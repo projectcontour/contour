@@ -5030,7 +5030,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionDetached),
 							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol),
-							Message: "Listener.Protocol \"invalid\" is not supported.",
+							Message: "Listener protocol \"invalid\" is unsupported, must be one of HTTP, HTTPS or TLS",
 						},
 					},
 				},

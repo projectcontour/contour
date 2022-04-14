@@ -211,45 +211,21 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 // DesiredEnvoyService generates the desired Envoy Service for the given contour.
 func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	var ports []corev1.ServicePort
-	var httpFound, httpsFound bool
 
-	// Put service ports in a map for easy lookup, and default
-	// http/https service port numbers if not specified.
-	servicePorts := map[string]int32{}
-	for _, p := range contour.Spec.NetworkPublishing.Envoy.ServicePorts {
-		servicePorts[p.Name] = p.PortNumber
-	}
-	if _, ok := servicePorts["http"]; !ok {
-		servicePorts["http"] = EnvoyServiceHTTPPort
-	}
-	if _, ok := servicePorts["https"]; !ok {
-		servicePorts["https"] = EnvoyServiceHTTPSPort
-	}
-
-	for _, port := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
-		switch port.Name {
-		case "http":
-			httpFound = true
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       port.Name,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       servicePorts[port.Name],
-				TargetPort: intstr.IntOrString{IntVal: port.PortNumber},
-			})
-		case "https":
-			httpsFound = true
-
-			ports = append(ports, corev1.ServicePort{
-				Name:       port.Name,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       servicePorts[port.Name],
-				TargetPort: intstr.IntOrString{IntVal: port.PortNumber},
-			})
-		}
-
-		if httpFound && httpsFound {
-			break
+	// Match service ports up to container ports based on name (the names
+	// are statically set by provisioner code to "http" and "https" so for
+	// now we're logically guaranteed to find matches).
+	for _, servicePort := range contour.Spec.NetworkPublishing.Envoy.ServicePorts {
+		for _, containerPort := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
+			if servicePort.Name == containerPort.Name {
+				ports = append(ports, corev1.ServicePort{
+					Name:       servicePort.Name,
+					Protocol:   corev1.ProtocolTCP,
+					Port:       servicePort.PortNumber,
+					TargetPort: intstr.IntOrString{IntVal: containerPort.PortNumber},
+				})
+				break
+			}
 		}
 	}
 

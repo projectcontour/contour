@@ -1,0 +1,1 @@
+Gateway API: set appropriate conditions on Listeners if they don't specify the same port as other Listeners for their protocol group (i.e. HTTP, or HTTPS/TLS) or don't have a unique hostname within their group.

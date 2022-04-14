@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -539,6 +540,142 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 
 				assert.Equal(t, want, contourConfig.Spec)
+			},
+		},
+		"The Envoy service's ports are derived from the Gateway's listeners (http & https)": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Listeners: []gatewayv1alpha2.Listener{
+						{
+							Name:     "listener-1",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     82,
+						},
+						{
+							Name:     "listener-2",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     82,
+							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+						},
+						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
+						{
+							Name:     "listener-3",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     80,
+						},
+						// listener-4 will be ignored because it's an unsupported protocol
+						{
+							Name:     "listener-4",
+							Protocol: gatewayv1alpha2.TCPProtocolType,
+							Port:     82,
+						},
+						{
+							Name:     "listener-5",
+							Protocol: gatewayv1alpha2.HTTPSProtocolType,
+							Port:     8443,
+						},
+						{
+							Name:     "listener-6",
+							Protocol: gatewayv1alpha2.TLSProtocolType,
+							Port:     8443,
+							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+						},
+						// listener-7's port will be ignored because it's different than the previous HTTPS/TLS listeners'
+						{
+							Name:     "listener-7",
+							Protocol: gatewayv1alpha2.HTTPSProtocolType,
+							Port:     8444,
+							Hostname: gatewayapi.ListenerHostname("foo.baz"),
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				// Get the expected Envoy service from the client.
+				envoyService := &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: gw.Namespace,
+						Name:      "envoy-" + gw.Name,
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(envoyService), envoyService))
+
+				require.Len(t, envoyService.Spec.Ports, 2)
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       82,
+					TargetPort: intstr.IntOrString{IntVal: 8080},
+				})
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "https",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8443,
+					TargetPort: intstr.IntOrString{IntVal: 8443},
+				})
+			},
+		},
+		"The Envoy service's ports are derived from the Gateway's listeners (http only)": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Listeners: []gatewayv1alpha2.Listener{
+						{
+							Name:     "listener-1",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     82,
+						},
+						{
+							Name:     "listener-2",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     82,
+							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+						},
+						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
+						{
+							Name:     "listener-3",
+							Protocol: gatewayv1alpha2.HTTPProtocolType,
+							Port:     80,
+						},
+						// listener-4 will be ignored because it's an unsupported protocol
+						{
+							Name:     "listener-4",
+							Protocol: gatewayv1alpha2.TCPProtocolType,
+							Port:     82,
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				// Get the expected Envoy service from the client.
+				envoyService := &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: gw.Namespace,
+						Name:      "envoy-" + gw.Name,
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(envoyService), envoyService))
+
+				require.Len(t, envoyService.Spec.Ports, 1)
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       82,
+					TargetPort: intstr.IntOrString{IntVal: 8080},
+				})
 			},
 		},
 	}

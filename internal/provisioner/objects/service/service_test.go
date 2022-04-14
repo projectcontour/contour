@@ -161,6 +161,17 @@ func TestDesiredEnvoyService(t *testing.T) {
 		NodePorts:   model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444}),
 	}
 	cntr := model.New(cfg)
+	cntr.Spec.NetworkPublishing.Envoy.ServicePorts = []model.ServicePort{
+		{
+			Name:       "http",
+			PortNumber: EnvoyServiceHTTPPort,
+		},
+		{
+			Name:       "https",
+			PortNumber: EnvoyServiceHTTPSPort,
+		},
+	}
+
 	svc := DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, corev1.ServiceTypeNodePort)
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)

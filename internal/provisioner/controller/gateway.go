@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
@@ -227,12 +228,22 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	for _, listener := range gateway.Spec.Listeners {
-		port := model.ServicePort{
-			Name:       string(listener.Name),
-			PortNumber: int32(listener.Port),
-		}
+	// Validate listener ports and hostnames to get
+	// the ports to program.
+	validateListenersResult := gatewayapi.ValidateListeners(gateway.Spec.Listeners)
 
+	if validateListenersResult.InsecurePort > 0 {
+		port := model.ServicePort{
+			Name:       "http",
+			PortNumber: int32(validateListenersResult.InsecurePort),
+		}
+		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+	}
+	if validateListenersResult.SecurePort > 0 {
+		port := model.ServicePort{
+			Name:       "https",
+			PortNumber: int32(validateListenersResult.SecurePort),
+		}
 		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 

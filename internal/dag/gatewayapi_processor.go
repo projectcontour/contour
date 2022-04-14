@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 
@@ -102,8 +103,21 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 	}
 
+	// Validate listener protocols, ports and hostnames and add conditions
+	// for all invalid listeners.
+	validateListenersResult := gatewayapi.ValidateListeners(p.source.gateway.Spec.Listeners)
+	for name, cond := range validateListenersResult.InvalidListenerConditions {
+		gwAccessor.AddListenerCondition(
+			string(name),
+			gatewayapi_v1alpha2.ListenerConditionType(cond.Type),
+			cond.Status,
+			gatewayapi_v1alpha2.ListenerConditionReason(cond.Reason),
+			cond.Message,
+		)
+	}
+
 	for _, listener := range p.source.gateway.Spec.Listeners {
-		p.computeListener(listener, gwAccessor, gatewayNotReadyCondition == nil)
+		p.computeListener(listener, gwAccessor, gatewayNotReadyCondition == nil, validateListenersResult)
 	}
 
 	p.computeGatewayConditions(gwAccessor, gatewayNotReadyCondition)
@@ -143,7 +157,7 @@ func addressTypeDerefOr(addressType *gatewayapi_v1alpha2.AddressType, defaultAdd
 	return defaultAddressType
 }
 
-func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate, isGatewayValid bool) {
+func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate, isGatewayValid bool, validateListenersResult gatewayapi.ValidateListenersResult) {
 	// set the listener's "Ready" condition based on whether we've
 	// added any other conditions for the listener. The assumption
 	// here is that if another condition is set, the listener is
@@ -184,9 +198,15 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 		}
 	}()
 
+	// If the listener had an invalid protocol/port/hostname, we don't need to go
+	// any further.
+	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
+		return
+	}
+
 	var listenerSecret *Secret
 
-	// Validate the listener protocol is a supported type.
+	// Validate TLS details for HTTPS/TLS protocol listeners.
 	switch listener.Protocol {
 	case gatewayapi_v1alpha2.HTTPSProtocolType:
 		// Validate that if protocol is type HTTPS, that TLS is defined.
@@ -242,17 +262,6 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 				}
 			}
 		}
-	case gatewayapi_v1alpha2.HTTPProtocolType:
-		// no action required, this is a valid protocol type.
-	default:
-		gwAccessor.AddListenerCondition(
-			string(listener.Name),
-			gatewayapi_v1alpha2.ListenerConditionDetached,
-			metav1.ConditionTrue,
-			gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol,
-			fmt.Sprintf("Listener.Protocol %q is not supported.", listener.Protocol),
-		)
-		return
 	}
 
 	// Get a list of the route kinds that the listener accepts.

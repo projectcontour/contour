@@ -475,6 +475,16 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.GCPLoadBalancerProvider
 			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address = &loadBalancerIP
 		}
+		cntr.Spec.NetworkPublishing.Envoy.ServicePorts = []model.ServicePort{
+			{
+				Name:       "http",
+				PortNumber: service.EnvoyServiceHTTPPort,
+			},
+			{
+				Name:       "https",
+				PortNumber: service.EnvoyServiceHTTPPort,
+			},
+		}
 		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []model.ContainerPort{
 			{
 				Name:       "http",
