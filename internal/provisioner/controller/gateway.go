@@ -238,13 +238,27 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Deployment replicas
 			contourModel.Spec.Replicas = gatewayClassParams.Spec.Contour.Replicas
 
-			// NodePlacement
+			// Node placement
 			if nodePlacement := gatewayClassParams.Spec.Contour.NodePlacement; nodePlacement != nil {
 				if contourModel.Spec.NodePlacement == nil {
 					contourModel.Spec.NodePlacement = &model.NodePlacement{}
 				}
 
 				contourModel.Spec.NodePlacement.Contour = &model.ContourNodePlacement{
+					NodeSelector: nodePlacement.NodeSelector,
+					Tolerations:  nodePlacement.Tolerations,
+				}
+			}
+		}
+
+		if gatewayClassParams.Spec.Envoy != nil {
+			// Node placement
+			if nodePlacement := gatewayClassParams.Spec.Envoy.NodePlacement; nodePlacement != nil {
+				if contourModel.Spec.NodePlacement == nil {
+					contourModel.Spec.NodePlacement = &model.NodePlacement{}
+				}
+
+				contourModel.Spec.NodePlacement.Envoy = &model.EnvoyNodePlacement{
 					NodeSelector: nodePlacement.NodeSelector,
 					Tolerations:  nodePlacement.Tolerations,
 				}
