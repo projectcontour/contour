@@ -44,6 +44,8 @@ As with default backends, Contour only supports configuring a Service as a backe
 Contour supports [wildcard hostnames][5] as documented by the upstream API as well as precise hostnames.
 Wildcard hostnames are limited to the whole first DNS label of the hostname, e.g. `*.foo.com` is valid but `*foo.com`, `foo*.com`, `foo.*.com` are not.
 `*` is also not a valid hostname.
+Precise hostnames in Ingress or HTTPProxy configuration take higher precedence over wildcards.
+For example, given an Ingress rule with the hostname `*.foo.com` routing to `service-a` and another Ingress rule or HTTPProxy route containing a subdomain (say `bar.foo.com`) routing to `service-b`, requests to `bar.foo.com` will be routes to `service-b`.
 The Ingress admission controller validation ensures valid hostnames are present when creating an Ingress resource.
 
 Contour supports all of the various [path matching][6] types described by the Ingress spec.
