@@ -573,7 +573,7 @@ func TestGatewayReconcile(t *testing.T) {
 						{
 							Name:     "listener-4",
 							Protocol: gatewayv1alpha2.TCPProtocolType,
-							Port:     83,
+							Port:     82,
 						},
 						{
 							Name:     "listener-5",
@@ -653,7 +653,7 @@ func TestGatewayReconcile(t *testing.T) {
 						{
 							Name:     "listener-4",
 							Protocol: gatewayv1alpha2.TCPProtocolType,
-							Port:     83,
+							Port:     82,
 						},
 					},
 				},
