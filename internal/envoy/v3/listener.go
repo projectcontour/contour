@@ -246,6 +246,16 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 							TypeUrl: HTTPFilterGzip,
 						},
 					},
+					ContentType: []string{
+						// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
+						"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
+						"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
+						"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
+						"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
+						// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
+						"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
+						"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
+					},
 				}),
 			},
 		},
