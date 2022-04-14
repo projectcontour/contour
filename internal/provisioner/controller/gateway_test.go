@@ -349,13 +349,11 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Contour: &contourv1alpha1.ContourSettings{
-						Config: &contourv1alpha1.ContourConfigurationSpec{
-							EnableExternalNameService: pointer.Bool(true),
-							Envoy: &contourv1alpha1.EnvoyConfig{
-								Listener: &contourv1alpha1.EnvoyListenerConfig{
-									DisableMergeSlashes: pointer.Bool(true),
-								},
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						EnableExternalNameService: pointer.Bool(true),
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Listener: &contourv1alpha1.EnvoyListenerConfig{
+								DisableMergeSlashes: pointer.Bool(true),
 							},
 						},
 					},
@@ -418,20 +416,18 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Contour: &contourv1alpha1.ContourSettings{
-						Config: &contourv1alpha1.ContourConfigurationSpec{
-							Gateway: &contourv1alpha1.GatewayConfig{
-								ControllerName: "some-controller",
-								GatewayRef: &contourv1alpha1.NamespacedName{
-									Namespace: "some-other-namespace",
-									Name:      "some-other-gateway",
-								},
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						Gateway: &contourv1alpha1.GatewayConfig{
+							ControllerName: "some-controller",
+							GatewayRef: &contourv1alpha1.NamespacedName{
+								Namespace: "some-other-namespace",
+								Name:      "some-other-gateway",
 							},
-							Envoy: &contourv1alpha1.EnvoyConfig{
-								Service: &contourv1alpha1.NamespacedName{
-									Namespace: "some-other-namespace",
-									Name:      "some-other-service",
-								},
+						},
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Service: &contourv1alpha1.NamespacedName{
+								Namespace: "some-other-namespace",
+								Name:      "some-other-service",
 							},
 						},
 					},
@@ -490,13 +486,11 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Contour: &contourv1alpha1.ContourSettings{
-						Config: &contourv1alpha1.ContourConfigurationSpec{
-							EnableExternalNameService: pointer.Bool(true),
-							Envoy: &contourv1alpha1.EnvoyConfig{
-								Listener: &contourv1alpha1.EnvoyListenerConfig{
-									DisableMergeSlashes: pointer.Bool(true),
-								},
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						EnableExternalNameService: pointer.Bool(true),
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Listener: &contourv1alpha1.EnvoyListenerConfig{
+								DisableMergeSlashes: pointer.Bool(true),
 							},
 						},
 					},

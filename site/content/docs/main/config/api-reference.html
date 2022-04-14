@@ -3981,6 +3981,22 @@ EnvoySettings
 i.e. the xDS client/data plane and associated resources.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>config</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Config is a ContourConfiguration spec that should be used
+when provisioning a Contour instance.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -4264,7 +4280,7 @@ for more information.</p>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
 </p>
 <p>
 <p>ContourConfigurationSpec represents a configuration of a Contour controller.
@@ -4538,6 +4554,22 @@ EnvoySettings
 i.e. the xDS client/data plane and associated resources.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>config</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Config is a ContourConfiguration spec that should be used
+when provisioning a Contour instance.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourDeploymentStatus">ContourDeploymentStatus
@@ -4592,22 +4624,6 @@ i.e. the xDS server/control plane and associated resources.</p>
 </tr>
 </thead>
 <tbody class="border-top">
-<tr>
-<td style="white-space:nowrap">
-<code>config</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
-ContourConfigurationSpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Config is a ContourConfiguration spec that should be used
-when provisioning a Contour instance.</p>
-</td>
-</tr>
 <tr>
 <td style="white-space:nowrap">
 <code>replicas</code>

@@ -32,17 +32,17 @@ type ContourDeploymentSpec struct {
 	//
 	// +optional
 	Envoy *EnvoySettings `json:"envoy,omitempty"`
-}
 
-// ContourSettings contains settings for the Contour part of the installation,
-// i.e. the xDS server/control plane and associated resources.
-type ContourSettings struct {
 	// Config is a ContourConfiguration spec that should be used
 	// when provisioning a Contour instance.
 	//
 	// +optional
 	Config *ContourConfigurationSpec `json:"config,omitempty"`
+}
 
+// ContourSettings contains settings for the Contour part of the installation,
+// i.e. the xDS server/control plane and associated resources.
+type ContourSettings struct {
 	// Replicas is the desired number of Contour replicas. If unset,
 	// defaults to 2.
 	//
