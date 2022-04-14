@@ -1056,6 +1056,57 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.Equal(t, "val-2", svc.Annotations["key-2"])
 			},
 		},
+		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						WorkloadType: contourv1alpha1.WorkloadTypeDeployment,
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the deployment has been created
+				deploy := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+
+				// Verify that a daemonset has *not* been created
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				err := r.client.Get(context.Background(), keyFor(ds), ds)
+				assert.True(t, errors.IsNotFound(err))
+			},
+		},
 	}
 
 	for name, tc := range tests {

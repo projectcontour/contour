@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
-	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
 	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
@@ -252,6 +252,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
+			// Workload type
+			// TODO where to do validation and surface errors?
+			switch gatewayClassParams.Spec.Envoy.WorkloadType {
+			case contour_api_v1alpha1.WorkloadTypeDaemonSet, contour_api_v1alpha1.WorkloadTypeDeployment:
+				contourModel.Spec.EnvoyWorkloadType = gatewayClassParams.Spec.Envoy.WorkloadType
+			}
+
 			// Network publishing
 			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
 				contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
@@ -328,7 +335,7 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 	handleResult("contour config", contourconfig.EnsureContourConfig(ctx, r.client, contour))
 	handleResult("xDS TLS secrets", secret.EnsureXDSSecrets(ctx, r.client, contour, r.contourImage))
 	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
-	handleResult("daemonset", daemonset.EnsureDaemonSet(ctx, r.client, contour, r.contourImage, r.envoyImage))
+	handleResult("envoy data plane", dataplane.EnsureDataPlane(ctx, r.client, contour, r.contourImage, r.envoyImage))
 	handleResult("contour service", service.EnsureContourService(ctx, r.client, contour))
 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
@@ -352,7 +359,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 
 	handleResult("envoy service", service.EnsureEnvoyServiceDeleted(ctx, r.client, contour))
 	handleResult("service", service.EnsureContourServiceDeleted(ctx, r.client, contour))
-	handleResult("daemonset", daemonset.EnsureDaemonSetDeleted(ctx, r.client, contour))
+	handleResult("envoy data plane", dataplane.EnsureDataPlaneDeleted(ctx, r.client, contour))
 	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
 	handleResult("xDS TLS Secrets", secret.EnsureXDSSecretsDeleted(ctx, r.client, contour))
 	handleResult("contour config", contourconfig.EnsureContourConfigDeleted(ctx, r.client, contour))

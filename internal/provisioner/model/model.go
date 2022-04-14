@@ -35,7 +35,8 @@ func Default(namespace, name string) *Contour {
 			Name:      name,
 		},
 		Spec: ContourSpec{
-			Replicas: 2,
+			Replicas:          2,
+			EnvoyWorkloadType: WorkloadTypeDaemonSet,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: LoadBalancerServicePublishingType,
@@ -164,7 +165,21 @@ type ContourSpec struct {
 
 	// RuntimeSettings is any user-defined ContourConfigurationSpec to use when provisioning.
 	RuntimeSettings *contourv1alpha1.ContourConfigurationSpec
+
+	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
+	EnvoyWorkloadType WorkloadType
 }
+
+// WorkloadType is the type of Kubernetes workload to use for a component.
+type WorkloadType = contourv1alpha1.WorkloadType
+
+const (
+	// A Kubernetes DaemonSet.
+	WorkloadTypeDaemonSet = contourv1alpha1.WorkloadTypeDaemonSet
+
+	// A Kubernetes Deployment.
+	WorkloadTypeDeployment = contourv1alpha1.WorkloadTypeDeployment
+)
 
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.
 type NodePlacement struct {

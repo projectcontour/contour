@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 
 	corev1 "k8s.io/api/core/v1"
@@ -238,7 +238,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,
-			Selector:        daemonset.EnvoyDaemonSetPodSelector(contour).MatchLabels,
+			Selector:        dataplane.EnvoyPodSelector(contour).MatchLabels,
 			SessionAffinity: corev1.ServiceAffinityNone,
 			LoadBalancerIP:  contour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP,
 		},
