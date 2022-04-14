@@ -762,6 +762,107 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.EqualValues(t, 3, *deploy.Spec.Replicas)
 			},
 		},
+		"If ContourDeployment.Spec.Contour.NodePlacement is not specified, the Contour deployment has no node selector or tolerations set": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Contour: &contourv1alpha1.ContourSettings{},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the ContourConfiguration has been created
+				deploy := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contour-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+
+				assert.Empty(t, deploy.Spec.Template.Spec.NodeSelector)
+				assert.Empty(t, deploy.Spec.Template.Spec.Tolerations)
+			},
+		},
+		"If ContourDeployment.Spec.Contour.NodePlacement is specified, it is used for the Contour deployment": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Contour: &contourv1alpha1.ContourSettings{
+						NodePlacement: &contourv1alpha1.NodePlacement{
+							NodeSelector: map[string]string{"foo": "bar"},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      "toleration-key-1",
+									Operator: corev1.TolerationOpEqual,
+									Value:    "toleration-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the ContourConfiguration has been created
+				deploy := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contour-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+
+				assert.Equal(t, map[string]string{"foo": "bar"}, deploy.Spec.Template.Spec.NodeSelector)
+				assert.Equal(t, []corev1.Toleration{
+					{
+						Key:      "toleration-key-1",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "toleration-value-1",
+					},
+				}, deploy.Spec.Template.Spec.Tolerations)
+			},
+		},
 	}
 
 	for name, tc := range tests {

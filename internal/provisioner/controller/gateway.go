@@ -225,18 +225,30 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
-	gcParams, err := r.getGatewayClassParams(ctx, gatewayClass)
+	gatewayClassParams, err := r.getGatewayClassParams(ctx, gatewayClass)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class parameters: %w", err)
 	}
 
-	if gcParams != nil {
+	if gatewayClassParams != nil {
 		// ContourConfiguration
-		contourModel.Spec.RuntimeSettings = gcParams.Spec.RuntimeSettings
+		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
-		if gcParams.Spec.Contour != nil {
+		if gatewayClassParams.Spec.Contour != nil {
 			// Deployment replicas
-			contourModel.Spec.Replicas = gcParams.Spec.Contour.Replicas
+			contourModel.Spec.Replicas = gatewayClassParams.Spec.Contour.Replicas
+
+			// NodePlacement
+			if nodePlacement := gatewayClassParams.Spec.Contour.NodePlacement; nodePlacement != nil {
+				if contourModel.Spec.NodePlacement == nil {
+					contourModel.Spec.NodePlacement = &model.NodePlacement{}
+				}
+
+				contourModel.Spec.NodePlacement.Contour = &model.ContourNodePlacement{
+					NodeSelector: nodePlacement.NodeSelector,
+					Tolerations:  nodePlacement.Tolerations,
+				}
+			}
 		}
 	}
 
