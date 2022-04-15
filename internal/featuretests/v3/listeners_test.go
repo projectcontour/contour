@@ -1283,8 +1283,8 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
+		NumTrustedHops(1).
 		DefaultFilters().
-		AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).
 		Get())
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{

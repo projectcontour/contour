@@ -2678,7 +2678,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
-						AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).
+						NumTrustedHops(1).
 						Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
