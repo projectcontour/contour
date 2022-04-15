@@ -36,7 +36,7 @@ import (
 )
 
 func TestGatewayReconcile(t *testing.T) {
-	const controller = "projectcontour.io/gateway-provisioner"
+	const controller = "projectcontour.io/gateway-controller"
 
 	reconcilableGatewayClass := func(name, controller string) *gatewayv1alpha2.GatewayClass {
 		return &gatewayv1alpha2.GatewayClass{

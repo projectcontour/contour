@@ -37,7 +37,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 metadata:
   name: contour
 spec:
-  controllerName: projectcontour.io/gateway-provisioner
+  controllerName: projectcontour.io/gateway-controller
 EOF
 
 cd $(mktemp -d)

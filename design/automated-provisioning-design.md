@@ -51,7 +51,7 @@ This also allows the Contour team to focus on implementing *one* standardized pr
 We believe this is a more effective use of our efforts.
 
 The Gateway provisioner will run as a Deployment in-cluster.
-It will watch for GatewayClasses that have a `spec.controller` value matching what the Gateway provisioner has been configured with (e.g. `projectcontour.io/gateway-provisioner`).
+It will watch for GatewayClasses that have a `spec.controller` value matching what the Gateway provisioner has been configured with (e.g. `projectcontour.io/gateway-controller`).
 It will set the `Accepted: true` condition on these GatewayClasses, if their `spec.parametersRef` is valid (more on GatewayClass parameters below).
 
 It will also watch for Gateways that use a GatewayClass controlled by it.

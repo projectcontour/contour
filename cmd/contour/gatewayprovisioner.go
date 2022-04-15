@@ -37,7 +37,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
-		gatewayControllerName: "projectcontour.io/gateway-provisioner",
+		gatewayControllerName: "projectcontour.io/gateway-controller",
 	}
 
 	cmd.Flag("contour-image", "The container image used for the managed Contour.").
