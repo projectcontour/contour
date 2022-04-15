@@ -22,7 +22,7 @@ import (
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_config_filter_http_grpc_stats "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
+	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -456,7 +456,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -565,7 +565,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -675,7 +675,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -786,7 +786,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -896,7 +896,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1007,7 +1007,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1116,7 +1116,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1226,7 +1226,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1337,7 +1337,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1448,7 +1448,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Name: "grpc_stats",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats.FilterConfig{
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 										EmitFilterState:     true,
 										EnableUpstreamStats: true,
 									},
@@ -1910,7 +1910,7 @@ func TestAddFilter(t *testing.T) {
 					Name: "grpc_stats",
 					ConfigType: &http.HttpFilter_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_grpc_stats.FilterConfig{
+							&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 								EmitFilterState:     true,
 								EnableUpstreamStats: true,
 							},
@@ -1989,7 +1989,7 @@ func TestAddFilter(t *testing.T) {
 					Name: "grpc_stats",
 					ConfigType: &http.HttpFilter_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_grpc_stats.FilterConfig{
+							&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
 								EmitFilterState:     true,
 								EnableUpstreamStats: true,
 							},
