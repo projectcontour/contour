@@ -75,7 +75,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			},
 			wantCondition: &metav1.Condition{
@@ -90,7 +90,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
@@ -111,7 +111,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "invalidgroup.io",
 						Kind:      "ContourDeployment",
@@ -138,7 +138,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "InvalidKind",
@@ -165,7 +165,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
@@ -192,7 +192,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
@@ -219,7 +219,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name: "gatewayclass-1",
 				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: "projectcontour.io/gateway-provisioner",
+					ControllerName: "projectcontour.io/gateway-controller",
 					ParametersRef: &gatewayv1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
@@ -256,7 +256,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 			}
 
 			r := &gatewayClassReconciler{
-				gatewayController: "projectcontour.io/gateway-provisioner",
+				gatewayController: "projectcontour.io/gateway-controller",
 				client:            client.Build(),
 				log:               logr.Discard(),
 			}

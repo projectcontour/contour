@@ -49,7 +49,7 @@ var _ = BeforeSuite(func() {
 			Name: "contour",
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-provisioner"),
+			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
 		},
 	}
 
@@ -242,7 +242,7 @@ var _ = Describe("Gateway provisioner", func() {
 					Name: "contour-with-params",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-provisioner"),
+					ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
 					ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
