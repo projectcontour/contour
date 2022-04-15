@@ -23,17 +23,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	"k8s.io/utils/pointer"
-
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/k8s"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
+
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"k8s.io/utils/pointer"
 )
 
 type serveContext struct {
@@ -370,10 +370,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 	if ctx.Config.RateLimitService.ExtensionService != "" {
+
+		nsedName := k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService)
 		rateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
 			ExtensionService: contour_api_v1alpha1.NamespacedName{
-				Name:      k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Name,
-				Namespace: k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Namespace,
+				Name:      nsedName.Name,
+				Namespace: nsedName.Namespace,
 			},
 			Domain:                  ctx.Config.RateLimitService.Domain,
 			FailOpen:                pointer.Bool(ctx.Config.RateLimitService.FailOpen),

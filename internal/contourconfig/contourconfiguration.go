@@ -184,49 +184,52 @@ func ParseTimeoutPolicy(timeoutParameters *contour_api_v1alpha1.TimeoutParameter
 		timeouts Timeouts
 	)
 
-	if timeoutParameters != nil {
-		if timeoutParameters.RequestTimeout != nil {
-			timeouts.Request, err = timeout.Parse(*timeoutParameters.RequestTimeout)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse request timeout: %s", err)
-			}
-		}
-		if timeoutParameters.ConnectionIdleTimeout != nil {
-			timeouts.ConnectionIdle, err = timeout.Parse(*timeoutParameters.ConnectionIdleTimeout)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse connection idle timeout: %s", err)
-			}
-		}
-		if timeoutParameters.StreamIdleTimeout != nil {
-			timeouts.StreamIdle, err = timeout.Parse(*timeoutParameters.StreamIdleTimeout)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse stream idle timeout: %s", err)
-			}
-		}
-		if timeoutParameters.MaxConnectionDuration != nil {
-			timeouts.MaxConnectionDuration, err = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse max connection duration: %s", err)
-			}
-		}
-		if timeoutParameters.DelayedCloseTimeout != nil {
-			timeouts.DelayedClose, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse delayed close timeout: %s", err)
-			}
-		}
-		if timeoutParameters.ConnectionShutdownGracePeriod != nil {
-			timeouts.ConnectionShutdownGracePeriod, err = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse connection shutdown grace period: %s", err)
-			}
-		}
-		if timeoutParameters.ConnectTimeout != nil {
-			timeouts.ConnectTimeout, err = time.ParseDuration(*timeoutParameters.ConnectTimeout)
-			if err != nil {
-				return Timeouts{}, fmt.Errorf("failed to parse connect timeout: %s", err)
-			}
+	if timeoutParameters == nil {
+		return timeouts, nil
+	}
+
+	if timeoutParameters.RequestTimeout != nil {
+		timeouts.Request, err = timeout.Parse(*timeoutParameters.RequestTimeout)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse request timeout: %s", err)
 		}
 	}
+	if timeoutParameters.ConnectionIdleTimeout != nil {
+		timeouts.ConnectionIdle, err = timeout.Parse(*timeoutParameters.ConnectionIdleTimeout)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse connection idle timeout: %s", err)
+		}
+	}
+	if timeoutParameters.StreamIdleTimeout != nil {
+		timeouts.StreamIdle, err = timeout.Parse(*timeoutParameters.StreamIdleTimeout)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse stream idle timeout: %s", err)
+		}
+	}
+	if timeoutParameters.MaxConnectionDuration != nil {
+		timeouts.MaxConnectionDuration, err = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse max connection duration: %s", err)
+		}
+	}
+	if timeoutParameters.DelayedCloseTimeout != nil {
+		timeouts.DelayedClose, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse delayed close timeout: %s", err)
+		}
+	}
+	if timeoutParameters.ConnectionShutdownGracePeriod != nil {
+		timeouts.ConnectionShutdownGracePeriod, err = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse connection shutdown grace period: %s", err)
+		}
+	}
+	if timeoutParameters.ConnectTimeout != nil {
+		timeouts.ConnectTimeout, err = time.ParseDuration(*timeoutParameters.ConnectTimeout)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse connect timeout: %s", err)
+		}
+	}
+
 	return timeouts, nil
 }
