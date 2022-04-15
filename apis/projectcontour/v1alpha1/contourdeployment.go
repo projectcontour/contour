@@ -72,6 +72,14 @@ type EnvoySettings struct {
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
+	// Replicas is the desired number of Envoy replicas. If WorkloadType
+	// is not "Deployment", this field is ignored. Otherwise, if unset,
+	// defaults to 2.
+	//
+	// +kubebuilder:default=2
+	// +kubebuilder:validation:Minimum=0
+	Replicas int32 `json:"replicas,omitempty"`
+
 	// NetworkPublishing defines how to expose Envoy to a network.
 	//
 	// +optional.

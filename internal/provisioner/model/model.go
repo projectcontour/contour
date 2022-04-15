@@ -35,8 +35,9 @@ func Default(namespace, name string) *Contour {
 			Name:      name,
 		},
 		Spec: ContourSpec{
-			Replicas:          2,
+			ContourReplicas:   2,
 			EnvoyWorkloadType: WorkloadTypeDaemonSet,
+			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: LoadBalancerServicePublishingType,
@@ -110,12 +111,14 @@ func (c *Contour) EnvoyTolerationsExist() bool {
 
 // ContourSpec defines the desired state of Contour.
 type ContourSpec struct {
-	// Replicas is the desired number of Contour replicas. If unset,
+	// ContourReplicas is the desired number of Contour replicas. If unset,
 	// defaults to 2.
-	//
-	// +kubebuilder:default=2
-	// +kubebuilder:validation:Minimum=0
-	Replicas int32 `json:"replicas,omitempty"`
+	ContourReplicas int32
+
+	// EnvoyReplicas is the desired number of Envoy replicas. If WorkloadType
+	// is not "Deployment", this field is ignored. Otherwise, if unset,
+	// defaults to 2.
+	EnvoyReplicas int32
 
 	// NetworkPublishing defines the schema for publishing Contour to a network.
 	//
@@ -669,7 +672,7 @@ func New(cfg Config) *Contour {
 			Name:      cfg.Name,
 		},
 		Spec: ContourSpec{
-			Replicas: cfg.Replicas,
+			ContourReplicas: cfg.Replicas,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,

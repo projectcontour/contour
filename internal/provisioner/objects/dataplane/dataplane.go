@@ -434,7 +434,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas:             pointer.Int32(2),
+			Replicas:             pointer.Int32(contour.Spec.EnvoyReplicas),
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),

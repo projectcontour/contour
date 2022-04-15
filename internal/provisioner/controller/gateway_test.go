@@ -1056,7 +1056,7 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.Equal(t, "val-2", svc.Annotations["key-2"])
 			},
 		},
-		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned": {
+		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1066,6 +1066,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					Envoy: &contourv1alpha1.EnvoySettings{
 						WorkloadType: contourv1alpha1.WorkloadTypeDeployment,
+						Replicas:     7,
 					},
 				},
 			},
@@ -1095,6 +1096,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+				assert.EqualValues(t, 7, *deploy.Spec.Replicas)
 
 				// Verify that a daemonset has *not* been created
 				ds := &appsv1.DaemonSet{
