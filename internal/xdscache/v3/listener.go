@@ -387,7 +387,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
@@ -439,7 +439,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
@@ -504,7 +504,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
