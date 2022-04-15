@@ -18,26 +18,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ContourDeploymentSpec defines the parameters of how a Contour
-// instance should be configured.
+// ContourDeploymentSpec specifies options for how a Contour
+// instance should be provisioned.
 type ContourDeploymentSpec struct {
-	// Contour contains settings for the Contour part of the installation,
-	// i.e. the xDS server/control plane and associated resources.
+	// Contour specifies deployment-time settings for the Contour
+	// part of the installation, i.e. the xDS server/control plane
+	// and associated resources, including things like replica count
+	// for the Deployment, and node placement constraints for the pods.
 	//
 	// +optional
 	Contour *ContourSettings `json:"contour,omitempty"`
 
-	// Envoy contains settings for the Envoy part of the installation,
-	// i.e. the xDS client/data plane and associated resources.
+	// Envoy specifies deployment-time settings for the Envoy
+	// part of the installation, i.e. the xDS client/data plane
+	// and associated resources, including things like the workload
+	// type to use (DaemonSet or Deployment), node placement constraints
+	// for the pods, and various options for the Envoy service.
 	//
 	// +optional
 	Envoy *EnvoySettings `json:"envoy,omitempty"`
 
-	// Config is a ContourConfiguration spec that should be used
-	// when provisioning a Contour instance.
+	// RuntimeSettings is a ContourConfiguration spec to be used when
+	// provisioning a Contour instance that will influence aspects of
+	// the Contour instance's runtime behavior.
 	//
 	// +optional
-	Config *ContourConfigurationSpec `json:"config,omitempty"`
+	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
 }
 
 // ContourSettings contains settings for the Contour part of the installation,

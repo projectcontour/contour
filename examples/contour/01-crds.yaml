@@ -880,12 +880,200 @@ spec:
           metadata:
             type: object
           spec:
-            description: ContourDeploymentSpec defines the parameters of how a Contour
-              instance should be configured.
+            description: ContourDeploymentSpec specifies options for how a Contour
+              instance should be provisioned.
             properties:
-              config:
-                description: Config is a ContourConfiguration spec that should be
-                  used when provisioning a Contour instance.
+              contour:
+                description: Contour specifies deployment-time settings for the Contour
+                  part of the installation, i.e. the xDS server/control plane and
+                  associated resources, including things like replica count for the
+                  Deployment, and node placement constraints for the pods.
+                properties:
+                  nodePlacement:
+                    description: NodePlacement describes node scheduling configuration
+                      of Contour pods.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: "NodeSelector is the simplest recommended form
+                          of node selection constraint and specifies a map of key-value
+                          pairs. For the pod to be eligible to run on a node, the
+                          node must have each of the indicated key-value pairs as
+                          labels (it can have additional labels as well). \n If unset,
+                          the pod(s) will be scheduled to any available node."
+                        type: object
+                      tolerations:
+                        description: "Tolerations work with taints to ensure that
+                          pods are not scheduled onto inappropriate nodes. One or
+                          more taints are applied to a node; this marks that the node
+                          should not accept any pods that do not tolerate the taints.
+                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+                          for additional details."
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  replicas:
+                    default: 2
+                    description: Replicas is the desired number of Contour replicas.
+                      If unset, defaults to 2.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                type: object
+              envoy:
+                description: Envoy specifies deployment-time settings for the Envoy
+                  part of the installation, i.e. the xDS client/data plane and associated
+                  resources, including things like the workload type to use (DaemonSet
+                  or Deployment), node placement constraints for the pods, and various
+                  options for the Envoy service.
+                properties:
+                  networkPublishing:
+                    description: NetworkPublishing defines how to expose Envoy to
+                      a network.
+                    properties:
+                      serviceAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: ServiceAnnotations is the annotations to add
+                          to the provisioned Envoy service.
+                        type: object
+                      type:
+                        default: LoadBalancerService
+                        description: "NetworkPublishingType is the type of publishing
+                          strategy to use. Valid values are: \n * LoadBalancerService
+                          \n In this configuration, network endpoints for Envoy use
+                          container networking. A Kubernetes LoadBalancer Service
+                          is created to publish Envoy network endpoints. \n See: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+                          \n * NodePortService \n Publishes Envoy network endpoints
+                          using a Kubernetes NodePort Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          NodePort Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                          \n * ClusterIPService \n Publishes Envoy network endpoints
+                          using a Kubernetes ClusterIP Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          ClusterIP Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
+                        enum:
+                        - LoadBalancerService
+                        - NodePortService
+                        - ClusterIPService
+                        type: string
+                    type: object
+                  nodePlacement:
+                    description: NodePlacement describes node scheduling configuration
+                      of Envoy pods.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: "NodeSelector is the simplest recommended form
+                          of node selection constraint and specifies a map of key-value
+                          pairs. For the pod to be eligible to run on a node, the
+                          node must have each of the indicated key-value pairs as
+                          labels (it can have additional labels as well). \n If unset,
+                          the pod(s) will be scheduled to any available node."
+                        type: object
+                      tolerations:
+                        description: "Tolerations work with taints to ensure that
+                          pods are not scheduled onto inappropriate nodes. One or
+                          more taints are applied to a node; this marks that the node
+                          should not accept any pods that do not tolerate the taints.
+                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+                          for additional details."
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  workloadType:
+                    default: Deployment
+                    description: WorkloadType is the type of workload to install Envoy
+                      as. Choices are DaemonSet and Deployment.
+                    enum:
+                    - DaemonSet
+                    - Deployment
+                    type: string
+                type: object
+              runtimeSettings:
+                description: RuntimeSettings is a ContourConfiguration spec to be
+                  used when provisioning a Contour instance that will influence aspects
+                  of the Contour instance's runtime behavior.
                 properties:
                   debug:
                     description: Debug contains parameters to enable debug logging
@@ -1472,188 +1660,6 @@ spec:
                           \n Contour's default is \"contour\"."
                         type: string
                     type: object
-                type: object
-              contour:
-                description: Contour contains settings for the Contour part of the
-                  installation, i.e. the xDS server/control plane and associated resources.
-                properties:
-                  nodePlacement:
-                    description: NodePlacement describes node scheduling configuration
-                      of Contour pods.
-                    properties:
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        description: "NodeSelector is the simplest recommended form
-                          of node selection constraint and specifies a map of key-value
-                          pairs. For the pod to be eligible to run on a node, the
-                          node must have each of the indicated key-value pairs as
-                          labels (it can have additional labels as well). \n If unset,
-                          the pod(s) will be scheduled to any available node."
-                        type: object
-                      tolerations:
-                        description: "Tolerations work with taints to ensure that
-                          pods are not scheduled onto inappropriate nodes. One or
-                          more taints are applied to a node; this marks that the node
-                          should not accept any pods that do not tolerate the taints.
-                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-                          for additional details."
-                        items:
-                          description: The pod this Toleration is attached to tolerates
-                            any taint that matches the triple <key,value,effect> using
-                            the matching operator <operator>.
-                          properties:
-                            effect:
-                              description: Effect indicates the taint effect to match.
-                                Empty means match all taint effects. When specified,
-                                allowed values are NoSchedule, PreferNoSchedule and
-                                NoExecute.
-                              type: string
-                            key:
-                              description: Key is the taint key that the toleration
-                                applies to. Empty means match all taint keys. If the
-                                key is empty, operator must be Exists; this combination
-                                means to match all values and all keys.
-                              type: string
-                            operator:
-                              description: Operator represents a key's relationship
-                                to the value. Valid operators are Exists and Equal.
-                                Defaults to Equal. Exists is equivalent to wildcard
-                                for value, so that a pod can tolerate all taints of
-                                a particular category.
-                              type: string
-                            tolerationSeconds:
-                              description: TolerationSeconds represents the period
-                                of time the toleration (which must be of effect NoExecute,
-                                otherwise this field is ignored) tolerates the taint.
-                                By default, it is not set, which means tolerate the
-                                taint forever (do not evict). Zero and negative values
-                                will be treated as 0 (evict immediately) by the system.
-                              format: int64
-                              type: integer
-                            value:
-                              description: Value is the taint value the toleration
-                                matches to. If the operator is Exists, the value should
-                                be empty, otherwise just a regular string.
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  replicas:
-                    default: 2
-                    description: Replicas is the desired number of Contour replicas.
-                      If unset, defaults to 2.
-                    format: int32
-                    minimum: 0
-                    type: integer
-                type: object
-              envoy:
-                description: Envoy contains settings for the Envoy part of the installation,
-                  i.e. the xDS client/data plane and associated resources.
-                properties:
-                  networkPublishing:
-                    description: NetworkPublishing defines how to expose Envoy to
-                      a network.
-                    properties:
-                      serviceAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: ServiceAnnotations is the annotations to add
-                          to the provisioned Envoy service.
-                        type: object
-                      type:
-                        default: LoadBalancerService
-                        description: "NetworkPublishingType is the type of publishing
-                          strategy to use. Valid values are: \n * LoadBalancerService
-                          \n In this configuration, network endpoints for Envoy use
-                          container networking. A Kubernetes LoadBalancer Service
-                          is created to publish Envoy network endpoints. \n See: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
-                          \n * NodePortService \n Publishes Envoy network endpoints
-                          using a Kubernetes NodePort Service. \n In this configuration,
-                          Envoy network endpoints use container networking. A Kubernetes
-                          NodePort Service is created to publish the network endpoints.
-                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
-                          \n * ClusterIPService \n Publishes Envoy network endpoints
-                          using a Kubernetes ClusterIP Service. \n In this configuration,
-                          Envoy network endpoints use container networking. A Kubernetes
-                          ClusterIP Service is created to publish the network endpoints.
-                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
-                        enum:
-                        - LoadBalancerService
-                        - NodePortService
-                        - ClusterIPService
-                        type: string
-                    type: object
-                  nodePlacement:
-                    description: NodePlacement describes node scheduling configuration
-                      of Envoy pods.
-                    properties:
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        description: "NodeSelector is the simplest recommended form
-                          of node selection constraint and specifies a map of key-value
-                          pairs. For the pod to be eligible to run on a node, the
-                          node must have each of the indicated key-value pairs as
-                          labels (it can have additional labels as well). \n If unset,
-                          the pod(s) will be scheduled to any available node."
-                        type: object
-                      tolerations:
-                        description: "Tolerations work with taints to ensure that
-                          pods are not scheduled onto inappropriate nodes. One or
-                          more taints are applied to a node; this marks that the node
-                          should not accept any pods that do not tolerate the taints.
-                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-                          for additional details."
-                        items:
-                          description: The pod this Toleration is attached to tolerates
-                            any taint that matches the triple <key,value,effect> using
-                            the matching operator <operator>.
-                          properties:
-                            effect:
-                              description: Effect indicates the taint effect to match.
-                                Empty means match all taint effects. When specified,
-                                allowed values are NoSchedule, PreferNoSchedule and
-                                NoExecute.
-                              type: string
-                            key:
-                              description: Key is the taint key that the toleration
-                                applies to. Empty means match all taint keys. If the
-                                key is empty, operator must be Exists; this combination
-                                means to match all values and all keys.
-                              type: string
-                            operator:
-                              description: Operator represents a key's relationship
-                                to the value. Valid operators are Exists and Equal.
-                                Defaults to Equal. Exists is equivalent to wildcard
-                                for value, so that a pod can tolerate all taints of
-                                a particular category.
-                              type: string
-                            tolerationSeconds:
-                              description: TolerationSeconds represents the period
-                                of time the toleration (which must be of effect NoExecute,
-                                otherwise this field is ignored) tolerates the taint.
-                                By default, it is not set, which means tolerate the
-                                taint forever (do not evict). Zero and negative values
-                                will be treated as 0 (evict immediately) by the system.
-                              format: int64
-                              type: integer
-                            value:
-                              description: Value is the taint value the toleration
-                                matches to. If the operator is Exists, the value should
-                                be empty, otherwise just a regular string.
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  workloadType:
-                    default: Deployment
-                    description: WorkloadType is the type of workload to install Envoy
-                      as. Choices are DaemonSet and Deployment.
-                    enum:
-                    - DaemonSet
-                    - Deployment
-                    type: string
                 type: object
             type: object
           status:

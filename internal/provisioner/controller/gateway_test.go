@@ -349,7 +349,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Config: &contourv1alpha1.ContourConfigurationSpec{
+					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
 						EnableExternalNameService: pointer.Bool(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
@@ -416,7 +416,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Config: &contourv1alpha1.ContourConfigurationSpec{
+					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
 						Gateway: &contourv1alpha1.GatewayConfig{
 							ControllerName: "some-controller",
 							GatewayRef: &contourv1alpha1.NamespacedName{
@@ -486,7 +486,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:      "gatewayclass-1-params",
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Config: &contourv1alpha1.ContourConfigurationSpec{
+					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
 						EnableExternalNameService: pointer.Bool(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{

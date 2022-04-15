@@ -46,8 +46,8 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		}
 
 		// Take any user-provided Config as a base.
-		if contour.Spec.Config != nil {
-			contourConfig.Spec = *contour.Spec.Config
+		if contour.Spec.RuntimeSettings != nil {
+			contourConfig.Spec = *contour.Spec.RuntimeSettings
 		}
 
 		// Override Gateway-specific settings to ensure the Contour is

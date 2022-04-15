@@ -285,8 +285,8 @@ func (in *ContourDeploymentSpec) DeepCopyInto(out *ContourDeploymentSpec) {
 		*out = new(EnvoySettings)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Config != nil {
-		in, out := &in.Config, &out.Config
+	if in.RuntimeSettings != nil {
+		in, out := &in.RuntimeSettings, &out.RuntimeSettings
 		*out = new(ContourConfigurationSpec)
 		(*in).DeepCopyInto(*out)
 	}

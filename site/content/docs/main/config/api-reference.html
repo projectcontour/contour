@@ -3961,8 +3961,10 @@ ContourSettings
 </td>
 <td>
 <em>(Optional)</em>
-<p>Contour contains settings for the Contour part of the installation,
-i.e. the xDS server/control plane and associated resources.</p>
+<p>Contour specifies deployment-time settings for the Contour
+part of the installation, i.e. the xDS server/control plane
+and associated resources, including things like replica count
+for the Deployment, and node placement constraints for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -3977,13 +3979,16 @@ EnvoySettings
 </td>
 <td>
 <em>(Optional)</em>
-<p>Envoy contains settings for the Envoy part of the installation,
-i.e. the xDS client/data plane and associated resources.</p>
+<p>Envoy specifies deployment-time settings for the Envoy
+part of the installation, i.e. the xDS client/data plane
+and associated resources, including things like the workload
+type to use (DaemonSet or Deployment), node placement constraints
+for the pods, and various options for the Envoy service.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>config</code>
+<code>runtimeSettings</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
@@ -3993,8 +3998,9 @@ ContourConfigurationSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Config is a ContourConfiguration spec that should be used
-when provisioning a Contour instance.</p>
+<p>RuntimeSettings is a ContourConfiguration spec to be used when
+provisioning a Contour instance that will influence aspects of
+the Contour instance&rsquo;s runtime behavior.</p>
 </td>
 </tr>
 </table>
@@ -4511,8 +4517,8 @@ in case some other controller wants to add a Condition.</p>
 <a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
 </p>
 <p>
-<p>ContourDeploymentSpec defines the parameters of how a Contour
-instance should be configured.</p>
+<p>ContourDeploymentSpec specifies options for how a Contour
+instance should be provisioned.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4534,8 +4540,10 @@ ContourSettings
 </td>
 <td>
 <em>(Optional)</em>
-<p>Contour contains settings for the Contour part of the installation,
-i.e. the xDS server/control plane and associated resources.</p>
+<p>Contour specifies deployment-time settings for the Contour
+part of the installation, i.e. the xDS server/control plane
+and associated resources, including things like replica count
+for the Deployment, and node placement constraints for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -4550,13 +4558,16 @@ EnvoySettings
 </td>
 <td>
 <em>(Optional)</em>
-<p>Envoy contains settings for the Envoy part of the installation,
-i.e. the xDS client/data plane and associated resources.</p>
+<p>Envoy specifies deployment-time settings for the Envoy
+part of the installation, i.e. the xDS client/data plane
+and associated resources, including things like the workload
+type to use (DaemonSet or Deployment), node placement constraints
+for the pods, and various options for the Envoy service.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>config</code>
+<code>runtimeSettings</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
@@ -4566,8 +4577,9 @@ ContourConfigurationSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Config is a ContourConfiguration spec that should be used
-when provisioning a Contour instance.</p>
+<p>RuntimeSettings is a ContourConfiguration spec to be used when
+provisioning a Contour instance that will influence aspects of
+the Contour instance&rsquo;s runtime behavior.</p>
 </td>
 </tr>
 </tbody>
