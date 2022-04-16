@@ -169,10 +169,8 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 		switch c.PrefixMatchType {
 		case dag.PrefixMatchSegment:
 			return &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					// Add anchor since we have a string literal prefix.
-					// Reduces regex program size so Envoy doesn't reject long prefix matches.
-					SafeRegex: SafeRegexMatch("^" + regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: c.Prefix,
 				},
 				Headers: headerMatcher(route.HeaderMatchConditions),
 			}
