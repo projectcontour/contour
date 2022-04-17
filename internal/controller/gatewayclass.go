@@ -166,50 +166,39 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, nil
 	}
 
-	for _, gc := range controlledClasses.notAcceptedClasses() {
+	updater := func(gc *gatewayapi_v1alpha2.GatewayClass, accepted bool) error {
 		if r.statusUpdater != nil {
 			r.statusUpdater.Send(k8s.StatusUpdate{
 				NamespacedName: types.NamespacedName{Name: gc.Name},
 				Resource:       &gatewayapi_v1alpha2.GatewayClass{},
 				Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
-					gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
+					gwc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 					if !ok {
 						panic(fmt.Sprintf("unsupported object type %T", obj))
 					}
 
-					copy := gc.DeepCopy()
-					return status.SetGatewayClassAccepted(context.Background(), r.client, copy, false)
+					return status.SetGatewayClassAccepted(context.Background(), r.client, gwc.DeepCopy(), accepted)
 				}),
 			})
 		} else {
 			// this branch makes testing easier by not going through the StatusUpdater.
-			copy := status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), false)
+			copy := status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), accepted)
 
 			if err := r.client.Status().Update(context.Background(), copy); err != nil {
-				return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+				return fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
 			}
+		}
+		return nil
+	}
+
+	for _, gc := range controlledClasses.notAcceptedClasses() {
+		if err := updater(gc, false); err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
-	if r.statusUpdater != nil {
-		r.statusUpdater.Send(k8s.StatusUpdate{
-			NamespacedName: types.NamespacedName{Name: controlledClasses.acceptedClass().Name},
-			Resource:       &gatewayapi_v1alpha2.GatewayClass{},
-			Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
-				gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
-				if !ok {
-					panic(fmt.Sprintf("unsupported object type %T", obj))
-				}
-
-				return status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), true)
-			}),
-		})
-	} else {
-		// this branch makes testing easier by not going through the StatusUpdater.
-		copy := status.SetGatewayClassAccepted(context.Background(), r.client, controlledClasses.acceptedClass().DeepCopy(), true)
-		if err := r.client.Status().Update(context.Background(), copy); err != nil {
-			return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
-		}
+	if err := updater(controlledClasses.acceptedClass(), true); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	r.eventHandler.OnAdd(controlledClasses.acceptedClass())
