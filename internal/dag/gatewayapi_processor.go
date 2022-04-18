@@ -762,9 +762,9 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 
 		for _, backendRef := range rule.BackendRefs {
 
-			service, err := p.validateBackendRef(backendRef, KindTLSRoute, route.Namespace)
-			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+			service, cond := p.validateBackendRef(backendRef, KindTLSRoute, route.Namespace)
+			if cond != nil {
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionType(cond.Type), cond.Status, status.RouteReasonType(cond.Reason), cond.Message)
 				continue
 			}
 
@@ -966,22 +966,31 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 }
 
 // validateBackendRef verifies that the specified BackendRef is valid.
-// Returns an error if not or the service found in the cache.
-func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeKind, routeNamespace string) (*Service, error) {
+// Returns a metav1.Condition for the route if any errors are detected.
+func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
+	degraded := func(msg string) *metav1.Condition {
+		return &metav1.Condition{
+			Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+			Status:  metav1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: msg,
+		}
+	}
+
 	if !(backendRef.Group == nil || *backendRef.Group == "") {
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Group must be \"\"")
+		return nil, degraded("Spec.Rules.BackendRef.Group must be \"\"")
 	}
 
 	if !(backendRef.Kind != nil && *backendRef.Kind == "Service") {
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Kind must be 'Service'")
+		return nil, degraded("Spec.Rules.BackendRef.Kind must be 'Service'")
 	}
 
 	if backendRef.Name == "" {
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Name must be specified")
+		return nil, degraded("Spec.Rules.BackendRef.Name must be specified")
 	}
 
 	if backendRef.Port == nil {
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Port must be specified")
+		return nil, degraded("Spec.Rules.BackendRef.Port must be specified")
 	}
 
 	// If the backend is in a different namespace than the route, then we need to
@@ -1000,7 +1009,12 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 				name:      string(backendRef.Name),
 			},
 		) {
-			return nil, fmt.Errorf("Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy")
+			return nil, &metav1.Condition{
+				Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+				Status:  metav1.ConditionFalse,
+				Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
+				Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
+			}
 		}
 	}
 
@@ -1014,7 +1028,7 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendRef.Port)), p.source, p.EnableExternalNameService)
 	if err != nil {
-		return nil, fmt.Errorf("service %q is invalid: %s", meta.Name, err)
+		return nil, degraded(fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
 	}
 
 	return service, nil
@@ -1097,9 +1111,9 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// Validate the backend refs.
 	totalWeight := uint32(0)
 	for _, backendRef := range backendRefs {
-		service, err := p.validateBackendRef(backendRef.BackendRef, KindHTTPRoute, routeNamespace)
-		if err != nil {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+		service, cond := p.validateBackendRef(backendRef.BackendRef, KindHTTPRoute, routeNamespace)
+		if cond != nil {
+			routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionType(cond.Type), cond.Status, status.RouteReasonType(cond.Reason), cond.Message)
 			continue
 		}
 
