@@ -807,7 +807,6 @@ If not set, SameSite attribute will not be rewritten.</p>
 <a href="#projectcontour.io/v1.HTTPProxyStatus">HTTPProxyStatus</a>, 
 <a href="#projectcontour.io/v1.TLSCertificateDelegationStatus">TLSCertificateDelegationStatus</a>, 
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourDeploymentStatus">ContourDeploymentStatus</a>, 
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceStatus">ExtensionServiceStatus</a>)
 </p>
 <p>
@@ -3952,20 +3951,44 @@ ContourDeploymentSpec
 <table style="border:none">
 <tr>
 <td style="white-space:nowrap">
-<code>replicas</code>
+<code>contour</code>
 <br>
 <em>
-int32
+<a href="#projectcontour.io/v1alpha1.ContourSettings">
+ContourSettings
+</a>
 </em>
 </td>
 <td>
-<p>Replicas is the desired number of Contour replicas. If unset,
-defaults to 2.</p>
+<em>(Optional)</em>
+<p>Contour specifies deployment-time settings for the Contour
+part of the installation, i.e. the xDS server/control plane
+and associated resources, including things like replica count
+for the Deployment, and node placement constraints for the pods.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>config</code>
+<code>envoy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">
+EnvoySettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Envoy specifies deployment-time settings for the Envoy
+part of the installation, i.e. the xDS client/data plane
+and associated resources, including things like the workload
+type to use (DaemonSet or Deployment), node placement constraints
+for the pods, and various options for the Envoy service.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>runtimeSettings</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
@@ -3975,7 +3998,9 @@ ContourConfigurationSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Config is the config that the instances of Contour are to utilize.</p>
+<p>RuntimeSettings is a ContourConfiguration spec to be used when
+provisioning a Contour instance that will influence aspects of
+the Contour instance&rsquo;s runtime behavior.</p>
 </td>
 </tr>
 </table>
@@ -4492,8 +4517,8 @@ in case some other controller wants to add a Condition.</p>
 <a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
 </p>
 <p>
-<p>ContourDeploymentSpec defines the parameters of how a Contour
-instance should be configured.</p>
+<p>ContourDeploymentSpec specifies options for how a Contour
+instance should be provisioned.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4505,20 +4530,44 @@ instance should be configured.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>replicas</code>
+<code>contour</code>
 <br>
 <em>
-int32
+<a href="#projectcontour.io/v1alpha1.ContourSettings">
+ContourSettings
+</a>
 </em>
 </td>
 <td>
-<p>Replicas is the desired number of Contour replicas. If unset,
-defaults to 2.</p>
+<em>(Optional)</em>
+<p>Contour specifies deployment-time settings for the Contour
+part of the installation, i.e. the xDS server/control plane
+and associated resources, including things like replica count
+for the Deployment, and node placement constraints for the pods.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>config</code>
+<code>envoy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">
+EnvoySettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Envoy specifies deployment-time settings for the Envoy
+part of the installation, i.e. the xDS client/data plane
+and associated resources, including things like the workload
+type to use (DaemonSet or Deployment), node placement constraints
+for the pods, and various options for the Envoy service.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>runtimeSettings</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
@@ -4528,7 +4577,9 @@ ContourConfigurationSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Config is the config that the instances of Contour are to utilize.</p>
+<p>RuntimeSettings is a ContourConfiguration spec to be used when
+provisioning a Contour instance that will influence aspects of
+the Contour instance&rsquo;s runtime behavior.</p>
 </td>
 </tr>
 </tbody>
@@ -4555,17 +4606,62 @@ ContourConfigurationSpec
 <code>conditions</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.DetailedCondition">
-[]DetailedCondition
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#condition-v1-meta">
+[]Kubernetes meta/v1.Condition
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Conditions contains the current status of the Contour resource.</p>
-<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.</p>
-<p>Contour will not modify any other Conditions set in this block,
-in case some other controller wants to add a Condition.</p>
+<p>Conditions describe the current conditions of the ContourDeployment resource.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ContourSettings">ContourSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
+</p>
+<p>
+<p>ContourSettings contains settings for the Contour part of the installation,
+i.e. the xDS server/control plane and associated resources.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of Contour replicas. If unset,
+defaults to 2.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>nodePlacement</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NodePlacement">
+NodePlacement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodePlacement describes node scheduling configuration of Contour pods.</p>
 </td>
 </tr>
 </tbody>
@@ -5099,6 +5195,71 @@ AccessLogLevel
 <p>AccessLogLevel sets the verbosity level of the access log.
 Valid options are <code>info</code>, <code>error</code> and <code>disabled</code>.</p>
 <p>Contour&rsquo;s default is &ldquo;info&rdquo;, meaning all requests are logged..</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
+</p>
+<p>
+<p>EnvoySettings contains settings for the Envoy part of the installation,
+i.e. the xDS client/data plane and associated resources.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>workloadType</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.WorkloadType">
+WorkloadType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WorkloadType is the type of workload to install Envoy
+as. Choices are DaemonSet and Deployment.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>networkPublishing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NetworkPublishing">
+NetworkPublishing
+</a>
+</em>
+</td>
+<td>
+<p>NetworkPublishing defines how to expose Envoy to a network.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>nodePlacement</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NodePlacement">
+NodePlacement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodePlacement describes node scheduling configuration of Envoy pods.</p>
 </td>
 </tr>
 </tbody>
@@ -5873,6 +6034,144 @@ If configured to port &ldquo;0&rdquo; then the admin interface is disabled.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>NetworkPublishing defines the schema for publishing to a network.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>type</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NetworkPublishingType">
+NetworkPublishingType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NetworkPublishingType is the type of publishing strategy to use. Valid values are:</p>
+<ul>
+<li>LoadBalancerService</li>
+</ul>
+<p>In this configuration, network endpoints for Envoy use container networking.
+A Kubernetes LoadBalancer Service is created to publish Envoy network
+endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer">https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer</a></p>
+<ul>
+<li>NodePortService</li>
+</ul>
+<p>Publishes Envoy network endpoints using a Kubernetes NodePort Service.</p>
+<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
+NodePort Service is created to publish the network endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#nodeport">https://kubernetes.io/docs/concepts/services-networking/service/#nodeport</a></p>
+<ul>
+<li>ClusterIPService</li>
+</ul>
+<p>Publishes Envoy network endpoints using a Kubernetes ClusterIP Service.</p>
+<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
+ClusterIP Service is created to publish the network endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceAnnotations</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceAnnotations is the annotations to add to
+the provisioned Envoy service.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.NetworkPublishingType">NetworkPublishingType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing</a>)
+</p>
+<p>
+<p>NetworkPublishingType is a way to publish network endpoints.</p>
+</p>
+<h3 id="projectcontour.io/v1alpha1.NodePlacement">NodePlacement
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>NodePlacement describes node scheduling configuration for pods.
+If nodeSelector and tolerations are specified, the scheduler will use both to
+determine where to place the pod(s).</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>nodeSelector</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is the simplest recommended form of node selection constraint
+and specifies a map of key-value pairs. For the pod to be eligible
+to run on a node, the node must have each of the indicated key-value pairs
+as labels (it can have additional labels as well).</p>
+<p>If unset, the pod(s) will be scheduled to any available node.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tolerations</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerations work with taints to ensure that pods are not scheduled
+onto inappropriate nodes. One or more taints are applied to a node; this
+marks that the node should not accept any pods that do not tolerate the
+taints.</p>
+<p>The default is an empty list.</p>
+<p>See <a href="https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/">https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/</a>
+for additional details.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.PolicyConfig">PolicyConfig
 </h3>
 <p>
@@ -6235,6 +6534,15 @@ for more information.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.WorkloadType">WorkloadType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>WorkloadType is the type of Kubernetes workload to use for a component.</p>
+</p>
 <h3 id="projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig
 </h3>
 <p>

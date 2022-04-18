@@ -880,12 +880,200 @@ spec:
           metadata:
             type: object
           spec:
-            description: ContourDeploymentSpec defines the parameters of how a Contour
-              instance should be configured.
+            description: ContourDeploymentSpec specifies options for how a Contour
+              instance should be provisioned.
             properties:
-              config:
-                description: Config is the config that the instances of Contour are
-                  to utilize.
+              contour:
+                description: Contour specifies deployment-time settings for the Contour
+                  part of the installation, i.e. the xDS server/control plane and
+                  associated resources, including things like replica count for the
+                  Deployment, and node placement constraints for the pods.
+                properties:
+                  nodePlacement:
+                    description: NodePlacement describes node scheduling configuration
+                      of Contour pods.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: "NodeSelector is the simplest recommended form
+                          of node selection constraint and specifies a map of key-value
+                          pairs. For the pod to be eligible to run on a node, the
+                          node must have each of the indicated key-value pairs as
+                          labels (it can have additional labels as well). \n If unset,
+                          the pod(s) will be scheduled to any available node."
+                        type: object
+                      tolerations:
+                        description: "Tolerations work with taints to ensure that
+                          pods are not scheduled onto inappropriate nodes. One or
+                          more taints are applied to a node; this marks that the node
+                          should not accept any pods that do not tolerate the taints.
+                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+                          for additional details."
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  replicas:
+                    default: 2
+                    description: Replicas is the desired number of Contour replicas.
+                      If unset, defaults to 2.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                type: object
+              envoy:
+                description: Envoy specifies deployment-time settings for the Envoy
+                  part of the installation, i.e. the xDS client/data plane and associated
+                  resources, including things like the workload type to use (DaemonSet
+                  or Deployment), node placement constraints for the pods, and various
+                  options for the Envoy service.
+                properties:
+                  networkPublishing:
+                    description: NetworkPublishing defines how to expose Envoy to
+                      a network.
+                    properties:
+                      serviceAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: ServiceAnnotations is the annotations to add
+                          to the provisioned Envoy service.
+                        type: object
+                      type:
+                        default: LoadBalancerService
+                        description: "NetworkPublishingType is the type of publishing
+                          strategy to use. Valid values are: \n * LoadBalancerService
+                          \n In this configuration, network endpoints for Envoy use
+                          container networking. A Kubernetes LoadBalancer Service
+                          is created to publish Envoy network endpoints. \n See: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+                          \n * NodePortService \n Publishes Envoy network endpoints
+                          using a Kubernetes NodePort Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          NodePort Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                          \n * ClusterIPService \n Publishes Envoy network endpoints
+                          using a Kubernetes ClusterIP Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          ClusterIP Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
+                        enum:
+                        - LoadBalancerService
+                        - NodePortService
+                        - ClusterIPService
+                        type: string
+                    type: object
+                  nodePlacement:
+                    description: NodePlacement describes node scheduling configuration
+                      of Envoy pods.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: "NodeSelector is the simplest recommended form
+                          of node selection constraint and specifies a map of key-value
+                          pairs. For the pod to be eligible to run on a node, the
+                          node must have each of the indicated key-value pairs as
+                          labels (it can have additional labels as well). \n If unset,
+                          the pod(s) will be scheduled to any available node."
+                        type: object
+                      tolerations:
+                        description: "Tolerations work with taints to ensure that
+                          pods are not scheduled onto inappropriate nodes. One or
+                          more taints are applied to a node; this marks that the node
+                          should not accept any pods that do not tolerate the taints.
+                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+                          for additional details."
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  workloadType:
+                    default: Deployment
+                    description: WorkloadType is the type of workload to install Envoy
+                      as. Choices are DaemonSet and Deployment.
+                    enum:
+                    - DaemonSet
+                    - Deployment
+                    type: string
+                type: object
+              runtimeSettings:
+                description: RuntimeSettings is a ContourConfiguration spec to be
+                  used when provisioning a Contour instance that will influence aspects
+                  of the Contour instance's runtime behavior.
                 properties:
                   debug:
                     description: Debug contains parameters to enable debug logging
@@ -1473,111 +1661,26 @@ spec:
                         type: string
                     type: object
                 type: object
-              replicas:
-                default: 2
-                description: Replicas is the desired number of Contour replicas. If
-                  unset, defaults to 2.
-                format: int32
-                minimum: 0
-                type: integer
             type: object
           status:
             description: ContourDeploymentStatus defines the observed state of a ContourDeployment
               resource.
             properties:
               conditions:
-                description: "Conditions contains the current status of the Contour
-                  resource. \n Contour will update a single condition, `Valid`, that
-                  is in normal-true polarity. \n Contour will not modify any other
-                  Conditions set in this block, in case some other controller wants
-                  to add a Condition."
+                description: Conditions describe the current conditions of the ContourDeployment
+                  resource.
                 items:
-                  description: "DetailedCondition is an extension of the normal Kubernetes
-                    conditions, with two extra fields to hold sub-conditions, which
-                    provide more detailed reasons for the state (True or False) of
-                    the condition. \n `errors` holds information about sub-conditions
-                    which are fatal to that condition and render its state False.
-                    \n `warnings` holds information about sub-conditions which are
-                    not fatal to that condition and do not force the state to be False.
-                    \n Remember that Conditions have a type, a status, and a reason.
-                    \n The type is the type of the condition, the most important one
-                    in this CRD set is `Valid`. `Valid` is a positive-polarity condition:
-                    when it is `status: true` there are no problems. \n In more detail,
-                    `status: true` means that the object is has been ingested into
-                    Contour with no errors. `warnings` may still be present, and will
-                    be indicated in the Reason field. There must be zero entries in
-                    the `errors` slice in this case. \n `Valid`, `status: false` means
-                    that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
-                    the `errors` field. There must be at least one error in the `errors`
-                    slice if `status` is `false`. \n For DetailedConditions of types
-                    other than `Valid`, the Condition must be in the negative polarity.
-                    When they have `status` `true`, there is an error. There must
-                    be at least one entry in the `errors` Subcondition slice. When
-                    they have `status` `false`, there are no serious errors, and there
-                    must be zero entries in the `errors` slice. In either case, there
-                    may be entries in the `warnings` slice. \n Regardless of the polarity,
-                    the `reason` and `message` fields must be updated with either
-                    the detail of the reason (if there is one and only one entry in
-                    total across both the `errors` and `warnings` slices), or `MultipleReasons`
-                    if there is more than one entry."
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    type FooStatus struct{     // Represents the observations of a
+                    foo's current state.     // Known .status.conditions.type are:
+                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
+                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
+                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
+                    \n     // other fields }"
                   properties:
-                    errors:
-                      description: "Errors contains a slice of relevant error subconditions
-                        for this object. \n Subconditions are expected to appear when
-                        relevant (when there is a error), and disappear when not relevant.
-                        An empty slice here indicates no errors."
-                      items:
-                        description: "SubCondition is a Condition-like type intended
-                          for use as a subcondition inside a DetailedCondition. \n
-                          It contains a subset of the Condition fields. \n It is intended
-                          for warnings and errors, so `type` names should use abnormal-true
-                          polarity, that is, they should be of the form \"ErrorPresent:
-                          true\". \n The expected lifecycle for these errors is that
-                          they should only be present when the error or warning is,
-                          and should be removed when they are not relevant."
-                        properties:
-                          message:
-                            description: "Message is a human readable message indicating
-                              details about the transition. \n This may be an empty
-                              string."
-                            maxLength: 32768
-                            type: string
-                          reason:
-                            description: "Reason contains a programmatic identifier
-                              indicating the reason for the condition's last transition.
-                              Producers of specific condition types may define expected
-                              values and meanings for this field, and whether the
-                              values are considered a guaranteed API. \n The value
-                              should be a CamelCase string. \n This field may not
-                              be empty."
-                            maxLength: 1024
-                            minLength: 1
-                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                            type: string
-                          status:
-                            description: Status of the condition, one of True, False,
-                              Unknown.
-                            enum:
-                            - "True"
-                            - "False"
-                            - Unknown
-                            type: string
-                          type:
-                            description: "Type of condition in `CamelCase` or in `foo.example.com/CamelCase`.
-                              \n This must be in abnormal-true polarity, that is,
-                              `ErrorFound` or `controller.io/ErrorFound`. \n The regex
-                              it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)"
-                            maxLength: 316
-                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                            type: string
-                        required:
-                        - message
-                        - reason
-                        - status
-                        - type
-                        type: object
-                      type: array
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
                         transitioned from one status to another. This should be when
@@ -1626,62 +1729,6 @@ spec:
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
-                    warnings:
-                      description: "Warnings contains a slice of relevant warning
-                        subconditions for this object. \n Subconditions are expected
-                        to appear when relevant (when there is a warning), and disappear
-                        when not relevant. An empty slice here indicates no warnings."
-                      items:
-                        description: "SubCondition is a Condition-like type intended
-                          for use as a subcondition inside a DetailedCondition. \n
-                          It contains a subset of the Condition fields. \n It is intended
-                          for warnings and errors, so `type` names should use abnormal-true
-                          polarity, that is, they should be of the form \"ErrorPresent:
-                          true\". \n The expected lifecycle for these errors is that
-                          they should only be present when the error or warning is,
-                          and should be removed when they are not relevant."
-                        properties:
-                          message:
-                            description: "Message is a human readable message indicating
-                              details about the transition. \n This may be an empty
-                              string."
-                            maxLength: 32768
-                            type: string
-                          reason:
-                            description: "Reason contains a programmatic identifier
-                              indicating the reason for the condition's last transition.
-                              Producers of specific condition types may define expected
-                              values and meanings for this field, and whether the
-                              values are considered a guaranteed API. \n The value
-                              should be a CamelCase string. \n This field may not
-                              be empty."
-                            maxLength: 1024
-                            minLength: 1
-                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                            type: string
-                          status:
-                            description: Status of the condition, one of True, False,
-                              Unknown.
-                            enum:
-                            - "True"
-                            - "False"
-                            - Unknown
-                            type: string
-                          type:
-                            description: "Type of condition in `CamelCase` or in `foo.example.com/CamelCase`.
-                              \n This must be in abnormal-true polarity, that is,
-                              `ErrorFound` or `controller.io/ErrorFound`. \n The regex
-                              it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)"
-                            maxLength: 316
-                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                            type: string
-                        required:
-                        - message
-                        - reason
-                        - status
-                        - type
-                        type: object
-                      type: array
                   required:
                   - lastTransitionTime
                   - message

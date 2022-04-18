@@ -133,8 +133,8 @@ type ContourSpec struct {
 	// +optional
 	EnableExternalNameService *bool `json:"enableExternalNameService,omitempty"`
 
-	// Config is any user-defined Config for the Contour instance.
-	Config *contourv1alpha1.ContourConfigurationSpec
+	// RuntimeSettings is any user-defined ContourConfigurationSpec to use when provisioning.
+	RuntimeSettings *contourv1alpha1.ContourConfigurationSpec
 }
 
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.
