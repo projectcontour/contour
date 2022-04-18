@@ -442,7 +442,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -541,7 +545,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -641,7 +649,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -742,7 +754,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -842,7 +858,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -943,7 +963,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -1042,7 +1066,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -1142,7 +1170,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -1243,7 +1275,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -1344,7 +1380,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
-									ContentType: compressorContentTypes,
+									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+											ContentType: compressorContentTypes,
+										},
+									},
 								}),
 							},
 						}, {
@@ -1895,7 +1935,11 @@ func TestAddFilter(t *testing.T) {
 									TypeUrl: HTTPFilterGzip,
 								},
 							},
-							ContentType: compressorContentTypes,
+							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+									ContentType: compressorContentTypes,
+								},
+							},
 						}),
 					},
 				},
@@ -1963,7 +2007,11 @@ func TestAddFilter(t *testing.T) {
 									TypeUrl: HTTPFilterGzip,
 								},
 							},
-							ContentType: compressorContentTypes,
+							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+									ContentType: compressorContentTypes,
+								},
+							},
 						}),
 					},
 				},
