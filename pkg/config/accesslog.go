@@ -36,6 +36,7 @@ var DefaultFields = AccessLogFields([]string{
 	"upstream_service_time",
 	"user_agent",
 	"x_forwarded_for",
+	"grpc_status",
 })
 
 // DEFAULT_ACCESS_LOG_TYPE is the default access log format.

@@ -460,6 +460,7 @@ func TestConvertServeContext(t *testing.T) {
 						"upstream_service_time",
 						"user_agent",
 						"x_forwarded_for",
+						"grpc_status",
 					}),
 				},
 				DefaultHTTPVersions: nil,

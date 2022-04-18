@@ -71,6 +71,7 @@ json-fields:
 - upstream_service_time
 - user_agent
 - x_forwarded_for
+- grpc_status
 accesslog-level: info
 timeouts:
   connection-idle-timeout: 60s
@@ -228,6 +229,7 @@ func TestValidateAccessLogFields(t *testing.T) {
 		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
 		{"path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
 		{"dog=pug", "cat=black"},
+		{"grpc_status"},
 	}
 
 	for _, c := range successCases {
@@ -533,6 +535,7 @@ func TestAccessLogFormatString(t *testing.T) {
 		"my durations are %DURATION%.0 and method is %REQ(:METHOD)%\n",
 		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
 		"just a string\n",
+		"%GRPC_STATUS%\n",
 	}
 
 	for _, c := range successCases {
