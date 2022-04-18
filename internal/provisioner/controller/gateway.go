@@ -236,7 +236,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		if gatewayClassParams.Spec.Contour != nil {
 			// Deployment replicas
-			contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
+			if gatewayClassParams.Spec.Contour.Replicas > 0 {
+				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
+			}
 
 			// Node placement
 			if nodePlacement := gatewayClassParams.Spec.Contour.NodePlacement; nodePlacement != nil {
@@ -260,7 +262,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Deployment replicas
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+				gatewayClassParams.Spec.Envoy.Replicas > 0 {
 				contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas
 			}
 
