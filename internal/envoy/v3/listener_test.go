@@ -1599,6 +1599,16 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						}, {
+							Name: "grpc_stats",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
+										EmitFilterState:     true,
+										EnableUpstreamStats: true,
+									},
+								),
+							},
+						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: &any.Any{
