@@ -253,9 +253,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		if gatewayClassParams.Spec.Envoy != nil {
 			// Workload type
-			// TODO where to do validation and surface errors?
-			switch gatewayClassParams.Spec.Envoy.WorkloadType {
-			case contour_api_v1alpha1.WorkloadTypeDaemonSet, contour_api_v1alpha1.WorkloadTypeDeployment:
+			// Note, the values have already been validated by the gatewayclass controller
+			// so just check for the existence of a value here.
+			if gatewayClassParams.Spec.Envoy.WorkloadType != "" {
 				contourModel.Spec.EnvoyWorkloadType = gatewayClassParams.Spec.Envoy.WorkloadType
 			}
 
@@ -266,7 +266,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// Network publishing
 			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
-				contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+				// Note, the values have already been validated by the gatewayclass controller
+				// so just check for the existence of a value here.
+				if networkPublishing.Type != "" {
+					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+				}
 				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
 			}
 
