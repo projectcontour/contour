@@ -5235,6 +5235,20 @@ as. Choices are DaemonSet and Deployment.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of Envoy replicas. If WorkloadType
+is not &ldquo;Deployment&rdquo;, this field is ignored. Otherwise, if unset,
+defaults to 2.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>networkPublishing</code>
 <br>
 <em>

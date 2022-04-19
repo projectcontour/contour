@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
-	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
 	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
@@ -191,30 +191,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	log.Info("ensuring gateway resources")
 
-	gatewayContour := &model.Contour{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: gateway.Namespace,
-			Name:      gateway.Name,
-		},
-		Spec: model.ContourSpec{
-			Replicas: 2,
-			NetworkPublishing: model.NetworkPublishing{
-				Envoy: model.EnvoyNetworkPublishing{
-					Type: model.LoadBalancerServicePublishingType,
-					ContainerPorts: []model.ContainerPort{
-						{
-							Name:       "http",
-							PortNumber: 8080,
-						},
-						{
-							Name:       "https",
-							PortNumber: 8443,
-						},
-					},
-				},
-			},
-		},
-	}
+	contourModel := model.Default(gateway.Namespace, gateway.Name)
 
 	// Currently, only a single address of type IPAddress or Hostname
 	// is supported; anything else will be ignored.
@@ -224,7 +201,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if address.Type == nil ||
 			*address.Type == gatewayapi_v1alpha2.IPAddressType ||
 			*address.Type == gatewayapi_v1alpha2.HostnameAddressType {
-			gatewayContour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
+			contourModel.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
 		}
 	}
 
@@ -237,25 +214,81 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			Name:       "http",
 			PortNumber: int32(validateListenersResult.InsecurePort),
 		}
-		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 	if validateListenersResult.SecurePort > 0 {
 		port := model.ServicePort{
 			Name:       "https",
 			PortNumber: int32(validateListenersResult.SecurePort),
 		}
-		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+
+		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
-	gcParams, err := r.getGatewayClassParams(ctx, gatewayClass)
+	gatewayClassParams, err := r.getGatewayClassParams(ctx, gatewayClass)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class parameters: %w", err)
 	}
-	if gcParams != nil {
-		gatewayContour.Spec.RuntimeSettings = gcParams.Spec.RuntimeSettings
+
+	if gatewayClassParams != nil {
+		// ContourConfiguration
+		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
+
+		if gatewayClassParams.Spec.Contour != nil {
+			// Deployment replicas
+			contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
+
+			// Node placement
+			if nodePlacement := gatewayClassParams.Spec.Contour.NodePlacement; nodePlacement != nil {
+				if contourModel.Spec.NodePlacement == nil {
+					contourModel.Spec.NodePlacement = &model.NodePlacement{}
+				}
+
+				contourModel.Spec.NodePlacement.Contour = &model.ContourNodePlacement{
+					NodeSelector: nodePlacement.NodeSelector,
+					Tolerations:  nodePlacement.Tolerations,
+				}
+			}
+		}
+
+		if gatewayClassParams.Spec.Envoy != nil {
+			// Workload type
+			// Note, the values have already been validated by the gatewayclass controller
+			// so just check for the existence of a value here.
+			if gatewayClassParams.Spec.Envoy.WorkloadType != "" {
+				contourModel.Spec.EnvoyWorkloadType = gatewayClassParams.Spec.Envoy.WorkloadType
+			}
+
+			// Deployment replicas
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
+				contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas
+			}
+
+			// Network publishing
+			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
+				// Note, the values have already been validated by the gatewayclass controller
+				// so just check for the existence of a value here.
+				if networkPublishing.Type != "" {
+					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+				}
+				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
+			}
+
+			// Node placement
+			if nodePlacement := gatewayClassParams.Spec.Envoy.NodePlacement; nodePlacement != nil {
+				if contourModel.Spec.NodePlacement == nil {
+					contourModel.Spec.NodePlacement = &model.NodePlacement{}
+				}
+
+				contourModel.Spec.NodePlacement.Envoy = &model.EnvoyNodePlacement{
+					NodeSelector: nodePlacement.NodeSelector,
+					Tolerations:  nodePlacement.Tolerations,
+				}
+			}
+		}
 	}
 
-	if errs := r.ensureContour(ctx, gatewayContour, log); len(errs) > 0 {
+	if errs := r.ensureContour(ctx, contourModel, log); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 
@@ -311,7 +344,7 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 	handleResult("contour config", contourconfig.EnsureContourConfig(ctx, r.client, contour))
 	handleResult("xDS TLS secrets", secret.EnsureXDSSecrets(ctx, r.client, contour, r.contourImage))
 	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
-	handleResult("daemonset", daemonset.EnsureDaemonSet(ctx, r.client, contour, r.contourImage, r.envoyImage))
+	handleResult("envoy data plane", dataplane.EnsureDataPlane(ctx, r.client, contour, r.contourImage, r.envoyImage))
 	handleResult("contour service", service.EnsureContourService(ctx, r.client, contour))
 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
@@ -335,7 +368,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 
 	handleResult("envoy service", service.EnsureEnvoyServiceDeleted(ctx, r.client, contour))
 	handleResult("service", service.EnsureContourServiceDeleted(ctx, r.client, contour))
-	handleResult("daemonset", daemonset.EnsureDaemonSetDeleted(ctx, r.client, contour))
+	handleResult("envoy data plane", dataplane.EnsureDataPlaneDeleted(ctx, r.client, contour))
 	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
 	handleResult("xDS TLS Secrets", secret.EnsureXDSSecretsDeleted(ctx, r.client, contour))
 	handleResult("contour config", contourconfig.EnsureContourConfigDeleted(ctx, r.client, contour))

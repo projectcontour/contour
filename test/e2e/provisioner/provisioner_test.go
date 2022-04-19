@@ -56,6 +56,35 @@ var _ = BeforeSuite(func() {
 	_, ok := f.CreateGatewayClassAndWaitFor(gc, gatewayClassAccepted)
 	require.True(f.T(), ok)
 
+	params := &contour_api_v1alpha1.ContourDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "projectcontour",
+			Name:      "contour-with-envoy-deployment",
+		},
+		Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+			Envoy: &contour_api_v1alpha1.EnvoySettings{
+				WorkloadType: contour_api_v1alpha1.WorkloadTypeDeployment,
+			},
+		},
+	}
+	require.NoError(f.T(), f.Client.Create(context.Background(), params))
+
+	gcWithEnvoyDeployment := &gatewayapi_v1alpha2.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "contour-with-envoy-deployment",
+		},
+		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
+			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
+			ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
+				Group:     "projectcontour.io",
+				Kind:      "ContourDeployment",
+				Namespace: gatewayapi.NamespacePtr(params.Namespace),
+				Name:      params.Name,
+			},
+		},
+	}
+	_, ok = f.CreateGatewayClassAndWaitFor(gcWithEnvoyDeployment, gatewayClassAccepted)
+	require.True(f.T(), ok)
 })
 
 var _ = AfterSuite(func() {
@@ -64,12 +93,17 @@ var _ = AfterSuite(func() {
 	// namespaces can take up to a couple minutes to complete.
 	require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
-	gc := &gatewayapi_v1alpha2.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "contour",
-		},
+	for _, name := range []string{"contour", "contour-with-envoy-deployment"} {
+		gc := &gatewayapi_v1alpha2.GatewayClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+		require.NoError(f.T(), f.DeleteGatewayClass(gc, false))
 	}
-	require.NoError(f.T(), f.DeleteGatewayClass(gc, false))
+
+	// No need to delete the ContourDeployment resource explicitly, it was
+	// in the projectcontour namespace which has already been deleted.
 })
 
 var _ = Describe("Gateway provisioner", func() {
@@ -316,6 +350,76 @@ var _ = Describe("Gateway provisioner", func() {
 
 				return gatewayScheduled(gw)
 			}, time.Minute, time.Second)
+
+			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
+		})
+	})
+	f.NamespacedTest("gateway-with-envoy-deployment", func(namespace string) {
+		Specify("A gateway with Envoy as a deployment can be provisioned and routes traffic correctly", func() {
+			gateway := &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "http",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-with-envoy-deployment"),
+					Listeners: []gatewayapi_v1alpha2.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1alpha2.Gateway) bool {
+				return gatewayReady(gw) && gatewayHasAddress(gw)
+			})
+			require.True(f.T(), ok)
+
+			f.Fixtures.Echo.Deploy(namespace, "echo")
+
+			route := &gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "httproute-1",
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							gatewayapi.GatewayParentRef("", gateway.Name),
+						},
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/prefix"),
+							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
+						},
+					},
+				},
+			}
+			_, ok = f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+			require.True(f.T(), ok)
+
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				OverrideURL: "http://" + gateway.Status.Addresses[0].Value,
+				Host:        string(route.Spec.Hostnames[0]),
+				Path:        "/prefix/match",
+				Condition:   e2e.HasStatusCode(200),
+			})
+			require.NotNil(f.T(), res)
+			require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
+
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(f.T(), namespace, body.Namespace)
+			assert.Equal(f.T(), "echo", body.Service)
 		})
 	})
 })

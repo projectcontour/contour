@@ -37,8 +37,8 @@ func (c *Contour) ContourDeploymentName() string {
 	return "contour-" + c.Name
 }
 
-// EnvoyDaemonSetName returns the name of the Envoy DaemonSet resource.
-func (c *Contour) EnvoyDaemonSetName() string {
+// EnvoyDataPlaneName returns the name of the Envoy data plane (DaemonSet or Deployment) resource.
+func (c *Contour) EnvoyDataPlaneName() string {
 	return "envoy-" + c.Name
 }
 

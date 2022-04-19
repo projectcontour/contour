@@ -18,7 +18,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 
@@ -105,14 +105,14 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 			description: "if probe values are set to default values",
 			mutate: func(ds *appsv1.DaemonSet) {
 				for i, c := range ds.Spec.Template.Spec.Containers {
-					if c.Name == daemonset.ShutdownContainerName {
+					if c.Name == dataplane.ShutdownContainerName {
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.ProbeHandler.HTTPGet.Scheme = "HTTP"
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.TimeoutSeconds = int32(1)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.PeriodSeconds = int32(10)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.SuccessThreshold = int32(1)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.FailureThreshold = int32(3)
 					}
-					if c.Name == daemonset.EnvoyContainerName {
+					if c.Name == dataplane.EnvoyContainerName {
 						ds.Spec.Template.Spec.Containers[i].ReadinessProbe.TimeoutSeconds = int32(1)
 						// ReadinessProbe InitialDelaySeconds and PeriodSeconds are not set as defaults,
 						// so they are omitted.
@@ -127,7 +127,7 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			original := daemonset.DesiredDaemonSet(cntr, testImage, testImage)
+			original := dataplane.DesiredDaemonSet(cntr, testImage, testImage)
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)

@@ -210,9 +210,9 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			Labels:    makeDeploymentLabels(contour),
 		},
 		Spec: appsv1.DeploymentSpec{
-			ProgressDeadlineSeconds: pointer.Int32Ptr(int32(600)),
-			Replicas:                &contour.Spec.Replicas,
-			RevisionHistoryLimit:    pointer.Int32Ptr(int32(10)),
+			ProgressDeadlineSeconds: pointer.Int32(600),
+			Replicas:                pointer.Int32(contour.Spec.ContourReplicas),
+			RevisionHistoryLimit:    pointer.Int32(10),
 			// Ensure the deployment adopts only its own pods.
 			Selector: ContourDeploymentPodSelector(contour),
 			Strategy: appsv1.DeploymentStrategy{

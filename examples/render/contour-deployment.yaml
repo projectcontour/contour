@@ -1257,6 +1257,14 @@ spec:
                           type: object
                         type: array
                     type: object
+                  replicas:
+                    default: 2
+                    description: Replicas is the desired number of Envoy replicas.
+                      If WorkloadType is not "Deployment", this field is ignored.
+                      Otherwise, if unset, defaults to 2.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   workloadType:
                     default: Deployment
                     description: WorkloadType is the type of workload to install Envoy

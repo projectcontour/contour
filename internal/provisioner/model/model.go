@@ -26,6 +26,37 @@ const (
 	OwningGatewayNameLabel = "projectcontour.io/owning-gateway-name"
 )
 
+// Default returns a default instance of a Contour
+// for the given namespace/name.
+func Default(namespace, name string) *Contour {
+	return &Contour{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Spec: ContourSpec{
+			ContourReplicas:   2,
+			EnvoyWorkloadType: WorkloadTypeDaemonSet,
+			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
+			NetworkPublishing: NetworkPublishing{
+				Envoy: EnvoyNetworkPublishing{
+					Type: LoadBalancerServicePublishingType,
+					ContainerPorts: []ContainerPort{
+						{
+							Name:       "http",
+							PortNumber: 8080,
+						},
+						{
+							Name:       "https",
+							PortNumber: 8443,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 // Contour is the representation of an instance of Contour + Envoy.
 type Contour struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -80,12 +111,14 @@ func (c *Contour) EnvoyTolerationsExist() bool {
 
 // ContourSpec defines the desired state of Contour.
 type ContourSpec struct {
-	// Replicas is the desired number of Contour replicas. If unset,
+	// ContourReplicas is the desired number of Contour replicas. If unset,
 	// defaults to 2.
-	//
-	// +kubebuilder:default=2
-	// +kubebuilder:validation:Minimum=0
-	Replicas int32 `json:"replicas,omitempty"`
+	ContourReplicas int32
+
+	// EnvoyReplicas is the desired number of Envoy replicas. If WorkloadType
+	// is not "Deployment", this field is ignored. Otherwise, if unset,
+	// defaults to 2.
+	EnvoyReplicas int32
 
 	// NetworkPublishing defines the schema for publishing Contour to a network.
 	//
@@ -135,7 +168,21 @@ type ContourSpec struct {
 
 	// RuntimeSettings is any user-defined ContourConfigurationSpec to use when provisioning.
 	RuntimeSettings *contourv1alpha1.ContourConfigurationSpec
+
+	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
+	EnvoyWorkloadType WorkloadType
 }
+
+// WorkloadType is the type of Kubernetes workload to use for a component.
+type WorkloadType = contourv1alpha1.WorkloadType
+
+const (
+	// A Kubernetes DaemonSet.
+	WorkloadTypeDaemonSet = contourv1alpha1.WorkloadTypeDaemonSet
+
+	// A Kubernetes Deployment.
+	WorkloadTypeDeployment = contourv1alpha1.WorkloadTypeDeployment
+)
 
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.
 type NodePlacement struct {
@@ -275,10 +322,7 @@ type EnvoyNetworkPublishing struct {
 	// ClusterIP Service is created to publish the network endpoints.
 	//
 	// See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-	//
-	// +unionDiscriminator
-	// +kubebuilder:default=LoadBalancerService
-	Type NetworkPublishingType `json:"type,omitempty"`
+	Type NetworkPublishingType
 
 	// LoadBalancer holds parameters for the load balancer. Present only if type is
 	// LoadBalancerService.
@@ -334,24 +378,25 @@ type EnvoyNetworkPublishing struct {
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:default={{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}
 	ContainerPorts []ContainerPort `json:"containerPorts,omitempty"`
+
+	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
+	ServiceAnnotations map[string]string
 }
 
-// NetworkPublishingType is a way to publish network endpoints.
-// +kubebuilder:validation:Enum=LoadBalancerService;NodePortService;ClusterIPService
-type NetworkPublishingType string
+type NetworkPublishingType = contourv1alpha1.NetworkPublishingType
 
 const (
 	// LoadBalancerServicePublishingType publishes a network endpoint using a Kubernetes
 	// LoadBalancer Service.
-	LoadBalancerServicePublishingType NetworkPublishingType = "LoadBalancerService"
+	LoadBalancerServicePublishingType NetworkPublishingType = contourv1alpha1.LoadBalancerServicePublishingType
 
 	// NodePortServicePublishingType publishes a network endpoint using a Kubernetes
 	// NodePort Service.
-	NodePortServicePublishingType NetworkPublishingType = "NodePortService"
+	NodePortServicePublishingType NetworkPublishingType = contourv1alpha1.NodePortServicePublishingType
 
 	// ClusterIPServicePublishingType publishes a network endpoint using a Kubernetes
 	// ClusterIP Service.
-	ClusterIPServicePublishingType NetworkPublishingType = "ClusterIPService"
+	ClusterIPServicePublishingType NetworkPublishingType = contourv1alpha1.ClusterIPServicePublishingType
 )
 
 // LoadBalancerStrategy holds parameters for a load balancer.
@@ -627,7 +672,7 @@ func New(cfg Config) *Contour {
 			Name:      cfg.Name,
 		},
 		Spec: ContourSpec{
-			Replicas: cfg.Replicas,
+			ContourReplicas: cfg.Replicas,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,

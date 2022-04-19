@@ -240,6 +240,41 @@ func TestGatewayClassReconcile(t *testing.T) {
 				Reason: string(gatewayv1alpha2.GatewayClassReasonAccepted),
 			},
 		},
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						WorkloadType: "invalid-workload-type",
+						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
+							Type: "invalid-networkpublishing-type",
+						},
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
 	}
 
 	for name, tc := range tests {
