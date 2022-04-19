@@ -952,7 +952,6 @@ spec:
                         type: array
                     type: object
                   replicas:
-                    default: 2
                     description: Replicas is the desired number of Contour replicas.
                       If unset, defaults to 2.
                     format: int32
@@ -977,7 +976,6 @@ spec:
                           to the provisioned Envoy service.
                         type: object
                       type:
-                        default: LoadBalancerService
                         description: "NetworkPublishingType is the type of publishing
                           strategy to use. Valid values are: \n * LoadBalancerService
                           \n In this configuration, network endpoints for Envoy use
@@ -992,11 +990,8 @@ spec:
                           using a Kubernetes ClusterIP Service. \n In this configuration,
                           Envoy network endpoints use container networking. A Kubernetes
                           ClusterIP Service is created to publish the network endpoints.
-                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
-                        enum:
-                        - LoadBalancerService
-                        - NodePortService
-                        - ClusterIPService
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+                          \n If unset, defaults to LoadBalancerService."
                         type: string
                     type: object
                   nodePlacement:
@@ -1062,7 +1057,6 @@ spec:
                         type: array
                     type: object
                   replicas:
-                    default: 2
                     description: Replicas is the desired number of Envoy replicas.
                       If WorkloadType is not "Deployment", this field is ignored.
                       Otherwise, if unset, defaults to 2.
@@ -1070,12 +1064,9 @@ spec:
                     minimum: 0
                     type: integer
                   workloadType:
-                    default: Deployment
                     description: WorkloadType is the type of workload to install Envoy
-                      as. Choices are DaemonSet and Deployment.
-                    enum:
-                    - DaemonSet
-                    - Deployment
+                      as. Choices are DaemonSet and Deployment. If unset, defaults
+                      to DaemonSet.
                     type: string
                 type: object
               runtimeSettings:

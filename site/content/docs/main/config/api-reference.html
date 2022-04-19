@@ -5230,7 +5230,8 @@ WorkloadType
 <td>
 <em>(Optional)</em>
 <p>WorkloadType is the type of workload to install Envoy
-as. Choices are DaemonSet and Deployment.</p>
+as. Choices are DaemonSet and Deployment. If unset, defaults
+to DaemonSet.</p>
 </td>
 </tr>
 <tr>
@@ -6099,6 +6100,7 @@ NodePort Service is created to publish the network endpoints.</p>
 <p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
 ClusterIP Service is created to publish the network endpoints.</p>
 <p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types</a></p>
+<p>If unset, defaults to LoadBalancerService.</p>
 </td>
 </tr>
 <tr>

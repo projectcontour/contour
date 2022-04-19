@@ -52,7 +52,6 @@ type ContourSettings struct {
 	// Replicas is the desired number of Contour replicas. If unset,
 	// defaults to 2.
 	//
-	// +kubebuilder:default=2
 	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas,omitempty"`
 
@@ -66,9 +65,9 @@ type ContourSettings struct {
 // i.e. the xDS client/data plane and associated resources.
 type EnvoySettings struct {
 	// WorkloadType is the type of workload to install Envoy
-	// as. Choices are DaemonSet and Deployment.
+	// as. Choices are DaemonSet and Deployment. If unset, defaults
+	// to DaemonSet.
 	//
-	// +kubebuilder:default=Deployment
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
@@ -76,7 +75,6 @@ type EnvoySettings struct {
 	// is not "Deployment", this field is ignored. Otherwise, if unset,
 	// defaults to 2.
 	//
-	// +kubebuilder:default=2
 	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas,omitempty"`
 
@@ -92,8 +90,6 @@ type EnvoySettings struct {
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
-//
-// +kubebuilder:validation:Enum=DaemonSet;Deployment
 type WorkloadType string
 
 const (
@@ -134,7 +130,8 @@ type NetworkPublishing struct {
 	//
 	// See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
 	//
-	// +kubebuilder:default=LoadBalancerService
+	// If unset, defaults to LoadBalancerService.
+	//
 	// +optional
 	Type NetworkPublishingType `json:"type,omitempty"`
 
@@ -146,8 +143,6 @@ type NetworkPublishing struct {
 }
 
 // NetworkPublishingType is a way to publish network endpoints.
-//
-// +kubebuilder:validation:Enum=LoadBalancerService;NodePortService;ClusterIPService
 type NetworkPublishingType string
 
 const (
