@@ -19,6 +19,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -95,6 +96,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -136,6 +140,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -177,6 +184,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -219,6 +229,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -267,6 +280,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -304,6 +320,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
@@ -331,6 +350,9 @@ func TestStatsListeners(t *testing.T) {
 							},
 							HttpFilters: []*http.HttpFilter{{
 								Name: wellknown.Router,
+								ConfigType: &http.HttpFilter_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+								},
 							}},
 							NormalizePath: protobuf.Bool(true),
 						}),
