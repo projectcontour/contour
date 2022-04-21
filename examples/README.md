@@ -20,6 +20,8 @@ Single file renderings of other examples suitable for `kubectl apply`ing via a U
 
 HTTPProxy examples under the `example-workload/httpproxy` directory. See the [README](./example-workload/httpproxy/README.md) for more details on each example.
 
+Gateway-API examples under the `example-workload/gatewayapi` directory. See the [README](./example-workload/gatewayapi/README.md) for more details on each example.
+
 ## `grafana`, `prometheus`
 
 Grafana and Prometheus examples, including the apps themselves, which can show the metrics that Contour exposes.
