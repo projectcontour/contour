@@ -20,11 +20,15 @@ import (
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_gzip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
+	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
@@ -439,9 +443,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -453,9 +457,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -470,9 +472,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -493,9 +493,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -552,9 +550,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -566,9 +564,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -583,9 +579,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -606,9 +600,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -666,9 +658,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -680,9 +672,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -697,9 +687,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -720,9 +708,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -781,9 +767,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -795,9 +781,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -812,9 +796,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -835,9 +817,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -895,9 +875,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -909,9 +889,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -926,9 +904,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -949,9 +925,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1010,9 +984,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1024,9 +998,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1041,9 +1013,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1064,9 +1034,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1123,9 +1091,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1137,9 +1105,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1154,9 +1120,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1177,9 +1141,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1237,9 +1199,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1251,9 +1213,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1268,9 +1228,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1291,9 +1249,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1352,9 +1308,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1366,9 +1322,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1383,9 +1337,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1406,9 +1358,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1467,9 +1417,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1481,9 +1431,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1498,9 +1446,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1521,9 +1467,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1580,9 +1524,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 										Name: "gzip",
-										TypedConfig: &any.Any{
-											TypeUrl: HTTPFilterGzip,
-										},
+										TypedConfig: protobuf.MustMarshalAny(
+											&envoy_gzip_v3.Gzip{},
+										),
 									},
 									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -1594,9 +1538,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "grpcweb",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGrpcWeb,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 							},
 						}, {
 							Name: "grpc_stats",
@@ -1611,9 +1553,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "cors",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterCORS,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 							},
 						}, {
 							Name: "local_ratelimit",
@@ -1634,9 +1574,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterRouter,
-								},
+								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
@@ -1963,18 +1901,14 @@ func TestAddFilter(t *testing.T) {
 			add: &http.HttpFilter{
 				Name: "router",
 				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: &any.Any{
-						TypeUrl: HTTPFilterRouter,
-					},
+					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 				},
 			},
 			want: []*http.HttpFilter{
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterRouter,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 					},
 				},
 			},
@@ -1984,18 +1918,14 @@ func TestAddFilter(t *testing.T) {
 			add: &http.HttpFilter{
 				Name: "grpcweb",
 				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: &any.Any{
-						TypeUrl: HTTPFilterGrpcWeb,
-					},
+					TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 				},
 			},
 			want: []*http.HttpFilter{
 				{
 					Name: "grpcweb",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterGrpcWeb,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 					},
 				},
 			},
@@ -2004,34 +1934,26 @@ func TestAddFilter(t *testing.T) {
 			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 				Name: "router",
 				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: &any.Any{
-						TypeUrl: HTTPFilterRouter,
-					},
+					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 				},
 			}),
 			add: &http.HttpFilter{
 				Name: "grpcweb",
 				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: &any.Any{
-						TypeUrl: HTTPFilterGrpcWeb,
-					},
+					TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 				},
 			},
 			want: []*http.HttpFilter{
 				{
 					Name: "grpcweb",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterGrpcWeb,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 					},
 				},
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterRouter,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 					},
 				},
 			},
@@ -2046,9 +1968,9 @@ func TestAddFilter(t *testing.T) {
 						TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 							CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 								Name: "gzip",
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGzip,
-								},
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_gzip_v3.Gzip{},
+								),
 							},
 							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -2061,9 +1983,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "grpcweb",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterGrpcWeb,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 					},
 				},
 				{
@@ -2080,9 +2000,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "cors",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterCORS,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 					},
 				},
 				{
@@ -2107,9 +2025,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterRouter,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 					},
 				},
 			},
@@ -2129,9 +2045,9 @@ func TestAddFilter(t *testing.T) {
 						TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 							CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 								Name: "gzip",
-								TypedConfig: &any.Any{
-									TypeUrl: HTTPFilterGzip,
-								},
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_gzip_v3.Gzip{},
+								),
 							},
 							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -2144,9 +2060,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "grpcweb",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterGrpcWeb,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 					},
 				},
 				{
@@ -2163,9 +2077,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "cors",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterCORS,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 					},
 				},
 				{
@@ -2222,9 +2134,7 @@ func TestAddFilter(t *testing.T) {
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterRouter,
-						},
+						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 					},
 				},
 			},
@@ -2242,9 +2152,7 @@ func TestAddFilter(t *testing.T) {
 		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(&http.HttpFilter{
 			Name: "router",
 			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: &any.Any{
-					TypeUrl: HTTPFilterRouter,
-				},
+				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 			},
 		})
 	})

@@ -23,18 +23,23 @@ import (
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_gzip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
+	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoy_proxy_protocol_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3"
+	envoy_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -49,11 +54,6 @@ const (
 	HTTPVersion1    HTTPVersionType = http.HttpConnectionManager_HTTP1
 	HTTPVersion2    HTTPVersionType = http.HttpConnectionManager_HTTP2
 	HTTPVersion3    HTTPVersionType = http.HttpConnectionManager_HTTP3
-
-	HTTPFilterRouter  = "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
-	HTTPFilterCORS    = "type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors"
-	HTTPFilterGrpcWeb = "type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb"
-	HTTPFilterGzip    = "type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip"
 )
 
 // ProtoNamesForVersions returns the slice of ALPN protocol names for the give HTTP versions.
@@ -109,6 +109,9 @@ func CodecForVersions(versions ...HTTPVersionType) HTTPVersionType {
 func TLSInspector() *envoy_listener_v3.ListenerFilter {
 	return &envoy_listener_v3.ListenerFilter{
 		Name: wellknown.TlsInspector,
+		ConfigType: &envoy_listener_v3.ListenerFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_tls_inspector_v3.TlsInspector{}),
+		},
 	}
 }
 
@@ -116,6 +119,9 @@ func TLSInspector() *envoy_listener_v3.ListenerFilter {
 func ProxyProtocol() *envoy_listener_v3.ListenerFilter {
 	return &envoy_listener_v3.ListenerFilter{
 		Name: wellknown.ProxyProtocol,
+		ConfigType: &envoy_listener_v3.ListenerFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_proxy_protocol_v3.ProxyProtocol{}),
+		},
 	}
 }
 
@@ -248,9 +254,9 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 						Name: "gzip",
-						TypedConfig: &any.Any{
-							TypeUrl: HTTPFilterGzip,
-						},
+						TypedConfig: protobuf.MustMarshalAny(
+							&envoy_gzip_v3.Gzip{},
+						),
 					},
 					ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
 						CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
@@ -272,9 +278,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 		&http.HttpFilter{
 			Name: "grpcweb",
 			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: &any.Any{
-					TypeUrl: HTTPFilterGrpcWeb,
-				},
+				TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 			},
 		},
 		&http.HttpFilter{
@@ -291,9 +295,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 		&http.HttpFilter{
 			Name: "cors",
 			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: &any.Any{
-					TypeUrl: HTTPFilterCORS,
-				},
+				TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 			},
 		},
 		&http.HttpFilter{
@@ -319,9 +321,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 		&http.HttpFilter{
 			Name: "router",
 			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: &any.Any{
-					TypeUrl: HTTPFilterRouter,
-				},
+				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 			},
 		},
 	)
