@@ -151,9 +151,7 @@ func ensureServiceDeletedHelper(ctx context.Context, cli client.Client, contour 
 	if err := cli.Delete(ctx, svc); err == nil || errors.IsNotFound(err) {
 		return nil
 	}
-
 	return err
-
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the

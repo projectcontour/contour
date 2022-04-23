@@ -72,8 +72,6 @@ kubectl::apply() {
 kind::cluster::create
 kubectl::do get nodes
 
-exit 0
-
 kubectl::apply ${REPO}/examples/contour/00-common.yaml
 
 kubectl::apply ${REPO}/examples/contour/01-contour-config.yaml
