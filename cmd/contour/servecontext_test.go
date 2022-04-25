@@ -411,6 +411,7 @@ func TestConvertServeContext(t *testing.T) {
 				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto:             pointer.Bool(false),
 					DisableAllowChunkedLength: pointer.Bool(false),
+					DisableMergeSlashes:       pointer.Bool(false),
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 					},
@@ -674,6 +675,16 @@ func TestConvertServeContext(t *testing.T) {
 						"custom_field",
 					}),
 				}
+				return cfg
+			},
+		},
+		"disable merge slashes": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.DisableMergeSlashes = true
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.DisableMergeSlashes = pointer.Bool(true)
 				return cfg
 			},
 		},

@@ -119,7 +119,20 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-pod-restart", testPodRestart)
 
-	f.NamespacedTest("httpproxy-merge-slash", testMergeSlash)
+	Context("disableMergeSlashes option", func() {
+		Context("default value of false", func() {
+			f.NamespacedTest("httpproxy-enable-merge-slashes", testDisableMergeSlashes(false))
+		})
+
+		Context("set to true", func() {
+			BeforeEach(func() {
+				contourConfig.DisableMergeSlashes = true
+				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = pointer.Bool(true)
+			})
+
+			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
+		})
+	})
 
 	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
