@@ -448,6 +448,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:             &ctx.useProxyProto,
 				DisableAllowChunkedLength: &ctx.Config.DisableAllowChunkedLength,
+				DisableMergeSlashes:       &ctx.Config.DisableMergeSlashes,
 				ConnectionBalancer:        ctx.Config.Listener.ConnectionBalancer,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
