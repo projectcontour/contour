@@ -46,9 +46,9 @@ Some validation of input HTTPProxy resources and base Gateway will be required, 
 
 ### General flow
 - Ingest resources via command line flag/files, unmarshal YAML
-- Validate they are useable HTTPProxies/Gateway configuration
+- Validate they are usable HTTPProxies/Gateway configuration
   - If using un-implemented features, skip and log warning
-- Convert useable resources to Gateway API resources
+- Convert usable resources to Gateway API resources
 - Write to standard out
 
 ### Handling of base Gateway/Listener configuration
