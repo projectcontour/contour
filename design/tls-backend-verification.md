@@ -70,7 +70,7 @@ The store of CA information is an opaque kubernetes secret.
 The secret will be stored in the same namespace as the corresponding IngressRoute.
 TLS certificate delegation is not in scope for this proposal.
 
-The secret object should contain one entry named `ca.key`, the constents will be the CA public key material.
+The secret object should contain one entry named `ca.key`, the contents will be the CA public key material.
 
 Example:
 ```
@@ -125,7 +125,7 @@ An alternative to storing CA information in Secrets is to store it in ConfigMaps
 This was rejected for two reasons
 
 1. Contour already watches Secret objects, so we get this for free without having to watch a new set of objects.
-2. Using ConfigMaps creates a precident for storing other information in ConfigMaps. As ConfigMaps are just homeless annotations, their potential for misuse is endless.
+2. Using ConfigMaps creates a precedent for storing other information in ConfigMaps. As ConfigMaps are just homeless annotations, their potential for misuse is endless.
 
 ## Security Considerations
 
