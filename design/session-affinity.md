@@ -97,8 +97,8 @@ Statistically requests without a session cookie will eventually land on service-
 Session affinity is based on the premise that the backend servers are robust, do not change ordering, or grow and shrink according to load.
 None of these properties are guaranteed by a Kubernetes cluster and will be visible to applications that rely heavily on session affinity.
 
-Any pertibation in the set of pods backing a service risks redistributing backends around the hash ring.
-This is an unavoidable consiquence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
+Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
+This is an unavoidable consequence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
 
 ## Detailed Design
 
@@ -139,7 +139,7 @@ See the following section on bootstrapping for more information.
 This seems reasonable as the fragility with session affinity means there is little value in persisting this cookie for days or weeks -- it does not represent a login token -- only a handle to in memory state on the target backend.
 Further, there is no reasonable `Expires` value as none are correct;
 If the cookie expires too shortly then sessions will be abruptly lost.
-If the cookie's expiry is too long then we risk imbalancing the backend as sessions will be naturally attracted to the longest living server in the group.
+If the cookie's expiry is too long then we risk unbalancing the backend as sessions will be naturally attracted to the longest living server in the group.
 Making this value configurable simply pushes this insoluble problem to our users. 
 - Path: `/`.
 The cookie applies to all routes on this virtual host in the hope that other `strategy: Cookie` backends, assuming they dispatch to the same set of servers will share the same affinity cookie.
