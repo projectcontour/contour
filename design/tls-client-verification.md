@@ -65,7 +65,7 @@ The same approach shall be followed for configuring trusted CA certificates as i
 The CA certificate is stored in an opaque Kubernetes secret.
 The secret will be stored in the same namespace as the corresponding `HTTPProxy` object.
 The secret object shall contain entry named `ca.crt`.
-The constents shall be the CA certificate in PEM format.
+The contents shall be the CA certificate in PEM format.
 The file may contain "PEM bundle", that is, a list of CA certificates concatenated in single file.
 
 Example:
