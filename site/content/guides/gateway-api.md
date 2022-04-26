@@ -41,9 +41,13 @@ The following prerequisites must be met before using Gateway API with Contour:
 
 Contour supports two modes of provisioning for use with Gateway API: **static** and **dynamic**.
 
-In **static** provisioning, the platform operator defines a `Gateway` resource, and then manually deploys a Contour instance corresponding to that `Gateway` resource. It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
+In **static** provisioning, the platform operator defines a `Gateway` resource, and then manually deploys a Contour instance corresponding to that `Gateway` resource.
+It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
+With static provisioning, Contour can be configured with either a [controller name][8], or a specific gateway (see the [API documentation][7].)
+If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
+If configured with a specific gateway, Contour will process that `Gateway` and its routes.
 
-In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration.
+In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
 Static provisioning may be more appropriate for users who prefer the traditional model of deploying Contour, have just a single Contour instance, or have highly customized YAML for deploying Contour.
 Dynamic provisioning may be more appropriate for users who want a simple declarative API for provisioning Contour instances.
@@ -100,7 +104,7 @@ This command creates:
 - Envoy DaemonSet / Service
 - Contour ConfigMap
 
-Update the Contour config map to enable Gateway API processing, and restart Contour to pick up the config change:
+Update the Contour config map to enable Gateway API processing by specifying a gateway controller name, and restart Contour to pick up the config change:
 
 ```shell
 kubectl apply -f - <<EOF
@@ -269,3 +273,5 @@ This guide only scratches the surface of the Gateway API's capabilities. See the
 [4]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [5]: https://gateway-api.sigs.k8s.io/v1alpha2/api-types/gatewayclass/#gatewayclass-parameters
 [6]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.ContourDeployment
+[7]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.GatewayConfig
+[8]: https://gateway-api.sigs.k8s.io/v1alpha2/api-types/gatewayclass/#gatewayclass-controller-selection

@@ -74,6 +74,11 @@ You should see the following:
 
 ### Option 3: Contour Gateway Provisioner (alpha)
 
+The Gateway provisioner watches for the creation of [Gateway API][31] `Gateway` resources, and dynamically provisions Contour+Envoy instances based on the `Gateway's` spec.
+Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
+In fact, this guide will use an `Ingress` resource to define routing rules, even when using the Gateway provisioner for installation.
+
+
 Deploy the Gateway provisioner:
 ```bash
 $ kubectl apply -f https://projectcontour.io/quickstart/gateway-provisioner.yaml
@@ -242,3 +247,4 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [28]: /guides/kind
 [29]: https://helm.sh/docs/intro/install/
 [30]: /guides/kind/#kind-configuration-file
+[31]: https://gateway-api.sigs.k8s.io/
