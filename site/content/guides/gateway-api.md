@@ -71,9 +71,14 @@ spec:
 EOF
 ```
 
-Create a Gateway:
+Create a Gateway in the `projectcontour` namespace:
 ```shell
 kubectl apply -f - <<EOF
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: projectcontour
+---
 kind: Gateway
 apiVersion: gateway.networking.k8s.io/v1alpha2
 metadata:
@@ -213,6 +218,10 @@ _Note, for simplicity and compatibility across all platforms we'll use `kubectl 
 
 Port-forward from your local machine to the Envoy service:
 ```shell
+# If using static provisioning
+$ kubectl -n projectcontour port-forward service/envoy 8888:80
+
+# If using dynamic provisioning
 $ kubectl -n projectcontour port-forward service/envoy-contour 8888:80
 ```
 
