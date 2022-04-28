@@ -36,10 +36,9 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-main
+  name: contour-certgen-v1.21.0-rc.1
   namespace: projectcontour
 spec:
-  ttlSecondsAfterFinished: 0
   template:
     metadata:
       labels:
@@ -47,8 +46,8 @@ spec:
     spec:
       containers:
       - name: contour
-        image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: Always
+        image: ghcr.io/projectcontour/contour:v1.21.0-rc.1
+        imagePullPolicy: IfNotPresent
         command:
         - contour
         - certgen
