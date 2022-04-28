@@ -159,7 +159,7 @@ jobs:
           LOAD_PREBUILT_IMAGE: "true"
           USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
         run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make e2e
       - uses: act10ns/slack@v1
         with:
@@ -220,7 +220,7 @@ jobs:
           MULTINODE_CLUSTER: "true"
           LOAD_PREBUILT_IMAGE: "true"
         run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
       - uses: act10ns/slack@v1
         with:
@@ -345,7 +345,7 @@ jobs:
         env:
           LOAD_PREBUILT_IMAGE: "true"
         run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make gateway-conformance
       - uses: act10ns/slack@v1
         with:
