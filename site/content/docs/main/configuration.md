@@ -57,6 +57,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--leader-election-resource-namespace`                   | The namespace of the resource (Lease) leader election will lease.      |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
+| `--log-format=<text|json>`                               | Log output format for Contour. Either text (default) or json.          |
 
 ## Configuration File
 
@@ -446,6 +447,7 @@ connects to Contour:
 | <nobr>--namespace</nobr>               | projectcontour    | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file. |
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.                                                                                                   |
+| <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
