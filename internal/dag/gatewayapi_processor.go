@@ -15,7 +15,6 @@ package dag
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -509,75 +508,70 @@ func isSecretRef(certificateRef gatewayapi_v1alpha2.SecretObjectReference) bool 
 		certificateRef.Kind != nil && *certificateRef.Kind == "Secret"
 }
 
-// computeHosts validates the hostnames for a HTTPRoute as well as validating
-// that the hostname on the HTTPRoute matches what is optionally defined on the
-// listener.hostname.
-func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha2.Hostname, listenerHostname *gatewayapi_v1alpha2.Hostname) (map[string]struct{}, []error) {
+// computeHosts returns the set of hostnames to match for a route. Both the result
+// and the error slice should be considered:
+// 	- if the set of hostnames is non-empty, it should be used for matching (may be ["*"]).
+//	- if the set of hostnames is empty, there was no intersection between the listener
+//	  hostname and the route hostnames, and the route should be marked "Accepted: false".
+//	- if the list of errors is non-empty, one or more hostnames was syntactically
+//	  invalid and some condition should be added to the route. This shouldn't be
+//	  possible because of kubebuilder+admission webhook validation but we're being
+//    defensive here.
+func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1alpha2.Hostname, listenerHostname string) (sets.String, []error) {
+	// The listener hostname is assumed to be valid because it's been run
+	// through the `gatewayapi.ValidateListeners` logic, so we don't need
+	// to validate it here.
 
-	hosts := make(map[string]struct{})
-	var errors []error
-
-	// Determine the hosts on the hostnames, if no hosts
-	// are defined, then set to "*". If the listenerHostname is defined,
-	// then the route must match the Gateway hostname.
-	if len(hostnames) == 0 && listenerHostname == nil {
-		hosts["*"] = struct{}{}
-		return hosts, nil
-	}
-
-	if listenerHostname != nil {
-		if string(*listenerHostname) != "*" {
-
-			// Validate listener hostname.
-			if err := validHostName(string(*listenerHostname)); err != nil {
-				return hosts, []error{err}
-			}
-
-			if len(hostnames) == 0 {
-				hosts[string(*listenerHostname)] = struct{}{}
-				return hosts, nil
-			}
+	// No route hostnames specified: use the listener hostname if specified,
+	// or else match all hostnames.
+	if len(routeHostnames) == 0 {
+		if len(listenerHostname) > 0 {
+			return sets.NewString(listenerHostname), nil
 		}
+
+		return sets.NewString("*"), nil
 	}
 
-	for _, host := range hostnames {
+	hostnames := sets.NewString()
+	var errs []error
 
-		hostname := string(host)
+	for i := range routeHostnames {
+		routeHostname := string(routeHostnames[i])
 
-		// Validate the hostname.
-		if err := validHostName(hostname); err != nil {
-			errors = append(errors, err)
+		// If the route hostname is not valid, record an error and skip it.
+		if err := gatewayapi.IsValidHostname(routeHostname); err != nil {
+			errs = append(errs, err)
 			continue
 		}
 
-		if listenerHostname != nil {
-			lhn := string(*listenerHostname)
+		switch {
+		// No listener hostname: use the route hostname.
+		case len(listenerHostname) == 0:
+			hostnames.Insert(routeHostname)
 
-			// A "*" hostname matches anything.
-			switch {
-			case lhn == "*":
-				hosts[hostname] = struct{}{}
-				continue
-			case lhn == hostname:
-				// If the listener.hostname matches then no need to
-				// do any other validation.
-				hosts[hostname] = struct{}{}
-				continue
-			case strings.Contains(lhn, "*"):
+		// Listener hostname matches the route hostname: use it.
+		case listenerHostname == routeHostname:
+			hostnames.Insert(routeHostname)
 
-				if removeFirstDNSLabel(lhn) != removeFirstDNSLabel(hostname) {
-					errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
-					continue
-				}
-			default:
-				// Validate the gateway listener hostname matches the hostnames hostname.
-				errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
-				continue
+		// Listener has a wildcard hostname: check if the route hostname matches.
+		case strings.HasPrefix(listenerHostname, "*"):
+			if removeFirstDNSLabel(listenerHostname) == removeFirstDNSLabel(routeHostname) {
+				hostnames.Insert(routeHostname)
+			}
+
+		// Route has a wildcard hostname: check if the listener hostname matches.
+		case strings.HasPrefix(routeHostname, "*"):
+			if removeFirstDNSLabel(listenerHostname) == removeFirstDNSLabel(routeHostname) {
+				hostnames.Insert(listenerHostname)
 			}
 		}
-		hosts[hostname] = struct{}{}
 	}
-	return hosts, errors
+
+	if len(hostnames) == 0 {
+		return nil, errs
+	}
+
+	return hostnames, errs
 }
 
 func removeFirstDNSLabel(input string) string {
@@ -585,22 +579,6 @@ func removeFirstDNSLabel(input string) string {
 		return input[strings.IndexAny(input, "."):]
 	}
 	return input
-}
-
-func validHostName(hostname string) error {
-	if isIP := net.ParseIP(hostname) != nil; isIP {
-		return fmt.Errorf("hostname %q must be a DNS name, not an IP address", hostname)
-	}
-	if strings.Contains(hostname, "*") {
-		if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
-			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
-		}
-	} else {
-		if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
-		}
-	}
-	return nil
 }
 
 // namespaceMatches returns true if the namespaces selector matches
@@ -730,7 +708,12 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 
 func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) bool {
 
-	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, &gatewayapi_v1alpha2.TLSRoute{}, route.Status.Parents)
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
+		k8s.NamespacedNameOf(route),
+		route.Generation,
+		&gatewayapi_v1alpha2.TLSRoute{},
+		route.Status.Parents,
+	)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
@@ -739,14 +722,19 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		return false
 	}
 
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
 	for _, err := range errs {
+		// The Gateway API spec does not indicate what to do if syntactically
+		// invalid hostnames make it through, we're using our best judgment here.
+		// Theoretically these should be prevented by the combination of kubebuilder
+		// and admission webhook validations.
 		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 	}
 
-	// Check if all the hostnames are invalid.
+	// If there were no intersections between the listener hostname and the
+	// route hostnames, the route is not accepted.
 	if len(hosts) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
 		return false
 	}
 
@@ -827,7 +815,12 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) bool {
-	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, &gatewayapi_v1alpha2.HTTPRoute{}, route.Status.Parents)
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
+		k8s.NamespacedNameOf(route),
+		route.Generation,
+		&gatewayapi_v1alpha2.HTTPRoute{},
+		route.Status.Parents,
+	)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
@@ -836,14 +829,19 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		return false
 	}
 
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
 	for _, err := range errs {
+		// The Gateway API spec does not indicate what to do if syntactically
+		// invalid hostnames make it through, we're using our best judgment here.
+		// Theoretically these should be prevented by the combination of kubebuilder
+		// and admission webhook validations.
 		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 	}
 
-	// Check if all the hostnames are invalid.
+	// If there were no intersections between the listener hostname and the
+	// route hostnames, the route is not accepted.
 	if len(hosts) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
 		return false
 	}
 

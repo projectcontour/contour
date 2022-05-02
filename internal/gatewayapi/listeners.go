@@ -15,8 +15,11 @@ package gatewayapi
 
 import (
 	"fmt"
+	"net"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -31,6 +34,7 @@ type ValidateListenersResult struct {
 // It ensures that:
 //	- all protocols are supported
 //	- each listener group (grouped by protocol, with HTTPS & TLS going together) uses a single port
+//	- listener hostnames are syntactically valid
 //  - hostnames within each listener group are unique
 // It returns the insecure & secure ports to use, as well as conditions for all invalid listeners.
 // If a listener is not in the "InvalidListenerConditions" map, it is assumed to be valid according
@@ -51,6 +55,8 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 	)
 
 	for _, listener := range listeners {
+		hostname := HostnameDeref(listener.Hostname)
+
 		switch listener.Protocol {
 		case gatewayapi_v1alpha2.HTTPProtocolType:
 			// Keep the first insecure listener port we see
@@ -62,7 +68,7 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 			// For other insecure listeners with an "invalid" port, the
 			// "PortUnavailable" reason will take precedence.
 			if int(listener.Port) == result.InsecurePort {
-				insecureHostnames[listenerHostname(listener)]++
+				insecureHostnames[hostname]++
 			}
 		case gatewayapi_v1alpha2.HTTPSProtocolType, gatewayapi_v1alpha2.TLSProtocolType:
 			// Keep the first secure listener port we see
@@ -74,12 +80,25 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 			// For other secure listeners with an "invalid" port, the
 			// "PortUnavailable" reason will take precedence.
 			if int(listener.Port) == result.SecurePort {
-				secureHostnames[listenerHostname(listener)]++
+				secureHostnames[hostname]++
 			}
 		}
 	}
 
 	for _, listener := range listeners {
+		hostname := HostnameDeref(listener.Hostname)
+
+		if len(hostname) > 0 {
+			if err := IsValidHostname(hostname); err != nil {
+				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+					Type:    string(gatewayapi_v1alpha2.ListenerConditionReady),
+					Status:  metav1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalid),
+					Message: err.Error(),
+				}
+			}
+		}
+
 		switch listener.Protocol {
 		case gatewayapi_v1alpha2.HTTPProtocolType:
 			switch {
@@ -90,7 +109,7 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 					Reason:  string(gatewayapi_v1alpha2.ListenerReasonPortUnavailable),
 					Message: "Only one HTTP port is supported",
 				}
-			case insecureHostnames[listenerHostname(listener)] > 1:
+			case insecureHostnames[hostname] > 1:
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 					Type:    string(gatewayapi_v1alpha2.ListenerConditionConflicted),
 					Status:  metav1.ConditionTrue,
@@ -107,7 +126,7 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 					Reason:  string(gatewayapi_v1alpha2.ListenerReasonPortUnavailable),
 					Message: "Only one HTTPS/TLS port is supported",
 				}
-			case secureHostnames[listenerHostname(listener)] > 1:
+			case secureHostnames[hostname] > 1:
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 					Type:    string(gatewayapi_v1alpha2.ListenerConditionConflicted),
 					Status:  metav1.ConditionTrue,
@@ -128,9 +147,32 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 	return result
 }
 
-func listenerHostname(listener gatewayapi_v1alpha2.Listener) string {
-	if listener.Hostname != nil {
-		return string(*listener.Hostname)
+// HostnameDeref returns the hostname as a string if it's not nil,
+// or an empty string otherwise.
+func HostnameDeref(hostname *gatewayapi_v1alpha2.Hostname) string {
+	if hostname == nil {
+		return ""
 	}
-	return ""
+
+	return string(*hostname)
+}
+
+// IsValidHostname validates that a given hostname is syntactically valid.
+// It returns nil if valid and an error if not valid.
+func IsValidHostname(hostname string) error {
+	if net.ParseIP(hostname) != nil {
+		return fmt.Errorf("invalid hostname %q: must be a DNS name, not an IP address", hostname)
+	}
+
+	if strings.Contains(hostname, "*") {
+		if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
+			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
+		}
+	} else {
+		if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
+			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
+		}
+	}
+
+	return nil
 }
