@@ -7029,6 +7029,51 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyLoadBalancerHashPolicyQueryParameter := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							Terminal: true,
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+						},
+						{
+							QueryParameterHashOptions: nil,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "other",
+							},
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	proxyLoadBalancerHashPolicySourceIP := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -7103,6 +7148,37 @@ func TestDAGInsert(t *testing.T) {
 								HeaderName: "X-Foo",
 							},
 							HashSourceIP: true,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Foo",
+							},
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Foo",
+							},
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+							HashSourceIP: true,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+							HashSourceIP: true,
+						},
+						{
+							QueryParameterHashOptions: nil,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "",
+							},
 						},
 					},
 				},
@@ -10750,6 +10826,39 @@ func TestDAGInsert(t *testing.T) {
 								{
 									HeaderHashOptions: &HeaderHashOptions{
 										HeaderName: "X-Some-Other-Header",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with load balancer request query parameter hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyQueryParameter,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									Terminal: true,
+									QueryParameterHashOptions: &QueryParameterHashOptions{
+										ParameterName: "something",
+									},
+								},
+								{
+									QueryParameterHashOptions: &QueryParameterHashOptions{
+										ParameterName: "other",
 									},
 								},
 							},
