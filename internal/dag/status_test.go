@@ -4283,7 +4283,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonDegraded),
-					Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
+					Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
 				},
 				gatewayapi_v1alpha2.ConditionRouteAccepted: {
 					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
@@ -5677,7 +5677,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Type:    string(status.ConditionResolvedRefs),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  string(status.ReasonDegraded),
-						Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
+						Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
 					},
 					gatewayapi_v1alpha2.ConditionRouteAccepted: {
 						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),

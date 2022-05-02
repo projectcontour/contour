@@ -15,7 +15,6 @@ package dag
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -520,14 +518,9 @@ func isSecretRef(certificateRef gatewayapi_v1alpha2.SecretObjectReference) bool 
 //	  possible because of kubebuilder+admission webhook validation but we're being
 //    defensive here.
 func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1alpha2.Hostname, listenerHostname string) (sets.String, []error) {
-	// TODO we should really be doing this in our `ValidateListeners` func,
-	// and marking the listener/gateway as not ready if there's a syntactically
-	// invalid listener hostname.
-	if len(listenerHostname) > 0 {
-		if err := validHostName(listenerHostname); err != nil {
-			return nil, []error{err}
-		}
-	}
+	// The listener hostname is assumed to be valid because it's been run
+	// through the `gatewayapi.ValidateListeners` logic, so we don't need
+	// to validate it here.
 
 	// No route hostnames specified: use the listener hostname if specified,
 	// or else match all hostnames.
@@ -546,7 +539,7 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1alpha2.
 		routeHostname := string(routeHostnames[i])
 
 		// If the route hostname is not valid, record an error and skip it.
-		if err := validHostName(routeHostname); err != nil {
+		if err := gatewayapi.IsValidHostname(routeHostname); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -586,22 +579,6 @@ func removeFirstDNSLabel(input string) string {
 		return input[strings.IndexAny(input, "."):]
 	}
 	return input
-}
-
-func validHostName(hostname string) error {
-	if isIP := net.ParseIP(hostname) != nil; isIP {
-		return fmt.Errorf("hostname %q must be a DNS name, not an IP address", hostname)
-	}
-	if strings.Contains(hostname, "*") {
-		if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
-			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
-		}
-	} else {
-		if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
-		}
-	}
-	return nil
 }
 
 // namespaceMatches returns true if the namespaces selector matches
@@ -729,14 +706,6 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	}
 }
 
-func hostnameDeref(hostname *gatewayapi_v1alpha2.Hostname) string {
-	if hostname == nil {
-		return ""
-	}
-
-	return string(*hostname)
-}
-
 func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) bool {
 
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -753,7 +722,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		return false
 	}
 
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, hostnameDeref(listenerHostname))
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
 		// invalid hostnames make it through, we're using our best judgment here.
@@ -860,7 +829,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		return false
 	}
 
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, hostnameDeref(listenerHostname))
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
 		// invalid hostnames make it through, we're using our best judgment here.

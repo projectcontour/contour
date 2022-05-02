@@ -78,7 +78,7 @@ func TestComputeHosts(t *testing.T) {
 			},
 			want: nil,
 			wantError: []error{
-				fmt.Errorf("hostname \"1.2.3.4\" must be a DNS name, not an IP address"),
+				fmt.Errorf("invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address"),
 			},
 		},
 		"valid wildcard hostname": {
@@ -115,22 +115,6 @@ func TestComputeHosts(t *testing.T) {
 			want: nil,
 			wantError: []error{
 				fmt.Errorf("invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
-			},
-		},
-		"invalid listener hostname": {
-			listenerHost: "#projectcontour.io",
-			hostnames:    []gatewayapi_v1alpha2.Hostname{},
-			want:         nil,
-			wantError: []error{
-				fmt.Errorf("invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
-			},
-		},
-		"invalid listener wildcard hostname": {
-			listenerHost: "*.*.projectcontour.io",
-			hostnames:    []gatewayapi_v1alpha2.Hostname{},
-			want:         nil,
-			wantError: []error{
-				fmt.Errorf("invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 			},
 		},
 		"listener host & hostnames host do not exactly match": {
