@@ -675,10 +675,10 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 		rhps := []RequestHashPolicy{}
 		actualStrategy := strategy
 		hashSourceIPSet := false
-		// Map of unique header names.
-		headerHashPolicies := map[string]struct{}{}
-		// Map of unique query parameter names.
-		queryParameterHashPolicies := map[string]struct{}{}
+		// Set of unique header names.
+		headerHashPolicies := sets.NewString()
+		// Set of unique query parameter names.
+		queryParameterHashPolicies := sets.NewString()
 		for _, hashPolicy := range lbp.RequestHashPolicies {
 			rhp := RequestHashPolicy{
 				Terminal: hashPolicy.Terminal,
@@ -718,12 +718,12 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 						"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
 					continue
 				}
-				if _, ok := headerHashPolicies[headerName]; ok {
+				if headerHashPolicies.Has(headerName) {
 					validCond.AddWarningf("SpecError", "IgnoredField",
 						"ignoring invalid header hash policy options with duplicated header name %s", headerName)
 					continue
 				}
-				headerHashPolicies[headerName] = struct{}{}
+				headerHashPolicies.Insert(headerName)
 				rhp.HeaderHashOptions = &HeaderHashOptions{
 					HeaderName: headerName,
 				}
@@ -738,12 +738,12 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 						"ignoring invalid query parameter hash policy options with an invalid empty query parameter name")
 					continue
 				}
-				if _, ok := queryParameterHashPolicies[queryParameter]; ok {
+				if queryParameterHashPolicies.Has(queryParameter) {
 					validCond.AddWarningf("SpecError", "IgnoredField",
 						"ignoring invalid query parameter hash policy options with duplicated query parameter name %s", queryParameter)
 					continue
 				}
-				queryParameterHashPolicies[queryParameter] = struct{}{}
+				queryParameterHashPolicies.Insert(queryParameter)
 				rhp.QueryParameterHashOptions = &QueryParameterHashOptions{
 					ParameterName: queryParameter,
 				}
