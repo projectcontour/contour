@@ -2024,6 +2024,40 @@ No HTTP headers or body content is rewritten.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.QueryParameterHashOptions">QueryParameterHashOptions
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RequestHashPolicy">RequestHashPolicy</a>)
+</p>
+<p>
+<p>QueryParameterHashOptions contains options to configure a query parameter based hash
+policy, used in request attribute hash based load balancing.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>parameterName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ParameterName is the name of the HTTP request query parameter that will be used to
+calculate the hash key. If the query parameter specified is not present on a
+request, no hash will be produced.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.RateLimitDescriptor">RateLimitDescriptor
 </h3>
 <p>
@@ -2306,6 +2340,23 @@ HeaderHashOptions
 <td>
 <em>(Optional)</em>
 <p>HeaderHashOptions should be set when request header hash based load
+balancing is desired. It must be the only hash option field set,
+otherwise this request hash policy object will be ignored.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>queryParameterHashOptions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.QueryParameterHashOptions">
+QueryParameterHashOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QueryParameterHashOptions should be set when request query parameter hash based load
 balancing is desired. It must be the only hash option field set,
 otherwise this request hash policy object will be ignored.</p>
 </td>
