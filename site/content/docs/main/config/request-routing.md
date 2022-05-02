@@ -330,6 +330,7 @@ spec:
         terminal: true
       - headerHashOptions:
           headerName: User-Agent
+      - hashSourceIP: true
 ```
 In this example, if a client request contains the `X-Some-Header` header, the value of the header will be hashed and used to route to an upstream Endpoint. This could be used to implement a similar workflow to cookie-based session affinity by passing a consistent value for this header. If it is present, because it is set as a `terminal` hash option, Envoy will not continue on to process to `User-Agent` header or source IP to calculate a hash. If `X-Some-Header` is not present, Envoy will use the `User-Agent` header value to make a routing decision along with the source IP of the client making the request. These policies can be used alone or as shown for an advanced routing decision.
 
