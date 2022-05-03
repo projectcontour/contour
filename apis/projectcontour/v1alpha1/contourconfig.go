@@ -319,14 +319,14 @@ type DebugConfig struct {
 	// +optional
 	Port int `json:"port,omitempty"`
 
-	// DebugLogLevel defines the log level which Contour will
+	// LogLevel defines the log level which Contour will
 	// use when outputting log information.
 	//
 	// Values: `info` (default), `debug`.
 	//
 	// Other values will produce an error.
 	// +optional
-	DebugLogLevel LogLevel `json:"logLevel,omitempty"`
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 
 	// KubernetesDebugLogLevel defines the log level which Contour will
 	// use when outputting Kubernetes specific log information.

@@ -40,13 +40,13 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Debug: &DebugConfig{},
 		}
 
-		c.Debug.DebugLogLevel = InfoLog
+		c.Debug.LogLevel = InfoLog
 		require.NoError(t, c.Validate())
 
-		c.Debug.DebugLogLevel = DebugLog
+		c.Debug.LogLevel = DebugLog
 		require.NoError(t, c.Validate())
 
-		c.Debug.DebugLogLevel = "foo"
+		c.Debug.LogLevel = "foo"
 		require.Error(t, c.Validate())
 	})
 

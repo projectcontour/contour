@@ -396,7 +396,7 @@ func TestConvertServeContext(t *testing.T) {
 			Debug: &contour_api_v1alpha1.DebugConfig{
 				Address:                 "127.0.0.1",
 				Port:                    6060,
-				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+				LogLevel:                contour_api_v1alpha1.InfoLog,
 				KubernetesDebugLogLevel: contourconfig.UIntPtr(0),
 			},
 			Health: &contour_api_v1alpha1.HealthConfig{

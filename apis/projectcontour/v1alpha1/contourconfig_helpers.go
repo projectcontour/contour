@@ -33,7 +33,7 @@ func (c *ContourConfigurationSpec) Validate() error {
 		validateFuncs = append(validateFuncs, c.XDSServer.Type.Validate)
 	}
 	if c.Debug != nil {
-		validateFuncs = append(validateFuncs, c.Debug.DebugLogLevel.Validate)
+		validateFuncs = append(validateFuncs, c.Debug.LogLevel.Validate)
 	}
 	if c.Envoy != nil {
 		validateFuncs = append(validateFuncs, c.Envoy.Validate)

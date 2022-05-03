@@ -275,12 +275,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	}
 	ingress.StatusAddress = ctx.Config.IngressStatusAddress
 
-	debugLogLevel := contour_api_v1alpha1.InfoLog
+	logLevel := contour_api_v1alpha1.InfoLog
 	switch ctx.Config.Debug {
 	case true:
-		debugLogLevel = contour_api_v1alpha1.DebugLog
+		logLevel = contour_api_v1alpha1.DebugLog
 	case false:
-		debugLogLevel = contour_api_v1alpha1.InfoLog
+		logLevel = contour_api_v1alpha1.InfoLog
 	}
 
 	var gatewayConfig *contour_api_v1alpha1.GatewayConfig
@@ -437,7 +437,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		Debug: &contour_api_v1alpha1.DebugConfig{
 			Address:                 ctx.debugAddr,
 			Port:                    ctx.debugPort,
-			DebugLogLevel:           debugLogLevel,
+			LogLevel:                logLevel,
 			KubernetesDebugLogLevel: &ctx.KubernetesDebug,
 		},
 		Health: &contour_api_v1alpha1.HealthConfig{
