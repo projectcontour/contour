@@ -2770,7 +2770,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			if diff := cmp.Diff(tc.wantGatewayStatusUpdate, gotGatewayUpdates, ops...); diff != "" {
 				t.Fatalf("expected gateway status: %v, got %v", tc.wantGatewayStatusUpdate, diff)
 			}
-
 		})
 	}
 
@@ -4294,6 +4293,238 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "two HTTP listeners, route's hostname intersects with one of them", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				Listeners: []gatewayapi_v1alpha2.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+							},
+						},
+						Hostname: gatewayapi.ListenerHostname("*.projectcontour.io"),
+					},
+					{
+						Name:     "listener-2",
+						Port:     80,
+						Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+							},
+						},
+						Hostname: gatewayapi.ListenerHostname("specifc.hostname.io"),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  string(status.ValidCondition),
+					Message: "Valid HTTPRoute",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
+					gatewayapi_v1alpha2.GatewayConditionReady: {
+						Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  status.ReasonValidGateway,
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1alpha2.SectionName("listener-1"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+							{
+								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Kind:  *gatewayapi.KindPtr("HTTPRoute"),
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    "Ready",
+								Status:  metav1.ConditionTrue,
+								Reason:  "Ready",
+								Message: "Valid listener",
+							},
+						},
+					},
+					"listener-2": {
+						Name:           gatewayapi_v1alpha2.SectionName("listener-2"),
+						AttachedRoutes: int32(0),
+						SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+							{
+								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Kind:  *gatewayapi.KindPtr("HTTPRoute"),
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    "Ready",
+								Status:  metav1.ConditionTrue,
+								Reason:  "Ready",
+								Message: "Valid listener",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	run(t, "two HTTP listeners, route's hostname intersects with neither of them", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"foo.randomdomain.io"},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				Listeners: []gatewayapi_v1alpha2.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+							},
+						},
+						Hostname: gatewayapi.ListenerHostname("*.projectcontour.io"),
+					},
+					{
+						Name:     "listener-2",
+						Port:     80,
+						Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+							},
+						},
+						Hostname: gatewayapi.ListenerHostname("specifc.hostname.io"),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonNoIntersectingHostnames),
+					Message: "No intersecting hostnames were found between the listener and the route.",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
+					gatewayapi_v1alpha2.GatewayConditionReady: {
+						Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  status.ReasonValidGateway,
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1alpha2.SectionName("listener-1"),
+						AttachedRoutes: int32(0),
+						SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+							{
+								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Kind:  *gatewayapi.KindPtr("HTTPRoute"),
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    "Ready",
+								Status:  metav1.ConditionTrue,
+								Reason:  "Ready",
+								Message: "Valid listener",
+							},
+						},
+					},
+					"listener-2": {
+						Name:           gatewayapi_v1alpha2.SectionName("listener-2"),
+						AttachedRoutes: int32(0),
+						SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+							{
+								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Kind:  *gatewayapi.KindPtr("HTTPRoute"),
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    "Ready",
+								Status:  metav1.ConditionTrue,
+								Reason:  "Ready",
+								Message: "Valid listener",
+							},
+						},
+					},
+				},
+			},
+		},
 	})
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute rule", testcase{
