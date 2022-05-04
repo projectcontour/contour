@@ -62,7 +62,7 @@ type matchConditions struct {
 	headers []HeaderMatchCondition
 }
 
-// Run translates Service APIs into DAG objects and
+// Run translates Gateway API types into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	p.dag = dag
@@ -80,7 +80,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		return
 	}
 	if p.source.gatewayclass == nil {
-		p.Info("Gatewayclass not found in cache.")
+		p.Info("GatewayClass not found in cache.")
 		return
 	}
 
@@ -115,6 +115,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		)
 	}
 
+	// Map routes to the listeners that they should attach to.
 	httpRoutesToListeners := map[*gatewayapi_v1alpha2.HTTPRoute][]*listenerInfo{}
 	tlsRoutesToListeners := map[*gatewayapi_v1alpha2.TLSRoute][]*listenerInfo{}
 
@@ -132,6 +133,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	listenerAttachedRoutes := map[string]int{}
 
+	// Compute each HTTPRoute.
 	for httpRoute, listeners := range httpRoutesToListeners {
 		func() {
 			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -156,10 +158,20 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			if hostCount == 0 {
 				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
+			} else {
+				// Determine if any errors exist in conditions and set the "Accepted"
+				// condition accordingly.
+				switch len(routeAccessor.Conditions) {
+				case 0:
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
+				default:
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+				}
 			}
 		}()
 	}
 
+	// Compute each TLSRoute.
 	for tlsRoute, listeners := range tlsRoutesToListeners {
 		func() {
 			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -184,6 +196,15 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			if hostCount == 0 {
 				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
+			} else {
+				// Determine if any errors exist in conditions and set the "Accepted"
+				// condition accordingly.
+				switch len(routeAccessor.Conditions) {
+				case 0:
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
+				default:
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+				}
 			}
 		}()
 	}
@@ -889,15 +910,6 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		}
 	}
 
-	// Determine if any errors exist in conditions and set the "Accepted"
-	// condition accordingly.
-	switch len(routeAccessor.Conditions) {
-	case 0:
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
-	default:
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
-	}
-
 	return programmed, hosts
 }
 
@@ -1036,15 +1048,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				programmed = true
 			}
 		}
-	}
-
-	// Determine if any errors exist in conditions and set the "Accepted"
-	// condition accordingly.
-	switch len(routeAccessor.Conditions) {
-	case 0:
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
-	default:
-		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
 
 	return programmed, hosts
