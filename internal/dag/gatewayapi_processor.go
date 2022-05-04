@@ -140,7 +140,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	listenerAttachedRoutes := map[string]int{}
 
-	// Compute each HTTPRoute.
+	// Compute each HTTPRoute for each listener that it potentially
+	// attaches to.
 	for httpRoute, listeners := range httpRoutesToListeners {
 		func() {
 			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -157,12 +158,16 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				return
 			}
 
+			// Keep track of the number of intersecting hosts
+			// between the route and all listeners so that we
+			// can set the appropriate route condition if there
+			// were none across all listeners.
 			hostCount := 0
 
 			for _, listener := range listeners {
-				programmed, hosts := p.computeHTTPRoute(httpRoute, routeAccessor, listener.secret, listener.listener.Hostname)
+				attached, hosts := p.computeHTTPRoute(httpRoute, routeAccessor, listener)
 
-				if programmed {
+				if attached {
 					listenerAttachedRoutes[string(listener.listener.Name)]++
 				}
 
@@ -184,7 +189,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}()
 	}
 
-	// Compute each TLSRoute.
+	// Compute each TLSRoute for each listener that it potentially
+	// attaches to.
 	for tlsRoute, listeners := range tlsRoutesToListeners {
 		func() {
 			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -201,12 +207,16 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				return
 			}
 
+			// Keep track of the number of intersecting hosts
+			// between the route and all listeners so that we
+			// can set the appropriate route condition if there
+			// were none across all listeners.
 			hostCount := 0
 
 			for _, listener := range listeners {
-				programmed, hosts := p.computeTLSRoute(tlsRoute, routeAccessor, listener.secret, listener.listener.Hostname)
+				attached, hosts := p.computeTLSRoute(tlsRoute, routeAccessor, listener)
 
-				if programmed {
+				if attached {
 					listenerAttachedRoutes[string(listener.listener.Name)]++
 				}
 
@@ -822,8 +832,8 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteConditionsUpdate, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname) (bool, sets.String) {
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteConditionsUpdate, listener *listenerInfo) (bool, sets.String) {
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
 		// invalid hostnames make it through, we're using our best judgment here.
@@ -892,8 +902,8 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		for host := range hosts {
 			secure := p.dag.EnsureSecureVirtualHost(host)
 
-			if listenerSecret != nil {
-				secure.Secret = listenerSecret
+			if listener.secret != nil {
+				secure.Secret = listener.secret
 			}
 
 			secure.TCPProxy = &proxy
@@ -905,8 +915,8 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	return programmed, hosts
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, routeAccessor *status.RouteConditionsUpdate, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname) (bool, sets.String) {
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listenerHostname))
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, routeAccessor *status.RouteConditionsUpdate, listener *listenerInfo) (bool, sets.String) {
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
 		// invalid hostnames make it through, we're using our best judgment here.
@@ -1013,9 +1023,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				}
 
 				switch {
-				case listenerSecret != nil:
+				case listener.secret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(host)
-					svhost.Secret = listenerSecret
+					svhost.Secret = listener.secret
 					svhost.AddRoute(route)
 				default:
 					vhost := p.dag.EnsureVirtualHost(host)
