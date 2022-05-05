@@ -138,9 +138,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 	}
 
+	// Keep track of the number of routes attached
+	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
 
-	// Compute each HTTPRoute for each listener that it potentially
+	// Compute each HTTPRoute for each Listener that it potentially
 	// attaches to.
 	for httpRoute, listeners := range httpRoutesToListeners {
 		func() {
@@ -189,7 +191,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}()
 	}
 
-	// Compute each TLSRoute for each listener that it potentially
+	// Compute each TLSRoute for each Listener that it potentially
 	// attaches to.
 	for tlsRoute, listeners := range tlsRoutesToListeners {
 		func() {
@@ -284,6 +286,11 @@ func addressTypeDerefOr(addressType *gatewayapi_v1alpha2.AddressType, defaultAdd
 	return defaultAddressType
 }
 
+// computeListener processes a Listener's spec, including TLS details,
+// allowed routes, etc., and sets the appropriate conditions on it in
+// the Gateway's .status.listeners. It returns lists of the HTTPRoutes
+// and TLSRoutes that select the Listener and are allowed by it, as well
+// as the TLS secret to use for the Listener (if any).
 func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate, validateListenersResult gatewayapi.ValidateListenersResult) ([]*gatewayapi_v1alpha2.HTTPRoute, []*gatewayapi_v1alpha2.TLSRoute, *Secret) {
 	// set the listener's "Ready" condition based on whether we've
 	// added any other conditions for the listener. The assumption
@@ -411,8 +418,8 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 					continue
 				}
 
-				// If the Gateway selects the HTTPRoute, check to see if the HTTPRoute selects
-				// the Gateway/listener.
+				// If the Listener allows the HTTPRoute, check to see if the HTTPRoute selects
+				// the Gateway/Listener.
 				if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
 					continue
 				}
@@ -430,8 +437,8 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 					continue
 				}
 
-				// If the Gateway selects the TLSRoute, check to see if the TLSRoute selects
-				// the Gateway/listener.
+				// If the Listener allows the TLSRoute, check to see if the TLSRoute selects
+				// the Gateway/Listener.
 				if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
 					continue
 				}
