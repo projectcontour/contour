@@ -182,10 +182,12 @@ lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run --build-tags=e2e
 
+# The inline config is needed to allow the Gateway API validating webhook YAML
+# (which we import directly from the Gateway API repo) to pass.
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint -d "{rules: {brackets: {max-spaces-inside: 1}, commas: {max-spaces-before: 1}}}" examples/ site/content/examples/ ./versions.yaml
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd
@@ -205,7 +207,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -230,10 +232,14 @@ generate-crd-yaml:
 	@echo "Generating Contour CRD YAML documents..."
 	@./hack/generate-crd-yaml.sh
 
-.PHONY: generate-gateway-crd-yaml
-generate-gateway-crd-yaml:
+.PHONY: generate-gateway-yaml
+generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
 	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}"
+	@echo "Generating Gateway API webhook documents..."
+	@curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/deploy/admission_webhook.yaml
+	@curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/deploy/certificate_config.yaml
+	
 
 .PHONY: generate-api-docs
 generate-api-docs:
