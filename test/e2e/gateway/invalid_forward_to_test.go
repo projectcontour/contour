@@ -63,28 +63,6 @@ func testInvalidForwardTo(namespace string) {
 							},
 						},
 					},
-
-					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/invalidport"),
-								},
-							},
-						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: gatewayapi.KindPtr("Service"),
-										Name: "echo-slash-default",
-									},
-								},
-							},
-						},
-					},
-
 					{
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
@@ -106,7 +84,6 @@ func testInvalidForwardTo(namespace string) {
 							},
 						},
 					},
-
 					{
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
@@ -168,10 +145,6 @@ func testInvalidForwardTo(namespace string) {
 			},
 			{
 				path:           "/invalidref",
-				expectResponse: 503,
-			},
-			{
-				path:           "/invalidport",
 				expectResponse: 503,
 			},
 			{
