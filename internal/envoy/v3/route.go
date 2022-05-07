@@ -149,10 +149,6 @@ func routeAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
-const prefixPathMatchSegmentRegex = `(?:[\/].*)*`
-
-var _ = regexp.MustCompile(prefixPathMatchSegmentRegex)
-
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	switch c := route.PathMatchCondition.(type) {
