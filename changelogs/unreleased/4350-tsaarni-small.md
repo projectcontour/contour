@@ -1,1 +1,0 @@
-Fixed a bug where upstream TLS SNI (`HTTProxy.spec.routes.requestHeadersPolicy` `Host` key) and protocol fields might not take effect when e.g. two `HTTPProxies` were otherwise equal but differed only on those fields.
