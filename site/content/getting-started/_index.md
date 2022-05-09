@@ -81,7 +81,7 @@ In fact, this guide will use an `Ingress` resource to define routing rules, even
 
 Deploy the Gateway provisioner:
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/gateway-provisioner.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/contour-gateway-provisioner.yaml
 ```
 
 Verify the Gateway provisioner deployment is available:
