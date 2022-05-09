@@ -29,18 +29,17 @@ Resource Types:
 <p>
 <p>HTTPProxy is an Ingress CRD specification.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td>
-<code>apiVersion</code>
-<br>
+<code>apiVersion</code></br>
 string</td>
 <td>
 <code>
@@ -50,8 +49,7 @@ projectcontour.io/v1
 </tr>
 <tr>
 <td>
-<code>kind</code>
-<br>
+<code>kind</code></br>
 string
 </td>
 <td><code>HTTPProxy</code></td>
@@ -189,18 +187,17 @@ HTTPProxyStatus
 <p>TLSCertificateDelegation is an TLS Certificate Delegation CRD specification.
 See design/tls-certificate-delegation.md for details.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td>
-<code>apiVersion</code>
-<br>
+<code>apiVersion</code></br>
 string</td>
 <td>
 <code>
@@ -210,8 +207,7 @@ projectcontour.io/v1
 </tr>
 <tr>
 <td>
-<code>kind</code>
-<br>
+<code>kind</code></br>
 string
 </td>
 <td><code>TLSCertificateDelegation</code></td>
@@ -287,14 +283,14 @@ TLSCertificateDelegationStatus
 <p>
 <p>AuthorizationPolicy modifies how client requests are authenticated.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>disabled</code>
@@ -339,14 +335,14 @@ outer scope.</p>
 client requests. The external server must implement the v3 Envoy
 external authorization GRPC protocol (<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto">https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto</a>).</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>extensionRef</code>
@@ -435,14 +431,14 @@ AuthorizationServerBufferSettings
 <p>
 <p>AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>maxRequestBytes</code>
@@ -485,7 +481,7 @@ bool
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.CORSHeaderValue">CORSHeaderValue
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.CORSPolicy">CORSPolicy</a>)
@@ -502,14 +498,14 @@ bool
 <p>
 <p>CORSPolicy allows setting the CORS policy</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>allowCredentials</code>
@@ -609,14 +605,14 @@ check for all cross-origin requests.</p>
 <p>CertificateDelegation maps the authority to reference a secret
 in the current namespace to a set of namespaces.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>secretName</code>
@@ -655,14 +651,14 @@ the secret will be delegated to all namespaces.</p>
 </p>
 <p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>value</code>
@@ -686,14 +682,14 @@ For now this is required.</p>
 </p>
 <p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>value</code>
@@ -718,14 +714,14 @@ For now this is required.</p>
 </p>
 <p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -832,14 +828,14 @@ In either case, there may be entries in the <code>warnings</code> slice.</p>
 (if there is one and only one entry in total across both the <code>errors</code> and <code>warnings</code> slices), or
 <code>MultipleReasons</code> if there is more than one entry.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>Condition</code>
@@ -901,14 +897,14 @@ An empty slice here indicates no warnings.</p>
 <p>
 <p>DownstreamValidation defines how to verify the client certificate.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>caSecret</code>
@@ -956,14 +952,14 @@ presented to the external authorization server.</p>
 <p>
 <p>ExtensionServiceReference names an ExtensionService resource.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>apiVersion</code>
@@ -1018,14 +1014,14 @@ string
 <p>GenericKeyDescriptor defines a descriptor entry with a static key and
 value.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>key</code>
@@ -1063,14 +1059,14 @@ string
 <p>
 <p>GlobalRateLimitPolicy defines global rate limiting parameters.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>descriptors</code>
@@ -1098,14 +1094,14 @@ descriptor contains 1+ key-value pair entries.</p>
 <p>
 <p>HTTPHealthCheckPolicy defines health checks on the upstream service.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>path</code>
@@ -1195,14 +1191,14 @@ int64
 <p>
 <p>HTTPProxySpec defines the spec of the CRD.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>virtualhost</code>
@@ -1292,14 +1288,14 @@ is given precedence over this field.</p>
 <p>
 <p>HTTPProxyStatus reports the current state of the HTTPProxy.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>currentStatus</code>
@@ -1373,14 +1369,14 @@ namespace your condition with a label, like <code>controller.domain.com/Conditio
 <p>
 <p>HTTPRequestRedirectPolicy defines configuration for redirecting a request.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>scheme</code>
@@ -1483,14 +1479,14 @@ The prefix must start with a leading slash.</p>
 <p>HeaderHashOptions contains options to configure a HTTP request header hash
 policy, used in request attribute hash based load balancing.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>headerName</code>
@@ -1519,14 +1515,14 @@ request, no hash will be produced.</p>
 headers. The Name field is required, but only one of the remaining
 fields should be be provided.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -1638,14 +1634,14 @@ equal to. The condition is true if the header has any other value.</p>
 <p>
 <p>HeaderValue represents a header name/value pair</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -1685,14 +1681,14 @@ The <code>Host</code> header is treated specially and if set in a HTTP response
 will be used as the SNI server name when forwarding over TLS. It is an
 error to attempt to set the <code>Host</code> header in a HTTP response.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>set</code>
@@ -1733,14 +1729,14 @@ If the header does not exist it will be added, otherwise it will be overwritten 
 <p>
 <p>Include describes a set of policies that can be applied to an HTTPProxy in a namespace.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -1800,14 +1796,14 @@ include invalid.</p>
 <p>
 <p>LoadBalancerPolicy defines the load balancing policy.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>strategy</code>
@@ -1854,14 +1850,14 @@ strategy will fall back the the default <code>RoundRobin</code>.</p>
 <p>
 <p>LocalRateLimitPolicy defines local rate limiting parameters.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>requests</code>
@@ -1948,14 +1944,14 @@ set when a request is rate-limited.</p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
 One of Prefix or Header must be provided.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>prefix</code>
@@ -1999,14 +1995,14 @@ and has no subsequent effects on the proxy&rsquo;s routing decision.
 No HTTP headers or body content is rewritten.</p>
 <p>Exactly one field in this struct may be specified.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>replacePrefix</code>
@@ -2034,14 +2030,14 @@ No HTTP headers or body content is rewritten.</p>
 <p>QueryParameterHashOptions contains options to configure a query parameter based hash
 policy, used in request attribute hash based load balancing.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>parameterName</code>
@@ -2067,14 +2063,14 @@ request, no hash will be produced.</p>
 <p>
 <p>RateLimitDescriptor defines a list of key-value pair generators.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>entries</code>
@@ -2101,14 +2097,14 @@ request, no hash will be produced.</p>
 <p>RateLimitDescriptorEntry is a key-value pair generator. Exactly
 one field on this struct must be non-nil.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>genericKey</code>
@@ -2186,14 +2182,14 @@ and a value equal to the client&rsquo;s IP address (from x-forwarded-for).</p>
 <p>
 <p>RateLimitPolicy defines rate limiting parameters.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>local</code>
@@ -2250,14 +2246,14 @@ service (RLS) for a rate limit decision on each request.</p>
 <p>
 <p>ReplacePrefix describes a path prefix replacement.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>prefix</code>
@@ -2304,14 +2300,14 @@ will be replaced with. This must not be empty.</p>
 <p>RequestHashPolicy contains configuration for an individual hash policy
 on a request attribute.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>terminal</code>
@@ -2389,14 +2385,14 @@ otherwise this request hash policy object will be ignored.</p>
 if a given header is present on the request. The value of the descriptor
 entry is equal to the value of the header (if present).</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>headerName</code>
@@ -2434,14 +2430,14 @@ string
 if the request&rsquo;s headers match a set of 1+ match criteria. The descriptor key
 is &ldquo;header_match&rdquo;, and the descriptor value is statically defined.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>headers</code>
@@ -2487,7 +2483,7 @@ string
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.RetryOn">RetryOn
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.RetryPolicy">RetryPolicy</a>)
@@ -2504,14 +2500,14 @@ string
 <p>
 <p>RetryPolicy defines the attributes associated with retrying policy.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>count</code>
@@ -2601,14 +2597,14 @@ Ignored if NumRetries is not supplied.</p>
 <p>
 <p>Route contains the set of routes for a virtual host.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>conditions</code>
@@ -2853,14 +2849,14 @@ HTTPRequestRedirectPolicy
 <p>
 <p>Service defines an Kubernetes Service to proxy traffic.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -3003,14 +2999,14 @@ that is, they should be of the form &ldquo;ErrorPresent: true&rdquo;.</p>
 <p>The expected lifecycle for these errors is that they should only be present when the error or warning is,
 and should be removed when they are not relevant.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>type</code>
@@ -3079,14 +3075,14 @@ string
 <p>
 <p>TCPHealthCheckPolicy defines health checks on the upstream service.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>intervalSeconds</code>
@@ -3150,14 +3146,14 @@ uint32
 <p>
 <p>TCPProxy contains the set of services to proxy TCP connections.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>loadBalancerPolicy</code>
@@ -3248,14 +3244,14 @@ TCPHealthCheckPolicy
 <p>
 <p>TCPProxyInclude describes a target HTTPProxy document which contains the TCPProxy details.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -3293,14 +3289,14 @@ string
 <p>TLS describes tls properties. The SNI names that will be matched on
 are described in the HTTPProxy&rsquo;s Spec.VirtualHost.Fqdn field.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>secretName</code>
@@ -3396,14 +3392,14 @@ be applied which handles all requests which don&rsquo;t match the SNI defined in
 <p>
 <p>TLSCertificateDelegationSpec defines the spec of the CRD</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>delegations</code>
@@ -3429,14 +3425,14 @@ be applied which handles all requests which don&rsquo;t match the SNI defined in
 <p>TLSCertificateDelegationStatus allows for the status of the delegation
 to be presented to the user.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>conditions</code>
@@ -3477,14 +3473,14 @@ The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout
 A value of &ldquo;0s&rdquo; will be treated as if the field were not set, i.e. by using Envoy&rsquo;s default behavior.</p>
 <p>Example input values: &ldquo;300ms&rdquo;, &ldquo;5s&rdquo;, &ldquo;1m&rdquo;.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>response</code>
@@ -3541,14 +3537,14 @@ If not supplied, Envoy&rsquo;s default value of 1h applies.</p>
 <p>
 <p>UpstreamValidation defines how to verify the backend service&rsquo;s certificate</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>caSecret</code>
@@ -3585,14 +3581,14 @@ string
 <p>VirtualHost appears at most once. If it is present, the object is considered
 to be a &ldquo;root&rdquo;.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>fqdn</code>
@@ -3694,18 +3690,17 @@ Resource Types:
 <p>
 <p>ContourConfiguration is the schema for a Contour instance.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td>
-<code>apiVersion</code>
-<br>
+<code>apiVersion</code></br>
 string</td>
 <td>
 <code>
@@ -3715,8 +3710,7 @@ projectcontour.io/v1alpha1
 </tr>
 <tr>
 <td>
-<code>kind</code>
-<br>
+<code>kind</code></br>
 string
 </td>
 <td><code>ContourConfiguration</code></td>
@@ -3944,18 +3938,17 @@ ContourConfigurationStatus
 <p>
 <p>ContourDeployment is the schema for a Contour Deployment.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td>
-<code>apiVersion</code>
-<br>
+<code>apiVersion</code></br>
 string</td>
 <td>
 <code>
@@ -3965,8 +3958,7 @@ projectcontour.io/v1alpha1
 </tr>
 <tr>
 <td>
-<code>kind</code>
-<br>
+<code>kind</code></br>
 string
 </td>
 <td><code>ContourDeployment</code></td>
@@ -4080,18 +4072,17 @@ An ExtensionService resource binds a network service to the Contour
 API so that Contour API features can be implemented by collaborating
 components.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td>
-<code>apiVersion</code>
-<br>
+<code>apiVersion</code></br>
 string</td>
 <td>
 <code>
@@ -4101,8 +4092,7 @@ projectcontour.io/v1alpha1
 </tr>
 <tr>
 <td>
-<code>kind</code>
-<br>
+<code>kind</code></br>
 string
 </td>
 <td><code>ExtensionService</code></td>
@@ -4254,7 +4244,7 @@ ExtensionServiceStatus
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.AccessLogFields">AccessLogFields
-(<code>[]string</code> alias)</h3>
+(<code>[]string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging</a>)
@@ -4262,15 +4252,33 @@ ExtensionServiceStatus
 <p>
 </p>
 <h3 id="projectcontour.io/v1alpha1.AccessLogLevel">AccessLogLevel
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging</a>)
 </p>
 <p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;disabled&#34;</p></td>
+<td><p>Disable the access log.</p>
+</td>
+</tr><tr><td><p>&#34;error&#34;</p></td>
+<td><p>Log only requests that result in an error.</p>
+</td>
+</tr><tr><td><p>&#34;info&#34;</p></td>
+<td><p>Log all requests. This is the default.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.AccessLogType">AccessLogType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging</a>)
@@ -4278,8 +4286,29 @@ ExtensionServiceStatus
 <p>
 <p>AccessLogType is the name of a supported access logging mechanism.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;envoy&#34;</p></td>
+<td><p>DEFAULT_ACCESS_LOG_TYPE is the default access log format.
+nolint:revive</p>
+</td>
+</tr><tr><td><p>&#34;envoy&#34;</p></td>
+<td><p>Set the Envoy access logging to Envoy&rsquo;s standard format.
+Can be customized using <code>accessLogFormatString</code>.</p>
+</td>
+</tr><tr><td><p>&#34;json&#34;</p></td>
+<td><p>Set the Envoy access logging to a JSON format.
+Can be customized using <code>jsonFields</code>.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.ClusterDNSFamilyType">ClusterDNSFamilyType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>)
@@ -4288,6 +4317,24 @@ ExtensionServiceStatus
 <p>ClusterDNSFamilyType is the Ip family to use for resolving DNS
 names in an Envoy cluster config.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;auto&#34;</p></td>
+<td><p>DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
+</td>
+</tr><tr><td><p>&#34;v4&#34;</p></td>
+<td><p>DNS lookups will only attempt v4 queries.</p>
+</td>
+</tr><tr><td><p>&#34;v6&#34;</p></td>
+<td><p>DNS lookups will only attempt v6 queries.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters
 </h3>
 <p>
@@ -4297,14 +4344,14 @@ names in an Envoy cluster config.</p>
 <p>
 <p>ClusterParameters holds various configurable cluster values.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>dnsLookupFamily</code>
@@ -4327,7 +4374,8 @@ in the IPv4 family.
 Note: This only applies to externalName clusters.</p>
 <p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily</a>
 for more information.</p>
-<p>Contour&rsquo;s default is &ldquo;auto&rdquo;.</p>
+<p>Values: <code>auto</code> (default), <code>v4</code>, <code>v6</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 </tbody>
@@ -4344,14 +4392,14 @@ for more information.</p>
 It contains most of all the options that can be customized, the
 other remaining options being command line flags.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>xdsServer</code>
@@ -4533,14 +4581,14 @@ MetricsConfig
 <p>
 <p>ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>conditions</code>
@@ -4571,14 +4619,14 @@ in case some other controller wants to add a Condition.</p>
 <p>ContourDeploymentSpec specifies options for how a Contour
 instance should be provisioned.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>contour</code>
@@ -4644,14 +4692,14 @@ the Contour instance&rsquo;s runtime behavior.</p>
 <p>
 <p>ContourDeploymentStatus defines the observed state of a ContourDeployment resource.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>conditions</code>
@@ -4679,14 +4727,14 @@ the Contour instance&rsquo;s runtime behavior.</p>
 <p>ContourSettings contains settings for the Contour part of the installation,
 i.e. the xDS server/control plane and associated resources.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>replicas</code>
@@ -4726,14 +4774,14 @@ NodePlacement
 <p>
 <p>DebugConfig contains Contour specific troubleshooting options.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>address</code>
@@ -4776,7 +4824,8 @@ LogLevel
 <em>(Optional)</em>
 <p>DebugLogLevel defines the log level which Contour will
 use when outputting log information.</p>
-<p>Contour&rsquo;s default is &ldquo;info&rdquo;.</p>
+<p>Values: <code>info</code> (default), <code>debug</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -4806,14 +4855,14 @@ use when outputting Kubernetes specific log information.</p>
 <p>
 <p>EnvoyConfig defines how Envoy is to be Configured from Contour.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>listener</code>
@@ -4958,9 +5007,8 @@ EnvoyLogging
 versions the proxy should accept. HTTP versions are
 strings of the form &ldquo;HTTP/xx&rdquo;. Supported versions are
 &ldquo;HTTP/1.1&rdquo; and &ldquo;HTTP/2&rdquo;.</p>
-<p>Contour&rsquo;s default list is:
-- &ldquo;HTTP/1.1&rdquo;
-- &ldquo;HTTP/2&rdquo;</p>
+<p>Values: <code>HTTP/1.1</code>, <code>HTTP/2</code> (default: both).</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -5021,14 +5069,14 @@ NetworkParameters
 <p>
 <p>EnvoyListener defines parameters for an Envoy Listener.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>address</code>
@@ -5079,14 +5127,14 @@ string
 <p>
 <p>EnvoyListenerConfig hold various configurable Envoy listener values.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>useProxyProtocol</code>
@@ -5148,6 +5196,8 @@ string
 <p>ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig">https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig</a>
 for more information.</p>
+<p>Values: (empty string): use the default ConnectionBalancer, <code>exact</code>: use the Exact ConnectionBalancer.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -5176,14 +5226,14 @@ EnvoyTLS
 <p>
 <p>EnvoyLogging defines how Envoy&rsquo;s logs can be configured.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>accessLogFormat</code>
@@ -5196,9 +5246,9 @@ AccessLogType
 </td>
 <td>
 <em>(Optional)</em>
-<p>AccessLogFormat sets the global access log format.
-Valid options are &lsquo;envoy&rsquo; or &lsquo;json&rsquo;</p>
-<p>Contour&rsquo;s default is &ldquo;envoy&rdquo;.</p>
+<p>AccessLogFormat sets the global access log format.</p>
+<p>Values: <code>envoy</code> (default), <code>json</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -5243,9 +5293,9 @@ AccessLogLevel
 </td>
 <td>
 <em>(Optional)</em>
-<p>AccessLogLevel sets the verbosity level of the access log.
-Valid options are <code>info</code>, <code>error</code> and <code>disabled</code>.</p>
-<p>Contour&rsquo;s default is &ldquo;info&rdquo;, meaning all requests are logged..</p>
+<p>AccessLogLevel sets the verbosity level of the access log.</p>
+<p>Values: <code>info</code> (default, meaning all requests are logged), <code>error</code> and <code>disabled</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 </tbody>
@@ -5260,14 +5310,14 @@ Valid options are <code>info</code>, <code>error</code> and <code>disabled</code
 <p>EnvoySettings contains settings for the Envoy part of the installation,
 i.e. the xDS client/data plane and associated resources.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>workloadType</code>
@@ -5339,14 +5389,14 @@ NodePlacement
 <p>
 <p>EnvoyTLS describes tls parameters for Envoy listneners.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>minimumProtocolVersion</code>
@@ -5358,8 +5408,9 @@ string
 <td>
 <em>(Optional)</em>
 <p>MinimumProtocolVersion is the minimum TLS version this vhost should
-negotiate. Valid options are <code>1.2</code> (default) and <code>1.3</code>.</p>
-<p>Contour&rsquo;s default is &ldquo;1.2&rdquo;.</p>
+negotiate.</p>
+<p>Values: <code>1.2</code> (default), <code>1.3</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -5379,19 +5430,22 @@ listeners when negotiating TLS 1.2. Ciphers are validated against the
 set that Envoy supports by default. This parameter should only be used
 by advanced users. Note that these will be ignored when TLS 1.3 is in
 use.</p>
-<p>See: <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters</a>
-Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
+<p>This field is optional; when it is undefined, a Contour-managed ciphersuite list
+will be used, which may be updated to keep it secure.</p>
 <p>Contour&rsquo;s default list is:
 - &ldquo;[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]&rdquo;
 - &ldquo;[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]&rdquo;
 - &ldquo;ECDHE-ECDSA-AES256-GCM-SHA384&rdquo;
 - &ldquo;ECDHE-RSA-AES256-GCM-SHA384&rdquo;</p>
+<p>Contour recommends leaving this undefined unless you are sure you must.</p>
+<p>See: <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters</a>
+Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
 </td>
 </tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionProtocolVersion">ExtensionProtocolVersion
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
@@ -5401,6 +5455,23 @@ Note: This list is a superset of what is valid for stock Envoy builds and those 
 to access extension services. The only version currently supported
 is &ldquo;v3&rdquo;.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;v2&#34;</p></td>
+<td><p>SupportProtocolVersion2 requests the &ldquo;v2&rdquo; support protocol version.</p>
+<p>Deprecated: this protocol version is no longer supported and the
+constant is retained for backwards compatibility only.</p>
+</td>
+</tr><tr><td><p>&#34;v3&#34;</p></td>
+<td><p>SupportProtocolVersion3 requests the &ldquo;v3&rdquo; support protocol version.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec
 </h3>
 <p>
@@ -5410,14 +5481,14 @@ is &ldquo;v3&rdquo;.</p>
 <p>
 <p>ExtensionServiceSpec defines the desired state of an ExtensionService resource.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>services</code>
@@ -5529,14 +5600,14 @@ protocol options will be available in future.</p>
 <p>ExtensionServiceStatus defines the observed state of an
 ExtensionService resource.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>conditions</code>
@@ -5567,14 +5638,14 @@ in case some other controller wants to add a Condition.</p>
 <p>ExtensionServiceTarget defines an Kubernetes Service to target with
 extension service traffic.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -5624,14 +5695,14 @@ uint32
 <p>
 <p>GatewayConfig holds the config for Gateway API controllers.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>controllerName</code>
@@ -5678,14 +5749,14 @@ Exactly one of ControllerName or GatewayRef must be set.</p>
 <p>
 <p>HTTPProxyConfig defines parameters on HTTPProxy.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>disablePermitInsecure</code>
@@ -5733,7 +5804,7 @@ use as fallback when a non-SNI request is received.</p>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.HTTPVersionType">HTTPVersionType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
@@ -5741,6 +5812,21 @@ use as fallback when a non-SNI request is received.</p>
 <p>
 <p>HTTPVersionType is the name of a supported HTTP version.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;HTTP/1.1&#34;</p></td>
+<td><p>HTTPVersion1 is the name of the HTTP/1.1 version.</p>
+</td>
+</tr><tr><td><p>&#34;HTTP/2&#34;</p></td>
+<td><p>HTTPVersion2 is the name of the HTTP/2 version.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.HeadersPolicy">HeadersPolicy
 </h3>
 <p>
@@ -5749,14 +5835,14 @@ use as fallback when a non-SNI request is received.</p>
 </p>
 <p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>set</code>
@@ -5793,14 +5879,14 @@ map[string]string
 <p>
 <p>HealthConfig defines the endpoints to enable health checks.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>address</code>
@@ -5838,14 +5924,14 @@ int
 <p>
 <p>IngressConfig defines ingress specific config items.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>classNames</code>
@@ -5875,7 +5961,7 @@ string
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.LogLevel">LogLevel
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.DebugConfig">DebugConfig</a>)
@@ -5883,6 +5969,21 @@ string
 <p>
 <p>LogLevel is the logging levels available.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;debug&#34;</p></td>
+<td><p>DebugLog sets the log level for Contour to <code>debug</code>.</p>
+</td>
+</tr><tr><td><p>&#34;info&#34;</p></td>
+<td><p>InfoLog sets the log level for Contour to <code>info</code>.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.MetricsConfig">MetricsConfig
 </h3>
 <p>
@@ -5893,14 +5994,14 @@ string
 <p>
 <p>MetricsConfig defines the metrics endpoint.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>address</code>
@@ -5954,14 +6055,14 @@ Metrics and health endpoints cannot have same port number when metrics is served
 <p>
 <p>TLS holds TLS file config details.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>caFile</code>
@@ -6016,14 +6117,14 @@ string
 <p>NamespacedName defines the namespace/name of the Kubernetes resource referred from the config file.
 Used for Contour config YAML file parsing, otherwise we could use K8s types.NamespacedName.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>name</code>
@@ -6057,14 +6158,14 @@ string
 <p>
 <p>NetworkParameters hold various configurable network values.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>numTrustedHops</code>
@@ -6109,14 +6210,14 @@ If configured to port &ldquo;0&rdquo; then the admin interface is disabled.</p>
 <p>
 <p>NetworkPublishing defines the schema for publishing to a network.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>type</code>
@@ -6171,7 +6272,7 @@ the provisioned Envoy service.</p>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.NetworkPublishingType">NetworkPublishingType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing</a>)
@@ -6179,6 +6280,27 @@ the provisioned Envoy service.</p>
 <p>
 <p>NetworkPublishingType is a way to publish network endpoints.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;ClusterIPService&#34;</p></td>
+<td><p>ClusterIPServicePublishingType publishes a network endpoint using a Kubernetes
+ClusterIP Service.</p>
+</td>
+</tr><tr><td><p>&#34;LoadBalancerService&#34;</p></td>
+<td><p>LoadBalancerServicePublishingType publishes a network endpoint using a Kubernetes
+LoadBalancer Service.</p>
+</td>
+</tr><tr><td><p>&#34;NodePortService&#34;</p></td>
+<td><p>NodePortServicePublishingType publishes a network endpoint using a Kubernetes
+NodePort Service.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.NodePlacement">NodePlacement
 </h3>
 <p>
@@ -6191,14 +6313,14 @@ the provisioned Envoy service.</p>
 If nodeSelector and tolerations are specified, the scheduler will use both to
 determine where to place the pod(s).</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>nodeSelector</code>
@@ -6248,14 +6370,14 @@ for additional details.</p>
 <p>
 <p>PolicyConfig holds default policy used if not explicitly set by the user</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>requestHeaders</code>
@@ -6311,14 +6433,14 @@ bool
 <p>
 <p>RateLimitServiceConfig defines properties of a global Rate Limit Service.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>extensionService</code>
@@ -6389,14 +6511,14 @@ to clients when the Rate Limit Service is consulted for a request.</p>
 <p>
 <p>TLS holds TLS file config details.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>caFile</code>
@@ -6452,12 +6574,30 @@ bool
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.TLSCipherType">TLSCipherType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS</a>)
 </p>
 <p>
+<p>TLSCipherType is a string alias for the TLS ciphers supported by Envoy.</p>
+<p>Values:</p>
+<ul>
+<li>[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]</li>
+<li>[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]</li>
+<li>ECDHE-ECDSA-AES128-GCM-SHA256</li>
+<li>ECDHE-RSA-AES128-GCM-SHA256</li>
+<li>ECDHE-ECDSA-AES128-SHA</li>
+<li>ECDHE-RSA-AES128-SHA</li>
+<li>AES128-GCM-SHA256</li>
+<li>AES128-SHA</li>
+<li>ECDHE-ECDSA-AES256-GCM-SHA384</li>
+<li>ECDHE-RSA-AES256-GCM-SHA384</li>
+<li>ECDHE-ECDSA-AES256-SHA</li>
+<li>ECDHE-RSA-AES256-SHA</li>
+<li>AES256-GCM-SHA384</li>
+<li>AES256-SHA</li>
+</ul>
 </p>
 <h3 id="projectcontour.io/v1alpha1.TimeoutParameters">TimeoutParameters
 </h3>
@@ -6468,14 +6608,14 @@ bool
 <p>
 <p>TimeoutParameters holds various configurable proxy timeout values.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>requestTimeout</code>
@@ -6602,7 +6742,7 @@ for more information.</p>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.WorkloadType">WorkloadType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
@@ -6619,14 +6759,14 @@ for more information.</p>
 <p>
 <p>XDSServerConfig holds the config for the Contour xDS server.</p>
 </p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
+<table>
+<thead>
 <tr>
 <th>Field</th>
 <th>Description</th>
 </tr>
 </thead>
-<tbody class="border-top">
+<tbody>
 <tr>
 <td style="white-space:nowrap">
 <code>type</code>
@@ -6640,7 +6780,8 @@ XDSServerType
 <td>
 <em>(Optional)</em>
 <p>Defines the XDSServer to use for <code>contour serve</code>.</p>
-<p>Contour&rsquo;s default is &ldquo;contour&rdquo;.</p>
+<p>Values: <code>contour</code> (default), <code>envoy</code>.</p>
+<p>Other values will produce an error.</p>
 </td>
 </tr>
 <tr>
@@ -6690,7 +6831,7 @@ TLS
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.XDSServerType">XDSServerType
-(<code>string</code> alias)</h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig</a>)
@@ -6698,6 +6839,21 @@ TLS
 <p>
 <p>XDSServerType is the type of xDS server implementation.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;contour&#34;</p></td>
+<td><p>Use Contour&rsquo;s xDS server.</p>
+</td>
+</tr><tr><td><p>&#34;envoy&#34;</p></td>
+<td><p>Use the upstream <code>go-control-plane</code>-based xDS server.</p>
+</td>
+</tr></tbody>
+</table>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>.
