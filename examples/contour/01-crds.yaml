@@ -57,9 +57,9 @@ spec:
                     minimum: 0
                     type: integer
                   logLevel:
-                    description: "DebugLogLevel defines the log level which Contour
-                      will use when outputting log information. \n Values: `info`
-                      (default), `debug`. \n Other values will produce an error."
+                    description: "LogLevel defines the log level which Contour will
+                      use when outputting log information. \n Values: `info` (default),
+                      `debug`. \n Other values will produce an error."
                     type: string
                   port:
                     description: "Defines the Contour debug address port. \n Contour's
@@ -1069,7 +1069,7 @@ spec:
                         minimum: 0
                         type: integer
                       logLevel:
-                        description: "DebugLogLevel defines the log level which Contour
+                        description: "LogLevel defines the log level which Contour
                           will use when outputting log information. \n Values: `info`
                           (default), `debug`. \n Other values will produce an error."
                         type: string
