@@ -1,0 +1,1 @@
+Gateway API: fixes a bug where a route would be marked "Accepted: false" with reason "NoIntersectingHostnames" if it did not have intersecting hostnames with _every_ Listener. Now, as long as the route's hostnames intersect with at least one Listener, it's accepted.
