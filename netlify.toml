@@ -154,3 +154,21 @@ status = 302
 from = "/quickstart/*/kuard.yaml"
 to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/kuard/kuard.yaml"
 status = 302
+
+
+# Redirect /quickstart/gateway-provisioner.yaml to the Gateway provisioner manifest that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/gateway-provisioner.yaml
+[[redirects]]
+  from = "/quickstart/gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.21/examples/render/gateway-provisioner.yaml"
+  status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.4.0/gateway-provisioner.yaml
+[[redirects]]
+  from = "/quickstart/*/gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/gateway-provisioner.yaml"
+  status = 302

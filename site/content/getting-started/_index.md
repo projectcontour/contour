@@ -9,7 +9,7 @@ id: getting-started
 This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
-- using the Contour operator (experimental)
+- using the Contour gateway provisioner (alpha)
 
 It then shows how to deploy a sample workload and route traffic to it via Contour.
 
@@ -72,61 +72,72 @@ You should see the following:
 - 1 instance of service/my-release-contour-envoy
 
 
-### Option 3: Contour Operator (experimental)
+### Option 3: Contour Gateway Provisioner (alpha)
 
-**NOTE**: If you are using a kind cluster, the Contour Operator requires a different kind configuration file than [what is described in the guide][30].
-Recreate your kind cluster, following the guide but using the following Operator-compatible config file:
-```yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-- role: worker
-  extraPortMappings:
-  - containerPort: 30080
-    hostPort: 80
-    listenAddress: "0.0.0.0"
-  - containerPort: 30443
-    hostPort: 443
-    listenAddress: "0.0.0.0"
+The Gateway provisioner watches for the creation of [Gateway API][31] `Gateway` resources, and dynamically provisions Contour+Envoy instances based on the `Gateway's` spec.
+Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
+In fact, this guide will use an `Ingress` resource to define routing rules, even when using the Gateway provisioner for installation.
+
+
+Deploy the Gateway provisioner:
+```bash
+$ kubectl apply -f https://projectcontour.io/quickstart/gateway-provisioner.yaml
 ```
 
-Install the Contour Operator & Contour CRDs:
+Verify the Gateway provisioner deployment is available:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/operator.yaml
+$ kubectl -n projectcontour get deployments
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+contour-gateway-provisioner   1/1     1            1           1m
 ```
 
-Verify the Operator deployment is available:
+Create a GatewayClass:
 
-```bash
-$ kubectl get deploy -n contour-operator
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-contour-operator   1/1     1            1           1m
+```shell
+kubectl apply -f - <<EOF
+kind: GatewayClass
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: contour
+spec:
+  controllerName: projectcontour.io/gateway-controller
+EOF
 ```
 
-Install an instance of the `Contour` custom resource:
+Create a Gateway:
 
-```bash
-# If using a kind cluster
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/{{< param latest_version >}}/examples/contour/contour-nodeport.yaml
-
-# If using a cluster with support for services of type LoadBalancer
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/{{< param latest_version >}}/examples/contour/contour.yaml
+```shell
+kubectl apply -f - <<EOF
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+EOF
 ```
 
-Verify the `Contour` custom resource is available (it may take up to several minutes to become available):
+Verify the `Gateway` is available (it may take up to a minute to become available):
 
 ```bash
-$ kubectl get contour/contour-sample
-NAME             READY   REASON
-contour-sample   True    ContourAvailable
+$ kubectl -n projectcontour get gateways
+NAME        CLASS     ADDRESS         READY   AGE
+contour     contour                   True    27s
 ```
 
 Verify the Contour pods are ready by running the following: 
 
 ```bash
-$ kubectl get pods -n projectcontour -o wide
+$ kubectl -n projectcontour get pods
 ```
 
 You should see the following:
@@ -163,19 +174,21 @@ kubectl patch ingress httpbin -p '{"spec":{"ingressClassName": "contour"}}'
 
 Now we're ready to send some traffic to our sample application, via Contour & Envoy.
 
-If you're using a local kind cluster, the address you'll use is `127.0.0.1`.
+_Note, for simplicity and compatibility across all platforms we'll use `kubectl port-forward` to get traffic to Envoy, but in a production environment you would typically use the Envoy service's address._
 
-If you're using a cluster with support for services of type `LoadBalancer`, you'll use the external IP address of the `envoy` service:
-
-```bash
-# If using YAML or the Operator
-kubectl -n projectcontour get svc/envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+Port-forward from your local machine to the Envoy service:
+```shell
+# If using YAML
+$ kubectl -n projectcontour port-forward service/envoy 8888:80
 
 # If using Helm
-kubectl -n projectcontour get svc/my-release-contour-envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+$ kubectl -n projectcontour port-forward service/my-release-contour-envoy 8888:80
+
+# If using the Gateway provisioner
+$ kubectl -n projectcontour port-forward service/envoy-contour 8888:80
 ```
 
-Verify access to the sample application via Contour/Envoy by browsing to the above address, either in a browser or via `curl http://<ADDRESS>`.
+In a browser or via `curl`, make a request to http://local.projectcontour.io:8888 (note, `local.projectcontour.io` is a public DNS record resolving to 127.0.0.1 to make use of the forwarded port).
 You should see the `httpbin` home page.
 
 Congratulations, you have installed Contour, deployed a backend application, created an `Ingress` to route traffic to the application, and successfully accessed the app with Contour!
@@ -184,7 +197,7 @@ Congratulations, you have installed Contour, deployed a backend application, cre
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
-- Explore [contour-operator][14] (experimental) to manage multiple instances of contour
+- Explore the [Gateway API guide][14] (alpha)
 - Explore other [deployment options][1]
 
 Check out the following demo videos:
@@ -218,7 +231,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [11]: https://github.com/projectcontour/community/wiki/Office-Hours
 [12]: {{< param slack_url >}}
 [13]: https://projectcontour.io/resources/deprecation-policy/
-[14]: https://github.com/projectcontour/contour-operator/blob/main/README.md
+[14]: https://projectcontour.io/guides/gateway-api
 [15]: https://github.com/bitnami/charts/tree/master/bitnami/contour
 [16]: https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice
 [17]: /docs/{{< param latest_version >}}/troubleshooting
@@ -234,3 +247,4 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [28]: /guides/kind
 [29]: https://helm.sh/docs/intro/install/
 [30]: /guides/kind/#kind-configuration-file
+[31]: https://gateway-api.sigs.k8s.io/
