@@ -2,7 +2,7 @@
 
 <h3 id="{{ anchorIDForType . }}">
     {{- .Name.Name }}
-    {{ if eq .Kind "Alias" }}(<code>{{.Underlying}}</code> alias){{ end -}}
+    {{ if eq .Kind "Alias" }}(<code>{{.Underlying}}</code> alias)</p>{{ end -}}
 </h3>
 {{ with (typeReferences .) }}
     <p>
@@ -22,20 +22,40 @@
     {{ safe (renderComments .CommentLines) }}
 </p>
 
+{{ with (constantsOfType .) }}
+<table>
+    <thead>
+        <tr>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+      {{- range . -}}
+      <tr>
+        {{- /* renderComments implicitly creates a <p> element, so we do the
+               same here to make the value line up nicely.  */ -}}
+        <td><p>{{ typeDisplayName . }}</p></td>
+        <td>{{ safe (renderComments .CommentLines) }}</td>
+      </tr>
+      {{- end -}}
+    </tbody>
+</table>
+{{ end }}
+
 {{ if .Members }}
-<table class="table table-striped table-borderless" style="border:none">
-    <thead class="border-bottom">
+<table>
+    <thead>
         <tr>
             <th>Field</th>
             <th>Description</th>
         </tr>
     </thead>
-    <tbody class="border-top">
+    <tbody>
         {{ if isExportedType . }}
         <tr>
             <td>
-                <code>apiVersion</code>
-                <br>
+                <code>apiVersion</code></br>
                 string</td>
             <td>
                 <code>
@@ -45,8 +65,7 @@
         </tr>
         <tr>
             <td>
-                <code>kind</code>
-                <br>
+                <code>kind</code></br>
                 string
             </td>
             <td><code>{{.Name.Name}}</code></td>

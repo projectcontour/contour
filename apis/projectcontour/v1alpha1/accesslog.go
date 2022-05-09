@@ -134,8 +134,14 @@ func (a AccessLogType) Validate() error {
 	}
 }
 
-const EnvoyAccessLog AccessLogType = "envoy"
-const JSONAccessLog AccessLogType = "json"
+const (
+	// Set the Envoy access logging to Envoy's standard format.
+	// Can be customized using `accessLogFormatString`.
+	EnvoyAccessLog AccessLogType = "envoy"
+	// Set the Envoy access logging to a JSON format.
+	// Can be customized using `jsonFields`.
+	JSONAccessLog AccessLogType = "json"
+)
 
 type AccessLogFields []string
 
@@ -200,25 +206,29 @@ func (a AccessLogLevel) Validate() error {
 	}
 }
 
-const LogLevelInfo AccessLogLevel = "info" // Default log level.
-const LogLevelError AccessLogLevel = "error"
-const LogLevelDisabled AccessLogLevel = "disabled"
+const (
+	// Log all requests. This is the default.
+	LogLevelInfo AccessLogLevel = "info"
+	// Log only requests that result in an error.
+	LogLevelError AccessLogLevel = "error"
+	// Disable the access log.
+	LogLevelDisabled AccessLogLevel = "disabled"
+)
 
-// TODO: Commented code since it's not yet in use, but makes the linter unhappy.
-// func validateAccessLogFormatString(format string) error {
-//	// Empty format means use default format, defined by Envoy.
-//	if format == "" {
-//		return nil
-//	}
-//	err := parseAccessLogFormat(format)
-//	if err != nil {
-//		return fmt.Errorf("invalid access log format: %s", err)
-//	}
-//	if !strings.HasSuffix(format, "\n") {
-//		return fmt.Errorf("invalid access log format: must end in newline")
-//	}
-//	return nil
-//}
+func validateAccessLogFormatString(format string) error {
+	// Empty format means use default format, defined by Envoy.
+	if format == "" {
+		return nil
+	}
+	err := parseAccessLogFormat(format)
+	if err != nil {
+		return fmt.Errorf("invalid access log format: %s", err)
+	}
+	if !strings.HasSuffix(format, "\n") {
+		return fmt.Errorf("invalid access log format: must end in newline")
+	}
+	return nil
+}
 
 // commandOperatorRegexp parses the command operators used in Envoy access log config
 //

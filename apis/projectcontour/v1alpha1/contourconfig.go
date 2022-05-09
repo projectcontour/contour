@@ -80,14 +80,20 @@ type ContourConfigurationSpec struct {
 // XDSServerType is the type of xDS server implementation.
 type XDSServerType string
 
-const ContourServerType XDSServerType = "contour"
-const EnvoyServerType XDSServerType = "envoy"
+const (
+	// Use Contour's xDS server.
+	ContourServerType XDSServerType = "contour"
+	// Use the upstream `go-control-plane`-based xDS server.
+	EnvoyServerType XDSServerType = "envoy"
+)
 
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {
 	// Defines the XDSServer to use for `contour serve`.
 	//
-	// Contour's default is "contour".
+	// Values: `contour` (default), `envoy`.
+	//
+	// Other values will produce an error.
 	// +optional
 	Type XDSServerType `json:"type,omitempty"`
 
@@ -205,11 +211,15 @@ type MetricsTLS struct {
 }
 
 // HTTPVersionType is the name of a supported HTTP version.
-// +kubebuilder:validation:Enum="HTTP/1.1";"HTTP/2"
 type HTTPVersionType string
 
-const HTTPVersion1 HTTPVersionType = "HTTP/1.1"
-const HTTPVersion2 HTTPVersionType = "HTTP/2"
+const (
+	// HTTPVersion1 is the name of the HTTP/1.1 version.
+	HTTPVersion1 HTTPVersionType = "HTTP/1.1"
+
+	// HTTPVersion2 is the name of the HTTP/2 version.
+	HTTPVersion2 HTTPVersionType = "HTTP/2"
+)
 
 // EnvoyConfig defines how Envoy is to be Configured from Contour.
 type EnvoyConfig struct {
@@ -263,9 +273,9 @@ type EnvoyConfig struct {
 	// strings of the form "HTTP/xx". Supported versions are
 	// "HTTP/1.1" and "HTTP/2".
 	//
-	// Contour's default list is:
-	//   - "HTTP/1.1"
-	//   - "HTTP/2"
+	// Values: `HTTP/1.1`, `HTTP/2` (default: both).
+	//
+	// Other values will produce an error.
 	// +optional
 	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions,omitempty"`
 
@@ -287,8 +297,13 @@ type EnvoyConfig struct {
 // LogLevel is the logging levels available.
 type LogLevel string
 
-const InfoLog LogLevel = "info"
-const DebugLog LogLevel = "debug"
+const (
+	// InfoLog sets the log level for Contour to `info`.
+	InfoLog LogLevel = "info"
+
+	// DebugLog sets the log level for Contour to `debug`.
+	DebugLog LogLevel = "debug"
+)
 
 // DebugConfig contains Contour specific troubleshooting options.
 type DebugConfig struct {
@@ -307,8 +322,9 @@ type DebugConfig struct {
 	// DebugLogLevel defines the log level which Contour will
 	// use when outputting log information.
 	//
-	// Contour's default is "info".
-	// +kubebuilder:validation:Enum=info;debug
+	// Values: `info` (default), `debug`.
+	//
+	// Other values will produce an error.
 	// +optional
 	DebugLogLevel LogLevel `json:"logLevel,omitempty"`
 
@@ -353,7 +369,10 @@ type EnvoyListenerConfig struct {
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
-	// +kubebuilder:validation:Enum="";"exact"
+	//
+	// Values: (empty string): use the default ConnectionBalancer, `exact`: use the Exact ConnectionBalancer.
+	//
+	// Other values will produce an error.
 	// +optional
 	ConnectionBalancer string `json:"connectionBalancer,omitempty"`
 
@@ -362,16 +381,34 @@ type EnvoyListenerConfig struct {
 	TLS *EnvoyTLS `json:"tls,omitempty"`
 }
 
-// +kubebuilder:validation:Enum="[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES128-GCM-SHA256";"ECDHE-RSA-AES128-GCM-SHA256";"ECDHE-ECDSA-AES128-SHA";"ECDHE-RSA-AES128-SHA";"AES128-GCM-SHA256";"AES128-SHA";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384";"ECDHE-ECDSA-AES256-SHA";"ECDHE-RSA-AES256-SHA";"AES256-GCM-SHA384";"AES256-SHA"
+// TLSCipherType is a string alias for the TLS ciphers supported by Envoy.
+//
+// Values:
+//
+// * [ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]
+// * [ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]
+// * ECDHE-ECDSA-AES128-GCM-SHA256
+// * ECDHE-RSA-AES128-GCM-SHA256
+// * ECDHE-ECDSA-AES128-SHA
+// * ECDHE-RSA-AES128-SHA
+// * AES128-GCM-SHA256
+// * AES128-SHA
+// * ECDHE-ECDSA-AES256-GCM-SHA384
+// * ECDHE-RSA-AES256-GCM-SHA384
+// * ECDHE-ECDSA-AES256-SHA
+// * ECDHE-RSA-AES256-SHA
+// * AES256-GCM-SHA384
+// * AES256-SHA
 type TLSCipherType string
 
 // EnvoyTLS describes tls parameters for Envoy listneners.
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
-	// negotiate. Valid options are `1.2` (default) and `1.3`.
+	// negotiate.
 	//
-	// Contour's default is "1.2".
-	// +kubebuilder:validation:Enum="1.2";"1.3"
+	// Values: `1.2` (default), `1.3`.
+	//
+	// Other values will produce an error.
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
 
@@ -381,14 +418,19 @@ type EnvoyTLS struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	//
-	//See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
-	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
+	// This field is optional; when it is undefined, a Contour-managed ciphersuite list
+	// will be used, which may be updated to keep it secure.
 	//
 	// Contour's default list is:
 	//   - "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
 	//   - "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
 	//   - "ECDHE-ECDSA-AES256-GCM-SHA384"
 	//   - "ECDHE-RSA-AES256-GCM-SHA384"
+	//
+	// Contour recommends leaving this undefined unless you are sure you must.
+	//
+	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
+	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 	// +optional
 	CipherSuites []TLSCipherType `json:"cipherSuites,omitempty"`
 }
@@ -412,10 +454,10 @@ type EnvoyListener struct {
 // EnvoyLogging defines how Envoy's logs can be configured.
 type EnvoyLogging struct {
 	// AccessLogFormat sets the global access log format.
-	// Valid options are 'envoy' or 'json'
 	//
-	// Contour's default is "envoy".
-	// +kubebuilder:validation:Enum="envoy";"json"
+	// Values: `envoy` (default), `json`.
+	//
+	// Other values will produce an error.
 	// +optional
 	AccessLogFormat AccessLogType `json:"accessLogFormat,omitempty"`
 
@@ -430,10 +472,10 @@ type EnvoyLogging struct {
 	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
 
 	// AccessLogLevel sets the verbosity level of the access log.
-	// Valid options are `info`, `error` and `disabled`.
 	//
-	// Contour's default is "info", meaning all requests are logged..
-	// +kubebuilder:validation:Enum="info";"error";"disabled"
+	// Values: `info` (default, meaning all requests are logged), `error` and `disabled`.
+	//
+	// Other values will produce an error.
 	// +optional
 	AccessLogLevel AccessLogLevel `json:"accessLogLevel,omitempty"`
 }
@@ -513,9 +555,14 @@ type TimeoutParameters struct {
 // names in an Envoy cluster config.
 type ClusterDNSFamilyType string
 
-const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
-const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
-const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+const (
+	// DNS lookups will do a v6 lookup first, followed by a v4 if that fails.
+	AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
+	// DNS lookups will only attempt v4 queries.
+	IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
+	// DNS lookups will only attempt v6 queries.
+	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+)
 
 // ClusterParameters holds various configurable cluster values.
 type ClusterParameters struct {
@@ -531,8 +578,9 @@ type ClusterParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
 	// for more information.
 	//
-	// Contour's default is "auto".
-	// +kubebuilder:validation:Enum="auto";"v4";"v6"
+	// Values: `auto` (default), `v4`, `v6`.
+	//
+	// Other values will produce an error.
 	// +optional
 	DNSLookupFamily ClusterDNSFamilyType `json:"dnsLookupFamily,omitempty"`
 }

@@ -45,10 +45,10 @@ var DefaultTLSCiphers = TLSCiphers([]string{
 	// "AES256-SHA",
 })
 
-// validTLSCiphers contains the list of TLS ciphers that Envoy supports
+// ValidTLSCiphers contains the list of TLS ciphers that Envoy supports
 // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
-var validTLSCiphers = map[string]struct{}{
+var ValidTLSCiphers = map[string]struct{}{
 	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]": {},
 	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]":     {},
 	"ECDHE-ECDSA-AES128-GCM-SHA256":                                 {},
@@ -90,7 +90,7 @@ func (tlsCiphers TLSCiphers) Validate() error {
 	invalidCiphers := []string{}
 	for _, cipher := range tlsCiphers {
 		trimmed := strings.TrimSpace(cipher)
-		if _, ok := validTLSCiphers[trimmed]; !ok {
+		if _, ok := ValidTLSCiphers[trimmed]; !ok {
 			invalidCiphers = append(invalidCiphers, trimmed)
 		}
 	}
