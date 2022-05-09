@@ -156,19 +156,19 @@ to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/e
 status = 302
 
 
-# Redirect /quickstart/gateway-provisioner.yaml to the Gateway provisioner manifest that matches :latest.
+# Redirect /quickstart/contour-gateway-provisioner.yaml to the Gateway provisioner manifest that matches :latest.
 #
-# kubectl apply https://projectcontour.io/quickstart/gateway-provisioner.yaml
+# kubectl apply https://projectcontour.io/quickstart/contour-gateway-provisioner.yaml
 [[redirects]]
-  from = "/quickstart/gateway-provisioner.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.21/examples/render/gateway-provisioner.yaml"
+  from = "/quickstart/contour-gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.21/examples/render/contour-gateway-provisioner.yaml"
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
-# kubectl apply https://projectcontour.io/quickstart/v1.4.0/gateway-provisioner.yaml
+# kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour-gateway-provisioner.yaml
 [[redirects]]
-  from = "/quickstart/*/gateway-provisioner.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/gateway-provisioner.yaml"
+  from = "/quickstart/*/contour-gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour-gateway-provisioner.yaml"
   status = 302

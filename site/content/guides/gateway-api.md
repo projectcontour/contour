@@ -133,7 +133,7 @@ See the next section ([Testing the Gateway API](#testing-the-gateway-api)) for h
 
 Deploy the Gateway provisioner:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/gateway-provisioner.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway-provisioner.yaml
 ```
 
 This command creates:
