@@ -1,1 +1,0 @@
-Gateway API: when an `HTTPRoute` or `TLSRoute` has a cross-namespace backend ref that's not permitted by a `ReferencePolicy`, set the reason for the `ResolvedRefs: false` condition to `RefNotPermitted` instead of `Degraded`.
