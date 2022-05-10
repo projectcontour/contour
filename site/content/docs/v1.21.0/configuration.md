@@ -255,7 +255,8 @@ MetricsParameters holds configurable parameters for Contour and Envoy metrics.
 ### Metrics Server Parameters
 
 MetricsServerParameters holds configurable parameters for Contour and Envoy metrics.
-Metrics and health endpoints cannot have same port number when metrics is served over HTTPS.
+Metrics are served over HTTPS if `server-certificate-path` and `server-key-path` are set.
+Metrics and health endpoints cannot have the same port number when metrics are served over HTTPS.
 
 | Field Name              | Type   | Default                      | Description                                                                  |
 | ----------------------- | ------ | ---------------------------- | -----------------------------------------------------------------------------|
