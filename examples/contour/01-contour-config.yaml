@@ -160,3 +160,16 @@ data:
     #       # example: Envoy flags that provide additional details about the response or connection
     #       X-Envoy-Response-Flags: %RESPONSE_FLAGS%
     #
+    # metrics:
+    #  contour:
+    #    address: 0.0.0.0
+    #    port: 8000
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #  envoy:
+    #    address: 0.0.0.0
+    #    port: 8002
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
