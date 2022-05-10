@@ -233,6 +233,15 @@ The rate limit service configuration block is used to configure an optional glob
 ### Metrics Configuration
 
 MetricsParameters holds configurable parameters for Contour and Envoy metrics.
+
+| Field Name  | Type                    | Default | Description                                                          |
+| ----------- | ----------------------- | ------- | -------------------------------------------------------------------- |
+| contour     | MetricsServerParameters |         | [Metrics Server Parameters](#metrics-server-parameters) for Contour. |
+| envoy       | MetricsServerParameters |         | [Metrics Server Parameters](#metrics-server-parameters) for Envoy.   |
+
+### Metrics Server Parameters
+
+MetricsServerParameters holds configurable parameters for Contour and Envoy metrics.
 Metrics and health endpoints cannot have same port number when metrics is served over HTTPS.
 
 | Field Name              | Type   | Default                      | Description                                                                  |
@@ -394,6 +403,19 @@ data:
     #   Whether or not the policy settings should apply to ingress objects
     #   applyToIngress: true
     #
+    # metrics:
+    #  contour:
+    #    address: 0.0.0.0
+    #    port: 8000
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #  envoy:
+    #    address: 0.0.0.0
+    #    port: 8002
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
