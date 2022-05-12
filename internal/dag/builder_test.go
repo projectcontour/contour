@@ -10149,10 +10149,6 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
-								Name: s1.Name,
-								Port: 8080,
-							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 								Scheme:     pointer.StringPtr("https"),
 								Hostname:   pointer.StringPtr("envoyproxy.io"),
@@ -10176,16 +10172,6 @@ func TestDAGInsert(t *testing.T) {
 								PortNumber: 443,
 								StatusCode: 301,
 							},
-							Clusters: []*Cluster{{
-								Upstream: &Service{
-									Weighted: WeightedService{
-										Weight:           1,
-										ServiceName:      s1.Name,
-										ServiceNamespace: s1.Namespace,
-										ServicePort:      s1.Spec.Ports[0],
-									},
-								},
-							}},
 						},
 					)),
 				},
@@ -10258,10 +10244,6 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/blog",
 							}},
-							Services: []contour_api_v1.Service{{
-								Name: s1.Name,
-								Port: 8080,
-							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 								Scheme:     pointer.StringPtr("https"),
 								Hostname:   pointer.StringPtr("envoyproxy.io"),
@@ -10298,6 +10280,139 @@ func TestDAGInsert(t *testing.T) {
 								PortNumber: 443,
 								StatusCode: 301,
 							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request DirectResponse policy - code 200": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: pointer.Int(200),
+								Body:       pointer.StringPtr("success"),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 200,
+								Body:       "success",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request DirectResponse policy - no body": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: pointer.Int(503),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 503,
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request DirectResponse policy with multiple matches": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/direct",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: pointer.Int(404),
+								Body:       pointer.StringPtr("page not found"),
+							},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/redirect",
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									Weighted: WeightedService{
@@ -10308,6 +10423,22 @@ func TestDAGInsert(t *testing.T) {
 									},
 								},
 							}},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/direct"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 404,
+								Body:       "page not found",
+							},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/redirect"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
 						},
 					)),
 				},

@@ -1985,7 +1985,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyInvalidNoServices, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNoServices.Name, Namespace: proxyInvalidNoServices.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent", "route.services must have at least one entry"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid", "must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
 		},
 	})
 
@@ -2621,6 +2621,64 @@ func TestDAGStatus(t *testing.T) {
 			{Name: tlsPassthrough.Name, Namespace: tlsPassthrough.Namespace}: fixture.NewValidCondition().
 				WithGeneration(tlsPassthrough.Generation).
 				Valid(),
+		},
+	})
+
+	noRouteAction := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "noRouteAction",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+	run(t, "No routeAction specified is invalid", testcase{
+		objs: []interface{}{noRouteAction},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: noRouteAction.Name, Namespace: noRouteAction.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid",
+					"must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
+		},
+	})
+
+	multipleRouteAction := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "multipleRouteAction",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+					StatusCode: pointer.Int(200),
+					Body:       pointer.StringPtr("success"),
+				},
+			}},
+		},
+	}
+	run(t, "Selecting more than one routeAction is invalid", testcase{
+		objs: []interface{}{multipleRouteAction},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: multipleRouteAction.Name, Namespace: multipleRouteAction.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid",
+					"must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
 		},
 	})
 }
