@@ -2627,6 +2627,24 @@ spec:
                         - name
                         type: object
                       type: array
+                    directResponsePolicy:
+                      description: DirectResponsePolicy Return an arbitrary HTTP response
+                        directly.
+                      properties:
+                        body:
+                          description: Body is the content of the response body. If
+                            this setting is omitted, no body is included in the generated
+                            response.
+                          type: string
+                        statusCode:
+                          description: StatusCode is  the HTTP response status to
+                            be returned.
+                          maximum: 599
+                          minimum: 200
+                          type: integer
+                      required:
+                      - statusCode
+                      type: object
                     enableWebsockets:
                       description: Enables websocket support for the route.
                       type: boolean
