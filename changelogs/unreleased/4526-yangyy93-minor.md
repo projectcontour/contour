@@ -5,7 +5,3 @@ This policy will allow a direct response to be configured for a specific set of 
 The Policy can be configured with a `StatusCode`, `Body`. And the `StatusCode` is required.
 
 It is important to note that one of route.services or route.requestRedirectPolicy or route.directResponsePolicy must be specified.
-
-
-
-
