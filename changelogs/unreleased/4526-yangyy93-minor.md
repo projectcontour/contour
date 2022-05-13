@@ -1,4 +1,4 @@
-## HTTP Request Direct Response Policy
+## HTTPProxy Direct Response Policy
 
 HTTPProxy.Route now has a HTTPDirectResponsePolicy which allows for routes to specify a RequestDirectResponsePolicy.
 This policy will allow a direct response to be configured for a specific set of Conditions within a single route.
