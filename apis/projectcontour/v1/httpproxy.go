@@ -388,12 +388,12 @@ type HTTPDirectResponsePolicy struct {
 	// +required
 	// +kubebuilder:validation:Minimum=200
 	// +kubebuilder:validation:Maximum=599
-	StatusCode *int `json:"statusCode"`
+	StatusCode int `json:"statusCode"`
 
 	// Body is the content of the response body.
 	// If this setting is omitted, no body is included in the generated response.
 	// +optional
-	Body *string `json:"body,omitempty"`
+	Body string `json:"body,omitempty"`
 }
 
 // HTTPRequestRedirectPolicy defines configuration for redirecting a request.

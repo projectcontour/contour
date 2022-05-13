@@ -1981,11 +1981,11 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	run(t, "invalid HTTPProxy due to empty route.service", testcase{
+	run(t, "No routeAction specified is invalid", testcase{
 		objs: []interface{}{proxyInvalidNoServices, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNoServices.Name, Namespace: proxyInvalidNoServices.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid", "must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid", "must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
 		},
 	})
 
@@ -2624,31 +2624,6 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	noRouteAction := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "noRouteAction",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/foo",
-				}},
-			}},
-		},
-	}
-	run(t, "No routeAction specified is invalid", testcase{
-		objs: []interface{}{noRouteAction},
-		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: noRouteAction.Name, Namespace: noRouteAction.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid",
-					"must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
-		},
-	})
-
 	multipleRouteAction := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -2667,8 +2642,8 @@ func TestDAGStatus(t *testing.T) {
 					Port: 8080,
 				}},
 				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-					StatusCode: pointer.Int(200),
-					Body:       pointer.StringPtr("success"),
+					StatusCode: 200,
+					Body:       "success",
 				},
 			}},
 		},
@@ -2677,7 +2652,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{multipleRouteAction},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: multipleRouteAction.Name, Namespace: multipleRouteAction.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid",
+				WithError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid",
 					"must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
 		},
 	})

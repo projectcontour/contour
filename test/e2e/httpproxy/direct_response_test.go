@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func testDirectResponseRule(namespace string) {
@@ -77,22 +76,22 @@ func getDirectResponseHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
 				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/directresponse-nobody",
 				}},
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{StatusCode: pointer.Int(200)},
+				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{StatusCode: 200},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/directresponse",
 				}},
 				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-					StatusCode: pointer.Int(200),
-					Body:       pointer.StringPtr("directResponse success"),
+					StatusCode: 200,
+					Body:       "directResponse success",
 				},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/directresponse-notfound",
 				}},
 				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-					StatusCode: pointer.Int(404),
-					Body:       pointer.StringPtr("not found"),
+					StatusCode: 404,
+					Body:       "not found",
 				},
 			}},
 		},

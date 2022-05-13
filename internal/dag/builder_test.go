@@ -10302,8 +10302,8 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/",
 							}},
 							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-								StatusCode: pointer.Int(200),
-								Body:       pointer.StringPtr("success"),
+								StatusCode: 200,
+								Body:       "success",
 							},
 						}},
 					},
@@ -10342,7 +10342,7 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/",
 							}},
 							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-								StatusCode: pointer.Int(503),
+								StatusCode: 503,
 							},
 						}},
 					},
@@ -10388,8 +10388,8 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/direct",
 							}},
 							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-								StatusCode: pointer.Int(404),
-								Body:       pointer.StringPtr("page not found"),
+								StatusCode: 404,
+								Body:       "page not found",
 							},
 						}, {
 							Conditions: []contour_api_v1.MatchCondition{{

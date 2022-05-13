@@ -1180,15 +1180,5 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 		return nil
 	}
 
-	var statusCode int
-	if direct.StatusCode != nil {
-		statusCode = *direct.StatusCode
-	}
-
-	var body string
-	if direct.Body != nil {
-		body = *direct.Body
-	}
-
-	return directResponse(uint32(statusCode), body)
+	return directResponse(uint32(direct.StatusCode), direct.Body)
 }
