@@ -470,7 +470,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 	for _, route := range proxy.Spec.Routes {
 		if err := routeActionCountValid(route); err != nil {
-			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "routeActionCountNotValid", err.Error())
+			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid", err.Error())
 			return nil
 		}
 
