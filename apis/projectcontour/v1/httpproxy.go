@@ -384,7 +384,7 @@ type Route struct {
 }
 
 type HTTPDirectResponsePolicy struct {
-	// StatusCode is  the HTTP response status to be returned.
+	// StatusCode is the HTTP response status to be returned.
 	// +required
 	// +kubebuilder:validation:Minimum=200
 	// +kubebuilder:validation:Maximum=599
