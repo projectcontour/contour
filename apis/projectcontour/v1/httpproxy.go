@@ -378,7 +378,7 @@ type Route struct {
 	// +optional
 	RequestRedirectPolicy *HTTPRequestRedirectPolicy `json:"requestRedirectPolicy,omitempty"`
 
-	// DirectResponsePolicy Return an arbitrary HTTP response directly.
+	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
 }
