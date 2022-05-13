@@ -10325,7 +10325,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"HTTPProxy request DirectResponse policy - no body": {
+		"HTTPProxy DirectResponse policy - no body": {
 			objs: []interface{}{
 				s1,
 				&contour_api_v1.HTTPProxy{
