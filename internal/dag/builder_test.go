@@ -10363,7 +10363,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"HTTPProxy request DirectResponse policy with multiple matches": {
+		"HTTPProxy DirectResponse policy with multiple matches": {
 			objs: []interface{}{
 				s1,
 				&contour_api_v1.HTTPProxy{
