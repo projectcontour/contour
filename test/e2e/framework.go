@@ -102,6 +102,8 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
+	ipV6Cluster := os.Getenv("IPV6_CLUSTER") == "true"
+
 	config, err := config.GetConfig()
 	require.NoError(t, err)
 
@@ -129,22 +131,38 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 
 	httpURLBase := os.Getenv("CONTOUR_E2E_HTTP_URL_BASE")
 	if httpURLBase == "" {
-		httpURLBase = "http://127.0.0.1:9080"
+		if ipV6Cluster {
+			httpURLBase = "http://[::1]:9080"
+		} else {
+			httpURLBase = "http://127.0.0.1:9080"
+		}
 	}
 
 	httpsURLBase := os.Getenv("CONTOUR_E2E_HTTPS_URL_BASE")
 	if httpsURLBase == "" {
-		httpsURLBase = "https://127.0.0.1:9443"
+		if ipV6Cluster {
+			httpsURLBase = "https://[::1]:9443"
+		} else {
+			httpsURLBase = "https://127.0.0.1:9443"
+		}
 	}
 
 	httpURLMetricsBase := os.Getenv("CONTOUR_E2E_HTTP_URL_METRICS_BASE")
 	if httpURLMetricsBase == "" {
-		httpURLMetricsBase = "http://127.0.0.1:8002"
+		if ipV6Cluster {
+			httpURLMetricsBase = "http://[::1]:8002"
+		} else {
+			httpURLMetricsBase = "http://127.0.0.1:8002"
+		}
 	}
 
 	httpURLAdminBase := os.Getenv("CONTOUR_E2E_HTTP_URL_ADMIN_BASE")
 	if httpURLAdminBase == "" {
-		httpURLAdminBase = "http://127.0.0.1:19001"
+		if ipV6Cluster {
+			httpURLAdminBase = "http://[::1]:19001"
+		} else {
+			httpURLAdminBase = "http://127.0.0.1:19001"
+		}
 	}
 
 	var (

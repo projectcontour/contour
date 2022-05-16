@@ -436,6 +436,19 @@ func (d *Deployment) EnsureRateLimitResources(namespace string, configContents s
 
 	deployment := d.RateLimitDeployment.DeepCopy()
 	deployment.Namespace = setNamespace
+	if os.Getenv("IPV6_CLUSTER") == "true" {
+		for i, c := range deployment.Spec.Template.Spec.Containers {
+			if c.Name != "ratelimit" {
+				continue
+			}
+			deployment.Spec.Template.Spec.Containers[i].Env = append(
+				deployment.Spec.Template.Spec.Containers[i].Env,
+				v1.EnvVar{Name: "HOST", Value: "::"},
+				v1.EnvVar{Name: "GRPC_HOST", Value: "::"},
+				v1.EnvVar{Name: "DEBUG_HOST", Value: "::"},
+			)
+		}
+	}
 	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
 		return err
 	}
@@ -624,7 +637,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 
 		// Set the xds server to the defined testing port as well as enable insecure communication.
 		contourConfiguration.Spec.XDSServer.Port = port
-		contourConfiguration.Spec.XDSServer.Address = "0.0.0.0"
+		contourConfiguration.Spec.XDSServer.Address = listenAllAddress()
 		contourConfiguration.Spec.XDSServer.TLS = &contour_api_v1alpha1.TLS{
 			Insecure: pointer.Bool(true),
 		}
@@ -659,8 +672,14 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 
 		contourServeArgs = append([]string{
 			"serve",
-			"--xds-address=0.0.0.0",
+			"--xds-address=" + listenAllAddress(),
 			"--xds-port=" + d.localContourPort,
+			"--stats-address=" + listenAllAddress(),
+			"--debug-http-address=" + localAddress(),
+			"--http-address=" + listenAllAddress(),
+			"--envoy-service-http-address=" + listenAllAddress(),
+			"--envoy-service-https-address=" + listenAllAddress(),
+			"--health-address=" + listenAllAddress(),
 			"--insecure",
 			"--kubeconfig=" + d.kubeConfig,
 			"--config-path=" + configFile.Name(),
@@ -675,6 +694,20 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		return nil, "", err
 	}
 	return session, configReferenceName, nil
+}
+
+func listenAllAddress() string {
+	if os.Getenv("IPV6_CLUSTER") == "true" {
+		return "::"
+	}
+	return "0.0.0.0"
+}
+
+func localAddress() string {
+	if os.Getenv("IPV6_CLUSTER") == "true" {
+		return "::1"
+	}
+	return "127.0.0.1"
 }
 
 func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile string) error {

@@ -25,6 +25,7 @@ readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
+readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.23.0"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
@@ -40,6 +41,9 @@ kind::cluster::create() {
     local config_file="${REPO}/test/scripts/kind-expose-port.yaml"
     if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
         config_file="${REPO}/test/scripts/kind-multinode.yaml"
+    fi
+    if [[ "${IPV6_CLUSTER}" == "true" ]]; then
+        config_file="${REPO}/test/scripts/kind-ipv6.yaml"
     fi
     ${KIND} create cluster \
         --name "${CLUSTERNAME}" \
@@ -90,10 +94,17 @@ if ! kubectl get secret -n metallb-system memberlist; then
 fi
 ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
 # Apply config with addresses based on docker network IPAM
-subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
-# Assume default kind network subnet prefix of 16, and choose addresses in that range.
-address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
-address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
+if [[ "${IPV6_CLUSTER}" == "true" ]]; then
+    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":"))')
+    # Assume default kind network subnet prefix of 64, and choose addresses in that range.
+    address_first_blocks=$(echo ${subnet} | awk -F: '{printf "%s:%s:%s:%s",$1,$2,$3,$4}')
+    address_range="${address_first_blocks}:ffff:ffff:ffff::-${address_first_blocks}:ffff:ffff:ffff:003f"
+else
+    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
+    # Assume default kind network subnet prefix of 16, and choose addresses in that range.
+    address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
+    address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
+fi
 ${KUBECTL} apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap

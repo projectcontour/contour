@@ -348,7 +348,7 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 		Spec: contour_api_v1alpha1.ContourConfigurationSpec{
 			XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 				Type:    XDSServerTypeFromEnv(),
-				Address: "0.0.0.0",
+				Address: listenAllAddress(),
 				Port:    8001,
 				TLS: &contour_api_v1alpha1.TLS{
 					CAFile:   "/certs/ca.crt",
@@ -358,13 +358,13 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 				},
 			},
 			Debug: &contour_api_v1alpha1.DebugConfig{
-				Address:                 "127.0.0.1",
+				Address:                 localAddress(),
 				Port:                    6060,
 				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 				KubernetesDebugLogLevel: contourconfig.UIntPtr(0),
 			},
 			Health: &contour_api_v1alpha1.HealthConfig{
-				Address: "0.0.0.0",
+				Address: listenAllAddress(),
 				Port:    8000,
 			},
 			Envoy: &contour_api_v1alpha1.EnvoyConfig{
@@ -390,21 +390,21 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					Namespace: "projectcontour",
 				},
 				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
-					Address:   "0.0.0.0",
+					Address:   listenAllAddress(),
 					Port:      8080,
 					AccessLog: "/dev/stdout",
 				},
 				HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
-					Address:   "0.0.0.0",
+					Address:   listenAllAddress(),
 					Port:      8443,
 					AccessLog: "/dev/stdout",
 				},
 				Health: &contour_api_v1alpha1.HealthConfig{
-					Address: "0.0.0.0",
+					Address: listenAllAddress(),
 					Port:    8002,
 				},
 				Metrics: &contour_api_v1alpha1.MetricsConfig{
-					Address: "0.0.0.0",
+					Address: listenAllAddress(),
 					Port:    8002,
 				},
 				Logging: &contour_api_v1alpha1.EnvoyLogging{
@@ -422,7 +422,7 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 			},
 			EnableExternalNameService: pointer.Bool(false),
 			Metrics: &contour_api_v1alpha1.MetricsConfig{
-				Address: "0.0.0.0",
+				Address: listenAllAddress(),
 				Port:    8000,
 			},
 		},

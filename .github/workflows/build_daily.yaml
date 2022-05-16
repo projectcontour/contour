@@ -77,3 +77,37 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  e2e-ipv6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.1'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
+          IPV6_CLUSTER: "true"
+        run: |
+          export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep -v link | grep -v host | head -n1 | awk '{print $2}')
+          make setup-kind-cluster run-e2e cleanup-kind
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
