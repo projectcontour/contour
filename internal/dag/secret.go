@@ -75,9 +75,8 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 		}
 
 		data, ok := secret.Data[CACertificateKey]
-
-		// Secret is not a CA
 		if !ok {
+			// Secret is not a CA
 			return false, nil
 		}
 
