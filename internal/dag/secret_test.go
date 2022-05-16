@@ -359,7 +359,6 @@ func TestIsValidSecret(t *testing.T) {
 			valid: true,
 			err:   nil,
 		},
-		// Opaque Secret, CA Cert with No CN
 		"Opaque Secret, CA Cert with No CN": {
 			secret: &v1.Secret{
 				Type: v1.SecretTypeOpaque,
@@ -379,6 +378,16 @@ func TestIsValidSecret(t *testing.T) {
 			},
 			valid: false,
 			err:   errors.New("can't use zero-length ca.crt value"),
+		},
+		"Opaque Secret, no CA Cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"some-other-key": []byte("value"),
+				},
+			},
+			valid: false,
+			err:   nil,
 		},
 		// Opaque Secret with TLS cert details won't be added.
 		"Opaque Secret, with TLS Cert and Key": {
