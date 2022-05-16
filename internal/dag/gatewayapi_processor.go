@@ -338,6 +338,10 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 		return nil, nil, nil
 	}
 
+	// Get a list of the route kinds that the listener accepts.
+	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
+	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
+
 	var listenerSecret *Secret
 
 	// Validate TLS details for HTTPS/TLS protocol listeners.
@@ -397,10 +401,6 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 			}
 		}
 	}
-
-	// Get a list of the route kinds that the listener accepts.
-	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
-	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
 
 	var httpRoutes []*gatewayapi_v1alpha2.HTTPRoute
 	var tlsRoutes []*gatewayapi_v1alpha2.TLSRoute
