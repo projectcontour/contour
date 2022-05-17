@@ -22,7 +22,6 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -358,10 +357,8 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 				},
 			},
 			Debug: &contour_api_v1alpha1.DebugConfig{
-				Address:                 "127.0.0.1",
-				Port:                    6060,
-				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
-				KubernetesDebugLogLevel: contourconfig.UIntPtr(0),
+				Address: "127.0.0.1",
+				Port:    6060,
 			},
 			Health: &contour_api_v1alpha1.HealthConfig{
 				Address: "0.0.0.0",
