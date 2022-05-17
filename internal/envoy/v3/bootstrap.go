@@ -308,7 +308,7 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 }
 
 func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_tls_v3.UpstreamTlsContext {
-	context := &envoy_tls_v3.UpstreamTlsContext{
+	return &envoy_tls_v3.UpstreamTlsContext{
 		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_tls_v3.TlsParameters{
 				TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
@@ -317,8 +317,10 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 				Name: "contour_xds_tls_certificate",
 				SdsConfig: &envoy_core_v3.ConfigSource{
 					ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
-						Path: certificateSdsFile,
+					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
+						PathConfigSource: &envoy_core_v3.PathConfigSource{
+							Path: certificateSdsFile,
+						},
 					},
 				},
 			}},
@@ -327,15 +329,16 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 					Name: "contour_xds_tls_validation_context",
 					SdsConfig: &envoy_core_v3.ConfigSource{
 						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
-							Path: validationSdsFile,
+						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
+							PathConfigSource: &envoy_core_v3.PathConfigSource{
+								Path: validationSdsFile,
+							},
 						},
 					},
 				},
 			},
 		},
 	}
-	return context
 }
 
 // tlsCertificateSdsSecretConfig creates DiscoveryResponse with file based SDS resource
