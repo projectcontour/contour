@@ -46,22 +46,31 @@ func TestProvisioner(t *testing.T) {
 var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
 
-	params := &contour_api_v1alpha1.ContourDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "projectcontour",
-			Name:      "basic-contour",
-		},
-		Spec: contour_api_v1alpha1.ContourDeploymentSpec{
-			RuntimeSettings: contourDeploymentRuntimeSettings(),
-		},
-	}
-	require.NoError(f.T(), f.Client.Create(context.Background(), params))
-
 	gc := &gatewayapi_v1alpha2.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour",
 		},
-		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
+	}
+
+	runtimeSettings := contourDeploymentRuntimeSettings()
+	// This will be non-nil if we are in an ipv6 cluster since we need to
+	// set listen addresses correctly. In that case, we can forgo the
+	// coverage of a GatewayClass without parameters set. For a regular
+	// cluster we will still have a basic GatewayClass without any
+	// parameters to ensure that case is covered.
+	if runtimeSettings != nil {
+		params := &contour_api_v1alpha1.ContourDeployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "projectcontour",
+				Name:      "basic-contour",
+			},
+			Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+				RuntimeSettings: runtimeSettings,
+			},
+		}
+		require.NoError(f.T(), f.Client.Create(context.Background(), params))
+
+		gc.Spec = gatewayapi_v1alpha2.GatewayClassSpec{
 			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
 			ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
 				Group:     "projectcontour.io",
@@ -69,7 +78,7 @@ var _ = BeforeSuite(func() {
 				Namespace: gatewayapi.NamespacePtr(params.Namespace),
 				Name:      params.Name,
 			},
-		},
+		}
 	}
 
 	_, ok := f.CreateGatewayClassAndWaitFor(gc, gatewayClassAccepted)
@@ -84,7 +93,7 @@ var _ = BeforeSuite(func() {
 			Envoy: &contour_api_v1alpha1.EnvoySettings{
 				WorkloadType: contour_api_v1alpha1.WorkloadTypeDeployment,
 			},
-			RuntimeSettings: contourDeploymentRuntimeSettings(),
+			RuntimeSettings: runtimeSettings,
 		},
 	}
 	require.NoError(f.T(), f.Client.Create(context.Background(), paramsEnvoyDeployment))
