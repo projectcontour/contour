@@ -35,21 +35,6 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		require.Error(t, c.Validate())
 	})
 
-	t.Run("debug log level validation", func(t *testing.T) {
-		c := ContourConfigurationSpec{
-			Debug: &DebugConfig{},
-		}
-
-		c.Debug.DebugLogLevel = InfoLog
-		require.NoError(t, c.Validate())
-
-		c.Debug.DebugLogLevel = DebugLog
-		require.NoError(t, c.Validate())
-
-		c.Debug.DebugLogLevel = "foo"
-		require.Error(t, c.Validate())
-	})
-
 	t.Run("envoy validation", func(t *testing.T) {
 		c := ContourConfigurationSpec{
 			Envoy: &EnvoyConfig{

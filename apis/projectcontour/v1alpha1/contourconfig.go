@@ -318,26 +318,6 @@ type DebugConfig struct {
 	// Contour's default is 6060.
 	// +optional
 	Port int `json:"port,omitempty"`
-
-	// DebugLogLevel defines the log level which Contour will
-	// use when outputting log information.
-	//
-	// Values: `info` (default), `debug`.
-	//
-	// Other values will produce an error.
-	// +optional
-	DebugLogLevel LogLevel `json:"logLevel,omitempty"`
-
-	// KubernetesDebugLogLevel defines the log level which Contour will
-	// use when outputting Kubernetes specific log information.
-	//
-	// Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
-	//
-	// Contour's default is 0.
-	// +optional
-	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:validation:Maximum=9
-	KubernetesDebugLogLevel *uint `json:"kubernetesLogLevel,omitempty"`
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.

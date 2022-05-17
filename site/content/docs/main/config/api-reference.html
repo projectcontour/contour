@@ -4810,40 +4810,6 @@ int
 <p>Contour&rsquo;s default is 6060.</p>
 </td>
 </tr>
-<tr>
-<td style="white-space:nowrap">
-<code>logLevel</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.LogLevel">
-LogLevel
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DebugLogLevel defines the log level which Contour will
-use when outputting log information.</p>
-<p>Values: <code>info</code> (default), <code>debug</code>.</p>
-<p>Other values will produce an error.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>kubernetesLogLevel</code>
-<br>
-<em>
-uint
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>KubernetesDebugLogLevel defines the log level which Contour will
-use when outputting Kubernetes specific log information.</p>
-<p>Details: <a href="https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md">https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md</a></p>
-<p>Contour&rsquo;s default is 0.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig
@@ -5962,10 +5928,6 @@ string
 </table>
 <h3 id="projectcontour.io/v1alpha1.LogLevel">LogLevel
 (<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.DebugConfig">DebugConfig</a>)
-</p>
 <p>
 <p>LogLevel is the logging levels available.</p>
 </p>

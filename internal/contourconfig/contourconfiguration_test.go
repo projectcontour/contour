@@ -43,10 +43,8 @@ func TestOverlayOnDefaults(t *testing.T) {
 			StatusAddress: "7.7.7.7",
 		},
 		Debug: &contour_api_v1alpha1.DebugConfig{
-			Address:                 "1.2.3.4",
-			Port:                    6789,
-			DebugLogLevel:           contour_api_v1alpha1.DebugLog,
-			KubernetesDebugLogLevel: contourconfig.UIntPtr(7),
+			Address: "1.2.3.4",
+			Port:    6789,
 		},
 		Health: &contour_api_v1alpha1.HealthConfig{
 			Address: "2.3.4.5",
