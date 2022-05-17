@@ -103,8 +103,10 @@ jobs:
           CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
           IPV6_CLUSTER: "true"
         run: |
-          export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep -v link | grep -v host | head -n1 | awk '{print $2}')
-          make setup-kind-cluster run-e2e cleanup-kind
+          # Set up cluster to ensure we have a docker bridge network to find a non-local ip from.
+          make setup-kind-cluster
+          export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep global | head -n1 | awk '{print $2}')
+          make run-e2e cleanup-kind
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
