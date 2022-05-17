@@ -50,6 +50,9 @@ var _ = BeforeSuite(func() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour",
 		},
+		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
+			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
+		},
 	}
 
 	runtimeSettings := contourDeploymentRuntimeSettings()
@@ -70,14 +73,11 @@ var _ = BeforeSuite(func() {
 		}
 		require.NoError(f.T(), f.Client.Create(context.Background(), params))
 
-		gc.Spec = gatewayapi_v1alpha2.GatewayClassSpec{
-			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
-			ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
-				Group:     "projectcontour.io",
-				Kind:      "ContourDeployment",
-				Namespace: gatewayapi.NamespacePtr(params.Namespace),
-				Name:      params.Name,
-			},
+		gc.Spec.ParametersRef = &gatewayapi_v1alpha2.ParametersReference{
+			Group:     "projectcontour.io",
+			Kind:      "ContourDeployment",
+			Namespace: gatewayapi.NamespacePtr(params.Namespace),
+			Name:      params.Name,
 		}
 	}
 
