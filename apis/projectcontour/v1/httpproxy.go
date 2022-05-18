@@ -392,6 +392,10 @@ type HTTPDirectResponsePolicy struct {
 
 	// Body is the content of the response body.
 	// If this setting is omitted, no body is included in the generated response.
+	//
+	// Note: Body is not recommended to set too long
+	// otherwise it can have significant resource usage impacts.
+	//
 	// +optional
 	Body string `json:"body,omitempty"`
 }
