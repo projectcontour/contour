@@ -215,12 +215,12 @@ func validatePrivateKey(data []byte) error {
 		}
 		switch block.Type {
 		case "PRIVATE KEY":
-			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
 				return err
 			}
 			keys++
 		case "RSA PRIVATE KEY":
-			if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+			if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 				return err
 			}
 			keys++
