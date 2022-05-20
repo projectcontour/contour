@@ -1,0 +1,1 @@
+Gateway API: return a 404 instead of a 503 when there are no valid backend refs for an HTTPRoute rule, to match the [revised Gateway API spec](https://github.com/kubernetes-sigs/gateway-api/pull/1151).
