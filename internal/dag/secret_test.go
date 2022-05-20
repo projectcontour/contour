@@ -323,6 +323,60 @@ func TestIsValidSecret(t *testing.T) {
 			valid: true,
 			err:   nil,
 		},
+		"TLS Secret, certificate, missing key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey: []byte(fixture.CERTIFICATE),
+				},
+			},
+			valid: false,
+			err:   errors.New("missing TLS private key"),
+		},
+		"TLS Secret, certificate, multiple keys, RSA and EC": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY + "\n" + fixture.EC_PRIVATE_KEY + "\n" + fixture.PKCS8_PRIVATE_KEY),
+				},
+			},
+			valid: false,
+			err:   errors.New("invalid TLS private key: multiple private keys"),
+		},
+		"TLS Secret, certificate, multiple keys, PKCS1 and PKCS8": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY + "\n" + fixture.PKCS8_PRIVATE_KEY),
+				},
+			},
+			valid: false,
+			err:   errors.New("invalid TLS private key: multiple private keys"),
+		},
+		"TLS Secret, certificate, invalid key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte("-----BEGIN RSA PRIVATE KEY-----\ninvalid\n-----END RSA PRIVATE KEY-----"),
+				},
+			},
+			valid: false,
+			err:   errors.New("invalid TLS private key: failed to parse PEM block"),
+		},
+		"TLS Secret, certificate, only EC parameters": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.EC_PARAMETERS),
+				},
+			},
+			valid: false,
+			err:   errors.New("invalid TLS private key: failed to locate private key"),
+		},
 		// The next two test cases are to cover
 		// #3496.
 		//
