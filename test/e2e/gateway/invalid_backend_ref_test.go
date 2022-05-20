@@ -27,8 +27,8 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func testInvalidForwardTo(namespace string) {
-	Specify("invalid forward to returns 503 status code", func() {
+func testInvalidBackendRef(namespace string) {
+	Specify("invalid backend ref returns 404 status code", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
@@ -39,7 +39,7 @@ func testInvalidForwardTo(namespace string) {
 				Name:      "http-filter-1",
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"invalidforwardto.projectcontour.io"},
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"invalidbackendref.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
@@ -145,11 +145,11 @@ func testInvalidForwardTo(namespace string) {
 			},
 			{
 				path:           "/invalidref",
-				expectResponse: 503,
+				expectResponse: 404,
 			},
 			{
 				path:           "/invalidservicename",
-				expectResponse: 503,
+				expectResponse: 404,
 			},
 		}
 
