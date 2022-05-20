@@ -5,8 +5,8 @@ set -o nounset
 set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
-readonly KUBECTL_VERS="v1.23.0"
-readonly KIND_VERS="v0.11.1"
+readonly KUBECTL_VERS="v1.24.0"
+readonly KIND_VERS="v0.14.0"
 readonly SONOBUOY_VERS="0.19.0"
 readonly KUBEBUILDER_VERS="3.1.0"
 
