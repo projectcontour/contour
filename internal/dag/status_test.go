@@ -3337,7 +3337,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3394,7 +3394,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3448,7 +3448,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3547,7 +3547,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
