@@ -290,7 +290,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		}
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeNodePort
-		
+
 		for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
 			if p.PortNumber == nil {
 				continue
@@ -357,7 +357,7 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 	}
 	_, updated := equality.ClusterIPServiceChanged(current, desired)
 	if !updated {
-		return nil 
+		return nil
 	}
 	if err := cli.Update(ctx, desired); err != nil {
 		return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
