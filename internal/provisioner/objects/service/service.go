@@ -108,37 +108,40 @@ var (
 	}
 )
 
-type desiredService func(*model.Contour) *corev1.Service
-type currentService func(context.Context, client.Client, *model.Contour) (*corev1.Service, error)
-type serviceUpdater func(context.Context, client.Client, *model.Contour, *corev1.Service, *corev1.Service) error
-
-func ensureServiceHelper(ctx context.Context, cli client.Client, contour *model.Contour, desiredSvc desiredService, currentSvc currentService, updater serviceUpdater) error {
-	desired := desiredSvc(contour)
-	current, err := currentSvc(ctx, cli, contour)
+// EnsureContourService ensures that a Contour Service exists for the given contour.
+func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
+	desired := DesiredContourService(contour)
+	current, err := currentContourService(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return createService(ctx, cli, desired)
 		}
 		return fmt.Errorf("failed to get service %s/%s: %w", desired.Namespace, desired.Name, err)
 	}
-	if err := updater(ctx, cli, contour, current, desired); err != nil {
+	if err := updateContourServiceIfNeeded(ctx, cli, contour, current, desired); err != nil {
 		return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
 	}
 	return nil
 }
 
-// EnsureContourService ensures that a Contour Service exists for the given contour.
-func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceHelper(ctx, cli, contour, DesiredContourService, currentContourService, updateContourServiceIfNeeded)
-}
-
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceHelper(ctx, cli, contour, DesiredEnvoyService, currentEnvoyService, updateEnvoyServiceIfNeeded)
+	desired := DesiredEnvoyService(contour)
+	current, err := currentEnvoyService(ctx, cli, contour)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return createService(ctx, cli, desired)
+		}
+		return fmt.Errorf("failed to get service %s/%s: %w", desired.Namespace, desired.Name, err)
+	}
+	if err := updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired); err != nil {
+		return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
+	}
+	return nil
 }
 
-func ensureServiceDeletedHelper(ctx context.Context, cli client.Client, contour *model.Contour, currentSvc currentService) error {
-	svc, err := currentSvc(ctx, cli, contour)
+func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
+	svc, err := currentService(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -157,13 +160,13 @@ func ensureServiceDeletedHelper(ctx context.Context, cli client.Client, contour 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
 // provided contour is deleted if Contour owner labels exist.
 func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeletedHelper(ctx, cli, contour, currentContourService)
+	return ensureServiceDeleted(ctx, cli, contour, contour.ContourServiceName())
 }
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeletedHelper(ctx, cli, contour, currentEnvoyService)
+	return ensureServiceDeleted(ctx, cli, contour, contour.EnvoyServiceName())
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
@@ -287,9 +290,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		}
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeNodePort
-		if len(contour.Spec.NetworkPublishing.Envoy.NodePorts) == 0 {
-			break
-		}
+		
 		for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
 			if p.PortNumber == nil {
 				continue
@@ -318,7 +319,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	return svc
 }
 
-func currentContourServiceHelper(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
+func currentService(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: namespace,
@@ -333,12 +334,12 @@ func currentContourServiceHelper(ctx context.Context, cli client.Client, namespa
 
 // currentContourService returns the current Contour Service for the provided contour.
 func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	return currentContourServiceHelper(ctx, cli, contour.Namespace, contour.ContourServiceName())
+	return currentService(ctx, cli, contour.Namespace, contour.ContourServiceName())
 }
 
 // currentEnvoyService returns the current Envoy Service for the provided contour.
 func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	return currentContourServiceHelper(ctx, cli, contour.Namespace, contour.EnvoyServiceName())
+	return currentService(ctx, cli, contour.Namespace, contour.EnvoyServiceName())
 }
 
 // createService creates a Service resource for the provided svc.
@@ -355,11 +356,13 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 		return nil
 	}
 	_, updated := equality.ClusterIPServiceChanged(current, desired)
-	if updated {
-		if err := cli.Update(ctx, desired); err != nil {
-			return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
-		}
+	if !updated {
+		return nil 
 	}
+	if err := cli.Update(ctx, desired); err != nil {
+		return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
+	}
+
 	return nil
 
 }
