@@ -18,6 +18,7 @@ package httpproxy
 
 import (
 	"context"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -67,7 +68,14 @@ func testRequiredFieldValidation(namespace string) {
 
 		err := f.Client.Create(context.TODO(), missingConditionHeaderName)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "spec.routes.conditions.header.name: Required value")
+
+		// Kubernetes 1.24 adds array indexes to the error message, so allow
+		// either format for now.
+		isExpectedErr := func(err error) bool {
+			return strings.Contains(err.Error(), "spec.routes.conditions.header.name: Required value") ||
+				strings.Contains(err.Error(), "spec.routes[0].conditions[0].header.name: Required value")
+		}
+		assert.True(t, isExpectedErr(err))
 
 		// This HTTPProxy is expressed as an Unstructured because the JSON
 		// tags for the relevant field do not include "omitempty", so when
@@ -119,7 +127,14 @@ func testRequiredFieldValidation(namespace string) {
 
 		err = f.Client.Create(context.TODO(), missingIncludesName)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "spec.includes.name: Required value")
+
+		// Kubernetes 1.24 adds array indexes to the error message, so allow
+		// either format for now.
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.includes.name: Required value") ||
+				strings.Contains(err.Error(), "spec.includes[0].name: Required value")
+		}
+		assert.True(t, isExpectedErr(err))
 
 		servicePortRange := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -144,6 +159,13 @@ func testRequiredFieldValidation(namespace string) {
 		}
 		err = f.Client.Create(context.TODO(), servicePortRange)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "spec.routes.services.port: Invalid value")
+
+		// Kubernetes 1.24 adds array indexes to the error message, so allow
+		// either format for now.
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.routes.services.port: Invalid value") ||
+				strings.Contains(err.Error(), "spec.routes[0].services[0].port: Invalid value")
+		}
+		assert.True(t, isExpectedErr(err))
 	})
 }

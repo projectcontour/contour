@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.22.0][16]         | 1.23, 1.22, 1.21    | [main][50]       | v1alpha2            |
+| main            | [1.22.0][16]         | 1.24, 1.23, 1.22    | [main][50]       | v1alpha2            |
 | 1.21.0          | [1.22.0][16]         | 1.23, 1.22, 1.21    | [1.21.0][69]     | v1alpha2            |
 | 1.20.1          | [1.21.1][15]         | 1.23, 1.22, 1.21    | [1.20.1][68]     | v1alpha2            |
 | 1.20.0          | [1.21.0][14]         | 1.23, 1.22, 1.21    | [1.20.0][67]     | v1alpha2            |

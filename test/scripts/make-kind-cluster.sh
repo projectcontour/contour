@@ -25,7 +25,7 @@ readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.23.0"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -67,20 +67,12 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
   ${KUBECTL} version
 fi
 
-# Push test images into the cluster. Do this up-front
-# so that the first test to use each image does not 
-# incur the cost of pulling it. Helps avoid flakes.
-for i in $(find "$REPO/test/e2e" -name "fixtures.go" -print0 | xargs -0 awk '$1=="Image:"{print $2}')
-do
-    # The "$i" values will be formatted like: "<image>",
-    # So we need to strip the quotes and comma.
-    image="${i%,}"
-    image="${image%\"}"
-    image="${image#\"}"
-
-    docker pull "$image"
-    kind::cluster::load "$image"
-done
+# Push test image into the cluster. Do this up-front
+# so that the first test does not incur the cost of 
+# pulling it. Helps avoid flakes.
+ECHOSERVERIMAGE=$(find "$REPO/test/e2e" -name "fixtures.go" -print0 | xargs -0 awk '$1=="const" && $2=="EchoServerImage"{print $4}' | tr -d '"')
+docker pull "$ECHOSERVERIMAGE"
+kind::cluster::load "$ECHOSERVERIMAGE"
 
 
 # Install metallb.

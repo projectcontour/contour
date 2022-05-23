@@ -18,6 +18,7 @@ package httpproxy
 
 import (
 	"context"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -55,6 +56,13 @@ func testRetryPolicyValidation(namespace string) {
 		}
 		err := f.Client.Create(context.TODO(), p)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "spec.routes.retryPolicy.retryOn: Unsupported value")
+
+		// Kubernetes 1.24 adds array indexes to the error message, so allow
+		// either format for now.
+		isExpectedErr := func(err error) bool {
+			return strings.Contains(err.Error(), "spec.routes.retryPolicy.retryOn: Unsupported value") ||
+				strings.Contains(err.Error(), "spec.routes[0].retryPolicy.retryOn[0]: Unsupported value")
+		}
+		assert.True(t, isExpectedErr(err))
 	})
 }
