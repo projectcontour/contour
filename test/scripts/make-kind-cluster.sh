@@ -67,20 +67,12 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
   ${KUBECTL} version
 fi
 
-# Push test images into the cluster. Do this up-front
-# so that the first test to use each image does not 
-# incur the cost of pulling it. Helps avoid flakes.
-for i in $(find "$REPO/test/e2e" -name "fixtures.go" -print0 | xargs -0 awk '$1=="Image:"{print $2}')
-do
-    # The "$i" values will be formatted like: "<image>",
-    # So we need to strip the quotes and comma.
-    image="${i%,}"
-    image="${image%\"}"
-    image="${image#\"}"
-
-    docker pull "$image"
-    kind::cluster::load "$image"
-done
+# Push test image into the cluster. Do this up-front
+# so that the first test does not incur the cost of 
+# pulling it. Helps avoid flakes.
+ECHOSERVERIMAGE=$(find "$REPO/test/e2e" -name "fixtures.go" -print0 | xargs -0 awk '$1=="const" && $2=="EchoServerImage"{print $4}' | tr -d '"')
+docker pull "$ECHOSERVERIMAGE"
+kind::cluster::load "$ECHOSERVERIMAGE"
 
 
 # Install metallb.

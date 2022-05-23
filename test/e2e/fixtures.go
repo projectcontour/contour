@@ -33,6 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// EchoServerImage is the image to use as a backend fixture.
+// Note that this MUST use a tag, not a digest, in order for
+// the pre-loading into kind to work, since loading + referencing
+// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
+const EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
+
 // Fixtures holds references to all of the E2E fixtures helpers.
 type Fixtures struct {
 	// Echo provides helpers for working with the ingress-conformance-echo
@@ -101,7 +107,7 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:dc59c3e517399b436fa9db58f16506bd37f3cd831a7298eaf01bd5762ec514e1",
+							Image: EchoServerImage,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
@@ -213,7 +219,7 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:dc59c3e517399b436fa9db58f16506bd37f3cd831a7298eaf01bd5762ec514e1",
+							Image: EchoServerImage,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
