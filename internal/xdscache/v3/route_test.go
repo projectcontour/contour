@@ -15,7 +15,6 @@ package v3
 
 import (
 	"net/http"
-	"regexp"
 	"testing"
 	"time"
 
@@ -3310,8 +3309,9 @@ func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_route_
 
 func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
-		PathMatchCondition: &dag.RegexMatchCondition{
-			Regex: regexp.QuoteMeta(prefix) + `(?:[\/].*)*`,
+		PathMatchCondition: &dag.PrefixMatchCondition{
+			Prefix:          prefix,
+			PrefixMatchType: dag.PrefixMatchSegment,
 		},
 		HeaderMatchConditions: headers,
 	})

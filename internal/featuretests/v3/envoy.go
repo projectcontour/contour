@@ -17,7 +17,6 @@ package v3
 
 import (
 	"path"
-	"regexp"
 	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -30,7 +29,6 @@ import (
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -120,13 +118,8 @@ func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_rout
 
 func routeSegmentPrefix(prefix string) *envoy_route_v3.RouteMatch {
 	return &envoy_route_v3.RouteMatch{
-		PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-			SafeRegex: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-				},
-				Regex: "^" + regexp.QuoteMeta(prefix) + `(?:[\/].*)*`,
-			},
+		PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+			PathSeparatedPrefix: prefix,
 		},
 	}
 }
