@@ -71,8 +71,8 @@ The shutdown command has a few arguments that can be passed to change how it beh
 | Name | Type | Default | Description |
 |------------|------|---------|-------------|
 | <nobr>check-interval</nobr> | duration | 5s | Time interval to poll Envoy for open connections. |
-| <nobr>check-delay</nobr> | duration | 60s | Time wait before polling Envoy for open connections. |
-| <nobr>drain-delay</nobr> | duration | 60s | Time wait before draining Envoy connections. |
+| <nobr>check-delay</nobr> | duration | 0s | Time wait before polling Envoy for open connections. |
+| <nobr>drain-delay</nobr> | duration | 0s | Time wait before draining Envoy connections. |
 | <nobr>min-open-connections</nobr> | integer | 0 | Min number of open connections when polling Envoy. |
 | <nobr>admin-port (Deprecated)</nobr> | integer | 9001 | Deprecated: No longer used, Envoy admin interface runs as a unix socket.  |
 | <nobr>admin-address</nobr> | string | /admin/admin.sock | Path to Envoy admin unix domain socket. |

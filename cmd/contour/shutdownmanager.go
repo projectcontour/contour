@@ -96,7 +96,7 @@ func newShutdownManagerContext() *shutdownmanagerContext {
 func newShutdownContext() *shutdownContext {
 	return &shutdownContext{
 		checkInterval:      5 * time.Second,
-		checkDelay:         60 * time.Second,
+		checkDelay:         0,
 		drainDelay:         0,
 		minOpenConnections: 0,
 	}
