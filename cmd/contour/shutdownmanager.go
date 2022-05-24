@@ -319,7 +319,7 @@ func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.
 	shutdown.Flag("admin-port", "DEPRECATED: Envoy admin interface port.").IntVar(&ctx.adminPort)
 	shutdown.Flag("admin-address", "Envoy admin interface address.").Default("/admin/admin.sock").StringVar(&ctx.adminAddress)
 	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
-	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
+	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("0s").DurationVar(&ctx.checkDelay)
 	shutdown.Flag("drain-delay", "Time to wait before draining Envoy connections.").Default("0s").DurationVar(&ctx.drainDelay)
 	shutdown.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
 	shutdown.Flag("ready-file", "File to write when shutdown is completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
