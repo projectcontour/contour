@@ -1224,21 +1224,8 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 			want: &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`^/foo(?:[\/].*)*`),
-				},
-			},
-		},
-		"path prefix match segment with regex meta char": {
-			route: &dag.Route{
-				PathMatchCondition: &dag.PrefixMatchCondition{
-					Prefix:          "/foo.bar",
-					PrefixMatchType: dag.PrefixMatchSegment,
-				},
-			},
-			want: &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`^/foo\.bar(?:[\/].*)*`),
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
 				},
 			},
 		},

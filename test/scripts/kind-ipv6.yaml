@@ -1,0 +1,17 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: ipv6
+nodes:
+- role: control-plane
+- role: worker
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 9080
+    listenAddress: "::"
+  - containerPort: 443
+    hostPort: 9443
+    listenAddress: "::"
+  - containerPort: 8002
+    hostPort: 8002
+    listenAddress: "::"

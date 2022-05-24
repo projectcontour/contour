@@ -338,6 +338,10 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 		return nil, nil, nil
 	}
 
+	// Get a list of the route kinds that the listener accepts.
+	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
+	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
+
 	var listenerSecret *Secret
 
 	// Validate TLS details for HTTPS/TLS protocol listeners.
@@ -397,10 +401,6 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 			}
 		}
 	}
-
-	// Get a list of the route kinds that the listener accepts.
-	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
-	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
 
 	var httpRoutes []*gatewayapi_v1alpha2.HTTPRoute
 	var tlsRoutes []*gatewayapi_v1alpha2.TLSRoute
@@ -1251,13 +1251,13 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 
 	for _, route := range routes {
 		// If there aren't any valid services, or the total weight of all of
-		// them equal zero, then return 503 responses to the caller.
+		// them equal zero, then return 404 responses to the caller.
 		if len(clusters) == 0 || totalWeight == 0 {
-			// Configure a direct response HTTP status code of 503 so the
+			// Configure a direct response HTTP status code of 404 so the
 			// route still matches the configured conditions since the
 			// service is missing or invalid.
 			route.DirectResponse = &DirectResponse{
-				StatusCode: http.StatusServiceUnavailable,
+				StatusCode: http.StatusNotFound,
 			}
 		}
 	}

@@ -111,7 +111,7 @@ var (
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := DesiredContourService(contour)
-	current, err := currentContourService(ctx, cli, contour)
+	current, err := currentService(ctx, cli, contour.Namespace, contour.ContourServiceName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return createService(ctx, cli, desired)
@@ -127,7 +127,7 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := DesiredEnvoyService(contour)
-	current, err := currentEnvoyService(ctx, cli, contour)
+	current, err := currentService(ctx, cli, contour.Namespace, contour.EnvoyServiceName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return createService(ctx, cli, desired)
@@ -140,46 +140,33 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.C
 	return nil
 }
 
-// EnsureContourServiceDeleted ensures that a Contour Service for the
-// provided contour is deleted if Contour owner labels exist.
-func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	svc, err := currentContourService(ctx, cli, contour)
+func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
+	svc, err := currentService(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if labels.Exist(svc, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
+	if !labels.Exist(svc, model.OwnerLabels(contour)) {
+		return nil
 	}
-	return nil
+	if err := cli.Delete(ctx, svc); err == nil || errors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
+// EnsureContourServiceDeleted ensures that a Contour Service for the
+// provided contour is deleted if Contour owner labels exist.
+func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
+	return ensureServiceDeleted(ctx, cli, contour, contour.ContourServiceName())
 }
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	svc, err := currentEnvoyService(ctx, cli, contour)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	if labels.Exist(svc, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
+	return ensureServiceDeleted(ctx, cli, contour, contour.EnvoyServiceName())
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
@@ -303,17 +290,18 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		}
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeNodePort
-		if len(contour.Spec.NetworkPublishing.Envoy.NodePorts) > 0 {
-			for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
-				if p.PortNumber != nil {
-					for i, q := range svc.Spec.Ports {
-						if q.Name == p.Name {
-							svc.Spec.Ports[i].NodePort = *p.PortNumber
-						}
-					}
+
+		for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
+			if p.PortNumber == nil {
+				continue
+			}
+			for i, q := range svc.Spec.Ports {
+				if q.Name == p.Name {
+					svc.Spec.Ports[i].NodePort = *p.PortNumber
 				}
 			}
 		}
+
 	case model.ClusterIPServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	}
@@ -331,26 +319,12 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	return svc
 }
 
-// currentContourService returns the current Contour Service for the provided contour.
-func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
+// currentContourService returns the current Contour/Envoy Service for the provided contour.
+func currentService(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.ContourServiceName(),
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
-}
-
-// currentEnvoyService returns the current Envoy Service for the provided contour.
-func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	current := &corev1.Service{}
-	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.EnvoyServiceName(),
+		Namespace: namespace,
+		Name:      name,
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -369,41 +343,45 @@ func createService(ctx context.Context, cli client.Client, svc *corev1.Service) 
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.
 func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
-		_, updated := equality.ClusterIPServiceChanged(current, desired)
-		if updated {
-			if err := cli.Update(ctx, desired); err != nil {
-				return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
-			}
-			return nil
-		}
+	if !labels.Exist(current, model.OwnerLabels(contour)) {
+		return nil
 	}
+	_, updated := equality.ClusterIPServiceChanged(current, desired)
+	if !updated {
+		return nil
+	}
+	if err := cli.Update(ctx, desired); err != nil {
+		return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
+	}
+
 	return nil
+
 }
 
 // updateEnvoyServiceIfNeeded updates an Envoy Service if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
-		// Using the Service returned by the equality pkg instead of the desired
-		// parameter since clusterIP is immutable.
-		var updated *corev1.Service
-		needed := false
-		switch contour.Spec.NetworkPublishing.Envoy.Type {
-		case model.NodePortServicePublishingType:
-			updated, needed = equality.NodePortServiceChanged(current, desired)
-		case model.ClusterIPServicePublishingType:
-			updated, needed = equality.ClusterIPServiceChanged(current, desired)
-		// Add additional network publishing types as they are introduced.
-		default:
-			// LoadBalancerService is the default network publishing type.
-			updated, needed = equality.LoadBalancerServiceChanged(current, desired)
-		}
-		if needed {
-			if err := cli.Update(ctx, updated); err != nil {
-				return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
-			}
-			return nil
+	if !labels.Exist(current, model.OwnerLabels(contour)) {
+		return nil
+	}
+
+	// Using the Service returned by the equality pkg instead of the desired
+	// parameter since clusterIP is immutable.
+	var updated *corev1.Service
+	needed := false
+	switch contour.Spec.NetworkPublishing.Envoy.Type {
+	case model.NodePortServicePublishingType:
+		updated, needed = equality.NodePortServiceChanged(current, desired)
+	case model.ClusterIPServicePublishingType:
+		updated, needed = equality.ClusterIPServiceChanged(current, desired)
+	// Add additional network publishing types as they are introduced.
+	default:
+		// LoadBalancerService is the default network publishing type.
+		updated, needed = equality.LoadBalancerServiceChanged(current, desired)
+	}
+	if needed {
+		if err := cli.Update(ctx, updated); err != nil {
+			return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
 		}
 	}
 	return nil

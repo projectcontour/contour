@@ -48,19 +48,6 @@ spec:
                     description: "Defines the Contour debug address interface. \n
                       Contour's default is \"127.0.0.1\"."
                     type: string
-                  kubernetesLogLevel:
-                    description: "KubernetesDebugLogLevel defines the log level which
-                      Contour will use when outputting Kubernetes specific log information.
-                      \n Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
-                      \n Contour's default is 0."
-                    maximum: 9
-                    minimum: 0
-                    type: integer
-                  logLevel:
-                    description: "DebugLogLevel defines the log level which Contour
-                      will use when outputting log information. \n Values: `info`
-                      (default), `debug`. \n Other values will produce an error."
-                    type: string
                   port:
                     description: "Defines the Contour debug address port. \n Contour's
                       default is 6060."
@@ -1059,19 +1046,6 @@ spec:
                       address:
                         description: "Defines the Contour debug address interface.
                           \n Contour's default is \"127.0.0.1\"."
-                        type: string
-                      kubernetesLogLevel:
-                        description: "KubernetesDebugLogLevel defines the log level
-                          which Contour will use when outputting Kubernetes specific
-                          log information. \n Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
-                          \n Contour's default is 0."
-                        maximum: 9
-                        minimum: 0
-                        type: integer
-                      logLevel:
-                        description: "DebugLogLevel defines the log level which Contour
-                          will use when outputting log information. \n Values: `info`
-                          (default), `debug`. \n Other values will produce an error."
                         type: string
                       port:
                         description: "Defines the Contour debug address port. \n Contour's

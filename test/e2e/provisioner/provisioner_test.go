@@ -19,6 +19,8 @@ package provisioner
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -53,10 +55,36 @@ var _ = BeforeSuite(func() {
 		},
 	}
 
+	runtimeSettings := contourDeploymentRuntimeSettings()
+	// This will be non-nil if we are in an ipv6 cluster since we need to
+	// set listen addresses correctly. In that case, we can forgo the
+	// coverage of a GatewayClass without parameters set. For a regular
+	// cluster we will still have a basic GatewayClass without any
+	// parameters to ensure that case is covered.
+	if runtimeSettings != nil {
+		params := &contour_api_v1alpha1.ContourDeployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "projectcontour",
+				Name:      "basic-contour",
+			},
+			Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+				RuntimeSettings: runtimeSettings,
+			},
+		}
+		require.NoError(f.T(), f.Client.Create(context.Background(), params))
+
+		gc.Spec.ParametersRef = &gatewayapi_v1alpha2.ParametersReference{
+			Group:     "projectcontour.io",
+			Kind:      "ContourDeployment",
+			Namespace: gatewayapi.NamespacePtr(params.Namespace),
+			Name:      params.Name,
+		}
+	}
+
 	_, ok := f.CreateGatewayClassAndWaitFor(gc, gatewayClassAccepted)
 	require.True(f.T(), ok)
 
-	params := &contour_api_v1alpha1.ContourDeployment{
+	paramsEnvoyDeployment := &contour_api_v1alpha1.ContourDeployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "projectcontour",
 			Name:      "contour-with-envoy-deployment",
@@ -65,9 +93,10 @@ var _ = BeforeSuite(func() {
 			Envoy: &contour_api_v1alpha1.EnvoySettings{
 				WorkloadType: contour_api_v1alpha1.WorkloadTypeDeployment,
 			},
+			RuntimeSettings: runtimeSettings,
 		},
 	}
-	require.NoError(f.T(), f.Client.Create(context.Background(), params))
+	require.NoError(f.T(), f.Client.Create(context.Background(), paramsEnvoyDeployment))
 
 	gcWithEnvoyDeployment := &gatewayapi_v1alpha2.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
@@ -78,8 +107,8 @@ var _ = BeforeSuite(func() {
 			ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
 				Group:     "projectcontour.io",
 				Kind:      "ContourDeployment",
-				Namespace: gatewayapi.NamespacePtr(params.Namespace),
-				Name:      params.Name,
+				Namespace: gatewayapi.NamespacePtr(paramsEnvoyDeployment.Namespace),
+				Name:      paramsEnvoyDeployment.Name,
 			},
 		},
 	}
@@ -162,7 +191,7 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok)
 
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-				OverrideURL: "http://" + gateway.Status.Addresses[0].Value,
+				OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
 				Host:        string(route.Spec.Hostnames[0]),
 				Path:        "/prefix/match",
 				Condition:   e2e.HasStatusCode(200),
@@ -252,7 +281,7 @@ var _ = Describe("Gateway provisioner", func() {
 			// Make requests against each HTTPRoute, verify response and backend service.
 			for i := 0; i < gatewayCount; i++ {
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-					OverrideURL: "http://" + gateways[i].Status.Addresses[0].Value,
+					OverrideURL: "http://" + net.JoinHostPort(gateways[i].Status.Addresses[0].Value, "80"),
 					Host:        string(routes[i].Spec.Hostnames[0]),
 					Path:        fmt.Sprintf("/http-%d/match", i),
 					Condition:   e2e.HasStatusCode(200),
@@ -327,6 +356,9 @@ var _ = Describe("Gateway provisioner", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "contour-params",
+				},
+				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+					RuntimeSettings: contourDeploymentRuntimeSettings(),
 				},
 			}
 			require.NoError(f.T(), f.Client.Create(context.Background(), params))
@@ -409,7 +441,7 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok)
 
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-				OverrideURL: "http://" + gateway.Status.Addresses[0].Value,
+				OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
 				Host:        string(route.Spec.Hostnames[0]),
 				Path:        "/prefix/match",
 				Condition:   e2e.HasStatusCode(200),
@@ -516,4 +548,39 @@ func conditionExists(conditions []metav1.Condition, conditionType string, condit
 	}
 
 	return false
+}
+
+func contourDeploymentRuntimeSettings() *contour_api_v1alpha1.ContourConfigurationSpec {
+	if os.Getenv("IPV6_CLUSTER") != "true" {
+		return nil
+	}
+
+	return &contour_api_v1alpha1.ContourConfigurationSpec{
+		XDSServer: &contour_api_v1alpha1.XDSServerConfig{
+			Address: "::",
+		},
+		Debug: &contour_api_v1alpha1.DebugConfig{
+			Address: "::1",
+		},
+		Health: &contour_api_v1alpha1.HealthConfig{
+			Address: "::",
+		},
+		Metrics: &contour_api_v1alpha1.MetricsConfig{
+			Address: "::",
+		},
+		Envoy: &contour_api_v1alpha1.EnvoyConfig{
+			HTTPListener: &contour_api_v1alpha1.EnvoyListener{
+				Address: "::",
+			},
+			HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
+				Address: "::",
+			},
+			Health: &contour_api_v1alpha1.HealthConfig{
+				Address: "::",
+			},
+			Metrics: &contour_api_v1alpha1.MetricsConfig{
+				Address: "::",
+			},
+		},
+	}
 }

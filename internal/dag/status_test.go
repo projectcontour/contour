@@ -3370,7 +3370,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3427,7 +3427,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3481,7 +3481,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3580,7 +3580,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// This still results in an attached route because it returns a 503.
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
@@ -3689,8 +3689,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -3831,8 +3833,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -3917,8 +3921,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -4003,8 +4009,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -4089,8 +4097,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -4176,8 +4186,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5045,8 +5057,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"https": {
-					Name:           "https",
-					SupportedKinds: nil,
+					Name: "https",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5104,8 +5118,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"https": {
-					Name:           "https",
-					SupportedKinds: nil,
+					Name: "https",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5167,8 +5183,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5227,8 +5245,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5335,8 +5355,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"https": {
-					Name:           "https",
-					SupportedKinds: nil,
+					Name: "https",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5383,8 +5405,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
@@ -5437,8 +5461,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
 				"tls": {
-					Name:           "tls",
-					SupportedKinds: nil,
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1alpha2.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
 					Conditions: []metav1.Condition{
 						{
 							Type:    "Ready",
