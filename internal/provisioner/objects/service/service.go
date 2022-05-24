@@ -334,12 +334,30 @@ func currentService(ctx context.Context, cli client.Client, namespace, name stri
 
 // currentContourService returns the current Contour Service for the provided contour.
 func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	return currentService(ctx, cli, contour.Namespace, contour.ContourServiceName())
+	current := &corev1.Service{}
+	key := types.NamespacedName{
+		Namespace: contour.Namespace,
+		Name:      contour.ContourServiceName(),
+	}
+	err := cli.Get(ctx, key, current)
+	if err != nil {
+		return nil, err
+	}
+	return current, nil
 }
 
 // currentEnvoyService returns the current Envoy Service for the provided contour.
 func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	return currentService(ctx, cli, contour.Namespace, contour.EnvoyServiceName())
+	current := &corev1.Service{}
+	key := types.NamespacedName{
+		Namespace: contour.Namespace,
+		Name:      contour.EnvoyServiceName(),
+	}
+	err := cli.Get(ctx, key, current)
+	if err != nil {
+		return nil, err
+	}
+	return current, nil
 }
 
 // createService creates a Service resource for the provided svc.
@@ -372,7 +390,6 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
 	if !labels.Exist(current, model.OwnerLabels(contour)) {
 		return nil
-
 	}
 
 	// Using the Service returned by the equality pkg instead of the desired
@@ -393,7 +410,6 @@ func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour 
 		if err := cli.Update(ctx, updated); err != nil {
 			return fmt.Errorf("failed to update service %s/%s: %w", desired.Namespace, desired.Name, err)
 		}
-
 	}
 	return nil
 }
