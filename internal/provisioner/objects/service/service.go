@@ -111,7 +111,7 @@ var (
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := DesiredContourService(contour)
-	current, err := currentContourService(ctx, cli, contour)
+	current, err := currentService(ctx, cli, contour.Namespace, contour.ContourServiceName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return createService(ctx, cli, desired)
@@ -127,7 +127,7 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := DesiredEnvoyService(contour)
-	current, err := currentEnvoyService(ctx, cli, contour)
+	current, err := currentService(ctx, cli, contour.Namespace, contour.EnvoyServiceName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return createService(ctx, cli, desired)
@@ -319,39 +319,12 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	return svc
 }
 
+// currentContourService returns the current Contour/Envoy Service for the provided contour.
 func currentService(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
-}
-
-// currentContourService returns the current Contour Service for the provided contour.
-func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	current := &corev1.Service{}
-	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.ContourServiceName(),
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
-}
-
-// currentEnvoyService returns the current Envoy Service for the provided contour.
-func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
-	current := &corev1.Service{}
-	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.EnvoyServiceName(),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
