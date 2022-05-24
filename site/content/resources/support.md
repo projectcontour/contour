@@ -24,7 +24,7 @@ They are our best guess as to when each version will be released.
 |Q4 2021 | ❌ | ✅ |
 |Q1 2022 | ❌ | ✅ |✅ |
 |Q2 2022 | ❌ | ✅ |✅ |✅ |
-|Q3 2022 | ❌ | ❌ |✅ |❌ | ✅ |
+|Q3 2022 | ❌ | ❌ |✅ |✅ | ✅ |
 
 ## What does a release being "supported" mean?
 
