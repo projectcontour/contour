@@ -1085,6 +1085,52 @@ descriptor contains 1+ key-value pair entries.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HTTPDirectResponsePolicy">HTTPDirectResponsePolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>statusCode</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>StatusCode is the HTTP response status to be returned.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>body</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Body is the content of the response body.
+If this setting is omitted, no body is included in the generated response.</p>
+<p>Note: Body is not recommended to set too long
+otherwise it can have significant resource usage impacts.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy
 </h3>
 <p>
@@ -2835,6 +2881,21 @@ HTTPRequestRedirectPolicy
 <td>
 <em>(Optional)</em>
 <p>RequestRedirectPolicy defines an HTTP redirection.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>directResponsePolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPDirectResponsePolicy">
+HTTPDirectResponsePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DirectResponsePolicy returns an arbitrary HTTP response directly.</p>
 </td>
 </tr>
 </tbody>

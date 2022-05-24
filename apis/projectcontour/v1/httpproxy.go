@@ -377,6 +377,27 @@ type Route struct {
 	// RequestRedirectPolicy defines an HTTP redirection.
 	// +optional
 	RequestRedirectPolicy *HTTPRequestRedirectPolicy `json:"requestRedirectPolicy,omitempty"`
+
+	// DirectResponsePolicy returns an arbitrary HTTP response directly.
+	// +optional
+	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+}
+
+type HTTPDirectResponsePolicy struct {
+	// StatusCode is the HTTP response status to be returned.
+	// +required
+	// +kubebuilder:validation:Minimum=200
+	// +kubebuilder:validation:Maximum=599
+	StatusCode int `json:"statusCode"`
+
+	// Body is the content of the response body.
+	// If this setting is omitted, no body is included in the generated response.
+	//
+	// Note: Body is not recommended to set too long
+	// otherwise it can have significant resource usage impacts.
+	//
+	// +optional
+	Body string `json:"body,omitempty"`
 }
 
 // HTTPRequestRedirectPolicy defines configuration for redirecting a request.

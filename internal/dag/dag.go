@@ -153,11 +153,14 @@ func (hc *HeaderMatchCondition) String() string {
 	return "header: " + details
 }
 
-// DirectResponse allows for a specific HTTP status code
+// DirectResponse allows for a specific HTTP status code and body
 // to be the response to a route request vs routing to
 // an envoy cluster.
 type DirectResponse struct {
+	// StatusCode is  the HTTP response status to be returned.
 	StatusCode uint32
+	// Body is the content of the response body.
+	Body string
 }
 
 // Redirect allows for a 301/302 redirect to be the response

@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -441,7 +442,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				routes = append(routes, &Route{
 					PathMatchCondition:    mergePathMatchConditions(include.Conditions),
 					HeaderMatchConditions: mergeHeaderMatchConditions(include.Conditions),
-					DirectResponse:        directResponse(http.StatusBadGateway),
+					DirectResponse:        directResponse(http.StatusBadGateway, ""),
 				})
 			}
 
@@ -468,6 +469,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	}
 
 	for _, route := range proxy.Spec.Routes {
+		if err := routeActionCountValid(route); err != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid", err.Error())
+			return nil
+		}
+
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid",
 				"route: %s", err)
@@ -505,13 +511,6 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		// A route may have no services defined only if a RequestRedirectPolicy is defined.
-		if len(route.Services) < 1 && route.RequestRedirectPolicy == nil {
-			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent",
-				"route.services must have at least one entry")
-			return nil
-		}
-
 		rtp, ctp, err := timeoutPolicy(route.TimeoutPolicy, p.ConnectTimeout)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "TimeoutPolicyNotValid",
@@ -535,6 +534,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(routeConditions),
 			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
@@ -548,6 +549,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RateLimitPolicy:       rlp,
 			RequestHashPolicies:   requestHashPolicies,
 			Redirect:              redirectPolicy,
+			DirectResponse:        directPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -713,8 +715,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				r.Clusters = append(r.Clusters, c)
 			}
 		}
-		if len(r.Clusters) == 0 && route.RequestRedirectPolicy == nil {
-			r.DirectResponse = directResponse(http.StatusServiceUnavailable)
+		if len(r.Clusters) == 0 && route.RequestRedirectPolicy == nil && route.DirectResponsePolicy == nil {
+			r.DirectResponse = directResponse(http.StatusServiceUnavailable, "")
 		}
 
 		// If we have a wildcard match, add a header match regex rule to match the
@@ -1095,10 +1097,32 @@ func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure
 }
 
-func directResponse(statusCode uint32) *DirectResponse {
+func directResponse(statusCode uint32, body string) *DirectResponse {
 	return &DirectResponse{
 		StatusCode: statusCode,
+		Body:       body,
 	}
+}
+
+// routeActionCountValid  only one of route.services, route.requestRedirectPolicy, or route.directResponsePolicy can be specified
+func routeActionCountValid(route contour_api_v1.Route) error {
+	var routeActionCount int
+	if len(route.Services) > 0 {
+		routeActionCount++
+	}
+
+	if route.RequestRedirectPolicy != nil {
+		routeActionCount++
+	}
+
+	if route.DirectResponsePolicy != nil {
+		routeActionCount++
+	}
+
+	if routeActionCount != 1 {
+		return errors.New("must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy")
+	}
+	return nil
 }
 
 // redirectRoutePolicy builds a *dag.Redirect for the supplied redirect policy.
@@ -1149,4 +1173,12 @@ func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) (*R
 		Path:       path,
 		Prefix:     prefix,
 	}, nil
+}
+
+func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *DirectResponse {
+	if direct == nil {
+		return nil
+	}
+
+	return directResponse(uint32(direct.StatusCode), direct.Body)
 }

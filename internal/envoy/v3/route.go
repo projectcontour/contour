@@ -195,14 +195,22 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 }
 
 // routeDirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
-// http status code supplied. This allows a direct response to a route request
+// http status code and body supplied. This allows a direct response to a route request
 // with an HTTP status code without needing to route to a specific cluster.
 func routeDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
-	return &envoy_route_v3.Route_DirectResponse{
+	r := &envoy_route_v3.Route_DirectResponse{
 		DirectResponse: &envoy_route_v3.DirectResponseAction{
 			Status: response.StatusCode,
 		},
 	}
+	if response.Body != "" {
+		r.DirectResponse.Body = &envoy_core_v3.DataSource{
+			Specifier: &envoy_core_v3.DataSource_InlineString{
+				InlineString: response.Body,
+			},
+		}
+	}
+	return r
 }
 
 // routeRedirect creates a *envoy_route_v3.Route_Redirect for the

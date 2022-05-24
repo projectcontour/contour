@@ -104,8 +104,8 @@ var _ = Describe("HTTPProxy", func() {
 	AfterEach(func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
+	f.NamespacedTest("httpproxy-direct-response-policy", testDirectResponseRule)
 
-	f.NamespacedTest("httpproxy-request-redirect-policy", testRequestRedirectRule)
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 

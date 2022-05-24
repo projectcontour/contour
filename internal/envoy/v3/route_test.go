@@ -639,7 +639,7 @@ func TestRouteDirectResponse(t *testing.T) {
 		directResponse *dag.DirectResponse
 		want           *envoy_route_v3.Route_DirectResponse
 	}{
-		"503": {
+		"503-nobody": {
 			directResponse: &dag.DirectResponse{StatusCode: 503},
 			want: &envoy_route_v3.Route_DirectResponse{
 				DirectResponse: &envoy_route_v3.DirectResponseAction{
@@ -647,11 +647,37 @@ func TestRouteDirectResponse(t *testing.T) {
 				},
 			},
 		},
-		"402": {
+		"503": {
+			directResponse: &dag.DirectResponse{StatusCode: 503, Body: "Service Unavailable"},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 503,
+					Body: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "Service Unavailable",
+						},
+					},
+				},
+			},
+		},
+		"402-nobody": {
 			directResponse: &dag.DirectResponse{StatusCode: 402},
 			want: &envoy_route_v3.Route_DirectResponse{
 				DirectResponse: &envoy_route_v3.DirectResponseAction{
 					Status: 402,
+				},
+			},
+		},
+		"402": {
+			directResponse: &dag.DirectResponse{StatusCode: 402, Body: "Payment Required"},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 402,
+					Body: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "Payment Required",
+						},
+					},
 				},
 			},
 		},
