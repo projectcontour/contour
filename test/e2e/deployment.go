@@ -833,8 +833,6 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 	}
 	envoyPodSpec.Containers[0].Image = d.contourImage
 	envoyPodSpec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
-	// Set shutdown check-delay to 0s to ensure cleanup is fast.
-	envoyPodSpec.Containers[0].Lifecycle.PreStop.Exec.Command = append(envoyPodSpec.Containers[0].Lifecycle.PreStop.Exec.Command, "--check-delay=0s")
 
 	if d.EnvoyDeploymentMode == DeploymentMode {
 		// The envoy deployment uses host ports, so can have at most
