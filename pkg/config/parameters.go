@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -868,7 +868,7 @@ func Parse(in io.Reader) (*Parameters, error) {
 	conf := Defaults()
 	decoder := yaml.NewDecoder(in)
 
-	decoder.SetStrict(true)
+	decoder.KnownFields(true)
 
 	if err := decoder.Decode(&conf); err != nil {
 		// The YAML decoder will return EOF if there are
