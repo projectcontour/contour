@@ -34,7 +34,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
 	coordinationv1 "k8s.io/api/coordination/v1"

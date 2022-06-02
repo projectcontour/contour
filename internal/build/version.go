@@ -14,7 +14,7 @@
 package build
 
 import (
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // BuildInfo is a struct for build information.
