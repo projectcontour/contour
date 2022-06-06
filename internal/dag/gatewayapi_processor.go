@@ -983,6 +983,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 			headerPolicy       *HeadersPolicy
 			headerModifierSeen bool
 			redirect           *gatewayapi_v1alpha2.HTTPRequestRedirectFilter
+			mirrorPolicy       *MirrorPolicy
 		)
 
 		for _, filter := range rule.Filters {
@@ -1009,9 +1010,31 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				if redirect == nil && filter.RequestRedirect != nil {
 					redirect = filter.RequestRedirect
 				}
+			case gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror:
+				// Get the mirror filter if there is one. If there are more than one
+				// mirror filters, "NotImplemented" condition on the Route is set to
+				// status: True, with the "NotImplemented" reason.
+				if mirrorPolicy != nil {
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.Rules.Filters: Only one mirror filter is supported.")
+					continue
+				}
+
+				if filter.RequestMirror != nil {
+					mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
+					if cond != nil {
+						routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionType(cond.Type), cond.Status, status.RouteReasonType(cond.Reason), cond.Message)
+						continue
+					}
+					mirrorPolicy = &MirrorPolicy{
+						Cluster: &Cluster{
+							Upstream: mirrorService,
+						},
+					}
+				}
+
 			default:
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType,
-					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier and RequestRedirect are supported.", filter.Type))
+					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, RequestRedirect and RequestMirror are supported.", filter.Type))
 			}
 		}
 
@@ -1023,7 +1046,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		if redirect != nil {
 			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, rule.BackendRefs, routeAccessor)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1050,6 +1073,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 // validateBackendRef verifies that the specified BackendRef is valid.
 // Returns a metav1.Condition for the route if any errors are detected.
 func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
+	return p.validateBackendObjectRef(backendRef.BackendObjectReference, "Spec.Rules.BackendRef", routeKind, routeNamespace)
+}
+
+// validateBackendObjectRef verifies that the specified BackendObjectReference
+// is valid. Returns a metav1.Condition for the route if any errors are detected.
+// As BackendObjectReference is used in multiple fields, the given field is used
+// to build the message in metav1.Condition.
+func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewayapi_v1alpha2.BackendObjectReference, field string, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
 	degraded := func(msg string) *metav1.Condition {
 		return &metav1.Condition{
 			Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
@@ -1059,25 +1090,25 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 		}
 	}
 
-	if !(backendRef.Group == nil || *backendRef.Group == "") {
-		return nil, degraded("Spec.Rules.BackendRef.Group must be \"\"")
+	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
+		return nil, degraded(fmt.Sprintf("%s.Group must be \"\"", field))
 	}
 
-	if !(backendRef.Kind != nil && *backendRef.Kind == "Service") {
-		return nil, degraded("Spec.Rules.BackendRef.Kind must be 'Service'")
+	if !(backendObjectRef.Kind != nil && *backendObjectRef.Kind == "Service") {
+		return nil, degraded(fmt.Sprintf("%s.Kind must be 'Service'", field))
 	}
 
-	if backendRef.Name == "" {
-		return nil, degraded("Spec.Rules.BackendRef.Name must be specified")
+	if backendObjectRef.Name == "" {
+		return nil, degraded(fmt.Sprintf("%s.Name must be specified", field))
 	}
 
-	if backendRef.Port == nil {
-		return nil, degraded("Spec.Rules.BackendRef.Port must be specified")
+	if backendObjectRef.Port == nil {
+		return nil, degraded(fmt.Sprintf("%s.Port must be specified", field))
 	}
 
 	// If the backend is in a different namespace than the route, then we need to
 	// check for a ReferencePolicy that allows the reference.
-	if backendRef.Namespace != nil && string(*backendRef.Namespace) != routeNamespace {
+	if backendObjectRef.Namespace != nil && string(*backendObjectRef.Namespace) != routeNamespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
 				group:     string(gatewayapi_v1alpha2.GroupName),
@@ -1087,28 +1118,28 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 			crossNamespaceTo{
 				group:     "",
 				kind:      "Service",
-				namespace: string(*backendRef.Namespace),
-				name:      string(backendRef.Name),
+				namespace: string(*backendObjectRef.Namespace),
+				name:      string(backendObjectRef.Name),
 			},
 		) {
 			return nil, &metav1.Condition{
 				Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
 				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
-				Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
+				Message: fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferencePolicy", field),
 			}
 		}
 	}
 
 	var meta types.NamespacedName
-	if backendRef.Namespace != nil {
-		meta = types.NamespacedName{Name: string(backendRef.Name), Namespace: string(*backendRef.Namespace)}
+	if backendObjectRef.Namespace != nil {
+		meta = types.NamespacedName{Name: string(backendObjectRef.Name), Namespace: string(*backendObjectRef.Namespace)}
 	} else {
-		meta = types.NamespacedName{Name: string(backendRef.Name), Namespace: routeNamespace}
+		meta = types.NamespacedName{Name: string(backendObjectRef.Name), Namespace: routeNamespace}
 	}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendRef.Port)), p.source, p.EnableExternalNameService)
+	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendObjectRef.Port)), p.source, p.EnableExternalNameService)
 	if err != nil {
 		return nil, degraded(fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
 	}
@@ -1182,7 +1213,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch)
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, backendRefs []gatewayapi_v1alpha2.HTTPBackendRef, routeAccessor *status.RouteConditionsUpdate) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1alpha2.HTTPBackendRef, routeAccessor *status.RouteConditionsUpdate) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1246,6 +1277,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  headerPolicy,
+			MirrorPolicy:          mirrorPolicy,
 		})
 	}
 

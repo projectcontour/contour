@@ -231,8 +231,9 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 		RetryTimeout:  60 * time.Second,
 		Fixtures: &Fixtures{
 			Echo: &Echo{
-				client: crClient,
-				t:      t,
+				client:     crClient,
+				kubeConfig: kubeConfig,
+				t:          t,
 			},
 			EchoSecure: &EchoSecure{
 				client: crClient,

@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 
 	"github.com/onsi/ginkgo/v2"
@@ -26,9 +27,13 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,8 +57,9 @@ type Fixtures struct {
 
 // Echo manages the ingress-conformance-echo fixture.
 type Echo struct {
-	client client.Client
-	t      ginkgo.GinkgoTInterface
+	client     client.Client
+	t          ginkgo.GinkgoTInterface
+	kubeConfig string
 }
 
 // Deploy runs DeployN with a default of 1 replica.
@@ -178,6 +184,65 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 		require.NoError(e.t, e.client.Delete(context.TODO(), service))
 		require.NoError(e.t, e.client.Delete(context.TODO(), deployment))
 	}
+}
+
+// DumpEchoLogs returns logs of the "conformance-echo" container in
+// the Echo pod in the given namespace and with the given name.
+// Namespace is defaulted to "default" and name is defaulted to
+// "ingress-conformance-echo" if not provided.
+func (e *Echo) DumpEchoLogs(ns, name string) ([][]byte, error) {
+	valOrDefault := func(val, defaultVal string) string {
+		if val != "" {
+			return val
+		}
+		return defaultVal
+	}
+
+	ns = valOrDefault(ns, "default")
+	name = valOrDefault(name, "ingress-conformance-echo")
+
+	var logs [][]byte
+
+	config, err := clientcmd.BuildConfigFromFlags("", e.kubeConfig)
+	if err != nil {
+		return nil, err
+	}
+	coreClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	pods := new(v1.PodList)
+	podListOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": name}),
+		Namespace:     ns,
+	}
+	if err := e.client.List(context.TODO(), pods, podListOptions); err != nil {
+		return nil, err
+	}
+
+	podLogOptions := &v1.PodLogOptions{
+		Container: "conformance-echo",
+	}
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == v1.PodFailed {
+			continue
+		}
+
+		req := coreClient.CoreV1().Pods(ns).GetLogs(pod.Name, podLogOptions)
+		logStream, err := req.Stream(context.TODO())
+		if err != nil {
+			continue
+		}
+		defer logStream.Close()
+		logBytes, err := ioutil.ReadAll(logStream)
+		if err != nil {
+			continue
+		}
+		logs = append(logs, logBytes)
+	}
+
+	return logs, nil
 }
 
 // EchoSecure manages the TLS-secured ingress-conformance-echo fixture.
