@@ -31,9 +31,6 @@ done
 
 echo
 
-# certgen uses the ':latest' image tag, so it always needs to be pulled. Everything
-# else correctly uses versioned image tags so we should use IfNotPresent and updates
-# the Contour config for Gateway API.
 for y in "${REPO}/examples/contour/"*.yaml ; do
     echo # Ensure we have at least one newline between joined fragments.
     case $y in
@@ -43,21 +40,30 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
     */01-contour-config.yaml)
         sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g' < "$y"
         ;;
-    */02-job-certgen.yaml)
-        cat "$y"
-        ;;
     *)
-        sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y"
+        cat $y
         ;;
     esac
 done
 
 for y in "${REPO}/examples/gateway/"*.yaml ; do
     echo # Ensure we have at least one newline between joined fragments.
+    
+    # Since the Gateway YAMLs are pulled from the Gateway API repo, the manifests do not start with "---".
     case $y in
-    */00-crds.yaml)
-        # Since the Gateway CRDs are generated, the manifest does not start with "---".
-        echo "---"
+    */00-crds.yaml)  
+      echo "---"
+      ;;
+
+    */01-admission_webhook.yaml)  
+      echo "---"
+      ;;
+
+    */02-certificate_config.yaml)  
+      echo "---"
+      ;;
+
     esac
+    
     cat "$y"
 done

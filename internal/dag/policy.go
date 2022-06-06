@@ -396,7 +396,7 @@ func ingressRetryPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) 
 	return rp
 }
 
-func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) RouteTimeoutPolicy {
 	response := annotation.ContourAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -404,47 +404,59 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 		// the response body.
 		response = annotation.ContourAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
-			return TimeoutPolicy{
-				ResponseTimeout: timeout.DefaultSetting(),
-				IdleTimeout:     timeout.DefaultSetting(),
+			return RouteTimeoutPolicy{
+				ResponseTimeout:   timeout.DefaultSetting(),
+				IdleStreamTimeout: timeout.DefaultSetting(),
 			}
 		}
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	tp, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
+	tp, _, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
 		Response: response,
-	})
+	}, 0)
 	if err != nil {
 		log.WithError(err).Error("Error parsing response-timeout annotation, using the default value")
-		return TimeoutPolicy{}
+		return RouteTimeoutPolicy{}
 	}
 
 	return tp
 }
 
-func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
+func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duration) (RouteTimeoutPolicy, ClusterTimeoutPolicy, error) {
 	if tp == nil {
-		return TimeoutPolicy{
-			ResponseTimeout: timeout.DefaultSetting(),
-			IdleTimeout:     timeout.DefaultSetting(),
-		}, nil
+		return RouteTimeoutPolicy{
+				ResponseTimeout:   timeout.DefaultSetting(),
+				IdleStreamTimeout: timeout.DefaultSetting(),
+			}, ClusterTimeoutPolicy{
+				IdleConnectionTimeout: timeout.DefaultSetting(),
+				ConnectTimeout:        0,
+			},
+			nil
 	}
 
 	responseTimeout, err := timeout.Parse(tp.Response)
 	if err != nil {
-		return TimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
 	}
 
-	idleTimeout, err := timeout.Parse(tp.Idle)
+	idleStreamTimeout, err := timeout.Parse(tp.Idle)
 	if err != nil {
-		return TimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
 	}
 
-	return TimeoutPolicy{
-		ResponseTimeout: responseTimeout,
-		IdleTimeout:     idleTimeout,
-	}, nil
+	idleConnectionTimeout, err := timeout.Parse(tp.IdleConnection)
+	if err != nil {
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
+	}
+
+	return RouteTimeoutPolicy{
+			ResponseTimeout:   responseTimeout,
+			IdleStreamTimeout: idleStreamTimeout,
+		}, ClusterTimeoutPolicy{
+			IdleConnectionTimeout: idleConnectionTimeout,
+			ConnectTimeout:        connectTimeout,
+		}, nil
 }
 
 func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {
@@ -663,18 +675,29 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 		rhps := []RequestHashPolicy{}
 		actualStrategy := strategy
 		hashSourceIPSet := false
-		// Map of unique header names.
-		headerHashPolicies := map[string]bool{}
+		// Set of unique header names.
+		headerHashPolicies := sets.NewString()
+		// Set of unique query parameter names.
+		queryParameterHashPolicies := sets.NewString()
 		for _, hashPolicy := range lbp.RequestHashPolicies {
 			rhp := RequestHashPolicy{
 				Terminal: hashPolicy.Terminal,
 			}
 
 			// Ensure hashing for exactly one request attribute is set.
-			if (!hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions == nil) ||
-				(hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions != nil) {
+			attrCounter := 0
+			if hashPolicy.HashSourceIP {
+				attrCounter++
+			}
+			if hashPolicy.HeaderHashOptions != nil {
+				attrCounter++
+			}
+			if hashPolicy.QueryParameterHashOptions != nil {
+				attrCounter++
+			}
+			if attrCounter != 1 {
 				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-					"ignoring invalid request hash policy, must set exactly one of hashSourceIP or headerHashOptions")
+					"ignoring invalid request hash policy, must set exactly one of hashSourceIP or headerHashOptions or queryParameterHashOptions")
 				continue
 			}
 
@@ -695,14 +718,34 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 						"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
 					continue
 				}
-				if _, ok := headerHashPolicies[headerName]; ok {
+				if headerHashPolicies.Has(headerName) {
 					validCond.AddWarningf("SpecError", "IgnoredField",
 						"ignoring invalid header hash policy options with duplicated header name %s", headerName)
 					continue
 				}
-				headerHashPolicies[headerName] = true
+				headerHashPolicies.Insert(headerName)
 				rhp.HeaderHashOptions = &HeaderHashOptions{
 					HeaderName: headerName,
+				}
+			}
+
+			if hashPolicy.QueryParameterHashOptions != nil {
+				// Pretty much everyone assumes that query parameter names are case-insensitive,
+				// but there is no actual standard for that.
+				queryParameter := strings.ToLower(hashPolicy.QueryParameterHashOptions.ParameterName)
+				if queryParameter == "" {
+					validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+						"ignoring invalid query parameter hash policy options with an invalid empty query parameter name")
+					continue
+				}
+				if queryParameterHashPolicies.Has(queryParameter) {
+					validCond.AddWarningf("SpecError", "IgnoredField",
+						"ignoring invalid query parameter hash policy options with duplicated query parameter name %s", queryParameter)
+					continue
+				}
+				queryParameterHashPolicies.Insert(queryParameter)
+				rhp.QueryParameterHashOptions = &QueryParameterHashOptions{
+					ParameterName: queryParameter,
 				}
 			}
 
@@ -710,7 +753,7 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 		}
 		if len(rhps) == 0 {
 			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
+				"ignoring invalid request hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
 			rhps = nil
 			actualStrategy = LoadBalancerPolicyRoundRobin
 		}

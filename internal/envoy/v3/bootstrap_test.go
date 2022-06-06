@@ -1566,7 +1566,9 @@ func TestBootstrap(t *testing.T) {
                         "name": "contour_xds_tls_certificate",
                         "sds_config": {
                           "resource_api_version": "V3",
-                          "path": "resources/sds/xds-tls-certificate.json"
+                          "path_config_source": {
+                            "path": "resources/sds/xds-tls-certificate.json"
+                          }
                         }
                       }
                     ],
@@ -1574,7 +1576,9 @@ func TestBootstrap(t *testing.T) {
                       "name": "contour_xds_tls_validation_context",
                       "sds_config": {
                         "resource_api_version": "V3",
-                        "path": "resources/sds/xds-validation-context.json"
+                        "path_config_source": {
+                          "path": "resources/sds/xds-validation-context.json"
+                        }
                       }
                     }
                   }

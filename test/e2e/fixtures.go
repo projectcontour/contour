@@ -33,6 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// EchoServerImage is the image to use as a backend fixture.
+// Note that this MUST use a tag, not a digest, in order for
+// the pre-loading into kind to work, since loading + referencing
+// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
+const EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
+
 // Fixtures holds references to all of the E2E fixtures helpers.
 type Fixtures struct {
 	// Echo provides helpers for working with the ingress-conformance-echo
@@ -101,7 +107,7 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:dc59c3e517399b436fa9db58f16506bd37f3cd831a7298eaf01bd5762ec514e1",
+							Image: EchoServerImage,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
@@ -213,7 +219,7 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:dc59c3e517399b436fa9db58f16506bd37f3cd831a7298eaf01bd5762ec514e1",
+							Image: EchoServerImage,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
@@ -345,36 +351,34 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 			Namespace: "projectcontour",
 		},
 		Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-			XDSServer: contour_api_v1alpha1.XDSServerConfig{
+			XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 				Type:    XDSServerTypeFromEnv(),
-				Address: "0.0.0.0",
+				Address: listenAllAddress(),
 				Port:    8001,
 				TLS: &contour_api_v1alpha1.TLS{
 					CAFile:   "/certs/ca.crt",
 					CertFile: "/certs/tls.crt",
 					KeyFile:  "/certs/tls.key",
-					Insecure: false,
+					Insecure: pointer.Bool(false),
 				},
 			},
-			Debug: contour_api_v1alpha1.DebugConfig{
-				Address:                 "127.0.0.1",
-				Port:                    6060,
-				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
-				KubernetesDebugLogLevel: 0,
+			Debug: &contour_api_v1alpha1.DebugConfig{
+				Address: localAddress(),
+				Port:    6060,
 			},
-			Health: contour_api_v1alpha1.HealthConfig{
-				Address: "0.0.0.0",
+			Health: &contour_api_v1alpha1.HealthConfig{
+				Address: listenAllAddress(),
 				Port:    8000,
 			},
-			Envoy: contour_api_v1alpha1.EnvoyConfig{
+			Envoy: &contour_api_v1alpha1.EnvoyConfig{
 				DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 					"HTTP/1.1", "HTTP/2",
 				},
-				Listener: contour_api_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:             false,
-					DisableAllowChunkedLength: false,
+				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto:             pointer.Bool(false),
+					DisableAllowChunkedLength: pointer.Bool(false),
 					ConnectionBalancer:        "",
-					TLS: contour_api_v1alpha1.EnvoyTLS{
+					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.2",
 						CipherSuites: []contour_api_v1alpha1.TLSCipherType{
 							"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
@@ -384,44 +388,44 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 						},
 					},
 				},
-				Service: contour_api_v1alpha1.NamespacedName{
+				Service: &contour_api_v1alpha1.NamespacedName{
 					Name:      "envoy",
 					Namespace: "projectcontour",
 				},
-				HTTPListener: contour_api_v1alpha1.EnvoyListener{
-					Address:   "0.0.0.0",
+				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
+					Address:   listenAllAddress(),
 					Port:      8080,
 					AccessLog: "/dev/stdout",
 				},
-				HTTPSListener: contour_api_v1alpha1.EnvoyListener{
-					Address:   "0.0.0.0",
+				HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
+					Address:   listenAllAddress(),
 					Port:      8443,
 					AccessLog: "/dev/stdout",
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
-					Address: "0.0.0.0",
+				Health: &contour_api_v1alpha1.HealthConfig{
+					Address: listenAllAddress(),
 					Port:    8002,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
-					Address: "0.0.0.0",
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
+					Address: listenAllAddress(),
 					Port:    8002,
 				},
-				Logging: contour_api_v1alpha1.EnvoyLogging{
+				Logging: &contour_api_v1alpha1.EnvoyLogging{
 					AccessLogFormat: contour_api_v1alpha1.EnvoyAccessLog,
 				},
-				Cluster: contour_api_v1alpha1.ClusterParameters{
+				Cluster: &contour_api_v1alpha1.ClusterParameters{
 					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 				},
-				Network: contour_api_v1alpha1.NetworkParameters{
-					EnvoyAdminPort: 9001,
+				Network: &contour_api_v1alpha1.NetworkParameters{
+					EnvoyAdminPort: pointer.Int(9001),
 				},
 			},
-			HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
-				DisablePermitInsecure: false,
+			HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+				DisablePermitInsecure: pointer.Bool(false),
 			},
-			EnableExternalNameService: false,
-			Metrics: contour_api_v1alpha1.MetricsConfig{
-				Address: "0.0.0.0",
+			EnableExternalNameService: pointer.Bool(false),
+			Metrics: &contour_api_v1alpha1.MetricsConfig{
+				Address: listenAllAddress(),
 				Port:    8000,
 			},
 		},

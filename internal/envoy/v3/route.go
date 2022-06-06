@@ -149,10 +149,6 @@ func routeAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
-const prefixPathMatchSegmentRegex = `(?:[\/].*)*`
-
-var _ = regexp.MustCompile(prefixPathMatchSegmentRegex)
-
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	switch c := route.PathMatchCondition.(type) {
@@ -169,10 +165,8 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 		switch c.PrefixMatchType {
 		case dag.PrefixMatchSegment:
 			return &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					// Add anchor since we have a string literal prefix.
-					// Reduces regex program size so Envoy doesn't reject long prefix matches.
-					SafeRegex: SafeRegexMatch("^" + regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: c.Prefix,
 				},
 				Headers: headerMatcher(route.HeaderMatchConditions),
 			}
@@ -201,14 +195,22 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 }
 
 // routeDirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
-// http status code supplied. This allows a direct response to a route request
+// http status code and body supplied. This allows a direct response to a route request
 // with an HTTP status code without needing to route to a specific cluster.
 func routeDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
-	return &envoy_route_v3.Route_DirectResponse{
+	r := &envoy_route_v3.Route_DirectResponse{
 		DirectResponse: &envoy_route_v3.DirectResponseAction{
 			Status: response.StatusCode,
 		},
 	}
+	if response.Body != "" {
+		r.DirectResponse.Body = &envoy_core_v3.DataSource{
+			Specifier: &envoy_core_v3.DataSource_InlineString{
+				InlineString: response.Body,
+			},
+		}
+	}
+	return r
 }
 
 // routeRedirect creates a *envoy_route_v3.Route_Redirect for the
@@ -263,7 +265,7 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	ra := envoy_route_v3.RouteAction{
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
-		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleTimeout),
+		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
 		PrefixRewrite:         r.PrefixRewrite,
 		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),
@@ -318,6 +320,13 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
 				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
 					HeaderName: rhp.HeaderHashOptions.HeaderName,
+				},
+			}
+		}
+		if rhp.QueryParameterHashOptions != nil {
+			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+					Name: rhp.QueryParameterHashOptions.ParameterName,
 				},
 			}
 		}
@@ -530,14 +539,22 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 
 		switch h.MatchType {
 		case dag.HeaderMatchTypeExact:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Exact{Exact: h.Value},
+				},
+			}
 		case dag.HeaderMatchTypeContains:
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
 		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		case dag.HeaderMatchTypeRegex:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-				SafeRegexMatch: SafeRegexMatch(h.Value),
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_SafeRegex{
+						SafeRegex: SafeRegexMatch(h.Value),
+					},
+				},
 			}
 		}
 		envoyHeaders = append(envoyHeaders, header)
@@ -547,14 +564,18 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
-func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
+func containsMatch(s string) *envoy_route_v3.HeaderMatcher_StringMatch {
 	// convert the substring s into a regular expression that matches s.
 	// note that Envoy expects the expression to match the entire string, not just the substring
 	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
 	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
 
-	return &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-		SafeRegexMatch: SafeRegexMatch(regex),
+	return &envoy_route_v3.HeaderMatcher_StringMatch{
+		StringMatch: &matcher.StringMatcher{
+			MatchPattern: &matcher.StringMatcher_SafeRegex{
+				SafeRegex: SafeRegexMatch(regex),
+			},
+		},
 	}
 }
 

@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 var f = e2e.NewFramework(false)
@@ -103,8 +104,8 @@ var _ = Describe("HTTPProxy", func() {
 	AfterEach(func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
+	f.NamespacedTest("httpproxy-direct-response-policy", testDirectResponseRule)
 
-	f.NamespacedTest("httpproxy-request-redirect-policy", testRequestRedirectRule)
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 
@@ -112,11 +113,26 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)
 
+	f.NamespacedTest("httpproxy-path-prefix-rewrite", testPathPrefixRewrite)
+
 	f.NamespacedTest("httpproxy-https-sni-enforcement", testHTTPSSNIEnforcement)
 
 	f.NamespacedTest("httpproxy-pod-restart", testPodRestart)
 
-	f.NamespacedTest("httpproxy-merge-slash", testMergeSlash)
+	Context("disableMergeSlashes option", func() {
+		Context("default value of false", func() {
+			f.NamespacedTest("httpproxy-enable-merge-slashes", testDisableMergeSlashes(false))
+		})
+
+		Context("set to true", func() {
+			BeforeEach(func() {
+				contourConfig.DisableMergeSlashes = true
+				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = pointer.Bool(true)
+			})
+
+			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
+		})
+	})
 
 	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
@@ -129,6 +145,8 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
 	f.NamespacedTest("httpproxy-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
+
+	f.NamespacedTest("httpproxy-ingress-wildcard-override", testIngressWildcardSubdomainFQDN)
 
 	f.NamespacedTest("httpproxy-https-fallback-certificate", func(namespace string) {
 		Context("with fallback certificate", func() {
@@ -280,7 +298,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -290,7 +308,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -300,7 +318,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -325,8 +343,8 @@ var _ = Describe("HTTPProxy", func() {
 								Namespace: namespace,
 							},
 							Domain:                  "contour",
-							FailOpen:                false,
-							EnableXRateLimitHeaders: false,
+							FailOpen:                pointer.Bool(false),
+							EnableXRateLimitHeaders: pointer.Bool(false),
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(

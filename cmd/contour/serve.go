@@ -52,8 +52,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -232,10 +234,8 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	}, nil
 }
 
-// doServe runs the contour serve subcommand.
-func (s *Server) doServe() error {
-
-	var contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec
+func (s *Server) getConfig() (contour_api_v1alpha1.ContourConfigurationSpec, error) {
+	var userConfig contour_api_v1alpha1.ContourConfigurationSpec
 
 	// Get the ContourConfiguration CRD if specified
 	if len(s.ctx.contourConfigurationName) > 0 {
@@ -254,45 +254,67 @@ func (s *Server) doServe() error {
 		// Using GetAPIReader() here because the manager's caches won't be started yet,
 		// so reads from the manager's client (which uses the caches for reads) will fail.
 		if err := s.mgr.GetAPIReader().Get(context.Background(), key, contourConfig); err != nil {
-			return fmt.Errorf("error getting contour configuration %s: %v", key, err)
+			return contour_api_v1alpha1.ContourConfigurationSpec{}, fmt.Errorf("error getting contour configuration %s: %v", key, err)
 		}
 
 		// Copy the Spec from the parsed Configuration
-		contourConfiguration = contourConfig.Spec
+		userConfig = contourConfig.Spec
 	} else {
 		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
-		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
+		userConfig = s.ctx.convertToContourConfigurationSpec()
 	}
 
-	err := contourConfiguration.Validate()
+	// Overlay the user-specified config onto the default config to come up
+	// with the final set of config to use.
+	contourConfiguration, err := contourconfig.OverlayOnDefaults(userConfig)
+	if err != nil {
+		return contour_api_v1alpha1.ContourConfigurationSpec{}, err
+	}
+
+	if err := contourConfiguration.Validate(); err != nil {
+		return contour_api_v1alpha1.ContourConfigurationSpec{}, err
+	}
+
+	return contourConfiguration, nil
+}
+
+// doServe runs the contour serve subcommand.
+func (s *Server) doServe() error {
+	// Get config. Any user-specified settings are "overlaid" onto default settings
+	// to come up with the final config. Note that because the default settings (as
+	// defined in contourconfig.Defaults()) instantiate structs for nearly every pointer
+	// in the ContourConfigurationSpec object structure, most nil-checking can be
+	// omitted in the below code. The exceptions are truly optional fields, such as
+	// RateLimitService, which is not required to exist/have a default.
+	contourConfiguration, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	// informerNamespaces is a list of namespaces that we should start informers for.
-	var informerNamespaces []string
+	// informerNamespaces is a set of namespaces that we should start informers for.
+	// If empty, informers will be started for all namespaces.
+	informerNamespaces := sets.NewString()
 
-	if len(contourConfiguration.HTTPProxy.RootNamespaces) > 0 {
-		informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.RootNamespaces...)
+	if rootNamespaces := contourConfiguration.HTTPProxy.RootNamespaces; len(rootNamespaces) > 0 {
+		s.log.WithField("context", "root-namespaces").Infof("watching root namespaces %q", rootNamespaces)
+		informerNamespaces.Insert(rootNamespaces...)
 
-		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
-		if contourConfiguration.HTTPProxy.FallbackCertificate != nil && !contains(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace) {
-			informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace)
-			s.log.WithField("context", "fallback-certificate").
-				Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					contourConfiguration.HTTPProxy.FallbackCertificate.Namespace)
+		// The fallback cert and client cert's namespaces only need to be added to informerNamespaces
+		// if we're processing specifici root namespaces, because otherwise, the informers will start
+		// for all namespaces so the below will automatically be included.
+
+		if fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate; fallbackCert != nil {
+			s.log.WithField("context", "fallback-certificate").Infof("watching fallback certificate namespace %q", fallbackCert.Namespace)
+			informerNamespaces.Insert(fallbackCert.Namespace)
 		}
 
-		// Add the client certificate namespace to informerNamespaces if it isn't present.
-		if contourConfiguration.Envoy.ClientCertificate != nil && !contains(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace) {
-			informerNamespaces = append(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace)
-			s.log.WithField("context", "envoy-client-certificate").
-				Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					contourConfiguration.Envoy.ClientCertificate.Namespace)
+		if clientCert := contourConfiguration.Envoy.ClientCertificate; clientCert != nil {
+			s.log.WithField("context", "envoy-client-certificate").Infof("watching client certificate namespace %q", clientCert.Namespace)
+			informerNamespaces.Insert(clientCert.Namespace)
 		}
 	}
 
-	cipherSuites := []string{}
+	var cipherSuites []string
 	for _, cs := range contourConfiguration.Envoy.Listener.TLS.CipherSuites {
 		cipherSuites = append(cipherSuites, string(cs))
 	}
@@ -302,13 +324,8 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	accessLogFormatString := ""
-	if contourConfiguration.Envoy.Logging.AccessLogFormatString != nil {
-		accessLogFormatString = *contourConfiguration.Envoy.Logging.AccessLogFormatString
-	}
-
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto: contourConfiguration.Envoy.Listener.UseProxyProto,
+		UseProxyProto: *contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPListeners: map[string]xdscache_v3.Listener{
 			xdscache_v3.ENVOY_HTTP_LISTENER: {
 				Name:    xdscache_v3.ENVOY_HTTP_LISTENER,
@@ -328,14 +345,15 @@ func (s *Server) doServe() error {
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
 		AccessLogFields:              contourConfiguration.Envoy.Logging.AccessLogFields,
 		AccessLogLevel:               contourConfiguration.Envoy.Logging.AccessLogLevel,
-		AccessLogFormatString:        accessLogFormatString,
+		AccessLogFormatString:        contourConfiguration.Envoy.Logging.AccessLogFormatString,
 		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
 		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
 		CipherSuites:                 config.SanitizeCipherSuites(cipherSuites),
 		Timeouts:                     timeouts,
 		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
-		AllowChunkedLength:           !contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
-		XffNumTrustedHops:            contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		AllowChunkedLength:           !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		MergeSlashes:                 !*contourConfiguration.Envoy.Listener.DisableMergeSlashes,
+		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
 	}
 
@@ -350,7 +368,7 @@ func (s *Server) doServe() error {
 	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(contourConfiguration.Envoy, listenerConfig),
+		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
 		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
@@ -391,17 +409,33 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	var gatewayControllerName string
+	var gatewayRef *types.NamespacedName
+
+	if contourConfiguration.Gateway != nil {
+		gatewayControllerName = contourConfiguration.Gateway.ControllerName
+
+		if contourConfiguration.Gateway.GatewayRef != nil {
+			gatewayRef = &types.NamespacedName{
+				Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
+				Name:      contourConfiguration.Gateway.GatewayRef.Name,
+			}
+		}
+	}
+
 	builder := s.getDAGBuilder(dagBuilderConfig{
 		ingressClassNames:         ingressClassNames,
 		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
-		gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
-		disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
-		enableExternalNameService: contourConfiguration.EnableExternalNameService,
+		gatewayControllerName:     gatewayControllerName,
+		gatewayRef:                gatewayRef,
+		disablePermitInsecure:     *contourConfiguration.HTTPProxy.DisablePermitInsecure,
+		enableExternalNameService: *contourConfiguration.EnableExternalNameService,
 		dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
 		headersPolicy:             contourConfiguration.Policy,
 		clientCert:                clientCert,
 		fallbackCert:              fallbackCert,
 		connectTimeout:            timeouts.ConnectTimeout,
+		client:                    s.mgr.GetClient(),
 	})
 
 	// Build the core Kubernetes event handler.
@@ -446,7 +480,7 @@ func (s *Server) doServe() error {
 
 	// If root namespaces are defined, filter for secrets in only those namespaces.
 	if len(informerNamespaces) > 0 {
-		handler = k8s.NewNamespaceFilter(informerNamespaces, eventHandler)
+		handler = k8s.NewNamespaceFilter(informerNamespaces.List(), eventHandler)
 	}
 
 	if err := informOnResource(&corev1.Secret{}, handler, s.mgr.GetCache()); err != nil {
@@ -467,23 +501,18 @@ func (s *Server) doServe() error {
 	}
 
 	// Create metrics service.
-	if err := s.setupMetrics(contourConfiguration.Metrics, contourConfiguration.Health, s.registry); err != nil {
+	if err := s.setupMetrics(*contourConfiguration.Metrics, *contourConfiguration.Health, s.registry); err != nil {
 		return err
 	}
 
 	// Create a separate health service if required.
-	if err := s.setupHealth(contourConfiguration.Health, contourConfiguration.Metrics); err != nil {
+	if err := s.setupHealth(*contourConfiguration.Health, *contourConfiguration.Metrics); err != nil {
 		return err
 	}
 
 	// Create debug service and register with workgroup.
-	if err := s.setupDebugService(contourConfiguration.Debug, builder); err != nil {
+	if err := s.setupDebugService(*contourConfiguration.Debug, builder); err != nil {
 		return err
-	}
-
-	var gatewayControllerName string
-	if contourConfiguration.Gateway != nil {
-		gatewayControllerName = contourConfiguration.Gateway.ControllerName
 	}
 
 	// Set up ingress load balancer status writer.
@@ -493,6 +522,7 @@ func (s *Server) doServe() error {
 		lbStatus:              make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassNames:     ingressClassNames,
 		gatewayControllerName: gatewayControllerName,
+		gatewayRef:            gatewayRef,
 		statusUpdater:         sh.Writer(),
 	}
 	if err := s.mgr.Add(lbsw); err != nil {
@@ -500,9 +530,9 @@ func (s *Server) doServe() error {
 	}
 
 	// Register an informer to watch envoy's service if we haven't been given static details.
-	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.StatusAddress != nil {
-		s.log.WithField("loadbalancer-address", *contourConfiguration.Ingress.StatusAddress).Info("Using supplied information for Ingress status")
-		lbsw.lbStatus <- parseStatusFlag(*contourConfiguration.Ingress.StatusAddress)
+	if lbAddress := contourConfiguration.Ingress.StatusAddress; len(lbAddress) > 0 {
+		s.log.WithField("loadbalancer-address", lbAddress).Info("Using supplied information for Ingress status")
+		lbsw.lbStatus <- parseStatusFlag(lbAddress)
 	} else {
 		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
 			ServiceName: contourConfiguration.Envoy.Service.Name,
@@ -528,7 +558,7 @@ func (s *Server) doServe() error {
 		log:             s.log,
 		mgr:             s.mgr,
 		registry:        s.registry,
-		config:          contourConfiguration.XDSServer,
+		config:          *contourConfiguration.XDSServer,
 		snapshotHandler: snapshotHandler,
 		resources:       resources,
 	}
@@ -583,8 +613,8 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		ExtensionService:        key,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
-		FailOpen:                contourConfiguration.RateLimitService.FailOpen,
-		EnableXRateLimitHeaders: contourConfiguration.RateLimitService.EnableXRateLimitHeaders,
+		FailOpen:                pointer.BoolDeref(contourConfiguration.RateLimitService.FailOpen, false),
+		EnableXRateLimitHeaders: pointer.BoolDeref(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
 	}, nil
 }
 
@@ -643,10 +673,8 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	}
 
 	log = log.WithField("address", addr)
-	if tls := x.config.TLS; tls != nil {
-		if tls.Insecure {
-			log = log.WithField("insecure", true)
-		}
+	if *x.config.TLS.Insecure {
+		log = log.WithField("insecure", true)
 	}
 
 	log.Infof("started xDS server type: %q", x.config.Type)
@@ -720,33 +748,51 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
-	if contourConfiguration.Gateway != nil {
-		// Create and register the gatewayclass controller with the manager.
-		gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
-		gwClass, err := controller.RegisterGatewayClassController(
-			s.log.WithField("context", "gatewayclass-controller"),
-			mgr,
-			eventHandler,
-			sh.Writer(),
-			gatewayClassControllerName,
-		)
-		if err != nil {
-			s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
-		}
-		needLeadershipNotification = append(needLeadershipNotification, gwClass)
+	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayRef != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
+		switch {
+		// If a specific gateway was specified, we don't need to run the
+		// GatewayClass and Gateway controllers to determine which gateway
+		// to process, we just need informers to get events.
+		case contourConfiguration.Gateway.GatewayRef != nil:
+			// Inform on GatewayClasses.
+			if err := informOnResource(&gatewayapi_v1alpha2.GatewayClass{}, eventHandler, mgr.GetCache()); err != nil {
+				s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
+			}
 
-		// Create and register the NewGatewayController controller with the manager.
-		gw, err := controller.RegisterGatewayController(
-			s.log.WithField("context", "gateway-controller"),
-			mgr,
-			eventHandler,
-			sh.Writer(),
-			gatewayClassControllerName,
-		)
-		if err != nil {
-			s.log.WithError(err).Fatal("failed to create gateway-controller")
+			// Inform on Gateways.
+			if err := informOnResource(&gatewayapi_v1alpha2.Gateway{}, eventHandler, mgr.GetCache()); err != nil {
+				s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
+			}
+		// Otherwise, run the GatewayClass and Gateway controllers to determine
+		// the appropriate gateway class and gateway to process.
+		default:
+			// Create and register the gatewayclass controller with the manager.
+			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
+			gwClass, err := controller.RegisterGatewayClassController(
+				s.log.WithField("context", "gatewayclass-controller"),
+				mgr,
+				eventHandler,
+				sh.Writer(),
+				gatewayClassControllerName,
+			)
+			if err != nil {
+				s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
+			}
+			needLeadershipNotification = append(needLeadershipNotification, gwClass)
+
+			// Create and register the NewGatewayController controller with the manager.
+			gw, err := controller.RegisterGatewayController(
+				s.log.WithField("context", "gateway-controller"),
+				mgr,
+				eventHandler,
+				sh.Writer(),
+				gatewayClassControllerName,
+			)
+			if err != nil {
+				s.log.WithError(err).Fatal("failed to create gateway-controller")
+			}
+			needLeadershipNotification = append(needLeadershipNotification, gw)
 		}
-		needLeadershipNotification = append(needLeadershipNotification, gw)
 
 		// Create and register the HTTPRoute controller with the manager.
 		if err := controller.RegisterHTTPRouteController(s.log.WithField("context", "httproute-controller"), mgr, eventHandler); err != nil {
@@ -774,7 +820,8 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 type dagBuilderConfig struct {
 	ingressClassNames         []string
 	rootNamespaces            []string
-	gatewayAPIConfigured      bool
+	gatewayControllerName     string
+	gatewayRef                *types.NamespacedName
 	disablePermitInsecure     bool
 	enableExternalNameService bool
 	dnsLookupFamily           contour_api_v1alpha1.ClusterDNSFamilyType
@@ -782,6 +829,7 @@ type dagBuilderConfig struct {
 	clientCert                *types.NamespacedName
 	fallbackCert              *types.NamespacedName
 	connectTimeout            time.Duration
+	client                    client.Client
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -819,7 +867,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			}
 		}
 
-		applyHeaderPolicyToIngress = dbc.headersPolicy.ApplyToIngress
+		applyHeaderPolicyToIngress = *dbc.headersPolicy.ApplyToIngress
 	}
 
 	var requestHeadersPolicyIngress dag.HeadersPolicy
@@ -861,7 +909,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		},
 	}
 
-	if dbc.gatewayAPIConfigured {
+	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
@@ -883,10 +931,12 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
 	builder := &dag.Builder{
 		Source: dag.KubernetesCache{
-			RootNamespaces:       dbc.rootNamespaces,
-			IngressClassNames:    dbc.ingressClassNames,
-			ConfiguredSecretRefs: configuredSecretRefs,
-			FieldLogger:          s.log.WithField("context", "KubernetesCache"),
+			RootNamespaces:           dbc.rootNamespaces,
+			IngressClassNames:        dbc.ingressClassNames,
+			ConfiguredGatewayToCache: dbc.gatewayRef,
+			ConfiguredSecretRefs:     configuredSecretRefs,
+			FieldLogger:              s.log.WithField("context", "KubernetesCache"),
+			Client:                   dbc.client,
 		},
 		Processors: dagProcessors,
 	}
@@ -895,15 +945,6 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 	// but it's safe to ignore since this function is only called once.
 	// nolint:govet
 	return builder
-}
-
-func contains(namespaces []string, ns string) bool {
-	for _, namespace := range namespaces {
-		if ns == namespace {
-			return true
-		}
-	}
-	return false
 }
 
 func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cache ctrl_cache.Cache) error {
@@ -934,7 +975,7 @@ var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)
 // add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
 // Currently only one extension exist in Envoy.
 func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLogType, accessLogFields contour_api_v1alpha1.AccessLogFields,
-	accessLogFormatString *string) []string {
+	accessLogFormatString string) []string {
 	// Function that finds out if command operator is present in a format string.
 	contains := func(format, command string) bool {
 		tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
@@ -949,10 +990,8 @@ func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLog
 	extensionsMap := make(map[string]bool)
 	switch accessLogFormat {
 	case contour_api_v1alpha1.EnvoyAccessLog:
-		if accessLogFormatString != nil {
-			if contains(*accessLogFormatString, "REQ_WITHOUT_QUERY") {
-				extensionsMap["envoy.formatter.req_without_query"] = true
-			}
+		if contains(accessLogFormatString, "REQ_WITHOUT_QUERY") {
+			extensionsMap["envoy.formatter.req_without_query"] = true
 		}
 	case contour_api_v1alpha1.JSONAccessLog:
 		for _, f := range accessLogFields.AsFieldMap() {

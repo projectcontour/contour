@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -45,22 +45,18 @@ func (s ServerType) Validate() error {
 
 // Validate the GatewayConfig.
 func (g *GatewayParameters) Validate() error {
-
-	var errorString string
 	if g == nil {
 		return nil
 	}
 
-	if len(g.ControllerName) == 0 {
-		if len(errorString) > 0 {
-			errorString += ","
-		}
-		errorString = strings.TrimSpace(fmt.Sprintf("%s controllerName required", errorString))
+	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
+		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
 	}
 
-	if len(errorString) > 0 {
-		return fmt.Errorf("invalid Gateway parameters specified: %s", errorString)
+	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
+		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
 	}
+
 	return nil
 }
 
@@ -354,7 +350,15 @@ type GatewayParameters struct {
 	// ControllerName is used to determine whether Contour should reconcile a
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
+	// Exactly one of ControllerName or GatewayRef must be set.
 	ControllerName string `yaml:"controllerName,omitempty"`
+
+	// GatewayRef defines a specific Gateway that this Contour
+	// instance corresponds to. If set, Contour will reconcile
+	// only this gateway, and will not reconcile any gateway
+	// classes.
+	// Exactly one of ControllerName or GatewayRef must be set.
+	GatewayRef *NamespacedName `yaml:"gatewayRef,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
@@ -613,6 +617,10 @@ type Parameters struct {
 	// See: https://github.com/projectcontour/contour/issues/3221
 	DisableAllowChunkedLength bool `yaml:"disableAllowChunkedLength,omitempty"`
 
+	// DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
+	// which strips duplicate slashes from request URL paths.
+	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
+
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
 	// TODO(youngnick): put a link to the issue and CVE here.
@@ -826,6 +834,7 @@ func Defaults() Parameters {
 		TLS:                       TLSParameters{},
 		DisablePermitInsecure:     false,
 		DisableAllowChunkedLength: false,
+		DisableMergeSlashes:       false,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
@@ -859,7 +868,7 @@ func Parse(in io.Reader) (*Parameters, error) {
 	conf := Defaults()
 	decoder := yaml.NewDecoder(in)
 
-	decoder.SetStrict(true)
+	decoder.KnownFields(true)
 
 	if err := decoder.Decode(&conf); err != nil {
 		// The YAML decoder will return EOF if there are

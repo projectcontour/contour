@@ -18,6 +18,7 @@ import (
 	"time"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -86,6 +87,42 @@ func TestHealthCheck(t *testing.T) {
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						Path: "/healthy",
 						Host: "foo-bar-host",
+					},
+				},
+			},
+		},
+		"h2 healthcheck": {
+			cluster: &dag.Cluster{
+				Protocol:              "h2",
+				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
+			},
+			want: &envoy_core_v3.HealthCheck{
+				Timeout:            protobuf.Duration(envoy.HCTimeout),
+				Interval:           protobuf.Duration(envoy.HCInterval),
+				UnhealthyThreshold: protobuf.UInt32(3),
+				HealthyThreshold:   protobuf.UInt32(2),
+				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+						Host:            "contour-envoy-healthcheck",
+						CodecClientType: typev3.CodecClientType_HTTP2,
+					},
+				},
+			},
+		},
+		"h2c healthcheck": {
+			cluster: &dag.Cluster{
+				Protocol:              "h2c",
+				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
+			},
+			want: &envoy_core_v3.HealthCheck{
+				Timeout:            protobuf.Duration(envoy.HCTimeout),
+				Interval:           protobuf.Duration(envoy.HCInterval),
+				UnhealthyThreshold: protobuf.UInt32(3),
+				HealthyThreshold:   protobuf.UInt32(2),
+				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+						Host:            "contour-envoy-healthcheck",
+						CodecClientType: typev3.CodecClientType_HTTP2,
 					},
 				},
 			},

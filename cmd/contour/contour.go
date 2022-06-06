@@ -32,6 +32,9 @@ func main() {
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
 
+	// Log-format applies to log format of all sub-commands.
+	logFormat := app.Flag("log-format", "Log output format for Contour. Either text or json.").Default("text").Enum("text", "json")
+
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
 	sdm, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
 
@@ -64,8 +67,21 @@ func main() {
 	serve, serveCtx := registerServe(app)
 	version := app.Command("version", "Build information for Contour.")
 
+	gatewayProvisioner, gatewayProvisionerConfig := registerGatewayProvisioner(app)
+
 	args := os.Args[1:]
-	switch kingpin.MustParse(app.Parse(args)) {
+	cmd := kingpin.MustParse(app.Parse(args))
+
+	switch *logFormat {
+	case "text":
+		log.SetFormatter(&logrus.TextFormatter{})
+	case "json":
+		log.SetFormatter(&logrus.JSONFormatter{})
+	}
+
+	switch cmd {
+	case gatewayProvisioner.FullCommand():
+		runGatewayProvisioner(gatewayProvisionerConfig)
 	case sdm.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
 	case sdmShutdown.FullCommand():
@@ -102,15 +118,15 @@ func main() {
 		// on top of any values sourced from -c's config file.
 		kingpin.MustParse(app.Parse(args))
 
+		if serveCtx.Config.Debug {
+			log.SetLevel(logrus.DebugLevel)
+		}
+
 		// Reinitialize with the target debug level.
 		k8s.InitLogging(
 			k8s.LogWriterOption(log.WithField("context", "kubernetes")),
 			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
 		)
-
-		if serveCtx.Config.Debug {
-			log.SetLevel(logrus.DebugLevel)
-		}
 
 		log.Infof("args: %v", args)
 

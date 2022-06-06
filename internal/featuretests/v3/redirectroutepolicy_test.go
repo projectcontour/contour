@@ -39,10 +39,6 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 					Scheme:     pointer.StringPtr("https"),
 					Hostname:   pointer.StringPtr("envoyproxy.io"),
@@ -87,10 +83,6 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 					Scheme:     pointer.StringPtr("https"),
 					Hostname:   pointer.StringPtr("envoyproxy.io"),

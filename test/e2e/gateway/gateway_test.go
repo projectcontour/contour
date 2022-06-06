@@ -35,7 +35,16 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+// ReconcileModeController means Contour should be configured
+// to reconcile based on a Gateway controller string.
+const ReconcileModeController = "controller"
+
+// ReconcileModeGateway means Contour should be configured
+// to reconcile a specific named Gateway.
+const ReconcileModeGateway = "gateway"
+
 var f = e2e.NewFramework(false)
+var reconcileMode = ReconcileModeController
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -55,6 +64,17 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Gateway API", func() {
+	// Run all tests for both gateway reconciliation modes.
+	for _, mode := range []string{ReconcileModeController, ReconcileModeGateway} {
+		reconcileMode = mode
+
+		Context(fmt.Sprintf("Reconcile mode %s", mode), func() {
+			runGatewayTests()
+		})
+	}
+})
+
+func runGatewayTests() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
@@ -70,19 +90,30 @@ var _ = Describe("Gateway API", func() {
 	// body. Modifies contour config to point to gateway.
 	testWithGateway := func(gateway *gatewayapi_v1alpha2.Gateway, gatewayClass *gatewayapi_v1alpha2.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
-
 			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.ControllerName), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
-					contourConfig.GatewayConfig = &config.GatewayParameters{
-						ControllerName: string(gatewayClass.Spec.ControllerName),
+					contourConfig.GatewayConfig = &config.GatewayParameters{}
+					if reconcileMode == ReconcileModeGateway {
+						contourConfig.GatewayConfig.GatewayRef = &config.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
+					} else {
+						contourConfig.GatewayConfig.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
-						ControllerName: string(gatewayClass.Spec.ControllerName),
+					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{}
+					if reconcileMode == ReconcileModeGateway {
+						contourConfiguration.Spec.Gateway.GatewayRef = &contour_api_v1alpha1.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
+					} else {
+						contourConfiguration.Spec.Gateway.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 
 					contourGatewayClass = gatewayClass
@@ -123,7 +154,15 @@ var _ = Describe("Gateway API", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
-		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
+		gatewayClassCond := gatewayClassValid
+		// If we're reconciling a specific Gateway,
+		// we don't expect GatewayClasses to be reconciled
+		// or become valid.
+		if reconcileMode == ReconcileModeGateway {
+			gatewayClassCond = func(*gatewayapi_v1alpha2.GatewayClass) bool { return true }
+		}
+
+		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
 	})
 
@@ -132,7 +171,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	Describe("HTTPRoute: Insecure (Non-TLS) Gateway", func() {
+	Describe("Gateway with one HTTP listener", func() {
 		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1alpha2.Gateway{
@@ -163,7 +202,7 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("gateway-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
 
-		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidForwardTo))
+		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidBackendRef))
 
 		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
@@ -176,7 +215,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 	})
 
-	Describe("HTTPRoute: TLS Gateway", func() {
+	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
 		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 
@@ -237,7 +276,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
-	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
+	Describe("Gateway with one TLS listener with Mode=Passthrough", func() {
 		gatewayClass := getGatewayClass()
 		gw := &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
@@ -265,8 +304,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
-	Describe("TLSRoute Gateway: Mode: Terminate", func() {
-
+	Describe("Gateway with one TLS listener with Mode=Terminate", func() {
 		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1alpha2.Gateway{
@@ -306,9 +344,94 @@ var _ = Describe("Gateway API", func() {
 			})
 		}
 
-		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
+		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("terminate.tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 	})
-})
+
+	Describe("Gateway with multiple HTTPS listeners, each with a different hostname and TLS cert", func() {
+		testWithMultipleHTTPSListenersGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gatewayClass := getGatewayClass()
+			gateway := &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiple-https-listeners",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gatewayClass.Name),
+					Listeners: []gatewayapi_v1alpha2.Listener{
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(443),
+							Hostname: gatewayapi.ListenerHostname("https-1.gateway.projectcontour.io"),
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert-1", ""),
+								},
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+						{
+							Name:     "https-2",
+							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(443),
+							Hostname: gatewayapi.ListenerHostname("https-2.gateway.projectcontour.io"),
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert-2", ""),
+								},
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+						{
+							Name:     "https-3",
+							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(443),
+							Hostname: gatewayapi.ListenerHostname("https-3.gateway.projectcontour.io"),
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert-3", ""),
+								},
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return testWithGateway(gateway, gatewayClass, func(namespace string) {
+				BeforeEach(func() {
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "tlscert-1", "https-1.gateway.projectcontour.io")
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "tlscert-2", "https-2.gateway.projectcontour.io")
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-3", "tlscert-3", "https-3.gateway.projectcontour.io")
+				})
+
+				body(namespace)
+			})
+		}
+
+		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
+	})
+}
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".

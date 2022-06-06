@@ -43,15 +43,6 @@ func testRequestRedirectRuleNoService(namespace string) {
 	})
 }
 
-func testRequestRedirectRule(namespace string) {
-	Specify("redirects can be specified on route rule", func() {
-		t := f.T()
-
-		proxy := getRedirectHTTPProxy(namespace, false)
-		doRedirectTest(namespace, proxy, t)
-	})
-}
-
 func testRequestRedirectRuleInvalid(namespace string) {
 	Specify("invalid policy specified on route rule", func() {
 

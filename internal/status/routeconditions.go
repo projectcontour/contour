@@ -18,7 +18,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilclock "k8s.io/apimachinery/pkg/util/clock"
+	utilclock "k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -40,6 +40,7 @@ const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 const ReasonGatewayAllowMismatch RouteReasonType = "GatewayAllowMismatch"
 const ReasonAllBackendRefsHaveZeroWeights RouteReasonType = "AllBackendRefsHaveZeroWeights"
 const ReasonInvalidPathMatch RouteReasonType = "InvalidPathMatch"
+const ReasonNoIntersectingHostnames RouteReasonType = "NoIntersectingHostnames"
 
 // clock is used to set lastTransitionTime on status conditions.
 var clock utilclock.Clock = utilclock.RealClock{}

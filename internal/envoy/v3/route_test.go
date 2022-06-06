@@ -322,7 +322,7 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"timeout 90s": {
 			route: &dag.Route{
-				TimeoutPolicy: dag.TimeoutPolicy{
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
 					ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 				},
 				Clusters: []*dag.Cluster{c1},
@@ -338,7 +338,7 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"timeout infinity": {
 			route: &dag.Route{
-				TimeoutPolicy: dag.TimeoutPolicy{
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
 					ResponseTimeout: timeout.DisabledSetting(),
 				},
 				Clusters: []*dag.Cluster{c1},
@@ -354,8 +354,8 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"idle timeout 10m": {
 			route: &dag.Route{
-				TimeoutPolicy: dag.TimeoutPolicy{
-					IdleTimeout: timeout.DurationSetting(10 * time.Minute),
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
+					IdleStreamTimeout: timeout.DurationSetting(10 * time.Minute),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -370,8 +370,8 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"idle timeout infinity": {
 			route: &dag.Route{
-				TimeoutPolicy: dag.TimeoutPolicy{
-					IdleTimeout: timeout.DisabledSetting(),
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
+					IdleStreamTimeout: timeout.DisabledSetting(),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -529,6 +529,48 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service w/ request query parameter hashing": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{c3},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{
+						Terminal: true,
+						QueryParameterHashOptions: &dag.QueryParameterHashOptions{
+							ParameterName: "something",
+						},
+					},
+					{
+						QueryParameterHashOptions: &dag.QueryParameterHashOptions{
+							ParameterName: "other",
+						},
+					},
+				},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/1a2ffc1fef",
+					},
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{
+						{
+							Terminal: true,
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+								QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+									Name: "something",
+								},
+							},
+						},
+						{
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+								QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+									Name: "other",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"host header rewrite": {
 			route: &dag.Route{
 				RequestHeadersPolicy: &dag.HeadersPolicy{
@@ -597,7 +639,7 @@ func TestRouteDirectResponse(t *testing.T) {
 		directResponse *dag.DirectResponse
 		want           *envoy_route_v3.Route_DirectResponse
 	}{
-		"503": {
+		"503-nobody": {
 			directResponse: &dag.DirectResponse{StatusCode: 503},
 			want: &envoy_route_v3.Route_DirectResponse{
 				DirectResponse: &envoy_route_v3.DirectResponseAction{
@@ -605,11 +647,37 @@ func TestRouteDirectResponse(t *testing.T) {
 				},
 			},
 		},
-		"402": {
+		"503": {
+			directResponse: &dag.DirectResponse{StatusCode: 503, Body: "Service Unavailable"},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 503,
+					Body: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "Service Unavailable",
+						},
+					},
+				},
+			},
+		},
+		"402-nobody": {
 			directResponse: &dag.DirectResponse{StatusCode: 402},
 			want: &envoy_route_v3.Route_DirectResponse{
 				DirectResponse: &envoy_route_v3.DirectResponseAction{
 					Status: 402,
+				},
+			},
+		},
+		"402": {
+			directResponse: &dag.DirectResponse{StatusCode: 402, Body: "Payment Required"},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 402,
+					Body: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "Payment Required",
+						},
+					},
 				},
 			},
 		},
@@ -1079,8 +1147,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11-22-33-44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11-22-33-44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1098,8 +1170,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1117,8 +1193,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1144,21 +1224,8 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 			want: &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`^/foo(?:[\/].*)*`),
-				},
-			},
-		},
-		"path prefix match segment with regex meta char": {
-			route: &dag.Route{
-				PathMatchCondition: &dag.PrefixMatchCondition{
-					Prefix:          "/foo.bar",
-					PrefixMatchType: dag.PrefixMatchSegment,
-				},
-			},
-			want: &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`^/foo\.bar(?:[\/].*)*`),
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
 				},
 			},
 		},
@@ -1204,12 +1271,16 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-regex-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{
-								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: &matcher.RegexMatcher{
+									EngineType: &matcher.RegexMatcher_GoogleRe2{
+										GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+									},
+									Regex: "[a-z0-9][a-z0-9-]+someniceregex",
+								},
 							},
-							Regex: "[a-z0-9][a-z0-9-]+someniceregex",
 						},
 					},
 				}},

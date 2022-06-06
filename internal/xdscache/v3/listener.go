@@ -122,6 +122,9 @@ type ListenerConfig struct {
 	// listeners.
 	AllowChunkedLength bool
 
+	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
+	MergeSlashes bool
+
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
@@ -276,20 +279,25 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(envoyConfig contour_api_v1alpha1.EnvoyConfig, listenerConfig ListenerConfig) *ListenerCache {
+func NewListenerCache(
+	listenerConfig ListenerConfig,
+	metricsConfig contour_api_v1alpha1.MetricsConfig,
+	healthConfig contour_api_v1alpha1.HealthConfig,
+	adminPort int,
+) *ListenerCache {
 	listenerCache := &ListenerCache{
 		Config:       listenerConfig,
 		staticValues: map[string]*envoy_listener_v3.Listener{},
 	}
 
-	for _, l := range envoy_v3.StatsListeners(envoyConfig.Metrics, envoyConfig.Health) {
+	for _, l := range envoy_v3.StatsListeners(metricsConfig, healthConfig) {
 		listenerCache.staticValues[l.Name] = l
 	}
 
 	// If the port is not zero, allow the read-only options from the
 	// Envoy admin webpage to be served.
-	if envoyConfig.Network.EnvoyAdminPort > 0 {
-		admin := envoy_v3.AdminListener(envoyConfig.Network.EnvoyAdminPort)
+	if adminPort > 0 {
+		admin := envoy_v3.AdminListener(adminPort)
 		listenerCache.staticValues[admin.Name] = admin
 	}
 
@@ -378,7 +386,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					MergeSlashes(cfg.MergeSlashes).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
@@ -429,7 +438,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					MergeSlashes(cfg.MergeSlashes).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
@@ -493,7 +503,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+					MergeSlashes(cfg.MergeSlashes).
+					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 

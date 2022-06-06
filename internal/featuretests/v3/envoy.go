@@ -17,7 +17,6 @@ package v3
 
 import (
 	"path"
-	"regexp"
 	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -30,7 +29,6 @@ import (
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -120,13 +118,8 @@ func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_rout
 
 func routeSegmentPrefix(prefix string) *envoy_route_v3.RouteMatch {
 	return &envoy_route_v3.RouteMatch{
-		PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-			SafeRegex: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-				},
-				Regex: "^" + regexp.QuoteMeta(prefix) + `(?:[\/].*)*`,
-			},
+		PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+			PathSeparatedPrefix: prefix,
 		},
 	}
 }
@@ -216,6 +209,40 @@ func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	return c
 }
 
+func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, httpVersion envoy_v3.HTTPVersionType) *envoy_cluster_v3.Cluster {
+	var config *envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig
+
+	switch httpVersion {
+	// Default protocol version in Envoy is HTTP1.1.
+	case envoy_v3.HTTPVersion1, envoy_v3.HTTPVersionAuto:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+		}
+	case envoy_v3.HTTPVersion2:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+		}
+
+	case envoy_v3.HTTPVersion3:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http3ProtocolOptions{},
+		}
+	}
+
+	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+					IdleTimeout: protobuf.Duration(timeout),
+				},
+				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+					ExplicitHttpConfig: config,
+				},
+			}),
+	}
+	return c
+}
+
 func withResponseTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
 	route.Route.Timeout = protobuf.Duration(timeout)
 	return route
@@ -274,9 +301,10 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 }
 
 type hashPolicySpecifier struct {
-	headerName   string
-	terminal     bool
-	hashSourceIP bool
+	headerName    string
+	terminal      bool
+	hashSourceIP  bool
+	parameterName string
 }
 
 func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies ...hashPolicySpecifier) *envoy_route_v3.Route_Route {
@@ -295,6 +323,13 @@ func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies
 			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
 				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
 					HeaderName: p.headerName,
+				},
+			}
+		}
+		if len(p.parameterName) > 0 {
+			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+					Name: p.parameterName,
 				},
 			}
 		}

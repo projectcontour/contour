@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -47,41 +47,42 @@ func TestParseDefaults(t *testing.T) {
 debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
-  xds-server-type: contour
+    xds-server-type: contour
 accesslog-format: envoy
 json-fields:
-- '@timestamp'
-- authority
-- bytes_received
-- bytes_sent
-- downstream_local_address
-- downstream_remote_address
-- duration
-- method
-- path
-- protocol
-- request_id
-- requested_server_name
-- response_code
-- response_flags
-- uber_trace_id
-- upstream_cluster
-- upstream_host
-- upstream_local_address
-- upstream_service_time
-- user_agent
-- x_forwarded_for
+    - '@timestamp'
+    - authority
+    - bytes_received
+    - bytes_sent
+    - downstream_local_address
+    - downstream_remote_address
+    - duration
+    - method
+    - path
+    - protocol
+    - request_id
+    - requested_server_name
+    - response_code
+    - response_flags
+    - uber_trace_id
+    - upstream_cluster
+    - upstream_host
+    - upstream_local_address
+    - upstream_service_time
+    - user_agent
+    - x_forwarded_for
+    - grpc_status
 accesslog-level: info
 timeouts:
-  connection-idle-timeout: 60s
-  connect-timeout: 2s
+    connection-idle-timeout: 60s
+    connect-timeout: 2s
 envoy-service-namespace: projectcontour
 envoy-service-name: envoy
 default-http-versions: []
 cluster:
-  dns-lookup-family: auto
+    dns-lookup-family: auto
 network:
-  admin-port: 9001
+    admin-port: 9001
 `
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(data)))
 
@@ -228,6 +229,7 @@ func TestValidateAccessLogFields(t *testing.T) {
 		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
 		{"path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
 		{"dog=pug", "cat=black"},
+		{"grpc_status"},
 	}
 
 	for _, c := range successCases {
@@ -460,6 +462,7 @@ func TestConfigFileDefaultOverrideImport(t *testing.T) {
 incluster: false
 disablePermitInsecure: false
 disableAllowChunkedLength: false
+disableMergeSlashes: false
 `,
 	)
 
@@ -532,6 +535,7 @@ func TestAccessLogFormatString(t *testing.T) {
 		"my durations are %DURATION%.0 and method is %REQ(:METHOD)%\n",
 		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
 		"just a string\n",
+		"%GRPC_STATUS%\n",
 	}
 
 	for _, c := range successCases {

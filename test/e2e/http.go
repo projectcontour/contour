@@ -63,7 +63,7 @@ type HTTPRequestOpts struct {
 	OverrideURL string
 	RequestOpts []func(*http.Request)
 	ClientOpts  []func(*http.Client)
-	Condition   func(*http.Response) bool
+	Condition   func(*HTTPResponse) bool
 }
 
 func (o *HTTPRequestOpts) requestURLBase(defaultURL string) string {
@@ -157,7 +157,7 @@ type HTTPSRequestOpts struct {
 	OverrideURL   string
 	RequestOpts   []func(*http.Request)
 	TLSConfigOpts []func(*tls.Config)
-	Condition     func(*http.Response) bool
+	Condition     func(*HTTPResponse) bool
 }
 
 func (o *HTTPSRequestOpts) requestURLBase(defaultURL string) string {
@@ -252,7 +252,7 @@ func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
 	}, nil
 }
 
-func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*HTTPResponse, bool) {
+func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*HTTPResponse) bool) (*HTTPResponse, bool) {
 	var res *HTTPResponse
 
 	if err := wait.PollImmediate(h.RetryInterval, h.RetryTimeout, func() (bool, error) {
@@ -275,7 +275,7 @@ func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), conditio
 		}
 
 		if condition != nil {
-			return condition(r), nil
+			return condition(res), nil
 		}
 		return false, nil
 	}); err != nil {
@@ -294,8 +294,8 @@ type HTTPResponse struct {
 // HasStatusCode returns a function that returns true
 // if the response has the specified status code, or
 // false otherwise.
-func HasStatusCode(code int) func(*http.Response) bool {
-	return func(res *http.Response) bool {
+func HasStatusCode(code int) func(*HTTPResponse) bool {
+	return func(res *HTTPResponse) bool {
 		return res != nil && res.StatusCode == code
 	}
 }

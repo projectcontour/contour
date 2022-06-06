@@ -40,6 +40,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ExtensionServiceList{},
 		&ContourConfiguration{},
 		&ContourConfigurationList{},
+		&ContourDeployment{},
+		&ContourDeploymentList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, GroupVersion)

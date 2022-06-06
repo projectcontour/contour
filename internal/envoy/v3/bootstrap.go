@@ -31,13 +31,13 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -211,7 +211,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 						KeepaliveInterval: protobuf.UInt32(5),
 					},
 				},
-				TypedExtensionProtocolOptions: http2ProtocolOptions(),
+				TypedExtensionProtocolOptions: protocolOptions(HTTPVersion2, timeout.DefaultSetting()),
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						Priority:           envoy_core_v3.RoutingPriority_HIGH,
@@ -287,9 +287,9 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 						},
 					},
 					// TODO(youngnick): Does there need to be a flag wired down to here?
-					MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+					MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
 						{
-							SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+							SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
 							Matcher: &matcher.StringMatcher{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "contour",
@@ -305,7 +305,7 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 }
 
 func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_tls_v3.UpstreamTlsContext {
-	context := &envoy_tls_v3.UpstreamTlsContext{
+	return &envoy_tls_v3.UpstreamTlsContext{
 		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_tls_v3.TlsParameters{
 				TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
@@ -314,8 +314,10 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 				Name: "contour_xds_tls_certificate",
 				SdsConfig: &envoy_core_v3.ConfigSource{
 					ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
-						Path: certificateSdsFile,
+					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
+						PathConfigSource: &envoy_core_v3.PathConfigSource{
+							Path: certificateSdsFile,
+						},
 					},
 				},
 			}},
@@ -324,15 +326,16 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 					Name: "contour_xds_tls_validation_context",
 					SdsConfig: &envoy_core_v3.ConfigSource{
 						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
-							Path: validationSdsFile,
+						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
+							PathConfigSource: &envoy_core_v3.PathConfigSource{
+								Path: validationSdsFile,
+							},
 						},
 					},
 				},
 			},
 		},
 	}
-	return context
 }
 
 // tlsCertificateSdsSecretConfig creates DiscoveryResponse with file based SDS resource
@@ -373,9 +376,9 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 						Filename: c.GrpcCABundle,
 					},
 				},
-				MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+				MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
 					{
-						SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+						SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
 						Matcher: &matcher.StringMatcher{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "contour",

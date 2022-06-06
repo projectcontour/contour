@@ -23,19 +23,22 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	klog "k8s.io/klog/v2"
+	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type klogParams struct {
+type logParams struct {
+	level int
 	flags *flag.FlagSet
 	log   *logrus.Entry
 }
 
-type LogOption func(*klogParams)
+type LogOption func(*logParams)
 
 // LogLevelOption creates an option to set the Kubernetes verbose
 // log level (1 - 10 is the standard range).
 func LogLevelOption(level int) LogOption {
-	return LogOption(func(p *klogParams) {
+	return LogOption(func(p *logParams) {
+		p.level = level
 		if err := p.flags.Set("v", strconv.Itoa(level)); err != nil {
 			panic(fmt.Sprintf("failed to set flag: %s", err))
 		}
@@ -44,7 +47,7 @@ func LogLevelOption(level int) LogOption {
 
 // LogWriterOption creates an option to set the Kubernetes logging output.
 func LogWriterOption(log *logrus.Entry) LogOption {
-	return LogOption(func(p *klogParams) {
+	return LogOption(func(p *logParams) {
 		p.log = log
 	})
 }
@@ -57,7 +60,7 @@ func InitLogging(options ...LogOption) {
 		}
 	}
 
-	p := klogParams{
+	p := logParams{
 		flags: flag.NewFlagSet(os.Args[0], flag.ExitOnError),
 	}
 
@@ -78,14 +81,47 @@ func InitLogging(options ...LogOption) {
 		// Use the LogSink from a logrusr Logger, but wrapped in
 		// an adapter that always returns true for Enabled() since
 		// we rely on klog to do log level filtering.
+		logger := logrusr.New(p.log, logrusr.WithReportCaller())
 		klog.SetLogger(logr.New(&alwaysEnabledLogSink{
-			LogSink: logrusr.New(p.log, logrusr.WithReportCaller()).GetSink(),
+			LogSink: logger.GetSink(),
+		}))
+
+		// Also set the controller-runtime logger to the same
+		// concrete logger but ensure its output is guarded by
+		// the configured V level.
+		controller_runtime_log.SetLogger(logr.New(&levelControlledLogSink{
+			level:   p.level,
+			LogSink: logger.GetSink(),
 		}))
 	}
 }
 
+type levelControlledLogSink struct {
+	level int
+	logr.LogSink
+	logr.CallDepthLogSink
+}
+
+func (l *levelControlledLogSink) Enabled(level int) bool {
+	return level <= l.level
+}
+
+// Satisfy the logr.CallDepthLogSink interface to get location logging.
+func (l *levelControlledLogSink) WithCallDepth(depth int) logr.LogSink {
+	callDepthLogSink, ok := l.LogSink.(logr.CallDepthLogSink)
+	if ok {
+		return &levelControlledLogSink{
+			level:   l.level,
+			LogSink: callDepthLogSink.WithCallDepth(depth),
+		}
+	}
+
+	return l
+}
+
 type alwaysEnabledLogSink struct {
 	logr.LogSink
+	logr.CallDepthLogSink
 }
 
 // Satisfy the logr.CallDepthLogSink interface to get location logging.

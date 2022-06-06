@@ -17,6 +17,7 @@ import (
 	"time"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -40,8 +41,9 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
 		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
-				Path: hc.Path,
-				Host: host,
+				Path:            hc.Path,
+				Host:            host,
+				CodecClientType: codecClientType(cluster),
 			},
 		},
 	}
@@ -67,4 +69,11 @@ func durationOrDefault(d, def time.Duration) *duration.Duration {
 		return protobuf.Duration(d)
 	}
 	return protobuf.Duration(def)
+}
+
+func codecClientType(cluster *dag.Cluster) typev3.CodecClientType {
+	if cluster.Protocol == "h2" || cluster.Protocol == "h2c" {
+		return typev3.CodecClientType_HTTP2
+	}
+	return typev3.CodecClientType_HTTP1
 }

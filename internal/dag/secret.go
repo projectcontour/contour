@@ -74,9 +74,15 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, nil
 		}
 
+		data, ok := secret.Data[CACertificateKey]
+		if !ok {
+			// Secret is not a CA
+			return false, nil
+		}
+
 		// If there's an Opaque Secret with a `ca.crt` key, and it's zero
 		// length, Contour can't use it, so return an error.
-		if data := secret.Data[CACertificateKey]; len(data) == 0 {
+		if len(data) == 0 {
 			return false, errors.New("can't use zero-length ca.crt value")
 		}
 
@@ -209,12 +215,12 @@ func validatePrivateKey(data []byte) error {
 		}
 		switch block.Type {
 		case "PRIVATE KEY":
-			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
 				return err
 			}
 			keys++
 		case "RSA PRIVATE KEY":
-			if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+			if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 				return err
 			}
 			keys++

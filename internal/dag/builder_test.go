@@ -1358,7 +1358,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 		// If the ServiceName referenced from an HTTPRoute is missing,
-		// the route should return an HTTP503.
+		// the route should return an HTTP 404.
 		"missing service": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -1384,12 +1384,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+						virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 					),
 				},
 			),
 		},
-		// If port is not defined the route will return an HTTP503.
+		// If port is not defined the route will return an HTTP 404.
 		"missing port": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -1422,7 +1422,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+						virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 					),
 				},
 			),
@@ -1462,7 +1462,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 				),
 			}),
 		},
@@ -1624,7 +1624,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 				),
 			}),
 		},
@@ -1679,7 +1679,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 				),
 			}),
 		},
@@ -1734,7 +1734,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 				),
 			}),
 		},
@@ -1790,7 +1790,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
 				),
 			}),
 		},
@@ -3151,7 +3151,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"weight of zero for a single forwardTo results in 503": {
+		"weight of zero for a single forwardTo results in 404": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -3179,7 +3179,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRouteService("/", http.StatusServiceUnavailable, &Service{
+						virtualhost("*", directResponseRouteService("/", http.StatusNotFound, &Service{
 							Weighted: WeightedService{
 								Weight:           0,
 								ServiceName:      kuardService.Name,
@@ -7029,6 +7029,51 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyLoadBalancerHashPolicyQueryParameter := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							Terminal: true,
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+						},
+						{
+							QueryParameterHashOptions: nil,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "other",
+							},
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	proxyLoadBalancerHashPolicySourceIP := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -7103,6 +7148,37 @@ func TestDAGInsert(t *testing.T) {
 								HeaderName: "X-Foo",
 							},
 							HashSourceIP: true,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Foo",
+							},
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Foo",
+							},
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+							HashSourceIP: true,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+							HashSourceIP: true,
+						},
+						{
+							QueryParameterHashOptions: nil,
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "",
+							},
 						},
 					},
 				},
@@ -8233,7 +8309,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8254,7 +8330,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8275,9 +8351,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
-							},
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)},
 						}),
 					),
 				},
@@ -8296,7 +8370,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8317,7 +8391,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8338,9 +8412,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(),
-							},
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()},
 						}),
 					),
 				},
@@ -10077,10 +10149,6 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
-								Name: s1.Name,
-								Port: 8080,
-							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 								Scheme:     pointer.StringPtr("https"),
 								Hostname:   pointer.StringPtr("envoyproxy.io"),
@@ -10104,16 +10172,6 @@ func TestDAGInsert(t *testing.T) {
 								PortNumber: 443,
 								StatusCode: 301,
 							},
-							Clusters: []*Cluster{{
-								Upstream: &Service{
-									Weighted: WeightedService{
-										Weight:           1,
-										ServiceName:      s1.Name,
-										ServiceNamespace: s1.Namespace,
-										ServicePort:      s1.Spec.Ports[0],
-									},
-								},
-							}},
 						},
 					)),
 				},
@@ -10186,10 +10244,6 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/blog",
 							}},
-							Services: []contour_api_v1.Service{{
-								Name: s1.Name,
-								Port: 8080,
-							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
 								Scheme:     pointer.StringPtr("https"),
 								Hostname:   pointer.StringPtr("envoyproxy.io"),
@@ -10226,6 +10280,139 @@ func TestDAGInsert(t *testing.T) {
 								PortNumber: 443,
 								StatusCode: 301,
 							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy DirectResponse policy - code 200": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: 200,
+								Body:       "success",
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 200,
+								Body:       "success",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy DirectResponse policy - no body": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: 503,
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 503,
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy DirectResponse policy with multiple matches": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "direct-response",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/direct",
+							}},
+							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								StatusCode: 404,
+								Body:       "page not found",
+							},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/redirect",
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									Weighted: WeightedService{
@@ -10236,6 +10423,22 @@ func TestDAGInsert(t *testing.T) {
 									},
 								},
 							}},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/direct"),
+							DirectResponse: &DirectResponse{
+								StatusCode: 404,
+								Body:       "page not found",
+							},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/redirect"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
 						},
 					)),
 				},
@@ -10754,6 +10957,39 @@ func TestDAGInsert(t *testing.T) {
 								{
 									HeaderHashOptions: &HeaderHashOptions{
 										HeaderName: "X-Some-Other-Header",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with load balancer request query parameter hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyQueryParameter,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									Terminal: true,
+									QueryParameterHashOptions: &QueryParameterHashOptions{
+										ParameterName: "something",
+									},
+								},
+								{
+									QueryParameterHashOptions: &QueryParameterHashOptions{
+										ParameterName: "other",
 									},
 								},
 							},

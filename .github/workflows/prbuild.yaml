@@ -9,6 +9,7 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  GO_VERSION: 1.18.2
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -17,7 +18,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.42.0
+          version: v1.45.0
           args: --build-tags=e2e
       - uses: act10ns/slack@v1
         with:
@@ -58,9 +59,9 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17.5'
+          go-version: ${{ env.GO_VERSION }}
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -119,11 +120,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.23.0@sha256:2f93d3c7b12a3e93e6c1f34f331415e105979961fcddbe69a4e3ab5a93ccbb35"
+            node_image: "docker.io/kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.22.4@sha256:ca3587e6e545a96c07bf82e2c46503d9ef86fc704f44c17577fca7bcabf5f978"
+            node_image: "docker.io/kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.21.2@sha256:9d07ff05e4afefbba983fac311807b3c17a5f36e7061f6cb7e2ba756255b2be4"
+            node_image: "docker.io/kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105"
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
@@ -146,9 +147,9 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17.5'
+          go-version: ${{ env.GO_VERSION }}
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -159,7 +160,7 @@ jobs:
           LOAD_PREBUILT_IMAGE: "true"
           USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
         run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make e2e
       - uses: act10ns/slack@v1
         with:
@@ -181,11 +182,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.23.0@sha256:2f93d3c7b12a3e93e6c1f34f331415e105979961fcddbe69a4e3ab5a93ccbb35"
+            node_image: "docker.io/kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.22.4@sha256:ca3587e6e545a96c07bf82e2c46503d9ef86fc704f44c17577fca7bcabf5f978"
+            node_image: "docker.io/kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.21.2@sha256:9d07ff05e4afefbba983fac311807b3c17a5f36e7061f6cb7e2ba756255b2be4"
+            node_image: "docker.io/kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -207,9 +208,9 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17.5'
+          go-version: ${{ env.GO_VERSION }}
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -220,7 +221,7 @@ jobs:
           MULTINODE_CLUSTER: "true"
           LOAD_PREBUILT_IMAGE: "true"
         run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
       - uses: act10ns/slack@v1
         with:
@@ -258,9 +259,9 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17.5'
+          go-version: ${{ env.GO_VERSION }}
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -297,9 +298,9 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17.5'
+          go-version: ${{ env.GO_VERSION }}
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -308,6 +309,45 @@ jobs:
         run: |
           make install
           make check-coverage
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  gateway-conformance:
+    runs-on: ubuntu-latest
+    needs: [build-image]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: image
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: Gateway API conformance tests
+        env:
+          LOAD_PREBUILT_IMAGE: "true"
+        run: |
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
+          make gateway-conformance
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}

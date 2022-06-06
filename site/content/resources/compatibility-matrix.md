@@ -10,7 +10,8 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.21.1][15]         | 1.23, 1.22, 1.21    | [main][50]       | v1alpha2            |
+| main            | [1.22.0][16]         | 1.24, 1.23, 1.22    | [main][50]       | v1alpha2            |
+| 1.21.0          | [1.22.0][16]         | 1.23, 1.22, 1.21    | [1.21.0][69]     | v1alpha2            |
 | 1.20.1          | [1.21.1][15]         | 1.23, 1.22, 1.21    | [1.20.1][68]     | v1alpha2            |
 | 1.20.0          | [1.21.0][14]         | 1.23, 1.22, 1.21    | [1.20.0][67]     | v1alpha2            |
 | 1.19.1          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.1][65]     | v1alpha1            |
@@ -111,6 +112,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [13]: https://www.envoyproxy.io/docs/envoy/v1.19.1/version_history/current
 [14]: https://www.envoyproxy.io/docs/envoy/v1.21.0/version_history/current
 [15]: https://www.envoyproxy.io/docs/envoy/v1.21.1/version_history/current
+[16]: https://www.envoyproxy.io/docs/envoy/v1.22.0/version_history/current
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
@@ -131,6 +133,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [66]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.3
 [67]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.0
 [68]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.1
+[69]: https://github.com/projectcontour/contour-operator/releases/tag/v1.21.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

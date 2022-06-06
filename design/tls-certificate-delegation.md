@@ -76,7 +76,7 @@ If the appropriate secret delegation is in place Contour will use the fully qual
 
 Alternative designs that extended the IngressRoute specification to allow referencing Secrets by name _and_ namespace were rejected because there was no way to effectively prevent anyone with the permission to construct an IngressRoute object in their own namespace from utilizing the TLS certificate from another namespace.
 While it would not be possible for the author to read the contents of the other namespace's secret--only Contour would have that permission--this would allow an attacker to present a certificate from a namespace they do not have permission to read as their own.
-In the case of a wildcard certificate this is benficial--it's actually what we want--but also opens up the possibility, when combined with DNS spoofing, of presenting an alternate site using the _real_ SSL certificate, leading to cookie hijacking and MITM attacks.
+In the case of a wildcard certificate this is beneficial--it's actually what we want--but also opens up the possibility, when combined with DNS spoofing, of presenting an alternate site using the _real_ SSL certificate, leading to cookie hijacking and MITM attacks.
 	
 ## Security Considerations
 

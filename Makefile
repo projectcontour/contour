@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.21.1
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.22.0
 GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -40,7 +40,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.17.5
+BUILD_BASE_IMAGE ?= golang:1.18.2
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -182,10 +182,12 @@ lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run --build-tags=e2e
 
+# The inline config is needed to allow the Gateway API validating webhook YAML
+# (which we import directly from the Gateway API repo) to pass.
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint -d "{rules: {brackets: {max-spaces-inside: 1}, commas: {max-spaces-before: 1}}}" examples/ site/content/examples/ ./versions.yaml
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd
@@ -205,7 +207,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -223,16 +225,21 @@ generate-deployment:
 	@./hack/generate-deployment.sh deployment
 	@./hack/generate-deployment.sh daemonset
 	@./hack/generate-gateway-deployment.sh
+	@./hack/generate-provisioner-deployment.sh
 
 .PHONY: generate-crd-yaml
 generate-crd-yaml:
 	@echo "Generating Contour CRD YAML documents..."
 	@./hack/generate-crd-yaml.sh
 
-.PHONY: generate-gateway-crd-yaml
-generate-gateway-crd-yaml:
+.PHONY: generate-gateway-yaml
+generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
 	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}"
+	@echo "Generating Gateway API webhook documents..."
+	@curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/deploy/admission_webhook.yaml
+	@curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/deploy/certificate_config.yaml
+	
 
 .PHONY: generate-api-docs
 generate-api-docs:
@@ -325,6 +332,13 @@ check-ingress-conformance: | install-contour-working run-ingress-conformance cle
 .PHONY: run-ingress-conformance
 run-ingress-conformance:
 	./test/scripts/run-ingress-conformance.sh
+
+.PHONY: gateway-conformance
+gateway-conformance: | setup-kind-cluster load-contour-image-kind run-gateway-conformance cleanup-kind ## Setup a kind cluster and run Gateway API conformance tests in it.
+
+.PHONY: run-gatway-conformance
+run-gateway-conformance: ## Run Gateway API conformance tests against the current cluster.
+	./test/scripts/run-gateway-conformance.sh
 
 .PHONY: deploy-gcp-bench-cluster
 deploy-gcp-bench-cluster:

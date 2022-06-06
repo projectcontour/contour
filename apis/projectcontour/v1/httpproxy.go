@@ -377,6 +377,27 @@ type Route struct {
 	// RequestRedirectPolicy defines an HTTP redirection.
 	// +optional
 	RequestRedirectPolicy *HTTPRequestRedirectPolicy `json:"requestRedirectPolicy,omitempty"`
+
+	// DirectResponsePolicy returns an arbitrary HTTP response directly.
+	// +optional
+	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+}
+
+type HTTPDirectResponsePolicy struct {
+	// StatusCode is the HTTP response status to be returned.
+	// +required
+	// +kubebuilder:validation:Minimum=200
+	// +kubebuilder:validation:Maximum=599
+	StatusCode int `json:"statusCode"`
+
+	// Body is the content of the response body.
+	// If this setting is omitted, no body is included in the generated response.
+	//
+	// Note: Body is not recommended to set too long
+	// otherwise it can have significant resource usage impacts.
+	//
+	// +optional
+	Body string `json:"body,omitempty"`
 }
 
 // HTTPRequestRedirectPolicy defines configuration for redirecting a request.
@@ -765,6 +786,12 @@ type TimeoutPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	Idle string `json:"idle,omitempty"`
+
+	// Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
+	// If not supplied, Envoy's default value of 1h applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	IdleConnection string `json:"idleConnection,omitempty"`
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
@@ -864,6 +891,17 @@ type HeaderHashOptions struct {
 	HeaderName string `json:"headerName,omitempty"`
 }
 
+// QueryParameterHashOptions contains options to configure a query parameter based hash
+// policy, used in request attribute hash based load balancing.
+type QueryParameterHashOptions struct {
+	// ParameterName is the name of the HTTP request query parameter that will be used to
+	// calculate the hash key. If the query parameter specified is not present on a
+	// request, no hash will be produced.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	ParameterName string `json:"parameterName,omitempty"`
+}
+
 // RequestHashPolicy contains configuration for an individual hash policy
 // on a request attribute.
 type RequestHashPolicy struct {
@@ -878,6 +916,12 @@ type RequestHashPolicy struct {
 	// otherwise this request hash policy object will be ignored.
 	// +optional
 	HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
+
+	// QueryParameterHashOptions should be set when request query parameter hash based load
+	// balancing is desired. It must be the only hash option field set,
+	// otherwise this request hash policy object will be ignored.
+	// +optional
+	QueryParameterHashOptions *QueryParameterHashOptions `json:"queryParameterHashOptions,omitempty"`
 
 	// HashSourceIP should be set to true when request source IP hash based
 	// load balancing is desired. It must be the only hash option field set,

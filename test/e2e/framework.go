@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -75,6 +77,10 @@ type Framework struct {
 	// are part of a full Contour deployment manifest.
 	Deployment *Deployment
 
+	// Provisioner provides helpers for managing deploying resources that
+	// are part of a Contour gateway provisioner manifest.
+	Provisioner *Provisioner
+
 	// Kubectl provides helpers for managing kubectl port-forward helpers.
 	Kubectl *Kubectl
 
@@ -95,6 +101,8 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
+
+	ipV6Cluster := os.Getenv("IPV6_CLUSTER") == "true"
 
 	config, err := config.GetConfig()
 	require.NoError(t, err)
@@ -123,22 +131,38 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 
 	httpURLBase := os.Getenv("CONTOUR_E2E_HTTP_URL_BASE")
 	if httpURLBase == "" {
-		httpURLBase = "http://127.0.0.1:9080"
+		if ipV6Cluster {
+			httpURLBase = "http://[::1]:9080"
+		} else {
+			httpURLBase = "http://127.0.0.1:9080"
+		}
 	}
 
 	httpsURLBase := os.Getenv("CONTOUR_E2E_HTTPS_URL_BASE")
 	if httpsURLBase == "" {
-		httpsURLBase = "https://127.0.0.1:9443"
+		if ipV6Cluster {
+			httpsURLBase = "https://[::1]:9443"
+		} else {
+			httpsURLBase = "https://127.0.0.1:9443"
+		}
 	}
 
 	httpURLMetricsBase := os.Getenv("CONTOUR_E2E_HTTP_URL_METRICS_BASE")
 	if httpURLMetricsBase == "" {
-		httpURLMetricsBase = "http://127.0.0.1:8002"
+		if ipV6Cluster {
+			httpURLMetricsBase = "http://[::1]:8002"
+		} else {
+			httpURLMetricsBase = "http://127.0.0.1:8002"
+		}
 	}
 
 	httpURLAdminBase := os.Getenv("CONTOUR_E2E_HTTP_URL_ADMIN_BASE")
 	if httpURLAdminBase == "" {
-		httpURLAdminBase = "http://127.0.0.1:19001"
+		if ipV6Cluster {
+			httpURLAdminBase = "http://[::1]:19001"
+		} else {
+			httpURLAdminBase = "http://127.0.0.1:19001"
+		}
 	}
 
 	var (
@@ -194,6 +218,13 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 
 	require.NoError(t, deployment.UnmarshalResources())
 
+	provisioner := &Provisioner{
+		client:          crClient,
+		cmdOutputWriter: ginkgo.GinkgoWriter,
+		contourImage:    contourImage,
+	}
+	require.NoError(t, provisioner.UnmarshalResources())
+
 	return &Framework{
 		Client:        crClient,
 		RetryInterval: time.Second,
@@ -223,9 +254,10 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 			retryTimeout:  60 * time.Second,
 			t:             t,
 		},
-		Deployment: deployment,
-		Kubectl:    kubectl,
-		t:          t,
+		Deployment:  deployment,
+		Provisioner: provisioner,
+		Kubectl:     kubectl,
+		t:           t,
 	}
 }
 
@@ -348,7 +380,7 @@ func (f *Framework) CreateNamespace(name string) {
 		// Got an existing namespace and it's terminating: give it a chance to go
 		// away.
 		require.Eventually(f.t, func() bool {
-			return api_errors.IsNotFound(f.Client.Get(context.TODO(), key, ns))
+			return api_errors.IsNotFound(f.Client.Get(context.TODO(), key, existing))
 		}, 3*time.Minute, time.Second)
 	}
 
@@ -521,4 +553,17 @@ func DetailedConditionInvalid(conditions []contourv1.DetailedCondition) bool {
 		}
 	}
 	return false
+}
+
+// VerifyTLSServerCert returns a TLS config functional
+// option that enables verifying the TLS server cert using
+// the provided CA cert.
+func VerifyTLSServerCert(caCert []byte) func(*tls.Config) {
+	return func(c *tls.Config) {
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM(caCert)
+
+		c.RootCAs = certPool
+		c.InsecureSkipVerify = false
+	}
 }
