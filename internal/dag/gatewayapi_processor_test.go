@@ -199,20 +199,20 @@ func TestComputeHosts(t *testing.T) {
 			want:         sets.NewString("http.projectcontour.io"),
 			wantError:    nil,
 		},
-		"listener host with many labels doesn't match hostnames wildcard host": {
-			listenerHost: "too.many.labels.projectcontour.io",
+		"listener host with many labels matches hostnames wildcard host": {
+			listenerHost: "very.many.labels.projectcontour.io",
 			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
-			want:      nil,
+			want:      sets.NewString("very.many.labels.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener wildcard host doesn't match hostnames with many labels host": {
 			listenerHost: "*.projectcontour.io",
 			hostnames: []gatewayapi_v1alpha2.Hostname{
-				"too.many.labels.projectcontour.io",
+				"very.many.labels.projectcontour.io",
 			},
-			want:      nil,
+			want:      sets.NewString("very.many.labels.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener wildcard host doesn't match bare hostname": {

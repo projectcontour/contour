@@ -77,7 +77,7 @@ func testTLSWildcardHost(namespace string) {
 			{
 				hostname:   "a.random3." + hostSuffix,
 				sni:        "a.random3." + hostSuffix,
-				wantStatus: 404,
+				wantStatus: 200,
 			},
 			{
 				hostname:   "random4." + hostSuffix,

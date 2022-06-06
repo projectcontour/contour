@@ -1270,10 +1270,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("*.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
-							HeaderMatchConditions: []HeaderMatchCondition{
-								{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
-							},
-							Clusters: clustersWeight(service(kuardService)),
+							Clusters:           clustersWeight(service(kuardService)),
 						}),
 					),
 				},
