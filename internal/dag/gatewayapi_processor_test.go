@@ -539,6 +539,22 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("http-listener")},
 			want:     false,
 		},
+		"multiple parentRefs with section names specified, first listener": {
+			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
+				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
+			},
+			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("listener-1")},
+			want:     true,
+		},
+		"multiple parentRefs with section names specified, second listener": {
+			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
+				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
+			},
+			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("listener-2")},
+			want:     true,
+		},
 	}
 
 	for name, tc := range tests {
