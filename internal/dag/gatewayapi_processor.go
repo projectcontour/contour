@@ -785,7 +785,9 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 			}
 
 			// section name specified: it must match the listener name
-			return *ref.SectionName == listener.Name
+			if *ref.SectionName == listener.Name {
+				return true
+			}
 		}
 	}
 
