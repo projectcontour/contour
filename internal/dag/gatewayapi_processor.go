@@ -688,15 +688,16 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1alpha2.
 
 		// Listener has a wildcard hostname: check if the route hostname matches.
 		case strings.HasPrefix(listenerHostname, "*"):
-			if removeFirstDNSLabel(listenerHostname) == removeFirstDNSLabel(routeHostname) {
+			if hostnameMatchesWildcardHostname(routeHostname, listenerHostname) {
 				hostnames.Insert(routeHostname)
 			}
 
 		// Route has a wildcard hostname: check if the listener hostname matches.
 		case strings.HasPrefix(routeHostname, "*"):
-			if removeFirstDNSLabel(listenerHostname) == removeFirstDNSLabel(routeHostname) {
+			if hostnameMatchesWildcardHostname(listenerHostname, routeHostname) {
 				hostnames.Insert(listenerHostname)
 			}
+
 		}
 	}
 
@@ -707,11 +708,16 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1alpha2.
 	return hostnames, errs
 }
 
-func removeFirstDNSLabel(input string) string {
-	if strings.Contains(input, ".") {
-		return input[strings.IndexAny(input, "."):]
+// hostnameMatchesWildcardHostname returns true if hostname has the non-wildcard
+// portion of wildcardHostname as a suffix, plus at least one DNS label matching the
+// wildcard.
+func hostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
+	if !strings.HasSuffix(hostname, strings.TrimPrefix(wildcardHostname, "*")) {
+		return false
 	}
-	return input
+
+	wildcardMatch := strings.TrimSuffix(hostname, strings.TrimPrefix(wildcardHostname, "*"))
+	return len(wildcardMatch) > 0
 }
 
 // namespaceMatches returns true if the namespaces selector matches
@@ -1023,14 +1029,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
 			for _, route := range routes {
-				// If we have a wildcard match, add a header match regex rule to match the
-				// hostname so we can be sure to only match one DNS label. This is required
-				// as Envoy's virtualhost hostname wildcard matching can match multiple
-				// labels. This match ignores a port in the hostname in case it is present.
-				if strings.HasPrefix(host, "*.") {
-					route.HeaderMatchConditions = append(route.HeaderMatchConditions, wildcardDomainHeaderMatch(host))
-				}
-
 				switch {
 				case listener.secret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(host)
