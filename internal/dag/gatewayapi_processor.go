@@ -1083,7 +1083,7 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewayapi_v1alpha2.BackendObjectReference, field string, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
 	degraded := func(msg string) *metav1.Condition {
 		return &metav1.Condition{
-			Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+			Type:    string(gatewayapi_v1alpha2.RouteConditionResolvedRefs),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: msg,
@@ -1123,7 +1123,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 			},
 		) {
 			return nil, &metav1.Condition{
-				Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+				Type:    string(gatewayapi_v1alpha2.RouteConditionResolvedRefs),
 				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
 				Message: fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferencePolicy", field),
