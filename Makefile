@@ -7,7 +7,8 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.22.2
-GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
+# GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
+GATEWAY_API_VERSION = "bcfe3da78648b4206a627fe7f3b2d0db7e755ba8"
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining

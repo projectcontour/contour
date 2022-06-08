@@ -38,7 +38,7 @@ require (
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.0
-	sigs.k8s.io/controller-tools v0.6.2
-	sigs.k8s.io/gateway-api v0.4.3
+	sigs.k8s.io/controller-tools v0.7.0
+	sigs.k8s.io/gateway-api v0.4.1-0.20220608164222-bcfe3da78648
 	sigs.k8s.io/kustomize/kyaml v0.10.17
 )
