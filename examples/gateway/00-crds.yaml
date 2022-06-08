@@ -3,6 +3,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
 spec:
@@ -21,6 +23,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .spec.controllerName
       name: Controller
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Accepted")].status
+      name: Accepted
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -228,6 +233,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
 spec:
@@ -293,7 +300,7 @@ spec:
                   manner, assigning an appropriate set of Addresses. \n The implementation
                   MUST bind all Listeners to every GatewayAddress that it assigns
                   to the Gateway and add a corresponding entry in GatewayStatus.Addresses.
-                  \n Support: Core"
+                  \n Support: Extended"
                 items:
                   description: GatewayAddress describes an address that can be bound
                     to a Gateway.
@@ -301,10 +308,9 @@ spec:
                     type:
                       default: IPAddress
                       description: Type of the address.
-                      enum:
-                      - IPAddress
-                      - Hostname
-                      - NamedAddress
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^([a-zA-Z0-9])+$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\/[a-zA-Z0-9]+$
                       type: string
                     value:
                       description: "Value of the address. The validity of the values
@@ -389,7 +395,7 @@ spec:
                             with the application protocol specified in the Listener's
                             Protocol field. If an implementation does not support
                             or recognize this resource type, it MUST set the \"ResolvedRefs\"
-                            condition to False for this Listener with the \"InvalidRoutesRef\"
+                            condition to False for this Listener with the \"InvalidRouteKinds\"
                             reason. \n Support: Core"
                           items:
                             description: RouteGroupKind indicates the group and kind
@@ -503,14 +509,18 @@ spec:
                         array. When both listener and route specify hostnames, there
                         MUST be an intersection between the values for a Route to
                         be accepted. For more information, refer to the Route specific
-                        Hostnames documentation. \n Support: Core"
+                        Hostnames documentation. \n Hostnames that are prefixed with
+                        a wildcard label (`*.`) are interpreted as a suffix match.
+                        That means that a match for `*.example.com` would match both
+                        `test.example.com`, and `foo.test.example.com`, but not `example.com`.
+                        \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                       type: string
                     name:
-                      description: "Name is the name of the Listener. \n Support:
-                        Core"
+                      description: "Name is the name of the Listener. This name MUST
+                        be unique within a Gateway. \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -550,9 +560,9 @@ spec:
                             MAY choose to support attaching multiple certificates
                             to a Listener, but this behavior is implementation-specific.
                             \n References to a resource in different namespace are
-                            invalid UNLESS there is a ReferencePolicy in the target
+                            invalid UNLESS there is a ReferenceGrant in the target
                             namespace that allows the certificate to be attached.
-                            If a ReferencePolicy does not allow this reference, the
+                            If a ReferenceGrant does not allow this reference, the
                             \"ResolvedRefs\" condition MUST be set to False for this
                             listener with the \"InvalidCertificateRef\" reason. \n
                             This field is required to have at least one element when
@@ -560,8 +570,9 @@ spec:
                             otherwise. \n CertificateRefs can reference to standard
                             Kubernetes resources, i.e. Secret, or implementation-specific
                             custom resources. \n Support: Core - A single reference
-                            to a Kubernetes Secret \n Support: Implementation-specific
-                            (More than one reference or other resource types)"
+                            to a Kubernetes Secret of type kubernetes.io/tls \n Support:
+                            Implementation-specific (More than one reference or other
+                            resource types)"
                           items:
                             description: "SecretObjectReference identifies an API
                               object including its namespace, defaulting to Secret.
@@ -596,10 +607,10 @@ spec:
                               namespace:
                                 description: "Namespace is the namespace of the backend.
                                   When unspecified, the local namespace is inferred.
-                                  \n Note that when a namespace is specified, a ReferencePolicy
+                                  \n Note that when a namespace is specified, a ReferenceGrant
                                   object is required in the referent namespace to
                                   allow that namespace's owner to accept the reference.
-                                  See the ReferencePolicy documentation for details.
+                                  See the ReferenceGrant documentation for details.
                                   \n Support: Core"
                                 maxLength: 63
                                 minLength: 1
@@ -685,10 +696,9 @@ spec:
                     type:
                       default: IPAddress
                       description: Type of the address.
-                      enum:
-                      - IPAddress
-                      - Hostname
-                      - NamedAddress
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^([a-zA-Z0-9])+$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\/[a-zA-Z0-9]+$
                       type: string
                     value:
                       description: "Value of the address. The validity of the values
@@ -946,6 +956,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
 spec:
@@ -1004,17 +1016,21 @@ spec:
                   * A Listener with `*.example.com` as the hostname matches HTTPRoutes
                   \  that have either not specified any hostnames or have specified
                   at least   one hostname that matches the Listener hostname. For
-                  example,   `test.example.com` and `*.example.com` would both match.
-                  On the other   hand, `example.com` and `test.example.net` would
-                  not match. \n If both the Listener and HTTPRoute have specified
-                  hostnames, any HTTPRoute hostnames that do not match the Listener
-                  hostname MUST be ignored. For example, if a Listener specified `*.example.com`,
-                  and the HTTPRoute specified `test.example.com` and `test.example.net`,
-                  `test.example.net` must not be considered for a match. \n If both
-                  the Listener and HTTPRoute have specified hostnames, and none match
-                  with the criteria above, then the HTTPRoute is not accepted. The
-                  implementation must raise an 'Accepted' Condition with a status
-                  of `False` in the corresponding RouteParentStatus. \n Support: Core"
+                  example,   `*.example.com`, `test.example.com`, and `foo.test.example.com`
+                  would   all match. On the other hand, `example.com` and `test.example.net`
+                  would   not match. \n Hostnames that are prefixed with a wildcard
+                  label (`*.`) are interpreted as a suffix match. That means that
+                  a match for `*.example.com` would match both `test.example.com`,
+                  and `foo.test.example.com`, but not `example.com`. \n If both the
+                  Listener and HTTPRoute have specified hostnames, any HTTPRoute hostnames
+                  that do not match the Listener hostname MUST be ignored. For example,
+                  if a Listener specified `*.example.com`, and the HTTPRoute specified
+                  `test.example.com` and `test.example.net`, `test.example.net` must
+                  not be considered for a match. \n If both the Listener and HTTPRoute
+                  have specified hostnames, and none match with the criteria above,
+                  then the HTTPRoute is not accepted. The implementation must raise
+                  an 'Accepted' Condition with a status of `False` in the corresponding
+                  RouteParentStatus. \n Support: Core"
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
@@ -1050,16 +1066,13 @@ spec:
                   is the case, the list of routes attached to those resources should
                   also be merged."
                 items:
-                  description: "ParentRef identifies an API object (usually a Gateway)
-                    that can be considered a parent of this resource (usually a route).
-                    The only kind of parent resource with \"Core\" support is Gateway.
-                    This API may be extended in the future to support additional kinds
-                    of parent resources, such as HTTPRoute. \n The API object must
-                    be valid in the cluster; the Group and Kind must be registered
-                    in the cluster for this reference to be valid. \n References to
-                    objects with invalid Group and Kind are not valid, and must be
-                    rejected by the implementation, with appropriate Conditions set
-                    on the containing object."
+                  description: "ParentReference identifies an API object (usually
+                    a Gateway) that can be considered a parent of this resource (usually
+                    a route). The only kind of parent resource with \"Core\" support
+                    is Gateway. This API may be extended in the future to support
+                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    API object must be valid in the cluster; the Group and Kind must
+                    be registered in the cluster for this reference to be valid."
                   properties:
                     group:
                       default: gateway.networking.k8s.io
@@ -1093,20 +1106,22 @@ spec:
                     sectionName:
                       description: "SectionName is the name of a section within the
                         target resource. In the following resources, SectionName is
-                        interpreted as the following: \n * Gateway: Listener Name
-                        \n Implementations MAY choose to support attaching Routes
-                        to other resources. If that is the case, they MUST clearly
-                        document how SectionName is interpreted. \n When unspecified
-                        (empty string), this will reference the entire resource. For
-                        the purpose of status, an attachment is considered successful
-                        if at least one section in the parent resource accepts it.
-                        For example, Gateway listeners can restrict which Routes can
-                        attach to them by Route kind, namespace, or hostname. If 1
-                        of 2 Gateway listeners accept attachment from the referencing
-                        Route, the Route MUST be considered successfully attached.
-                        If no Gateway listeners accept attachment from this Route,
-                        the Route MUST be considered detached from the Gateway. \n
-                        Support: Core"
+                        interpreted as the following: \n * Gateway: Listener Name.
+                        When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected listener must match both
+                        specified values. \n Implementations MAY choose to support
+                        attaching Routes to other resources. If that is the case,
+                        they MUST clearly document how SectionName is interpreted.
+                        \n When unspecified (empty string), this will reference the
+                        entire resource. For the purpose of status, an attachment
+                        is considered successful if at least one section in the parent
+                        resource accepts it. For example, Gateway listeners can restrict
+                        which Routes can attach to them by Route kind, namespace,
+                        or hostname. If 1 of 2 Gateway listeners accept attachment
+                        from the referencing Route, the Route MUST be considered successfully
+                        attached. If no Gateway listeners accept attachment from this
+                        Route, the Route MUST be considered detached from the Gateway.
+                        \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -1129,15 +1144,23 @@ spec:
                     and forwarding the request to an API object (backendRefs).
                   properties:
                     backendRefs:
-                      description: "If unspecified or invalid (refers to a non-existent
-                        resource or a Service with no endpoints), the rule performs
-                        no forwarding. If there are also no filters specified that
-                        would result in a response being sent, a HTTP 503 status code
-                        is returned. 503 responses must be sent so that the overall
-                        weight is respected; if an invalid backend is requested to
-                        have 80% of requests, then 80% of requests must get a 503
-                        instead. \n Support: Core for Kubernetes Service Support:
-                        Custom for any other resource \n Support for weight: Core"
+                      description: "BackendRefs defines the backend(s) where matching
+                        requests should be sent. \n A 404 status code MUST be returned
+                        if there are no BackendRefs or filters specified that would
+                        result in a response being sent. \n A BackendRef is considered
+                        invalid when it refers to: \n * an unknown or unsupported
+                        kind of resource * a resource that does not exist * a resource
+                        in another namespace when the reference has not been   explicitly
+                        allowed by a ReferenceGrant (or equivalent concept). \n When
+                        a BackendRef is invalid, 404 status codes MUST be returned
+                        for requests that would have otherwise been routed to an invalid
+                        backend. If multiple backends are specified, and some are
+                        invalid, the proportion of requests that would otherwise have
+                        been routed to an invalid backend MUST receive a 404 status
+                        code. \n When a BackendRef refers to a Service that has no
+                        ready endpoints, it is recommended to return a 503 status
+                        code. \n Support: Core for Kubernetes Service Support: Custom
+                        for any other resource \n Support for weight: Core"
                       items:
                         description: HTTPBackendRef defines how a HTTPRoute should
                           forward an HTTP request.
@@ -1315,7 +1338,7 @@ spec:
                                         False` and not configure this backend in the
                                         underlying implementation. \n If there is
                                         a cross-namespace reference to an *existing*
-                                        object that is not allowed by a ReferencePolicy,
+                                        object that is not allowed by a ReferenceGrant,
                                         the controller must ensure the \"ResolvedRefs\"
                                         \ condition on the Route is set to `status:
                                         False`, with the \"RefNotPermitted\" reason
@@ -1339,6 +1362,7 @@ spec:
                                           default: Service
                                           description: Kind is kind of the referent.
                                             For example "HTTPRoute" or "Service".
+                                            Defaults to "Service" when not specified.
                                           maxLength: 63
                                           minLength: 1
                                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -1352,10 +1376,10 @@ spec:
                                           description: "Namespace is the namespace
                                             of the backend. When unspecified, the
                                             local namespace is inferred. \n Note that
-                                            when a namespace is specified, a ReferencePolicy
+                                            when a namespace is specified, a ReferenceGrant
                                             object is required in the referent namespace
                                             to allow that namespace's owner to accept
-                                            the reference. See the ReferencePolicy
+                                            the reference. See the ReferenceGrant
                                             documentation for details. \n Support:
                                             Core"
                                           maxLength: 63
@@ -1445,7 +1469,7 @@ spec:
                                     \n If a reference to a custom filter type cannot
                                     be resolved, the filter MUST NOT be skipped. Instead,
                                     requests that would have been processed by that
-                                    filter MUST receive a HTTP error response."
+                                    filter MUST receive a HTTP error response. \n "
                                   enum:
                                   - RequestHeaderModifier
                                   - RequestMirror
@@ -1468,7 +1492,8 @@ spec:
                           kind:
                             default: Service
                             description: Kind is kind of the referent. For example
-                              "HTTPRoute" or "Service".
+                              "HTTPRoute" or "Service". Defaults to "Service" when
+                              not specified.
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -1481,10 +1506,10 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferencePolicy
+                              Note that when a namespace is specified, a ReferenceGrant
                               object is required in the referent namespace to allow
                               that namespace's owner to accept the reference. See
-                              the ReferencePolicy documentation for details. \n Support:
+                              the ReferenceGrant documentation for details. \n Support:
                               Core"
                             maxLength: 63
                             minLength: 1
@@ -1535,7 +1560,13 @@ spec:
                         extended filters. - Implementation-specific custom filters
                         have no API guarantees across   implementations. \n Specifying
                         a core filter multiple times has unspecified or custom conformance.
-                        \n Support: Core"
+                        \n All filters are expected to be compatible with each other
+                        except for the URLRewrite and RequestRedirect filters, which
+                        may not be combined. If an implementation can not support
+                        other combinations of filters, they must clearly document
+                        that limitation. In all cases where incompatible or unsupported
+                        filters are specified, implementations MUST add a warning
+                        condition to status. \n Support: Core"
                       items:
                         description: HTTPRouteFilter defines processing steps that
                           must be completed during the request or response lifecycle.
@@ -1693,7 +1724,7 @@ spec:
                                   is set to `status: False` and not configure this
                                   backend in the underlying implementation. \n If
                                   there is a cross-namespace reference to an *existing*
-                                  object that is not allowed by a ReferencePolicy,
+                                  object that is not allowed by a ReferenceGrant,
                                   the controller must ensure the \"ResolvedRefs\"
                                   \ condition on the Route is set to `status: False`,
                                   with the \"RefNotPermitted\" reason and not configure
@@ -1714,7 +1745,8 @@ spec:
                                   kind:
                                     default: Service
                                     description: Kind is kind of the referent. For
-                                      example "HTTPRoute" or "Service".
+                                      example "HTTPRoute" or "Service". Defaults to
+                                      "Service" when not specified.
                                     maxLength: 63
                                     minLength: 1
                                     pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -1728,9 +1760,9 @@ spec:
                                     description: "Namespace is the namespace of the
                                       backend. When unspecified, the local namespace
                                       is inferred. \n Note that when a namespace is
-                                      specified, a ReferencePolicy object is required
+                                      specified, a ReferenceGrant object is required
                                       in the referent namespace to allow that namespace's
-                                      owner to accept the reference. See the ReferencePolicy
+                                      owner to accept the reference. See the ReferenceGrant
                                       documentation for details. \n Support: Core"
                                     maxLength: 63
                                     minLength: 1
@@ -1816,7 +1848,7 @@ spec:
                               behavior. \n If a reference to a custom filter type
                               cannot be resolved, the filter MUST NOT be skipped.
                               Instead, requests that would have been processed by
-                              that filter MUST receive a HTTP error response."
+                              that filter MUST receive a HTTP error response. \n "
                             enum:
                             - RequestHeaderModifier
                             - RequestMirror
@@ -1856,10 +1888,12 @@ spec:
                         Routes, matching precedence MUST be determined in order of
                         the following criteria, continuing on ties: \n * The oldest
                         Route based on creation timestamp. * The Route appearing first
-                        in alphabetical order by   \"<namespace>/<name>\". \n If ties
+                        in alphabetical order by   \"{namespace}/{name}\". \n If ties
                         still exist within the Route that has been given precedence,
                         matching precedence MUST be granted to the first matching
-                        rule meeting the above criteria."
+                        rule meeting the above criteria. \n When no rules matching
+                        a request have been successfully attached to the parent a
+                        request is coming from, a HTTP 404 status code MUST be returned."
                       items:
                         description: "HTTPRouteMatch defines the predicate used to
                           match requests to a given action. Multiple match types are
@@ -2139,7 +2173,11 @@ spec:
                         with the controllerName field on GatewayClass. \n Example:
                         \"example.net/gateway-controller\". \n The format of this
                         field is DOMAIN \"/\" PATH, where DOMAIN and PATH are valid
-                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names)."
+                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+                        \n Controllers MUST populate this field when writing status.
+                        Controllers should ensure that entries to status populated
+                        with their ControllerName are cleaned up when they are no
+                        longer necessary."
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
@@ -2181,19 +2219,22 @@ spec:
                           description: "SectionName is the name of a section within
                             the target resource. In the following resources, SectionName
                             is interpreted as the following: \n * Gateway: Listener
-                            Name \n Implementations MAY choose to support attaching
-                            Routes to other resources. If that is the case, they MUST
-                            clearly document how SectionName is interpreted. \n When
-                            unspecified (empty string), this will reference the entire
-                            resource. For the purpose of status, an attachment is
-                            considered successful if at least one section in the parent
-                            resource accepts it. For example, Gateway listeners can
-                            restrict which Routes can attach to them by Route kind,
-                            namespace, or hostname. If 1 of 2 Gateway listeners accept
-                            attachment from the referencing Route, the Route MUST
-                            be considered successfully attached. If no Gateway listeners
-                            accept attachment from this Route, the Route MUST be considered
-                            detached from the Gateway. \n Support: Core"
+                            Name. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected listener
+                            must match both specified values. \n Implementations MAY
+                            choose to support attaching Routes to other resources.
+                            If that is the case, they MUST clearly document how SectionName
+                            is interpreted. \n When unspecified (empty string), this
+                            will reference the entire resource. For the purpose of
+                            status, an attachment is considered successful if at least
+                            one section in the parent resource accepts it. For example,
+                            Gateway listeners can restrict which Routes can attach
+                            to them by Route kind, namespace, or hostname. If 1 of
+                            2 Gateway listeners accept attachment from the referencing
+                            Route, the Route MUST be considered successfully attached.
+                            If no Gateway listeners accept attachment from this Route,
+                            the Route MUST be considered detached from the Gateway.
+                            \n Support: Core"
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -2229,19 +2270,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
-  name: referencepolicies.gateway.networking.k8s.io
+  name: referencegrants.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
   names:
     categories:
     - gateway-api
-    kind: ReferencePolicy
-    listKind: ReferencePolicyList
-    plural: referencepolicies
+    kind: ReferenceGrant
+    listKind: ReferenceGrantList
+    plural: referencegrants
     shortNames:
-    - refpol
-    singular: referencepolicy
+    - refgrant
+    singular: referencegrant
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -2251,14 +2294,14 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: "ReferencePolicy identifies kinds of resources in other namespaces
+        description: "ReferenceGrant identifies kinds of resources in other namespaces
           that are trusted to reference the specified kinds of resources in the same
-          namespace as the policy. \n Each ReferencePolicy can be used to represent
+          namespace as the policy. \n Each ReferenceGrant can be used to represent
           a unique trust relationship. Additional Reference Policies can be used to
           add to the set of trusted sources of inbound references for the namespace
           they are defined within. \n All cross-namespace references in Gateway API
           (with the exception of cross-namespace Gateway-route attachment) require
-          a ReferencePolicy. \n Support: Core"
+          a ReferenceGrant. \n Support: Core"
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -2273,7 +2316,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of ReferencePolicy.
+            description: Spec defines the desired state of ReferenceGrant.
             properties:
               from:
                 description: "From describes the trusted namespaces and kinds that
@@ -2282,7 +2325,7 @@ spec:
                   can be valid from, or to put this another way, entries must be combined
                   using OR. \n Support: Core"
                 items:
-                  description: ReferencePolicyFrom describes trusted namespaces and
+                  description: ReferenceGrantFrom describes trusted namespaces and
                     kinds.
                   properties:
                     group:
@@ -2322,8 +2365,8 @@ spec:
                   to, or to put this another way, entries must be combined using OR.
                   \n Support: Core"
                 items:
-                  description: ReferencePolicyTo describes what Kinds are allowed
-                    as targets of the references.
+                  description: ReferenceGrantTo describes what Kinds are allowed as
+                    targets of the references.
                   properties:
                     group:
                       description: "Group is the group of the referent. When empty,
@@ -2340,9 +2383,9 @@ spec:
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
                       type: string
                     name:
-                      description: Name is the name of the referent. When unspecified
-                        or empty, this policy refers to all resources of the specified
-                        Group and Kind in the local namespace.
+                      description: Name is the name of the referent. When unspecified,
+                        this policy refers to all resources of the specified Group
+                        and Kind in the local namespace.
                       maxLength: 253
                       minLength: 1
                       type: string
@@ -2373,6 +2416,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
 spec:
@@ -2429,16 +2474,13 @@ spec:
                   is the case, the list of routes attached to those resources should
                   also be merged."
                 items:
-                  description: "ParentRef identifies an API object (usually a Gateway)
-                    that can be considered a parent of this resource (usually a route).
-                    The only kind of parent resource with \"Core\" support is Gateway.
-                    This API may be extended in the future to support additional kinds
-                    of parent resources, such as HTTPRoute. \n The API object must
-                    be valid in the cluster; the Group and Kind must be registered
-                    in the cluster for this reference to be valid. \n References to
-                    objects with invalid Group and Kind are not valid, and must be
-                    rejected by the implementation, with appropriate Conditions set
-                    on the containing object."
+                  description: "ParentReference identifies an API object (usually
+                    a Gateway) that can be considered a parent of this resource (usually
+                    a route). The only kind of parent resource with \"Core\" support
+                    is Gateway. This API may be extended in the future to support
+                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    API object must be valid in the cluster; the Group and Kind must
+                    be registered in the cluster for this reference to be valid."
                   properties:
                     group:
                       default: gateway.networking.k8s.io
@@ -2472,20 +2514,22 @@ spec:
                     sectionName:
                       description: "SectionName is the name of a section within the
                         target resource. In the following resources, SectionName is
-                        interpreted as the following: \n * Gateway: Listener Name
-                        \n Implementations MAY choose to support attaching Routes
-                        to other resources. If that is the case, they MUST clearly
-                        document how SectionName is interpreted. \n When unspecified
-                        (empty string), this will reference the entire resource. For
-                        the purpose of status, an attachment is considered successful
-                        if at least one section in the parent resource accepts it.
-                        For example, Gateway listeners can restrict which Routes can
-                        attach to them by Route kind, namespace, or hostname. If 1
-                        of 2 Gateway listeners accept attachment from the referencing
-                        Route, the Route MUST be considered successfully attached.
-                        If no Gateway listeners accept attachment from this Route,
-                        the Route MUST be considered detached from the Gateway. \n
-                        Support: Core"
+                        interpreted as the following: \n * Gateway: Listener Name.
+                        When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected listener must match both
+                        specified values. \n Implementations MAY choose to support
+                        attaching Routes to other resources. If that is the case,
+                        they MUST clearly document how SectionName is interpreted.
+                        \n When unspecified (empty string), this will reference the
+                        entire resource. For the purpose of status, an attachment
+                        is considered successful if at least one section in the parent
+                        resource accepts it. For example, Gateway listeners can restrict
+                        which Routes can attach to them by Route kind, namespace,
+                        or hostname. If 1 of 2 Gateway listeners accept attachment
+                        from the referencing Route, the Route MUST be considered successfully
+                        attached. If no Gateway listeners accept attachment from this
+                        Route, the Route MUST be considered detached from the Gateway.
+                        \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -2513,9 +2557,9 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferencePolicy object is required
+                          namespace is specified, a ReferenceGrant object is required
                           in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferencePolicy documentation
+                          to accept the reference. See the ReferenceGrant documentation
                           for details."
                         properties:
                           group:
@@ -2529,7 +2573,8 @@ spec:
                           kind:
                             default: Service
                             description: Kind is kind of the referent. For example
-                              "HTTPRoute" or "Service".
+                              "HTTPRoute" or "Service". Defaults to "Service" when
+                              not specified.
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -2542,10 +2587,10 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferencePolicy
+                              Note that when a namespace is specified, a ReferenceGrant
                               object is required in the referent namespace to allow
                               that namespace's owner to accept the reference. See
-                              the ReferencePolicy documentation for details. \n Support:
+                              the ReferenceGrant documentation for details. \n Support:
                               Core"
                             maxLength: 63
                             minLength: 1
@@ -2713,7 +2758,11 @@ spec:
                         with the controllerName field on GatewayClass. \n Example:
                         \"example.net/gateway-controller\". \n The format of this
                         field is DOMAIN \"/\" PATH, where DOMAIN and PATH are valid
-                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names)."
+                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+                        \n Controllers MUST populate this field when writing status.
+                        Controllers should ensure that entries to status populated
+                        with their ControllerName are cleaned up when they are no
+                        longer necessary."
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
@@ -2755,19 +2804,22 @@ spec:
                           description: "SectionName is the name of a section within
                             the target resource. In the following resources, SectionName
                             is interpreted as the following: \n * Gateway: Listener
-                            Name \n Implementations MAY choose to support attaching
-                            Routes to other resources. If that is the case, they MUST
-                            clearly document how SectionName is interpreted. \n When
-                            unspecified (empty string), this will reference the entire
-                            resource. For the purpose of status, an attachment is
-                            considered successful if at least one section in the parent
-                            resource accepts it. For example, Gateway listeners can
-                            restrict which Routes can attach to them by Route kind,
-                            namespace, or hostname. If 1 of 2 Gateway listeners accept
-                            attachment from the referencing Route, the Route MUST
-                            be considered successfully attached. If no Gateway listeners
-                            accept attachment from this Route, the Route MUST be considered
-                            detached from the Gateway. \n Support: Core"
+                            Name. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected listener
+                            must match both specified values. \n Implementations MAY
+                            choose to support attaching Routes to other resources.
+                            If that is the case, they MUST clearly document how SectionName
+                            is interpreted. \n When unspecified (empty string), this
+                            will reference the entire resource. For the purpose of
+                            status, an attachment is considered successful if at least
+                            one section in the parent resource accepts it. For example,
+                            Gateway listeners can restrict which Routes can attach
+                            to them by Route kind, namespace, or hostname. If 1 of
+                            2 Gateway listeners accept attachment from the referencing
+                            Route, the Route MUST be considered successfully attached.
+                            If no Gateway listeners accept attachment from this Route,
+                            the Route MUST be considered detached from the Gateway.
+                            \n Support: Core"
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -2803,6 +2855,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
 spec:
@@ -2905,16 +2959,13 @@ spec:
                   is the case, the list of routes attached to those resources should
                   also be merged."
                 items:
-                  description: "ParentRef identifies an API object (usually a Gateway)
-                    that can be considered a parent of this resource (usually a route).
-                    The only kind of parent resource with \"Core\" support is Gateway.
-                    This API may be extended in the future to support additional kinds
-                    of parent resources, such as HTTPRoute. \n The API object must
-                    be valid in the cluster; the Group and Kind must be registered
-                    in the cluster for this reference to be valid. \n References to
-                    objects with invalid Group and Kind are not valid, and must be
-                    rejected by the implementation, with appropriate Conditions set
-                    on the containing object."
+                  description: "ParentReference identifies an API object (usually
+                    a Gateway) that can be considered a parent of this resource (usually
+                    a route). The only kind of parent resource with \"Core\" support
+                    is Gateway. This API may be extended in the future to support
+                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    API object must be valid in the cluster; the Group and Kind must
+                    be registered in the cluster for this reference to be valid."
                   properties:
                     group:
                       default: gateway.networking.k8s.io
@@ -2948,20 +2999,22 @@ spec:
                     sectionName:
                       description: "SectionName is the name of a section within the
                         target resource. In the following resources, SectionName is
-                        interpreted as the following: \n * Gateway: Listener Name
-                        \n Implementations MAY choose to support attaching Routes
-                        to other resources. If that is the case, they MUST clearly
-                        document how SectionName is interpreted. \n When unspecified
-                        (empty string), this will reference the entire resource. For
-                        the purpose of status, an attachment is considered successful
-                        if at least one section in the parent resource accepts it.
-                        For example, Gateway listeners can restrict which Routes can
-                        attach to them by Route kind, namespace, or hostname. If 1
-                        of 2 Gateway listeners accept attachment from the referencing
-                        Route, the Route MUST be considered successfully attached.
-                        If no Gateway listeners accept attachment from this Route,
-                        the Route MUST be considered detached from the Gateway. \n
-                        Support: Core"
+                        interpreted as the following: \n * Gateway: Listener Name.
+                        When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected listener must match both
+                        specified values. \n Implementations MAY choose to support
+                        attaching Routes to other resources. If that is the case,
+                        they MUST clearly document how SectionName is interpreted.
+                        \n When unspecified (empty string), this will reference the
+                        entire resource. For the purpose of status, an attachment
+                        is considered successful if at least one section in the parent
+                        resource accepts it. For example, Gateway listeners can restrict
+                        which Routes can attach to them by Route kind, namespace,
+                        or hostname. If 1 of 2 Gateway listeners accept attachment
+                        from the referencing Route, the Route MUST be considered successfully
+                        attached. If no Gateway listeners accept attachment from this
+                        Route, the Route MUST be considered detached from the Gateway.
+                        \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -2983,7 +3036,7 @@ spec:
                         the rule performs no forwarding; if no filters are specified
                         that would result in a response being sent, the underlying
                         implementation must actively reject request attempts to this
-                        backend, by rejecting the connection or returning a 503 status
+                        backend, by rejecting the connection or returning a 404 status
                         code. Request rejections must respect weight; if an invalid
                         backend is requested to have 80% of requests, then 80% of
                         requests must be rejected instead. \n Support: Core for Kubernetes
@@ -2992,9 +3045,9 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferencePolicy object is required
+                          namespace is specified, a ReferenceGrant object is required
                           in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferencePolicy documentation
+                          to accept the reference. See the ReferenceGrant documentation
                           for details."
                         properties:
                           group:
@@ -3008,7 +3061,8 @@ spec:
                           kind:
                             default: Service
                             description: Kind is kind of the referent. For example
-                              "HTTPRoute" or "Service".
+                              "HTTPRoute" or "Service". Defaults to "Service" when
+                              not specified.
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -3021,10 +3075,10 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferencePolicy
+                              Note that when a namespace is specified, a ReferenceGrant
                               object is required in the referent namespace to allow
                               that namespace's owner to accept the reference. See
-                              the ReferencePolicy documentation for details. \n Support:
+                              the ReferenceGrant documentation for details. \n Support:
                               Core"
                             maxLength: 63
                             minLength: 1
@@ -3192,7 +3246,11 @@ spec:
                         with the controllerName field on GatewayClass. \n Example:
                         \"example.net/gateway-controller\". \n The format of this
                         field is DOMAIN \"/\" PATH, where DOMAIN and PATH are valid
-                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names)."
+                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+                        \n Controllers MUST populate this field when writing status.
+                        Controllers should ensure that entries to status populated
+                        with their ControllerName are cleaned up when they are no
+                        longer necessary."
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
@@ -3234,19 +3292,22 @@ spec:
                           description: "SectionName is the name of a section within
                             the target resource. In the following resources, SectionName
                             is interpreted as the following: \n * Gateway: Listener
-                            Name \n Implementations MAY choose to support attaching
-                            Routes to other resources. If that is the case, they MUST
-                            clearly document how SectionName is interpreted. \n When
-                            unspecified (empty string), this will reference the entire
-                            resource. For the purpose of status, an attachment is
-                            considered successful if at least one section in the parent
-                            resource accepts it. For example, Gateway listeners can
-                            restrict which Routes can attach to them by Route kind,
-                            namespace, or hostname. If 1 of 2 Gateway listeners accept
-                            attachment from the referencing Route, the Route MUST
-                            be considered successfully attached. If no Gateway listeners
-                            accept attachment from this Route, the Route MUST be considered
-                            detached from the Gateway. \n Support: Core"
+                            Name. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected listener
+                            must match both specified values. \n Implementations MAY
+                            choose to support attaching Routes to other resources.
+                            If that is the case, they MUST clearly document how SectionName
+                            is interpreted. \n When unspecified (empty string), this
+                            will reference the entire resource. For the purpose of
+                            status, an attachment is considered successful if at least
+                            one section in the parent resource accepts it. For example,
+                            Gateway listeners can restrict which Routes can attach
+                            to them by Route kind, namespace, or hostname. If 1 of
+                            2 Gateway listeners accept attachment from the referencing
+                            Route, the Route MUST be considered successfully attached.
+                            If no Gateway listeners accept attachment from this Route,
+                            the Route MUST be considered detached from the Gateway.
+                            \n Support: Core"
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -3282,6 +3343,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
+    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    gateway.networking.k8s.io/channel: standard
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
 spec:
@@ -3338,16 +3401,13 @@ spec:
                   is the case, the list of routes attached to those resources should
                   also be merged."
                 items:
-                  description: "ParentRef identifies an API object (usually a Gateway)
-                    that can be considered a parent of this resource (usually a route).
-                    The only kind of parent resource with \"Core\" support is Gateway.
-                    This API may be extended in the future to support additional kinds
-                    of parent resources, such as HTTPRoute. \n The API object must
-                    be valid in the cluster; the Group and Kind must be registered
-                    in the cluster for this reference to be valid. \n References to
-                    objects with invalid Group and Kind are not valid, and must be
-                    rejected by the implementation, with appropriate Conditions set
-                    on the containing object."
+                  description: "ParentReference identifies an API object (usually
+                    a Gateway) that can be considered a parent of this resource (usually
+                    a route). The only kind of parent resource with \"Core\" support
+                    is Gateway. This API may be extended in the future to support
+                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    API object must be valid in the cluster; the Group and Kind must
+                    be registered in the cluster for this reference to be valid."
                   properties:
                     group:
                       default: gateway.networking.k8s.io
@@ -3381,20 +3441,22 @@ spec:
                     sectionName:
                       description: "SectionName is the name of a section within the
                         target resource. In the following resources, SectionName is
-                        interpreted as the following: \n * Gateway: Listener Name
-                        \n Implementations MAY choose to support attaching Routes
-                        to other resources. If that is the case, they MUST clearly
-                        document how SectionName is interpreted. \n When unspecified
-                        (empty string), this will reference the entire resource. For
-                        the purpose of status, an attachment is considered successful
-                        if at least one section in the parent resource accepts it.
-                        For example, Gateway listeners can restrict which Routes can
-                        attach to them by Route kind, namespace, or hostname. If 1
-                        of 2 Gateway listeners accept attachment from the referencing
-                        Route, the Route MUST be considered successfully attached.
-                        If no Gateway listeners accept attachment from this Route,
-                        the Route MUST be considered detached from the Gateway. \n
-                        Support: Core"
+                        interpreted as the following: \n * Gateway: Listener Name.
+                        When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected listener must match both
+                        specified values. \n Implementations MAY choose to support
+                        attaching Routes to other resources. If that is the case,
+                        they MUST clearly document how SectionName is interpreted.
+                        \n When unspecified (empty string), this will reference the
+                        entire resource. For the purpose of status, an attachment
+                        is considered successful if at least one section in the parent
+                        resource accepts it. For example, Gateway listeners can restrict
+                        which Routes can attach to them by Route kind, namespace,
+                        or hostname. If 1 of 2 Gateway listeners accept attachment
+                        from the referencing Route, the Route MUST be considered successfully
+                        attached. If no Gateway listeners accept attachment from this
+                        Route, the Route MUST be considered detached from the Gateway.
+                        \n Support: Core"
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -3422,9 +3484,9 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferencePolicy object is required
+                          namespace is specified, a ReferenceGrant object is required
                           in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferencePolicy documentation
+                          to accept the reference. See the ReferenceGrant documentation
                           for details."
                         properties:
                           group:
@@ -3438,7 +3500,8 @@ spec:
                           kind:
                             default: Service
                             description: Kind is kind of the referent. For example
-                              "HTTPRoute" or "Service".
+                              "HTTPRoute" or "Service". Defaults to "Service" when
+                              not specified.
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -3451,10 +3514,10 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferencePolicy
+                              Note that when a namespace is specified, a ReferenceGrant
                               object is required in the referent namespace to allow
                               that namespace's owner to accept the reference. See
-                              the ReferencePolicy documentation for details. \n Support:
+                              the ReferenceGrant documentation for details. \n Support:
                               Core"
                             maxLength: 63
                             minLength: 1
@@ -3622,7 +3685,11 @@ spec:
                         with the controllerName field on GatewayClass. \n Example:
                         \"example.net/gateway-controller\". \n The format of this
                         field is DOMAIN \"/\" PATH, where DOMAIN and PATH are valid
-                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names)."
+                        Kubernetes names (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+                        \n Controllers MUST populate this field when writing status.
+                        Controllers should ensure that entries to status populated
+                        with their ControllerName are cleaned up when they are no
+                        longer necessary."
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
@@ -3664,19 +3731,22 @@ spec:
                           description: "SectionName is the name of a section within
                             the target resource. In the following resources, SectionName
                             is interpreted as the following: \n * Gateway: Listener
-                            Name \n Implementations MAY choose to support attaching
-                            Routes to other resources. If that is the case, they MUST
-                            clearly document how SectionName is interpreted. \n When
-                            unspecified (empty string), this will reference the entire
-                            resource. For the purpose of status, an attachment is
-                            considered successful if at least one section in the parent
-                            resource accepts it. For example, Gateway listeners can
-                            restrict which Routes can attach to them by Route kind,
-                            namespace, or hostname. If 1 of 2 Gateway listeners accept
-                            attachment from the referencing Route, the Route MUST
-                            be considered successfully attached. If no Gateway listeners
-                            accept attachment from this Route, the Route MUST be considered
-                            detached from the Gateway. \n Support: Core"
+                            Name. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected listener
+                            must match both specified values. \n Implementations MAY
+                            choose to support attaching Routes to other resources.
+                            If that is the case, they MUST clearly document how SectionName
+                            is interpreted. \n When unspecified (empty string), this
+                            will reference the entire resource. For the purpose of
+                            status, an attachment is considered successful if at least
+                            one section in the parent resource accepts it. For example,
+                            Gateway listeners can restrict which Routes can attach
+                            to them by Route kind, namespace, or hostname. If 1 of
+                            2 Gateway listeners accept attachment from the referencing
+                            Route, the Route MUST be considered successfully attached.
+                            If no Gateway listeners accept attachment from this Route,
+                            the Route MUST be considered detached from the Gateway.
+                            \n Support: Core"
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
