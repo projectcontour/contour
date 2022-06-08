@@ -68,7 +68,7 @@ var (
 					Port:     443,
 					Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},

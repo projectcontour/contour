@@ -289,7 +289,7 @@ func TestTLSRoute(t *testing.T) {
 				Protocol: "TLS",
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef("tlscert", ""),
 					},
 				},

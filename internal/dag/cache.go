@@ -498,7 +498,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			}
 
 			for _, certificateRef := range listener.TLS.CertificateRefs {
-				if isRefToSecret(*certificateRef, secret, kc.gateway.Namespace) {
+				if isRefToSecret(certificateRef, secret, kc.gateway.Namespace) {
 					return true
 				}
 			}

@@ -62,8 +62,8 @@ func PreciseHostname(host string) *gatewayapi_v1alpha2.PreciseHostname {
 	return &h
 }
 
-func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
-	ref := &gatewayapi_v1alpha2.SecretObjectReference{
+func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectReference {
+	ref := gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr(""),
 		Kind:  KindPtr("Secret"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),

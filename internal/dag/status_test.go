@@ -3629,7 +3629,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -3684,7 +3684,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -3756,7 +3756,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -3812,7 +3812,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -3900,7 +3900,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -3988,7 +3988,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -4076,7 +4076,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -4164,7 +4164,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
@@ -5314,7 +5314,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							{
 								Group: gatewayapi.GroupPtr("invalid-group"),
 								Kind:  gatewayapi.KindPtr("NotASecret"),
@@ -5379,7 +5379,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("nonexistent-secret", "projectcontour"),
 						},
 					},
@@ -5440,7 +5440,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							{
 								Group: gatewayapi.GroupPtr("invalid-group"),
 								Kind:  gatewayapi.KindPtr("NotASecret"),
@@ -5506,7 +5506,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("nonexistent-secret", "projectcontour"),
 						},
 					},
@@ -5722,7 +5722,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", "projectcontour"),
 						},
 					},
@@ -5863,7 +5863,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					// Mode is not defined and should default to "Terminate".
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
 					},
 				},
@@ -5886,7 +5886,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
 					},
 				},

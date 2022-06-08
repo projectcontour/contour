@@ -356,7 +356,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 					},
 				},
@@ -391,7 +391,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
 					},
 				},
@@ -415,7 +415,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 					},
 				},
@@ -451,7 +451,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 						},
 					},
@@ -914,7 +914,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 							Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
-							CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
@@ -1891,7 +1891,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Port:     443,
 						Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-							CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
@@ -2038,7 +2038,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Port:     443,
 						Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-							CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 								{
 									Group: gatewayapi.GroupPtr("custom"),
 									Kind:  gatewayapi.KindPtr("shhhh"),
