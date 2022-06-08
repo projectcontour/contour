@@ -17,14 +17,18 @@
 package gateway
 
 import (
+	"context"
 	"regexp"
-	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -65,6 +69,18 @@ func testRequestMirrorRule(namespace string) {
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
+		// Wait for "echo-shadow" deployment to be available
+		require.Eventually(f.T(), func() bool {
+			d := &appsv1.Deployment{}
+			if err := f.Client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: "echo-shadow"}, d); err != nil {
+				return false
+			}
+			for _, c := range d.Status.Conditions {
+				return c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue
+			}
+			return false
+		}, f.RetryTimeout, f.RetryInterval)
+
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),
 			Path:      "/mirror",
@@ -73,21 +89,23 @@ func testRequestMirrorRule(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		// Wait for echo logs successfully applied to the Kubernetes API Server
-		// If this test fails, sufficiently increase the delay and try again
-		time.Sleep(1 * time.Second)
-
 		// Ensure the request was mirrored to one of "echo-shadow" pods via logs
-		var mirrored bool
-		mirrorLogRegexp := regexp.MustCompile(`Echoing back request made to \/mirror to client`)
+		require.Eventually(t, func() bool {
+			var mirrored bool
+			mirrorLogRegexp := regexp.MustCompile(`Echoing back request made to \/mirror to client`)
 
-		logs, err := f.Fixtures.Echo.DumpEchoLogs(namespace, "echo-shadow")
-		require.NoError(f.T(), err)
-		for _, log := range logs {
-			if mirrorLogRegexp.MatchString(string(log)) {
-				mirrored = true
+			logs, err := f.Fixtures.Echo.DumpEchoLogs(namespace, "echo-shadow")
+			if err != nil {
+				return false
 			}
-		}
-		require.True(t, mirrored, "expected the request to be mirrored")
+
+			for _, log := range logs {
+				if mirrorLogRegexp.MatchString(string(log)) {
+					mirrored = true
+				}
+			}
+			return mirrored
+
+		}, f.RetryTimeout, f.RetryInterval)
 	})
 }
