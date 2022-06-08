@@ -444,7 +444,7 @@ func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
@@ -462,7 +462,7 @@ func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}

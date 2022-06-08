@@ -120,7 +120,7 @@ func testInvalidBackendRef(namespace string) {
 
 			var hasAccepted, hasResolvedRefs bool
 			for _, cond := range route.Status.Parents[0].Conditions {
-				if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionFalse {
+				if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionFalse {
 					hasAccepted = true
 				}
 				if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {

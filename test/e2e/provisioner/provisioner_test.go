@@ -532,7 +532,7 @@ func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.ConditionRouteAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), metav1.ConditionTrue) {
 			return true
 		}
 	}

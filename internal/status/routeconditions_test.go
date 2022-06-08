@@ -30,7 +30,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	var testGeneration int64 = 7
 
 	simpleValidCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+		Type:               string(gatewayapi_v1alpha2.RouteConditionAccepted),
 		Status:             projectcontour.ConditionTrue,
 		Reason:             "Valid",
 		Message:            "Valid HTTPRoute",
@@ -43,7 +43,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 		Conditions: make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
 	}
 
-	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
+	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)
 	assert.Equal(t, simpleValidCondition.Reason, got.Reason)
