@@ -32,7 +32,8 @@ func testDisableMergeSlashes(disableMergeSlashes bool) e2e.NamespacedTestBody {
 		testName = "when disable merge slashes is false, consecutive slashes in requests are merged"
 	}
 	return func(namespace string) {
-		Specify(testName, func() {
+		// Flake tracking issue: https://github.com/projectcontour/contour/issues/4536
+		Specify(testName, FlakeAttempts(3), func() {
 			t := f.T()
 
 			f.Fixtures.Echo.Deploy(namespace, "echo-1")
