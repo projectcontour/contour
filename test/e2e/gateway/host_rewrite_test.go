@@ -41,7 +41,7 @@ func testHostRewrite(namespace string) {
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"hostrewrite.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},

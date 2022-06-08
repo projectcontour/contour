@@ -768,7 +768,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.R
 
 // routeSelectsGatewayListener determines whether a route selects
 // a given Gateway+Listener.
-func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener gatewayapi_v1alpha2.Listener, routeParentRefs []gatewayapi_v1alpha2.ParentRef, routeNamespace string) bool {
+func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener gatewayapi_v1alpha2.Listener, routeParentRefs []gatewayapi_v1alpha2.ParentReference, routeNamespace string) bool {
 	for _, ref := range routeParentRefs {
 		if ref.Group == nil || ref.Kind == nil {
 			continue

@@ -43,7 +43,7 @@ func testTLSRoutePassthrough(namespace string) {
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 						gatewayapi.GatewayParentRef("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
@@ -86,7 +86,7 @@ func testTLSRouteTerminate(namespace string) {
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 						gatewayapi.GatewayParentRef("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},

@@ -2864,7 +2864,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -2902,7 +2902,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -2949,7 +2949,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -2967,7 +2967,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3018,7 +3018,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3067,7 +3067,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3116,7 +3116,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3165,7 +3165,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3214,7 +3214,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3263,7 +3263,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3307,7 +3307,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3363,7 +3363,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3416,7 +3416,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3474,7 +3474,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3528,7 +3528,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -3571,7 +3571,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4254,7 +4254,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"*.*.projectcontour.io",
@@ -4297,7 +4297,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"#projectcontour.io",
@@ -4340,7 +4340,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"1.2.3.4",
@@ -4380,7 +4380,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"foo.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
@@ -4496,7 +4496,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"foo.randomdomain.io"},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
@@ -4617,7 +4617,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4915,7 +4915,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4969,7 +4969,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -5023,7 +5023,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -5953,7 +5953,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6003,7 +6003,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6048,7 +6048,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6099,7 +6099,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6143,7 +6143,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6187,7 +6187,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6231,7 +6231,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -6272,7 +6272,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef(gw.Namespace, gw.Name),
 							},
 						},

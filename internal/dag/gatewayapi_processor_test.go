@@ -487,60 +487,60 @@ func TestNamespaceMatches(t *testing.T) {
 
 func TestRouteSelectsGatewayListener(t *testing.T) {
 	tests := map[string]struct {
-		routeParentRefs []gatewayapi_v1alpha2.ParentRef
+		routeParentRefs []gatewayapi_v1alpha2.ParentReference
 		routeNamespace  string
 		listener        gatewayapi_v1alpha2.Listener
 		want            bool
 	}{
 		"gateway namespace specified, no listener specified, gateway in same namespace as route": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayParentRef("projectcontour", "contour"),
 			},
 			want: true,
 		},
 		"gateway namespace specified, no listener specified, gateway in different namespace than route": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayParentRef("different-ns-than-gateway", "contour"),
 			},
 			want: false,
 		},
 		"no gateway namespace specified, no listener specified, gateway in same namespace as route": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayParentRef("", "contour"),
 			},
 			routeNamespace: "projectcontour",
 			want:           true,
 		},
 		"no gateway namespace specified, no listener specified, gateway in different namespace than route": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayParentRef("", "contour"),
 			},
 			routeNamespace: "different-ns-than-gateway",
 			want:           false,
 		},
 		"parentRef name doesn't match gateway name": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayParentRef("projectcontour", "different-name-than-gateway"),
 			},
 			want: false,
 		},
 
 		"section name specified, matches listener": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener"),
 			},
 			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("http-listener")},
 			want:     true,
 		},
 		"section name specified, does not match listener": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name"),
 			},
 			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("http-listener")},
 			want:     false,
 		},
 		"multiple parentRefs with section names specified, first listener": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
 			},
@@ -548,7 +548,7 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 			want:     true,
 		},
 		"multiple parentRefs with section names specified, second listener": {
-			routeParentRefs: []gatewayapi_v1alpha2.ParentRef{
+			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
 			},

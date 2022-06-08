@@ -175,7 +175,7 @@ var _ = Describe("Gateway provisioner", func() {
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							gatewayapi.GatewayParentRef("", gateway.Name),
 						},
 					},
@@ -260,7 +260,7 @@ var _ = Describe("Gateway provisioner", func() {
 							gatewayapi_v1alpha2.Hostname(fmt.Sprintf("http-%d.provisioner.projectcontour.io", i)),
 						},
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 								gatewayapi.GatewayParentRef("", fmt.Sprintf("http-%d", i)),
 							},
 						},
@@ -425,7 +425,7 @@ var _ = Describe("Gateway provisioner", func() {
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							gatewayapi.GatewayParentRef("", gateway.Name),
 						},
 					},

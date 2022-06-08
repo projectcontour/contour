@@ -121,7 +121,7 @@ func TestGateway_TLS(t *testing.T) {
 		},
 		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},

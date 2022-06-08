@@ -156,7 +156,7 @@ func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayap
 
 // isRefToGateway returns whether or not ref is a reference
 // to a Gateway with the given namespace & name.
-func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedName) bool {
+func isRefToGateway(ref gatewayapi_v1alpha2.ParentReference, gateway types.NamespacedName) bool {
 	return ref.Group != nil && *ref.Group == gatewayapi_v1alpha2.GroupName &&
 		ref.Kind != nil && *ref.Kind == "Gateway" &&
 		ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(gateway.Namespace) &&
@@ -165,14 +165,14 @@ func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedN
 
 // parentRefForGateway returns a ParentRef for a Gateway with
 // the given namespace and name.
-func parentRefForGateway(gateway types.NamespacedName) gatewayapi_v1alpha2.ParentRef {
+func parentRefForGateway(gateway types.NamespacedName) gatewayapi_v1alpha2.ParentReference {
 	var (
 		group     = gatewayapi_v1alpha2.Group(gatewayapi_v1alpha2.GroupName)
 		kind      = gatewayapi_v1alpha2.Kind("Gateway")
 		namespace = gatewayapi_v1alpha2.Namespace(gateway.Namespace)
 	)
 
-	return gatewayapi_v1alpha2.ParentRef{
+	return gatewayapi_v1alpha2.ParentReference{
 		Group:     &group,
 		Kind:      &kind,
 		Namespace: &namespace,
