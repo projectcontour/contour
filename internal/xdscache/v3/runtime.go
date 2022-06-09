@@ -18,6 +18,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // RuntimeCache manages the contents of the gRPC RTDS cache.
@@ -25,13 +27,18 @@ type RuntimeCache struct {
 	contour.Cond
 }
 
-// Contents returns an empty set of layers for now.
+// Contents returns all Runtime layers.
 func (c *RuntimeCache) Contents() []proto.Message {
-	return []proto.Message{}
+	return protobuf.AsMessages(envoy_v3.RuntimeLayers())
 }
 
-// Query returns an empty set of layers for now.
+// Query returns only the "dynamic" layer if requested, otherwise empty.
 func (c *RuntimeCache) Query(names []string) []proto.Message {
+	for _, name := range names {
+		if name == envoy_v3.DynamicRuntimeLayerName {
+			return protobuf.AsMessages(envoy_v3.RuntimeLayers())
+		}
+	}
 	return []proto.Message{}
 }
 

@@ -31,7 +31,6 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/proto"
@@ -39,12 +38,6 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
-	"google.golang.org/protobuf/types/known/structpb"
-)
-
-const (
-	maxRegexProgramSizeError = 1 << 20
-	maxRegexProgramSizeWarn  = 1000
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -168,11 +161,15 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				{
 					Name: "base",
 					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_StaticLayer{
-						StaticLayer: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"re2.max_program_size.error_level": {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeError}},
-								"re2.max_program_size.warn_level":  {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeWarn}},
-							},
+						StaticLayer: baseRuntimeLayer(),
+					},
+				},
+				{
+					Name: "dynamic",
+					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer_{
+						RtdsLayer: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer{
+							Name:       DynamicRuntimeLayerName,
+							RtdsConfig: ConfigSource("contour"),
 						},
 					},
 				},
@@ -290,9 +287,9 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 						},
 					},
 					// TODO(youngnick): Does there need to be a flag wired down to here?
-					MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+					MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
 						{
-							SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+							SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
 							Matcher: &matcher.StringMatcher{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "contour",
@@ -379,9 +376,9 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 						Filename: c.GrpcCABundle,
 					},
 				},
-				MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+				MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
 					{
-						SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+						SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
 						Matcher: &matcher.StringMatcher{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "contour",

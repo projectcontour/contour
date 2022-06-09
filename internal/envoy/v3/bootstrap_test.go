@@ -182,6 +182,26 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        }
+      },
+      {
         "name": "admin",
         "admin_layer": {}
       }
@@ -339,6 +359,26 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        }
+      },
+      {
         "name": "admin",
         "admin_layer": {}
       }
@@ -493,6 +533,26 @@ func TestBootstrap(t *testing.T) {
         "static_layer": {
           "re2.max_program_size.error_level": 1048576,
           "re2.max_program_size.warn_level": 1000
+        }
+      },
+      {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
         }
       },
       {
@@ -654,6 +714,26 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        }
+      },
+      {
         "name": "admin",
         "admin_layer": {}
       }
@@ -809,6 +889,26 @@ func TestBootstrap(t *testing.T) {
         "static_layer": {
           "re2.max_program_size.error_level": 1048576,
           "re2.max_program_size.warn_level": 1000
+        }
+      },
+      {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
         }
       },
       {
@@ -970,6 +1070,26 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        }
+      },
+      {
         "name": "admin",
         "admin_layer": {}
       }
@@ -1127,6 +1247,26 @@ func TestBootstrap(t *testing.T) {
         "static_layer": {
           "re2.max_program_size.error_level": 1048576,
           "re2.max_program_size.warn_level": 1000
+        }
+      },
+      {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
         }
       },
       {
@@ -1324,6 +1464,26 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
+        "name": "dynamic",
+        "rtds_layer": {
+          "name": "dynamic",
+          "rtds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        }
+      },
+      {
         "name": "admin",
         "admin_layer": {}
       }
@@ -1513,6 +1673,26 @@ func TestBootstrap(t *testing.T) {
               "static_layer": {
                 "re2.max_program_size.error_level": 1048576,
                 "re2.max_program_size.warn_level": 1000
+              }
+            },
+            {
+              "name": "dynamic",
+              "rtds_layer": {
+                "name": "dynamic",
+                "rtds_config": {
+                  "api_config_source": {
+                    "api_type": "GRPC",
+                    "transport_api_version": "V3",
+                    "grpc_services": [
+                      {
+                        "envoy_grpc": {
+                          "cluster_name": "contour"
+                        }
+                      }
+                    ]
+                  },
+                  "resource_api_version": "V3"
+                }
               }
             },
             {
