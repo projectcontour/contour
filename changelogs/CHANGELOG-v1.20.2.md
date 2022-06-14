@@ -12,14 +12,13 @@ A big thank you to everyone who contributed to the release.
 
 # Minor Changes
 
-## Bump Envoy to v1.22.2
+## Bump Envoy to v1.21.3
 
-Bumps Envoy to security patch version 1.22.2.
-Envoy CI had a few issues releasing 1.22.1 so a subsequent patch, 1.22.2 was released.
+Bumps Envoy to security patch version 1.21.3.
 Envoy announcement [here](https://groups.google.com/g/envoy-announce/c/QxI6z6wdL7M).
-See Envoy release notes [for 1.22.1 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/v1.22.1) and [1.22.2 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/current).
+See Envoy release notes [here](https://www.envoyproxy.io/docs/envoy/v1.21.3/version_history/current).
 
-(#4572, @sunjayBhatia)
+(#4569, @sunjayBhatia)
 
 
 # Other Changes

@@ -19,7 +19,7 @@ Envoy CI had a few issues releasing 1.22.1 so a subsequent patch, 1.22.2 was rel
 Envoy announcement [here](https://groups.google.com/g/envoy-announce/c/QxI6z6wdL7M).
 See Envoy release notes [for 1.22.1 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/v1.22.1) and [1.22.2 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/current).
 
-(#4572, @sunjayBhatia)
+(#4573, @sunjayBhatia)
 
 
 # Other Changes
