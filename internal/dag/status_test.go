@@ -2821,6 +2821,36 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	}
 
+	kuardService2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	kuardService3 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard3",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	run(t, "simple httproute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -4572,9 +4602,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	})
 
-	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute rule", testcase{
+	run(t, "More than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
 		objs: []interface{}{
 			kuardService,
+			kuardService2,
+			kuardService3,
 			&gatewayapi_v1alpha2.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
@@ -4594,8 +4626,16 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
-							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror, // HTTPRouteFilterRequestMirror is not supported yet.
-						}},
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							},
+						}, {
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+							}},
+						},
 					}},
 				},
 			}},
@@ -4605,8 +4645,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				status.ConditionNotImplemented: {
 					Type:    string(status.ConditionNotImplemented),
 					Status:  contour_api_v1.ConditionTrue,
-					Reason:  string(status.ReasonHTTPRouteFilterType),
-					Message: "HTTPRoute.Spec.Rules.Filters: invalid type \"RequestMirror\": only RequestHeaderModifier and RequestRedirect are supported.",
+					Reason:  string(status.ReasonNotImplemented),
+					Message: "HTTPRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
 				},
 				gatewayapi_v1alpha2.ConditionRouteAccepted: {
 					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
@@ -4617,6 +4657,247 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 		}},
 		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "Invalid RequestMirror filter due to unspecified backendRef.name", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi_v1alpha2.BackendObjectReference{
+									Group: gatewayapi.GroupPtr(""),
+									Kind:  gatewayapi.KindPtr("Service"),
+									Port:  gatewayapi.PortNumPtr(8080),
+								},
+							},
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				status.ConditionResolvedRefs: {
+					Type:    string(status.ConditionResolvedRefs),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonDegraded),
+					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
+				},
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+			},
+		}},
+		// This still results in an attached route because it returns a 404.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "Invalid RequestMirror filter due to unspecified backendRef.port", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi_v1alpha2.BackendObjectReference{
+									Group: gatewayapi.GroupPtr(""),
+									Kind:  gatewayapi.KindPtr("Service"),
+									Name:  gatewayapi_v1alpha2.ObjectName("kuard2"),
+								},
+							},
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				status.ConditionResolvedRefs: {
+					Type:    string(status.ConditionResolvedRefs),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonDegraded),
+					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Port must be specified",
+				},
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+			},
+		}},
+		// This still results in an attached route because it returns a 404.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "Invalid RequestMirror filter due to invalid backendRef.name on two matches", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Value: pointer.StringPtr("/"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("invalid-one", 8080),
+							},
+						}},
+					}, {
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard2", 8080, 1),
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Value: pointer.StringPtr("/blog"),
+							},
+						}},
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("invalid-two", 8080),
+							},
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				status.ConditionResolvedRefs: {
+					Type:    string(status.ConditionResolvedRefs),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonDegraded),
+					Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
+				},
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+			},
+		}},
+		// This still results in an attached route because it returns a 404.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "Invalid RequestMirror filter due to unmatched backendRef.namespace", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi_v1alpha2.BackendObjectReference{
+									Group:     gatewayapi.GroupPtr(""),
+									Kind:      gatewayapi.KindPtr("Service"),
+									Namespace: gatewayapi.NamespacePtr("some-other-namespace"),
+									Name:      gatewayapi_v1alpha2.ObjectName("kuard2"),
+									Port:      gatewayapi.PortNumPtr(8080),
+								},
+							},
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				status.ConditionResolvedRefs: {
+					Type:    string(status.ConditionResolvedRefs),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
+					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
+				},
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+			},
+		}},
+		// This still results in an attached route because it returns a 404.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 

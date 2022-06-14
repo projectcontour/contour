@@ -3024,6 +3024,91 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with request mirror filter": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
+				},
+			),
+		},
+		"HTTPRoute rule with request mirror filter with multiple matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: append(
+								gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+								gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/another-match")...,
+							),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
+						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
+					)),
+				},
+			),
+		},
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
