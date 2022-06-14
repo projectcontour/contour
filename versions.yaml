@@ -37,8 +37,19 @@ versions:
       gateway-api:
         - v1alpha2
       contour-operator: v1.21.0
-  - version: v1.20.1
+  - version: v1.20.2
     supported: "true"
+    dependencies:
+      envoy: "1.21.3"
+      kubernetes:
+        - "1.23"
+        - "1.22"
+        - "1.21"
+      gateway-api:
+        - v1alpha2
+      contour-operator: v1.20.2
+  - version: v1.20.1
+    supported: "false"
     dependencies:
       envoy: "1.21.1"
       kubernetes:
