@@ -8,7 +8,7 @@ LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.22.2
 # GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
-GATEWAY_API_VERSION = "bcfe3da78648b4206a627fe7f3b2d0db7e755ba8"
+GATEWAY_API_VERSION = "d37f3c92372299d65133e8a70c0236fe9e5da24d"
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
@@ -236,7 +236,7 @@ generate-crd-yaml:
 .PHONY: generate-gateway-yaml
 generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
-	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}"
+	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=${GATEWAY_API_VERSION}"
 	@echo "Generating Gateway API webhook documents..."
 	@curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/admission_webhook.yaml
 	@curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/certificate_config.yaml
