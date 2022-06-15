@@ -18,6 +18,7 @@ package incluster
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -44,7 +45,8 @@ var _ = BeforeSuite(func() {
 	originalArgs := f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Args
 	var newArgs []string
 	for _, arg := range originalArgs {
-		if !strings.Contains(arg, "--config-path") {
+		if !strings.Contains(arg, "--config-path") && // Config comes from config CRD.
+			!strings.Contains(arg, "--xds-address") { // xDS address comes from config CRD.
 			newArgs = append(newArgs, arg)
 		}
 	}
@@ -104,4 +106,21 @@ var _ = Describe("Incluster", func() {
 	f.NamespacedTest("projectcontour-resource-rbac", testProjectcontourResourcesRBAC)
 
 	f.NamespacedTest("ingress-resource-rbac", testIngressResourceRBAC)
+
+	Context("ipv4 cluster ipv6 listen compatibility", func() {
+		BeforeEach(func() {
+			if os.Getenv("IPV6_CLUSTER") == "true" {
+				Skip("skipping ipv4 cluster test")
+			}
+			contourConfig.Spec.XDSServer.Address = "::"
+			contourConfig.Spec.Health.Address = "::"
+			contourConfig.Spec.Metrics.Address = "::"
+			contourConfig.Spec.Envoy.HTTPListener.Address = "::"
+			contourConfig.Spec.Envoy.HTTPSListener.Address = "::"
+			contourConfig.Spec.Envoy.Health.Address = "::"
+			contourConfig.Spec.Envoy.Metrics.Address = "::"
+		})
+
+		f.NamespacedTest("ipv4-ipv6-compat-smoke-test", testSimpleSmoke)
+	})
 })
