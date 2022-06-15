@@ -4857,7 +4857,7 @@ rules:
   - gatewayclasses
   - gateways
   - httproutes
-  - referencegrants
+  - referencepolicies
   - tlsroutes
   verbs:
   - get
@@ -5236,8 +5236,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -5667,8 +5667,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -7084,8 +7084,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -7300,18 +7300,18 @@ spec:
                   properties:
                     backendRefs:
                       description: "BackendRefs defines the backend(s) where matching
-                        requests should be sent. \n A 404 status code MUST be returned
+                        requests should be sent. \n A 500 status code MUST be returned
                         if there are no BackendRefs or filters specified that would
                         result in a response being sent. \n A BackendRef is considered
                         invalid when it refers to: \n * an unknown or unsupported
                         kind of resource * a resource that does not exist * a resource
                         in another namespace when the reference has not been   explicitly
                         allowed by a ReferenceGrant (or equivalent concept). \n When
-                        a BackendRef is invalid, 404 status codes MUST be returned
+                        a BackendRef is invalid, 500 status codes MUST be returned
                         for requests that would have otherwise been routed to an invalid
                         backend. If multiple backends are specified, and some are
                         invalid, the proportion of requests that would otherwise have
-                        been routed to an invalid backend MUST receive a 404 status
+                        been routed to an invalid backend MUST receive a 500 status
                         code. \n When a BackendRef refers to a Service that has no
                         ready endpoints, it is recommended to return a 503 status
                         code. \n Support: Core for Kubernetes Service Support: Custom
@@ -8832,18 +8832,18 @@ spec:
                   properties:
                     backendRefs:
                       description: "BackendRefs defines the backend(s) where matching
-                        requests should be sent. \n A 404 status code MUST be returned
+                        requests should be sent. \n A 500 status code MUST be returned
                         if there are no BackendRefs or filters specified that would
                         result in a response being sent. \n A BackendRef is considered
                         invalid when it refers to: \n * an unknown or unsupported
                         kind of resource * a resource that does not exist * a resource
                         in another namespace when the reference has not been   explicitly
                         allowed by a ReferenceGrant (or equivalent concept). \n When
-                        a BackendRef is invalid, 404 status codes MUST be returned
+                        a BackendRef is invalid, 500 status codes MUST be returned
                         for requests that would have otherwise been routed to an invalid
                         backend. If multiple backends are specified, and some are
                         invalid, the proportion of requests that would otherwise have
-                        been routed to an invalid backend MUST receive a 404 status
+                        been routed to an invalid backend MUST receive a 500 status
                         code. \n When a BackendRef refers to a Service that has no
                         ready endpoints, it is recommended to return a 503 status
                         code. \n Support: Core for Kubernetes Service Support: Custom
@@ -10175,8 +10175,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -10203,7 +10203,7 @@ spec:
         description: "ReferenceGrant identifies kinds of resources in other namespaces
           that are trusted to reference the specified kinds of resources in the same
           namespace as the policy. \n Each ReferenceGrant can be used to represent
-          a unique trust relationship. Additional Reference Policies can be used to
+          a unique trust relationship. Additional Reference Grants can be used to
           add to the set of trusted sources of inbound references for the namespace
           they are defined within. \n All cross-namespace references in Gateway API
           (with the exception of cross-namespace Gateway-route attachment) require
@@ -10321,8 +10321,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -10814,8 +10814,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -11022,7 +11022,7 @@ spec:
                         the rule performs no forwarding; if no filters are specified
                         that would result in a response being sent, the underlying
                         implementation must actively reject request attempts to this
-                        backend, by rejecting the connection or returning a 404 status
+                        backend, by rejecting the connection or returning a 500 status
                         code. Request rejections must respect weight; if an invalid
                         backend is requested to have 80% of requests, then 80% of
                         requests must be rejected instead. \n Support: Core for Kubernetes
@@ -11356,8 +11356,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
-    gateway.networking.k8s.io/bundle-version: v0.5.0-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
+    gateway.networking.k8s.io/bundle-version: v0.5.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io

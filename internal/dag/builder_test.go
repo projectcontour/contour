@@ -1498,13 +1498,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -1551,13 +1551,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 							Name: gatewayapi.ObjectNamePtr(kuardService.Name),
 						}},
@@ -1605,13 +1605,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -1660,13 +1660,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would need to be "projectcontour" to be valid
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -1715,13 +1715,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "some-other-namespace", // would need to be "default" to be valid
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -1770,13 +1770,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 							Name: gatewayapi.ObjectNamePtr("some-other-service"), // would need to be "kuard" to be valid.
 						}},
@@ -2100,13 +2100,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 						}},
 					},
@@ -2152,13 +2152,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 							Name: gatewayapi.ObjectNamePtr(sec2.Name),
 						}},
@@ -2195,13 +2195,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: "wrong-namespace",
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 						}},
 					},
@@ -2221,13 +2221,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 						}},
 					},
@@ -2247,13 +2247,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "WrongKind",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 						}},
 					},
@@ -2273,13 +2273,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "WrongKind",
 						}},
 					},
@@ -2299,13 +2299,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "tls-cert-reference-policy",
 						Namespace: sec2.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "Gateway",
 							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Secret",
 							Name: gatewayapi.ObjectNamePtr("wrong-name"),
 						}},
@@ -3369,13 +3369,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -3433,13 +3433,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 							Name: gatewayapi.ObjectNamePtr(kuardService.Name),
 						}},
@@ -3498,13 +3498,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "HTTPRoute", // would need to be TLSRoute to be valid
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -3547,13 +3547,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would have to be "projectcontour" to be valid
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -3596,13 +3596,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "some-other-namespace", // would have to be "default" to be valid
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 						}},
 					},
@@ -3645,13 +3645,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 							Group:     gatewayapi_v1alpha2.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 							Kind: "Service",
 							Name: gatewayapi.ObjectNamePtr("some-other-service"), // would have to be "kuard" to be valid
 						}},

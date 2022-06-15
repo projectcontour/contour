@@ -3655,13 +3655,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 					}},
 				},
@@ -3782,13 +3782,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 						Name: gatewayapi.ObjectNamePtr("secret"),
 					}},
@@ -3838,13 +3838,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "wrong-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 					}},
 				},
@@ -3926,13 +3926,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 					}},
 				},
@@ -4014,13 +4014,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "WrongKind",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 					}},
 				},
@@ -4102,13 +4102,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "WrongKind",
 					}},
 				},
@@ -4190,13 +4190,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
 				},
-				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+				Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+					From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
 						Group:     gatewayapi_v1alpha2.GroupName,
 						Kind:      "Gateway",
 						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
 					}},
-					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+					To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
 						Kind: "Secret",
 						Name: gatewayapi.ObjectNamePtr("wrong-name"),
 					}},
