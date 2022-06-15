@@ -4674,7 +4674,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4704,8 +4704,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAccepted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+				gatewayapi_v1alpha2.RouteConditionAccepted: {
+					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -4730,7 +4730,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4760,8 +4760,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Port must be specified",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAccepted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+				gatewayapi_v1alpha2.RouteConditionAccepted: {
+					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -4786,7 +4786,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4831,8 +4831,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAccepted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+				gatewayapi_v1alpha2.RouteConditionAccepted: {
+					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -4857,7 +4857,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{
 						"test.projectcontour.io",
@@ -4889,8 +4889,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
 					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAccepted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+				gatewayapi_v1alpha2.RouteConditionAccepted: {
+					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
