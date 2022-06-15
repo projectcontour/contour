@@ -54,7 +54,7 @@ Contour is unable to do much about this, and we expect administrators the use th
 #### Multitenancy
 Contour is designed to be used in a multitenant fashion - it's an expected use case that a Contour install would service teams that have completely different security contexts, and should not be able to access each others config.
 Contour mitigates this as far as we can, using our HTTPProxy and TSLCertificateDelegation CRDs to enable more-secure cross-namespace references.
-The ReferencePolicy object in the Gateway API is also based on this idea, that cross-namespace references are only valid when the *owner of the namespace* accepts them.
+The ReferenceGrant object in the Gateway API is also based on this idea, that cross-namespace references are only valid when the *owner of the namespace* accepts them.
 #### Insider access
 In general, Contour adheres to the Kubernetes security model, that makes the minimum size security boundary the namespace (or at least, the RBAC around objects in that namespace).
 For Contour's primary use cases to work, application developers and other ingress configuration owners *must* have access to create or modify ingress config objects (whether they are Ingress, HTTPProxy, or Gateway API) inside their own namespace.

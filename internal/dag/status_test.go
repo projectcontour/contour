@@ -3600,7 +3600,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
-					Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
+					Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 				},
 				gatewayapi_v1alpha2.RouteConditionAccepted: {
 					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
@@ -3614,8 +3614,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
-	// BEGIN TLS CertificateRef + ReferencePolicy tests
-	run(t, "Gateway references TLS cert in different namespace, with valid ReferencePolicy", testcase{
+	// BEGIN TLS CertificateRef + ReferenceGrant tests
+	run(t, "Gateway references TLS cert in different namespace, with valid ReferenceGrant", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -3650,7 +3650,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -3670,7 +3670,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with no ReferencePolicy", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with no ReferenceGrant", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -3734,7 +3734,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -3742,7 +3742,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with valid ReferenceGrant (secret-specific)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -3777,7 +3777,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -3798,7 +3798,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (policy in wrong namespace)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -3833,7 +3833,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "wrong-namespace",
@@ -3878,7 +3878,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -3886,7 +3886,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From namespace)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -3921,7 +3921,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -3966,7 +3966,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -3974,7 +3974,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From kind)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -4009,7 +4009,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -4054,7 +4054,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -4062,7 +4062,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong To kind)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -4097,7 +4097,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -4142,7 +4142,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -4150,7 +4150,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)", testcase{
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong secret name)", testcase{
 		gateway: &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -4185,7 +4185,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
-			&gatewayapi_v1alpha2.ReferencePolicy{
+			&gatewayapi_v1alpha2.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tls-cert-reference-policy",
 					Namespace: "tls-cert-namespace",
@@ -4231,7 +4231,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
 				},
@@ -4239,7 +4239,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	// END TLS CertificateRef + ReferencePolicy tests
+	// END TLS CertificateRef + ReferenceGrant tests
 
 	run(t, "spec.rules.hostname: invalid wildcard", testcase{
 		objs: []interface{}{
@@ -4887,7 +4887,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
-					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
+					Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 				},
 				gatewayapi_v1alpha2.RouteConditionAccepted: {
 					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),

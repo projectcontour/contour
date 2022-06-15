@@ -1424,7 +1424,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"HTTPRoute references a backend in a different namespace, no ReferencePolicy": {
+		"HTTPRoute references a backend in a different namespace, no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1463,7 +1463,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with valid ReferencePolicy": {
+		"HTTPRoute references a backend in a different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1493,7 +1493,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -1516,7 +1516,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with valid ReferencePolicy (service-specific)": {
+		"HTTPRoute references a backend in a different namespace, with valid ReferenceGrant (service-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1546,7 +1546,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -1570,7 +1570,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong Kind)": {
+		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong Kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1600,7 +1600,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -1625,7 +1625,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1655,7 +1655,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would need to be "projectcontour" to be valid
@@ -1680,7 +1680,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong from namespace)": {
+		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong from namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1710,7 +1710,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -1735,7 +1735,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong service name)": {
+		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong service name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1765,7 +1765,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -2089,15 +2089,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 
-		// BEGIN TLS CertificateRef + ReferencePolicy tests
-		"Gateway references TLS cert in different namespace, with valid ReferencePolicy": {
+		// BEGIN TLS CertificateRef + ReferenceGrant tests
+		"Gateway references TLS cert in different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2132,7 +2132,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"Gateway references TLS cert in different namespace, with no ReferencePolicy": {
+		"Gateway references TLS cert in different namespace, with no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
@@ -2142,14 +2142,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)": {
+		"Gateway references TLS cert in different namespace, with valid ReferenceGrant (secret-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2185,14 +2185,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: "wrong-namespace",
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2211,14 +2211,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)": {
+		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2237,14 +2237,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)": {
+		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2263,14 +2263,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)": {
+		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong To kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2289,14 +2289,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)": {
+		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong secret name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
+						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
@@ -2317,7 +2317,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 
-		// END CertificateRef ReferencePolicy tests
+		// END CertificateRef ReferenceGrant tests
 
 		"No valid hostnames defined": {
 			gatewayclass: validClass,
@@ -3311,7 +3311,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"TLSRoute references a backend in a different namespace, no ReferencePolicy": {
+		"TLSRoute references a backend in a different namespace, no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3334,7 +3334,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute references a backend in a different namespace, with valid ReferencePolicy": {
+		"TLSRoute references a backend in a different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3364,7 +3364,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -3398,7 +3398,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"TLSRoute references a backend in a different namespace, with valid ReferencePolicy (service-specific)": {
+		"TLSRoute references a backend in a different namespace, with valid ReferenceGrant (service-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3428,7 +3428,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -3463,7 +3463,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong Kind)": {
+		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong Kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3493,7 +3493,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -3512,7 +3512,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3542,7 +3542,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would have to be "projectcontour" to be valid
@@ -3561,7 +3561,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong from namespace)": {
+		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong from namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3591,7 +3591,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
@@ -3610,7 +3610,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong service name)": {
+		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong service name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -3640,7 +3640,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha2.ReferencePolicy{
+				&gatewayapi_v1alpha2.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,

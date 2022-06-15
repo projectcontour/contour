@@ -1,0 +1,1 @@
+Gateway API: adds support for ReferenceGrant, which was formerly known as ReferencePolicy. To ease migration, _both_ resources are supported for this release, but ReferencePolicy support will be removed next release.
