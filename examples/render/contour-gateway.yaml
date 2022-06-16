@@ -4857,6 +4857,7 @@ rules:
   - gatewayclasses
   - gateways
   - httproutes
+  - referencegrants
   - referencepolicies
   - tlsroutes
   verbs:

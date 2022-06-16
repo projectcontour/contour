@@ -535,7 +535,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 	}
 
 	// If the secret is in a different namespace than the gateway, then we need to
-	// check for a ReferencePolicy that allows the reference.
+	// check for a ReferencePolicy or ReferenceGrant that allows the reference.
 	if certificateRef.Namespace != nil && string(*certificateRef.Namespace) != p.source.gateway.Namespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
@@ -555,7 +555,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 				gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
 				metav1.ConditionFalse,
 				gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef,
-				fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q namespace must match the Gateway's namespace or be covered by a ReferencePolicy", certificateRef.Name),
+				fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant", certificateRef.Name),
 			)
 			return nil
 		}
@@ -632,7 +632,43 @@ func (p *GatewayAPIProcessor) validCrossNamespaceRef(from crossNamespaceFrom, to
 		return true
 	}
 
-	// If we got here, no reference policy allowed both the "from" and "to".
+	for _, referenceGrant := range p.source.referencegrants {
+		// The ReferenceGrant must be defined in the namespace of
+		// the "to" (the referent).
+		if referenceGrant.Namespace != to.namespace {
+			continue
+		}
+
+		// Check if the ReferenceGrant has a matching "from".
+		var fromAllowed bool
+		for _, refGrantFrom := range referenceGrant.Spec.From {
+			if string(refGrantFrom.Namespace) == from.namespace && string(refGrantFrom.Group) == from.group && string(refGrantFrom.Kind) == from.kind {
+				fromAllowed = true
+				break
+			}
+		}
+		if !fromAllowed {
+			continue
+		}
+
+		// Check if the ReferenceGrant has a matching "to".
+		var toAllowed bool
+		for _, refGrantTo := range referenceGrant.Spec.To {
+			if string(refGrantTo.Group) == to.group && string(refGrantTo.Kind) == to.kind && (refGrantTo.Name == nil || *refGrantTo.Name == "" || string(*refGrantTo.Name) == to.name) {
+				toAllowed = true
+				break
+			}
+		}
+		if !toAllowed {
+			continue
+		}
+
+		// If we got here, both the "from" and the "to" were allowed by this
+		// reference grant.
+		return true
+	}
+
+	// If we got here, no reference policy or reference grant allowed both the "from" and "to".
 	return false
 }
 
@@ -1107,7 +1143,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 	}
 
 	// If the backend is in a different namespace than the route, then we need to
-	// check for a ReferencePolicy that allows the reference.
+	// check for a ReferencePolicy or ReferenceGrant that allows the reference.
 	if backendObjectRef.Namespace != nil && string(*backendObjectRef.Namespace) != routeNamespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
@@ -1126,7 +1162,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 				Type:    string(gatewayapi_v1alpha2.RouteConditionResolvedRefs),
 				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
-				Message: fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferencePolicy", field),
+				Message: fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferencePolicy/ReferenceGrant", field),
 			}
 		}
 	}
