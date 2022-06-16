@@ -22,6 +22,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 export CONTOUR_IMG=${CONTOUR_E2E_IMAGE:-ghcr.io/projectcontour/contour:main}
 
 echo "Using Contour image: ${CONTOUR_IMG}"
+echo "Using Gateway API version: ${GATEWAY_API_VERSION}"
 
 ${KUBECTL} apply -f examples/gateway-provisioner/00-common.yaml
 ${KUBECTL} apply -f examples/gateway-provisioner/01-roles.yaml
@@ -43,4 +44,5 @@ EOF
 cd $(mktemp -d)
 git clone https://github.com/kubernetes-sigs/gateway-api
 cd gateway-api
+git checkout "${GATEWAY_API_VERSION}"
 go test ./conformance -gateway-class=contour

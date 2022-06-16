@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.22.2
-GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
+GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
@@ -340,7 +340,7 @@ gateway-conformance: | setup-kind-cluster load-contour-image-kind run-gateway-co
 
 .PHONY: run-gatway-conformance
 run-gateway-conformance: ## Run Gateway API conformance tests against the current cluster.
-	./test/scripts/run-gateway-conformance.sh
+	GATEWAY_API_VERSION=$(GATEWAY_API_VERSION) ./test/scripts/run-gateway-conformance.sh
 
 .PHONY: deploy-gcp-bench-cluster
 deploy-gcp-bench-cluster:
