@@ -46,7 +46,7 @@ func testMultipleHTTPSListeners(namespace string) {
 				},
 				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							gatewayapi.GatewayListenerParentRef("", "multiple-https-listeners", "https-"+tc),
 						},
 					},

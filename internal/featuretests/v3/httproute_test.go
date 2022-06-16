@@ -68,7 +68,7 @@ var (
 					Port:     443,
 					Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
@@ -121,7 +121,7 @@ func TestGateway_TLS(t *testing.T) {
 		},
 		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},

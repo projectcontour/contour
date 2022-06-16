@@ -246,7 +246,7 @@ func runGatewayTests() {
 							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
 							},
@@ -322,7 +322,7 @@ func runGatewayTests() {
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 								Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
 							},
@@ -365,7 +365,7 @@ func runGatewayTests() {
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							Hostname: gatewayapi.ListenerHostname("https-1.gateway.projectcontour.io"),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-1", ""),
 								},
 							},
@@ -384,7 +384,7 @@ func runGatewayTests() {
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							Hostname: gatewayapi.ListenerHostname("https-2.gateway.projectcontour.io"),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-2", ""),
 								},
 							},
@@ -403,7 +403,7 @@ func runGatewayTests() {
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							Hostname: gatewayapi.ListenerHostname("https-3.gateway.projectcontour.io"),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-3", ""),
 								},
 							},
@@ -444,7 +444,7 @@ func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
@@ -462,7 +462,7 @@ func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}

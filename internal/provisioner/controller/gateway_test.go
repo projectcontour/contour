@@ -320,7 +320,7 @@ func TestGatewayReconcile(t *testing.T) {
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "projectcontour.io")
 			},
 		},
-		"A gateway with one named address results in an Envoy service with no loadBalancerIP": {
+		"A gateway with one custom address type results in an Envoy service with no loadBalancerIP": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: &gatewayv1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -331,8 +331,8 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1alpha2.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.NamedAddressType),
-							Value: "named-addresses-are-not-supported",
+							Type:  gatewayapi.AddressTypePtr("acme.io/CustomAddressType"),
+							Value: "custom-address-types-are-not-supported",
 						},
 					},
 				},

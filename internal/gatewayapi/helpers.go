@@ -62,8 +62,8 @@ func PreciseHostname(host string) *gatewayapi_v1alpha2.PreciseHostname {
 	return &h
 }
 
-func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
-	ref := &gatewayapi_v1alpha2.SecretObjectReference{
+func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectReference {
+	ref := gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr(""),
 		Kind:  KindPtr("Secret"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
@@ -76,8 +76,8 @@ func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectRef
 	return ref
 }
 
-func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
-	parentRef := gatewayapi_v1alpha2.ParentRef{
+func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentReference {
+	parentRef := gatewayapi_v1alpha2.ParentReference{
 		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
 		Kind:  KindPtr("Gateway"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
@@ -90,7 +90,7 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
 	return parentRef
 }
 
-func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1alpha2.ParentRef {
+func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1alpha2.ParentReference {
 	parentRef := GatewayParentRef(namespace, name)
 
 	if listener != "" {

@@ -156,7 +156,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			// If the Gateway is invalid, set status on the route and we're done.
 			if gatewayNotReadyCondition != nil {
-				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 				return
 			}
 
@@ -177,15 +177,15 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			}
 
 			if hostCount == 0 {
-				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
 			} else {
 				// Determine if any errors exist in conditions and set the "Accepted"
 				// condition accordingly.
 				switch len(routeAccessor.Conditions) {
 				case 0:
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
 				default:
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 				}
 			}
 		}()
@@ -205,7 +205,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			// If the Gateway is invalid, set status on the route.
 			if gatewayNotReadyCondition != nil {
-				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 				return
 			}
 
@@ -226,15 +226,15 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			}
 
 			if hostCount == 0 {
-				routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonNoIntersectingHostnames, "No intersecting hostnames were found between the listener and the route.")
 			} else {
 				// Determine if any errors exist in conditions and set the "Accepted"
 				// condition accordingly.
 				switch len(routeAccessor.Conditions) {
 				case 0:
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
 				default:
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 				}
 			}
 		}()
@@ -523,7 +523,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 
 	// Validate a v1.Secret is referenced which can be kind: secret & group: core.
 	// ref: https://github.com/kubernetes-sigs/gateway-api/pull/562
-	if !isSecretRef(*certificateRef) {
+	if !isSecretRef(certificateRef) {
 		gwAccessor.AddListenerCondition(
 			listenerName,
 			gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
@@ -768,7 +768,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.R
 
 // routeSelectsGatewayListener determines whether a route selects
 // a given Gateway+Listener.
-func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener gatewayapi_v1alpha2.Listener, routeParentRefs []gatewayapi_v1alpha2.ParentRef, routeNamespace string) bool {
+func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener gatewayapi_v1alpha2.Listener, routeParentRefs []gatewayapi_v1alpha2.ParentReference, routeNamespace string) bool {
 	for _, ref := range routeParentRefs {
 		if ref.Group == nil || ref.Kind == nil {
 			continue
@@ -1083,7 +1083,7 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewayapi_v1alpha2.BackendObjectReference, field string, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
 	degraded := func(msg string) *metav1.Condition {
 		return &metav1.Condition{
-			Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+			Type:    string(gatewayapi_v1alpha2.RouteConditionResolvedRefs),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: msg,
@@ -1123,7 +1123,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 			},
 		) {
 			return nil, &metav1.Condition{
-				Type:    string(gatewayapi_v1alpha2.ConditionRouteResolvedRefs),
+				Type:    string(gatewayapi_v1alpha2.RouteConditionResolvedRefs),
 				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1alpha2.ListenerReasonRefNotPermitted),
 				Message: fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferencePolicy", field),
