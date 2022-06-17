@@ -236,8 +236,6 @@ generate-crd-yaml:
 generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
 	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=${GATEWAY_API_VERSION}"
-	@echo "---" >> examples/gateway/00-crds.yaml
-	@curl -s https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/crd/experimental/gateway.networking.k8s.io_referencepolicies.yaml >> examples/gateway/00-crds.yaml
 	@echo "Generating Gateway API webhook documents..."
 	@curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/admission_webhook.yaml
 	@curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/certificate_config.yaml
