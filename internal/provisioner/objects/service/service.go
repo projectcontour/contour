@@ -231,11 +231,14 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		},
 	}
 
+	providerParams := &contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
+
 	// Add AWS LB annotations based on the network publishing strategy and provider type.
 	if contour.Spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
-		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AWSLoadBalancerProvider {
+		providerParams.Type == model.AWSLoadBalancerProvider {
+
 		// Add the TCP backend protocol annotation for AWS classic load balancers.
-		if isELB(&contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters) {
+		if isELB(providerParams) {
 			svc.Annotations[awsLbBackendProtoAnnotation] = "tcp"
 			svc.Annotations[awsLBProxyProtocolAnnotation] = "*"
 		} else {
@@ -246,29 +249,29 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 
 	// Add the AllocationIDs annotation if specified by AWS provider parameters.
 	if allocationIDsNeeded(&contour.Spec) {
-		svc.Annotations[awsLBAllocationIDsAnnotation] = strings.Join(contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.AllocationIDs, ",")
+		svc.Annotations[awsLBAllocationIDsAnnotation] = strings.Join(providerParams.AWS.AllocationIDs, ",")
 	}
 
 	// Add the ResourceGroup annotation if specified by Azure provider parameters.
 	if resourceGroupNeeded(&contour.Spec) {
-		svc.Annotations[azureLBResourceGroupAnnotation] = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.ResourceGroup
+		svc.Annotations[azureLBResourceGroupAnnotation] = *providerParams.Azure.ResourceGroup
 	}
 
 	// Add the Subnet annotation if specified by provider parameters.
 	if subnetNeeded(&contour.Spec) {
-		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider {
-			svc.Annotations[azureLBSubnetAnnotation] = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Subnet
-		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider {
-			svc.Annotations[gcpLBSubnetAnnotation] = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet
+		if providerParams.Type == model.AzureLoadBalancerProvider {
+			svc.Annotations[azureLBSubnetAnnotation] = *providerParams.Azure.Subnet
+		} else if providerParams.Type == model.GCPLoadBalancerProvider {
+			svc.Annotations[gcpLBSubnetAnnotation] = *providerParams.GCP.Subnet
 		}
 	}
 
 	// Add LoadBalancerIP parameter if specified by provider parameters.
 	if loadBalancerAddressNeeded(&contour.Spec) {
-		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider {
-			svc.Spec.LoadBalancerIP = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address
-		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider {
-			svc.Spec.LoadBalancerIP = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address
+		if providerParams.Type == model.AzureLoadBalancerProvider {
+			svc.Spec.LoadBalancerIP = *providerParams.Azure.Address
+		} else if providerParams.Type == model.GCPLoadBalancerProvider {
+			svc.Spec.LoadBalancerIP = *providerParams.GCP.Address
 		}
 	}
 
@@ -282,7 +285,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == model.InternalLoadBalancer
 		if isInternal {
-			provider := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type
+			provider := providerParams.Type
 			internalAnnotations := InternalLBAnnotations[provider]
 			for name, value := range internalAnnotations {
 				svc.Annotations[name] = value
@@ -372,8 +375,10 @@ func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
 	case model.NodePortServicePublishingType:
 		updated, needed = equality.NodePortServiceChanged(current, desired)
+
 	case model.ClusterIPServicePublishingType:
 		updated, needed = equality.ClusterIPServiceChanged(current, desired)
+
 	// Add additional network publishing types as they are introduced.
 	default:
 		// LoadBalancerService is the default network publishing type.
@@ -396,46 +401,54 @@ func isELB(params *model.ProviderLoadBalancerParameters) bool {
 // allocationIDsNeeded returns true if "service.beta.kubernetes.io/aws-load-balancer-eip-allocations"
 // annotation is needed based on the provided spec.
 func allocationIDsNeeded(spec *model.ContourSpec) bool {
+	providerParams := &spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
+
 	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "External" &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AWSLoadBalancerProvider &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS != nil &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.Type == model.AWSNetworkLoadBalancer &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.AllocationIDs != nil
+		providerParams.Type == model.AWSLoadBalancerProvider &&
+		providerParams.AWS != nil &&
+		providerParams.AWS.Type == model.AWSNetworkLoadBalancer &&
+		providerParams.AWS.AllocationIDs != nil
 }
 
 // resourceGroupNeeded returns true if "service.beta.kubernetes.io/azure-load-balancer-resource-group"
 // annotation is needed based on the provided spec.
 func resourceGroupNeeded(spec *model.ContourSpec) bool {
+	providerParams := &spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
+
 	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
+		providerParams.Type == model.AzureLoadBalancerProvider &&
+		providerParams.Azure != nil &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "External" &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.ResourceGroup != nil
+		providerParams.Azure.ResourceGroup != nil
 }
 
 // subnetNeeded returns true if "service.beta.kubernetes.io/azure-load-balancer-internal-subnet" or
 // "networking.gke.io/internal-load-balancer-subnet" annotation is needed based
 // on the provided spec.
 func subnetNeeded(spec *model.ContourSpec) bool {
+	providerParams := &spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
+
 	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "Internal" &&
-		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
-			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
-			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Subnet != nil) ||
-			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider &&
-				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil &&
-				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet != nil))
+		((providerParams.Type == model.AzureLoadBalancerProvider &&
+			providerParams.Azure != nil &&
+			providerParams.Azure.Subnet != nil) ||
+			(providerParams.Type == model.GCPLoadBalancerProvider &&
+				providerParams.GCP != nil &&
+				providerParams.GCP.Subnet != nil))
 }
 
 // loadBalancerAddressNeeded returns true if LoadBalancerIP parameter of service
 // is needed based on provided spec.
 func loadBalancerAddressNeeded(spec *model.ContourSpec) bool {
+	providerParams := &spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
+	
 	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
-		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
-			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
-			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address != nil) ||
-			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider &&
-				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil &&
-				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address != nil))
+		((providerParams.Type == model.AzureLoadBalancerProvider &&
+			providerParams.Azure != nil &&
+			providerParams.Azure.Address != nil) ||
+			(providerParams.Type == model.GCPLoadBalancerProvider &&
+				providerParams.GCP != nil &&
+				providerParams.GCP.Address != nil))
 }
