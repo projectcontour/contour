@@ -207,7 +207,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourDeploymentName(),
-			Labels:    makeDeploymentLabels(contour),
+			Labels:    contour.ContourDeploymentLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: pointer.Int32(600),
@@ -317,23 +317,6 @@ func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *m
 		}
 	}
 	return nil
-}
-
-// makeDeploymentLabels returns labels for a Contour deployment.
-func makeDeploymentLabels(contour *model.Contour) map[string]string {
-	labels := map[string]string{
-		"app.kubernetes.io/name":       "contour",
-		"app.kubernetes.io/instance":   contour.Name,
-		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
-	}
-
-	// Add owner labels
-	for k, v := range model.OwnerLabels(contour) {
-		labels[k] = v
-	}
-
-	return labels
 }
 
 // ContourDeploymentPodSelector returns a label selector using "app: contour" as the

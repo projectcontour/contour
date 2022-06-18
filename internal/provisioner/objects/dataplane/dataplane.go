@@ -326,22 +326,11 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *appsv1.DaemonSet {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
-	labels := map[string]string{
-		"app.kubernetes.io/name":       "contour",
-		"app.kubernetes.io/instance":   contour.Name,
-		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
-	}
-	// Add owner labels
-	for k, v := range model.OwnerLabels(contour) {
-		labels[k] = v
-	}
-
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    labels,
+			Labels:    contour.ContourDeploymentLabels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
@@ -416,22 +405,11 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *appsv1.Deployment {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
-	labels := map[string]string{
-		"app.kubernetes.io/name":       "contour",
-		"app.kubernetes.io/instance":   contour.Name,
-		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
-	}
-	// Add owner labels
-	for k, v := range model.OwnerLabels(contour) {
-		labels[k] = v
-	}
-
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    labels,
+			Labels:    contour.ContourDeploymentLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas:             pointer.Int32(contour.Spec.EnvoyReplicas),
