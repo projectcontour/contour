@@ -2686,6 +2686,109 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert single route with single query param match without type specified and path match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/"),
+								},
+								QueryParams: []gatewayapi_v1alpha2.HTTPQueryParamMatch{
+									{
+										Name:  "param-1",
+										Value: "value-1",
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							QueryParamMatchConditions: []QueryParamMatchCondition{
+								{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
+		"insert single route with single query param match with type specified and path match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/"),
+								},
+								QueryParams: []gatewayapi_v1alpha2.HTTPQueryParamMatch{
+									{
+										Type:  gatewayapi.QueryParamMatchTypePtr(gatewayapi_v1alpha2.QueryParamMatchExact),
+										Name:  "param-1",
+										Value: "value-1",
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							QueryParamMatchConditions: []QueryParamMatchCondition{
+								{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
 		"Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,

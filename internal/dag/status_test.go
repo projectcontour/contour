@@ -3343,7 +3343,60 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionNotImplemented),
 					Status:  contour_api_v1.ConditionTrue,
 					Reason:  string(status.ReasonHeaderMatchType),
-					Message: "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.",
+					Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "RegularExpression query param match not supported for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Value: pointer.StringPtr("/"),
+							},
+							QueryParams: []gatewayapi_v1alpha2.HTTPQueryParamMatch{
+								{
+									Type:  gatewayapi.QueryParamMatchTypePtr(gatewayapi_v1alpha2.QueryParamMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Name:  "param-1",
+									Value: "value-1",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.RouteConditionAccepted: {
+					Type:    string(gatewayapi_v1alpha2.RouteConditionAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+				status.ConditionNotImplemented: {
+					Type:    string(status.ConditionNotImplemented),
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  string(status.ReasonQueryParamMatchType),
+					Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported",
 				},
 			},
 		}},
