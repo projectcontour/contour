@@ -443,7 +443,7 @@ func subnetNeeded(spec *model.ContourSpec) bool {
 // is needed based on provided spec.
 func loadBalancerAddressNeeded(spec *model.ContourSpec) bool {
 	providerParams := &spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters
-	
+
 	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
 		((providerParams.Type == model.AzureLoadBalancerProvider &&
 			providerParams.Azure != nil &&
