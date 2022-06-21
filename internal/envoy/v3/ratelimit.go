@@ -144,13 +144,7 @@ func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http.HttpFilter {
 				Timeout:         envoy.Timeout(config.Timeout),
 				FailureModeDeny: !config.FailOpen,
 				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-					GrpcService: &envoy_core_v3.GrpcService{
-						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-								ClusterName: dag.ExtensionClusterName(config.ExtensionService),
-							},
-						},
-					},
+					GrpcService:         GrpcService(dag.ExtensionClusterName(config.ExtensionService), timeout.DefaultSetting()),
 					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 				},
 				EnableXRatelimitHeaders: enableXRateLimitHeaders(config.EnableXRateLimitHeaders),

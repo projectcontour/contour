@@ -680,18 +680,7 @@ end
 func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
 	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: &envoy_core_v3.GrpcService{
-				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-					EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-						ClusterName: authzClusterName,
-					},
-				},
-				Timeout: envoy.Timeout(timeout),
-				// We don't need to configure metadata here, since we allow
-				// operators to specify authorization context parameters at
-				// the virtual host and route.
-				InitialMetadata: []*envoy_core_v3.HeaderValue{},
-			},
+			GrpcService: GrpcService(authzClusterName, timeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
@@ -766,6 +755,18 @@ func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filte
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
 	}
 	return fc
+}
+
+// GRPCService returns a envoy_core_v3.GrpcService for the given parameters.
+func GrpcService(clusterName string, timeout timeout.Setting) *envoy_core_v3.GrpcService {
+	return &envoy_core_v3.GrpcService{
+		TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+			EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+				ClusterName: clusterName,
+			},
+		},
+		Timeout: envoy.Timeout(timeout),
+	}
 }
 
 // ListenerFilters returns a []*envoy_listener_v3.ListenerFilter for the supplied listener filters.
