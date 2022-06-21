@@ -231,7 +231,7 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 				ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
 				TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 				GrpcServices: []*envoy_core_v3.GrpcService{
-					GrpcService(cluster, timeout.DefaultSetting()),
+					GrpcService(cluster, "", timeout.DefaultSetting()),
 				},
 			},
 		},

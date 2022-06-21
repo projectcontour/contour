@@ -3085,6 +3085,7 @@ func TestListenerVisit(t *testing.T) {
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 												ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												Authority:   "extension.projectcontour.ratelimit",
 											},
 										},
 									},
@@ -3101,6 +3102,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
 					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					SNI:                     "ratelimit-example.com",
 					Domain:                  "contour",
 					Timeout:                 timeout.DurationSetting(7 * time.Second),
 					FailOpen:                false,
@@ -3170,6 +3172,7 @@ func TestListenerVisit(t *testing.T) {
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 												ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												Authority:   "ratelimit-example.com",
 											},
 										},
 									},
@@ -3208,6 +3211,7 @@ func TestListenerVisit(t *testing.T) {
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+													Authority:   "ratelimit-example.com",
 												},
 											},
 										},
@@ -3315,6 +3319,7 @@ func TestListenerVisit(t *testing.T) {
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+													Authority:   "extension.projectcontour.ratelimit",
 												},
 											},
 										},
@@ -3353,6 +3358,7 @@ func TestListenerVisit(t *testing.T) {
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+													Authority:   "extension.projectcontour.ratelimit",
 												},
 											},
 										},
@@ -3386,6 +3392,7 @@ func TestListenerVisit(t *testing.T) {
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+													Authority:   "extension.projectcontour.ratelimit",
 												},
 											},
 										},

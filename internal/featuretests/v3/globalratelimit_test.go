@@ -82,6 +82,7 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 							TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 								EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 									ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+									Authority:   "extension.projectcontour.ratelimit",
 								},
 							},
 						},

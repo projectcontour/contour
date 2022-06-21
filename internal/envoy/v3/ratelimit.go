@@ -123,6 +123,7 @@ func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.
 // an HTTP global rate limiting filter.
 type GlobalRateLimitConfig struct {
 	ExtensionService        types.NamespacedName
+	SNI                     string
 	FailOpen                bool
 	Timeout                 timeout.Setting
 	Domain                  string
@@ -144,7 +145,7 @@ func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http.HttpFilter {
 				Timeout:         envoy.Timeout(config.Timeout),
 				FailureModeDeny: !config.FailOpen,
 				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-					GrpcService:         GrpcService(dag.ExtensionClusterName(config.ExtensionService), timeout.DefaultSetting()),
+					GrpcService:         GrpcService(dag.ExtensionClusterName(config.ExtensionService), config.SNI, timeout.DefaultSetting()),
 					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 				},
 				EnableXRatelimitHeaders: enableXRateLimitHeaders(config.EnableXRateLimitHeaders),

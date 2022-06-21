@@ -677,10 +677,10 @@ end
 
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
+func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
 	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(authzClusterName, timeout),
+			GrpcService: GrpcService(authzClusterName, sni, timeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
@@ -758,11 +758,16 @@ func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filte
 }
 
 // GRPCService returns a envoy_core_v3.GrpcService for the given parameters.
-func GrpcService(clusterName string, timeout timeout.Setting) *envoy_core_v3.GrpcService {
+func GrpcService(clusterName, sni string, timeout timeout.Setting) *envoy_core_v3.GrpcService {
+	authority := strings.ReplaceAll(clusterName, "/", ".")
+	if sni != "" {
+		authority = sni
+	}
 	return &envoy_core_v3.GrpcService{
 		TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 			EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 				ClusterName: clusterName,
+				Authority:   authority,
 			},
 		},
 		Timeout: envoy.Timeout(timeout),
