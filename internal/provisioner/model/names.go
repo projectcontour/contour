@@ -79,8 +79,8 @@ func (c *Contour) EnvoyRBACNames() RBACNames {
 	}
 }
 
-// ContourDeploymentLabels returns labels for a Contour deployment.
-func (c *Contour) ContourDeploymentLabels() map[string]string {
+// ComponentLabels returns labels for a Contour component.
+func (c *Contour) ComponentLabels() map[string]string {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "contour",
 		"app.kubernetes.io/instance":   c.Name,

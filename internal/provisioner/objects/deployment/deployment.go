@@ -207,7 +207,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourDeploymentName(),
-			Labels:    contour.ContourDeploymentLabels(),
+			Labels:    contour.ComponentLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: pointer.Int32(600),

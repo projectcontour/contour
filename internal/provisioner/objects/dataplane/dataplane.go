@@ -330,7 +330,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.ContourDeploymentLabels(),
+			Labels:    contour.ComponentLabels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
@@ -409,7 +409,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.ContourDeploymentLabels(),
+			Labels:    contour.ComponentLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas:             pointer.Int32(contour.Spec.EnvoyReplicas),
