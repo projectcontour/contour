@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	// needed if tests are run against GCP
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -99,6 +100,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, contourv1.AddToScheme(scheme))
 	require.NoError(t, contourv1alpha1.AddToScheme(scheme))
 	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
+	require.NoError(t, gatewayapi_v1beta1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
@@ -409,10 +411,10 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 
 // CreateGatewayAndWaitFor creates a gateway in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1alpha2.Gateway, condition func(*gatewayapi_v1alpha2.Gateway) bool) (*gatewayapi_v1alpha2.Gateway, bool) {
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1beta1.Gateway, condition func(*gatewayapi_v1beta1.Gateway) bool) (*gatewayapi_v1beta1.Gateway, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), gateway))
 
-	res := &gatewayapi_v1alpha2.Gateway{}
+	res := &gatewayapi_v1beta1.Gateway{}
 
 	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
 		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gateway), res); err != nil {
@@ -433,10 +435,10 @@ func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1alpha2.Gateway
 
 // CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1alpha2.GatewayClass, condition func(*gatewayapi_v1alpha2.GatewayClass) bool) (*gatewayapi_v1alpha2.GatewayClass, bool) {
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1beta1.GatewayClass, condition func(*gatewayapi_v1beta1.GatewayClass) bool) (*gatewayapi_v1beta1.GatewayClass, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), gatewayClass))
 
-	res := &gatewayapi_v1alpha2.GatewayClass{}
+	res := &gatewayapi_v1beta1.GatewayClass{}
 
 	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
 		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gatewayClass), res); err != nil {
@@ -457,7 +459,7 @@ func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1alph
 
 // DeleteGateway deletes the provided gateway in the Kubernetes API
 // or fails the test if it encounters an error.
-func (f *Framework) DeleteGateway(gw *gatewayapi_v1alpha2.Gateway, waitForDeletion bool) error {
+func (f *Framework) DeleteGateway(gw *gatewayapi_v1beta1.Gateway, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
 
 	if waitForDeletion {
@@ -471,7 +473,7 @@ func (f *Framework) DeleteGateway(gw *gatewayapi_v1alpha2.Gateway, waitForDeleti
 
 // DeleteGatewayClass deletes the provided gatewayclass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1alpha2.GatewayClass, waitForDeletion bool) error {
+func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1beta1.GatewayClass, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))
 
 	if waitForDeletion {

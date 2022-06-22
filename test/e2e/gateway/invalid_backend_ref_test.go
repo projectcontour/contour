@@ -76,7 +76,7 @@ func testInvalidBackendRef(namespace string) {
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: gatewayapi.KindPtr("Service"),
+										Kind: gatewayapi.KindPtrV1Alpha2("Service"),
 										Name: "non-existent-service",
 										Port: gatewayapi.PortNumPtr(80),
 									},
@@ -97,7 +97,7 @@ func testInvalidBackendRef(namespace string) {
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: gatewayapi.KindPtr("Service"),
+										Kind: gatewayapi.KindPtrV1Alpha2("Service"),
 										Name: "echo-slash-default",
 										Port: gatewayapi.PortNumPtr(80),
 									},
