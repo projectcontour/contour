@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type GatewayReasonType string
@@ -34,16 +34,16 @@ const MessageValidGateway = "Valid Gateway"
 // Gateway's status.
 type GatewayStatusUpdate struct {
 	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
-	ListenerStatus     map[string]*gatewayapi_v1alpha2.ListenerStatus
+	Conditions         map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition
+	ExistingConditions map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition
+	ListenerStatus     map[string]*gatewayapi_v1beta1.ListenerStatus
 	Generation         int64
 	TransitionTime     metav1.Time
 }
 
 // AddCondition returns a metav1.Condition for a given GatewayConditionType.
 func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
-	cond gatewayapi_v1alpha2.GatewayConditionType,
+	cond gatewayapi_v1beta1.GatewayConditionType,
 	status metav1.ConditionStatus,
 	reason GatewayReasonType,
 	message string,
@@ -65,19 +65,19 @@ func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 	return newCond
 }
 
-func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, kinds []gatewayapi_v1alpha2.Kind) {
+func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, kinds []gatewayapi_v1beta1.Kind) {
 	if gatewayUpdate.ListenerStatus == nil {
-		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1beta1.ListenerStatus{}
 	}
 	if gatewayUpdate.ListenerStatus[listenerName] == nil {
-		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
-			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1beta1.ListenerStatus{
+			Name: gatewayapi_v1beta1.SectionName(listenerName),
 		}
 	}
 
 	for _, kind := range kinds {
-		groupKind := gatewayapi_v1alpha2.RouteGroupKind{
-			Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+		groupKind := gatewayapi_v1beta1.RouteGroupKind{
+			Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
 			Kind:  kind,
 		}
 
@@ -87,11 +87,11 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName
 
 func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int) {
 	if gatewayUpdate.ListenerStatus == nil {
-		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1beta1.ListenerStatus{}
 	}
 	if gatewayUpdate.ListenerStatus[listenerName] == nil {
-		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
-			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1beta1.ListenerStatus{
+			Name: gatewayapi_v1beta1.SectionName(listenerName),
 		}
 	}
 
@@ -101,17 +101,17 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName
 // AddListenerCondition adds a Condition for the specified listener.
 func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 	listenerName string,
-	cond gatewayapi_v1alpha2.ListenerConditionType,
+	cond gatewayapi_v1beta1.ListenerConditionType,
 	status metav1.ConditionStatus,
-	reason gatewayapi_v1alpha2.ListenerConditionReason,
+	reason gatewayapi_v1beta1.ListenerConditionReason,
 	message string,
 ) metav1.Condition {
 	if gatewayUpdate.ListenerStatus == nil {
-		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1beta1.ListenerStatus{}
 	}
 	if gatewayUpdate.ListenerStatus[listenerName] == nil {
-		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
-			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1beta1.ListenerStatus{
+			Name: gatewayapi_v1beta1.SectionName(listenerName),
 		}
 	}
 
@@ -144,18 +144,18 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 	return newCond
 }
 
-func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
-	conditions := make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition)
+func getGatewayConditions(gs *gatewayapi_v1beta1.GatewayStatus) map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition {
+	conditions := make(map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition)
 	for _, cond := range gs.Conditions {
-		if _, ok := conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)]; !ok {
-			conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)] = cond
+		if _, ok := conditions[gatewayapi_v1beta1.GatewayConditionType(cond.Type)]; !ok {
+			conditions[gatewayapi_v1beta1.GatewayConditionType(cond.Type)] = cond
 		}
 	}
 	return conditions
 }
 
 func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
-	o, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	o, ok := obj.(*gatewayapi_v1beta1.Gateway)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayStatusUpdate status mutator",
 			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
@@ -200,7 +200,7 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 
 	// Overwrite all listener statuses since we re-compute all of them
 	// for each Gateway status update.
-	var listenerStatusToWrite []gatewayapi_v1alpha2.ListenerStatus
+	var listenerStatusToWrite []gatewayapi_v1beta1.ListenerStatus
 	for _, status := range gatewayUpdate.ListenerStatus {
 		if status.Conditions == nil {
 			// Conditions is a required field so we have to specify an empty slice here
@@ -208,7 +208,7 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 		}
 		if status.SupportedKinds == nil {
 			// SupportedKinds is a required field so we have to specify an empty slice here
-			status.SupportedKinds = []gatewayapi_v1alpha2.RouteGroupKind{}
+			status.SupportedKinds = []gatewayapi_v1beta1.RouteGroupKind{}
 		}
 		listenerStatusToWrite = append(listenerStatusToWrite, *status)
 	}

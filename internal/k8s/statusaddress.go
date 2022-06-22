@@ -30,7 +30,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -132,7 +132,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			}),
 		))
 
-	case *gatewayapi_v1alpha2.Gateway:
+	case *gatewayapi_v1beta1.Gateway:
 		switch {
 		// Specific Gateway configured: check if the added Gateway
 		// matches.
@@ -147,7 +147,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		// Otherwise, check if the added Gateway's class is controlled
 		// by us.
 		default:
-			gc := &gatewayapi_v1alpha2.GatewayClass{}
+			gc := &gatewayapi_v1beta1.GatewayClass{}
 			if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
 				s.Logger.
 					WithField("name", o.Name).
@@ -171,9 +171,9 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		s.StatusUpdater.Send(NewStatusUpdate(
 			o.Name,
 			o.Namespace,
-			&gatewayapi_v1alpha2.Gateway{},
+			&gatewayapi_v1beta1.Gateway{},
 			StatusMutatorFunc(func(obj client.Object) client.Object {
-				gateway, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+				gateway, ok := obj.(*gatewayapi_v1beta1.Gateway)
 				if !ok {
 					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
 						obj.GetName(), obj.GetNamespace(),
@@ -187,16 +187,16 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				}
 
 				if ip := loadBalancerStatus.Ingress[0].IP; len(ip) > 0 {
-					dco.Status.Addresses = []gatewayapi_v1alpha2.GatewayAddress{
+					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.IPAddressType),
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
 							Value: ip,
 						},
 					}
 				} else if hostname := loadBalancerStatus.Ingress[0].Hostname; len(hostname) > 0 {
-					dco.Status.Addresses = []gatewayapi_v1alpha2.GatewayAddress{
+					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.HostnameAddressType),
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostname,
 						},
 					}

@@ -61,6 +61,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -755,12 +756,12 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		// to process, we just need informers to get events.
 		case contourConfiguration.Gateway.GatewayRef != nil:
 			// Inform on GatewayClasses.
-			if err := informOnResource(&gatewayapi_v1alpha2.GatewayClass{}, eventHandler, mgr.GetCache()); err != nil {
+			if err := informOnResource(&gatewayapi_v1beta1.GatewayClass{}, eventHandler, mgr.GetCache()); err != nil {
 				s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
 			}
 
 			// Inform on Gateways.
-			if err := informOnResource(&gatewayapi_v1alpha2.Gateway{}, eventHandler, mgr.GetCache()); err != nil {
+			if err := informOnResource(&gatewayapi_v1beta1.Gateway{}, eventHandler, mgr.GetCache()); err != nil {
 				s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
 			}
 		// Otherwise, run the GatewayClass and Gateway controllers to determine

@@ -16,6 +16,7 @@ package gatewayapi
 import (
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func SectionNamePtr(sectionName string) *gatewayapi_v1alpha2.SectionName {
@@ -52,12 +53,12 @@ func HTTPMethodPtr(method gatewayapi_v1alpha2.HTTPMethod) *gatewayapi_v1alpha2.H
 	return &method
 }
 
-func AddressTypePtr(addressType gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+func AddressTypePtr(addressType gatewayapi_v1beta1.AddressType) *gatewayapi_v1beta1.AddressType {
 	return &addressType
 }
 
-func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
-	h := gatewayapi_v1alpha2.Hostname(host)
+func ListenerHostname(host string) *gatewayapi_v1beta1.Hostname {
+	h := gatewayapi_v1beta1.Hostname(host)
 	return &h
 }
 
@@ -68,7 +69,7 @@ func PreciseHostname(host string) *gatewayapi_v1alpha2.PreciseHostname {
 
 func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectReference {
 	ref := gatewayapi_v1alpha2.SecretObjectReference{
-		Group: GroupPtr(""),
+		Group: groupPtrV1Alpha2(""),
 		Kind:  KindPtr("Secret"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
@@ -82,7 +83,7 @@ func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectRefe
 
 func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentReference {
 	parentRef := gatewayapi_v1alpha2.ParentReference{
-		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
+		Group: groupPtrV1Alpha2(gatewayapi_v1alpha2.GroupName),
 		Kind:  KindPtr("Gateway"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
@@ -104,7 +105,13 @@ func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1alp
 	return parentRef
 }
 
-func GroupPtr(group string) *gatewayapi_v1alpha2.Group {
+func GroupPtr(group string) *gatewayapi_v1beta1.Group {
+	gwGroup := gatewayapi_v1beta1.Group(group)
+	return &gwGroup
+}
+
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func groupPtrV1Alpha2(group string) *gatewayapi_v1alpha2.Group {
 	gwGroup := gatewayapi_v1alpha2.Group(group)
 	return &gwGroup
 }
@@ -126,7 +133,7 @@ func ObjectNamePtr(name string) *gatewayapi_v1alpha2.ObjectName {
 
 func ServiceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendObjectReference {
 	return gatewayapi_v1alpha2.BackendObjectReference{
-		Group: GroupPtr(""),
+		Group: groupPtrV1Alpha2(""),
 		Kind:  KindPtr("Service"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 		Port:  PortNumPtr(port),
