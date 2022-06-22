@@ -400,7 +400,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// HTTPRoute with a single weight.
-	route1 := &gatewayapi_v1alpha2.HTTPRoute{
+	route1 := &gatewayapi_v1beta1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
@@ -409,17 +409,17 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				"type": "controller",
 			},
 		},
-		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{
+			Hostnames: []gatewayapi_v1beta1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/blog"),
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 1),
 			}},
 		},
@@ -437,7 +437,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	), nil)
 
 	// HTTPRoute with multiple weights.
-	route2 := &gatewayapi_v1alpha2.HTTPRoute{
+	route2 := &gatewayapi_v1beta1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
@@ -446,17 +446,17 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				"type": "controller",
 			},
 		},
-		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{
+			Hostnames: []gatewayapi_v1beta1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/blog"),
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRefs(
 					gatewayapi.HTTPBackendRef("svc1", 80, 60),
 					gatewayapi.HTTPBackendRef("svc2", 80, 90),
@@ -540,7 +540,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
@@ -596,7 +596,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},

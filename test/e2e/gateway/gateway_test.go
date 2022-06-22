@@ -440,14 +440,14 @@ func runGatewayTests() {
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
-func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
+func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}

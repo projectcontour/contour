@@ -857,7 +857,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert gateway-api HTTPRoute": {
-			obj: &gatewayapi_v1alpha2.HTTPRoute{
+			obj: &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
@@ -1205,13 +1205,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove gateway-api HTTPRoute": {
-			cache: cache(&gatewayapi_v1alpha2.HTTPRoute{
+			cache: cache(&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.HTTPRoute{
+			obj: &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
@@ -1562,14 +1562,14 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	httpRoute := func(namespace, name string) *gatewayapi_v1alpha2.HTTPRoute {
-		return &gatewayapi_v1alpha2.HTTPRoute{
+	httpRoute := func(namespace, name string) *gatewayapi_v1beta1.HTTPRoute {
+		return &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 					BackendRefs: gatewayapi.HTTPBackendRef(name, 80, 1),
 				}},
 			},

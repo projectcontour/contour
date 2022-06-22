@@ -321,10 +321,10 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 
 // CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1alpha2.HTTPRoute, condition func(*gatewayapi_v1alpha2.HTTPRoute) bool) (*gatewayapi_v1alpha2.HTTPRoute, bool) {
+func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1beta1.HTTPRoute, condition func(*gatewayapi_v1beta1.HTTPRoute) bool) (*gatewayapi_v1beta1.HTTPRoute, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), route))
 
-	res := &gatewayapi_v1alpha2.HTTPRoute{}
+	res := &gatewayapi_v1beta1.HTTPRoute{}
 
 	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
 		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
