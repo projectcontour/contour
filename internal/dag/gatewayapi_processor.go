@@ -1258,6 +1258,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch)
 
 func gatewayQueryParamMatchConditions(matches []gatewayapi_v1alpha2.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
 	var dagMatchConditions []QueryParamMatchCondition
+	seenNames := sets.String{}
 
 	for _, match := range matches {
 		// QueryParamMatchTypeExact is the default if not defined in the object.
@@ -1266,6 +1267,13 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1alpha2.HTTPQueryPar
 		if match.Type != nil && *match.Type != gatewayapi_v1alpha2.QueryParamMatchExact {
 			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported")
 		}
+
+		// If multiple match conditions are found for the same value,
+		// use the first one and ignore subsequent ones.
+		if seenNames.Has(match.Name) {
+			continue
+		}
+		seenNames.Insert(match.Name)
 
 		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
 			MatchType: queryParamMatchType,

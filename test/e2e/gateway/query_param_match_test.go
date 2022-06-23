@@ -76,14 +76,16 @@ func testGatewayQueryParamMatch(namespace string) {
 
 		cases := map[string]string{
 			"/?animal=whale":                     "echo-1",
-			"/?animal=whale&foo=bar":             "echo-1",
+			"/?animal=whale&foo=bar":             "echo-1", // extra irrelevant parameters have no impact
+			"/?animal=whale&animal=dolphin":      "echo-1", // the first occurrence of a given key in a querystring is used for matching
 			"/?animal=dolphin":                   "echo-2",
-			"/?animal=dolphin&color=blue":        "echo-2",
+			"/?animal=dolphin&animal=whale":      "echo-2", // the first occurrence of a given key in a querystring is used for matching
+			"/?animal=dolphin&color=blue":        "echo-2", // all matches must match for a route to be selected
 			"/?animal=dolphin&color=red":         "echo-3",
-			"/?animal=dolphin&color=red&foo=bar": "echo-3",
-			"/?animal=horse":                     "echo-4",
-			"/?animal=whalesay":                  "echo-4",
-			"/?animal=bluedolphin":               "echo-4",
+			"/?animal=dolphin&color=red&foo=bar": "echo-3", // extra irrelevant parameters have no impact
+			"/?animal=horse":                     "echo-4", // non-matching values do not match
+			"/?animal=whalesay":                  "echo-4", // value matching is exact, not prefix
+			"/?animal=bluedolphin":               "echo-4", // value matching is exact, not suffix
 			"/?color=blue":                       "echo-4",
 			"/?nomatch=true":                     "echo-4",
 		}
