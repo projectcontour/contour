@@ -472,4 +472,6 @@ descriptors:
 			f.NamespacedTest("root-ns-cli", testRootNamespaces(rootNamespaces))
 		})
 	})
+
+	f.NamespacedTest("httpproxy-crl", testClientCertRevocation)
 })

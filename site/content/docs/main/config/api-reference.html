@@ -916,6 +916,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Name of a Kubernetes secret that contains a CA certificate bundle.
+The secret must contain key named ca.crt.
 The client certificate must validate against the certificates in the bundle.
 If specified and SkipClientCertValidation is true, client certificates will
 be required on requests.</p>
@@ -939,6 +940,37 @@ is set to true, client certificates are requested but not verified by
 Envoy. If CACertificate is specified, client certificates are required on
 requests, but not verified. If external authorization is in use, they are
 presented to the external authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>crlSecret</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of a Kubernetes opaque secret that contains a concatenated list of PEM encoded CRLs.
+The secret must contain key named crl.pem.
+This field will be used to verify that a client certificate has not been revoked.
+CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert is true.
+Large CRL lists are not supported since individual secrets are limited to 1MiB in size.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>crlOnlyVerifyLeafCert</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If this option is set to true, only the certificate at the end of the
+certificate chain will be subject to validation by CRL.</p>
 </td>
 </tr>
 </tbody>
@@ -3615,7 +3647,8 @@ string
 </em>
 </td>
 <td>
-<p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend</p>
+<p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
+The secret must contain key named ca.crt.</p>
 </td>
 </tr>
 <tr>
@@ -3627,7 +3660,7 @@ string
 </em>
 </td>
 <td>
-<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate</p>
+<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate.</p>
 </td>
 </tr>
 </tbody>

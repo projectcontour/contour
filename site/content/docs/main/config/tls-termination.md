@@ -193,6 +193,55 @@ In the above example, setting the `skipClientCertValidation` field to `true` wil
 Failed validation of client certificates by Envoy will be ignored and the `fail_verify_error` [Listener statistic][2] incremented.
 If the `caSecret` field is omitted, Envoy will request but not require client certificates to be present on requests.
 
+Optionally, you can enable certificate revocation check by providing one or more Certificate Revocation Lists (CRLs).
+Attribute `crlSecret` contains a name of an existing Kubernetes Secret that must be of type "Opaque" and have a data key named `crl.pem`.
+The data value of the key `crl.pem` must be one or more PEM-encoded CRLs concatenated together.
+Large CRL lists are not supported since individual Secrets are limited to 1MiB in size.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: with-client-auth-and-crl-check
+spec:
+  virtualhost:
+    fqdn: www.example.com
+    tls:
+      secretName: secret
+      clientValidation:
+        caSecret: client-root-ca
+        crlSecret: client-crl
+  routes:
+    - services:
+        - name: s1
+          port: 80
+```
+
+CRLs must be available from all relevant CAs, including intermediate CAs.
+Otherwise clients will be denied access, since the revocation status cannot be checked for the full certificate chain.
+This behavior can be controlled by `crlOnlyVerifyLeafCert` field.
+If the option is set to `true`, only the certificate at the end of the certificate chain will be subject to validation by CRL.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: with-client-auth-and-crl-check-only-leaf
+spec:
+  virtualhost:
+    fqdn: www.example.com
+    tls:
+      secretName: secret
+      clientValidation:
+        caSecret: client-root-ca
+        crlSecret: client-crl
+        crlOnlyVerifyLeafCert: true
+  routes:
+    - services:
+        - name: s1
+          port: 80
+```
+
 ## TLS Session Proxying
 
 HTTPProxy supports proxying of TLS encapsulated TCP sessions.

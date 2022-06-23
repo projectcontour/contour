@@ -49,7 +49,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		// directly into this field boxes the nil into the unexported
 		// type of this grpc OneOf field which causes proto marshaling
 		// to explode later on.
-		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false)
+		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false, nil, false)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
 		}
@@ -58,7 +58,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	return context
 }
 
-func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
+func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, crl []byte, onlyVerifyLeafCertCrl bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
 	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
 		ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 			TrustChainVerification: envoy_v3_tls.CertificateValidationContext_VERIFY_TRUST_CHAIN,
@@ -91,6 +91,15 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *
 		}
 	}
 
+	if len(crl) > 0 {
+		vc.ValidationContext.Crl = &envoy_api_v3_core.DataSource{
+			Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+				InlineBytes: crl,
+			},
+		}
+		vc.ValidationContext.OnlyVerifyLeafCertCrl = onlyVerifyLeafCertCrl
+	}
+
 	return vc
 }
 
@@ -111,7 +120,8 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion envoy_v3_
 		},
 	}
 	if peerValidationContext != nil {
-		vc := validationContext(peerValidationContext.GetCACertificate(), "", peerValidationContext.SkipClientCertValidation)
+		vc := validationContext(peerValidationContext.GetCACertificate(), "", peerValidationContext.SkipClientCertValidation,
+			peerValidationContext.GetCRL(), peerValidationContext.OnlyVerifyLeafCertCrl)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
 			context.RequireClientCertificate = protobuf.Bool(true)

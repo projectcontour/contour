@@ -27,6 +27,9 @@ import (
 // CACertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
 const CACertificateKey = "ca.crt"
 
+// CRLKey is the key name for accessing CRL bundles in Kubernetes Secrets.
+const CRLKey = "crl.pem"
+
 // validTLSSecret returns an error if the Secret is not of type TLS or if it doesn't contain certificate and private key material.
 func validTLSSecret(s *v1.Secret) error {
 	if s.Type != v1.SecretTypeTLS {
@@ -62,7 +65,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, fmt.Errorf("invalid TLS private key: %v", err)
 		}
 
-	// Generic secrets may have a 'ca.crt' only.
+	// Generic secrets may have 'ca.crt' or `crt.pem`.
 	case v1.SecretTypeOpaque, "":
 		// Note that we can't return an error in the first two cases
 		// because we have to watch all the secrets in the cluster, and most
@@ -74,16 +77,26 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, nil
 		}
 
-		data, ok := secret.Data[CACertificateKey]
-		if !ok {
-			// Secret is not a CA
-			return false, nil
-		}
-
 		// If there's an Opaque Secret with a `ca.crt` key, and it's zero
 		// length, Contour can't use it, so return an error.
-		if len(data) == 0 {
+		data, containsCA := secret.Data[CACertificateKey]
+		if containsCA && len(data) == 0 {
 			return false, errors.New("can't use zero-length ca.crt value")
+		}
+
+		data, containsCRL := secret.Data[CRLKey]
+		if containsCRL {
+			if len(data) == 0 {
+				return false, errors.New("can't use zero-length crt.pem value")
+			}
+			if err := validateCRL(data); err != nil {
+				return false, err
+			}
+		}
+
+		// Secret has neither CA nor CRL.
+		if !(containsCA || containsCRL) {
+			return false, nil // Not an error.
 		}
 
 	default:
@@ -244,4 +257,20 @@ func validatePrivateKey(data []byte) error {
 	default:
 		return errors.New("multiple private keys")
 	}
+}
+
+// validateCRL checks that PEM file contains at least one CRL.
+func validateCRL(data []byte) error {
+	for containsPEMHeader(data) {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			return errors.New("failed to parse PEM block")
+		}
+		if block.Type == "X509 CRL" {
+			return nil
+		}
+	}
+
+	return errors.New("failed to locate CRL")
 }
