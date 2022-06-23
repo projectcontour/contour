@@ -19,7 +19,6 @@ package gateway
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,7 +122,7 @@ func testInvalidBackendRef(namespace string) {
 				if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionFalse {
 					hasAccepted = true
 				}
-				if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
+				if cond.Type == string(gatewayapi_v1beta1.RouteConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
 					hasResolvedRefs = true
 				}
 			}

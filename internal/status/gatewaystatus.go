@@ -26,7 +26,6 @@ import (
 type GatewayReasonType string
 
 const ReasonValidGateway = "Valid"
-const ReasonInvalidGateway = "Invalid"
 
 const MessageValidGateway = "Valid Gateway"
 
