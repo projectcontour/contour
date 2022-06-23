@@ -51,6 +51,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		// to explode later on.
 		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false, nil, false)
 		if vc != nil {
+			// TODO: update this for SDS (CommonTlsContext_ValidationContextSdsSecretConfig) instead of inlining it.
 			context.CommonTlsContext.ValidationContextType = vc
 		}
 	}
@@ -58,6 +59,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	return context
 }
 
+// TODO: update this for SDS (CommonTlsContext_ValidationContextSdsSecretConfig) instead of inlining it.
 func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, crl []byte, onlyVerifyLeafCertCrl bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
 	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
 		ValidationContext: &envoy_v3_tls.CertificateValidationContext{
@@ -71,7 +73,6 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, c
 
 	if len(ca) > 0 {
 		vc.ValidationContext.TrustedCa = &envoy_api_v3_core.DataSource{
-			// TODO(dfc) update this for SDS
 			Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
 				InlineBytes: ca,
 			},
