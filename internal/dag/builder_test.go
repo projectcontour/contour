@@ -2640,6 +2640,54 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert route with multiple header matches including multiple for the same key": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+								Headers: []gatewayapi_v1alpha2.HTTPHeaderMatch{
+									{Name: "header-1", Value: "value-1"},
+									{Name: "header-2", Value: "value-2"},
+									{Name: "header-1", Value: "value-3"},
+									{Name: "HEADER-1", Value: "value-4"},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "header-1", Value: "value-1", MatchType: "exact"},
+								{Name: "header-2", Value: "value-2", MatchType: "exact"},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
 		"route with HTTP method match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
