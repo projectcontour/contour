@@ -40,6 +40,10 @@ func HeaderMatchTypePtr(val gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1a
 	return &val
 }
 
+func QueryParamMatchTypePtr(val gatewayapi_v1alpha2.QueryParamMatchType) *gatewayapi_v1alpha2.QueryParamMatchType {
+	return &val
+}
+
 func TLSModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.TLSModeType {
 	return &mode
 }
@@ -152,6 +156,20 @@ func HTTPHeaderMatch(matchType gatewayapi_v1alpha2.HeaderMatchType, name, value 
 			Value: value,
 		},
 	}
+}
+
+func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1alpha2.HTTPQueryParamMatch {
+	var matches []gatewayapi_v1alpha2.HTTPQueryParamMatch
+
+	for name, val := range namesAndValues {
+		matches = append(matches, gatewayapi_v1alpha2.HTTPQueryParamMatch{
+			Type:  QueryParamMatchTypePtr(gatewayapi_v1alpha2.QueryParamMatchExact),
+			Name:  name,
+			Value: val,
+		})
+	}
+
+	return matches
 }
 
 func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.HTTPBackendRef) []gatewayapi_v1alpha2.HTTPBackendRef {

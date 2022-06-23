@@ -202,6 +202,8 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
 
+		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayQueryParamMatch))
+
 		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidBackendRef))
 
 		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))

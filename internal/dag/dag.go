@@ -153,6 +153,28 @@ func (hc *HeaderMatchCondition) String() string {
 	return "header: " + details
 }
 
+const (
+	// QueryParamMatchTypeExact matches a querystring parameter value exactly.
+	QueryParamMatchTypeExact = "exact"
+)
+
+// QueryParamMatchCondition matches querystring parameters by MatchType
+type QueryParamMatchCondition struct {
+	Name      string
+	Value     string
+	MatchType string
+}
+
+func (qc *QueryParamMatchCondition) String() string {
+	details := strings.Join([]string{
+		"name=" + qc.Name,
+		"value=" + qc.Value,
+		"matchtype=", qc.MatchType,
+	}, "&")
+
+	return "queryparam: " + details
+}
+
 // DirectResponse allows for a specific HTTP status code and body
 // to be the response to a route request vs routing to
 // an envoy cluster.
@@ -201,6 +223,10 @@ type Route struct {
 	// HeaderMatchConditions specifies a set of additional Conditions to
 	// match on the request headers.
 	HeaderMatchConditions []HeaderMatchCondition
+
+	// QueryParamMatchConditions specifies a set of additional Conditions to
+	// match on the querystring parameters.
+	QueryParamMatchConditions []QueryParamMatchCondition
 
 	Clusters []*Cluster
 
@@ -520,6 +546,9 @@ func (v *VirtualHost) AddRoute(route *Route) {
 func conditionsToString(r *Route) string {
 	s := []string{r.PathMatchCondition.String()}
 	for _, cond := range r.HeaderMatchConditions {
+		s = append(s, cond.String())
+	}
+	for _, cond := range r.QueryParamMatchConditions {
 		s = append(s, cond.String())
 	}
 	return strings.Join(s, ",")

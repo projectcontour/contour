@@ -58,8 +58,9 @@ type GatewayAPIProcessor struct {
 
 // matchConditions holds match rules.
 type matchConditions struct {
-	path    MatchCondition
-	headers []HeaderMatchCondition
+	path        MatchCondition
+	headers     []HeaderMatchCondition
+	queryParams []QueryParamMatchCondition
 }
 
 // Run translates Gateway API types into DAG objects and
@@ -994,7 +995,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 			headerMatches, err := gatewayHeaderMatchConditions(match.Headers)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, err.Error())
 				continue
 			}
 
@@ -1008,9 +1009,16 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				})
 			}
 
+			queryParamMatches, err := gatewayQueryParamMatchConditions(match.QueryParams)
+			if err != nil {
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonQueryParamMatchType, err.Error())
+				continue
+			}
+
 			matchconditions = append(matchconditions, &matchConditions{
-				path:    pathMatch,
-				headers: headerMatches,
+				path:        pathMatch,
+				headers:     headerMatches,
+				queryParams: queryParamMatches,
 			})
 		}
 
@@ -1238,7 +1246,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch)
 			case gatewayapi_v1alpha2.HeaderMatchExact:
 				headerMatchType = HeaderMatchTypeExact
 			default:
-				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
 			}
 		}
 
@@ -1246,6 +1254,35 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch)
 	}
 
 	return headerMatchConditions, nil
+}
+
+func gatewayQueryParamMatchConditions(matches []gatewayapi_v1alpha2.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
+	var dagMatchConditions []QueryParamMatchCondition
+	seenNames := sets.String{}
+
+	for _, match := range matches {
+		// QueryParamMatchTypeExact is the default if not defined in the object.
+		queryParamMatchType := QueryParamMatchTypeExact
+
+		if match.Type != nil && *match.Type != gatewayapi_v1alpha2.QueryParamMatchExact {
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported")
+		}
+
+		// If multiple match conditions are found for the same value,
+		// use the first one and ignore subsequent ones.
+		if seenNames.Has(match.Name) {
+			continue
+		}
+		seenNames.Insert(match.Name)
+
+		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
+			MatchType: queryParamMatchType,
+			Name:      match.Name,
+			Value:     match.Value,
+		})
+	}
+
+	return dagMatchConditions, nil
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
@@ -1309,11 +1346,12 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
 		routes = append(routes, &Route{
-			Clusters:              clusters,
-			PathMatchCondition:    mc.path,
-			HeaderMatchConditions: mc.headers,
-			RequestHeadersPolicy:  headerPolicy,
-			MirrorPolicy:          mirrorPolicy,
+			Clusters:                  clusters,
+			PathMatchCondition:        mc.path,
+			HeaderMatchConditions:     mc.headers,
+			QueryParamMatchConditions: mc.queryParams,
+			RequestHeadersPolicy:      headerPolicy,
+			MirrorPolicy:              mirrorPolicy,
 		})
 	}
 
