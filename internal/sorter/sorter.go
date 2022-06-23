@@ -107,23 +107,32 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 	}
 }
 
-// longestRouteByHeaderConditions compares the HeaderMatchCondition slices for
-// lhs and rhs and returns true if lhs is longer.
-func longestRouteByHeaderConditions(lhs, rhs *dag.Route) bool {
-	if len(lhs.HeaderMatchConditions) == len(rhs.HeaderMatchConditions) {
-		pair := make([]dag.HeaderMatchCondition, 2)
+// longestRouteByHeaderAndQueryParamConditions compares the HeaderMatchConditions
+// and QueryParamMatchConditions slices for lhs and rhs and returns true if lhs is
+// longer.
+func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
+	// One route has a longer HeaderMatchConditions slice.
+	if len(lhs.HeaderMatchConditions) != len(rhs.HeaderMatchConditions) {
+		return len(lhs.HeaderMatchConditions) > len(rhs.HeaderMatchConditions)
+	}
 
-		for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
-			pair[0] = lhs.HeaderMatchConditions[i]
-			pair[1] = rhs.HeaderMatchConditions[i]
+	// HeaderMatchConditions are equal length: compare item by item.
+	pair := make([]dag.HeaderMatchCondition, 2)
 
-			if headerMatchConditionSorter(pair).Less(0, 1) {
-				return true
-			}
+	for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
+		pair[0] = lhs.HeaderMatchConditions[i]
+		pair[1] = rhs.HeaderMatchConditions[i]
+
+		if headerMatchConditionSorter(pair).Less(0, 1) {
+			return true
 		}
 	}
 
-	return len(lhs.HeaderMatchConditions) > len(rhs.HeaderMatchConditions)
+	// If there is no difference in the header match conditions, compare the length
+	// of the query param match conditions. Note that this is sufficient for implementing
+	// the Gateway API spec, but this may need to be enhanced if we add query param
+	// match support to HTTPProxy.
+	return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
 }
 
 // Sorts the given Route slice in place. Routes are ordered first by
@@ -148,7 +157,7 @@ func (s routeSorter) Less(i, j int) bool {
 				return false
 			default:
 				if a.PrefixMatchType == b.PrefixMatchType {
-					return longestRouteByHeaderConditions(s[i], s[j])
+					return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
 				}
 				// Segment prefixes sort first as they are more specific.
 				return a.PrefixMatchType == dag.PrefixMatchSegment
@@ -165,7 +174,7 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaderConditions(s[i], s[j])
+				return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
 			}
 		case *dag.PrefixMatchCondition:
 			return true
@@ -181,7 +190,7 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaderConditions(s[i], s[j])
+				return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
 			}
 		case *dag.PrefixMatchCondition:
 			return true

@@ -1286,6 +1286,31 @@ func TestRouteMatch(t *testing.T) {
 				}},
 			},
 		},
+		"query param exact match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "exact",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

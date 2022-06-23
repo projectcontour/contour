@@ -159,7 +159,8 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
 				SafeRegex: SafeRegexMatch("^" + c.Regex),
 			},
-			Headers: headerMatcher(route.HeaderMatchConditions),
+			Headers:         headerMatcher(route.HeaderMatchConditions),
+			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
 		switch c.PrefixMatchType {
@@ -168,7 +169,8 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
 					PathSeparatedPrefix: c.Prefix,
 				},
-				Headers: headerMatcher(route.HeaderMatchConditions),
+				Headers:         headerMatcher(route.HeaderMatchConditions),
+				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		case dag.PrefixMatchString:
 			fallthrough
@@ -177,7 +179,8 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: c.Prefix,
 				},
-				Headers: headerMatcher(route.HeaderMatchConditions),
+				Headers:         headerMatcher(route.HeaderMatchConditions),
+				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		}
 	case *dag.ExactMatchCondition:
@@ -185,11 +188,13 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
 				Path: c.Path,
 			},
-			Headers: headerMatcher(route.HeaderMatchConditions),
+			Headers:         headerMatcher(route.HeaderMatchConditions),
+			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	default:
 		return &envoy_route_v3.RouteMatch{
-			Headers: headerMatcher(route.HeaderMatchConditions),
+			Headers:         headerMatcher(route.HeaderMatchConditions),
+			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	}
 }
@@ -560,6 +565,28 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 		envoyHeaders = append(envoyHeaders, header)
 	}
 	return envoyHeaders
+}
+
+func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_route_v3.QueryParameterMatcher {
+	var envoyQueryParamMatchers []*envoy_route_v3.QueryParameterMatcher
+
+	for _, q := range queryParams {
+		queryParam := &envoy_route_v3.QueryParameterMatcher{
+			Name: q.Name,
+		}
+
+		if q.MatchType == dag.QueryParamMatchTypeExact {
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Exact{Exact: q.Value},
+				},
+			}
+		}
+
+		envoyQueryParamMatchers = append(envoyQueryParamMatchers, queryParam)
+	}
+
+	return envoyQueryParamMatchers
 }
 
 // containsMatch returns a HeaderMatchSpecifier which will match the

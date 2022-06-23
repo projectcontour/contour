@@ -283,6 +283,40 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 	assert.Equal(t, want, have)
 }
 
+func TestSortRoutesMostQueryParams(t *testing.T) {
+	want := []*dag.Route{
+		{
+
+			PathMatchCondition: matchExact("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "query-param-1", Value: "query-value-1"},
+				{Name: "query-param-2", Value: "query-value-2"},
+				{Name: "query-param-3", Value: "query-value-3"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "query-param-1", Value: "query-value-1"},
+				{Name: "query-param-2", Value: "query-value-2"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "query-param-1", Value: "query-value-1"},
+			},
+		},
+	}
+
+	have := shuffleRoutes(want)
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
+}
+
 func TestSortSecrets(t *testing.T) {
 	want := []*envoy_tls_v3.Secret{
 		{Name: "first"},
