@@ -1237,20 +1237,28 @@ func gatewayPathMatchCondition(match *gatewayapi_v1alpha2.HTTPPathMatch, routeAc
 
 func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
 	var headerMatchConditions []HeaderMatchCondition
+	seenNames := sets.String{}
 
 	for _, match := range matches {
-		// HeaderMatchTypeExact is the default if not defined in the object.
-		headerMatchType := HeaderMatchTypeExact
-		if match.Type != nil {
-			switch *match.Type {
-			case gatewayapi_v1alpha2.HeaderMatchExact:
-				headerMatchType = HeaderMatchTypeExact
-			default:
-				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
-			}
+		// "Exact" is the default if not defined in the object, and
+		// the only supported match type.
+		if match.Type != nil && *match.Type != gatewayapi_v1alpha2.HeaderMatchExact {
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
 		}
 
-		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{MatchType: headerMatchType, Name: string(match.Name), Value: match.Value})
+		// If multiple match conditions are found for the same header name (case-insensitive),
+		// use the first one and ignore subsequent ones.
+		upperName := strings.ToUpper(string(match.Name))
+		if seenNames.Has(upperName) {
+			continue
+		}
+		seenNames.Insert(upperName)
+
+		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
+			MatchType: HeaderMatchTypeExact,
+			Name:      string(match.Name),
+			Value:     match.Value,
+		})
 	}
 
 	return headerMatchConditions, nil
@@ -1261,9 +1269,8 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1alpha2.HTTPQueryPar
 	seenNames := sets.String{}
 
 	for _, match := range matches {
-		// QueryParamMatchTypeExact is the default if not defined in the object.
-		queryParamMatchType := QueryParamMatchTypeExact
-
+		// "Exact" is the default if not defined in the object, and
+		// the only supported match type.
 		if match.Type != nil && *match.Type != gatewayapi_v1alpha2.QueryParamMatchExact {
 			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported")
 		}
@@ -1276,7 +1283,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1alpha2.HTTPQueryPar
 		seenNames.Insert(match.Name)
 
 		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
-			MatchType: queryParamMatchType,
+			MatchType: QueryParamMatchTypeExact,
 			Name:      match.Name,
 			Value:     match.Value,
 		})
