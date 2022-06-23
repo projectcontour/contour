@@ -2668,7 +2668,7 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 				gatewayapi_v1beta1.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionTrue,
-					Reason:  status.ReasonValidGateway,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
 					Message: status.MessageValidGateway,
 				},
 			},
@@ -4494,7 +4494,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					gatewayapi_v1beta1.GatewayConditionReady: {
 						Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
 						Status:  contour_api_v1.ConditionTrue,
-						Reason:  status.ReasonValidGateway,
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
 						Message: status.MessageValidGateway,
 					},
 				},
@@ -4610,7 +4610,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					gatewayapi_v1beta1.GatewayConditionReady: {
 						Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
 						Status:  contour_api_v1.ConditionTrue,
-						Reason:  status.ReasonValidGateway,
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
 						Message: status.MessageValidGateway,
 					},
 				},

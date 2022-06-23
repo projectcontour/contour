@@ -843,7 +843,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	gwAccessor.AddCondition(
 		gatewayapi_v1beta1.GatewayConditionScheduled,
 		metav1.ConditionTrue,
-		status.GatewayReasonType(gatewayapi_v1beta1.GatewayReasonScheduled),
+		gatewayapi_v1beta1.GatewayReasonScheduled,
 		"Gateway is scheduled",
 	)
 
@@ -852,7 +852,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 		gwAccessor.AddCondition(
 			gatewayapi_v1beta1.GatewayConditionType(gatewayNotReadyCondition.Type),
 			gatewayNotReadyCondition.Status,
-			status.GatewayReasonType(gatewayNotReadyCondition.Reason),
+			gatewayapi_v1beta1.GatewayConditionReason(gatewayNotReadyCondition.Reason),
 			gatewayNotReadyCondition.Message,
 		)
 	default:
@@ -877,10 +877,10 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 
 		if !allListenersReady {
 			// If we have invalid listeners, set Ready=false.
-			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionFalse, status.GatewayReasonType(gatewayapi_v1beta1.GatewayReasonListenersNotValid), "Listeners are not valid")
+			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionFalse, gatewayapi_v1beta1.GatewayReasonListenersNotValid, "Listeners are not valid")
 		} else {
 			// Otherwise, Ready=true.
-			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
+			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionTrue, gatewayapi_v1beta1.GatewayReasonReady, status.MessageValidGateway)
 		}
 	}
 }
