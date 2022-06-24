@@ -894,6 +894,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
 			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
 			ConnectTimeout:            dbc.connectTimeout,
+			FallbackCertificate:       dbc.fallbackCert,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,

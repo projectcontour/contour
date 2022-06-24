@@ -58,6 +58,7 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"projectcontour.io/tls-minimum-protocol-version": {},
 		"projectcontour.io/tls-cert-namespace":           {},
 		"projectcontour.io/websocket-routes":             {},
+		"projectcontour.io/enable-fallback-certificate":  {},
 	},
 	"Service": {
 		"projectcontour.io/max-connections":       {},
@@ -207,6 +208,13 @@ func IngressClass(o metav1.Object) string {
 		return class
 	}
 	return ""
+}
+
+// FallbackCertificateEnabled returns true if the given Ingress has the
+// "projectcontour.io/enable-fallback-certificate" annotation set to
+// "true".
+func FallbackCertificateEnabled(i *networking_v1.Ingress) bool {
+	return ContourAnnotation(i, "enable-fallback-certificate") == "true"
 }
 
 // MinTLSVersion returns the TLS protocol version specified by an ingress annotation

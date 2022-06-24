@@ -53,6 +53,11 @@ type IngressProcessor struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// FallbackCertificate is the optional identifier of the
+	// TLS secret to use by default when SNI is not set on a
+	// request.
+	FallbackCertificate *types.NamespacedName
 }
 
 // Run translates Ingresses into DAG objects and
@@ -77,26 +82,85 @@ func (p *IngressProcessor) Run(dag *DAG, source *KubernetesCache) {
 // computeSecureVirtualhosts populates tls parameters of
 // secure virtual hosts.
 func (p *IngressProcessor) computeSecureVirtualhosts() {
-	for _, ing := range p.source.ingresses {
-		for _, tls := range ing.Spec.TLS {
-			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
-			if err != nil {
-				p.WithError(err).
-					WithField("name", ing.GetName()).
-					WithField("namespace", ing.GetNamespace()).
-					WithField("secret", secretName).
-					Error("unresolved secret reference")
-				continue
-			}
+	var (
+		fallbackCert *Secret
+		err          error
+	)
+	if p.FallbackCertificate != nil {
+		fallbackCert, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
+		if err != nil {
+			p.WithError(err).
+				WithField("secret", p.FallbackCertificate).
+				Error("fallback certificate is invalid")
+		}
+	}
 
-			if !p.source.DelegationPermitted(secretName, ing.GetNamespace()) {
-				p.WithError(err).
-					WithField("name", ing.GetName()).
+	for _, ing := range p.source.ingresses {
+		fallbackCertEnabled := annotation.FallbackCertificateEnabled(ing)
+		if fallbackCertEnabled {
+			if fallbackCert != nil { // Case where we have a fallback cert.
+				if !p.source.DelegationPermitted(*p.FallbackCertificate, ing.GetNamespace()) {
+					p.WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("secret", p.FallbackCertificate).
+						Error("fallback certificate delegation not permitted")
+
+					// Disable fallback usage for this Ingress so we can
+					// program the rest of it.
+					fallbackCertEnabled = false
+				}
+			} else if p.FallbackCertificate != nil { // Fallback cert configured but invalid.
+				p.WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
-					WithField("secret", secretName).
-					Error("certificate delegation not permitted")
-				continue
+					Error("fallback certificate enabled but the fallback Certificate Secret is invalid")
+
+				// Disable fallback usage for this Ingress so we can
+				// program the rest of it.
+				fallbackCertEnabled = false
+			} else { // No fallback cert configured.
+				p.WithField("name", ing.GetName()).
+					WithField("namespace", ing.GetNamespace()).
+					Error("fallback certificate enabled but the fallback Certificate Secret is not configured in Contour configuration file")
+
+				// Disable fallback usage for this Ingress so we can
+				// program the rest of it.
+				fallbackCertEnabled = false
+			}
+		}
+
+		for _, tls := range ing.Spec.TLS {
+			var secret *Secret
+			if tls.SecretName == "" {
+				if fallbackCertEnabled {
+					// If no provided secret, use fallback cert as main vhost secret.
+					secret = fallbackCert
+				} else {
+					p.WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("hosts", tls.Hosts).
+						Error("no TLS secret provided and fallback cert invalid or not configured")
+					continue
+				}
+			} else {
+				secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
+				secret, err = p.source.LookupSecret(secretName, validTLSSecret)
+				if err != nil {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("secret", secretName).
+						Error("unresolved secret reference")
+					continue
+				}
+
+				if !p.source.DelegationPermitted(secretName, ing.GetNamespace()) {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("secret", secretName).
+						Error("certificate delegation not permitted")
+					continue
+				}
 			}
 
 			// We have validated the TLS secrets, so we can go
@@ -104,7 +168,10 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// Ingress.
 			for _, host := range tls.Hosts {
 				svhost := p.dag.EnsureSecureVirtualHost(host)
-				svhost.Secret = sec
+				svhost.Secret = secret
+				if fallbackCertEnabled {
+					svhost.FallbackCertificate = fallbackCert
+				}
 				// default to a minimum TLS version of 1.2 if it's not specified
 				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
 			}

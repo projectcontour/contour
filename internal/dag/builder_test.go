@@ -4325,6 +4325,11 @@ func TestDAGInsert(t *testing.T) {
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
+	fallbackCertificateDefaultRef := &types.NamespacedName{
+		Name:      "fallbacksecret",
+		Namespace: "default",
+	}
+
 	fallbackCertificateSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "fallbacksecret",
@@ -7811,12 +7816,11 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs                         []interface{}
-		disablePermitInsecure        bool
-		enableExternalNameSvc        bool
-		fallbackCertificateName      string
-		fallbackCertificateNamespace string
-		want                         []*Listener
+		objs                  []interface{}
+		disablePermitInsecure bool
+		enableExternalNameSvc bool
+		fallbackCertificate   *types.NamespacedName
+		want                  []*Listener
 	}{
 		"ingressv1: insert ingress w/ default backend w/o matching service": {
 			objs: []interface{}{
@@ -8327,6 +8331,432 @@ func TestDAGInsert(t *testing.T) {
 					Port: 443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, no fallback cert or main secret configured": {
+			fallbackCertificate: nil,
+			objs: []interface{}{
+				s9,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								Hosts: []string{"foo-0.com"},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, no fallback cert configured": {
+			fallbackCertificate: nil,
+			objs: []interface{}{
+				sec1,
+				s9,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"foo-0.com"},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-0.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, no fallback cert in cluster": {
+			fallbackCertificate: fallbackCertificateDefaultRef,
+			objs: []interface{}{
+				sec1,
+				s9,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"foo-0.com"},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-0.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, tls secrets, and fallback cert provided": {
+			fallbackCertificate: fallbackCertificateDefaultRef,
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts: []string{
+									"foo-0.com",
+									"foo-1.com",
+								},
+							},
+							{
+								SecretName: sec1.Name,
+								Hosts: []string{
+									"foo-2.com",
+								},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+							{
+								Host:             "foo-1.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+							{
+								Host:             "foo-2.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+						virtualhost("foo-1.com", prefixroute("/", service(s9))),
+						virtualhost("foo-2.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-0.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(sec1),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-1.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(sec1),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-2.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(sec1),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, no tls secrets, and fallback cert provided": {
+			fallbackCertificate: fallbackCertificateDefaultRef,
+			objs: []interface{}{
+				s9,
+				fallbackCertificateSecret,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								Hosts: []string{
+									"foo-0.com",
+									"foo-1.com",
+								},
+							},
+							{
+								Hosts: []string{
+									"foo-2.com",
+								},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+							{
+								Host:             "foo-1.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+							{
+								Host:             "foo-2.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+						virtualhost("foo-1.com", prefixroute("/", service(s9))),
+						virtualhost("foo-2.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-0.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(fallbackCertificateSecret),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-1.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(fallbackCertificateSecret),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-2.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion:       "1.2",
+							Secret:              secret(fallbackCertificateSecret),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, tls secrets, fallback cert provided, delegation not permitted": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "root",
+			},
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecretRootNamespace,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts: []string{
+									"foo-0.com",
+								},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "foo-0.com",
+								Routes: routes(prefixroute("/", service(s9))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with fallback certificate enabled, no tls secrets, fallback cert provided, delegation not permitted": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "root",
+			},
+			objs: []interface{}{
+				s9,
+				fallbackCertificateSecretRootNamespace,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallback-enabled",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/enable-fallback-certificate": "true",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{
+							{
+								Hosts: []string{
+									"foo-0.com",
+								},
+							},
+						},
+						Rules: []networking_v1.IngressRule{
+							{
+								Host:             "foo-0.com",
+								IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo-0.com", prefixroute("/", service(s9))),
 					),
 				},
 			),
@@ -11273,8 +11703,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate enabled": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "default",
+			fallbackCertificate: fallbackCertificateDefaultRef,
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11327,8 +11756,10 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate enabled - cert delegation not configured": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "root",
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "root",
+			},
 			objs: []interface{}{
 				sec4,
 				s9,
@@ -11358,8 +11789,10 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(),
 		},
 		"httpproxy with fallback certificate enabled - cert delegation configured all namespaces": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "root",
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "root",
+			},
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11424,8 +11857,10 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate enabled - cert delegation configured single namespaces": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "root",
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "root",
+			},
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11490,8 +11925,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate enabled - no tls secret": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "default",
+			fallbackCertificate: fallbackCertificateDefaultRef,
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11520,8 +11954,7 @@ func TestDAGInsert(t *testing.T) {
 			want: nil,
 		},
 		"httpproxy with fallback certificate enabled along with ClientValidation": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "default",
+			fallbackCertificate: fallbackCertificateDefaultRef,
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11553,8 +11986,7 @@ func TestDAGInsert(t *testing.T) {
 			want: nil,
 		},
 		"httpproxy with fallback certificate enabled - another not enabled": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "default",
+			fallbackCertificate: fallbackCertificateDefaultRef,
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11638,8 +12070,10 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate enabled - bad fallback cert": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "badnamespaces",
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "badnamespaces",
+			},
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11691,8 +12125,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate disabled - fallback cert specified": {
-			fallbackCertificateName:      "fallbacksecret",
-			fallbackCertificateNamespace: "default",
+			fallbackCertificate: fallbackCertificateDefaultRef,
 			objs: []interface{}{
 				sec1,
 				s9,
@@ -11890,14 +12323,12 @@ func TestDAGInsert(t *testing.T) {
 					&IngressProcessor{
 						FieldLogger:               fixture.NewTestLogger(t),
 						EnableExternalNameService: tc.enableExternalNameSvc,
+						FallbackCertificate:       tc.fallbackCertificate,
 					},
 					&HTTPProxyProcessor{
 						EnableExternalNameService: tc.enableExternalNameSvc,
 						DisablePermitInsecure:     tc.disablePermitInsecure,
-						FallbackCertificate: &types.NamespacedName{
-							Name:      tc.fallbackCertificateName,
-							Namespace: tc.fallbackCertificateNamespace,
-						},
+						FallbackCertificate:       tc.fallbackCertificate,
 					},
 					&ListenerProcessor{},
 				},
