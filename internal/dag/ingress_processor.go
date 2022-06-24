@@ -98,7 +98,9 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
 		fallbackCertEnabled := annotation.FallbackCertificateEnabled(ing)
 		if fallbackCertEnabled {
-			if fallbackCert != nil { // Case where we have a fallback cert.
+			switch {
+			// Case where we have a fallback cert.
+			case fallbackCert != nil:
 				if !p.source.DelegationPermitted(*p.FallbackCertificate, ing.GetNamespace()) {
 					p.WithField("name", ing.GetName()).
 						WithField("namespace", ing.GetNamespace()).
@@ -109,7 +111,9 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 					// program the rest of it.
 					fallbackCertEnabled = false
 				}
-			} else if p.FallbackCertificate != nil { // Fallback cert configured but invalid.
+
+			// Fallback cert configured but invalid.
+			case p.FallbackCertificate != nil:
 				p.WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
 					Error("fallback certificate enabled but the fallback Certificate Secret is invalid")
@@ -117,7 +121,9 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 				// Disable fallback usage for this Ingress so we can
 				// program the rest of it.
 				fallbackCertEnabled = false
-			} else { // No fallback cert configured.
+
+			// No fallback cert configured.
+			default:
 				p.WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
 					Error("fallback certificate enabled but the fallback Certificate Secret is not configured in Contour configuration file")
