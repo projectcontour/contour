@@ -609,8 +609,14 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		}
 	}
 
+	var sni string
+	if extensionSvc.Spec.UpstreamValidation != nil {
+		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	}
+
 	return &xdscache_v3.RateLimitConfig{
 		ExtensionService:        key,
+		SNI:                     sni,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
 		FailOpen:                pointer.BoolDeref(contourConfiguration.RateLimitService.FailOpen, false),
