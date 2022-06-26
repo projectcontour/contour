@@ -65,7 +65,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, fmt.Errorf("invalid TLS private key: %v", err)
 		}
 
-	// Generic secrets may have 'ca.crt' or `crt.pem`.
+	// Generic secrets may have 'ca.crt' or `crl.pem`.
 	case v1.SecretTypeOpaque, "":
 		// Note that we can't return an error in the first two cases
 		// because we have to watch all the secrets in the cluster, and most
@@ -87,7 +87,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 		data, containsCRL := secret.Data[CRLKey]
 		if containsCRL {
 			if len(data) == 0 {
-				return false, errors.New("can't use zero-length crt.pem value")
+				return false, errors.New("can't use zero-length crl.pem value")
 			}
 			if err := validateCRL(data); err != nil {
 				return false, err
