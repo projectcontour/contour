@@ -33,6 +33,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
@@ -839,7 +840,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		// invalid gatewayclass test case is unneeded since the controller
 		// uses a predicate to filter events before they're given to the EventHandler.
 		"insert valid gatewayclass": {
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour",
 				},
@@ -847,7 +848,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert gateway-api Gateway": {
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
@@ -906,7 +907,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Namespace: "gateway-namespace",
 				Name:      "gateway-name",
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
@@ -919,17 +920,17 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Name:      "gateway-name",
 			},
 			pre: []interface{}{
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						GatewayClassName: gatewayapi_v1alpha2.ObjectName("some-other-gatewayclass"),
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						GatewayClassName: gatewayapi_v1beta1.ObjectName("some-other-gatewayclass"),
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
@@ -942,17 +943,17 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Name:      "gateway-name",
 			},
 			pre: []interface{}{
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						GatewayClassName: gatewayapi_v1alpha2.ObjectName("gatewayclass-1"),
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						GatewayClassName: gatewayapi_v1beta1.ObjectName("gatewayclass-1"),
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
@@ -964,7 +965,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Namespace: "gateway-namespace",
 				Name:      "gateway-name",
 			},
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "gateway-namespace",
 					Name:      "some-other-gateway-name",
@@ -977,7 +978,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Namespace: "gateway-namespace",
 				Name:      "gateway-name",
 			},
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "gateway-namespace",
 					Name:      "gateway-name",
@@ -1176,12 +1177,12 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: false,
 		},
 		"remove gatewayclass": {
-			cache: cache(&gatewayapi_v1alpha2.GatewayClass{
+			cache: cache(&gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour",
 				},
@@ -1189,13 +1190,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove gateway-api Gateway": {
-			cache: cache(&gatewayapi_v1alpha2.Gateway{
+			cache: cache(&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
@@ -1266,7 +1267,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
@@ -1276,13 +1277,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"specific gateway configured, remove gatewayclass, non-matching name": {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
-				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
+				gatewayclass: &gatewayapi_v1beta1.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gatewayclass-1",
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-other-gatewayclass",
 				},
@@ -1292,13 +1293,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"specific gateway configured, remove gatewayclass, matching name": {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
-				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
+				gatewayclass: &gatewayapi_v1beta1.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gatewayclass-1",
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.GatewayClass{
+			obj: &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
@@ -1309,7 +1310,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 			},
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "gateway-namespace",
 					Name:      "gateway-name",
@@ -1320,14 +1321,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"specific gateway configured, remove gateway, non-matching namespace/name": {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
-				gateway: &gatewayapi_v1alpha2.Gateway{
+				gateway: &gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "gateway-namespace",
 					Name:      "some-other-gateway",
@@ -1338,14 +1339,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"specific gateway configured, remove gateway, matching namespace/name": {
 			cache: &KubernetesCache{
 				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
-				gateway: &gatewayapi_v1alpha2.Gateway{
+				gateway: &gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.Gateway{
+			obj: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "gateway-namespace",
 					Name:      "gateway-name",
@@ -1865,13 +1866,13 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"gateway does not define TLS on listener, does not trigger rebuild": {
 			cache: cache(
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						Listeners: []gatewayapi_v1alpha2.Listener{{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
 							TLS: nil,
 						}},
 					},
@@ -1882,14 +1883,14 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"gateway does not define TLS.CertificateRef on listener, does not trigger rebuild": {
 			cache: cache(
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						Listeners: []gatewayapi_v1alpha2.Listener{{
-							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 								CertificateRefs: nil,
 							},
 						}},
@@ -1901,15 +1902,15 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"gateway listener references secret, triggers rebuild (core Group)": {
 			cache: cache(
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						Listeners: []gatewayapi_v1alpha2.Listener{{
-							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
 							},
@@ -1922,15 +1923,15 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"gateway listener references secret, triggers rebuild (v1 Group)": {
 			cache: cache(
-				&gatewayapi_v1alpha2.Gateway{
+				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						Listeners: []gatewayapi_v1alpha2.Listener{{
-							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
 							},

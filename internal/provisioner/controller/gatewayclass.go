@@ -31,19 +31,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // gatewayClassReconciler reconciles GatewayClass objects.
 type gatewayClassReconciler struct {
-	gatewayController gatewayapi_v1alpha2.GatewayController
+	gatewayController gatewayapi_v1beta1.GatewayController
 	client            client.Client
 	log               logr.Logger
 }
 
 func NewGatewayClassController(mgr manager.Manager, gatewayController string) (controller.Controller, error) {
 	r := &gatewayClassReconciler{
-		gatewayController: gatewayapi_v1alpha2.GatewayController(gatewayController),
+		gatewayController: gatewayapi_v1beta1.GatewayController(gatewayController),
 		client:            mgr.GetClient(),
 		log:               ctrl.Log.WithName("gatewayclass-controller"),
 	}
@@ -54,7 +54,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha2.GatewayClass{}},
+		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -74,7 +74,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 }
 
 func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
-	gatewayClass, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
+	gatewayClass, ok := obj.(*gatewayapi_v1beta1.GatewayClass)
 	if !ok {
 		return false
 	}
@@ -86,7 +86,7 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 // for all provisioner-controlled GatewayClasses that have a ParametersRef to
 // the specified ContourDeployment object.
 func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(contourDeployment client.Object) []reconcile.Request {
-	var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
+	var gatewayClasses gatewayapi_v1beta1.GatewayClassList
 	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
 		r.log.Error(err, "error listing gateway classes")
 		return nil
@@ -120,7 +120,7 @@ func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(contourDep
 }
 
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+	gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
 	if err := r.client.Get(ctx, req.NamespacedName, gatewayClass); err != nil {
 		// GatewayClass no longer exists, nothing to do.
 		if errors.IsNotFound(err) {
@@ -147,7 +147,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			ctx,
 			gatewayClass,
 			metav1.ConditionFalse,
-			gatewayapi_v1alpha2.GatewayClassReasonInvalidParameters,
+			gatewayapi_v1beta1.GatewayClassReasonInvalidParameters,
 			"Invalid ParametersRef, must be a reference to an existing namespaced projectcontour.io/ContourDeployment resource",
 		); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
@@ -188,7 +188,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				ctx,
 				gatewayClass,
 				metav1.ConditionFalse,
-				gatewayapi_v1alpha2.GatewayClassReasonInvalidParameters,
+				gatewayapi_v1beta1.GatewayClassReasonInvalidParameters,
 				strings.Join(invalidParamsMessages, "; "),
 			); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
@@ -198,7 +198,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	if err := r.setAcceptedCondition(ctx, gatewayClass, metav1.ConditionTrue, gatewayapi_v1alpha2.GatewayClassReasonAccepted, "GatewayClass has been accepted by the controller"); err != nil {
+	if err := r.setAcceptedCondition(ctx, gatewayClass, metav1.ConditionTrue, gatewayapi_v1beta1.GatewayClassReasonAccepted, "GatewayClass has been accepted by the controller"); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
 	}
 
@@ -207,14 +207,14 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *gatewayClassReconciler) setAcceptedCondition(
 	ctx context.Context,
-	gatewayClass *gatewayapi_v1alpha2.GatewayClass,
+	gatewayClass *gatewayapi_v1beta1.GatewayClass,
 	status metav1.ConditionStatus,
-	reason gatewayapi_v1alpha2.GatewayClassConditionReason,
+	reason gatewayapi_v1beta1.GatewayClassConditionReason,
 	message string,
 ) error {
 	var newConds []metav1.Condition
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == status {
 				return nil
 			}
@@ -229,7 +229,7 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 
 	// nolint:gocritic
 	gatewayClass.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
+		Type:               string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
 		Status:             status,
 		ObservedGeneration: gatewayClass.Generation,
 		LastTransitionTime: metav1.Now(),
@@ -246,7 +246,7 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 
 // isValidParametersRef returns true if the provided ParametersReference is
 // to a ContourDeployment resource that exists.
-func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *gatewayapi_v1alpha2.ParametersReference) (bool, *contour_api_v1alpha1.ContourDeployment, error) {
+func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *gatewayapi_v1beta1.ParametersReference) (bool, *contour_api_v1alpha1.ContourDeployment, error) {
 	if ref == nil {
 		return true, nil, nil
 	}
@@ -271,7 +271,7 @@ func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *
 	return true, params, nil
 }
 
-func isContourDeploymentRef(ref *gatewayapi_v1alpha2.ParametersReference) bool {
+func isContourDeploymentRef(ref *gatewayapi_v1beta1.ParametersReference) bool {
 	if ref == nil {
 		return false
 	}

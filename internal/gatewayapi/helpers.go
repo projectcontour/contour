@@ -16,6 +16,7 @@ package gatewayapi
 import (
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func SectionNamePtr(sectionName string) *gatewayapi_v1alpha2.SectionName {
@@ -28,7 +29,7 @@ func PortNumPtr(port int) *gatewayapi_v1alpha2.PortNumber {
 	return &pn
 }
 
-func FromNamespacesPtr(val gatewayapi_v1alpha2.FromNamespaces) *gatewayapi_v1alpha2.FromNamespaces {
+func FromNamespacesPtr(val gatewayapi_v1beta1.FromNamespaces) *gatewayapi_v1beta1.FromNamespaces {
 	return &val
 }
 
@@ -44,7 +45,7 @@ func QueryParamMatchTypePtr(val gatewayapi_v1alpha2.QueryParamMatchType) *gatewa
 	return &val
 }
 
-func TLSModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.TLSModeType {
+func TLSModeTypePtr(mode gatewayapi_v1beta1.TLSModeType) *gatewayapi_v1beta1.TLSModeType {
 	return &mode
 }
 
@@ -52,12 +53,12 @@ func HTTPMethodPtr(method gatewayapi_v1alpha2.HTTPMethod) *gatewayapi_v1alpha2.H
 	return &method
 }
 
-func AddressTypePtr(addressType gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+func AddressTypePtr(addressType gatewayapi_v1beta1.AddressType) *gatewayapi_v1beta1.AddressType {
 	return &addressType
 }
 
-func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
-	h := gatewayapi_v1alpha2.Hostname(host)
+func ListenerHostname(host string) *gatewayapi_v1beta1.Hostname {
+	h := gatewayapi_v1beta1.Hostname(host)
 	return &h
 }
 
@@ -66,11 +67,11 @@ func PreciseHostname(host string) *gatewayapi_v1alpha2.PreciseHostname {
 	return &h
 }
 
-func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectReference {
-	ref := gatewayapi_v1alpha2.SecretObjectReference{
+func CertificateRef(name, namespace string) gatewayapi_v1beta1.SecretObjectReference {
+	ref := gatewayapi_v1beta1.SecretObjectReference{
 		Group: GroupPtr(""),
 		Kind:  KindPtr("Secret"),
-		Name:  gatewayapi_v1alpha2.ObjectName(name),
+		Name:  gatewayapi_v1beta1.ObjectName(name),
 	}
 
 	if namespace != "" {
@@ -82,13 +83,13 @@ func CertificateRef(name, namespace string) gatewayapi_v1alpha2.SecretObjectRefe
 
 func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentReference {
 	parentRef := gatewayapi_v1alpha2.ParentReference{
-		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
-		Kind:  KindPtr("Gateway"),
+		Group: GroupPtrV1Alpha2(gatewayapi_v1alpha2.GroupName),
+		Kind:  KindPtrV1Alpha2("Gateway"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
 
 	if namespace != "" {
-		parentRef.Namespace = NamespacePtr(namespace)
+		parentRef.Namespace = NamespacePtrV1Alpha2(namespace)
 	}
 
 	return parentRef
@@ -104,17 +105,35 @@ func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1alp
 	return parentRef
 }
 
-func GroupPtr(group string) *gatewayapi_v1alpha2.Group {
+func GroupPtr(group string) *gatewayapi_v1beta1.Group {
+	gwGroup := gatewayapi_v1beta1.Group(group)
+	return &gwGroup
+}
+
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func GroupPtrV1Alpha2(group string) *gatewayapi_v1alpha2.Group {
 	gwGroup := gatewayapi_v1alpha2.Group(group)
 	return &gwGroup
 }
 
-func KindPtr(kind string) *gatewayapi_v1alpha2.Kind {
+func KindPtr(kind string) *gatewayapi_v1beta1.Kind {
+	gwKind := gatewayapi_v1beta1.Kind(kind)
+	return &gwKind
+}
+
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func KindPtrV1Alpha2(kind string) *gatewayapi_v1alpha2.Kind {
 	gwKind := gatewayapi_v1alpha2.Kind(kind)
 	return &gwKind
 }
 
-func NamespacePtr(namespace string) *gatewayapi_v1alpha2.Namespace {
+func NamespacePtr(namespace string) *gatewayapi_v1beta1.Namespace {
+	gwNamespace := gatewayapi_v1beta1.Namespace(namespace)
+	return &gwNamespace
+}
+
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func NamespacePtrV1Alpha2(namespace string) *gatewayapi_v1alpha2.Namespace {
 	gwNamespace := gatewayapi_v1alpha2.Namespace(namespace)
 	return &gwNamespace
 }
@@ -126,14 +145,14 @@ func ObjectNamePtr(name string) *gatewayapi_v1alpha2.ObjectName {
 
 func ServiceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendObjectReference {
 	return gatewayapi_v1alpha2.BackendObjectReference{
-		Group: GroupPtr(""),
-		Kind:  KindPtr("Service"),
+		Group: GroupPtrV1Alpha2(""),
+		Kind:  KindPtrV1Alpha2("Service"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 		Port:  PortNumPtr(port),
 	}
 }
 
-func GatewayAddressTypePtr(addr gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+func GatewayAddressTypePtr(addr gatewayapi_v1beta1.AddressType) *gatewayapi_v1beta1.AddressType {
 	return &addr
 }
 

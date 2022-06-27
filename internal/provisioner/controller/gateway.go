@@ -40,12 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // gatewayReconciler reconciles Gateway objects.
 type gatewayReconciler struct {
-	gatewayController gatewayapi_v1alpha2.GatewayController
+	gatewayController gatewayapi_v1beta1.GatewayController
 	contourImage      string
 	envoyImage        string
 	client            client.Client
@@ -54,7 +54,7 @@ type gatewayReconciler struct {
 
 func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, envoyImage string) (controller.Controller, error) {
 	r := &gatewayReconciler{
-		gatewayController: gatewayapi_v1alpha2.GatewayController(gatewayController),
+		gatewayController: gatewayapi_v1beta1.GatewayController(gatewayController),
 		contourImage:      contourImage,
 		envoyImage:        envoyImage,
 		client:            mgr.GetClient(),
@@ -67,7 +67,7 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha2.Gateway{}},
+		&source.Kind{Type: &gatewayapi_v1beta1.Gateway{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.forReconcilableGatewayClass),
 	); err != nil {
@@ -78,7 +78,7 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	// Gateways when a provisioner-controlled GatewayClass becomes
 	// "Accepted: true".
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha2.GatewayClass{}},
+		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
 		handler.EnqueueRequestsFromMapFunc(r.getGatewayClassGateways),
 		predicate.NewPredicateFuncs(r.isGatewayClassReconcilable),
 	); err != nil {
@@ -92,12 +92,12 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 // controlled by the provisioner, and that GatewayClass has a condition of
 // "Accepted: true".
 func (r *gatewayReconciler) forReconcilableGatewayClass(obj client.Object) bool {
-	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	gw, ok := obj.(*gatewayapi_v1beta1.Gateway)
 	if !ok {
 		return false
 	}
 
-	gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+	gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
 	if err := r.client.Get(context.Background(), client.ObjectKey{Name: string(gw.Spec.GatewayClassName)}, gatewayClass); err != nil {
 		return false
 	}
@@ -109,7 +109,7 @@ func (r *gatewayReconciler) forReconcilableGatewayClass(obj client.Object) bool 
 // GatewayClass controlled by the provisioner that has an "Accepted: true"
 // condition.
 func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
-	gatewayClass, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
+	gatewayClass, ok := obj.(*gatewayapi_v1beta1.GatewayClass)
 	if !ok {
 		return false
 	}
@@ -120,7 +120,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 
 	var accepted bool
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				accepted = true
 			}
@@ -132,7 +132,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 }
 
 func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) []reconcile.Request {
-	var gateways gatewayapi_v1alpha2.GatewayList
+	var gateways gatewayapi_v1beta1.GatewayList
 	if err := r.client.List(context.Background(), &gateways); err != nil {
 		r.log.Error(err, "error listing gateways")
 		return nil
@@ -140,7 +140,7 @@ func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) 
 
 	var reconciles []reconcile.Request
 	for _, gw := range gateways.Items {
-		if gw.Spec.GatewayClassName == gatewayapi_v1alpha2.ObjectName(gatewayClass.GetName()) {
+		if gw.Spec.GatewayClassName == gatewayapi_v1beta1.ObjectName(gatewayClass.GetName()) {
 			reconciles = append(reconciles, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: gw.Namespace,
@@ -156,7 +156,7 @@ func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name)
 
-	gateway := &gatewayapi_v1alpha2.Gateway{}
+	gateway := &gatewayapi_v1beta1.Gateway{}
 	if err := r.client.Get(ctx, req.NamespacedName, gateway); err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("deleting gateway resources")
@@ -181,7 +181,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Theoretically all event sources should be filtered already, but doesn't hurt
 	// to double-check this here to ensure we only reconcile gateways for accepted
 	// gateway classes the provisioner controls.
-	gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+	gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
 	if err := r.client.Get(ctx, client.ObjectKey{Name: string(gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
 		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class: %w", err)
 	}
@@ -199,8 +199,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		address := gateway.Spec.Addresses[0]
 
 		if address.Type == nil ||
-			*address.Type == gatewayapi_v1alpha2.IPAddressType ||
-			*address.Type == gatewayapi_v1alpha2.HostnameAddressType {
+			*address.Type == gatewayapi_v1beta1.IPAddressType ||
+			*address.Type == gatewayapi_v1beta1.HostnameAddressType {
 			contourModel.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
 		}
 	}
@@ -297,7 +297,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var newConds []metav1.Condition
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1alpha2.GatewayConditionScheduled) {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionScheduled) {
 			if cond.Status == metav1.ConditionTrue {
 				return ctrl.Result{}, nil
 			}
@@ -312,11 +312,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1alpha2.GatewayConditionScheduled),
+		Type:               string(gatewayapi_v1beta1.GatewayConditionScheduled),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: gateway.Generation,
 		LastTransitionTime: metav1.Now(),
-		Reason:             string(gatewayapi_v1alpha2.GatewayReasonScheduled),
+		Reason:             string(gatewayapi_v1beta1.GatewayReasonScheduled),
 		Message:            "Gateway is scheduled",
 	})
 
@@ -380,7 +380,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	return errs
 }
 
-func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1alpha2.GatewayClass) (*contour_api_v1alpha1.ContourDeployment, error) {
+func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1beta1.GatewayClass) (*contour_api_v1alpha1.ContourDeployment, error) {
 	// Check if there is a parametersRef to ContourDeployment with
 	// a namespace specified. Theoretically, we should only be reconciling
 	// Gateways for GatewayClasses that have valid parameter refs (or no refs),

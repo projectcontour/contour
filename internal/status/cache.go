@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // ConditionType is used to ensure we only use a limited set of possible values
@@ -35,7 +36,7 @@ type ConditionType string
 const ValidCondition ConditionType = "Valid"
 
 // NewCache creates a new Cache for holding status updates.
-func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1alpha2.GatewayController) Cache {
+func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1beta1.GatewayController) Cache {
 	return Cache{
 		gatewayRef:        gateway,
 		gatewayController: gatewayController,
@@ -56,7 +57,7 @@ type CacheEntry interface {
 // KindAccessor.
 type Cache struct {
 	gatewayRef        types.NamespacedName
-	gatewayController gatewayapi_v1alpha2.GatewayController
+	gatewayController gatewayapi_v1beta1.GatewayController
 
 	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
 	gatewayUpdates map[types.NamespacedName]*GatewayStatusUpdate
@@ -119,7 +120,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, gwUpdate := range c.gatewayUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       &gatewayapi_v1alpha2.Gateway{},
+			Resource:       &gatewayapi_v1beta1.Gateway{},
 			Mutator:        gwUpdate,
 		}
 
@@ -169,10 +170,10 @@ func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
 // status changes as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the GatewayStatusUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayStatusUpdate, func()) {
+func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1beta1.GatewayStatus) (*GatewayStatusUpdate, func()) {
 	gu := &GatewayStatusUpdate{
 		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition),
 		ExistingConditions: getGatewayConditions(gs),
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
@@ -231,7 +232,7 @@ func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation 
 		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
 		ExistingConditions: c.getRouteGatewayConditions(gateways),
 		GatewayRef:         c.gatewayRef,
-		GatewayController:  c.gatewayController,
+		GatewayController:  gatewayapi_v1alpha2.GatewayController(c.gatewayController),
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
 		Resource:           resource,

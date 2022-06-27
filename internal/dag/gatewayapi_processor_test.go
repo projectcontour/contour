@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestComputeHosts(t *testing.T) {
@@ -241,7 +242,7 @@ func TestComputeHosts(t *testing.T) {
 
 func TestNamespaceMatches(t *testing.T) {
 	tests := map[string]struct {
-		namespaces *gatewayapi_v1alpha2.RouteNamespaces
+		namespaces *gatewayapi_v1beta1.RouteNamespaces
 		namespace  string
 		valid      bool
 		wantError  bool
@@ -253,7 +254,7 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError:  false,
 		},
 		"nil From matches all": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: nil,
 			},
 			namespace: "projectcontour",
@@ -261,32 +262,32 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromAll matches all": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 			wantError: false,
 		},
 		"From.NamespacesFromSame matches": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 			wantError: false,
 		},
 		"From.NamespacesFromSame doesn't match": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 			},
 			namespace: "custom",
 			valid:     false,
 			wantError: false,
 		},
 		"From.NamespacesFromSelector matches labels, same ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "production",
@@ -298,8 +299,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -311,8 +312,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -324,8 +325,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'In', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -339,8 +340,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -353,8 +354,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -367,8 +368,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -381,8 +382,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -395,8 +396,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.NamespacesFromSelector match expression 'Exists', cannot specify values": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -410,8 +411,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: true,
 		},
 		"From.NamespacesFromSelector match expression 'NotExists', cannot specify values": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -425,8 +426,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: true,
 		},
 		"From.NamespacesFromSelector must define matchLabels or matchExpression": {
-			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-				From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{},
 			},
 			namespace: "custom",
@@ -441,7 +442,7 @@ func TestNamespaceMatches(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1alpha2.Gateway{
+					gateway: &gatewayapi_v1beta1.Gateway{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
@@ -489,7 +490,7 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 	tests := map[string]struct {
 		routeParentRefs []gatewayapi_v1alpha2.ParentReference
 		routeNamespace  string
-		listener        gatewayapi_v1alpha2.Listener
+		listener        gatewayapi_v1beta1.Listener
 		want            bool
 	}{
 		"gateway namespace specified, no listener specified, gateway in same namespace as route": {
@@ -529,14 +530,14 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener"),
 			},
-			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("http-listener")},
+			listener: gatewayapi_v1beta1.Listener{Name: "http-listener"},
 			want:     true,
 		},
 		"section name specified, does not match listener": {
 			routeParentRefs: []gatewayapi_v1alpha2.ParentReference{
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name"),
 			},
-			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("http-listener")},
+			listener: gatewayapi_v1beta1.Listener{Name: "http-listener"},
 			want:     false,
 		},
 		"multiple parentRefs with section names specified, first listener": {
@@ -544,7 +545,7 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
 			},
-			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("listener-1")},
+			listener: gatewayapi_v1beta1.Listener{Name: "listener-1"},
 			want:     true,
 		},
 		"multiple parentRefs with section names specified, second listener": {
@@ -552,7 +553,7 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
 				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
 			},
-			listener: gatewayapi_v1alpha2.Listener{Name: *gatewayapi.SectionNamePtr("listener-2")},
+			listener: gatewayapi_v1beta1.Listener{Name: "listener-2"},
 			want:     true,
 		},
 	}
@@ -563,7 +564,7 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1alpha2.Gateway{
+					gateway: &gatewayapi_v1beta1.Gateway{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",

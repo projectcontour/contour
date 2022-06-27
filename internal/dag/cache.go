@@ -34,6 +34,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
@@ -62,8 +63,8 @@ type KubernetesCache struct {
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services                  map[types.NamespacedName]*v1.Service
 	namespaces                map[string]*v1.Namespace
-	gatewayclass              *gatewayapi_v1alpha2.GatewayClass
-	gateway                   *gatewayapi_v1alpha2.Gateway
+	gatewayclass              *gatewayapi_v1beta1.GatewayClass
+	gateway                   *gatewayapi_v1beta1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
 	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
@@ -155,7 +156,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		case *contour_api_v1.TLSCertificateDelegation:
 			kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 			return true
-		case *gatewayapi_v1alpha2.GatewayClass:
+		case *gatewayapi_v1beta1.GatewayClass:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway class
 			// matches that gateway's.
@@ -171,7 +172,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				kc.gatewayclass = obj
 				return true
 			}
-		case *gatewayapi_v1alpha2.Gateway:
+		case *gatewayapi_v1beta1.Gateway:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway
 			// matches, and get its gateway class.
@@ -182,7 +183,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 
 				kc.gateway = obj
 
-				gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+				gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
 				if err := kc.Client.Get(context.Background(), client.ObjectKey{Name: string(kc.gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
 					kc.WithError(err).Errorf("error getting gatewayclass for gateway %s/%s", kc.gateway.Namespace, kc.gateway.Name)
 				} else {
@@ -294,7 +295,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.tlscertificatedelegations[m]
 		delete(kc.tlscertificatedelegations, m)
 		return ok
-	case *gatewayapi_v1alpha2.GatewayClass:
+	case *gatewayapi_v1beta1.GatewayClass:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gatewayclass == nil || obj.Name != kc.gatewayclass.Name {
@@ -306,7 +307,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 			kc.gatewayclass = nil
 			return true
 		}
-	case *gatewayapi_v1alpha2.Gateway:
+	case *gatewayapi_v1beta1.Gateway:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gateway == nil || k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
@@ -518,10 +519,10 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	return false
 }
 
-func isRefToSecret(ref gatewayapi_v1alpha2.SecretObjectReference, secret *v1.Secret, gatewayNamespace string) bool {
+func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secret, gatewayNamespace string) bool {
 	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Secret" &&
-		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
+		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1beta1.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
 		string(ref.Name) == secret.Name
 }
 

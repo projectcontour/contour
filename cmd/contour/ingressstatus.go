@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // loadBalancerStatusWriter orchestrates LoadBalancer address status
@@ -90,7 +90,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 	// Only create Gateway informer if a controller or specific gateway was provided,
 	// otherwise the API may not exist in the cluster.
 	if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
-		resources = append(resources, &gatewayapi_v1alpha2.Gateway{})
+		resources = append(resources, &gatewayapi_v1beta1.Gateway{})
 	}
 
 	for _, r := range resources {
@@ -138,7 +138,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			// Only list Gateways if a controller or specific gateway was configured,
 			// otherwise the API may not exist in the cluster.
 			if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
-				var gatewayList gatewayapi_v1alpha2.GatewayList
+				var gatewayList gatewayapi_v1beta1.GatewayList
 				if err := isw.cache.List(context.Background(), &gatewayList); err != nil {
 					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")
 				} else {

@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 var f = e2e.NewFramework(true)
@@ -46,12 +47,12 @@ func TestProvisioner(t *testing.T) {
 var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
 
-	gc := &gatewayapi_v1alpha2.GatewayClass{
+	gc := &gatewayapi_v1beta1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour",
 		},
-		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
+		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+			ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
 		},
 	}
 
@@ -73,7 +74,7 @@ var _ = BeforeSuite(func() {
 		}
 		require.NoError(f.T(), f.Client.Create(context.Background(), params))
 
-		gc.Spec.ParametersRef = &gatewayapi_v1alpha2.ParametersReference{
+		gc.Spec.ParametersRef = &gatewayapi_v1beta1.ParametersReference{
 			Group:     "projectcontour.io",
 			Kind:      "ContourDeployment",
 			Namespace: gatewayapi.NamespacePtr(params.Namespace),
@@ -98,13 +99,13 @@ var _ = BeforeSuite(func() {
 	}
 	require.NoError(f.T(), f.Client.Create(context.Background(), paramsEnvoyDeployment))
 
-	gcWithEnvoyDeployment := &gatewayapi_v1alpha2.GatewayClass{
+	gcWithEnvoyDeployment := &gatewayapi_v1beta1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour-with-envoy-deployment",
 		},
-		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
-			ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
+		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+			ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+			ParametersRef: &gatewayapi_v1beta1.ParametersReference{
 				Group:     "projectcontour.io",
 				Kind:      "ContourDeployment",
 				Namespace: gatewayapi.NamespacePtr(paramsEnvoyDeployment.Namespace),
@@ -123,7 +124,7 @@ var _ = AfterSuite(func() {
 	require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
 	for _, name := range []string{"contour", "contour-with-envoy-deployment"} {
-		gc := &gatewayapi_v1alpha2.GatewayClass{
+		gc := &gatewayapi_v1beta1.GatewayClass{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
 			},
@@ -138,21 +139,21 @@ var _ = AfterSuite(func() {
 var _ = Describe("Gateway provisioner", func() {
 	f.NamespacedTest("basic-provisioned-gateway", func(namespace string) {
 		Specify("A basic one-listener HTTP gateway can be provisioned and routes traffic correctly", func() {
-			gateway := &gatewayapi_v1alpha2.Gateway{
+			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "http",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour"),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour"),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -160,7 +161,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1alpha2.Gateway) bool {
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				return gatewayReady(gw) && gatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
@@ -210,23 +211,23 @@ var _ = Describe("Gateway provisioner", func() {
 			gatewayCount := 2
 
 			// Create two Gateways and wait for them to be provisioned with addresses.
-			var gateways []*gatewayapi_v1alpha2.Gateway
+			var gateways []*gatewayapi_v1beta1.Gateway
 			for i := 0; i < gatewayCount; i++ {
-				gw := &gatewayapi_v1alpha2.Gateway{
+				gw := &gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      fmt.Sprintf("http-%d", i),
 						Namespace: namespace,
 					},
-					Spec: gatewayapi_v1alpha2.GatewaySpec{
-						GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour"),
-						Listeners: []gatewayapi_v1alpha2.Listener{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						GatewayClassName: gatewayapi_v1beta1.ObjectName("contour"),
+						Listeners: []gatewayapi_v1beta1.Listener{
 							{
 								Name:     "http",
-								Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-								Port:     gatewayapi_v1alpha2.PortNumber(80),
-								AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-									Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-										From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+								Port:     gatewayapi_v1beta1.PortNumber(80),
+								AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+									Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+										From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 									},
 								},
 							},
@@ -234,7 +235,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				}
 
-				res, ok := f.CreateGatewayAndWaitFor(gw, func(gw *gatewayapi_v1alpha2.Gateway) bool {
+				res, ok := f.CreateGatewayAndWaitFor(gw, func(gw *gatewayapi_v1beta1.Gateway) bool {
 					return gatewayReady(gw) && gatewayHasAddress(gw)
 				})
 				require.True(f.T(), ok)
@@ -300,13 +301,13 @@ var _ = Describe("Gateway provisioner", func() {
 		Specify("GatewayClass parameters are handled correctly", func() {
 			// Create GatewayClass with a reference to a nonexistent ContourDeployment,
 			// it should be set to "Accepted: false" since the ref is invalid.
-			gatewayClass := &gatewayapi_v1alpha2.GatewayClass{
+			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour-with-params",
 				},
-				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					ControllerName: gatewayapi_v1alpha2.GatewayController("projectcontour.io/gateway-controller"),
-					ParametersRef: &gatewayapi_v1alpha2.ParametersReference{
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Namespace: gatewayapi.NamespacePtr(namespace),
@@ -319,21 +320,21 @@ var _ = Describe("Gateway provisioner", func() {
 
 			// Create a Gateway using that GatewayClass, it should not be scheduled
 			// since the GatewayClass is not accepted.
-			gateway := &gatewayapi_v1alpha2.Gateway{
+			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "http",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-with-params"),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-with-params"),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -343,7 +344,7 @@ var _ = Describe("Gateway provisioner", func() {
 			require.NoError(f.T(), f.Client.Create(context.Background(), gateway))
 
 			require.Never(f.T(), func() bool {
-				gw := &gatewayapi_v1alpha2.Gateway{}
+				gw := &gatewayapi_v1beta1.Gateway{}
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gateway), gw); err != nil {
 					return false
 				}
@@ -365,7 +366,7 @@ var _ = Describe("Gateway provisioner", func() {
 
 			// Now the GatewayClass should be accepted.
 			require.Eventually(f.T(), func() bool {
-				gc := &gatewayapi_v1alpha2.GatewayClass{}
+				gc := &gatewayapi_v1beta1.GatewayClass{}
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gatewayClass), gc); err != nil {
 					return false
 				}
@@ -375,7 +376,7 @@ var _ = Describe("Gateway provisioner", func() {
 
 			// And now the Gateway should be scheduled.
 			require.Eventually(f.T(), func() bool {
-				gw := &gatewayapi_v1alpha2.Gateway{}
+				gw := &gatewayapi_v1beta1.Gateway{}
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gateway), gw); err != nil {
 					return false
 				}
@@ -388,21 +389,21 @@ var _ = Describe("Gateway provisioner", func() {
 	})
 	f.NamespacedTest("gateway-with-envoy-deployment", func(namespace string) {
 		Specify("A gateway with Envoy as a deployment can be provisioned and routes traffic correctly", func() {
-			gateway := &gatewayapi_v1alpha2.Gateway{
+			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "http",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-with-envoy-deployment"),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-with-envoy-deployment"),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -410,7 +411,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1alpha2.Gateway) bool {
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				return gatewayReady(gw) && gatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
@@ -458,13 +459,13 @@ var _ = Describe("Gateway provisioner", func() {
 
 // gatewayClassAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: true".
-func gatewayClassAccepted(gatewayClass *gatewayapi_v1alpha2.GatewayClass) bool {
+func gatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
 
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}
@@ -474,49 +475,49 @@ func gatewayClassAccepted(gatewayClass *gatewayapi_v1alpha2.GatewayClass) bool {
 
 // gatewayClassNotAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: false".
-func gatewayClassNotAccepted(gatewayClass *gatewayapi_v1alpha2.GatewayClass) bool {
+func gatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
 
 	return conditionExists(
 		gatewayClass.Status.Conditions,
-		string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
+		string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
 		metav1.ConditionFalse,
 	)
 }
 
 // gatewayScheduled returns true if the gateway has a .status.conditions
 // entry of Scheduled: true".
-func gatewayScheduled(gateway *gatewayapi_v1alpha2.Gateway) bool {
+func gatewayScheduled(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1alpha2.GatewayConditionScheduled),
+		string(gatewayapi_v1beta1.GatewayConditionScheduled),
 		metav1.ConditionTrue,
 	)
 }
 
 // gatewayReady returns true if the gateway has a .status.conditions
 // entry of Ready: true".
-func gatewayReady(gateway *gatewayapi_v1alpha2.Gateway) bool {
+func gatewayReady(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1alpha2.GatewayConditionReady),
+		string(gatewayapi_v1beta1.GatewayConditionReady),
 		metav1.ConditionTrue,
 	)
 }
 
 // gatewayHasAddress returns true if the gateway has a non-empty
 // .status.addresses entry.
-func gatewayHasAddress(gateway *gatewayapi_v1alpha2.Gateway) bool {
+func gatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
