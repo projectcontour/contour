@@ -455,12 +455,12 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
         "upstream_connection_options": {
           "tcp_keepalive": {
@@ -642,12 +642,12 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
         "upstream_connection_options": {
           "tcp_keepalive": {
@@ -829,12 +829,12 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
         "upstream_connection_options": {
           "tcp_keepalive": {
@@ -1204,12 +1204,12 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
         "dns_lookup_family": "V6_ONLY",
         "upstream_connection_options": {
@@ -1394,12 +1394,12 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
         "upstream_connection_options": {
           "tcp_keepalive": {
@@ -1618,12 +1618,12 @@ func TestBootstrap(t *testing.T) {
                 ]
               },
               "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
         },
               "transport_socket": {
                 "name": "envoy.transport_sockets.tls",
@@ -1830,7 +1830,223 @@ func TestBootstrap(t *testing.T) {
 				GrpcClientKey:  "client.key",
 			},
 			wantedError: true,
-		}}
+		},
+		"Enable overload manager by specifying --overload-max-heap=2147483648": {
+			config: envoy.BootstrapConfig{
+				Path:                 "envoy.json",
+				Namespace:            "projectcontour",
+				MaximumHeapSizeBytes: 2147483648, // 2 GiB
+			},
+			wantedBootstrapConfig: `{
+        "static_resources": {
+          "clusters": [
+            {
+              "name": "contour",
+              "alt_stat_name": "projectcontour_contour_8001",
+              "type": "STATIC",
+              "connect_timeout": "5s",
+              "load_assignment": {
+                "cluster_name": "contour",
+                "endpoints": [
+                  {
+                    "lb_endpoints": [
+                      {
+                        "endpoint": {
+                          "address": {
+                            "socket_address": {
+                              "address": "127.0.0.1",
+                              "port_value": 8001
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "circuit_breakers": {
+                "thresholds": [
+                  {
+                    "priority": "HIGH",
+                    "max_connections": 100000,
+                    "max_pending_requests": 100000,
+                    "max_requests": 60000000,
+                    "max_retries": 50
+                  },
+                  {
+                    "max_connections": 100000,
+                    "max_pending_requests": 100000,
+                    "max_requests": 60000000,
+                    "max_retries": 50
+                  }
+                ]
+              },
+              "typed_extension_protocol_options": {
+                "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+                  "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+                  "explicit_http_config": {
+                    "http2_protocol_options": {}
+                  }
+                }
+              },
+              "upstream_connection_options": {
+                "tcp_keepalive": {
+                  "keepalive_probes": 3,
+                  "keepalive_time": 30,
+                  "keepalive_interval": 5
+                }
+              }
+            },
+            {
+              "name": "envoy-admin",
+              "alt_stat_name": "projectcontour_envoy-admin_9001",
+              "type": "STATIC",
+              "connect_timeout": "0.250s",
+              "load_assignment": {
+                "cluster_name": "envoy-admin",
+                "endpoints": [
+                  {
+                    "lb_endpoints": [
+                      {
+                        "endpoint": {
+                          "address": {
+                            "pipe": {
+                              "path": "/admin/admin.sock",
+                              "mode": 420
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "dynamic_resources": {
+          "lds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour",
+                    "authority": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          },
+          "cds_config": {
+            "api_config_source": {
+              "api_type": "GRPC",
+              "transport_api_version": "V3",
+              "grpc_services": [
+                {
+                  "envoy_grpc": {
+                    "cluster_name": "contour",
+                    "authority": "contour"
+                  }
+                }
+              ]
+            },
+            "resource_api_version": "V3"
+          }
+        },
+        "layered_runtime": {
+          "layers": [
+            {
+              "name": "base",
+              "static_layer": {
+                "re2.max_program_size.error_level": 1048576,
+                "re2.max_program_size.warn_level": 1000
+              }
+            },
+            {
+              "name": "dynamic",
+              "rtds_layer": {
+                "name": "dynamic",
+                "rtds_config": {
+                  "api_config_source": {
+                    "api_type": "GRPC",
+                    "transport_api_version": "V3",
+                    "grpc_services": [
+                      {
+                        "envoy_grpc": {
+                          "cluster_name": "contour",
+                          "authority": "contour"
+                        }
+                      }
+                    ]
+                  },
+                  "resource_api_version": "V3"
+                }
+              }
+            },
+            {
+              "name": "admin",
+              "admin_layer": {}
+            }
+          ]
+        },
+        "admin": {
+          "access_log": [
+            {
+              "name": "envoy.access_loggers.file",
+              "typed_config": {
+                "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+                "path": "/dev/null"
+              }
+            }
+          ],
+          "address": {
+            "pipe": {
+              "path": "/admin/admin.sock",
+              "mode": 420
+            }
+          }
+        },
+        "overload_manager": {
+          "refresh_interval": "0.250s",
+          "resource_monitors": [
+            {
+              "name": "envoy.resource_monitors.fixed_heap",
+              "typed_config": {
+                "@type": "type.googleapis.com/envoy.extensions.resource_monitors.fixed_heap.v3.FixedHeapConfig",
+                "max_heap_size_bytes": "2147483648"
+              }
+            }
+          ],
+          "actions": [
+            {
+              "name": "envoy.overload_actions.shrink_heap",
+              "triggers": [
+                {
+                  "name": "envoy.resource_monitors.fixed_heap",
+                  "threshold": {
+                    "value": 0.9
+                  }
+                }
+              ]
+            },
+            {
+              "name": "envoy.overload_actions.stop_accepting_requests",
+              "triggers": [
+                {
+                  "name": "envoy.resource_monitors.fixed_heap",
+                  "threshold": {
+                    "value": 0.98
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }`},
+	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

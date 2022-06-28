@@ -43,6 +43,8 @@ toc:
         url: /config/annotations
       - page: Cookie Rewriting
         url: /config/cookie-rewriting
+      - page: Overload Manager
+        url: /config/overload-manager
       - page: API Reference
         url: /config/api
   - title: Deployment

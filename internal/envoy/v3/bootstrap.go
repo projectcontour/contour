@@ -29,8 +29,10 @@ import (
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_overload_v3 "github.com/envoyproxy/go-control-plane/envoy/config/overload/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_regex_engines_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/regex_engines/v3"
+	envoy_fixed_heap_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -156,7 +158,7 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 }
 
 func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
-	return &envoy_bootstrap_v3.Bootstrap{
+	bootstrap := &envoy_bootstrap_v3.Bootstrap{
 		LayeredRuntime: &envoy_bootstrap_v3.LayeredRuntime{
 			Layers: []*envoy_bootstrap_v3.RuntimeLayer{
 				{
@@ -251,6 +253,51 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 			Address:   UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
 		},
 	}
+	if c.MaximumHeapSizeBytes > 0 {
+		bootstrap.OverloadManager = &envoy_config_overload_v3.OverloadManager{
+			RefreshInterval: protobuf.Duration(250 * time.Millisecond),
+			ResourceMonitors: []*envoy_config_overload_v3.ResourceMonitor{
+				{
+					Name: "envoy.resource_monitors.fixed_heap",
+					ConfigType: &envoy_config_overload_v3.ResourceMonitor_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(
+							&envoy_fixed_heap_v3.FixedHeapConfig{
+								MaxHeapSizeBytes: c.MaximumHeapSizeBytes,
+							}),
+					},
+				},
+			},
+			Actions: []*envoy_config_overload_v3.OverloadAction{
+				{
+					Name: "envoy.overload_actions.shrink_heap",
+					Triggers: []*envoy_config_overload_v3.Trigger{
+						{
+							Name: "envoy.resource_monitors.fixed_heap",
+							TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
+								Threshold: &envoy_config_overload_v3.ThresholdTrigger{
+									Value: 0.90,
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "envoy.overload_actions.stop_accepting_requests",
+					Triggers: []*envoy_config_overload_v3.Trigger{
+						{
+							Name: "envoy.resource_monitors.fixed_heap",
+							TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
+								Threshold: &envoy_config_overload_v3.ThresholdTrigger{
+									Value: 0.98,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+	return bootstrap
 }
 
 func adminAccessLog(logPath string) []*envoy_config_accesslog_v3.AccessLog {
