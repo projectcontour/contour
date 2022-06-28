@@ -138,7 +138,7 @@ jobs:
       - name: Gateway API conformance tests (latest)
         env:
           CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
-          GATEWAY_API_VERSION: "master"
+          GATEWAY_API_VERSION: "main"
         run: |
           # Skip the `load-contour-image-kind` target, pull the `main` image instead.
           make setup-kind-cluster run-gateway-conformance cleanup-kind
