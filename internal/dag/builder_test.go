@@ -4401,6 +4401,16 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	crl := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "crl",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			CRLKey: []byte(fixture.CRL),
+		},
+	}
+
 	i1V1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -6441,6 +6451,65 @@ func TestDAGInsert(t *testing.T) {
 					ClientValidation: &contour_api_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
 						CACertificate:            cert1.Name,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy22 is downstream validation with CRL check.
+	proxy22 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:             cert1.Name,
+						CertificateRevocationList: crl.Name,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy22 is downstream validation with CRL check but only for leaf-certificate.
+	proxy23 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:             cert1.Name,
+						CertificateRevocationList: crl.Name,
+						OnlyVerifyLeafCertCrl:     true,
 					},
 				},
 			},
@@ -9638,6 +9707,71 @@ func TestDAGInsert(t *testing.T) {
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
 								CACertificate:            &Secret{Object: cert1},
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with client validation and CRL check": {
+			objs: []interface{}{
+				proxy22, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate: &Secret{Object: cert1},
+								CRL:           &Secret{Object: crl},
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with client validation and CRL check but only for leaf-certificate": {
+			objs: []interface{}{
+				proxy23, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate:         &Secret{Object: cert1},
+								CRL:                   &Secret{Object: crl},
+								OnlyVerifyLeafCertCrl: true,
 							},
 						},
 					),

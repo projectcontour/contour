@@ -1874,11 +1874,12 @@ spec:
                 properties:
                   caSecret:
                     description: Name or namespaced name of the Kubernetes secret
-                      used to validate the certificate presented by the backend
+                      used to validate the certificate presented by the backend. The
+                      secret must contain key named ca.crt.
                     type: string
                   subjectName:
                     description: Key which is expected to be present in the 'subjectAltName'
-                      of the presented certificate
+                      of the presented certificate.
                     type: string
                 required:
                 - caSecret
@@ -3122,11 +3123,12 @@ spec:
                               caSecret:
                                 description: Name or namespaced name of the Kubernetes
                                   secret used to validate the certificate presented
-                                  by the backend
+                                  by the backend. The secret must contain key named
+                                  ca.crt.
                                 type: string
                               subjectName:
                                 description: Key which is expected to be present in
-                                  the 'subjectAltName' of the presented certificate
+                                  the 'subjectAltName' of the presented certificate.
                                 type: string
                             required:
                             - caSecret
@@ -3463,11 +3465,12 @@ spec:
                             caSecret:
                               description: Name or namespaced name of the Kubernetes
                                 secret used to validate the certificate presented
-                                by the backend
+                                by the backend. The secret must contain key named
+                                ca.crt.
                               type: string
                             subjectName:
                               description: Key which is expected to be present in
-                                the 'subjectAltName' of the presented certificate
+                                the 'subjectAltName' of the presented certificate.
                               type: string
                           required:
                           - caSecret
@@ -3871,10 +3874,25 @@ spec:
                         properties:
                           caSecret:
                             description: Name of a Kubernetes secret that contains
-                              a CA certificate bundle. The client certificate must
-                              validate against the certificates in the bundle. If
-                              specified and SkipClientCertValidation is true, client
-                              certificates will be required on requests.
+                              a CA certificate bundle. The secret must contain key
+                              named ca.crt. The client certificate must validate against
+                              the certificates in the bundle. If specified and SkipClientCertValidation
+                              is true, client certificates will be required on requests.
+                            minLength: 1
+                            type: string
+                          crlOnlyVerifyLeafCert:
+                            description: If this option is set to true, only the certificate
+                              at the end of the certificate chain will be subject
+                              to validation by CRL.
+                            type: boolean
+                          crlSecret:
+                            description: Name of a Kubernetes opaque secret that contains
+                              a concatenated list of PEM encoded CRLs. The secret
+                              must contain key named crl.pem. This field will be used
+                              to verify that a client certificate has not been revoked.
+                              CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert
+                              is true. Large CRL lists are not supported since individual
+                              secrets are limited to 1MiB in size.
                             minLength: 1
                             type: string
                           skipClientCertValidation:

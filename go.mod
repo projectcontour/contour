@@ -22,7 +22,7 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1
-	github.com/tsaarni/certyaml v0.6.2
+	github.com/tsaarni/certyaml v0.9.0
 	github.com/vektra/mockery/v2 v2.10.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gonum.org/v1/plot v0.10.0

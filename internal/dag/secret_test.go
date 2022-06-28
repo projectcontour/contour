@@ -456,6 +456,26 @@ func TestIsValidSecret(t *testing.T) {
 			valid: false,
 			err:   nil,
 		},
+		"Opaque Secret with CRL": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CRLKey: []byte(fixture.CRL),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"Opaque Secret with zero-length CRL": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CRLKey: []byte(""),
+				},
+			},
+			valid: false,
+			err:   errors.New("can't use zero-length crl.pem value"),
+		},
 	}
 
 	for name, tc := range tests {

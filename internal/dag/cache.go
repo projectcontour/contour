@@ -611,6 +611,14 @@ func validCA(s *v1.Secret) error {
 	return nil
 }
 
+func validCRL(s *v1.Secret) error {
+	if len(s.Data[CRLKey]) == 0 {
+		return fmt.Errorf("empty %q key", CRLKey)
+	}
+
+	return nil
+}
+
 // LookupService returns the Kubernetes service and port matching the provided parameters,
 // or an error if a match can't be found.
 func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*v1.Service, v1.ServicePort, error) {
