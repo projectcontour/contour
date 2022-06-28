@@ -44,7 +44,7 @@ func testTLSRoutePassthrough(namespace string) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-						gatewayapi.GatewayParentRef("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRefV1Alpha2("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"passthrough.tlsroute.gatewayapi.projectcontour.io"},
@@ -87,7 +87,7 @@ func testTLSRouteTerminate(namespace string) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-						gatewayapi.GatewayParentRef("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRefV1Alpha2("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"terminate.tlsroute.gatewayapi.projectcontour.io"},

@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func testTLSGateway(namespace string) {
@@ -32,25 +32,25 @@ func testTLSGateway(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-insecure")
 		f.Fixtures.Echo.Deploy(namespace, "echo-secure")
 
-		route := &gatewayapi_v1alpha2.HTTPRoute{
+		route := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
 							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
 							SectionName: gatewayapi.SectionNamePtr("insecure"),
 						},
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
 
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-insecure", 80, 1),
 					},
 				},
@@ -58,24 +58,24 @@ func testTLSGateway(namespace string) {
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
-		route = &gatewayapi_v1alpha2.HTTPRoute{
+		route = &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-2",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
 							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
 							SectionName: gatewayapi.SectionNamePtr("secure"),
 						},
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-secure", 80, 1),
 					},
 				},

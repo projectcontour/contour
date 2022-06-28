@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func testRequestRedirectRule(namespace string) {
@@ -35,25 +35,25 @@ func testRequestRedirectRule(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayapi_v1alpha2.HTTPRoute{
+		route := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "httproute-redirect",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestredirectrule.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"requestredirectrule.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/basic-redirect"),
-						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/basic-redirect"),
+						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
-								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect,
-								RequestRedirect: &gatewayapi_v1alpha2.HTTPRequestRedirectFilter{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
 									Hostname: gatewayapi.PreciseHostname("projectcontour.io"),
 								},
 							},
@@ -61,11 +61,11 @@ func testRequestRedirectRule(namespace string) {
 						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/complex-redirect"),
-						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/complex-redirect"),
+						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
-								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect,
-								RequestRedirect: &gatewayapi_v1alpha2.HTTPRequestRedirectFilter{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
 									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
 									StatusCode: pointer.Int(301),
 									Scheme:     pointer.String("https"),

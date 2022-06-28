@@ -65,7 +65,7 @@ type KubernetesCache struct {
 	namespaces                map[string]*v1.Namespace
 	gatewayclass              *gatewayapi_v1beta1.GatewayClass
 	gateway                   *gatewayapi_v1beta1.Gateway
-	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute
+	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
 	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant
@@ -86,7 +86,7 @@ func (kc *KubernetesCache) init() {
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
-	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute)
+	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute)
 	kc.referencepolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy)
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
@@ -196,7 +196,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				kc.gateway = obj
 				return true
 			}
-		case *gatewayapi_v1alpha2.HTTPRoute:
+		case *gatewayapi_v1beta1.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *gatewayapi_v1alpha2.TLSRoute:
@@ -319,7 +319,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 			kc.gateway = nil
 			return true
 		}
-	case *gatewayapi_v1alpha2.HTTPRoute:
+	case *gatewayapi_v1beta1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
 		delete(kc.httproutes, m)
@@ -412,10 +412,10 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	return false
 }
 
-func isRefToService(ref gatewayapi_v1alpha2.BackendObjectReference, service *v1.Service, routeNamespace string) bool {
+func isRefToService(ref gatewayapi_v1beta1.BackendObjectReference, service *v1.Service, routeNamespace string) bool {
 	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Service" &&
-		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(service.Namespace)) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
+		((ref.Namespace != nil && string(*ref.Namespace) == service.Namespace) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
 		string(ref.Name) == service.Name
 }
 

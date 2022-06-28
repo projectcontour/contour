@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -226,13 +225,13 @@ func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fu
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1beta1.RouteParentStatus) (*RouteConditionsUpdate, func()) {
 	pu := &RouteConditionsUpdate{
 		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition),
 		ExistingConditions: c.getRouteGatewayConditions(gateways),
 		GatewayRef:         c.gatewayRef,
-		GatewayController:  gatewayapi_v1alpha2.GatewayController(c.gatewayController),
+		GatewayController:  c.gatewayController,
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
 		Resource:           resource,

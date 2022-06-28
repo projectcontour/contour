@@ -33,7 +33,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -168,21 +167,21 @@ var _ = Describe("Gateway provisioner", func() {
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
-			route := &gatewayapi_v1alpha2.HTTPRoute{
+			route := &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-1",
 				},
-				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1beta1.Hostname{"provisioner.projectcontour.io"},
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
 							gatewayapi.GatewayParentRef("", gateway.Name),
 						},
 					},
-					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 						{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/prefix"),
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
 							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 						},
 					},
@@ -249,25 +248,25 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 
 			// Create two HTTPRoutes, one for each Gateway, and wait for them to be accepted
-			var routes []*gatewayapi_v1alpha2.HTTPRoute
+			var routes []*gatewayapi_v1beta1.HTTPRoute
 			for i := 0; i < gatewayCount; i++ {
-				route := &gatewayapi_v1alpha2.HTTPRoute{
+				route := &gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      fmt.Sprintf("httproute-%d", i),
 					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							gatewayapi_v1alpha2.Hostname(fmt.Sprintf("http-%d.provisioner.projectcontour.io", i)),
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							gatewayapi_v1beta1.Hostname(fmt.Sprintf("http-%d.provisioner.projectcontour.io", i)),
 						},
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{
 								gatewayapi.GatewayParentRef("", fmt.Sprintf("http-%d", i)),
 							},
 						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 							{
-								Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, fmt.Sprintf("/http-%d", i)),
+								Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, fmt.Sprintf("/http-%d", i)),
 								BackendRefs: gatewayapi.HTTPBackendRef(fmt.Sprintf("echo-%d", i), 80, 1),
 							},
 						},
@@ -418,21 +417,21 @@ var _ = Describe("Gateway provisioner", func() {
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
-			route := &gatewayapi_v1alpha2.HTTPRoute{
+			route := &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-1",
 				},
-				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1beta1.Hostname{"provisioner.projectcontour.io"},
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
 							gatewayapi.GatewayParentRef("", gateway.Name),
 						},
 					},
-					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 						{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/prefix"),
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
 							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 						},
 					},
@@ -527,13 +526,13 @@ func gatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
-func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
+func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
 			return true
 		}
 	}

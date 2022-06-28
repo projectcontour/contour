@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func testHostRewrite(namespace string) {
@@ -33,34 +33,34 @@ func testHostRewrite(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayapi_v1alpha2.HTTPRoute{
+		route := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-rewrite",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"hostrewrite.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"hostrewrite.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
 							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Path: &gatewayapi_v1beta1.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/"),
 								},
 							},
 						},
-						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
+						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
-								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-									Add: []gatewayapi_v1alpha2.HTTPHeader{
-										{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "rewritten.com"},
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+									Add: []gatewayapi_v1beta1.HTTPHeader{
+										{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "rewritten.com"},
 									},
 								},
 							},
