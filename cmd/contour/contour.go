@@ -51,9 +51,9 @@ func main() {
 	cli.Flag("cafile", "CA bundle file for connecting to a TLS-secured Contour.").Envar("CLI_CAFILE").StringVar(&client.CAFile)
 	cli.Flag("cert-file", "Client certificate file for connecting to a TLS-secured Contour.").Envar("CLI_CERT_FILE").StringVar(&client.ClientCert)
 	cli.Flag("key-file", "Client key file for connecting to a TLS-secured Contour.").Envar("CLI_KEY_FILE").StringVar(&client.ClientKey)
-	cli.Flag("node-id", "Node ID for the CLI client to use").Envar("CLI_NODE_ID").Default("ContourCLI").StringVar(&client.NodeId)
-	cli.Flag("nack", "NACK all responses (for testing)").BoolVar(&client.Nack)
-	cli.Flag("delta", "Use incremental xDS").BoolVar(&client.Delta)
+	cli.Flag("node-id", "Node ID for the CLI client to use.").Envar("CLI_NODE_ID").Default("ContourCLI").StringVar(&client.NodeID)
+	cli.Flag("nack", "NACK all responses (for testing).").BoolVar(&client.Nack)
+	cli.Flag("delta", "Use incremental xDS.").BoolVar(&client.Delta)
 
 	var resources []string
 	cds := cli.Command("cds", "Watch services.")
@@ -104,42 +104,42 @@ func main() {
 	case cds.FullCommand():
 		if client.Delta {
 			stream := client.DeltaClusterStream()
-			watchDeltaStream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeId)
+			watchDeltaStream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeID)
 		} else {
 			stream := client.ClusterStream()
-			watchstream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeId)
+			watchstream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeID)
 		}
 	case eds.FullCommand():
 		if client.Delta {
 			stream := client.DeltaEndpointStream()
-			watchDeltaStream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeId)
+			watchDeltaStream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeID)
 		} else {
 			stream := client.EndpointStream()
-			watchstream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeId)
+			watchstream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeID)
 		}
 	case lds.FullCommand():
 		if client.Delta {
 			stream := client.DeltaListenerStream()
-			watchDeltaStream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeId)
+			watchDeltaStream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeID)
 		} else {
 			stream := client.ListenerStream()
-			watchstream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeId)
+			watchstream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeID)
 		}
 	case rds.FullCommand():
 		if client.Delta {
 			stream := client.DeltaRouteStream()
-			watchDeltaStream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeId)
+			watchDeltaStream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeID)
 		} else {
 			stream := client.RouteStream()
-			watchstream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeId)
+			watchstream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeID)
 		}
 	case sds.FullCommand():
 		if client.Delta {
 			stream := client.DeltaRouteStream()
-			watchDeltaStream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeId)
+			watchDeltaStream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeID)
 		} else {
 			stream := client.RouteStream()
-			watchstream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeId)
+			watchstream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeID)
 		}
 	case serve.FullCommand():
 		// Parse args a second time so cli flags are applied

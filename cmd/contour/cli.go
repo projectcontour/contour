@@ -44,7 +44,7 @@ type Client struct {
 	ClientKey   string
 	Nack        bool
 	Delta       bool
-	NodeId      string
+	NodeID      string
 	Log         *logrus.Logger
 }
 
@@ -140,7 +140,7 @@ type stream interface {
 	Recv() (*envoy_discovery_v3.DiscoveryResponse, error)
 }
 
-func watchstream(log *logrus.Logger, st stream, typeURL string, resources []string, nack bool, NodeID string) {
+func watchstream(log *logrus.Logger, st stream, typeURL string, resources []string, nack bool, nodeID string) {
 	m := protojson.MarshalOptions{
 		Multiline:     true,
 		Indent:        "  ",
@@ -155,7 +155,7 @@ func watchstream(log *logrus.Logger, st stream, typeURL string, resources []stri
 		ResourceNames: resources,
 		VersionInfo:   currentVersion,
 		Node: &corev3.Node{
-			Id: NodeID,
+			Id: nodeID,
 		},
 	}
 	log.WithField("currentVersion", currentVersion).Info("Sending discover request")
@@ -200,7 +200,7 @@ func watchstream(log *logrus.Logger, st stream, typeURL string, resources []stri
 					Message: "Told to create a NACK for testing",
 				},
 				Node: &corev3.Node{
-					Id: NodeID,
+					Id: nodeID,
 				},
 			}
 			log.WithField("response_nonce", resp.Nonce).
@@ -224,7 +224,7 @@ func watchstream(log *logrus.Logger, st stream, typeURL string, resources []stri
 				ResponseNonce: resp.Nonce,
 				VersionInfo:   resp.VersionInfo,
 				Node: &corev3.Node{
-					Id: NodeID,
+					Id: nodeID,
 				},
 			}
 			log.WithField("response_nonce", resp.Nonce).
@@ -282,7 +282,7 @@ type deltaStream interface {
 	Recv() (*envoy_discovery_v3.DeltaDiscoveryResponse, error)
 }
 
-func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resources []string, nack bool, NodeID string) {
+func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resources []string, nack bool, nodeID string) {
 	m := protojson.MarshalOptions{
 		Multiline:     true,
 		Indent:        "  ",
@@ -296,7 +296,7 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 		TypeUrl:                typeURL,
 		ResourceNamesSubscribe: resources,
 		Node: &corev3.Node{
-			Id: NodeID,
+			Id: nodeID,
 		},
 	}
 	log.WithField("currentVersion", currentVersion).Info("Sending incremental discover request")
@@ -340,7 +340,7 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 					Message: "Told to create a NACK for testing",
 				},
 				Node: &corev3.Node{
-					Id: NodeID,
+					Id: nodeID,
 				},
 			}
 			log.WithField("response_nonce", resp.Nonce).
@@ -363,7 +363,7 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 				TypeUrl:       typeURL,
 				ResponseNonce: resp.Nonce,
 				Node: &corev3.Node{
-					Id: NodeID,
+					Id: nodeID,
 				},
 			}
 			log.WithField("response_nonce", resp.Nonce).
