@@ -31,8 +31,8 @@ func TestGatewayAddCondition(t *testing.T) {
 	simpleValidCondition := metav1.Condition{
 		Type:               string(gatewayapi_v1beta1.GatewayConditionScheduled),
 		Status:             metav1.ConditionTrue,
-		Reason:             ReasonValidGateway,
-		Message:            "Valid Gateway",
+		Reason:             string(gatewayapi_v1beta1.GatewayReasonScheduled),
+		Message:            MessageValidGateway,
 		ObservedGeneration: testGeneration,
 	}
 
@@ -44,8 +44,12 @@ func TestGatewayAddCondition(t *testing.T) {
 		TransitionTime:     metav1.Time{},
 	}
 
-	got := gatewayUpdate.AddCondition(gatewayapi_v1beta1.GatewayConditionScheduled, metav1.ConditionTrue, ReasonValidGateway,
-		"Valid Gateway")
+	got := gatewayUpdate.AddCondition(
+		gatewayapi_v1beta1.GatewayConditionScheduled,
+		metav1.ConditionTrue,
+		gatewayapi_v1beta1.GatewayReasonScheduled,
+		MessageValidGateway,
+	)
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)
 	assert.Equal(t, simpleValidCondition.Reason, got.Reason)

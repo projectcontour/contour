@@ -31,22 +31,21 @@ func TestComputeGatewayClassAcceptedCondition(t *testing.T) {
 		expect   metav1.Condition
 	}{
 		{
-			name: "valid gatewayclass",
-
+			name:     "accepted gatewayclass",
 			accepted: true,
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionTrue,
-				Reason: reasonValidGatewayClass,
+				Reason: string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
 			},
 		},
 		{
-			name:     "invalid gatewayclass",
+			name:     "not accepted gatewayclass",
 			accepted: false,
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: reasonInvalidGatewayClass,
+				Reason: string(ReasonOlderGatewayClassExists),
 			},
 		},
 	}

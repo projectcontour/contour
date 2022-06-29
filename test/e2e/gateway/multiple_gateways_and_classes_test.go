@@ -26,6 +26,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -118,7 +119,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				for _, cond := range gc.Status.Conditions {
 					if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
-						cond.Reason == "Invalid" &&
+						cond.Reason == string(status.ReasonOlderGatewayClassExists) &&
 						cond.Message == "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists" {
 						return true
 					}

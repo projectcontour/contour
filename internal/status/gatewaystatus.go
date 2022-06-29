@@ -23,11 +23,6 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-type GatewayReasonType string
-
-const ReasonValidGateway = "Valid"
-const ReasonInvalidGateway = "Invalid"
-
 const MessageValidGateway = "Valid Gateway"
 
 // GatewayStatusUpdate represents an atomic update to a
@@ -45,7 +40,7 @@ type GatewayStatusUpdate struct {
 func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 	cond gatewayapi_v1beta1.GatewayConditionType,
 	status metav1.ConditionStatus,
-	reason GatewayReasonType,
+	reason gatewayapi_v1beta1.GatewayConditionReason,
 	message string,
 ) metav1.Condition {
 

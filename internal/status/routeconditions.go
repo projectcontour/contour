@@ -27,26 +27,21 @@ import (
 
 const (
 	ConditionNotImplemented   gatewayapi_v1beta1.RouteConditionType = "NotImplemented"
-	ConditionResolvedRefs     gatewayapi_v1beta1.RouteConditionType = "ResolvedRefs"
 	ConditionValidBackendRefs gatewayapi_v1beta1.RouteConditionType = "ValidBackendRefs"
 	ConditionValidMatches     gatewayapi_v1beta1.RouteConditionType = "ValidMatches"
 )
 
-type RouteReasonType string
-
 const (
-	ReasonNotImplemented                RouteReasonType = "NotImplemented"
-	ReasonPathMatchType                 RouteReasonType = "PathMatchType"
-	ReasonHeaderMatchType               RouteReasonType = "HeaderMatchType"
-	ReasonQueryParamMatchType           RouteReasonType = "QueryParamMatchType"
-	ReasonHTTPRouteFilterType           RouteReasonType = "HTTPRouteFilterType"
-	ReasonDegraded                      RouteReasonType = "Degraded"
-	ReasonValid                         RouteReasonType = "Valid"
-	ReasonErrorsExist                   RouteReasonType = "ErrorsExist"
-	ReasonGatewayAllowMismatch          RouteReasonType = "GatewayAllowMismatch"
-	ReasonAllBackendRefsHaveZeroWeights RouteReasonType = "AllBackendRefsHaveZeroWeights"
-	ReasonInvalidPathMatch              RouteReasonType = "InvalidPathMatch"
-	ReasonNoIntersectingHostnames       RouteReasonType = "NoIntersectingHostnames"
+	ReasonNotImplemented                gatewayapi_v1beta1.RouteConditionReason = "NotImplemented"
+	ReasonPathMatchType                 gatewayapi_v1beta1.RouteConditionReason = "PathMatchType"
+	ReasonHeaderMatchType               gatewayapi_v1beta1.RouteConditionReason = "HeaderMatchType"
+	ReasonQueryParamMatchType           gatewayapi_v1beta1.RouteConditionReason = "QueryParamMatchType"
+	ReasonHTTPRouteFilterType           gatewayapi_v1beta1.RouteConditionReason = "HTTPRouteFilterType"
+	ReasonDegraded                      gatewayapi_v1beta1.RouteConditionReason = "Degraded"
+	ReasonErrorsExist                   gatewayapi_v1beta1.RouteConditionReason = "ErrorsExist"
+	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1beta1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
+	ReasonInvalidPathMatch              gatewayapi_v1beta1.RouteConditionReason = "InvalidPathMatch"
+	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
 )
 
 // clock is used to set lastTransitionTime on status conditions.
@@ -64,7 +59,7 @@ type RouteConditionsUpdate struct {
 }
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
-func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
 
 	if c, ok := routeUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
