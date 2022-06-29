@@ -56,6 +56,7 @@ var (
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{
 				{
+					Name:     "http",
 					Port:     80,
 					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
@@ -65,6 +66,7 @@ var (
 					},
 				},
 				{
+					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
