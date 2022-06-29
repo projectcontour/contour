@@ -17,18 +17,22 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
-	"os"
 
+	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
-	"github.com/golang/protobuf/proto"
+	"github.com/sirupsen/logrus"
+	grpc_code "google.golang.org/genproto/googleapis/rpc/code"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -38,6 +42,10 @@ type Client struct {
 	CAFile      string
 	ClientCert  string
 	ClientKey   string
+	Nack        bool
+	Delta       bool
+	NodeId      string
+	Log         *logrus.Logger
 }
 
 func (c *Client) dial() *grpc.ClientConn {
@@ -52,16 +60,20 @@ func (c *Client) dial() *grpc.ClientConn {
 		}
 		// Load the client certificates from disk
 		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
-		kingpin.FatalIfError(err, "failed to load certificates from disk")
+		if err != nil {
+			c.Log.WithError(err).Fatal("failed to load certificates from disk")
+		}
 		// Create a certificate pool from the certificate authority
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(c.CAFile)
-		kingpin.FatalIfError(err, "failed to read CA cert")
+		if err != nil {
+			c.Log.WithError(err).Fatal("failed to read CA cert")
+		}
 
 		// Append the certificates from the CA
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
 			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
-			kingpin.Fatalf("failed to append CA certs")
+			c.Log.Fatal("failed to append CA certs")
 		}
 
 		creds := credentials.NewTLS(&tls.Config{
@@ -80,7 +92,9 @@ func (c *Client) dial() *grpc.ClientConn {
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)
-	kingpin.FatalIfError(err, "failed connecting Contour Server")
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed connecting Contour Server")
+	}
 
 	return conn
 }
@@ -88,28 +102,36 @@ func (c *Client) dial() *grpc.ClientConn {
 // ClusterStream returns a stream of Clusters using the config in the Client.
 func (c *Client) ClusterStream() envoy_service_cluster_v3.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := envoy_service_cluster_v3.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Clusters")
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch stream of Clusters")
+	}
 	return stream
 }
 
 // EndpointStream returns a stream of Endpoints using the config in the Client.
 func (c *Client) EndpointStream() envoy_service_endpoint_v3.EndpointDiscoveryService_StreamEndpointsClient {
 	stream, err := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Endpoints")
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch stream of Endpoints")
+	}
 	return stream
 }
 
 // ListenerStream returns a stream of Listeners using the config in the Client.
 func (c *Client) ListenerStream() envoy_service_listener_v3.ListenerDiscoveryService_StreamListenersClient {
 	stream, err := envoy_service_listener_v3.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Listeners")
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch stream of Listeners")
+	}
 	return stream
 }
 
 // RouteStream returns a stream of Routes using the config in the Client.
 func (c *Client) RouteStream() envoy_service_route_v3.RouteDiscoveryService_StreamRoutesClient {
 	stream, err := envoy_service_route_v3.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Routes")
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch stream of Routes")
+	}
 	return stream
 }
 
@@ -118,21 +140,242 @@ type stream interface {
 	Recv() (*envoy_discovery_v3.DiscoveryResponse, error)
 }
 
-func watchstream(st stream, typeURL string, resources []string) {
-	m := proto.TextMarshaler{
-		Compact:   false,
-		ExpandAny: true,
+func watchstream(log *logrus.Logger, st stream, typeURL string, resources []string, nack bool, NodeID string) {
+	m := protojson.MarshalOptions{
+		Multiline:     true,
+		Indent:        "  ",
+		UseProtoNames: true,
 	}
+
+	currentVersion := "0"
+
+	// Send the initial, non-ACK discovery request.
+	req := &envoy_discovery_v3.DiscoveryRequest{
+		TypeUrl:       typeURL,
+		ResourceNames: resources,
+		VersionInfo:   currentVersion,
+		Node: &corev3.Node{
+			Id: NodeID,
+		},
+	}
+	log.WithField("currentVersion", currentVersion).Info("Sending discover request")
+	fmt.Println(m.Format(req))
+	err := st.Send(req)
+	if err != nil {
+		log.WithError(err).Fatal("failed to send Discover Request")
+	}
+
 	for {
-		req := &envoy_discovery_v3.DiscoveryRequest{
-			TypeUrl:       typeURL,
-			ResourceNames: resources,
-		}
-		err := st.Send(req)
-		kingpin.FatalIfError(err, "failed to send Discover Request")
+
+		// Wait until we receive a response to our request.
 		resp, err := st.Recv()
-		kingpin.FatalIfError(err, "failed to receive response for Discover Request")
-		err = m.Marshal(os.Stdout, resp)
-		kingpin.FatalIfError(err, "failed to marshal Discovery Response")
+		if err != nil {
+			log.WithError(err).Fatal("failed to receive response for Discover Request")
+		}
+		log.WithField("currentVersion", currentVersion).
+			WithField("resp_version_info", resp.VersionInfo).
+			WithField("nonce", resp.Nonce).
+			Info("Received Discovery Response")
+
+		fmt.Println(m.Format(resp))
+		if err != nil {
+			log.WithError(err).Fatal("failed to marshal Discovery Response")
+		}
+
+		currentVersion = resp.VersionInfo
+
+		if nack {
+			// We'll NACK the response we just got.
+			// The ResponseNonce field is what makes it an ACK,
+			// and the VersionInfo field must match the one in the response we
+			// just got, or else the watch won't happen properly.
+			// The ErrorDetail field being populated is what makes this a NACK
+			// instead of an ACK.
+			nackReq := &envoy_discovery_v3.DiscoveryRequest{
+				TypeUrl:       typeURL,
+				ResponseNonce: resp.Nonce,
+				VersionInfo:   resp.VersionInfo,
+				ErrorDetail: &status.Status{
+					Code:    int32(grpc_code.Code_INTERNAL),
+					Message: "Told to create a NACK for testing",
+				},
+				Node: &corev3.Node{
+					Id: NodeID,
+				},
+			}
+			log.WithField("response_nonce", resp.Nonce).
+				WithField("version_info", resp.VersionInfo).
+				WithField("currentVersion", currentVersion).
+				Info("Sending NACK discover request")
+
+			fmt.Println(m.Format(nackReq))
+			err := st.Send(nackReq)
+			if err != nil {
+				log.WithError(err).Fatal("failed to send NACK Discover Request")
+			}
+
+		} else {
+			// We'll ACK our request.
+			// The ResponseNonce field is what makes it an ACK,
+			// and the VersionInfo field must match the one in the response we
+			// just got, or else the watch won't happen properly.
+			ackReq := &envoy_discovery_v3.DiscoveryRequest{
+				TypeUrl:       typeURL,
+				ResponseNonce: resp.Nonce,
+				VersionInfo:   resp.VersionInfo,
+				Node: &corev3.Node{
+					Id: NodeID,
+				},
+			}
+			log.WithField("response_nonce", resp.Nonce).
+				WithField("version_info", resp.VersionInfo).
+				WithField("currentVersion", currentVersion).
+				Info("Sending ACK discover request")
+			fmt.Println(m.Format(ackReq))
+			err := st.Send(ackReq)
+			if err != nil {
+				log.WithError(err).Fatal("failed to send ACK Discover Request")
+			}
+
+		}
+	}
+}
+
+// ClusterStream returns a stream of Clusters using the config in the Client.
+func (c *Client) DeltaClusterStream() envoy_service_cluster_v3.ClusterDiscoveryService_DeltaClustersClient {
+	stream, err := envoy_service_cluster_v3.NewClusterDiscoveryServiceClient(c.dial()).DeltaClusters(context.Background())
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch incremental stream of Clusters")
+	}
+	return stream
+}
+
+// EndpointStream returns a stream of Endpoints using the config in the Client.
+func (c *Client) DeltaEndpointStream() envoy_service_endpoint_v3.EndpointDiscoveryService_DeltaEndpointsClient {
+	stream, err := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(c.dial()).DeltaEndpoints(context.Background())
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch incremental stream of Endpoints")
+	}
+	return stream
+}
+
+// ListenerStream returns a stream of Listeners using the config in the Client.
+func (c *Client) DeltaListenerStream() envoy_service_listener_v3.ListenerDiscoveryService_DeltaListenersClient {
+	stream, err := envoy_service_listener_v3.NewListenerDiscoveryServiceClient(c.dial()).DeltaListeners(context.Background())
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch incremental stream of Listeners")
+	}
+	return stream
+}
+
+// RouteStream returns a stream of Routes using the config in the Client.
+func (c *Client) DeltaRouteStream() envoy_service_route_v3.RouteDiscoveryService_DeltaRoutesClient {
+	stream, err := envoy_service_route_v3.NewRouteDiscoveryServiceClient(c.dial()).DeltaRoutes(context.Background())
+	if err != nil {
+		c.Log.WithError(err).Fatal("failed to fetch incremental stream of Routes")
+	}
+	return stream
+}
+
+type deltaStream interface {
+	Send(*envoy_discovery_v3.DeltaDiscoveryRequest) error
+	Recv() (*envoy_discovery_v3.DeltaDiscoveryResponse, error)
+}
+
+func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resources []string, nack bool, NodeID string) {
+	m := protojson.MarshalOptions{
+		Multiline:     true,
+		Indent:        "  ",
+		UseProtoNames: true,
+	}
+
+	currentVersion := "0"
+
+	// Send the initial, non-ACK discovery request.
+	req := &envoy_discovery_v3.DeltaDiscoveryRequest{
+		TypeUrl:                typeURL,
+		ResourceNamesSubscribe: resources,
+		Node: &corev3.Node{
+			Id: NodeID,
+		},
+	}
+	log.WithField("currentVersion", currentVersion).Info("Sending incremental discover request")
+	fmt.Println(m.Format(req))
+	err := st.Send(req)
+	if err != nil {
+		log.WithError(err).Fatal("failed to send incremental Discover Request")
+	}
+
+	for {
+
+		// Wait until we receive a response to our request.
+		resp, err := st.Recv()
+		if err != nil {
+			log.WithError(err).Fatal("failed to receive response for incremental Discover Request")
+		}
+		log.WithField("currentVersion", currentVersion).
+			WithField("resp_system_version_info", resp.SystemVersionInfo).
+			WithField("nonce", resp.Nonce).
+			Info("Received Discovery Response")
+
+		fmt.Println(m.Format(resp))
+		if err != nil {
+			log.WithError(err).Fatal("failed to marshal incremental Discovery Response")
+		}
+
+		currentVersion = resp.SystemVersionInfo
+
+		if nack {
+			// We'll NACK the response we just got.
+			// The ResponseNonce field is what makes it an ACK,
+			// and the VersionInfo field must match the one in the response we
+			// just got, or else the watch won't happen properly.
+			// The ErrorDetail field being populated is what makes this a NACK
+			// instead of an ACK.
+			nackReq := &envoy_discovery_v3.DeltaDiscoveryRequest{
+				TypeUrl:       typeURL,
+				ResponseNonce: resp.Nonce,
+				ErrorDetail: &status.Status{
+					Code:    int32(grpc_code.Code_INTERNAL),
+					Message: "Told to create a NACK for testing",
+				},
+				Node: &corev3.Node{
+					Id: NodeID,
+				},
+			}
+			log.WithField("response_nonce", resp.Nonce).
+				WithField("version_info", resp.SystemVersionInfo).
+				WithField("currentVersion", currentVersion).
+				Info("Sending incremental NACK discover request")
+
+			fmt.Println(m.Format(nackReq))
+			err := st.Send(nackReq)
+			if err != nil {
+				log.WithError(err).Fatal("failed to send NACK Discover Request")
+			}
+
+		} else {
+			// We'll ACK our request.
+			// The ResponseNonce field is what makes it an ACK,
+			// and the VersionInfo field must match the one in the response we
+			// just got, or else the watch won't happen properly.
+			ackReq := &envoy_discovery_v3.DeltaDiscoveryRequest{
+				TypeUrl:       typeURL,
+				ResponseNonce: resp.Nonce,
+				Node: &corev3.Node{
+					Id: NodeID,
+				},
+			}
+			log.WithField("response_nonce", resp.Nonce).
+				WithField("version_info", resp.SystemVersionInfo).
+				WithField("currentVersion", currentVersion).
+				Info("Sending incremental ACK discover request")
+			fmt.Println(m.Format(ackReq))
+			err := st.Send(ackReq)
+			if err != nil {
+				log.WithError(err).Fatal("failed to send ACK incremental Discover Request")
+			}
+
+		}
 	}
 }
