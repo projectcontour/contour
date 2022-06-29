@@ -99,6 +99,9 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
+	if protocol == "" && port.AppProtocol != nil {
+		protocol = *port.AppProtocol
+	}
 	return protocol
 }
 

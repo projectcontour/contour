@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func TestBuilderLookupService(t *testing.T) {
@@ -75,10 +76,38 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
+	annotatedService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "annotatedservice",
+			Namespace:   "default",
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "6441,6442,ssl"},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "foo",
+				Protocol:   "TCP",
+				Port:       6441,
+				TargetPort: intstr.FromInt(26441),
+			}, {
+				Name:       "ssl",
+				Protocol:   "TCP",
+				Port:       6443,
+				TargetPort: intstr.FromInt(26443),
+			}, {
+				Name:        "happy",
+				Protocol:    "TCP",
+				Port:        6445,
+				TargetPort:  intstr.FromInt(26445),
+				AppProtocol: pointer.String("tls"),
+			}},
+		},
+	}
+
 	services := map[types.NamespacedName]*v1.Service{
-		{Name: "service1", Namespace: "default"}:              s1,
-		{Name: "externalnamevalid", Namespace: "default"}:     externalNameValid,
-		{Name: "externalnamelocalhost", Namespace: "default"}: externalNameLocalhost,
+		{Name: "service1", Namespace: "default"}:                             s1,
+		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,
+		{Name: "externalnamelocalhost", Namespace: "default"}:                externalNameLocalhost,
+		{Name: annotatedService.Name, Namespace: annotatedService.Namespace}: annotatedService,
 	}
 
 	tests := map[string]struct {
@@ -107,6 +136,84 @@ func TestBuilderLookupService(t *testing.T) {
 			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
 			port:           intstr.FromString("8080"),
 			want:           service(s1),
+		},
+		"lookup service by port number with annotated number": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromInt(6441),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[0],
+				},
+				Protocol: "tls",
+			},
+		},
+		"lookup service by port number with annotated name": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromInt(6443),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[1],
+				},
+				Protocol: "tls",
+			},
+		},
+		"lookup service by port name with annotatated number": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromString("foo"),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[0],
+				},
+				Protocol: "tls",
+			},
+		},
+		"lookup service by port name with annotated name": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromString("ssl"),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[1],
+				},
+				Protocol: "tls",
+			},
+		},
+		"lookup service by port number with AppProtocol": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromInt(6445),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[2],
+				},
+				Protocol: "tls",
+			},
+		},
+		"lookup service by port name with AppProtocol": {
+			NamespacedName: types.NamespacedName{Name: "annotatedservice", Namespace: "default"},
+			port:           intstr.FromString("happy"),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "annotatedservice",
+					ServiceNamespace: "default",
+					ServicePort:      annotatedService.Spec.Ports[2],
+				},
+				Protocol: "tls",
+			},
 		},
 		"when service does not exist an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "nonexistent-service", Namespace: "default"},
