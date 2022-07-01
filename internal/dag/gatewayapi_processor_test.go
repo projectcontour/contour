@@ -21,8 +21,10 @@ import (
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -245,13 +247,11 @@ func TestNamespaceMatches(t *testing.T) {
 		namespaces *gatewayapi_v1beta1.RouteNamespaces
 		namespace  string
 		valid      bool
-		wantError  bool
 	}{
 		"nil matches all": {
 			namespaces: nil,
 			namespace:  "projectcontour",
 			valid:      true,
-			wantError:  false,
 		},
 		"nil From matches all": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -259,7 +259,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "projectcontour",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromAll matches all": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -267,7 +266,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "projectcontour",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSame matches": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -275,7 +273,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "projectcontour",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSame doesn't match": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -283,7 +280,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     false,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector matches labels, same ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -296,7 +292,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "projectcontour",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -309,7 +304,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -322,7 +316,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "projectcontour",
 			valid:     false,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'In', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -337,7 +330,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -351,7 +343,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     true,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -365,7 +356,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     false,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector matches expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -379,7 +369,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     false,
-			wantError: false,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -393,46 +382,6 @@ func TestNamespaceMatches(t *testing.T) {
 			},
 			namespace: "custom",
 			valid:     true,
-			wantError: false,
-		},
-		"From.NamespacesFromSelector match expression 'Exists', cannot specify values": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
-						Key:      "something",
-						Operator: metav1.LabelSelectorOpExists,
-						Values:   []string{"error"},
-					}},
-				},
-			},
-			namespace: "custom",
-			valid:     false,
-			wantError: true,
-		},
-		"From.NamespacesFromSelector match expression 'NotExists', cannot specify values": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
-						Key:      "something",
-						Operator: metav1.LabelSelectorOpDoesNotExist,
-						Values:   []string{"error"},
-					}},
-				},
-			},
-			namespace: "custom",
-			valid:     false,
-			wantError: true,
-		},
-		"From.NamespacesFromSelector must define matchLabels or matchExpression": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{},
-			},
-			namespace: "custom",
-			valid:     false,
-			wantError: true,
 		},
 	}
 
@@ -479,9 +428,15 @@ func TestNamespaceMatches(t *testing.T) {
 				},
 			}
 
-			got, gotError := processor.namespaceMatches(tc.namespaces, tc.namespace)
+			var selector labels.Selector
+			var err error
+			if tc.namespaces != nil && tc.namespaces.Selector != nil {
+				selector, err = metav1.LabelSelectorAsSelector(tc.namespaces.Selector)
+				require.NoError(t, err)
+			}
+
+			got := processor.namespaceMatches(tc.namespaces, selector, tc.namespace)
 			assert.Equal(t, tc.valid, got)
-			assert.Equal(t, tc.wantError, gotError != nil)
 		})
 	}
 }
