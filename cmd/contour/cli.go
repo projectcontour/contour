@@ -37,6 +37,7 @@ import (
 )
 
 // Client holds the details for the cli client to connect to.
+// TODO(youngnick): Move NACK handling to a sentinel, either file or keystroke.
 type Client struct {
 	ContourAddr string
 	CAFile      string
@@ -327,9 +328,7 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 
 		if nack {
 			// We'll NACK the response we just got.
-			// The ResponseNonce field is what makes it an ACK,
-			// and the VersionInfo field must match the one in the response we
-			// just got, or else the watch won't happen properly.
+			// The ResponseNonce field is what makes it an ACK.
 			// The ErrorDetail field being populated is what makes this a NACK
 			// instead of an ACK.
 			nackReq := &envoy_discovery_v3.DeltaDiscoveryRequest{
@@ -356,9 +355,7 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 
 		} else {
 			// We'll ACK our request.
-			// The ResponseNonce field is what makes it an ACK,
-			// and the VersionInfo field must match the one in the response we
-			// just got, or else the watch won't happen properly.
+			// The ResponseNonce field is what makes it an ACK.
 			ackReq := &envoy_discovery_v3.DeltaDiscoveryRequest{
 				TypeUrl:       typeURL,
 				ResponseNonce: resp.Nonce,
