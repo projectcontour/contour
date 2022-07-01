@@ -1,0 +1,1 @@
+`LastTransitionTime` should only update for object transitions when the Condition has actually changed value.

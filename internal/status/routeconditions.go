@@ -60,6 +60,11 @@ type RouteConditionsUpdate struct {
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
 func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
+	ec := routeUpdate.ExistingConditions[cond]
+	if ec.Reason == string(reason) && ec.Status == status && ec.Message == message &&
+		ec.ObservedGeneration == routeUpdate.Generation {
+		return ec
+	}
 
 	if c, ok := routeUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
