@@ -89,10 +89,11 @@ func TestBuilderLookupService(t *testing.T) {
 				Port:       6441,
 				TargetPort: intstr.FromInt(26441),
 			}, {
-				Name:       "ssl",
-				Protocol:   "TCP",
-				Port:       6443,
-				TargetPort: intstr.FromInt(26443),
+				Name:        "ssl",
+				Protocol:    "TCP",
+				Port:        6443,
+				TargetPort:  intstr.FromInt(26443),
+				AppProtocol: pointer.String("http"), // Should be ignored
 			}, {
 				Name:        "happy",
 				Protocol:    "TCP",
