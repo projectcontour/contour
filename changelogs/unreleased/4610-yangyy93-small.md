@@ -1,1 +1,1 @@
-Updated the list of know supported envoy log template keywords
+Updated the list of supported envoy log template keywords.
