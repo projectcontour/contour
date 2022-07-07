@@ -207,7 +207,7 @@ func parseAccessLogFormat(format string) error {
 			return fmt.Errorf("invalid Envoy format: %s, invalid Envoy operator: %s", f, op)
 		}
 
-		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY") && f[3] == "" {
+		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY" || op == "ENVIRONMENT") && f[3] == "" {
 			return fmt.Errorf("invalid Envoy format: %s, arguments required for operator: %s", f, op)
 		}
 

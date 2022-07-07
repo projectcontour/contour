@@ -208,6 +208,7 @@ func TestValidateAccessLogFields(t *testing.T) {
 		{"invalid=%TRAILER%"},
 		{"invalid=%RESP%"},
 		{"invalid=%REQ_WITHOUT_QUERY%"},
+		{"invalid=%ENVIRONMENT%"},
 		{"@timestamp", "invalid=%START_TIME(%s.%6f):10%"},
 	}
 
@@ -228,6 +229,7 @@ func TestValidateAccessLogFields(t *testing.T) {
 		{"@timestamp", "trailer=%TRAILER(CONTENT-LENGTH):10%"},
 		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
 		{"path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
+		{"pod=%ENVIRONMENT(ENVOY_POD_NAME)%"},
 		{"dog=pug", "cat=black"},
 		{"grpc_status"},
 	}
