@@ -3567,7 +3567,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
 							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
+							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
 							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 						},
 						{
@@ -5009,7 +5009,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
 							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
+							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
 							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 						},
 						{
@@ -6234,7 +6234,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
 								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
+								Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
 								Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 							},
 							{
