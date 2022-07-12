@@ -51,6 +51,9 @@ func main() {
 	cli.Flag("cafile", "CA bundle file for connecting to a TLS-secured Contour.").Envar("CLI_CAFILE").StringVar(&client.CAFile)
 	cli.Flag("cert-file", "Client certificate file for connecting to a TLS-secured Contour.").Envar("CLI_CERT_FILE").StringVar(&client.ClientCert)
 	cli.Flag("key-file", "Client key file for connecting to a TLS-secured Contour.").Envar("CLI_KEY_FILE").StringVar(&client.ClientKey)
+	cli.Flag("node-id", "Node ID for the CLI client to use.").Envar("CLI_NODE_ID").Default("ContourCLI").StringVar(&client.NodeID)
+	cli.Flag("nack", "NACK all responses (for testing).").BoolVar(&client.Nack)
+	cli.Flag("delta", "Use incremental xDS.").BoolVar(&client.Delta)
 
 	var resources []string
 	cds := cli.Command("cds", "Watch services.")
@@ -99,20 +102,45 @@ func main() {
 	case certgenApp.FullCommand():
 		doCertgen(certgenConfig, log)
 	case cds.FullCommand():
-		stream := client.ClusterStream()
-		watchstream(stream, resource_v3.ClusterType, resources)
+		if client.Delta {
+			stream := client.DeltaClusterStream()
+			watchDeltaStream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeID)
+		} else {
+			stream := client.ClusterStream()
+			watchstream(log, stream, resource_v3.ClusterType, resources, client.Nack, client.NodeID)
+		}
 	case eds.FullCommand():
-		stream := client.EndpointStream()
-		watchstream(stream, resource_v3.EndpointType, resources)
+		if client.Delta {
+			stream := client.DeltaEndpointStream()
+			watchDeltaStream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeID)
+		} else {
+			stream := client.EndpointStream()
+			watchstream(log, stream, resource_v3.EndpointType, resources, client.Nack, client.NodeID)
+		}
 	case lds.FullCommand():
-		stream := client.ListenerStream()
-		watchstream(stream, resource_v3.ListenerType, resources)
+		if client.Delta {
+			stream := client.DeltaListenerStream()
+			watchDeltaStream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeID)
+		} else {
+			stream := client.ListenerStream()
+			watchstream(log, stream, resource_v3.ListenerType, resources, client.Nack, client.NodeID)
+		}
 	case rds.FullCommand():
-		stream := client.RouteStream()
-		watchstream(stream, resource_v3.RouteType, resources)
+		if client.Delta {
+			stream := client.DeltaRouteStream()
+			watchDeltaStream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeID)
+		} else {
+			stream := client.RouteStream()
+			watchstream(log, stream, resource_v3.RouteType, resources, client.Nack, client.NodeID)
+		}
 	case sds.FullCommand():
-		stream := client.RouteStream()
-		watchstream(stream, resource_v3.SecretType, resources)
+		if client.Delta {
+			stream := client.DeltaRouteStream()
+			watchDeltaStream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeID)
+		} else {
+			stream := client.RouteStream()
+			watchstream(log, stream, resource_v3.SecretType, resources, client.Nack, client.NodeID)
+		}
 	case serve.FullCommand():
 		// Parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
