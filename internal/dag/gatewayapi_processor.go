@@ -184,24 +184,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						"No intersecting hostnames were found between the listener and the route.",
 					)
 				} else {
-					// Determine if any errors exist in conditions and set the "Accepted"
-					// condition accordingly.
-					switch len(routeAccessor.ConditionsForParentRef(routeParentRef)) {
-					case 0:
-						routeParentStatusAccessor.AddCondition(
-							gatewayapi_v1beta1.RouteConditionAccepted,
-							metav1.ConditionTrue,
-							gatewayapi_v1beta1.RouteReasonAccepted,
-							"Valid HTTPRoute",
-						)
-					default:
-						routeParentStatusAccessor.AddCondition(
-							gatewayapi_v1beta1.RouteConditionAccepted,
-							metav1.ConditionFalse,
-							status.ReasonErrorsExist,
-							"Errors found, check other Conditions for details.",
-						)
-					}
+					routeParentStatusAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionTrue,
+						gatewayapi_v1beta1.RouteReasonAccepted,
+						"Accepted HTTPRoute",
+					)
 				}
 			}
 		}()
@@ -265,24 +253,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						"No intersecting hostnames were found between the listener and the route.",
 					)
 				} else {
-					// Determine if any errors exist in conditions and set the "Accepted"
-					// condition accordingly.
-					switch len(routeAccessor.ConditionsForParentRef(upgradedRouteParentRef)) {
-					case 0:
-						routeParentStatusAccessor.AddCondition(
-							gatewayapi_v1beta1.RouteConditionAccepted,
-							metav1.ConditionTrue,
-							gatewayapi_v1beta1.RouteReasonAccepted,
-							"Valid TLSRoute",
-						)
-					default:
-						routeParentStatusAccessor.AddCondition(
-							gatewayapi_v1beta1.RouteConditionAccepted,
-							metav1.ConditionFalse,
-							status.ReasonErrorsExist,
-							"Errors found, check other Conditions for details.",
-						)
-					}
+					routeParentStatusAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionTrue,
+						gatewayapi_v1beta1.RouteReasonAccepted,
+						"Accepted TLSRoute",
+					)
 				}
 			}
 		}()
