@@ -27,7 +27,7 @@ import (
 )
 
 func testInvalidBackendRef(namespace string) {
-	Specify("invalid backend ref returns 404 status code", func() {
+	Specify("invalid backend ref returns 500 status code", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
@@ -119,7 +119,7 @@ func testInvalidBackendRef(namespace string) {
 
 			var hasAccepted, hasResolvedRefs bool
 			for _, cond := range route.Status.Parents[0].Conditions {
-				if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionFalse {
+				if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 					hasAccepted = true
 				}
 				if cond.Type == string(gatewayapi_v1beta1.RouteConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
@@ -144,11 +144,11 @@ func testInvalidBackendRef(namespace string) {
 			},
 			{
 				path:           "/invalidref",
-				expectResponse: 404,
+				expectResponse: 500,
 			},
 			{
 				path:           "/invalidservicename",
-				expectResponse: 404,
+				expectResponse: 500,
 			},
 		}
 
