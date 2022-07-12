@@ -6087,7 +6087,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
 								Selector: &metav1.LabelSelector{},
 							},
 						},
