@@ -1356,7 +1356,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 		// If the ServiceName referenced from an HTTPRoute is missing,
-		// the route should return an HTTP 404.
+		// the route should return an HTTP 500.
 		"missing service": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -1382,12 +1382,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
 				},
 			),
 		},
-		// If port is not defined the route will return an HTTP 404.
+		// If port is not defined the route will return an HTTP 500.
 		"missing port": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -1421,7 +1421,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
 				},
 			),
@@ -1461,7 +1461,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
 			}),
 		},
@@ -1623,7 +1623,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
 			}),
 		},
@@ -1678,7 +1678,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
 			}),
 		},
@@ -1733,7 +1733,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
 			}),
 		},
@@ -1789,7 +1789,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name: HTTP_LISTENER_NAME,
 				Port: 80,
 				VirtualHosts: virtualhosts(
-					virtualhost("*", directResponseRoute("/", http.StatusNotFound)),
+					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
 			}),
 		},
@@ -3443,7 +3443,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"weight of zero for a single forwardTo results in 404": {
+		"weight of zero for a single forwardTo results in 500": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -3471,7 +3471,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRouteService("/", http.StatusNotFound, &Service{
+						virtualhost("*", directResponseRouteService("/", http.StatusInternalServerError, &Service{
 							Weighted: WeightedService{
 								Weight:           0,
 								ServiceName:      kuardService.Name,
