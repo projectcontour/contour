@@ -14,6 +14,7 @@
 package gatewayapi
 
 import (
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -266,13 +267,14 @@ func UpgradeParentRefs(parentRefs []gatewayapi_v1alpha2.ParentReference) []gatew
 	var res []gatewayapi_v1beta1.ParentReference
 
 	for _, parentRef := range parentRefs {
-		res = append(res, upgradeParentRef(parentRef))
+		res = append(res, UpgradeParentRef(parentRef))
 	}
 
 	return res
 }
 
-func upgradeParentRef(parentRef gatewayapi_v1alpha2.ParentReference) gatewayapi_v1beta1.ParentReference {
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func UpgradeParentRef(parentRef gatewayapi_v1alpha2.ParentReference) gatewayapi_v1beta1.ParentReference {
 	upgraded := gatewayapi_v1beta1.ParentReference{}
 
 	if parentRef.Group != nil {
@@ -305,14 +307,19 @@ func UpgradeRouteParentStatuses(routeParentStatuses []gatewayapi_v1alpha2.RouteP
 	var res []gatewayapi_v1beta1.RouteParentStatus
 
 	for _, rps := range routeParentStatuses {
-		res = append(res, gatewayapi_v1beta1.RouteParentStatus{
-			ParentRef:      upgradeParentRef(rps.ParentRef),
-			ControllerName: gatewayapi_v1beta1.GatewayController(rps.ControllerName),
-			Conditions:     rps.Conditions,
-		})
+		res = append(res, UpgradeRouteParentStatus(rps))
 	}
 
 	return res
+}
+
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
+func UpgradeRouteParentStatus(routeParentStatus gatewayapi_v1alpha2.RouteParentStatus) gatewayapi_v1beta1.RouteParentStatus {
+	return gatewayapi_v1beta1.RouteParentStatus{
+		ParentRef:      UpgradeParentRef(routeParentStatus.ParentRef),
+		ControllerName: gatewayapi_v1beta1.GatewayController(routeParentStatus.ControllerName),
+		Conditions:     routeParentStatus.Conditions,
+	}
 }
 
 // TODO(sk): delete when Gateway API v1alpha2 support is dropped
@@ -330,6 +337,7 @@ func DowngradeRouteParentStatuses(routeParentStatuses []gatewayapi_v1beta1.Route
 	return res
 }
 
+// TODO(sk): delete when Gateway API v1alpha2 support is dropped
 func downgradeParentRef(parentRef gatewayapi_v1beta1.ParentReference) gatewayapi_v1alpha2.ParentReference {
 	downgraded := gatewayapi_v1alpha2.ParentReference{}
 
@@ -394,4 +402,24 @@ func UpgradeBackendRef(backendRef gatewayapi_v1alpha2.BackendRef) gatewayapi_v1b
 	upgraded.Weight = backendRef.Weight
 
 	return upgraded
+}
+
+// IsRefToGateway returns whether the provided parent ref is a reference
+// to a Gateway with the given namespace/name, irrespective of whether a
+// section/listener name has been specified (i.e. a parent ref to a listener
+// on the specified gateway will return "true").
+func IsRefToGateway(parentRef gatewayapi_v1beta1.ParentReference, gateway types.NamespacedName) bool {
+	if parentRef.Group != nil && string(*parentRef.Group) != gatewayapi_v1beta1.GroupName {
+		return false
+	}
+
+	if parentRef.Kind != nil && string(*parentRef.Kind) != "Gateway" {
+		return false
+	}
+
+	if parentRef.Namespace != nil && string(*parentRef.Namespace) != gateway.Namespace {
+		return false
+	}
+
+	return string(parentRef.Name) == gateway.Name
 }

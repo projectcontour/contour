@@ -42,141 +42,142 @@ const (
 	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1beta1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
 	ReasonInvalidPathMatch              gatewayapi_v1beta1.RouteConditionReason = "InvalidPathMatch"
 	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
+	ReasonListenersNotReady             gatewayapi_v1beta1.RouteConditionReason = "ListenersNotReady"
 )
 
 // clock is used to set lastTransitionTime on status conditions.
 var clock utilclock.Clock = utilclock.RealClock{}
 
-type RouteConditionsUpdate struct {
-	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition
-	GatewayRef         types.NamespacedName
-	GatewayController  gatewayapi_v1beta1.GatewayController
-	Resource           client.Object
-	Generation         int64
-	TransitionTime     metav1.Time
+// RouteStatusUpdate represents an atomic update to a
+// Route's status.
+type RouteStatusUpdate struct {
+	FullName            types.NamespacedName
+	RouteParentStatuses []*gatewayapi_v1beta1.RouteParentStatus
+	GatewayRef          types.NamespacedName
+	GatewayController   gatewayapi_v1beta1.GatewayController
+	Resource            client.Object
+	Generation          int64
+	TransitionTime      metav1.Time
 }
 
-// AddCondition returns a metav1.Condition for a given ConditionType.
-func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
+// RouteParentStatusUpdate helps update a specific
+// parent ref's RouteParentStatus.
+type RouteParentStatusUpdate struct {
+	*RouteStatusUpdate
+	parentRef gatewayapi_v1beta1.ParentReference
+}
 
-	if c, ok := routeUpdate.Conditions[cond]; ok {
-		message = fmt.Sprintf("%s, %s", c.Message, message)
+// StatusUpdateFor returns a RouteParentStatusUpdate for the given parent ref.
+func (r *RouteStatusUpdate) StatusUpdateFor(parentRef gatewayapi_v1beta1.ParentReference) *RouteParentStatusUpdate {
+	return &RouteParentStatusUpdate{
+		RouteStatusUpdate: r,
+		parentRef:         parentRef,
+	}
+}
+
+// AddCondition adds a condition with the given properties
+// to the RouteParentStatus.
+func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
+	var rps *gatewayapi_v1beta1.RouteParentStatus
+
+	for _, v := range r.RouteParentStatuses {
+		if v.ParentRef == r.parentRef {
+			rps = v
+			break
+		}
 	}
 
-	newDc := metav1.Condition{
+	if rps == nil {
+		rps = &gatewayapi_v1beta1.RouteParentStatus{
+			ParentRef:      r.parentRef,
+			ControllerName: r.GatewayController,
+		}
+
+		r.RouteParentStatuses = append(r.RouteParentStatuses, rps)
+	}
+
+	idx := -1
+	for i, c := range rps.Conditions {
+		if c.Type == string(conditionType) {
+			idx = i
+			break
+		}
+	}
+
+	if idx > -1 {
+		message = rps.Conditions[idx].Message + ", " + message
+	}
+
+	cond := metav1.Condition{
 		Reason:             string(reason),
 		Status:             status,
-		Type:               string(cond),
+		Type:               string(conditionType),
 		Message:            message,
 		LastTransitionTime: metav1.NewTime(clock.Now()),
-		ObservedGeneration: routeUpdate.Generation,
+		ObservedGeneration: r.Generation,
 	}
-	routeUpdate.Conditions[cond] = newDc
-	return newDc
+
+	if idx > -1 {
+		rps.Conditions[idx] = cond
+	} else {
+		rps.Conditions = append(rps.Conditions, cond)
+	}
+
+	return cond
 }
 
-func (routeUpdate *RouteConditionsUpdate) Mutate(obj client.Object) client.Object {
-
-	var gatewayStatuses []gatewayapi_v1beta1.RouteParentStatus
-	var conditionsToWrite []metav1.Condition
-
-	for _, cond := range routeUpdate.Conditions {
-
-		// set the Condition's observed generation based on
-		// the generation of the route we looked at.
-		cond.ObservedGeneration = routeUpdate.Generation
-		cond.LastTransitionTime = routeUpdate.TransitionTime
-
-		// is there a newer Condition on the route matching
-		// this condition's type? If so, our observation is stale,
-		// so don't write it, keep the newer one instead.
-		var newerConditionExists bool
-		for _, existingCond := range routeUpdate.ExistingConditions {
-			if existingCond.Type != cond.Type {
-				continue
-			}
-
-			if existingCond.ObservedGeneration > cond.ObservedGeneration {
-				conditionsToWrite = append(conditionsToWrite, existingCond)
-				newerConditionExists = true
-				break
-			}
-		}
-
-		// if we didn't find a newer version of the Condition on the
-		// route, then write the one we computed.
-		if !newerConditionExists {
-			conditionsToWrite = append(conditionsToWrite, cond)
+func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
+	for _, rps := range r.RouteParentStatuses {
+		if rps.ParentRef == parentRef {
+			return rps.Conditions
 		}
 	}
 
-	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1beta1.RouteParentStatus{
-		ParentRef:      gatewayapi.GatewayParentRef(routeUpdate.GatewayRef.Namespace, routeUpdate.GatewayRef.Name),
-		ControllerName: routeUpdate.GatewayController,
-		Conditions:     conditionsToWrite,
-	})
+	return nil
+}
+
+func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
+	var newRouteParentStatuses []gatewayapi_v1beta1.RouteParentStatus
+
+	for _, rps := range r.RouteParentStatuses {
+		for i := range rps.Conditions {
+			cond := &rps.Conditions[i]
+
+			cond.ObservedGeneration = r.Generation
+			cond.LastTransitionTime = r.TransitionTime
+		}
+
+		newRouteParentStatuses = append(newRouteParentStatuses, *rps)
+	}
 
 	switch o := obj.(type) {
 	case *gatewayapi_v1beta1.HTTPRoute:
 		route := o.DeepCopy()
 
-		// Set the HTTPRoute status.
-		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Parents)...)
-		route.Status.RouteStatus.Parents = gatewayStatuses
+		// Get all the RouteParentStatuses that are for other Gateways.
+		for _, rps := range o.Status.Parents {
+			if !gatewayapi.IsRefToGateway(rps.ParentRef, r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, rps)
+			}
+		}
+
+		route.Status.Parents = newRouteParentStatuses
+
 		return route
 	case *gatewayapi_v1alpha2.TLSRoute:
 		route := o.DeepCopy()
 
-		// Set the TLSRoute status.
-		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(gatewayapi.UpgradeRouteParentStatuses(route.Status.Parents))...)
-		route.Status.RouteStatus.Parents = gatewayapi.DowngradeRouteParentStatuses(gatewayStatuses)
+		// Get all the RouteParentStatuses that are for other Gateways.
+		for _, rps := range o.Status.Parents {
+			if !gatewayapi.IsRefToGateway(gatewayapi.UpgradeParentRef(rps.ParentRef), r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, gatewayapi.UpgradeRouteParentStatus(rps))
+			}
+		}
+
+		route.Status.Parents = gatewayapi.DowngradeRouteParentStatuses(newRouteParentStatuses)
+
 		return route
 	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator",
-			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
-		))
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator", obj, r.FullName.Namespace, r.FullName.Name))
 	}
-}
-
-// combineConditions (due for a rename) returns all RouteParentStatuses
-// from gwStatus that are *not* for the routeUpdate's Gateway.
-func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1beta1.RouteParentStatus) []gatewayapi_v1beta1.RouteParentStatus {
-	var gatewayStatuses []gatewayapi_v1beta1.RouteParentStatus
-
-	// Now that we have all the conditions, add them back to the object
-	// to get written out.
-	for _, rgs := range gwStatus {
-		if !isRefToGateway(rgs.ParentRef, routeUpdate.GatewayRef) {
-			gatewayStatuses = append(gatewayStatuses, rgs)
-		}
-	}
-
-	return gatewayStatuses
-}
-
-// isRefToGateway returns whether or not ref is a reference
-// to a Gateway with the given namespace & name.
-func isRefToGateway(ref gatewayapi_v1beta1.ParentReference, gateway types.NamespacedName) bool {
-	return ref.Group != nil && *ref.Group == gatewayapi_v1beta1.GroupName &&
-		ref.Kind != nil && *ref.Kind == "Gateway" &&
-		ref.Namespace != nil && string(*ref.Namespace) == gateway.Namespace &&
-		string(ref.Name) == gateway.Name
-}
-
-func (c *Cache) getRouteGatewayConditions(gatewayStatus []gatewayapi_v1beta1.RouteParentStatus) map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition {
-	for _, gs := range gatewayStatus {
-		if isRefToGateway(gs.ParentRef, c.gatewayRef) {
-
-			conditions := make(map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition)
-			for _, gsCondition := range gs.Conditions {
-				if val, ok := conditions[gatewayapi_v1beta1.RouteConditionType(gsCondition.Type)]; !ok {
-					conditions[gatewayapi_v1beta1.RouteConditionType(gsCondition.Type)] = val
-				}
-			}
-			return conditions
-		}
-	}
-	return map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition{}
 }

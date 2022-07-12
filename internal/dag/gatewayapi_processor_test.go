@@ -19,6 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -485,75 +486,254 @@ func TestNamespaceMatches(t *testing.T) {
 	}
 }
 
-func TestRouteSelectsGatewayListener(t *testing.T) {
+func TestGetListenersForRouteParentRef(t *testing.T) {
 	tests := map[string]struct {
-		routeParentRefs []gatewayapi_v1beta1.ParentReference
-		routeNamespace  string
-		listener        gatewayapi_v1beta1.Listener
-		want            bool
+		routeParentRef gatewayapi_v1beta1.ParentReference
+		routeNamespace string
+		routeKind      string
+		listeners      []*listenerInfo
+		want           []int // specify the indexes of the listeners that should be selected
 	}{
 		"gateway namespace specified, no listener specified, gateway in same namespace as route": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayParentRef("projectcontour", "contour"),
+			routeParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+			routeNamespace: "projectcontour",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			want: true,
+			want: []int{0, 1},
 		},
 		"gateway namespace specified, no listener specified, gateway in different namespace than route": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayParentRef("different-ns-than-gateway", "contour"),
+			routeParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+			routeNamespace: "different-namespace-than-gateway",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			want: false,
+			want: nil,
 		},
 		"no gateway namespace specified, no listener specified, gateway in same namespace as route": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayParentRef("", "contour"),
-			},
+			routeParentRef: gatewayapi.GatewayParentRef("", "contour"),
 			routeNamespace: "projectcontour",
-			want:           true,
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+			},
+			want: []int{0, 1},
 		},
 		"no gateway namespace specified, no listener specified, gateway in different namespace than route": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayParentRef("", "contour"),
+			routeParentRef: gatewayapi.GatewayParentRef("", "contour"),
+			routeNamespace: "different-namespace-than-gateway",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			routeNamespace: "different-ns-than-gateway",
-			want:           false,
-		},
-		"parentRef name doesn't match gateway name": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayParentRef("projectcontour", "different-name-than-gateway"),
-			},
-			want: false,
+			want: nil,
 		},
 
-		"section name specified, matches listener": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener"),
+		"section name specified, matches first listener": {
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-1"),
+			routeNamespace: "projectcontour",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			listener: gatewayapi_v1beta1.Listener{Name: "http-listener"},
-			want:     true,
+			want: []int{0},
+		},
+		"section name specified, matches second listener": {
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-2"),
+			routeNamespace: "projectcontour",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+			},
+			want: []int{1},
 		},
 		"section name specified, does not match listener": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name"),
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name"),
+			routeNamespace: "projectcontour",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			listener: gatewayapi_v1beta1.Listener{Name: "http-listener"},
-			want:     false,
+			want: nil,
 		},
-		"multiple parentRefs with section names specified, first listener": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
+		"route kind only allowed by second listener": {
+			routeParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+			routeNamespace: "projectcontour",
+			routeKind:      "HTTPRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"TLSRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
 			},
-			listener: gatewayapi_v1beta1.Listener{Name: "listener-1"},
-			want:     true,
-		},
-		"multiple parentRefs with section names specified, second listener": {
-			routeParentRefs: []gatewayapi_v1beta1.ParentReference{
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1"),
-				gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-2"),
-			},
-			listener: gatewayapi_v1beta1.Listener{Name: "listener-2"},
-			want:     true,
+			want: []int{1},
 		},
 	}
 
@@ -572,8 +752,17 @@ func TestRouteSelectsGatewayListener(t *testing.T) {
 				},
 			}
 
-			got := routeSelectsGatewayListener(processor.source.gateway, tc.listener, tc.routeParentRefs, tc.routeNamespace)
-			assert.Equal(t, tc.want, got)
+			rsu := &status.RouteStatusUpdate{}
+			rpsu := rsu.StatusUpdateFor(tc.routeParentRef)
+
+			got := processor.getListenersForRouteParentRef(tc.routeParentRef, tc.routeNamespace, gatewayapi_v1beta1.Kind(tc.routeKind), tc.listeners, rpsu)
+
+			var want []*listenerInfo
+			for _, i := range tc.want {
+				want = append(want, tc.listeners[i])
+			}
+
+			assert.Equal(t, want, got)
 		})
 	}
 }

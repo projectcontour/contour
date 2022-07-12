@@ -41,7 +41,7 @@ func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1beta1
 		gatewayController: gatewayController,
 		proxyUpdates:      make(map[types.NamespacedName]*ProxyUpdate),
 		gatewayUpdates:    make(map[types.NamespacedName]*GatewayStatusUpdate),
-		routeUpdates:      make(map[types.NamespacedName]*RouteConditionsUpdate),
+		routeUpdates:      make(map[types.NamespacedName]*RouteStatusUpdate),
 		entries:           make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
@@ -60,7 +60,7 @@ type Cache struct {
 
 	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
 	gatewayUpdates map[types.NamespacedName]*GatewayStatusUpdate
-	routeUpdates   map[types.NamespacedName]*RouteConditionsUpdate
+	routeUpdates   map[types.NamespacedName]*RouteStatusUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -157,8 +157,8 @@ func (c *Cache) GetGatewayUpdates() []*GatewayStatusUpdate {
 }
 
 // GetRouteUpdates gets the underlying RouteConditionsUpdate objects from the cache.
-func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
-	var allUpdates []*RouteConditionsUpdate
+func (c *Cache) GetRouteUpdates() []*RouteStatusUpdate {
+	var allUpdates []*RouteStatusUpdate
 	for _, conditionsUpdate := range c.routeUpdates {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
@@ -221,24 +221,22 @@ func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fu
 	}
 }
 
-// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
+// RouteConditionsAccessor returns a RouteStatusUpdate that allows a client to build up a list of
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
+// is done. The commit function pattern is used so that the RouteStatusUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1beta1.RouteParentStatus) (*RouteConditionsUpdate, func()) {
-	pu := &RouteConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1beta1.RouteConditionType]metav1.Condition),
-		ExistingConditions: c.getRouteGatewayConditions(gateways),
-		GatewayRef:         c.gatewayRef,
-		GatewayController:  c.gatewayController,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
-		Resource:           resource,
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object) (*RouteStatusUpdate, func()) {
+	pu := &RouteStatusUpdate{
+		FullName:          nsName,
+		GatewayRef:        c.gatewayRef,
+		GatewayController: c.gatewayController,
+		Generation:        generation,
+		TransitionTime:    metav1.NewTime(clock.Now()),
+		Resource:          resource,
 	}
 
 	return pu, func() {
-		if len(pu.Conditions) == 0 {
+		if len(pu.RouteParentStatuses) == 0 {
 			return
 		}
 		c.routeUpdates[pu.FullName] = pu
