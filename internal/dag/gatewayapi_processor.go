@@ -117,12 +117,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		)
 	}
 
-	// Compute listeners and save a list of the ready ones.
+	// Compute listeners and save a list of the valid/ready ones.
 	var readyListeners []*listenerInfo
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
-		if info := p.computeListener(listener, gwAccessor, validateListenersResult); info != nil && gwAccessor.IsListenerReady(string(listener.Name)) {
-			readyListeners = append(readyListeners, info)
+		if ready, listenerInfo := p.computeListener(listener, gwAccessor, validateListenersResult); ready {
+			readyListeners = append(readyListeners, listenerInfo)
 		}
 	}
 
@@ -331,14 +331,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		}
 
 		// Check if the route is in a namespace that the listener allows.
-		// TODO move validation of the NS label selector (if it exists) into
-		// computeListener, so we can set an appropriate condition on the listener,
-		// and avoid having to deal with an error here.
-		namespaceAllowed, err := p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, routeNamespace)
-		if err != nil {
-			p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-		}
-		if !namespaceAllowed {
+		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
 			continue
 		}
 
@@ -359,9 +352,10 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 }
 
 type listenerInfo struct {
-	listener     gatewayapi_v1beta1.Listener
-	allowedKinds []gatewayapi_v1beta1.Kind
-	tlsSecret    *Secret
+	listener          gatewayapi_v1beta1.Listener
+	allowedKinds      []gatewayapi_v1beta1.Kind
+	namespaceSelector labels.Selector
+	tlsSecret         *Secret
 }
 
 func (l *listenerInfo) AllowsKind(kind gatewayapi_v1beta1.Kind) bool {
@@ -416,7 +410,7 @@ func (p *GatewayAPIProcessor) computeListener(
 	listener gatewayapi_v1beta1.Listener,
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
-) *listenerInfo {
+) (bool, *listenerInfo) {
 	// set the listener's "Ready" condition based on whether we've
 	// added any other conditions for the listener. The assumption
 	// here is that if another condition is set, the listener is
@@ -460,12 +454,53 @@ func (p *GatewayAPIProcessor) computeListener(
 	// If the listener had an invalid protocol/port/hostname, we don't need to go
 	// any further.
 	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
-		return nil
+		return false, nil
 	}
 
 	// Get a list of the route kinds that the listener accepts.
 	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
 	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
+
+	var selector labels.Selector
+
+	if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
+		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gatewayapi_v1beta1.NamespacesFromSelector {
+
+		if listener.AllowedRoutes.Namespaces.Selector == nil {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				"Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".",
+			)
+			return false, nil
+		}
+
+		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				"Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.",
+			)
+			return false, nil
+		}
+
+		var err error
+		selector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
+		if err != nil {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err),
+			)
+			return false, nil
+		}
+	}
 
 	var listenerSecret *Secret
 
@@ -481,14 +516,14 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
 			)
-			return nil
+			return false, nil
 		}
 
 		// Check for valid TLS configuration on the Gateway.
 		if listenerSecret = p.validGatewayTLS(*listener.TLS, string(listener.Name), gwAccessor); listenerSecret == nil {
 			// If TLS was configured on the Listener, but it's invalid, don't allow any
 			// routes to be bound to this listener since it can't serve TLS traffic.
-			return nil
+			return false, nil
 		}
 	case gatewayapi_v1beta1.TLSProtocolType:
 		// TLS is required for the type TLS.
@@ -500,7 +535,7 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
 			)
-			return nil
+			return false, nil
 		}
 
 		if listener.TLS.Mode != nil {
@@ -510,7 +545,7 @@ func (p *GatewayAPIProcessor) computeListener(
 				if listenerSecret = p.validGatewayTLS(*listener.TLS, string(listener.Name), gwAccessor); listenerSecret == nil {
 					// If TLS was configured on the Listener, but it's invalid, don't allow any
 					// routes to be bound to this listener since it can't serve TLS traffic.
-					return nil
+					return false, nil
 				}
 			case gatewayapi_v1beta1.TLSModePassthrough:
 				if len(listener.TLS.CertificateRefs) > 0 {
@@ -521,16 +556,17 @@ func (p *GatewayAPIProcessor) computeListener(
 						gatewayapi_v1beta1.ListenerReasonInvalid,
 						fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when TLS Mode is %q.", *listener.TLS.Mode),
 					)
-					return nil
+					return false, nil
 				}
 			}
 		}
 	}
 
-	return &listenerInfo{
-		listener:     listener,
-		allowedKinds: listenerRouteKinds,
-		tlsSecret:    listenerSecret,
+	return true, &listenerInfo{
+		listener:          listener,
+		allowedKinds:      listenerRouteKinds,
+		tlsSecret:         listenerSecret,
+		namespaceSelector: selector,
 	}
 }
 
@@ -839,9 +875,9 @@ func hostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	return len(wildcardMatch) > 0
 }
 
-// namespaceMatches returns true if the namespaces selector matches
-// the route that is being processed.
-func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.RouteNamespaces, routeNamespace string) (bool, error) {
+// namespaceMatches returns true if namespaces allows
+// the provided route namespace.
+func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.RouteNamespaces, namespaceSelector labels.Selector, routeNamespace string) bool {
 	// From indicates where Routes will be selected for this Gateway.
 	// Possible values are:
 	//   * All: Routes in all namespaces may be used by this Gateway.
@@ -849,40 +885,26 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.Ro
 	//     this Gateway.
 	//   * Same: Only Routes in the same namespace may be used by this Gateway.
 
-	if namespaces == nil {
-		return true, nil
-	}
-
-	if namespaces.From == nil {
-		return true, nil
+	if namespaces == nil || namespaces.From == nil {
+		return true
 	}
 
 	switch *namespaces.From {
 	case gatewayapi_v1beta1.NamespacesFromAll:
-		return true, nil
+		return true
 	case gatewayapi_v1beta1.NamespacesFromSame:
-		return p.source.gateway.Namespace == routeNamespace, nil
+		return p.source.gateway.Namespace == routeNamespace
 	case gatewayapi_v1beta1.NamespacesFromSelector:
-		if namespaces.Selector == nil ||
-			(len(namespaces.Selector.MatchLabels) == 0 && len(namespaces.Selector.MatchExpressions) == 0) {
-			return false, fmt.Errorf("RouteNamespaces selector must be specified when `RouteSelectType=Selector`")
-		}
-
 		// Look up the route's namespace in the list of cached namespaces.
 		if ns := p.source.namespaces[routeNamespace]; ns != nil {
 
 			// Check that the route's namespace is included in the Gateway's
-			// namespace selector/expression.
-			l, err := metav1.LabelSelectorAsSelector(namespaces.Selector)
-			if err != nil {
-				return false, err
-			}
-
-			// Look for matching labels on Selector.
-			return l.Matches(labels.Set(ns.Labels)), nil
+			// namespace selector.
+			return namespaceSelector.Matches(labels.Set(ns.Labels))
 		}
 	}
-	return true, nil
+
+	return true
 }
 
 func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, gatewayNotReadyCondition *metav1.Condition) {

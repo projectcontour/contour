@@ -5961,6 +5961,169 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 		}},
 	})
+
+	run(t, "Listener with FromNamespaces=Selector, no selector specified", testcase{
+		objs: []interface{}{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "http",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								Selector: nil,
+							},
+						},
+					}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
+				gatewayapi_v1beta1.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"http": {
+					Name: "http",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Listener with FromNamespaces=Selector, invalid selector (can't specify values with Exists operator)", testcase{
+		objs: []interface{}{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "http",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								Selector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{{
+										Key:      "something",
+										Operator: metav1.LabelSelectorOpExists,
+										Values:   []string{"error"},
+									}},
+								},
+							},
+						},
+					}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
+				gatewayapi_v1beta1.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"http": {
+					Name: "http",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Error parsing Listener.AllowedRoutes.Namespaces.Selector: values: Invalid value: []string{\"error\"}: values set must be empty for exists and does not exist.",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Listener with FromNamespaces=Selector, invalid selector (must specify MatchLabels and/or MatchExpressions)", testcase{
+		objs: []interface{}{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "http",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								Selector: &metav1.LabelSelector{},
+							},
+						},
+					}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
+				gatewayapi_v1beta1.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"http": {
+					Name: "http",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.",
+						},
+					},
+				},
+			},
+		}},
+	})
+
 }
 
 func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
