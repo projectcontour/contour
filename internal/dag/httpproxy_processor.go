@@ -264,6 +264,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
 						"Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified")
 				}
+				if tls.ClientValidation.CertificateRevocationList != "" {
+					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace))
+					crl, err := p.source.LookupSecret(secretName, validCRL)
+					if err != nil {
+						// CRL is missing or not configured.
+						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
+							"Spec.VirtualHost.TLS client validation is invalid: invalid CRL Secret %q: %s", secretName, err)
+					}
+					dv.CRL = crl
+					dv.OnlyVerifyLeafCertCrl = tls.ClientValidation.OnlyVerifyLeafCertCrl
+				}
 				svhost.DownstreamValidation = dv
 			}
 

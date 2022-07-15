@@ -15,6 +15,7 @@ package v3
 
 import (
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,6 +43,7 @@ func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v3.ExtAuthz_Gr
 			TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 				EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 					ClusterName: name,
+					Authority:   strings.ReplaceAll(name, "/", "."),
 				},
 			},
 			Timeout: protobuf.Duration(defaultResponseTimeout),

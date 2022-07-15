@@ -26,11 +26,12 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // Tests in this block set up/tear down their own GatewayClasses and Gateways.
@@ -79,19 +80,19 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	})
 
 	AfterEach(func() {
-		require.NoError(f.T(), f.Client.DeleteAllOf(context.Background(), &gatewayapi_v1alpha2.GatewayClass{}))
+		require.NoError(f.T(), f.Client.DeleteAllOf(context.Background(), &gatewayapi_v1beta1.GatewayClass{}))
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
 	f.NamespacedTest("gateway-multiple-gatewayclasses", func(namespace string) {
 		Specify("only the oldest matching gatewayclass should be accepted", func() {
-			newGatewayClass := func(name, controller string) *gatewayapi_v1alpha2.GatewayClass {
-				return &gatewayapi_v1alpha2.GatewayClass{
+			newGatewayClass := func(name, controller string) *gatewayapi_v1beta1.GatewayClass {
+				return &gatewayapi_v1beta1.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: name,
 					},
-					Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-						ControllerName: gatewayapi_v1alpha2.GatewayController(controller),
+					Spec: gatewayapi_v1beta1.GatewayClassSpec{
+						ControllerName: gatewayapi_v1beta1.GatewayController(controller),
 					},
 				}
 			}
@@ -114,11 +115,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// create another matching GC: should not be accepted since it's not oldest
 			secondOldest := newGatewayClass("second-oldest-matching-gatewayclass", controllerName)
-			_, notOldest := f.CreateGatewayClassAndWaitFor(secondOldest, func(gc *gatewayapi_v1alpha2.GatewayClass) bool {
+			_, notOldest := f.CreateGatewayClassAndWaitFor(secondOldest, func(gc *gatewayapi_v1beta1.GatewayClass) bool {
 				for _, cond := range gc.Status.Conditions {
-					if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) &&
+					if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
-						cond.Reason == "Invalid" &&
+						cond.Reason == string(status.ReasonOlderGatewayClassExists) &&
 						cond.Message == "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists" {
 						return true
 					}
@@ -145,33 +146,33 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	f.NamespacedTest("gateway-multiple-gateways", func(namespace string) {
 		Specify("only the oldest gateway for the accepted gatewayclass should be accepted", func() {
 			// Create a matching gateway class.
-			gc := &gatewayapi_v1alpha2.GatewayClass{
+			gc := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour-gatewayclass",
 				},
-				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(gc, gatewayClassValid)
 			require.True(f.T(), valid)
 
 			// Create a matching gateway and verify it's accepted.
-			oldest := &gatewayapi_v1alpha2.Gateway{
+			oldest := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "oldest",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gc.Name),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -182,28 +183,28 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			require.True(f.T(), valid)
 
 			// Create another matching gateway and verify it's not accepted.
-			secondOldest := &gatewayapi_v1alpha2.Gateway{
+			secondOldest := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "second-oldest",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gc.Name),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
 					},
 				},
 			}
-			_, notScheduled := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1alpha2.Gateway) bool {
+			_, notScheduled := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				for _, cond := range gw.Status.Conditions {
 					if cond.Type == "Scheduled" &&
 						cond.Status == metav1.ConditionFalse &&
@@ -234,33 +235,33 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	f.NamespacedTest("gateway-multiple-classes-and-gateways", func(namespace string) {
 		Specify("gatewayclass and gateway admission transitions properly when older gatewayclasses are deleted", func() {
 			// Create a matching gateway class.
-			olderGC := &gatewayapi_v1alpha2.GatewayClass{
+			olderGC := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "older-gc",
 				},
-				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(olderGC, gatewayClassValid)
 			require.True(f.T(), valid)
 
 			// Create a matching gateway and verify it's accepted.
-			olderGCGateway1 := &gatewayapi_v1alpha2.Gateway{
+			olderGCGateway1 := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "older-gc-gw-1",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName(olderGC.Name),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(olderGC.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -272,12 +273,12 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// Create a second matching gatewayclass & 2 associated gateways
 			// and verify none of them are accepted.
-			newerGC := &gatewayapi_v1alpha2.GatewayClass{
+			newerGC := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "newer-gc",
 				},
-				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController(controllerName),
 				},
 			}
 			require.NoError(f.T(), f.Client.Create(context.Background(), newerGC))
@@ -288,21 +289,21 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				return gatewayClassValid(newerGC)
 			}, 5*time.Second, time.Second)
 
-			newerGCGateway1 := &gatewayapi_v1alpha2.Gateway{
+			newerGCGateway1 := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "newer-gc-gw-1",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName(newerGC.Name),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(newerGC.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -317,21 +318,21 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				return gatewayValid(newerGCGateway1)
 			}, 5*time.Second, time.Second)
 
-			newerGCGateway2 := &gatewayapi_v1alpha2.Gateway{
+			newerGCGateway2 := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "newer-gc-gw-2",
 					Namespace: namespace,
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName(newerGC.Name),
-					Listeners: []gatewayapi_v1alpha2.Listener{
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(newerGC.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
-							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},

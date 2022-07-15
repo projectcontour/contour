@@ -141,6 +141,7 @@ type ListenerConfig struct {
 
 type RateLimitConfig struct {
 	ExtensionService        types.NamespacedName
+	SNI                     string
 	Domain                  string
 	Timeout                 timeout.Setting
 	FailOpen                bool
@@ -411,6 +412,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				if vh.AuthorizationService != nil {
 					authFilter = envoy_v3.FilterExternalAuthz(
 						vh.AuthorizationService.Name,
+						vh.AuthorizationService.SNI,
 						vh.AuthorizationFailOpen,
 						vh.AuthorizationResponseTimeout,
 						vh.AuthorizationServerWithRequestBody,
@@ -548,6 +550,7 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 
 	return &envoy_v3.GlobalRateLimitConfig{
 		ExtensionService:        config.ExtensionService,
+		SNI:                     config.SNI,
 		FailOpen:                config.FailOpen,
 		Timeout:                 config.Timeout,
 		Domain:                  config.Domain,

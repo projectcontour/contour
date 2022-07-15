@@ -203,6 +203,7 @@ func TestSocketAddress(t *testing.T) {
 func TestDownstreamTLSContext(t *testing.T) {
 	const subjectName = "client-subject-name"
 	ca := []byte("client-ca-cert")
+	crl := []byte("crl-data")
 
 	serverSecret := &dag.Secret{
 		Object: &v1.Secret{
@@ -240,6 +241,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 								ClusterName: "contour",
+								Authority:   "contour",
 							},
 						},
 					}},
@@ -321,6 +323,85 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 	}
+	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		CRL: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "crl",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CRLKey: crl,
+				},
+			},
+		},
+	}
+	validationContextWithCRLCheck := &envoy_tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+			TrustedCa: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
+					InlineBytes: ca,
+				},
+			},
+			Crl: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
+					InlineBytes: crl,
+				},
+			},
+		},
+	}
+
+	peerValidationContextWithCRLCheckOnlyLeaf := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		CRL: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "crl",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CRLKey: crl,
+				},
+			},
+		},
+		OnlyVerifyLeafCertCrl: true,
+	}
+	validationContextWithCRLCheckOnlyLeaf := &envoy_tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+			TrustedCa: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
+					InlineBytes: ca,
+				},
+			},
+			Crl: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
+					InlineBytes: crl,
+				},
+			},
+			OnlyVerifyLeafCertCrl: true,
+		},
+	}
 
 	tests := map[string]struct {
 		got  *envoy_tls_v3.DownstreamTlsContext
@@ -384,6 +465,30 @@ func TestDownstreamTLSContext(t *testing.T) {
 				RequireClientCertificate: protobuf.Bool(true),
 			},
 		},
+		"Downstream validation with CRL check": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContextWithCRLCheck,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+		"Downstream validation with CRL check but only for leaf-certificate": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContextWithCRLCheckOnlyLeaf,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -429,6 +534,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -536,6 +642,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -644,6 +751,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -753,6 +861,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -861,6 +970,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -970,6 +1080,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1077,6 +1188,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1185,6 +1297,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1294,6 +1407,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1403,6 +1517,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1510,6 +1625,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
+														Authority:   "contour",
 													},
 												},
 											}},
@@ -1960,7 +2076,7 @@ func TestAddFilter(t *testing.T) {
 		},
 		"Add to the default filters": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add:     FilterExternalAuthz("test", false, timeout.Setting{}, nil),
+			add:     FilterExternalAuthz("test", "", false, timeout.Setting{}, nil),
 			want: []*http.HttpFilter{
 				{
 					Name: "compressor",
@@ -2021,7 +2137,7 @@ func TestAddFilter(t *testing.T) {
 						}),
 					},
 				},
-				FilterExternalAuthz("test", false, timeout.Setting{}, nil),
+				FilterExternalAuthz("test", "", false, timeout.Setting{}, nil),
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
@@ -2033,7 +2149,7 @@ func TestAddFilter(t *testing.T) {
 		"Add to the default filters with AuthorizationServerBufferSettings": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
 			add: FilterExternalAuthz(
-				"test", false, timeout.Setting{}, &dag.AuthorizationServerBufferSettings{
+				"test", "ext-auth-server.com", false, timeout.Setting{}, &dag.AuthorizationServerBufferSettings{
 					MaxRequestBytes:     10,
 					AllowPartialMessage: true,
 					PackAsBytes:         true,
@@ -2108,6 +2224,7 @@ func TestAddFilter(t *testing.T) {
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 												ClusterName: "test",
+												Authority:   "ext-auth-server.com",
 											},
 										},
 										Timeout:         envoy.Timeout(timeout.Setting{}),

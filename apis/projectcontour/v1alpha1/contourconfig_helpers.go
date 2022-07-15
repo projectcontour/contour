@@ -150,11 +150,7 @@ func (e *EnvoyLogging) Validate() error {
 	if err := e.AccessLogFields.Validate(); err != nil {
 		return err
 	}
-	if err := validateAccessLogFormatString(e.AccessLogFormatString); err != nil {
-		return err
-	}
-
-	return nil
+	return validateAccessLogFormatString(e.AccessLogFormatString)
 }
 
 // endpointsInConfict returns error if different protocol are configured to use single port.

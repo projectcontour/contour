@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // ConditionType is used to ensure we only use a limited set of possible values
@@ -35,13 +35,13 @@ type ConditionType string
 const ValidCondition ConditionType = "Valid"
 
 // NewCache creates a new Cache for holding status updates.
-func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1alpha2.GatewayController) Cache {
+func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1beta1.GatewayController) Cache {
 	return Cache{
 		gatewayRef:        gateway,
 		gatewayController: gatewayController,
 		proxyUpdates:      make(map[types.NamespacedName]*ProxyUpdate),
 		gatewayUpdates:    make(map[types.NamespacedName]*GatewayStatusUpdate),
-		routeUpdates:      make(map[types.NamespacedName]*RouteConditionsUpdate),
+		routeUpdates:      make(map[types.NamespacedName]*RouteStatusUpdate),
 		entries:           make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
@@ -56,11 +56,11 @@ type CacheEntry interface {
 // KindAccessor.
 type Cache struct {
 	gatewayRef        types.NamespacedName
-	gatewayController gatewayapi_v1alpha2.GatewayController
+	gatewayController gatewayapi_v1beta1.GatewayController
 
 	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
 	gatewayUpdates map[types.NamespacedName]*GatewayStatusUpdate
-	routeUpdates   map[types.NamespacedName]*RouteConditionsUpdate
+	routeUpdates   map[types.NamespacedName]*RouteStatusUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -119,7 +119,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, gwUpdate := range c.gatewayUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       &gatewayapi_v1alpha2.Gateway{},
+			Resource:       &gatewayapi_v1beta1.Gateway{},
 			Mutator:        gwUpdate,
 		}
 
@@ -157,8 +157,8 @@ func (c *Cache) GetGatewayUpdates() []*GatewayStatusUpdate {
 }
 
 // GetRouteUpdates gets the underlying RouteConditionsUpdate objects from the cache.
-func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
-	var allUpdates []*RouteConditionsUpdate
+func (c *Cache) GetRouteUpdates() []*RouteStatusUpdate {
+	var allUpdates []*RouteStatusUpdate
 	for _, conditionsUpdate := range c.routeUpdates {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
@@ -169,10 +169,10 @@ func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
 // status changes as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the GatewayStatusUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayStatusUpdate, func()) {
+func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1beta1.GatewayStatus) (*GatewayStatusUpdate, func()) {
 	gu := &GatewayStatusUpdate{
 		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition),
 		ExistingConditions: getGatewayConditions(gs),
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
@@ -221,24 +221,22 @@ func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fu
 	}
 }
 
-// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
+// RouteConditionsAccessor returns a RouteStatusUpdate that allows a client to build up a list of
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
+// is done. The commit function pattern is used so that the RouteStatusUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
-	pu := &RouteConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
-		ExistingConditions: c.getRouteGatewayConditions(gateways),
-		GatewayRef:         c.gatewayRef,
-		GatewayController:  c.gatewayController,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
-		Resource:           resource,
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object) (*RouteStatusUpdate, func()) {
+	pu := &RouteStatusUpdate{
+		FullName:          nsName,
+		GatewayRef:        c.gatewayRef,
+		GatewayController: c.gatewayController,
+		Generation:        generation,
+		TransitionTime:    metav1.NewTime(clock.Now()),
+		Resource:          resource,
 	}
 
 	return pu, func() {
-		if len(pu.Conditions) == 0 {
+		if len(pu.RouteParentStatuses) == 0 {
 			return
 		}
 		c.routeUpdates[pu.FullName] = pu

@@ -30,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
@@ -375,47 +375,47 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		status                     v1.LoadBalancerStatus
 		gatewayClassControllerName string
 		gatewayRef                 *types.NamespacedName
-		preop                      *gatewayapi_v1alpha2.Gateway
-		postop                     *gatewayapi_v1alpha2.Gateway
+		preop                      *gatewayapi_v1beta1.Gateway
+		postop                     *gatewayapi_v1beta1.Gateway
 	}{
 		"happy path (IP)": {
 			status:                     ipLBStatus,
 			gatewayClassControllerName: "projectcontour.io/contour",
-			preop: &gatewayapi_v1alpha2.Gateway{
+			preop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
 				},
 			},
-			postop: &gatewayapi_v1alpha2.Gateway{
+			postop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1alpha2.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.IPAddressType),
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},
@@ -425,41 +425,41 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"happy path (hostname)": {
 			status:                     hostnameLBStatus,
 			gatewayClassControllerName: "projectcontour.io/contour",
-			preop: &gatewayapi_v1alpha2.Gateway{
+			preop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
 				},
 			},
-			postop: &gatewayapi_v1alpha2.Gateway{
+			postop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1alpha2.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.HostnameAddressType),
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
 						},
 					},
@@ -469,35 +469,35 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Gateway not controlled by this Contour": {
 			status:                     ipLBStatus,
 			gatewayClassControllerName: "projectcontour.io/some-other-controller",
-			preop: &gatewayapi_v1alpha2.Gateway{
+			preop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
 				},
 			},
-			postop: &gatewayapi_v1alpha2.Gateway{
+			postop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -507,35 +507,35 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Specific gateway configured, gateway does not match": {
 			status:     ipLBStatus,
 			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
-			preop: &gatewayapi_v1alpha2.Gateway{
+			preop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "some-other-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
 				},
 			},
-			postop: &gatewayapi_v1alpha2.Gateway{
+			postop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "some-other-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -545,41 +545,41 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Specific gateway configured, gateway matches": {
 			status:     ipLBStatus,
 			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
-			preop: &gatewayapi_v1alpha2.Gateway{
+			preop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
 				},
 			},
-			postop: &gatewayapi_v1alpha2.Gateway{
+			postop: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
+				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1alpha2.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.IPAddressType),
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},
@@ -601,7 +601,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					// with the data from the API server; this simulates that behavior by
 					// updating the struct pointed to by the third argument with the fields
 					// we care about. See Run's godoc for more info.
-					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
+					args[2].(*gatewayapi_v1beta1.GatewayClass).Spec.ControllerName = gatewayapi_v1beta1.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
 
@@ -632,7 +632,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					// with the data from the API server; this simulates that behavior by
 					// updating the struct pointed to by the third argument with the fields
 					// we care about. See Run's godoc for more info.
-					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
+					args[2].(*gatewayapi_v1beta1.GatewayClass).Spec.ControllerName = gatewayapi_v1beta1.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
 

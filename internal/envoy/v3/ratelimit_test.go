@@ -271,6 +271,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
+										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},
@@ -299,6 +300,37 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
+										Authority:   "extension.projectcontour.ratelimit",
+									},
+								},
+							},
+							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+						},
+					}),
+				},
+			},
+		},
+		"when rate limit server has SNI set": {
+			cfg: &GlobalRateLimitConfig{
+				ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+				SNI:              "some-server.com",
+				Timeout:          timeout.DurationSetting(7 * time.Second),
+				Domain:           "domain",
+				FailOpen:         false,
+			},
+			want: &http.HttpFilter{
+				Name: wellknown.HTTPRateLimit,
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						Domain:          "domain",
+						Timeout:         protobuf.Duration(7 * time.Second),
+						FailureModeDeny: true,
+						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_core_v3.GrpcService{
+								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/projectcontour/ratelimit",
+										Authority:   "some-server.com",
 									},
 								},
 							},
@@ -328,6 +360,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
+										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},

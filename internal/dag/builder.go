@@ -17,7 +17,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // Processor constructs part of a DAG.
@@ -54,7 +54,7 @@ func (b *Builder) Build() *DAG {
 	if b.Source.gateway != nil {
 		gatewayNSName = k8s.NamespacedNameOf(b.Source.gateway)
 	}
-	var gatewayController gatewayapi_v1alpha2.GatewayController
+	var gatewayController gatewayapi_v1beta1.GatewayController
 	if b.Source.gatewayclass != nil {
 		gatewayController = b.Source.gatewayclass.Spec.ControllerName
 	}

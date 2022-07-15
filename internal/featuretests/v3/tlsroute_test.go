@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestTLSRoute(t *testing.T) {
@@ -42,39 +43,39 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(svcAnother)
 
-	rh.OnAdd(&gatewayapi_v1alpha2.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-gc",
 		},
-		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
+		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1alpha2.GatewayClassStatus{
+		Status: gatewayapi_v1beta1.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
+					Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
 		},
 	})
 
-	gatewayPassthrough := &gatewayapi_v1alpha2.Gateway{
+	gatewayPassthrough := &gatewayapi_v1beta1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha2.Listener{{
+		Spec: gatewayapi_v1beta1.GatewaySpec{
+			Listeners: []gatewayapi_v1beta1.Listener{{
 				Port:     443,
-				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
+				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -91,7 +92,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
@@ -143,7 +144,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
@@ -193,7 +194,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
@@ -211,7 +212,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
@@ -278,24 +279,24 @@ func TestTLSRoute(t *testing.T) {
 	}
 
 	// Validate TLSTerminate.
-	gatewayTerminate := &gatewayapi_v1alpha2.Gateway{
+	gatewayTerminate := &gatewayapi_v1beta1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha2.Listener{{
+		Spec: gatewayapi_v1beta1.GatewaySpec{
+			Listeners: []gatewayapi_v1beta1.Listener{{
 				Port:     443,
 				Protocol: "TLS",
-				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1alpha2.SecretObjectReference{
+				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 						gatewayapi.CertificateRef("tlscert", ""),
 					},
 				},
-				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // KindOf returns the kind string for the given Kubernetes object.
@@ -43,7 +43,7 @@ func KindOf(obj interface{}) string {
 			return "Ingress"
 		case *contour_api_v1.HTTPProxy:
 			return "HTTPProxy"
-		case *gatewayapi_v1alpha2.HTTPRoute:
+		case *gatewayapi_v1beta1.HTTPRoute:
 			return "HTTPRoute"
 		case *contour_api_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"

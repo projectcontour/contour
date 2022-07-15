@@ -500,6 +500,12 @@ type PeerValidationContext struct {
 	// SkipClientCertValidation when set to true will ensure Envoy requests but
 	// does not verify peer certificates.
 	SkipClientCertValidation bool
+	// CRL holds a reference to the Secret containing the Certificate Revocation List.
+	// It is used to check for revocation of the peer certificate.
+	CRL *Secret
+	// OnlyVerifyLeafCertCrl when set to true, only the certificate at the end of the
+	// certificate chain will be subject to validation by CRL.
+	OnlyVerifyLeafCertCrl bool
 }
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.
@@ -518,6 +524,15 @@ func (pvc *PeerValidationContext) GetSubjectName() string {
 		return ""
 	}
 	return pvc.SubjectName
+}
+
+// GetCRL returns the Certificate Revocation List.
+func (pvc *PeerValidationContext) GetCRL() []byte {
+	if pvc == nil || pvc.CRL == nil {
+		// No validation required.
+		return nil
+	}
+	return pvc.CRL.Object.Data[CRLKey]
 }
 
 // A VirtualHost represents a named L4/L7 service.

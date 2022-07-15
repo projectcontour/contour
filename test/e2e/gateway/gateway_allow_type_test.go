@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func testRouteParentRefs(namespace string) {
@@ -37,21 +37,21 @@ func testRouteParentRefs(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
 		// This route has a parentRef to the gateway.
-		gatewayInParentRefsRoute := &gatewayapi_v1alpha2.HTTPRoute{
+		gatewayInParentRefsRoute := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "gateway-in-parent-refs",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"routeparentrefs.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchExact, "/gateway-in-parent-refs"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchExact, "/gateway-in-parent-refs"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-blue", 80, 1),
 					},
 				},
@@ -70,21 +70,21 @@ func testRouteParentRefs(namespace string) {
 		assert.Equal(t, "echo-blue", body.Service)
 
 		// This route does not have a parentRef to the gateway.
-		gatewayNotInParentRefsRoute := &gatewayapi_v1alpha2.HTTPRoute{
+		gatewayNotInParentRefsRoute := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "gateway-not-in-parent-refs",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"routeparentrefs.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "invalid-name"),
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchExact, "/gateway-not-in-parent-refs"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchExact, "/gateway-not-in-parent-refs"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-blue", 80, 1),
 					},
 				},

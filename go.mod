@@ -22,7 +22,7 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1
-	github.com/tsaarni/certyaml v0.6.2
+	github.com/tsaarni/certyaml v0.9.0
 	github.com/vektra/mockery/v2 v2.10.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gonum.org/v1/plot v0.10.0
@@ -31,14 +31,14 @@ require (
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.24.1
-	k8s.io/apiextensions-apiserver v0.24.1
-	k8s.io/apimachinery v0.24.1
-	k8s.io/client-go v0.24.1
+	k8s.io/api v0.24.2
+	k8s.io/apiextensions-apiserver v0.24.2
+	k8s.io/apimachinery v0.24.2
+	k8s.io/client-go v0.24.2
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/controller-tools v0.7.0
-	sigs.k8s.io/gateway-api v0.5.0-rc1
+	sigs.k8s.io/gateway-api v0.5.0
 	sigs.k8s.io/kustomize/kyaml v0.10.17
 )

@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func testRequestHeaderModifierForwardTo(namespace string) {
@@ -35,35 +35,35 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayapi_v1alpha2.HTTPRoute{
+		route := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/filter"),
+						BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
 							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
+								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-filter", 80),
 								},
-								Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
+								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
-										Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-											Add: []gatewayapi_v1alpha2.HTTPHeader{
-												{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
+										Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+											Add: []gatewayapi_v1beta1.HTTPHeader{
+												{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},
-											Set: []gatewayapi_v1alpha2.HTTPHeader{
-												{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
+											Set: []gatewayapi_v1beta1.HTTPHeader{
+												{Name: gatewayapi_v1beta1.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 											},
 											Remove: []string{"Other-Header"},
 										},
@@ -73,7 +73,7 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						},
 					},
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/nofilter"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
@@ -134,30 +134,30 @@ func testRequestHeaderModifierRule(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayapi_v1alpha2.HTTPRoute{
+		route := &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
 			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1beta1.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
-						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/filter"),
+						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
-								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-									Add: []gatewayapi_v1alpha2.HTTPHeader{
-										{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+									Add: []gatewayapi_v1beta1.HTTPHeader{
+										{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
 									},
-									Set: []gatewayapi_v1alpha2.HTTPHeader{
-										{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
+									Set: []gatewayapi_v1beta1.HTTPHeader{
+										{Name: gatewayapi_v1beta1.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 									},
 									Remove: []string{"Other-Header"},
 								},
@@ -166,7 +166,7 @@ func testRequestHeaderModifierRule(namespace string) {
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-filter", 80, 1),
 					},
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/nofilter"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},

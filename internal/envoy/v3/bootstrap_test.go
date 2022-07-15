@@ -133,7 +133,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -147,7 +148,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -192,7 +194,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -310,7 +313,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -324,7 +328,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -369,7 +374,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -487,7 +493,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -501,7 +508,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -546,7 +554,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -665,7 +674,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -679,7 +689,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -724,7 +735,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -843,7 +855,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -857,7 +870,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -902,7 +916,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1021,7 +1036,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1035,7 +1051,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1080,7 +1097,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1201,7 +1219,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1215,7 +1234,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1260,7 +1280,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1415,7 +1436,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1429,7 +1451,8 @@ func TestBootstrap(t *testing.T) {
         "grpc_services": [
           {
             "envoy_grpc": {
-              "cluster_name": "contour"
+              "cluster_name": "contour",
+              "authority": "contour"
             }
           }
         ]
@@ -1474,7 +1497,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1627,7 +1651,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1641,7 +1666,8 @@ func TestBootstrap(t *testing.T) {
               "grpc_services": [
                 {
                   "envoy_grpc": {
-                    "cluster_name": "contour"
+                    "cluster_name": "contour",
+                    "authority": "contour"
                   }
                 }
               ]
@@ -1686,7 +1712,8 @@ func TestBootstrap(t *testing.T) {
                     "grpc_services": [
                       {
                         "envoy_grpc": {
-                          "cluster_name": "contour"
+                          "cluster_name": "contour",
+                          "authority": "contour"
                         }
                       }
                     ]
