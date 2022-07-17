@@ -1,6 +1,6 @@
 # Website Contributions
 
-The [projectcontour.io][9] is a static HTML site built using the Hugo static site generator. All site content is written in Markdown.
+[projectcontour.io][9] is a static HTML site built using the Hugo static site generator. All site content is written in Markdown.
 
 Contribution [guidelines][4] and [workflows][3] still apply to site contributions.
 
