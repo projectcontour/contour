@@ -64,13 +64,22 @@ A reference table, located at the end of the Markdown file, uses the following f
 
 ## Using URL parameters
 Several URL parameters are available for you to use when creating reference table links:
+
+- base_url: "https://projectcontour.io"
+- twitter_url: "https://twitter.com/projectcontour"
+- github_url: "https://github.com/projectcontour/contour"
+- slack_url: "https://kubernetes.slack.com/messages/contour"
+- latest_version: latest document version
+
+You can use parameters to build URL strings in the link reference table. For example:
 ```
-base_url: "https://projectcontour.io"
-twitter_url: "https://twitter.com/projectcontour"
-github_url: "https://github.com/projectcontour/contour"
-github_raw_url: "https://raw.githubusercontent.com/projectcontour/contour"
-slack_url: "https://kubernetes.slack.com/messages/contour"
+[1]: {{< param github_url >}}/issues
+[2]: /docs/{{< param latest_version >}}/config/fundamentals
+[3]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
+[4]: {{< param slack_url >}}
+[5]: {{< param base_url >}}/resources/ philosophy
 ```
+
 
 ## Using notices
 Notices are used to call out specific information. There are four types of notices:
@@ -107,7 +116,7 @@ To test your website changes, run the following command from the `site` director
 hugo server
 ```
 
-Go to `http:\\localhost:1313` to view the website and changes in your browser. When ready, commit and push your changes to GitHub and create a Pull Request (PR). You can let the team know in the [Contour Slack channel][7] that you have created a PR.
+Go to `http://localhost:1313` to view the website and changes in your browser. When ready, commit and push your changes to GitHub and create a Pull Request (PR). You can let the team know in the [Contour Slack channel][7] that you have created a PR.
 
 
 ## Next steps
