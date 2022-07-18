@@ -147,7 +147,7 @@ func (e *EnvoyLogging) Validate() error {
 	if err := e.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
-	if err := e.AccessLogFields.Validate(); err != nil {
+	if err := e.AccessLogJSONFields.Validate(); err != nil {
 		return err
 	}
 	return validateAccessLogFormatString(e.AccessLogFormatString)

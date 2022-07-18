@@ -19,8 +19,8 @@ import (
 	"strings"
 )
 
-// DefaultFields are fields that will be included by default when JSON logging is enabled.
-var DefaultFields = AccessLogFields([]string{
+// DefaultAccessLogJSONFields are fields that will be included by default when JSON logging is enabled.
+var DefaultAccessLogJSONFields = AccessLogJSONFields([]string{
 	"@timestamp",
 	"authority",
 	"bytes_received",
@@ -44,9 +44,8 @@ var DefaultFields = AccessLogFields([]string{
 	"x_forwarded_for",
 })
 
-// DEFAULT_ACCESS_LOG_TYPE is the default access log format.
-// nolint:revive
-const DEFAULT_ACCESS_LOG_TYPE = EnvoyAccessLog
+// DefaultAccessLogType is the default access log format.
+const DefaultAccessLogType = EnvoyAccessLog
 
 // jsonFields is the canonical translation table for JSON fields to Envoy log template formats,
 // used for specifying fields for Envoy to log when JSON logging is enabled.
@@ -143,9 +142,9 @@ const (
 	JSONAccessLog AccessLogType = "json"
 )
 
-type AccessLogFields []string
+type AccessLogJSONFields []string
 
-func (a AccessLogFields) Validate() error {
+func (a AccessLogJSONFields) Validate() error {
 
 	for key, val := range a.AsFieldMap() {
 		if val == "" {
@@ -165,7 +164,7 @@ func (a AccessLogFields) Validate() error {
 	return nil
 }
 
-func (a AccessLogFields) AsFieldMap() map[string]string {
+func (a AccessLogJSONFields) AsFieldMap() map[string]string {
 	fieldMap := map[string]string{}
 
 	for _, val := range a {

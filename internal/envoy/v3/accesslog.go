@@ -67,7 +67,7 @@ func FileAccessLogEnvoy(path string, format string, extensions []string, level c
 
 // FileAccessLogJSON returns a new file based access log filter
 // that will log in JSON format
-func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogFields, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
+func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFields, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
 	if level == contour_api_v1alpha1.LogLevelDisabled {
 		return nil
 	}

@@ -449,7 +449,7 @@ type EnvoyLogging struct {
 	// AccessLogFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
 	// +optional
-	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
+	AccessLogJSONFields AccessLogJSONFields `json:"accessLogJSONFields,omitempty"`
 
 	// AccessLogLevel sets the verbosity level of the access log.
 	//

@@ -4337,7 +4337,7 @@ ExtensionServiceStatus
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.AccessLogFields">AccessLogFields
+<h3 id="projectcontour.io/v1alpha1.AccessLogJSONFields">AccessLogJSONFields
 (<code>[]string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
@@ -4388,8 +4388,7 @@ ExtensionServiceStatus
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;envoy&#34;</p></td>
-<td><p>DEFAULT_ACCESS_LOG_TYPE is the default access log format.
-nolint:revive</p>
+<td><p>DefaultAccessLogType is the default access log format.</p>
 </td>
 </tr><tr><td><p>&#34;envoy&#34;</p></td>
 <td><p>Set the Envoy access logging to Envoy&rsquo;s standard format.
@@ -5327,11 +5326,11 @@ When empty, Envoy&rsquo;s default format is used.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>jsonFields</code>
+<code>accessLogJSONFields</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.AccessLogFields">
-AccessLogFields
+<a href="#projectcontour.io/v1alpha1.AccessLogJSONFields">
+AccessLogJSONFields
 </a>
 </em>
 </td>

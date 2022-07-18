@@ -232,18 +232,18 @@ spec:
                           when format is set to `envoy`. When empty, Envoy's default
                           format is used.
                         type: string
+                      accessLogJSONFields:
+                        description: AccessLogFields sets the fields that JSON logging
+                          will output when AccessLogFormat is json.
+                        items:
+                          type: string
+                        type: array
                       accessLogLevel:
                         description: "AccessLogLevel sets the verbosity level of the
                           access log. \n Values: `info` (default, meaning all requests
                           are logged), `error` and `disabled`. \n Other values will
                           produce an error."
                         type: string
-                      jsonFields:
-                        description: AccessLogFields sets the fields that JSON logging
-                          will output when AccessLogFormat is json.
-                        items:
-                          type: string
-                        type: array
                     type: object
                   metrics:
                     description: "Metrics defines the endpoint Envoy uses to serve
@@ -1237,18 +1237,18 @@ spec:
                               format when format is set to `envoy`. When empty, Envoy's
                               default format is used.
                             type: string
+                          accessLogJSONFields:
+                            description: AccessLogFields sets the fields that JSON
+                              logging will output when AccessLogFormat is json.
+                            items:
+                              type: string
+                            type: array
                           accessLogLevel:
                             description: "AccessLogLevel sets the verbosity level
                               of the access log. \n Values: `info` (default, meaning
                               all requests are logged), `error` and `disabled`. \n
                               Other values will produce an error."
                             type: string
-                          jsonFields:
-                            description: AccessLogFields sets the fields that JSON
-                              logging will output when AccessLogFormat is json.
-                            items:
-                              type: string
-                            type: array
                         type: object
                       metrics:
                         description: "Metrics defines the endpoint Envoy uses to serve

@@ -344,10 +344,10 @@ func (s *Server) doServe() error {
 		},
 		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
-		AccessLogFields:              contourConfiguration.Envoy.Logging.AccessLogFields,
+		AccessLogJSONFields:          contourConfiguration.Envoy.Logging.AccessLogJSONFields,
 		AccessLogLevel:               contourConfiguration.Envoy.Logging.AccessLogLevel,
 		AccessLogFormatString:        contourConfiguration.Envoy.Logging.AccessLogFormatString,
-		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
+		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogJSONFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
 		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
 		CipherSuites:                 config.SanitizeCipherSuites(cipherSuites),
 		Timeouts:                     timeouts,
@@ -986,7 +986,7 @@ var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)
 // Note: When adding support for new formatter, update the list of extensions here and
 // add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
 // Currently only one extension exist in Envoy.
-func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLogType, accessLogFields contour_api_v1alpha1.AccessLogFields,
+func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLogType, accessLogFields contour_api_v1alpha1.AccessLogJSONFields,
 	accessLogFormatString string) []string {
 	// Function that finds out if command operator is present in a format string.
 	contains := func(format, command string) bool {

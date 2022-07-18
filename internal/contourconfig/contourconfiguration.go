@@ -111,7 +111,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			Logging: &contour_api_v1alpha1.EnvoyLogging{
 				AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 				AccessLogFormatString: "",
-				AccessLogFields:       nil,
+				AccessLogJSONFields:   nil,
 				AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 			},
 			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
