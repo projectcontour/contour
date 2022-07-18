@@ -499,6 +499,72 @@ func TestDownstreamTLSContext(t *testing.T) {
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
+	defaultHTTPFilters := []*http.HttpFilter{
+		{
+			Name: "compressor",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+						Name: "gzip",
+						TypedConfig: protobuf.MustMarshalAny(
+							&envoy_gzip_v3.Gzip{},
+						),
+					},
+					ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+						CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+							ContentType: compressorContentTypes,
+						},
+					},
+				}),
+			},
+		}, {
+			Name: "grpcweb",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
+			},
+		}, {
+			Name: "grpc_stats",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(
+					&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
+						EmitFilterState:     true,
+						EnableUpstreamStats: true,
+					},
+				),
+			},
+		}, {
+			Name: "cors",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
+			},
+		}, {
+			Name: "local_ratelimit",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(
+					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+						StatPrefix: "http",
+					},
+				),
+			},
+		}, {
+			Name: "envoy.filters.http.lua",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
+					DefaultSourceCode: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+						},
+					},
+				}),
+			},
+		}, {
+			Name: "router",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		routename                     string
 		accesslogger                  []*envoy_accesslog_v3.AccessLog
@@ -543,65 +609,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -651,65 +659,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -760,65 +710,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -870,65 +762,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -979,65 +813,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1089,65 +865,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1197,65 +915,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1306,65 +966,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1416,65 +1018,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1526,65 +1070,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -1634,65 +1120,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: "compressor",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-										Name: "gzip",
-										TypedConfig: protobuf.MustMarshalAny(
-											&envoy_gzip_v3.Gzip{},
-										),
-									},
-									ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-										CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-											ContentType: compressorContentTypes,
-										},
-									},
-								}),
-							},
-						}, {
-							Name: "grpcweb",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-							},
-						}, {
-							Name: "grpc_stats",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-										EmitFilterState:     true,
-										EnableUpstreamStats: true,
-									},
-								),
-							},
-						}, {
-							Name: "cors",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-							},
-						}, {
-							Name: "local_ratelimit",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http",
-									},
-								),
-							},
-						}, {
-							Name: "envoy.filters.http.lua",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-									InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
-								}),
-							},
-						}, {
-							Name: "router",
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-							},
-						}},
+						HttpFilters: defaultHTTPFilters,
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
@@ -2133,7 +1561,11 @@ func TestAddFilter(t *testing.T) {
 					Name: "envoy.filters.http.lua",
 					ConfigType: &http.HttpFilter_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-							InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
+							DefaultSourceCode: &envoy_core_v3.DataSource{
+								Specifier: &envoy_core_v3.DataSource_InlineString{
+									InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+								},
+							},
 						}),
 					},
 				},
@@ -2210,7 +1642,11 @@ func TestAddFilter(t *testing.T) {
 					Name: "envoy.filters.http.lua",
 					ConfigType: &http.HttpFilter_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-							InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
+							DefaultSourceCode: &envoy_core_v3.DataSource{
+								Specifier: &envoy_core_v3.DataSource_InlineString{
+									InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+								},
+							},
 						}),
 					},
 				},
