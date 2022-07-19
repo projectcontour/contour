@@ -15,6 +15,8 @@ package v1alpha1
 
 import (
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Validate configuration that is not already covered by CRD validation.
@@ -131,18 +133,18 @@ func (e *EnvoyTLS) Validate() error {
 }
 
 // SanitizedCipherSuites returns a deduplicated list of TLS ciphers.
+// Order is maintained.
 func (e *EnvoyTLS) SanitizedCipherSuites() []string {
 	if len(e.CipherSuites) == 0 {
 		return DefaultTLSCiphers
 	}
 
-	// Not using the set abstraction here so we can maintain the
-	// list order.
-	uniqueCiphers := map[string]struct{}{}
+	uniqueCiphers := sets.NewString()
+	// We also use a list so we can maintain the order.
 	validatedCiphers := []string{}
 	for _, c := range e.CipherSuites {
-		if _, found := uniqueCiphers[c]; !found {
-			uniqueCiphers[c] = struct{}{}
+		if !uniqueCiphers.Has(c) {
+			uniqueCiphers.Insert(c)
 			validatedCiphers = append(validatedCiphers, c)
 		}
 	}
