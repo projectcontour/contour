@@ -246,8 +246,8 @@ spec:
                           format is used.
                         type: string
                       accessLogJSONFields:
-                        description: AccessLogFields sets the fields that JSON logging
-                          will output when AccessLogFormat is json.
+                        description: AccessLogJSONFields sets the fields that JSON
+                          logging will output when AccessLogFormat is json.
                         items:
                           type: string
                         type: array
@@ -1251,8 +1251,8 @@ spec:
                               default format is used.
                             type: string
                           accessLogJSONFields:
-                            description: AccessLogFields sets the fields that JSON
-                              logging will output when AccessLogFormat is json.
+                            description: AccessLogJSONFields sets the fields that
+                              JSON logging will output when AccessLogFormat is json.
                             items:
                               type: string
                             type: array
