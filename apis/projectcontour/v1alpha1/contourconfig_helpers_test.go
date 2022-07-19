@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,11 +106,36 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 				},
 			},
 		}
-
-		c.Envoy.Listener.TLS.CipherSuites = []v1alpha1.TLSCipherType{"ECDHE-ECDSA-AES128-GCM-SHA256"}
 		require.NoError(t, c.Validate())
 
-		c.Envoy.Listener.TLS.CipherSuites = []v1alpha1.TLSCipherType{"foo"}
+		c.Envoy.Listener.TLS.MinimumProtocolVersion = "invalid"
+		require.Error(t, c.Validate())
+
+		c.Envoy.Listener.TLS.MinimumProtocolVersion = "1.3"
+		require.NoError(t, c.Validate())
+
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"ECDHE-RSA-AES128-GCM-SHA256",
+			"ECDHE-ECDSA-AES128-SHA",
+			"AES128-GCM-SHA256",
+			"AES128-SHA",
+			"ECDHE-ECDSA-AES256-GCM-SHA384",
+			"ECDHE-RSA-AES256-GCM-SHA384",
+			"ECDHE-ECDSA-AES256-SHA",
+			"ECDHE-RSA-AES256-SHA",
+			"AES256-GCM-SHA384",
+			"AES256-SHA",
+		}
+		require.NoError(t, c.Validate())
+
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"NOTAVALIDCIPHER",
+			"AES128-GCM-SHA256",
+		}
 		require.Error(t, c.Validate())
 	})
 
@@ -129,4 +155,66 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Gateway.GatewayRef = &v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
 		require.Error(t, c.Validate())
 	})
+}
+
+func TestSanitizeCipherSuites(t *testing.T) {
+	testCases := map[string]struct {
+		ciphers []string
+		want    []string
+	}{
+		"no ciphers": {
+			ciphers: nil,
+			want:    v1alpha1.DefaultTLSCiphers,
+		},
+		"valid list": {
+			ciphers: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+			want: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+		},
+		"cipher duplicated": {
+			ciphers: []string{
+				"ECDHE-RSA-AES128-SHA",
+				"ECDHE-RSA-AES128-SHA",
+			},
+			want: []string{
+				"ECDHE-RSA-AES128-SHA",
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			e := &v1alpha1.EnvoyTLS{
+				CipherSuites: tc.ciphers,
+			}
+			assert.Equal(t, tc.want, e.SanitizedCipherSuites())
+		})
+	}
+}
+
+// TestAccessLogFormatExtensions tests that command operators requiring extensions are recognized for given access log format.
+func TestAccessLogFormatExtensions(t *testing.T) {
+	e1 := v1alpha1.EnvoyLogging{
+		AccessLogFormat:       v1alpha1.EnvoyAccessLog,
+		AccessLogFormatString: "[%START_TIME%] \"%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%\"\n",
+	}
+	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, e1.AccessLogFormatterExtensions())
+
+	e2 := v1alpha1.EnvoyLogging{
+		AccessLogFormat:     v1alpha1.JSONAccessLog,
+		AccessLogJSONFields: []string{"@timestamp", "path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
+	}
+	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, e2.AccessLogFormatterExtensions())
+
+	e3 := v1alpha1.EnvoyLogging{
+		AccessLogFormat: v1alpha1.EnvoyAccessLog,
+	}
+	assert.Empty(t, e3.AccessLogFormatterExtensions())
 }

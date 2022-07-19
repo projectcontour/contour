@@ -58,7 +58,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				ConnectionBalancer:        "yesplease",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.7",
-					CipherSuites: []contour_api_v1alpha1.TLSCipherType{
+					CipherSuites: []string{
 						"foo",
 						"bar",
 					},

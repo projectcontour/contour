@@ -289,9 +289,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 	}
 
-	var cipherSuites []contour_api_v1alpha1.TLSCipherType
+	var cipherSuites []string
 	for _, suite := range ctx.Config.TLS.CipherSuites {
-		cipherSuites = append(cipherSuites, contour_api_v1alpha1.TLSCipherType(suite))
+		cipherSuites = append(cipherSuites, suite)
 	}
 
 	var accessLogFormat contour_api_v1alpha1.AccessLogType

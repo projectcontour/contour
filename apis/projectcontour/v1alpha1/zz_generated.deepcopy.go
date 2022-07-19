@@ -534,7 +534,7 @@ func (in *EnvoyTLS) DeepCopyInto(out *EnvoyTLS) {
 	*out = *in
 	if in.CipherSuites != nil {
 		in, out := &in.CipherSuites, &out.CipherSuites
-		*out = make([]TLSCipherType, len(*in))
+		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
 }

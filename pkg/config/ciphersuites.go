@@ -14,8 +14,7 @@
 package config
 
 import (
-	"fmt"
-	"strings"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // TLSCiphers holds a list of TLS ciphers
@@ -30,72 +29,27 @@ type TLSCiphers []string
 //
 // The commented ciphers are left in place to simplify updating this list for future
 // versions of envoy.
-var DefaultTLSCiphers = TLSCiphers([]string{
-	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-	// "ECDHE-ECDSA-AES128-SHA",
-	// "ECDHE-RSA-AES128-SHA",
-	// "AES128-GCM-SHA256",
-	// "AES128-SHA",
-	"ECDHE-ECDSA-AES256-GCM-SHA384",
-	"ECDHE-RSA-AES256-GCM-SHA384",
-	// "ECDHE-ECDSA-AES256-SHA",
-	// "ECDHE-RSA-AES256-SHA",
-	// "AES256-GCM-SHA384",
-	// "AES256-SHA",
-})
+var DefaultTLSCiphers = TLSCiphers(contour_api_v1alpha1.DefaultTLSCiphers)
 
 // ValidTLSCiphers contains the list of TLS ciphers that Envoy supports
 // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
-var ValidTLSCiphers = map[string]struct{}{
-	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]": {},
-	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]":     {},
-	"ECDHE-ECDSA-AES128-GCM-SHA256":                                 {},
-	"ECDHE-RSA-AES128-GCM-SHA256":                                   {},
-	"ECDHE-ECDSA-AES128-SHA":                                        {},
-	"ECDHE-RSA-AES128-SHA":                                          {},
-	"AES128-GCM-SHA256":                                             {},
-	"AES128-SHA":                                                    {},
-	"ECDHE-ECDSA-AES256-GCM-SHA384":                                 {},
-	"ECDHE-RSA-AES256-GCM-SHA384":                                   {},
-	"ECDHE-ECDSA-AES256-SHA":                                        {},
-	"ECDHE-RSA-AES256-SHA":                                          {},
-	"AES256-GCM-SHA384":                                             {},
-	"AES256-SHA":                                                    {},
-}
+var ValidTLSCiphers = contour_api_v1alpha1.ValidTLSCiphers
 
 // SanitizeCipherSuites trims a list of ciphers to remove whitespace and
 // duplicates, returning the passed in default if the corrected list is empty.
 // The ciphers argument should be a list of valid ciphers.
 func SanitizeCipherSuites(ciphers []string) []string {
-	if len(ciphers) == 0 {
-		return DefaultTLSCiphers
+	e := &contour_api_v1alpha1.EnvoyTLS{
+		CipherSuites: ciphers,
 	}
-
-	uniqueCiphers := map[string]bool{}
-	validatedCiphers := []string{}
-	for _, v := range ciphers {
-		cipher := strings.TrimSpace(v)
-		if _, found := uniqueCiphers[cipher]; !found {
-			uniqueCiphers[cipher] = true
-			validatedCiphers = append(validatedCiphers, cipher)
-		}
-	}
-	return validatedCiphers
+	return e.SanitizedCipherSuites()
 }
 
 // Validate ciphers. Returns error on unsupported cipher.
 func (tlsCiphers TLSCiphers) Validate() error {
-	invalidCiphers := []string{}
-	for _, cipher := range tlsCiphers {
-		trimmed := strings.TrimSpace(cipher)
-		if _, ok := ValidTLSCiphers[trimmed]; !ok {
-			invalidCiphers = append(invalidCiphers, trimmed)
-		}
+	e := &contour_api_v1alpha1.EnvoyTLS{
+		CipherSuites: tlsCiphers,
 	}
-	if len(invalidCiphers) > 0 {
-		return fmt.Errorf("invalid ciphers: %s", strings.Join(invalidCiphers, ","))
-	}
-	return nil
+	return e.Validate()
 }

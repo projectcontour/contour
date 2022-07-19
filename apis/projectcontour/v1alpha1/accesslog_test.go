@@ -1,0 +1,124 @@
+// Copyright Project Contour Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package v1alpha1_test
+
+import (
+	"testing"
+
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestValidateAccessLogType(t *testing.T) {
+	assert.Error(t, v1alpha1.AccessLogType("").Validate())
+	assert.Error(t, v1alpha1.AccessLogType("foo").Validate())
+
+	assert.NoError(t, v1alpha1.EnvoyAccessLog.Validate())
+	assert.NoError(t, v1alpha1.JSONAccessLog.Validate())
+}
+
+func TestValidateAccessLogLevel(t *testing.T) {
+	assert.Error(t, v1alpha1.AccessLogLevel("").Validate())
+	assert.Error(t, v1alpha1.AccessLogLevel("foo").Validate())
+
+	assert.NoError(t, v1alpha1.LogLevelInfo.Validate())
+	assert.NoError(t, v1alpha1.LogLevelError.Validate())
+	assert.NoError(t, v1alpha1.LogLevelDisabled.Validate())
+}
+
+func TestValidateAccessLogJSONFields(t *testing.T) {
+	errorCases := [][]string{
+		{"dog", "cat"},
+		{"req"},
+		{"resp"},
+		{"trailer"},
+		{"@timestamp", "dog"},
+		{"@timestamp", "content-id=%REQ=dog%"},
+		{"@timestamp", "content-id=%dog(%"},
+		{"@timestamp", "content-id=%REQ()%"},
+		{"@timestamp", "content-id=%DOG%"},
+		{"@timestamp", "duration=my durations % are %DURATION%.0 and %REQ(:METHOD)%"},
+		{"invalid=%REQ%"},
+		{"invalid=%TRAILER%"},
+		{"invalid=%RESP%"},
+		{"invalid=%REQ_WITHOUT_QUERY%"},
+		{"invalid=%ENVIRONMENT%"},
+		{"@timestamp", "invalid=%START_TIME(%s.%6f):10%"},
+	}
+
+	for _, c := range errorCases {
+		assert.Error(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+	}
+
+	successCases := [][]string{
+		{"@timestamp", "method"},
+		{"start_time"},
+		{"@timestamp", "response_duration"},
+		{"@timestamp", "duration=%DURATION%.0"},
+		{"@timestamp", "duration=My duration=%DURATION%.0"},
+		{"@timestamp", "duration=%START_TIME(%s.%6f)%"},
+		{"@timestamp", "content-id=%REQ(X-CONTENT-ID)%"},
+		{"@timestamp", "content-id=%REQ(X-CONTENT-ID):10%"},
+		{"@timestamp", "length=%RESP(CONTENT-LENGTH):10%"},
+		{"@timestamp", "trailer=%TRAILER(CONTENT-LENGTH):10%"},
+		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
+		{"path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
+		{"pod=%ENVIRONMENT(ENVOY_POD_NAME)%"},
+		{"dog=pug", "cat=black"},
+		{"grpc_status"},
+	}
+
+	for _, c := range successCases {
+		assert.NoError(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+	}
+}
+
+func TestAccessLogFormatString(t *testing.T) {
+	errorCases := []string{
+		"%REQ=dog%\n",
+		"%dog(%\n",
+		"%REQ()%\n",
+		"%DOG%\n",
+		"my durations % are %DURATION%.0 and %REQ(:METHOD)%\n",
+		"%REQ%\n",
+		"%TRAILER%\n",
+		"%RESP%\n",
+		"%REQ_WITHOUT_QUERY%\n",
+		"%START_TIME(%s.%6f):10%\n",
+		"no newline at the end",
+	}
+
+	for _, c := range errorCases {
+		assert.Error(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+	}
+
+	successCases := []string{
+		"",
+		"%DURATION%.0\n",
+		"My duration %DURATION%.0\n",
+		"%START_TIME(%s.%6f)%\n",
+		"%REQ(X-CONTENT-ID)%\n",
+		"%REQ(X-CONTENT-ID):10%\n",
+		"%RESP(CONTENT-LENGTH):10%\n",
+		"%TRAILER(CONTENT-LENGTH):10%\n",
+		"my durations are %DURATION%.0 and method is %REQ(:METHOD)%\n",
+		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
+		"just a string\n",
+		"%GRPC_STATUS%\n",
+	}
+
+	for _, c := range successCases {
+		assert.NoError(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+	}
+}

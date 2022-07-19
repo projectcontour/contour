@@ -4337,6 +4337,10 @@ ExtensionServiceStatus
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.AccessLogFormatString">AccessLogFormatString
+(<code>string</code> alias)</p></h3>
+<p>
+</p>
 <h3 id="projectcontour.io/v1alpha1.AccessLogJSONFields">AccessLogJSONFields
 (<code>[]string</code> alias)</p></h3>
 <p>
@@ -5477,9 +5481,7 @@ negotiate.</p>
 <code>cipherSuites</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.TLSCipherType">
-[]TLSCipherType
-</a>
+[]string
 </em>
 </td>
 <td>
@@ -5496,6 +5498,21 @@ will be used, which may be updated to keep it secure.</p>
 - &ldquo;[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]&rdquo;
 - &ldquo;ECDHE-ECDSA-AES256-GCM-SHA384&rdquo;
 - &ldquo;ECDHE-RSA-AES256-GCM-SHA384&rdquo;</p>
+<p>Ciphers provided are validated against the following list:
+- &ldquo;[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]&rdquo;
+- &ldquo;[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]&rdquo;
+- &ldquo;ECDHE-ECDSA-AES128-GCM-SHA256&rdquo;
+- &ldquo;ECDHE-RSA-AES128-GCM-SHA256&rdquo;
+- &ldquo;ECDHE-ECDSA-AES128-SHA&rdquo;
+- &ldquo;ECDHE-RSA-AES128-SHA&rdquo;
+- &ldquo;AES128-GCM-SHA256&rdquo;
+- &ldquo;AES128-SHA&rdquo;
+- &ldquo;ECDHE-ECDSA-AES256-GCM-SHA384&rdquo;
+- &ldquo;ECDHE-RSA-AES256-GCM-SHA384&rdquo;
+- &ldquo;ECDHE-ECDSA-AES256-SHA&rdquo;
+- &ldquo;ECDHE-RSA-AES256-SHA&rdquo;
+- &ldquo;AES256-GCM-SHA384&rdquo;
+- &ldquo;AES256-SHA&rdquo;</p>
 <p>Contour recommends leaving this undefined unless you are sure you must.</p>
 <p>See: <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters</a>
 Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
@@ -6628,32 +6645,6 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.TLSCipherType">TLSCipherType
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS</a>)
-</p>
-<p>
-<p>TLSCipherType is a string alias for the TLS ciphers supported by Envoy.</p>
-<p>Values:</p>
-<ul>
-<li>[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]</li>
-<li>[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]</li>
-<li>ECDHE-ECDSA-AES128-GCM-SHA256</li>
-<li>ECDHE-RSA-AES128-GCM-SHA256</li>
-<li>ECDHE-ECDSA-AES128-SHA</li>
-<li>ECDHE-RSA-AES128-SHA</li>
-<li>AES128-GCM-SHA256</li>
-<li>AES128-SHA</li>
-<li>ECDHE-ECDSA-AES256-GCM-SHA384</li>
-<li>ECDHE-RSA-AES256-GCM-SHA384</li>
-<li>ECDHE-ECDSA-AES256-SHA</li>
-<li>ECDHE-RSA-AES256-SHA</li>
-<li>AES256-GCM-SHA384</li>
-<li>AES256-SHA</li>
-</ul>
-</p>
 <h3 id="projectcontour.io/v1alpha1.TimeoutParameters">TimeoutParameters
 </h3>
 <p>
