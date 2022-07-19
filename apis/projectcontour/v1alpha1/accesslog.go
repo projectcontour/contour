@@ -271,7 +271,7 @@ var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)
 func parseAccessLogFormatString(format string) error {
 	// FindAllStringSubmatch will always return a slice with matches where every slice is a slice
 	// of submatches with length of 5 (number of capture groups + 1).
-	tokens := commandOperatorRegexp.FindAllStringSubmatch(string(format), -1)
+	tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
 	if len(tokens) == 0 {
 		return nil
 	}

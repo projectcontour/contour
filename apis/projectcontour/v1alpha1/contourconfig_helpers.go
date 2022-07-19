@@ -121,7 +121,7 @@ func (e *EnvoyTLS) Validate() error {
 	var invalidCipherSuites []string
 	for _, c := range e.CipherSuites {
 		if _, ok := ValidTLSCiphers[c]; !ok {
-			invalidCipherSuites = append(invalidCipherSuites, string(c))
+			invalidCipherSuites = append(invalidCipherSuites, c)
 		}
 	}
 	if len(invalidCipherSuites) > 0 {
