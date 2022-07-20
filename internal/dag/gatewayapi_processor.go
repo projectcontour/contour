@@ -509,9 +509,9 @@ func (p *GatewayAPIProcessor) computeListener(
 			return false, nil
 		}
 
-		// Check for valid TLS configuration on the Gateway.
-		if listenerSecret = p.validGatewayTLS(*listener.TLS, string(listener.Name), gwAccessor); listenerSecret == nil {
-			// If TLS was configured on the Listener, but it's invalid, don't allow any
+		// Resolve the TLS secret.
+		if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
+			// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
 			// routes to be bound to this listener since it can't serve TLS traffic.
 			return false, nil
 		}
@@ -623,8 +623,13 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 	return routeKinds
 }
 
-func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1beta1.GatewayTLSConfig, listenerName string, gwAccessor *status.GatewayStatusUpdate) *Secret {
-	if len(listenerTLS.CertificateRefs) != 1 {
+// resolveListenerSecret validates and resolves a Listener TLS secret
+// from a given list of certificateRefs. There must be exactly one
+// certificate ref, to a v1.Secret, that exists, is allowed to be referenced
+// based on namespace and ReferenceGrants, and is a valid TLS secret.
+// Conditions are set if any of these requirements are not met.
+func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi_v1beta1.SecretObjectReference, listenerName string, gwAccessor *status.GatewayStatusUpdate) *Secret {
+	if len(certificateRefs) != 1 {
 		gwAccessor.AddListenerCondition(
 			listenerName,
 			gatewayapi_v1beta1.ListenerConditionReady,
@@ -635,7 +640,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1beta1.Gat
 		return nil
 	}
 
-	certificateRef := listenerTLS.CertificateRefs[0]
+	certificateRef := certificateRefs[0]
 
 	// Validate a v1.Secret is referenced which can be kind: secret & group: core.
 	// ref: https://github.com/kubernetes-sigs/gateway-api/pull/562
