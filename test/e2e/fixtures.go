@@ -444,7 +444,7 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					ConnectionBalancer:        "",
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.2",
-						CipherSuites: []contour_api_v1alpha1.TLSCipherType{
+						CipherSuites: []string{
 							"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 							"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 							"ECDHE-ECDSA-AES256-GCM-SHA384",

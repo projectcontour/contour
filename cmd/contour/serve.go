@@ -20,7 +20,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -315,11 +314,6 @@ func (s *Server) doServe() error {
 		}
 	}
 
-	var cipherSuites []string
-	for _, cs := range contourConfiguration.Envoy.Listener.TLS.CipherSuites {
-		cipherSuites = append(cipherSuites, string(cs))
-	}
-
 	timeouts, err := contourconfig.ParseTimeoutPolicy(contourConfiguration.Envoy.Timeouts)
 	if err != nil {
 		return err
@@ -344,12 +338,12 @@ func (s *Server) doServe() error {
 		},
 		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
-		AccessLogFields:              contourConfiguration.Envoy.Logging.AccessLogFields,
+		AccessLogJSONFields:          contourConfiguration.Envoy.Logging.AccessLogJSONFields,
 		AccessLogLevel:               contourConfiguration.Envoy.Logging.AccessLogLevel,
 		AccessLogFormatString:        contourConfiguration.Envoy.Logging.AccessLogFormatString,
-		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
+		AccessLogFormatterExtensions: contourConfiguration.Envoy.Logging.AccessLogFormatterExtensions(),
 		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                 config.SanitizeCipherSuites(cipherSuites),
+		CipherSuites:                 contourConfiguration.Envoy.Listener.TLS.SanitizedCipherSuites(),
 		Timeouts:                     timeouts,
 		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
 		AllowChunkedLength:           !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
@@ -967,56 +961,4 @@ func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cac
 
 	inf.AddEventHandler(handler)
 	return nil
-}
-
-// commandOperatorRegexp parses the command operators used in Envoy access log configuration
-//
-// Capture Groups:
-// Given string "the start time is %START_TIME(%s):3% wow!"
-//
-//   0. Whole match "%START_TIME(%s):3%"
-//   1. Full operator: "START_TIME(%s):3%"
-//   2. Operator Name: "START_TIME"
-//   3. Arguments: "(%s)"
-//   4. Truncation length: ":3"
-var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
-
-// AccessLogFormatterExtensions returns a list of formatter extension names required by the access log format.
-//
-// Note: When adding support for new formatter, update the list of extensions here and
-// add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
-// Currently only one extension exist in Envoy.
-func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLogType, accessLogFields contour_api_v1alpha1.AccessLogFields,
-	accessLogFormatString string) []string {
-	// Function that finds out if command operator is present in a format string.
-	contains := func(format, command string) bool {
-		tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
-		for _, t := range tokens {
-			if t[2] == command {
-				return true
-			}
-		}
-		return false
-	}
-
-	extensionsMap := make(map[string]bool)
-	switch accessLogFormat {
-	case contour_api_v1alpha1.EnvoyAccessLog:
-		if contains(accessLogFormatString, "REQ_WITHOUT_QUERY") {
-			extensionsMap["envoy.formatter.req_without_query"] = true
-		}
-	case contour_api_v1alpha1.JSONAccessLog:
-		for _, f := range accessLogFields.AsFieldMap() {
-			if contains(f, "REQ_WITHOUT_QUERY") {
-				extensionsMap["envoy.formatter.req_without_query"] = true
-			}
-		}
-	}
-
-	var extensions []string
-	for k := range extensionsMap {
-		extensions = append(extensions, k)
-	}
-
-	return extensions
 }

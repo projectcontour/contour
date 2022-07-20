@@ -108,12 +108,12 @@ func TestFileAccessLog(t *testing.T) {
 func TestJSONFileAccessLog(t *testing.T) {
 	tests := map[string]struct {
 		path    string
-		headers contour_api_v1alpha1.AccessLogFields
+		headers contour_api_v1alpha1.AccessLogJSONFields
 		want    []*envoy_accesslog_v3.AccessLog
 	}{
 		"only timestamp": {
 			path:    "/dev/stdout",
-			headers: contour_api_v1alpha1.AccessLogFields([]string{"@timestamp"}),
+			headers: contour_api_v1alpha1.AccessLogJSONFields([]string{"@timestamp"}),
 			want: []*envoy_accesslog_v3.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
@@ -137,7 +137,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 		},
 		"custom fields should appear": {
 			path: "/dev/stdout",
-			headers: contour_api_v1alpha1.AccessLogFields([]string{
+			headers: contour_api_v1alpha1.AccessLogJSONFields([]string{
 				"@timestamp",
 				"method",
 				"custom1=%REQ(X-CUSTOM-HEADER)%",

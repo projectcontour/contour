@@ -19,8 +19,8 @@ import (
 	"strings"
 )
 
-// DefaultFields are fields that will be included by default when JSON logging is enabled.
-var DefaultFields = AccessLogFields([]string{
+// DefaultAccessLogJSONFields are fields that will be included by default when JSON logging is enabled.
+var DefaultAccessLogJSONFields = AccessLogJSONFields([]string{
 	"@timestamp",
 	"authority",
 	"bytes_received",
@@ -42,11 +42,11 @@ var DefaultFields = AccessLogFields([]string{
 	"upstream_service_time",
 	"user_agent",
 	"x_forwarded_for",
+	"grpc_status",
 })
 
-// DEFAULT_ACCESS_LOG_TYPE is the default access log format.
-// nolint:revive
-const DEFAULT_ACCESS_LOG_TYPE = EnvoyAccessLog
+// DefaultAccessLogType is the default access log format.
+const DefaultAccessLogType = EnvoyAccessLog
 
 // jsonFields is the canonical translation table for JSON fields to Envoy log template formats,
 // used for specifying fields for Envoy to log when JSON logging is enabled.
@@ -73,6 +73,9 @@ var envoySimpleOperators = map[string]struct{}{
 	"CONNECTION_TERMINATION_DETAILS":                {},
 	"DOWNSTREAM_DIRECT_REMOTE_ADDRESS":              {},
 	"DOWNSTREAM_DIRECT_REMOTE_ADDRESS_WITHOUT_PORT": {},
+	"DOWNSTREAM_DIRECT_REMOTE_PORT":                 {},
+	"DOWNSTREAM_HEADER_BYTES_RECEIVED":              {},
+	"DOWNSTREAM_HEADER_BYTES_SENT":                  {},
 	"DOWNSTREAM_LOCAL_ADDRESS":                      {},
 	"DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT":         {},
 	"DOWNSTREAM_LOCAL_PORT":                         {},
@@ -89,32 +92,53 @@ var envoySimpleOperators = map[string]struct{}{
 	"DOWNSTREAM_PEER_URI_SAN":                       {},
 	"DOWNSTREAM_REMOTE_ADDRESS":                     {},
 	"DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT":        {},
+	"DOWNSTREAM_REMOTE_PORT":                        {},
 	"DOWNSTREAM_TLS_CIPHER":                         {},
 	"DOWNSTREAM_TLS_SESSION_ID":                     {},
 	"DOWNSTREAM_TLS_VERSION":                        {},
+	"DOWNSTREAM_WIRE_BYTES_RECEIVED":                {},
+	"DOWNSTREAM_WIRE_BYTES_SENT":                    {},
 	"DURATION":                                      {},
+	"FILTER_CHAIN_NAME":                             {},
 	"GRPC_STATUS":                                   {},
+	"GRPC_STATUS_NUMBER":                            {},
 	"HOSTNAME":                                      {},
 	"LOCAL_REPLY_BODY":                              {},
 	"PROTOCOL":                                      {},
+	"REQUEST_HEADERS_BYTES":                         {},
 	"REQUESTED_SERVER_NAME":                         {},
 	"REQUEST_DURATION":                              {},
+	"REQUEST_TX_DURATION":                           {},
 	"RESPONSE_CODE":                                 {},
 	"RESPONSE_CODE_DETAILS":                         {},
 	"RESPONSE_DURATION":                             {},
 	"RESPONSE_FLAGS":                                {},
+	"RESPONSE_HEADERS_BYTES":                        {},
+	"RESPONSE_TRAILERS_BYTES":                       {},
 	"RESPONSE_TX_DURATION":                          {},
 	"ROUTE_NAME":                                    {},
 	"START_TIME":                                    {},
 	"UPSTREAM_CLUSTER":                              {},
+	"UPSTREAM_HEADER_BYTES_RECEIVED":                {},
+	"UPSTREAM_HEADER_BYTES_SENT":                    {},
 	"UPSTREAM_HOST":                                 {},
 	"UPSTREAM_LOCAL_ADDRESS":                        {},
+	"UPSTREAM_LOCAL_ADDRESS_WITHOUT_PORT":           {},
+	"UPSTREAM_LOCAL_PORT":                           {},
+	"UPSTREAM_REMOTE_ADDRESS":                       {},
+	"UPSTREAM_REMOTE_ADDRESS_WITHOUT_PORT":          {},
+	"UPSTREAM_REMOTE_PORT":                          {},
+	"UPSTREAM_REQUEST_ATTEMPT_COUNT":                {},
 	"UPSTREAM_TRANSPORT_FAILURE_REASON":             {},
+	"UPSTREAM_WIRE_BYTES_RECEIVED":                  {},
+	"UPSTREAM_WIRE_BYTES_SENT":                      {},
+	"VIRTUAL_CLUSTER_NAME":                          {},
 }
 
 // envoyComplexOperators is the list of known Envoy log template keywords that require
 // arguments.
 var envoyComplexOperators = map[string]struct{}{
+	"ENVIRONMENT":       {},
 	"REQ":               {},
 	"RESP":              {},
 	"START_TIME":        {},
@@ -143,9 +167,9 @@ const (
 	JSONAccessLog AccessLogType = "json"
 )
 
-type AccessLogFields []string
+type AccessLogJSONFields []string
 
-func (a AccessLogFields) Validate() error {
+func (a AccessLogJSONFields) Validate() error {
 
 	for key, val := range a.AsFieldMap() {
 		if val == "" {
@@ -156,7 +180,7 @@ func (a AccessLogFields) Validate() error {
 			continue
 		}
 
-		err := parseAccessLogFormat(val)
+		err := parseAccessLogFormatString(val)
 		if err != nil {
 			return fmt.Errorf("invalid JSON field: %s", err)
 		}
@@ -165,7 +189,7 @@ func (a AccessLogFields) Validate() error {
 	return nil
 }
 
-func (a AccessLogFields) AsFieldMap() map[string]string {
+func (a AccessLogJSONFields) AsFieldMap() map[string]string {
 	fieldMap := map[string]string{}
 
 	for _, val := range a {
@@ -215,16 +239,18 @@ const (
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
 
-func validateAccessLogFormatString(format string) error {
+type AccessLogFormatString string
+
+func (s AccessLogFormatString) Validate() error {
 	// Empty format means use default format, defined by Envoy.
-	if format == "" {
+	if s == "" {
 		return nil
 	}
-	err := parseAccessLogFormat(format)
+	err := parseAccessLogFormatString(string(s))
 	if err != nil {
 		return fmt.Errorf("invalid access log format: %s", err)
 	}
-	if !strings.HasSuffix(format, "\n") {
+	if !strings.HasSuffix(string(s), "\n") {
 		return fmt.Errorf("invalid access log format: must end in newline")
 	}
 	return nil
@@ -242,8 +268,7 @@ func validateAccessLogFormatString(format string) error {
 //   4. Truncation length: ":3"
 var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
 
-func parseAccessLogFormat(format string) error {
-
+func parseAccessLogFormatString(format string) error {
 	// FindAllStringSubmatch will always return a slice with matches where every slice is a slice
 	// of submatches with length of 5 (number of capture groups + 1).
 	tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
@@ -263,7 +288,7 @@ func parseAccessLogFormat(format string) error {
 			return fmt.Errorf("invalid Envoy format: %s, invalid Envoy operator: %s", f, op)
 		}
 
-		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY") && f[3] == "" {
+		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY" || op == "ENVIRONMENT") && f[3] == "" {
 			return fmt.Errorf("invalid Envoy format: %s, arguments required for operator: %s", f, op)
 		}
 

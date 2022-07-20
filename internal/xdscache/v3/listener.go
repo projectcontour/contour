@@ -100,10 +100,10 @@ type ListenerConfig struct {
 	// If not set, defaults to 'envoy'
 	AccessLogType contour_api_v1alpha1.AccessLogType
 
-	// AccessLogFields sets the fields that should be shown in JSON logs.
+	// AccessLogJSONFields sets the fields that should be shown in JSON logs.
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
 	// Defaults to a particular set of fields.
-	AccessLogFields contour_api_v1alpha1.AccessLogFields
+	AccessLogJSONFields contour_api_v1alpha1.AccessLogJSONFields
 
 	// AccessLogFormatString sets the format string to be used for text based access logs.
 	// Defaults to empty to defer to Envoy's default log format.
@@ -234,11 +234,11 @@ func (lvc *ListenerConfig) accesslogType() string {
 
 // accesslogFields returns the access log fields that should be configured
 // for Envoy, or a default set if not configured.
-func (lvc *ListenerConfig) accesslogFields() contour_api_v1alpha1.AccessLogFields {
-	if lvc.AccessLogFields != nil {
-		return lvc.AccessLogFields
+func (lvc *ListenerConfig) accesslogFields() contour_api_v1alpha1.AccessLogJSONFields {
+	if lvc.AccessLogJSONFields != nil {
+		return lvc.AccessLogJSONFields
 	}
-	return contour_api_v1alpha1.DefaultFields
+	return contour_api_v1alpha1.DefaultAccessLogJSONFields
 }
 
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLog {

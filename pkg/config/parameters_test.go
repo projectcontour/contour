@@ -184,61 +184,6 @@ func TestValidateGatewayParameters(t *testing.T) {
 	assert.Equal(t, nil, gw.Validate())
 }
 
-func TestValidateAccessLogType(t *testing.T) {
-	assert.Error(t, AccessLogType("").Validate())
-	assert.Error(t, AccessLogType("foo").Validate())
-
-	assert.NoError(t, EnvoyAccessLog.Validate())
-	assert.NoError(t, JSONAccessLog.Validate())
-}
-
-func TestValidateAccessLogFields(t *testing.T) {
-	errorCases := [][]string{
-		{"dog", "cat"},
-		{"req"},
-		{"resp"},
-		{"trailer"},
-		{"@timestamp", "dog"},
-		{"@timestamp", "content-id=%REQ=dog%"},
-		{"@timestamp", "content-id=%dog(%"},
-		{"@timestamp", "content-id=%REQ()%"},
-		{"@timestamp", "content-id=%DOG%"},
-		{"@timestamp", "duration=my durations % are %DURATION%.0 and %REQ(:METHOD)%"},
-		{"invalid=%REQ%"},
-		{"invalid=%TRAILER%"},
-		{"invalid=%RESP%"},
-		{"invalid=%REQ_WITHOUT_QUERY%"},
-		{"invalid=%ENVIRONMENT%"},
-		{"@timestamp", "invalid=%START_TIME(%s.%6f):10%"},
-	}
-
-	for _, c := range errorCases {
-		assert.Error(t, AccessLogFields(c).Validate(), c)
-	}
-
-	successCases := [][]string{
-		{"@timestamp", "method"},
-		{"start_time"},
-		{"@timestamp", "response_duration"},
-		{"@timestamp", "duration=%DURATION%.0"},
-		{"@timestamp", "duration=My duration=%DURATION%.0"},
-		{"@timestamp", "duration=%START_TIME(%s.%6f)%"},
-		{"@timestamp", "content-id=%REQ(X-CONTENT-ID)%"},
-		{"@timestamp", "content-id=%REQ(X-CONTENT-ID):10%"},
-		{"@timestamp", "length=%RESP(CONTENT-LENGTH):10%"},
-		{"@timestamp", "trailer=%TRAILER(CONTENT-LENGTH):10%"},
-		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
-		{"path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
-		{"pod=%ENVIRONMENT(ENVOY_POD_NAME)%"},
-		{"dog=pug", "cat=black"},
-		{"grpc_status"},
-	}
-
-	for _, c := range successCases {
-		assert.NoError(t, AccessLogFields(c).Validate(), c)
-	}
-}
-
 func TestValidateHTTPVersionType(t *testing.T) {
 	assert.Error(t, HTTPVersionType("").Validate())
 	assert.Error(t, HTTPVersionType("foo").Validate())
@@ -317,66 +262,13 @@ func TestTLSParametersValidation(t *testing.T) {
 		CipherSuites: []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
-			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-			"ECDHE-RSA-AES128-GCM-SHA256",
-			"ECDHE-ECDSA-AES128-SHA",
-			" ECDHE-RSA-AES128-SHA   ",
-			"AES128-GCM-SHA256",
-			"AES128-SHA",
-			"ECDHE-ECDSA-AES256-GCM-SHA384",
-			"ECDHE-RSA-AES256-GCM-SHA384",
-			"ECDHE-ECDSA-AES256-SHA",
-			"ECDHE-RSA-AES256-SHA",
-			"AES256-GCM-SHA384",
-			"AES256-SHA",
 		},
 	}.Validate())
 	assert.Error(t, TLSParameters{
 		CipherSuites: []string{
-			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 			"NOTAVALIDCIPHER",
-			"AES128-GCM-SHA256",
 		},
 	}.Validate())
-}
-
-func TestSanitizeCipherSuites(t *testing.T) {
-	testCases := map[string]struct {
-		ciphers []string
-		want    []string
-	}{
-		"no ciphers": {
-			ciphers: nil,
-			want:    DefaultTLSCiphers,
-		},
-		"valid list": {
-			ciphers: []string{
-				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-				"  ECDHE-RSA-AES128-SHA ",
-				"AES128-SHA",
-			},
-			want: []string{
-				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-				"ECDHE-RSA-AES128-SHA",
-				"AES128-SHA",
-			},
-		},
-		"cipher duplicated": {
-			ciphers: []string{
-				"ECDHE-RSA-AES128-SHA",
-				"ECDHE-RSA-AES128-SHA",
-			},
-			want: []string{
-				"ECDHE-RSA-AES128-SHA",
-			},
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, SanitizeCipherSuites(tc.ciphers))
-		})
-	}
 }
 
 func TestConfigFileValidation(t *testing.T) {
@@ -403,8 +295,16 @@ accesslog-format: /dev/null
 `)
 
 	check(`
+accesslog-format-string: "%REQ%"
+`)
+
+	check(`
 json-fields:
 - one
+`)
+
+	check(`
+accesslog-level: invalid
 `)
 
 	check(`
@@ -505,62 +405,6 @@ network:
   num-trusted-hops: 1
   admin-port: 9001
 `)
-}
-
-func TestAccessLogFormatString(t *testing.T) {
-	errorCases := []string{
-		"%REQ=dog%\n",
-		"%dog(%\n",
-		"%REQ()%\n",
-		"%DOG%\n",
-		"my durations % are %DURATION%.0 and %REQ(:METHOD)%\n",
-		"%REQ%\n",
-		"%TRAILER%\n",
-		"%RESP%\n",
-		"%REQ_WITHOUT_QUERY%\n",
-		"%START_TIME(%s.%6f):10%\n",
-		"no newline at the end",
-	}
-
-	for _, c := range errorCases {
-		assert.Error(t, validateAccessLogFormatString(c), c)
-	}
-
-	successCases := []string{
-		"%DURATION%.0\n",
-		"My duration %DURATION%.0\n",
-		"%START_TIME(%s.%6f)%\n",
-		"%REQ(X-CONTENT-ID)%\n",
-		"%REQ(X-CONTENT-ID):10%\n",
-		"%RESP(CONTENT-LENGTH):10%\n",
-		"%TRAILER(CONTENT-LENGTH):10%\n",
-		"my durations are %DURATION%.0 and method is %REQ(:METHOD)%\n",
-		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
-		"just a string\n",
-		"%GRPC_STATUS%\n",
-	}
-
-	for _, c := range successCases {
-		assert.NoError(t, validateAccessLogFormatString(c), c)
-	}
-}
-
-// TestAccessLogFormatExtensions tests that command operators requiring extensions are recognized for given access log format.
-func TestAccessLogFormatExtensions(t *testing.T) {
-	p1 := Parameters{
-		AccessLogFormat:       EnvoyAccessLog,
-		AccessLogFormatString: "[%START_TIME%] \"%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%\"\n",
-	}
-	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, p1.AccessLogFormatterExtensions())
-
-	p2 := Parameters{
-		AccessLogFormat: JSONAccessLog,
-		AccessLogFields: []string{"@timestamp", "path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
-	}
-	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, p2.AccessLogFormatterExtensions())
-
-	p3 := Defaults()
-	assert.Empty(t, p3.AccessLogFormatterExtensions())
 }
 
 func TestMetricsParametersValidation(t *testing.T) {
