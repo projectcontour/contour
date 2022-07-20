@@ -483,7 +483,10 @@ func (p *GatewayAPIProcessor) computeListener(
 	// Validate TLS details for HTTPS/TLS protocol listeners.
 	switch listener.Protocol {
 	case gatewayapi_v1beta1.HTTPSProtocolType:
-		// Validate that if protocol is type HTTPS, that TLS is defined.
+		// The HTTPS protocol is used for HTTP traffic encrypted with TLS,
+		// which is to be TLS-terminated at the proxy and then routed to
+		// backends using HTTPRoutes.
+
 		if listener.TLS == nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
@@ -491,6 +494,17 @@ func (p *GatewayAPIProcessor) computeListener(
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
+			)
+			return false, nil
+		}
+
+		if listener.TLS.Mode != nil && *listener.TLS.Mode != gatewayapi_v1beta1.TLSModeTerminate {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModeTerminate, listener.Protocol),
 			)
 			return false, nil
 		}
@@ -502,7 +516,15 @@ func (p *GatewayAPIProcessor) computeListener(
 			return false, nil
 		}
 	case gatewayapi_v1beta1.TLSProtocolType:
-		// TLS is required for the type TLS.
+		// The TLS protocol is used for TCP traffic encrypted with TLS.
+		// Gateway API allows TLS to be either terminated at the proxy
+		// or passed through to the backend, but the former requires using
+		// TCPRoute to route traffic since the underlying protocol is TCP
+		// not HTTP, which Contour doesn't support. Therefore, we only
+		// support "Passthrough" with the TLS protocol, which requires
+		// the use of TLSRoute to route to backends since the traffic is
+		// still encrypted.
+
 		if listener.TLS == nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
@@ -514,27 +536,26 @@ func (p *GatewayAPIProcessor) computeListener(
 			return false, nil
 		}
 
-		if listener.TLS.Mode != nil {
-			switch *listener.TLS.Mode {
-			case gatewayapi_v1beta1.TLSModeTerminate:
-				// Check for valid TLS configuration on the Gateway.
-				if listenerSecret = p.validGatewayTLS(*listener.TLS, string(listener.Name), gwAccessor); listenerSecret == nil {
-					// If TLS was configured on the Listener, but it's invalid, don't allow any
-					// routes to be bound to this listener since it can't serve TLS traffic.
-					return false, nil
-				}
-			case gatewayapi_v1beta1.TLSModePassthrough:
-				if len(listener.TLS.CertificateRefs) > 0 {
-					gwAccessor.AddListenerCondition(
-						string(listener.Name),
-						gatewayapi_v1beta1.ListenerConditionReady,
-						metav1.ConditionFalse,
-						gatewayapi_v1beta1.ListenerReasonInvalid,
-						fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when TLS Mode is %q.", *listener.TLS.Mode),
-					)
-					return false, nil
-				}
-			}
+		if listener.TLS.Mode == nil || *listener.TLS.Mode != gatewayapi_v1beta1.TLSModePassthrough {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModePassthrough, listener.Protocol),
+			)
+			return false, nil
+		}
+
+		if len(listener.TLS.CertificateRefs) != 0 {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionReady,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalid,
+				fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1alpha2.TLSModePassthrough),
+			)
+			return false, nil
 		}
 	}
 

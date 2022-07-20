@@ -345,31 +345,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	gatewayTLSTerminateAllNamespaces := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
-					},
-				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-					},
-				},
-			}},
-		},
-	}
-
 	sec2 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
@@ -387,9 +362,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Name:     "tls",
+				Name:     "https",
 				Port:     443,
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -902,7 +877,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		// END TLSRoute<->Gateway selection test cases
 
-		"TLSRoute with TLS.Mode=Passthrough is invalid if certificateRef is specified": {
+		"TLS Listener with TLS.Mode=Passthrough is invalid if certificateRef is specified": {
 			gatewayclass: validClass,
 			gateway: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -933,43 +908,40 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute with TLS.Mode=Terminate is invalid when TLS certificate reference is to a nonexistent secret": {
+		"TLS Listener with TLS.Mode=Terminate is invalid": {
 			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateAllNamespaces,
-			objs: []interface{}{
-				// note, sec1 is not added here
-				kuardService,
-				basicTLSRoute,
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.TLSProtocolType,
+						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+							Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
+							},
+						},
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							},
+						},
+					}},
+				},
 			},
-			want: listeners(),
-		},
-		"TLSRoute with TLS.Mode=Terminate is valid when TLS certificate reference is valid": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateAllNamespaces,
 			objs: []interface{}{
 				sec1,
 				kuardService,
 				basicTLSRoute,
 			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
-							Secret: secret(sec1),
-						},
-					),
-				},
-			),
+			want: listeners(),
 		},
-		"TLSRoute with TLS not defined is invalid": {
+		"TLS Listener with TLS not defined is invalid": {
 			gatewayclass: validClass,
 			gateway: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2113,7 +2085,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(
@@ -2123,12 +2095,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
+								Name:   "test.projectcontour.io",
+								Routes: routes(prefixrouteHTTPRoute("/", service(kuardService))),
 							},
 							Secret: secret(sec2),
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
 						},
 					),
 				},
@@ -2139,7 +2109,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
 			objs: []interface{}{
 				sec2,
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
@@ -2166,7 +2136,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(
@@ -2176,12 +2146,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
+								Name:   "test.projectcontour.io",
+								Routes: routes(prefixrouteHTTPRoute("/", service(kuardService))),
 							},
 							Secret: secret(sec2),
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
 						},
 					),
 				},
@@ -2208,7 +2176,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
@@ -2234,7 +2202,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
@@ -2260,7 +2228,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
@@ -2286,7 +2254,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
@@ -2313,7 +2281,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				basicTLSRoute,
+				basicHTTPRoute,
 				kuardService,
 			},
 			want: listeners(),
