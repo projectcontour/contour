@@ -119,16 +119,26 @@ var envoySimpleOperators = map[string]struct{}{
 	"ROUTE_NAME":                                    {},
 	"START_TIME":                                    {},
 	"UPSTREAM_CLUSTER":                              {},
+	"UPSTREAM_FILTER_STATE":                         {},
 	"UPSTREAM_HEADER_BYTES_RECEIVED":                {},
 	"UPSTREAM_HEADER_BYTES_SENT":                    {},
 	"UPSTREAM_HOST":                                 {},
 	"UPSTREAM_LOCAL_ADDRESS":                        {},
 	"UPSTREAM_LOCAL_ADDRESS_WITHOUT_PORT":           {},
 	"UPSTREAM_LOCAL_PORT":                           {},
+	"UPSTREAM_PEER_CERT":                            {},
+	"UPSTREAM_PEER_CERT_V_END":                      {},
+	"UPSTREAM_PEER_CERT_V_START":                    {},
+	"UPSTREAM_PEER_ISSUER":                          {},
+	"UPSTREAM_PEER_SUBJECT":                         {},
+	"UPSTREAM_PROTOCOL":                             {},
 	"UPSTREAM_REMOTE_ADDRESS":                       {},
 	"UPSTREAM_REMOTE_ADDRESS_WITHOUT_PORT":          {},
 	"UPSTREAM_REMOTE_PORT":                          {},
 	"UPSTREAM_REQUEST_ATTEMPT_COUNT":                {},
+	"UPSTREAM_TLS_CIPHER":                           {},
+	"UPSTREAM_TLS_SESSION_ID":                       {},
+	"UPSTREAM_TLS_VERSION":                          {},
 	"UPSTREAM_TRANSPORT_FAILURE_REASON":             {},
 	"UPSTREAM_WIRE_BYTES_RECEIVED":                  {},
 	"UPSTREAM_WIRE_BYTES_SENT":                      {},
@@ -137,13 +147,20 @@ var envoySimpleOperators = map[string]struct{}{
 
 // envoyComplexOperators is the list of known Envoy log template keywords that require
 // arguments.
-var envoyComplexOperators = map[string]struct{}{
+var envoyComplexOperators = map[string]struct {
+	argsOptional       bool
+	truncateDisallowed bool
+}{
 	"ENVIRONMENT":       {},
+	"METADATA":          {},
 	"REQ":               {},
-	"RESP":              {},
-	"START_TIME":        {},
-	"TRAILER":           {},
 	"REQ_WITHOUT_QUERY": {},
+	"RESP":              {},
+	"START_TIME": {
+		argsOptional:       true,
+		truncateDisallowed: true,
+	},
+	"TRAILER": {},
 }
 
 // AccessLogType is the name of a supported access logging mechanism.
@@ -283,17 +300,15 @@ func parseAccessLogFormatString(format string) error {
 		}
 
 		_, okSimple := envoySimpleOperators[op]
-		_, okComplex := envoyComplexOperators[op]
+		complexOptions, okComplex := envoyComplexOperators[op]
 		if !okSimple && !okComplex {
 			return fmt.Errorf("invalid Envoy format: %s, invalid Envoy operator: %s", f, op)
 		}
 
-		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY" || op == "ENVIRONMENT") && f[3] == "" {
+		if okComplex && !complexOptions.argsOptional && f[3] == "" {
 			return fmt.Errorf("invalid Envoy format: %s, arguments required for operator: %s", f, op)
 		}
-
-		// START_TIME cannot not have truncation length.
-		if op == "START_TIME" && f[4] != "" {
+		if okComplex && complexOptions.truncateDisallowed && f[4] != "" {
 			return fmt.Errorf("invalid Envoy format: %s, operator %s cannot have truncation length", f, op)
 		}
 	}

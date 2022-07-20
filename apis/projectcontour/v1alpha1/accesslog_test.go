@@ -97,6 +97,7 @@ func TestAccessLogFormatString(t *testing.T) {
 		"%REQ_WITHOUT_QUERY%\n",
 		"%START_TIME(%s.%6f):10%\n",
 		"no newline at the end",
+		"%METADATA%\n",
 	}
 
 	for _, c := range errorCases {
@@ -108,6 +109,7 @@ func TestAccessLogFormatString(t *testing.T) {
 		"%DURATION%.0\n",
 		"My duration %DURATION%.0\n",
 		"%START_TIME(%s.%6f)%\n",
+		"%START_TIME%\n",
 		"%REQ(X-CONTENT-ID)%\n",
 		"%REQ(X-CONTENT-ID):10%\n",
 		"%RESP(CONTENT-LENGTH):10%\n",
@@ -116,6 +118,17 @@ func TestAccessLogFormatString(t *testing.T) {
 		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
 		"just a string\n",
 		"%GRPC_STATUS%\n",
+		"%METADATA(ROUTE:com.test.my_filter:test_key):20%\n",
+		"%UPSTREAM_PROTOCOL%\n",
+		"%UPSTREAM_PEER_SUBJECT%\n",
+		"%UPSTREAM_PEER_ISSUER%\n",
+		"%UPSTREAM_TLS_SESSION_ID%\n",
+		"%UPSTREAM_TLS_CIPHER%\n",
+		"%UPSTREAM_TLS_VERSION%\n",
+		"%UPSTREAM_PEER_CERT_V_START%\n",
+		"%UPSTREAM_PEER_CERT_V_END%\n",
+		"%UPSTREAM_PEER_CERT%\n",
+		"%UPSTREAM_FILTER_STATE%\n",
 	}
 
 	for _, c := range successCases {
