@@ -141,20 +141,10 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.C
 }
 
 func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
-	svc, err := currentService(ctx, cli, contour.Namespace, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
+	getter := func(ctx context.Context, cli client.Client, namespace, name2 string) (client.Object, error) {
+		return currentService(ctx, cli, namespace, name2)
 	}
-	if !labels.Exist(svc, model.OwnerLabels(contour)) {
-		return nil
-	}
-	if err := cli.Delete(ctx, svc); err == nil || errors.IsNotFound(err) {
-		return nil
-	}
-	return err
+	return objects.EnsureObjectDeleted(ctx, cli, contour, name, getter)
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the

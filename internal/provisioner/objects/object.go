@@ -14,7 +14,14 @@
 package objects
 
 import (
+	"context"
+
+	"github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -37,4 +44,26 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 		RunAsGroup:   &group,
 		RunAsNonRoot: &nonRoot,
 	}
+}
+
+// objectGetter get the object with name
+type objectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
+
+// EnsureObjectDeleted ensures that a object with the name is deleted
+// if Contour owner labels exist.
+func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter objectGetter) error {
+	obj, err := getter(ctx, cli, contour.Namespace, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if !labels.Exist(obj, model.OwnerLabels(contour)) {
+		return nil
+	}
+	if err := cli.Delete(ctx, obj); err == nil || errors.IsNotFound(err) {
+		return nil
+	}
+	return err
 }

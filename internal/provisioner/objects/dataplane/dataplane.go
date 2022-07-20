@@ -114,28 +114,18 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	// we don't know which one was actually created, since we're not yet
 	// using finalizers so the Gateway spec is unavailable to us at deletion
 	// time.
-
-	ds, err := CurrentDaemonSet(ctx, cli, contour)
-	if err != nil && !errors.IsNotFound(err) {
+	dsGetter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+		return CurrentDaemonSet(ctx, cli, contour)
+	}
+	if err := objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), dsGetter); err != nil {
 		return err
 	}
-	if ds != nil && labels.Exist(ds, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, ds); err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-	}
 
-	deploy, err := currentDeployment(ctx, cli, contour)
-	if err != nil && !errors.IsNotFound(err) {
-		return err
+	deployGetter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+		return currentDeployment(ctx, cli, contour)
 	}
-	if deploy != nil && labels.Exist(deploy, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, deploy); err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-	}
+	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), deployGetter)
 
-	return nil
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
