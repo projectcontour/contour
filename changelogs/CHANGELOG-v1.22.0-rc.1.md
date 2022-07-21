@@ -180,12 +180,12 @@ The simplest way to install v1.22.0-rc.1 is to apply one of the example configur
 
 With Gateway API:
 ```bash
-kubectl apply -f https://github.com/projectcontour/contour/blob/v1.22.0-rc.1/examples/render/contour-gateway.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.22.0-rc.1/examples/render/contour-gateway.yaml
 ```
 
 Without Gateway API:
 ```bash
-kubectl apply -f https://github.com/projectcontour/contour/blob/v1.22.0-rc.1/examples/render/contour.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.22.0-rc.1/examples/render/contour.yaml
 ```
 
 
