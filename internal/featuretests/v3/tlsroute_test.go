@@ -16,7 +16,6 @@ package v3
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -268,68 +267,4 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnDelete(route2)
 	rh.OnDelete(route3)
 	rh.OnDelete(route4)
-
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-
-	// Validate TLSTerminate.
-	gatewayTerminate := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     443,
-				Protocol: "TLS",
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-						gatewayapi.CertificateRef("tlscert", ""),
-					},
-				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-					},
-				},
-			}},
-		},
-	}
-
-	rh.OnAdd(sec1)
-	rh.OnAdd(gatewayTerminate)
-	rh.OnAdd(route1)
-
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
-				FilterChains: appendFilterChains(
-					filterchaintls("tcp.projectcontour.io", sec1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"), nil),
-				),
-				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
-			statsListener(),
-		),
-		TypeUrl: listenerType,
-	})
-
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
 }
