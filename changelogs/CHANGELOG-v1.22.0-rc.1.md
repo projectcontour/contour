@@ -42,15 +42,6 @@ It is important to note that one of route.services or route.requestRedirectPolic
 
 (#4526, @yangyy93)
 
-## Bump Envoy to v1.22.2
-
-Bumps Envoy to security patch version 1.22.2.
-Envoy CI had a few issues releasing 1.22.1 so a subsequent patch, 1.22.2 was released.
-Envoy announcement [here](https://groups.google.com/g/envoy-announce/c/QxI6z6wdL7M).
-See Envoy release notes [for 1.22.1 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/v1.22.1) and [1.22.2 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/current).
-
-(#4572, @sunjayBhatia)
-
 ##  Bind create label operation for contour's deployment to the struct
 
 There are now three places to create the same label(s), so let the operation to be a method of the Contour struct.
