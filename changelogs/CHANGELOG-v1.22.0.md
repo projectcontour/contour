@@ -29,6 +29,13 @@ For information on getting started with Contour and Gateway API, see the [Contou
 
 # Minor Changes
 
+## Update to Envoy 1.23.0
+
+Contour now uses Envoy 1.23.0.
+See [the Envoy changelog](https://www.envoyproxy.io/docs/envoy/v1.23.0/version_history/v1.23/v1.23.0) for more information on the contents of the release.
+
+(#4621, @skriss)
+
 ## HTTPProxy Direct Response Policy
 
 HTTPProxy.Route now has a HTTPDirectResponsePolicy which allows for routes to specify a DirectResponsePolicy.
@@ -39,26 +46,24 @@ It is important to note that one of route.services or route.requestRedirectPolic
 
 (#4526, @yangyy93)
 
-## Bump Envoy to v1.22.2
+## Validating revocation status of client certificates
 
-Bumps Envoy to security patch version 1.22.2.
-Envoy CI had a few issues releasing 1.22.1 so a subsequent patch, 1.22.2 was released.
-Envoy announcement [here](https://groups.google.com/g/envoy-announce/c/QxI6z6wdL7M).
-See Envoy release notes [for 1.22.1 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/v1.22.1) and [1.22.2 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/current).
+It is now possible to enable revocation check for client certificates validation.
+The CRL files must be provided in advance and configured as opaque Secret.
+To enable the feature, `httpproxy.spec.virtualhost.tls.clientValidation.crlSecret` is set with the secret name.
 
-(#4572, @sunjayBhatia)
+(#4592, @tsaarni)
 
-##  Bind create label operation for contour's deployment to the struct
+## Consolidate access logging and TLS cipher suite validation
 
-There are now three places to create the same label(s), so let the operation to be a method of the Contour struct.
+Access log and TLS cipher suite configuration validation logic is now consolidated in the `apis/projectcontour/v1alpha1` package.
+Existing exported elements of the `pkg/config` package are left untouched, though implementation logic now lives in `apis/projectcontour/v1alpha1`.
 
-(#4585, @izturn)
+This should largely be a no-op for users however, as part of this cleanup, a few minor incompatible changes have been made:
+- TLS cipher suite list elements will no longer be allowed to have leading or trailing whitespace
+- The ContourConfiguration CRD field `spec.envoy.logging.jsonFields` has been renamed to `spec.envoy.logging.accessLogJSONFields`
 
-## Use local variable to replace the long access chain of fields
-
-The access chain of fields is too long, so use local variable to replace them.
-
-(#4586, @izturn)
+(#4626, @sunjayBhatia)
 
 ## Gateway API: implement HTTP query parameter matching
 
@@ -93,14 +98,6 @@ spec:
 
 (#4588, @skriss)
 
-## Validating revocation status of client certificates
-
-It is now possible to enable revocation check for client certificates validation.
-The CRL files must be provided in advance and configured as opaque Secret.
-To enable the feature, `httpproxy.spec.virtualhost.tls.clientValidation.crlSecret` is set with the secret name.
-
-(#4592, @tsaarni)
-
 ## Gateway API: update handling of various invalid HTTPRoute/TLSRoute scenarios
 
 Updates the handling of various invalid HTTPRoute/TLSRoute scenarios to be conformant with the Gateway API spec, including:
@@ -111,24 +108,6 @@ Updates the handling of various invalid HTTPRoute/TLSRoute scenarios to be confo
 
 (#4614, @skriss)
 
-## Update to Envoy 1.23.0
-
-Contour now uses Envoy 1.23.0.
-See [the Envoy changelog](https://www.envoyproxy.io/docs/envoy/v1.23.0/version_history/v1.23/v1.23.0) for more information on the contents of the release.
-
-(#4621, @skriss)
-
-## Consolidate access logging and TLS cipher suite validation
-
-Access log and TLS cipher suite configuration validation logic is now consolidated in the `apis/projectcontour/v1alpha1` package.
-Existing exported elements of the `pkg/config` package are left untouched, though implementation logic now lives in `apis/projectcontour/v1alpha1`.
-
-This should largely be a no-op for users however, as part of this cleanup, a few minor incompatible changes have been made:
-- TLS cipher suite list elements will no longer be allowed to have leading or trailing whitespace
-- The ContourConfiguration CRD field `spec.envoy.logging.jsonFields` has been renamed to `spec.envoy.logging.accessLogJSONFields`
-
-(#4626, @sunjayBhatia)
-
 ## Gateway API: enforce correct TLS modes for HTTPS and TLS listener protocols
 
 Contour now enforces that the correct TLS modes are used for the HTTPS and TLS listener protocols.
@@ -137,10 +116,21 @@ For a TLS listener, the TLS mode "Passthrough" must be used (this is compatible 
 
 (#4631, @skriss)
 
+##  Bind create label operation for contour's deployment to the struct
+
+There are now three places to create the same label(s), so let the operation to be a method of the Contour struct.
+
+(#4585, @izturn)
+
+## Use local variable to replace the long access chain of fields
+
+The access chain of fields is too long, so use local variable to replace them.
+
+(#4586, @izturn)
+
 
 # Other Changes
-- RTDS now serves dynamic runtime configuration layer which is requested by bootstrap configuration.
-In this future, contents of this runtime configuration will be made configurable by users. (#4387, @sunjayBhatia)
+- RTDS now serves dynamic runtime configuration layer which is requested by bootstrap configuration. In the future, contents of this runtime configuration will be made configurable by users. (#4387, @sunjayBhatia)
 - internal/envoy: use Envoy's path-based prefix matching instead of regular expressions. (#4477, @mmalecki)
 - Gateway API: compute Listener supported kinds sooner, so it's populated in all cases where it can be computed. (#4523, @skriss)
 - When validating secrets, don't log an error for an Opaque secret that doesn't contain a `ca.crt` key. (#4528, @skriss)
@@ -170,7 +160,6 @@ In this future, contents of this runtime configuration will be made configurable
 
 
 # Deprecation and Removal Notices
-
 
 ## Gateway API: ReferencePolicy is deprecated, will be removed next release
 
