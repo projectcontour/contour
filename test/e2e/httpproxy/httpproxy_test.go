@@ -474,4 +474,8 @@ descriptors:
 	})
 
 	f.NamespacedTest("httpproxy-crl", testClientCertRevocation)
+
+	Context("gRPC tests", func() {
+		f.NamespacedTest("grpc-upstream-plaintext", testGRPCServicePlaintext)
+	})
 })
