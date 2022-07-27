@@ -1,1 +1,0 @@
-Remove grey banner from main website page.

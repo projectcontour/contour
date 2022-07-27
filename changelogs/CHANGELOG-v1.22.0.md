@@ -1,9 +1,6 @@
-We are delighted to present version v1.22.0-rc.1 of Contour, our layer 7 HTTP reverse proxy for Kubernetes clusters.
+We are delighted to present version v1.22.0 of Contour, our layer 7 HTTP reverse proxy for Kubernetes clusters.
 
 A big thank you to everyone who contributed to the release.
-
-**Please note that this is pre-release software**, and as such we do not recommend installing it in production environments.
-Feedback and bug reports are welcome!
 
 
 - [Major Changes](#major-changes)
@@ -41,6 +38,15 @@ The Policy can be configured with a `StatusCode`, `Body`. And the `StatusCode` i
 It is important to note that one of route.services or route.requestRedirectPolicy or route.directResponsePolicy must be specified.
 
 (#4526, @yangyy93)
+
+## Bump Envoy to v1.22.2
+
+Bumps Envoy to security patch version 1.22.2.
+Envoy CI had a few issues releasing 1.22.1 so a subsequent patch, 1.22.2 was released.
+Envoy announcement [here](https://groups.google.com/g/envoy-announce/c/QxI6z6wdL7M).
+See Envoy release notes [for 1.22.1 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/v1.22.1) and [1.22.2 here](https://www.envoyproxy.io/docs/envoy/v1.22.2/version_history/current).
+
+(#4572, @sunjayBhatia)
 
 ##  Bind create label operation for contour's deployment to the struct
 
@@ -160,6 +166,7 @@ In this future, contents of this runtime configuration will be made configurable
 
 # Docs Changes
 - Updated SITE_CONTRIBUTION.md to reflect Hugo platform. (#4620, @gary-tai)
+- Remove grey banner from main website page. (#4635, @gary-tai)
 
 
 # Deprecation and Removal Notices
@@ -176,22 +183,14 @@ Users of ReferencePolicies must migrate their resources to ReferenceGrants ahead
 
 # Installing and Upgrading
 
-The simplest way to install v1.22.0-rc.1 is to apply one of the example configurations:
+For a fresh install of Contour, consult the [getting started documentation](https://projectcontour.io/getting-started/).
 
-With Gateway API:
-```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.22.0-rc.1/examples/render/contour-gateway.yaml
-```
-
-Without Gateway API:
-```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.22.0-rc.1/examples/render/contour.yaml
-```
+To upgrade an existing Contour installation, please consult the [upgrade documentation](https://projectcontour.io/resources/upgrading/).
 
 
 # Compatible Kubernetes Versions
 
-Contour v1.22.0-rc.1 is tested against Kubernetes 1.22 through 1.24.
+Contour v1.22.0 is tested against Kubernetes 1.22 through 1.24.
 
 # Community Thanks!
 We’re immensely grateful for all the community contributions that help make Contour even better! For this release, special thanks go out to the following contributors:
