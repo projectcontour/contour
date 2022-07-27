@@ -74,7 +74,7 @@ fi
 # Push test images into the cluster. Do this up-front
 # so that the first test does not incur the cost of 
 # pulling them. Helps avoid flakes.
-images=$(grep "Image = " $(find "$REPO/test/e2e" -name "fixtures.go" -print0) | awk '{print $3}' | tr -d '"')
+images=$(grep "Image = " $(find "$REPO/test/e2e" -name "fixtures.go") | awk '{print $3}' | tr -d '"')
 for image in ${images}; do
   docker pull "${image}"
   kind::cluster::load "${image}"
