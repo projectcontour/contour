@@ -11,6 +11,7 @@ These combinations of versions are specifically tested in CI and supported by th
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
 | main            | [1.23.0][19]         | 1.24, 1.23, 1.22    | [main][50]       | v1alpha2, v1beta1   |
+| 1.22.0          | [1.23.0][19]         | 1.24, 1.23, 1.22    | [1.22.0][72]     | v1alpha2, v1beta1   |
 | 1.21.1          | [1.22.2][17]         | 1.23, 1.22, 1.21    | [1.21.1][70]     | v1alpha2            |
 | 1.21.0          | [1.22.0][16]         | 1.23, 1.22, 1.21    | [1.21.0][69]     | v1alpha2            |
 | 1.20.2          | [1.21.3][18]         | 1.23, 1.22, 1.21    | [1.20.2][71]     | v1alpha2            |
@@ -141,6 +142,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [69]: https://github.com/projectcontour/contour-operator/releases/tag/v1.21.0
 [70]: https://github.com/projectcontour/contour-operator/releases/tag/v1.21.1
 [71]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.2
+[71]: https://github.com/projectcontour/contour-operator/releases/tag/v1.22.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix
