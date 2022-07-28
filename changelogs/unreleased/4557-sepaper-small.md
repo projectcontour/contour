@@ -1,1 +1,0 @@
-Gateway API: adds support for the "RequestMirror" HTTPRoute filter type at the rule level.

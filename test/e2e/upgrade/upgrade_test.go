@@ -107,7 +107,6 @@ var _ = Describe("upgrading Contour", func() {
 			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 
 			By("waiting for envoy daemonset to be updated")
-			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetOutOfDate())
 			require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 			By("ensuring app is still routable")
