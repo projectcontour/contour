@@ -79,6 +79,7 @@ func testGRPCServicePlaintext(namespace string) {
 			// Retry if Envoy returns unavailable, the upstream
 			// may not be healthy yet.
 			grpc_retry.WithCodes(codes.Unavailable),
+			grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 100)),
 			grpc_retry.WithMax(20),
 		}
 		conn, err := grpc.DialContext(dialCtx, grpcAddr,
