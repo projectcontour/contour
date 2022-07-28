@@ -367,20 +367,6 @@ func (d *Deployment) EnsureEnvoyDeployment() error {
 	return d.ensureResource(d.EnvoyDeployment, new(apps_v1.Deployment))
 }
 
-// Wait for Envoy daemonset update to go out of date due to the
-// update propagating. Possibly needed before calling WaitForEnvoyDaemonSetUpdated
-// to ensure that does not pass without waiting for update to propagate.
-func (d *Deployment) WaitForEnvoyDaemonSetOutOfDate() error {
-	daemonSetUpdated := func() (bool, error) {
-		tempDS := new(apps_v1.DaemonSet)
-		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
-			return false, err
-		}
-		return tempDS.Status.UpdatedNumberScheduled < tempDS.Status.DesiredNumberScheduled, nil
-	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
-}
-
 func (d *Deployment) WaitForEnvoyUpdated() error {
 	if d.EnvoyDeploymentMode == DaemonsetMode {
 		return d.waitForEnvoyDaemonSetUpdated()
@@ -394,7 +380,8 @@ func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
 			return false, err
 		}
-		return tempDS.Status.NumberAvailable > 0 &&
+		return tempDS.Status.ObservedGeneration == tempDS.Generation &&
+			tempDS.Status.NumberAvailable > 0 &&
 			tempDS.Status.NumberAvailable == tempDS.Status.DesiredNumberScheduled &&
 			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
 	}
