@@ -18,6 +18,7 @@ package httpproxy
 
 import (
 	"context"
+	"crypto/tls"
 	"strings"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +42,7 @@ func testGRPCServicePlaintext(namespace string) {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-echo-plaintext.projectcontour.io")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -49,9 +52,14 @@ func testGRPCServicePlaintext(namespace string) {
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
 					Fqdn: "grpc-echo-plaintext.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo",
+					},
 				},
 				Routes: []contourv1.Route{
 					{
+						// So we can make TLS and non-TLs requests.
+						PermitInsecure: true,
 						Services: []contourv1.Service{
 							{
 								Name:     "grpc-echo",
@@ -71,32 +79,38 @@ func testGRPCServicePlaintext(namespace string) {
 		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 		require.True(t, ok)
 
-		grpcAddr := strings.TrimPrefix(f.HTTP.HTTPURLBase, "http://")
+		insecureAddr := strings.TrimPrefix(f.HTTP.HTTPURLBase, "http://")
+		secureAddr := strings.TrimPrefix(f.HTTP.HTTPSURLBase, "https://")
 
-		dialCtx, dialCancel := context.WithTimeout(context.Background(), time.Second*30)
-		defer dialCancel()
-		retryOpts := []grpc_retry.CallOption{
-			// Retry if Envoy returns unavailable, the upstream
-			// may not be healthy yet.
-			grpc_retry.WithCodes(codes.Unavailable),
-			grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 100)),
-			grpc_retry.WithMax(20),
+		for addr, transportCreds := range map[string]credentials.TransportCredentials{
+			insecureAddr: insecure.NewCredentials(),
+			secureAddr:   credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}),
+		} {
+			dialCtx, dialCancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer dialCancel()
+			retryOpts := []grpc_retry.CallOption{
+				// Retry if Envoy returns unavailable, the upstream
+				// may not be healthy yet.
+				grpc_retry.WithCodes(codes.Unavailable),
+				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 100)),
+				grpc_retry.WithMax(20),
+			}
+			conn, err := grpc.DialContext(dialCtx, addr,
+				grpc.WithBlock(),
+				grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
+				grpc.WithTransportCredentials(transportCreds),
+				grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+			)
+			require.NoError(t, err)
+			defer conn.Close()
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			defer cancel()
+			client := yages.NewEchoClient(conn)
+			resp, err := client.Ping(ctx, &yages.Empty{})
+
+			require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
+			require.Equal(t, "pong", resp.Text)
 		}
-		conn, err := grpc.DialContext(dialCtx, grpcAddr,
-			grpc.WithBlock(),
-			grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
-		)
-		require.NoError(t, err)
-		defer conn.Close()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
-		client := yages.NewEchoClient(conn)
-		resp, err := client.Ping(ctx, &yages.Empty{})
-
-		require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
-		require.Equal(t, "pong", resp.Text)
 	})
 }
