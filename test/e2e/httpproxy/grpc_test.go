@@ -84,7 +84,10 @@ func testGRPCServicePlaintext(namespace string) {
 
 		for addr, transportCreds := range map[string]credentials.TransportCredentials{
 			insecureAddr: insecure.NewCredentials(),
-			secureAddr:   credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}),
+			secureAddr: credentials.NewTLS(&tls.Config{
+				//nolint:gosec
+				InsecureSkipVerify: true,
+			}),
 		} {
 			dialCtx, dialCancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer dialCancel()
