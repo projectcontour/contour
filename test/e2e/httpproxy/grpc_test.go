@@ -94,9 +94,8 @@ func testGRPCServicePlaintext(namespace string) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 		client := yages.NewEchoClient(conn)
-		resp, err := client.Ping(ctx, &yages.Empty{},
-			grpc.WaitForReady(true),
-		)
+		resp, err := client.Ping(ctx, &yages.Empty{})
+
 		require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
 		require.Equal(t, "pong", resp.Text)
 	})
