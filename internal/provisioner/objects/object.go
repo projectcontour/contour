@@ -46,10 +46,10 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 	}
 }
 
-// objectGetter get the object with name
+// objectGetter gets an object given a namespace and name.
 type objectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
 
-// EnsureObjectDeleted ensures that a object with the name is deleted
+// EnsureObjectDeleted ensures that an object with the given namespace and name is deleted
 // if Contour owner labels exist.
 func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter objectGetter) error {
 	obj, err := getter(ctx, cli, contour.Namespace, name)
@@ -62,7 +62,7 @@ func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.
 	if !labels.Exist(obj, model.OwnerLabels(contour)) {
 		return nil
 	}
-	if err := cli.Delete(ctx, obj); err == nil || errors.IsNotFound(err) {
+	if err = cli.Delete(ctx, obj); err == nil || errors.IsNotFound(err) {
 		return nil
 	}
 	return err
