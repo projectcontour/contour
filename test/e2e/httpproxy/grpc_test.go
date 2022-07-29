@@ -231,7 +231,7 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 	require.GreaterOrEqual(t, len(body), currentPos+5)
 	// Trailers frame marker.
 	require.Equal(t, uint8(0x80), body[currentPos])
-	currentPos += 1
+	currentPos++
 
 	// Get trailers frame length.
 	trailersLen := 0
