@@ -123,7 +123,7 @@ func testGRPCServicePlaintext(namespace string) {
 }
 
 func testGRPCWeb(namespace string) {
-	FSpecify("grpc-Web HTTP requests to a gRPC service work as expected", func() {
+	Specify("grpc-Web HTTP requests to a gRPC service work as expected", func() {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
