@@ -17,11 +17,14 @@
 package httpproxy
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"net/http"
 	"strings"
 	"time"
 
+	proto_convert "github.com/golang/protobuf/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/mhausenblas/yages/yages"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,6 +36,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -116,4 +120,136 @@ func testGRPCServicePlaintext(namespace string) {
 			require.Equal(t, "pong", resp.Text)
 		}
 	})
+}
+
+func testGRPCWeb(namespace string) {
+	FSpecify("grpc-Web HTTP requests to a gRPC service work as expected", func() {
+		t := f.T()
+
+		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-web.projectcontour.io")
+
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "grpc-web",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "grpc-web.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo",
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name:     "grpc-echo",
+								Port:     9000,
+								Protocol: pointer.String("h2c"),
+							},
+						},
+					},
+				},
+			},
+		}
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(t, ok)
+
+		// One byte marker that this is a data frame, and 4 bytes
+		// for the length (we can use 0 since the yages.Empty message
+		// is actually empty and has no fields).
+		// See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
+		bodyData := []byte{0x0, 0x0, 0x0, 0x0, 0x0}
+
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host: p.Spec.VirtualHost.Fqdn,
+			Path: "/yages.Echo/Ping",
+			Body: bytes.NewReader(bodyData),
+			RequestOpts: []func(*http.Request){
+				func(req *http.Request) {
+					req.Method = http.MethodPost
+				},
+				e2e.OptSetHeaders(map[string]string{
+					"Content-Type": "application/grpc-web+proto",
+					"Accept":       "application/grpc-web+proto",
+					"X-Grpc-Web":   "1",
+				}),
+			},
+			Condition: func(res *e2e.HTTPResponse) bool {
+				if e2e.HasStatusCode(http.StatusOK)(res) {
+					resp := parseGRPCWebResponse(res.Body)
+					return resp.content != nil && resp.content.Text == "pong" &&
+						resp.trailers["grpc-status"] == "0"
+				}
+				return false
+			},
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, gRPC status OK, and response data %s, got HTTP status %d and raw body: %q", "pong", res.StatusCode, string(res.Body))
+	})
+}
+
+type grpcWebResponse struct {
+	content  *yages.Content
+	trailers map[string]string
+}
+
+func parseGRPCWebResponse(body []byte) grpcWebResponse {
+	defer GinkgoRecover()
+	t := f.T()
+
+	response := grpcWebResponse{
+		trailers: make(map[string]string),
+	}
+
+	// Should have at least the data frame marker and 4 bytes for size.
+	require.Greater(t, len(body), 5)
+	currentPos := 0
+	// Data frame marker.
+	require.Equal(t, uint8(0x0), body[currentPos])
+	currentPos++
+
+	// Get data frame length.
+	dataLen := 0
+	for _, b := range body[currentPos : currentPos+4] {
+		dataLen = dataLen<<8 + int(b)
+	}
+	currentPos += 4
+
+	if dataLen > 0 {
+		require.Greater(t, len(body), currentPos+dataLen)
+
+		content := new(yages.Content)
+		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], proto_convert.MessageV2(content)))
+		response.content = content
+		currentPos += dataLen
+	}
+
+	// Should have at least the trailers frame marker and 4 bytes for size.
+	require.GreaterOrEqual(t, len(body), currentPos+5)
+	// Trailers frame marker.
+	require.Equal(t, uint8(0x80), body[currentPos])
+	currentPos += 1
+
+	// Get trailers frame length.
+	trailersLen := 0
+	for _, b := range body[currentPos : currentPos+4] {
+		trailersLen = trailersLen<<8 + int(b)
+	}
+	currentPos += 4
+
+	if trailersLen > 0 {
+		require.Equal(t, len(body), currentPos+trailersLen)
+
+		trailersKV := strings.Split(strings.TrimSpace(string(body[currentPos:])), "\r\n")
+		for _, kv := range trailersKV {
+			k, v, found := strings.Cut(kv, ":")
+			require.True(t, found)
+			response.trailers[k] = v
+		}
+	}
+
+	return response
 }

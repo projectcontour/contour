@@ -477,5 +477,7 @@ descriptors:
 
 	Context("gRPC tests", func() {
 		f.NamespacedTest("grpc-upstream-plaintext", testGRPCServicePlaintext)
+
+		f.NamespacedTest("grpc-web", testGRPCWeb)
 	})
 })
