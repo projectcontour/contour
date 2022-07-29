@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -61,6 +62,7 @@ type HTTPRequestOpts struct {
 	Path        string
 	Host        string
 	OverrideURL string
+	Body        io.Reader
 	RequestOpts []func(*http.Request)
 	ClientOpts  []func(*http.Client)
 	Condition   func(*HTTPResponse) bool
@@ -85,7 +87,7 @@ func OptSetHeaders(headers map[string]string) func(*http.Request) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLBase)+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -155,6 +157,7 @@ type HTTPSRequestOpts struct {
 	Path          string
 	Host          string
 	OverrideURL   string
+	Body          io.Reader
 	RequestOpts   []func(*http.Request)
 	TLSConfigOpts []func(*tls.Config)
 	Condition     func(*HTTPResponse) bool
@@ -177,7 +180,7 @@ func OptSetSNI(name string) func(*tls.Config) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host

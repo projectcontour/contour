@@ -3762,9 +3762,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -3805,7 +3805,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("https", "HTTPRoute", 0),
 	})
 
 	run(t, "Gateway references TLS cert in different namespace, with no ReferenceGrant", testcase{
@@ -3817,9 +3817,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -3856,10 +3856,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -3889,9 +3889,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -3933,7 +3933,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("https", "HTTPRoute", 0),
 	})
 
 	run(t, "Gateway references TLS cert in different namespace, with invalid ReferenceGrant (policy in wrong namespace)", testcase{
@@ -3945,9 +3945,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -4000,10 +4000,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -4033,9 +4033,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -4088,10 +4088,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -4121,9 +4121,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -4176,10 +4176,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -4209,9 +4209,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -4264,10 +4264,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -4297,9 +4297,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Spec: gatewayapi_v1beta1.GatewaySpec{
 				GatewayClassName: gatewayapi_v1beta1.ObjectName("projectcontour.io/contour"),
 				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
+					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -4353,10 +4353,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
+				"https": {
+					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5624,133 +5624,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 		}},
 	})
-	run(t, "TLS certificate ref to a non-secret on a TLS listener results in a listener condition", testcase{
-		objs: []interface{}{},
-		gateway: &gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "contour",
-				Namespace: "projectcontour",
-			},
-			Spec: gatewayapi_v1beta1.GatewaySpec{
-				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
-					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-						},
-					},
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-							{
-								Group: gatewayapi.GroupPtr("invalid-group"),
-								Kind:  gatewayapi.KindPtr("NotASecret"),
-								Name:  "foo",
-							},
-						},
-					},
-				}},
-			},
-		},
-		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
-			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
-			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
-					Status:  contour_api_v1.ConditionFalse,
-					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
-					Message: "Listeners are not valid",
-				},
-			},
-			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
-					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
-					},
-					Conditions: []metav1.Condition{
-						{
-							Type:    "Ready",
-							Status:  metav1.ConditionFalse,
-							Reason:  "Invalid",
-							Message: "Invalid listener, see other listener conditions for details",
-						},
-						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"foo\" must contain a reference to a core.Secret",
-						},
-					},
-				},
-			},
-		}},
-	})
-
-	run(t, "nonexistent TLS certificate ref on a TLS listener results in a listener condition", testcase{
-		objs: []interface{}{},
-		gateway: &gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "contour",
-				Namespace: "projectcontour",
-			},
-			Spec: gatewayapi_v1beta1.GatewaySpec{
-				Listeners: []gatewayapi_v1beta1.Listener{{
-					Name:     "tls",
-					Port:     443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-						},
-					},
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-							gatewayapi.CertificateRef("nonexistent-secret", "projectcontour"),
-						},
-					},
-				}},
-			},
-		},
-		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
-			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
-			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
-					Status:  contour_api_v1.ConditionFalse,
-					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
-					Message: "Listeners are not valid",
-				},
-			},
-			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-				"tls": {
-					Name: "tls",
-					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
-					},
-					Conditions: []metav1.Condition{
-						{
-							Type:    "Ready",
-							Status:  metav1.ConditionFalse,
-							Reason:  "Invalid",
-							Message: "Invalid listener, see other listener conditions for details",
-						},
-						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
-							Message: "Spec.VirtualHost.TLS.CertificateRefs \"nonexistent-secret\" referent is invalid: Secret not found",
-						},
-					},
-				},
-			},
-		}},
-	})
 
 	run(t, "invalid listener protocol results in a listener condition", testcase{
 		objs: []interface{}{},
@@ -5954,7 +5827,116 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    "Ready",
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
-							Message: "Listener.TLS.CertificateRefs cannot be defined when TLS Mode is \"Passthrough\".",
+							Message: "Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is \"Passthrough\".",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "TLS listener with TLS.Mode=Terminate results in a listener condition", testcase{
+		objs: []interface{}{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+							gatewayapi.CertificateRef("tlscert", "projectcontour"),
+						},
+					},
+				}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
+				gatewayapi_v1beta1.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"tls": {
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Listener.TLS.Mode must be \"Passthrough\" when protocol is \"TLS\".",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "HTTPS listener with TLS.Mode=Passthrough results in a listener condition", testcase{
+		objs: []interface{}{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{{
+					Name:     "https",
+					Port:     443,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+					},
+				}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionScheduled: gatewayScheduledCondition(),
+				gatewayapi_v1beta1.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"https": {
+					Name: "https",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Listener.TLS.Mode must be \"Terminate\" when protocol is \"HTTPS\".",
 						},
 					},
 				},
@@ -6220,53 +6202,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 		})
 	}
 
-	gateways := []*gatewayapi_v1beta1.Gateway{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
-				Name:     "tls-default-terminate",
-				Port:     443,
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					// Mode is not defined and should default to "Terminate".
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
-					},
-				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-					},
-				},
-			}},
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
-				Name:     "tls-terminate",
-				Port:     443,
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
-					},
-				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
-					},
-				},
-			}},
-		},
-	}, {
+	gw := &gatewayapi_v1beta1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
@@ -6286,7 +6222,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			}},
 		},
-	}}
+	}
 
 	kuardService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -6303,414 +6239,408 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 		},
 	}
 
-	// Both a "mode: terminate" & a "mode: passthrough" should return the same
-	// valid status. This loops through all three types (Not Defined, Terminate, Passthrough)
-	// and validates the proper status is set. Note when not defined, the default is "terminate".
-	for _, gw := range gateways {
-
-		run(t, "TLSRoute: spec.rules.backendRef.name not specified", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.backendRef.name not specified", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-								{
-									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: gatewayapi.KindPtrV1Alpha2("Service"),
-										Port: gatewayapi.PortNumPtrV1Alpha2(8080),
-									},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+							{
+								BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+									Kind: gatewayapi.KindPtrV1Alpha2("Service"),
+									Port: gatewayapi.PortNumPtrV1Alpha2(8080),
 								},
 							},
-						}},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "Spec.Rules.BackendRef.Name must be specified",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-								Message: "Accepted TLSRoute",
-							},
+						},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "Spec.Rules.BackendRef.Name must be specified",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted TLSRoute",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.backendRef.name invalid on two matches", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.backendRef.name invalid on two matches", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{
-							{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil)},
-							{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-two", 8080, nil)},
-						},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
-								Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-								Message: "Accepted TLSRoute",
-							},
-						},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
+						{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil)},
+						{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-two", 8080, nil)},
 					},
 				},
 			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
-
-		run(t, "TLSRoute: spec.rules.backendRef.port not specified", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
+							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted TLSRoute",
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
+
+	run(t, "TLSRoute: spec.rules.backendRef.port not specified", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-								{
-									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: gatewayapi.KindPtrV1Alpha2("Service"),
-										Name: "kuard",
-									},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+							{
+								BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+									Kind: gatewayapi.KindPtrV1Alpha2("Service"),
+									Name: "kuard",
 								},
 							},
-						}},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "Spec.Rules.BackendRef.Port must be specified",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-								Message: "Accepted TLSRoute",
-							},
+						},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "Spec.Rules.BackendRef.Port must be specified",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted TLSRoute",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.backendRefs not specified", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.backendRefs not specified", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
-						},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{
-							{}, // rule with no backend refs
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
+						{}, // rule with no backend refs
 					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "At least one Spec.Rules.BackendRef must be specified.",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-								Message: "Accepted TLSRoute",
-							},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "At least one Spec.Rules.BackendRef must be specified.",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted TLSRoute",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"*.*.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"*.*.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
-								Message: "No intersecting hostnames were found between the listener and the route.",
-							},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"#projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"#projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
-								Message: "No intersecting hostnames were found between the listener and the route.",
-							},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "contour",
+	run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
 						},
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
-							},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"1.2.3.4"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"1.2.3.4"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonDegraded),
-								Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
-								Message: "No intersecting hostnames were found between the listener and the route.",
-							},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 
-		run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
-			gateway: gw,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-								gatewayapi.GatewayParentRefV1Alpha2(gw.Namespace, gw.Name),
-							},
+	run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRefV1Alpha2(gw.Namespace, gw.Name),
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, pointer.Int32(0)),
-						}},
 					},
-				}},
-			wantRouteConditions: []*status.RouteStatusUpdate{{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []metav1.Condition{
-							{
-								Type:    string(status.ConditionValidBackendRefs),
-								Status:  contour_api_v1.ConditionFalse,
-								Reason:  string(status.ReasonAllBackendRefsHaveZeroWeights),
-								Message: "At least one Spec.Rules.BackendRef must have a non-zero weight.",
-							},
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-								Message: "Accepted TLSRoute",
-							},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, pointer.Int32(0)),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(status.ConditionValidBackendRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonAllBackendRefsHaveZeroWeights),
+							Message: "At least one Spec.Rules.BackendRef must have a non-zero weight.",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted TLSRoute",
 						},
 					},
 				},
-			}},
-			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
-		})
-	}
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 }
 
 func gatewayScheduledCondition() metav1.Condition {

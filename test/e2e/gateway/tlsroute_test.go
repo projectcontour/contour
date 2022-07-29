@@ -35,7 +35,6 @@ func testTLSRoutePassthrough(namespace string) {
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo")
 		f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "passthrough.tlsroute.gatewayapi.projectcontour.io")
 
-		// TLSRoute that doesn't define the termination type.
 		route := &gatewayapi_v1alpha2.TLSRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
@@ -58,49 +57,6 @@ func testTLSRoutePassthrough(namespace string) {
 		// Ensure request routes to echo.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      "passthrough.tlsroute.gatewayapi.projectcontour.io",
-			Condition: e2e.HasStatusCode(200),
-		})
-		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
-
-		// Ensure request doesn't route when non-matching SNI is provided
-		require.Never(f.T(), func() bool {
-			_, err := f.HTTP.SecureRequest(&e2e.HTTPSRequestOpts{
-				Host: "something.else.not.matching",
-			})
-			return err == nil
-		}, time.Second*5, time.Millisecond*200)
-	})
-}
-
-func testTLSRouteTerminate(namespace string) {
-	Specify("TLS requests terminate via SNI at Envoy and then are routed to a service", func() {
-		t := f.T()
-
-		f.Fixtures.Echo.Deploy(namespace, "echo")
-
-		route := &gatewayapi_v1alpha2.TLSRoute{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "tls-route-1",
-			},
-			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-						gatewayapi.GatewayParentRefV1Alpha2("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
-					},
-				},
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"terminate.tlsroute.gatewayapi.projectcontour.io"},
-				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-					BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, nil),
-				}},
-			},
-		}
-		f.CreateTLSRouteAndWaitFor(route, tlsRouteAccepted)
-
-		// Ensure request routes to echo matching SNI: terminate.tlsroute.gatewayapi.projectcontour.io
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host:      "terminate.tlsroute.gatewayapi.projectcontour.io",
 			Condition: e2e.HasStatusCode(200),
 		})
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)

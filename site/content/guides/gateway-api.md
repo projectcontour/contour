@@ -1,5 +1,5 @@
 ---
-title: Using Gateway API (v1alpha2) with Contour
+title: Using Gateway API with Contour
 layout: page
 ---
 
@@ -9,7 +9,7 @@ layout: page
 evolve service networking APIs within the Kubernetes ecosystem. Gateway API consists of multiple resources that provide
 user interfaces to expose Kubernetes applications- Services, Ingress, and more.
 
-This guide covers using version **v1alpha2** of the Gateway API, with Contour `v1.21.0` or higher.
+This guide covers using version **v1beta1** of the Gateway API, with Contour `v1.22.0` or higher.
 
 ### Background
 
@@ -63,7 +63,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
 spec:
@@ -80,7 +80,7 @@ metadata:
   name: projectcontour
 ---
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
   namespace: projectcontour
@@ -149,7 +149,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
 spec:
@@ -162,7 +162,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
   namespace: projectcontour
@@ -246,7 +246,7 @@ A simple example of a parameterized Contour GatewayClass that provisions Envoy a
 
 ```yaml
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour-with-envoy-deployment
 spec:
@@ -280,7 +280,7 @@ This guide only scratches the surface of the Gateway API's capabilities. See the
 [2]: https://kubernetes.io/
 [3]: https://projectcontour.io/resources/compatibility-matrix/
 [4]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[5]: https://gateway-api.sigs.k8s.io/v1alpha2/api-types/gatewayclass/#gatewayclass-parameters
+[5]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-parameters
 [6]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.ContourDeployment
 [7]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.GatewayConfig
-[8]: https://gateway-api.sigs.k8s.io/v1alpha2/api-types/gatewayclass/#gatewayclass-controller-selection
+[8]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-controller-selection

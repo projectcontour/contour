@@ -58,7 +58,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				ConnectionBalancer:        "yesplease",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.7",
-					CipherSuites: []contour_api_v1alpha1.TLSCipherType{
+					CipherSuites: []string{
 						"foo",
 						"bar",
 					},
@@ -98,7 +98,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 			Logging: &contour_api_v1alpha1.EnvoyLogging{
 				AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
 				AccessLogFormatString: "foo",
-				AccessLogFields:       []string{"field-1", "field-2"},
+				AccessLogJSONFields:   []string{"field-1", "field-2"},
 				AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
 			},
 			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{

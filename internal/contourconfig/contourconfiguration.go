@@ -20,7 +20,6 @@ import (
 	"github.com/imdario/mergo"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/utils/pointer"
 )
 
@@ -81,7 +80,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				ConnectionBalancer:        "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",
-					CipherSuites:           defaultCipherSuites(),
+					CipherSuites:           contour_api_v1alpha1.DefaultTLSCiphers,
 				},
 			},
 			Service: &contour_api_v1alpha1.NamespacedName{
@@ -111,7 +110,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			Logging: &contour_api_v1alpha1.EnvoyLogging{
 				AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 				AccessLogFormatString: "",
-				AccessLogFields:       nil,
+				AccessLogJSONFields:   nil,
 				AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 			},
 			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
@@ -154,16 +153,6 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			TLS:     nil,
 		},
 	}
-}
-
-func defaultCipherSuites() []contour_api_v1alpha1.TLSCipherType {
-	var res []contour_api_v1alpha1.TLSCipherType
-
-	for _, cipherSuite := range config.DefaultTLSCiphers {
-		res = append(res, contour_api_v1alpha1.TLSCipherType(cipherSuite))
-	}
-
-	return res
 }
 
 type Timeouts struct {
