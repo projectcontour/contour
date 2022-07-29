@@ -37,11 +37,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EchoServerImage is the image to use as a backend fixture.
-// Note that this MUST use a tag, not a digest, in order for
-// the pre-loading into kind to work, since loading + referencing
-// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
-const EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
+const (
+	// Note that these image references MUST use a tag, not a digest, in order for
+	// the pre-loading into kind to work, since loading + referencing
+	// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
+
+	// EchoServerImage is the image to use as a backend fixture.
+	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
+
+	// GRPCServerImage is the image to use for tests that require a gRPC server.
+	GRPCServerImage = "quay.io/mhausenblas/yages:0.1.0"
+)
 
 // Fixtures holds references to all of the E2E fixtures helpers.
 type Fixtures struct {
@@ -52,6 +58,10 @@ type Fixtures struct {
 	// EchoSecure provides helpers for working with the TLS-secured
 	// ingress-conformance-echo-tls test fixture.
 	EchoSecure *EchoSecure
+
+	// GRPC provides helpers for working with a gRPC echo server test
+	// fixture.
+	GRPC *GRPC
 }
 
 // Echo manages the ingress-conformance-echo fixture.
@@ -73,13 +83,6 @@ func (e *Echo) Deploy(ns, name string) func() {
 // and name is defaulted to "ingress-conformance-echo" if not provided. Returns
 // a cleanup function.
 func (e *Echo) DeployN(ns, name string, replicas int32) func() {
-	valOrDefault := func(val, defaultVal string) string {
-		if val != "" {
-			return val
-		}
-		return defaultVal
-	}
-
 	ns = valOrDefault(ns, "default")
 	name = valOrDefault(name, "ingress-conformance-echo")
 
@@ -190,13 +193,6 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 // Namespace is defaulted to "default" and name is defaulted to
 // "ingress-conformance-echo" if not provided.
 func (e *Echo) DumpEchoLogs(ns, name string) ([][]byte, error) {
-	valOrDefault := func(val, defaultVal string) string {
-		if val != "" {
-			return val
-		}
-		return defaultVal
-	}
-
 	ns = valOrDefault(ns, "default")
 	name = valOrDefault(name, "ingress-conformance-echo")
 
@@ -256,13 +252,6 @@ type EchoSecure struct {
 // and name is defaulted to "ingress-conformance-echo-tls" if not provided. Returns
 // a cleanup function.
 func (e *EchoSecure) Deploy(ns, name string) func() {
-	valOrDefault := func(val, defaultVal string) string {
-		if val != "" {
-			return val
-		}
-		return defaultVal
-	}
-
 	ns = valOrDefault(ns, "default")
 	name = valOrDefault(name, "ingress-conformance-echo-tls")
 
@@ -397,6 +386,116 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 	}
 }
 
+type GRPC struct {
+	client client.Client
+	t      ginkgo.GinkgoTInterface
+}
+
+func (g *GRPC) Deploy(ns, name string) func() {
+	ns = valOrDefault(ns, "default")
+	name = valOrDefault(name, "grpc-echo")
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app.kubernetes.io/name": name},
+				},
+				Spec: corev1.PodSpec{
+					TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+						{
+							// Attempt to spread pods across different nodes if possible.
+							TopologyKey:       "kubernetes.io/hostname",
+							MaxSkew:           1,
+							WhenUnsatisfiable: corev1.ScheduleAnyway,
+							LabelSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "grpc-echo",
+							Image: GRPCServerImage,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "INGRESS_NAME",
+									Value: name,
+								},
+								{
+									Name:  "SERVICE_NAME",
+									Value: name,
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "NAMESPACE",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "grpc",
+									ContainerPort: 9000,
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromString("grpc"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	require.NoError(g.t, g.client.Create(context.TODO(), deployment))
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "grpc",
+					Port:       9000,
+					TargetPort: intstr.FromString("grpc"),
+				},
+			},
+			Selector: map[string]string{"app.kubernetes.io/name": name},
+		},
+	}
+	require.NoError(g.t, g.client.Create(context.TODO(), service))
+
+	return func() {
+		require.NoError(g.t, g.client.Delete(context.TODO(), service))
+		require.NoError(g.t, g.client.Delete(context.TODO(), deployment))
+	}
+}
+
 // DefaultContourConfigFileParams returns a default configuration in a config
 // file params object.
 func DefaultContourConfigFileParams() *config.Parameters {
@@ -508,4 +607,11 @@ func XDSServerTypeFromEnv() contour_api_v1alpha1.XDSServerType {
 		serverType = contour_api_v1alpha1.XDSServerType(typeFromEnv)
 	}
 	return serverType
+}
+
+func valOrDefault(val, defaultVal string) string {
+	if val != "" {
+		return val
+	}
+	return defaultVal
 }
