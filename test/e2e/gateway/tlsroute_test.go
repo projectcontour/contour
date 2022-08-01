@@ -59,6 +59,7 @@ func testTLSRoutePassthrough(namespace string) {
 			Host:      "passthrough.tlsroute.gatewayapi.projectcontour.io",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 
