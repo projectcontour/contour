@@ -99,8 +99,8 @@ func testGRPCServicePlaintext(namespace string) {
 				// Retry if Envoy returns unavailable, the upstream
 				// may not be healthy yet.
 				grpc_retry.WithCodes(codes.Unavailable),
-				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 100)),
-				grpc_retry.WithMax(20),
+				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
+				grpc_retry.WithMax(10),
 			}
 			conn, err := grpc.DialContext(dialCtx, addr,
 				grpc.WithBlock(),
@@ -111,7 +111,8 @@ func testGRPCServicePlaintext(namespace string) {
 			require.NoError(t, err)
 			defer conn.Close()
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			// Give significant leeway for retries to complete with exponential backoff.
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 			defer cancel()
 			client := yages.NewEchoClient(conn)
 			resp, err := client.Ping(ctx, &yages.Empty{})
