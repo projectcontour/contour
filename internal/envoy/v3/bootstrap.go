@@ -30,6 +30,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	envoy_regex_engines_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/regex_engines/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -240,6 +241,10 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 					),
 				},
 			}},
+		},
+		DefaultRegexEngine: &envoy_core_v3.TypedExtensionConfig{
+			Name:        "envoy.regex_engines.google_re2",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_regex_engines_v3.GoogleRE2{}),
 		},
 		Admin: &envoy_bootstrap_v3.Admin{
 			AccessLog: adminAccessLog(c.GetAdminAccessLogPath()),

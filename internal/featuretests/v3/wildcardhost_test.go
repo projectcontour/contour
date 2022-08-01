@@ -93,9 +93,6 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												EngineType: &matcher.RegexMatcher_GoogleRe2{
-													GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-												},
 												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo\\.com",
 											},
 										},
@@ -157,9 +154,6 @@ func TestHTTPProxyWildcardFQDN(t *testing.T) {
 								StringMatch: &matcher.StringMatcher{
 									MatchPattern: &matcher.StringMatcher_SafeRegex{
 										SafeRegex: &matcher.RegexMatcher{
-											EngineType: &matcher.RegexMatcher_GoogleRe2{
-												GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-											},
 											Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io",
 										},
 									},
@@ -265,9 +259,6 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												EngineType: &matcher.RegexMatcher_GoogleRe2{
-													GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-												},
 												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com",
 											},
 										},
@@ -296,9 +287,6 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												EngineType: &matcher.RegexMatcher_GoogleRe2{
-													GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-												},
 												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com",
 											},
 										},
