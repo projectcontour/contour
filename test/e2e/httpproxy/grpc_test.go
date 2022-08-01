@@ -100,7 +100,7 @@ func testGRPCServicePlaintext(namespace string) {
 				// may not be healthy yet.
 				grpc_retry.WithCodes(codes.Unavailable),
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
-				grpc_retry.WithMax(10),
+				grpc_retry.WithMax(20),
 			}
 			conn, err := grpc.DialContext(dialCtx, addr,
 				grpc.WithBlock(),
