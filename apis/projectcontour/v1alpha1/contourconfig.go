@@ -361,26 +361,6 @@ type EnvoyListenerConfig struct {
 	TLS *EnvoyTLS `json:"tls,omitempty"`
 }
 
-// TLSCipherType is a string alias for the TLS ciphers supported by Envoy.
-//
-// Values:
-//
-// * [ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]
-// * [ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]
-// * ECDHE-ECDSA-AES128-GCM-SHA256
-// * ECDHE-RSA-AES128-GCM-SHA256
-// * ECDHE-ECDSA-AES128-SHA
-// * ECDHE-RSA-AES128-SHA
-// * AES128-GCM-SHA256
-// * AES128-SHA
-// * ECDHE-ECDSA-AES256-GCM-SHA384
-// * ECDHE-RSA-AES256-GCM-SHA384
-// * ECDHE-ECDSA-AES256-SHA
-// * ECDHE-RSA-AES256-SHA
-// * AES256-GCM-SHA384
-// * AES256-SHA
-type TLSCipherType string
-
 // EnvoyTLS describes tls parameters for Envoy listneners.
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
@@ -407,12 +387,28 @@ type EnvoyTLS struct {
 	//   - "ECDHE-ECDSA-AES256-GCM-SHA384"
 	//   - "ECDHE-RSA-AES256-GCM-SHA384"
 	//
+	// Ciphers provided are validated against the following list:
+	//   - "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
+	//   - "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
+	//   - "ECDHE-ECDSA-AES128-GCM-SHA256"
+	//   - "ECDHE-RSA-AES128-GCM-SHA256"
+	//   - "ECDHE-ECDSA-AES128-SHA"
+	//   - "ECDHE-RSA-AES128-SHA"
+	//   - "AES128-GCM-SHA256"
+	//   - "AES128-SHA"
+	//   - "ECDHE-ECDSA-AES256-GCM-SHA384"
+	//   - "ECDHE-RSA-AES256-GCM-SHA384"
+	//   - "ECDHE-ECDSA-AES256-SHA"
+	//   - "ECDHE-RSA-AES256-SHA"
+	//   - "AES256-GCM-SHA384"
+	//   - "AES256-SHA"
+	//
 	// Contour recommends leaving this undefined unless you are sure you must.
 	//
 	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 	// +optional
-	CipherSuites []TLSCipherType `json:"cipherSuites,omitempty"`
+	CipherSuites []string `json:"cipherSuites,omitempty"`
 }
 
 // EnvoyListener defines parameters for an Envoy Listener.
@@ -446,10 +442,10 @@ type EnvoyLogging struct {
 	// +optional
 	AccessLogFormatString string `json:"accessLogFormatString,omitempty"`
 
-	// AccessLogFields sets the fields that JSON logging will
+	// AccessLogJSONFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
 	// +optional
-	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
+	AccessLogJSONFields AccessLogJSONFields `json:"accessLogJSONFields,omitempty"`
 
 	// AccessLogLevel sets the verbosity level of the access log.
 	//

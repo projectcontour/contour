@@ -16,7 +16,7 @@ package v1alpha1
 import (
 	"fmt"
 
-	"github.com/projectcontour/contour/pkg/config"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Validate configuration that is not already covered by CRD validation.
@@ -106,20 +106,49 @@ func (e *EnvoyConfig) Validate() error {
 		}
 	}
 
-	// CipherSuites
+	// Envoy TLS configuration
 	if e.Listener != nil && e.Listener.TLS != nil {
-		var invalidCipherSuites []string
-		for _, c := range e.Listener.TLS.CipherSuites {
-			if _, ok := config.ValidTLSCiphers[string(c)]; !ok {
-				invalidCipherSuites = append(invalidCipherSuites, string(c))
-			}
-		}
-		if len(invalidCipherSuites) > 0 {
-			return fmt.Errorf("invalid cipher suites %q", invalidCipherSuites)
-		}
+		return e.Listener.TLS.Validate()
 	}
 
 	return nil
+}
+
+// Validate ensures EnvoyTLS configuration is valid.
+func (e *EnvoyTLS) Validate() error {
+	if e.MinimumProtocolVersion != "" && e.MinimumProtocolVersion != "1.2" && e.MinimumProtocolVersion != "1.3" {
+		return fmt.Errorf("invalid TLS minimum protocol version %q", e.MinimumProtocolVersion)
+	}
+
+	var invalidCipherSuites []string
+	for _, c := range e.CipherSuites {
+		if _, ok := ValidTLSCiphers[c]; !ok {
+			invalidCipherSuites = append(invalidCipherSuites, c)
+		}
+	}
+	if len(invalidCipherSuites) > 0 {
+		return fmt.Errorf("invalid cipher suites %q", invalidCipherSuites)
+	}
+	return nil
+}
+
+// SanitizedCipherSuites returns a deduplicated list of TLS ciphers.
+// Order is maintained.
+func (e *EnvoyTLS) SanitizedCipherSuites() []string {
+	if len(e.CipherSuites) == 0 {
+		return DefaultTLSCiphers
+	}
+
+	uniqueCiphers := sets.NewString()
+	// We also use a list so we can maintain the order.
+	validatedCiphers := []string{}
+	for _, c := range e.CipherSuites {
+		if !uniqueCiphers.Has(c) {
+			uniqueCiphers.Insert(c)
+			validatedCiphers = append(validatedCiphers, c)
+		}
+	}
+	return validatedCiphers
 }
 
 // Validate ensures that exactly one of ControllerName or GatewayRef are specified.
@@ -147,10 +176,49 @@ func (e *EnvoyLogging) Validate() error {
 	if err := e.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
-	if err := e.AccessLogFields.Validate(); err != nil {
+	if err := e.AccessLogJSONFields.Validate(); err != nil {
 		return err
 	}
-	return validateAccessLogFormatString(e.AccessLogFormatString)
+	return AccessLogFormatString(e.AccessLogFormatString).Validate()
+}
+
+// AccessLogFormatterExtensions returns a list of formatter extension names required by the access log format.
+//
+// Note: When adding support for new formatter, update the list of extensions here and
+// add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
+// Currently only one extension exist in Envoy.
+func (e *EnvoyLogging) AccessLogFormatterExtensions() []string {
+	// Function that finds out if command operator is present in a format string.
+	contains := func(format, command string) bool {
+		tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
+		for _, t := range tokens {
+			if t[2] == command {
+				return true
+			}
+		}
+		return false
+	}
+
+	extensionsMap := make(map[string]bool)
+	switch e.AccessLogFormat {
+	case EnvoyAccessLog:
+		if contains(e.AccessLogFormatString, "REQ_WITHOUT_QUERY") {
+			extensionsMap["envoy.formatter.req_without_query"] = true
+		}
+	case JSONAccessLog:
+		for _, f := range e.AccessLogJSONFields.AsFieldMap() {
+			if contains(f, "REQ_WITHOUT_QUERY") {
+				extensionsMap["envoy.formatter.req_without_query"] = true
+			}
+		}
+	}
+
+	var extensions []string
+	for k := range extensionsMap {
+		extensions = append(extensions, k)
+	}
+
+	return extensions
 }
 
 // endpointsInConfict returns error if different protocol are configured to use single port.

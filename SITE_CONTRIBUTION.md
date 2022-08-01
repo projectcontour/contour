@@ -1,166 +1,139 @@
 # Website Contributions
 
-The projectcontour.io site is a static HTML site built using the Jekyll platform. Site content is written in markdown with liquid templating to populate content sections such as links.
+[projectcontour.io][9] is a static HTML site built using the Hugo static site generator. All site content is written in Markdown.
 
-Contribution [guidelines][8] and [workflows][7] still apply to site contributions.
+Contribution [guidelines][4] and [workflows][3] still apply to site contributions.
 
-Please familiarize yourself with Jekyll and Liquid templating if you intend on contributing to the site.
+Please familiarize yourself with Hugo and Markdown if you intend on contributing to the site.
 
-- [Jekyll documentation][1]
-- [Liquid Templating][2]
-- [Mastering Markdown][5]
+- [Hugo documentation][1]
+- [Mastering Markdown][2]
 
-## Directory Structure
+## Prerequisites
+- You must have Hugo installed. Follow the [Hugo installation][10] instructions for your platform. To verify the installation, you should see a list of help commands when you run the following command:
+    ```
+    hugo help
+    ```
 
-Overview of the site directory structure and purpose of directories:
+- A local copy of the contour repository
 
+## Understanding the directory structure
+The website content is located in the `site/content` directory. 
+The `site` directory is organized as follows:
 ```
 site
-├── _contributors
-├── css # Fonts
-│   └── fonts
-│       ├── IcoMoon
-│       └── Metropolis
-├── _data # Custom data files
-├── docs # Versioned product documentation
-│   ├── main
-│   └── v1.0.0
-├── _guides # Unversioned product usage guides
-├── img
-│   ├── case-study-icons
-│   ├── cert-manager
-│   ├── contour-1.0
-│   ├── contributors
-│   ├── heroes
-│   └── posts
-├── _includes # HTML partials that are incorporated into layouts
-├── js # Javascript files
-├── _layouts # Layout templates to wrap posts and pages
-├── _metrics # Content is auto generated. Do not modify contents
-├── _plugins # Ruby files for custom Jekyll plugins
-├── _posts # Contour blog posts
-├── _resources # General information pages
-└── _scss # Site style sheets
-    ├── bootstrap-4.1.3
-    │   ├── mixins
-    │   └── utilities
-    └── site
-        ├── common
-        ├── layouts
-        ├── objects
-        ├── settings
-        └── utilities
+├───archetypes
+├───content
+│   ├───community # Community page
+│   ├───docs # Versioned product documentation
+│   │   ├───main
+│   │   ├───v1.0.0
+│   │   ├───v1.0.1
+│   │   ├─── ...
+│   ├───examples
+│   ├───getting-started # Getting started guide
+│   ├───guides # Guides to configuring specific features
+│   ├───posts # Blog posts
+│   └───resources # Resources such as videos, podcasts, and community articles
+├───data
+├───img
+├───public # Blog
+├───resources
+└───themes
 ```
 
-## Link Insertion Standards
 
-Usage of links within a page has been standardized to simplify the process of finding and fixing links as required.
+## Linking to resources
+Reference table links are preferred over inline links as reference tables make it easier to find and update links.
+Reference table links use the following Markdown format:
+```
+If you encounter issues, review the [troubleshooting][17] page, [file an issue][6], or talk to us on the [#contour channel][12] on Kubernetes Slack.
+```
 
-Avoid using inline links, instead, use a reference table at the bottom of the file; making it easier to find and update links. [Reference Links][3]. There are some exceptions to this rule, such as deprecation warnings.
+A reference table, located at the end of the Markdown file, uses the following format:
+```
+[1]: /docs/{{< param latest_version >}}/deploy-options
+[2]: /CONTRIBUTING.md#contribution-workflow
+[3]: {{< param github_url >}}/issues
+[4]: https://httpbin.org/
+[5]: https://github.com/projectcontour/community/wiki/Office-Hours
+[6]: {{< param slack_url >}}
+[7]: https://github.com/bitnami/charts/tree/master/bitnami/contour
+[8]: https://www.youtube.com/watch?v=xUJbTnN3Dmw
+```
 
-There are several conditions which will determine the correct type of link templating to use.
+## Using URL parameters
+Several URL parameters are available for you to use when creating reference table links:
 
-**Linking to a blog post:**
+- base_url: "https://projectcontour.io"
+- twitter_url: "https://twitter.com/projectcontour"
+- github_url: "https://github.com/projectcontour/contour"
+- slack_url: "https://kubernetes.slack.com/messages/contour"
+- latest_version: latest document version
 
-Use this formation when linking to a projectcontour.io blog post. `{% post_url 2010-07-21-name-of-post %}`
+You can use parameters to build URL strings in the link reference table. For example:
+```
+[1]: {{< param github_url >}}/issues
+[2]: /docs/{{< param latest_version >}}/config/fundamentals
+[3]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
+[4]: {{< param slack_url >}}
+[5]: {{< param base_url >}}/resources/ philosophy
+```
 
-This method will follow any site / page changes to permalinks and Jekyll will validate the link during build.
 
-**Linking to a projectcontour.io page:**
+## Using notices
+Notices are used to call out specific information. There are four types of notices:
+- Tip
+- Information
+- Warning
+- Notes
 
-This template is used when linking to another projectcontour.io page. Path to the .md is relative from /site/.
-`{% link getting-started.md %}` `{% link docs/v1.0.0/deploy-options.md %}`
+Notice types use the following format:
+```
+{{< notice tip >}}
+This is a TIP
+{{< /notice >}}
 
-Jekyll will perform validation against links inserted with this method.
+{{< notice info >}}
+This is INFORMATION
+{{< /notice >}}
 
-**Linking to a section within the same page:**
+{{< notice warning >}}
+This is a WARNING
+{{< /notice >}}
 
-Links are created for all headers when the site is built. You can link to sections within the same page by using `#section-text`.
-Spaces within a heading are replaced with a hyphen. `## My heading` has a link `#My-heading`.
+{{< notice note >}}
+This is a NOTE
+{{< /notice >}}
+```
 
-**Linking to a section within another page:**
+## Proofreading and spelling
+Most IDEs have spellcheck or a spellcheck plugin to assist with identifying common spelling errors. If you would like, have someone else review your changes as an additional check.
 
-Unfortunately, the `{% link %}` templating method does not allow linking to a section within a page. Use this format when linking to a section within another page.
-`{% <Path to page post generation/<section> %}` or `/docs/v1.0.0/deploy-options/#Host-Networking`
+## Testing your changes
+To test your website changes, run the following command from the `site` directory:
+```
+hugo server
+```
 
-A key difference between using `{% link %}` and the above method is that `{% link %}` will resolve to pages final location. To use the above method, you need to point the link to the location where the document will end up. For example, files in the `_guides` directory will be located in `/guides` on the live site. Therefore, the link for `_guides/cert-manager` is `/guides/cert-manager`.
+Go to `http://localhost:1313` to view the website and changes in your browser. When ready, commit and push your changes to GitHub and create a Pull Request (PR). You can let the team know in the [Contour Slack channel][7] that you have created a PR.
 
-Additionally, the above method will not follow any permalink changes or page-specific permalink.
 
-**Linking to the project contour GitHub repo:**
+## Next steps
+Have questions? Send a Slack message on the Contour channel, an email on the mailing list, or join a Contour meeting.
+- Slack: kubernetes.slack.com [#contour][7]
+- Join us in a [User Group][5] or [Office Hours][6] meeting 
+- Join the [mailing list][8] for the latest information
 
-The GitHub metadata plugin populates Jekyll variables with data from GitHub during build. When inserting a link to the Project Contour repository, use the prefix `{{< param github_url >}}`.
 
-A full list of variables can be found in the [jekyll-github-metadata documentation][4].
 
-**Linking to an external page:**
-
-Links to external pages are done using the full URL, `[1]: https://projectcontour.io` for example.
-
-## Proofread and spell check
-
-If you're making any content submissions, please proofread and spell check your work.
-
-Spell check can be run using `make check`.
-
-## Local Site Testing
-
-Perform local tests before creating a PR to detect issues such as broken links.
-
-**Using docker:**
-
-The easiest way to run the site locally is by using the top-level [Makefile](./Makefile). This has a `site-devel` target and runs a [Jekyll][6] development server in Docker, which is useful for checking local documentation changes.
-By default, the site will be available on [port 4000](http://127.0.0.1:4000/).
-
-Note that the version of [Jekyll][6] used by the site is pinned in the [Gemfile](./site/Gemfile.lock). The `site-devel` target uses the matching versioned Docker image to ensure compatibility.
-
-Once you are happy with your changes, commit them and push everything
-to your fork.  When you submit a PR, Netlify will automatically
-generate a preview of your changes.
-
-**Manual Jekyll Instance:**
-
-If you need to manually install and run [Jekyll][6]
-without using Docker, you can install the [Jekyll][6]
-packages on your development system.
-
-On macOS, install the following:
-
-- `brew install rbenv`
-- `rbenv install 2.6.3`
-- `gem install bundler`
-
-On Ubuntu you will need these packages:
-
-- ruby
-- ruby-dev
-- ruby-bundler
-- build-essential
-- zlib1g-dev
-- nginx (or apache2)
-
-Install [Jekyll][6] and plug-ins in one fell
-swoop. This mirrors the plug-ins used by GitHub Pages on your local
-machine including Jekyll, Sass, etc:
-
-- `gem install github-pages`
-
-Then:
-
-1. Clone down your own fork, or clone the main repo `git clone https://github.com/projectcontour/contour` and add your own remote.
-2. `cd site`
-3. `rbenv local 2.6.3`
-4. `bundle install`
-5. Serve the site and watch for markup/sass changes `jekyll serve --livereload`. You may need to run `bundle exec jekyll serve --livereload`.
-6. View your website at http://127.0.0.1:4000/
-
-Please ensure that your local version of bundler matches the version specified in `site/Gemfile.lock`. Unintentional changes to the bundler version in `site/Gemfile.lock` can cause issue with the Netlify build process.
-
-[1]: https://jekyllrb.com/docs/
-[2]: https://help.shopify.com/en/themes/liquid/basics
-[3]: https://sourceforge.net/p/lookup/wiki/markdown_syntax/#md_ex_reflinks
-[4]: https://github.com/jekyll/github-metadata/blob/master/docs/site.github.md
-[5]: https://guides.github.com/features/mastering-markdown/
-[6]: https://jekyllrb.com
-[7]: /CONTRIBUTING.md#contribution-workflow
-[8]: /CONTRIBUTING.md
+[1]: https://gohugo.io/documentation/
+[2]: https://guides.github.com/features/mastering-markdown/
+[3]: /CONTRIBUTING.md#contribution-workflow
+[4]: /CONTRIBUTING.md
+[5]: https://projectcontour.io/community/
+[6]: https://github.com/projectcontour/community/wiki/Office-Hours
+[7]: https://kubernetes.slack.com/messages/contour
+[8]: https://lists.cncf.io/g/cncf-contour-users/
+[9]: https://projectcontour.io
+[10]: https://gohugo.io/getting-started/installing/

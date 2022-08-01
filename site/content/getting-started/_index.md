@@ -97,7 +97,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
 spec:
@@ -110,7 +110,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
   namespace: projectcontour

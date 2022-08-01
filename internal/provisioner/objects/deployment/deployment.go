@@ -76,23 +76,10 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
 func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	deploy, err := CurrentDeployment(ctx, cli, contour)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
+	deployGetter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+		return CurrentDeployment(ctx, cli, contour)
 	}
-
-	if labels.Exist(deploy, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, deploy); err != nil {
-			if errors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
+	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), deployGetter)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using

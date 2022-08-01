@@ -41,8 +41,22 @@ spec:
   controllerName: projectcontour.io/gateway-controller
 EOF
 
-cd $(mktemp -d)
-git clone https://github.com/kubernetes-sigs/gateway-api
-cd gateway-api
-git checkout "${GATEWAY_API_VERSION}"
-go test ./conformance -gateway-class=contour
+
+# If we're running conformance tests for the same Gateway API version
+# that we're using via go.mod, use our own test driver (via `go test`)
+# so we can opt into additional supported features that we know we support.
+# Otherwise, we're likely running the `main` conformance tests for a nightly
+# build, where we have to clone the upstream repo to be able to run that
+# version of the tests, but lose the ability to opt into tests for additional
+# supported features since that's not exposed via flag.
+GO_MOD_GATEWAY_API_VERSION=$(grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $2}')
+
+if [ "$GATEWAY_API_VERSION" = "$GO_MOD_GATEWAY_API_VERSION" ]; then
+  go test -tags conformance ./test/conformance/gatewayapi --gateway-class=contour
+else 
+  cd $(mktemp -d)
+  git clone https://github.com/kubernetes-sigs/gateway-api
+  cd gateway-api
+  git checkout "${GATEWAY_API_VERSION}"
+  go test ./conformance -gateway-class=contour
+fi

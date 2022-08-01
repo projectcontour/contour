@@ -437,7 +437,7 @@ func TestConvertServeContext(t *testing.T) {
 					AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 					AccessLogFormatString: "",
 					AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
-					AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
 						"@timestamp",
 						"authority",
 						"bytes_received",
@@ -669,7 +669,7 @@ func TestConvertServeContext(t *testing.T) {
 					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
 					AccessLogFormatString: "foo-bar-baz",
 					AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
-					AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
 						"custom_field",
 					}),
 				}

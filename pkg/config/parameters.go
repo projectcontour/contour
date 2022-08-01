@@ -19,10 +19,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -96,12 +96,7 @@ const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 type AccessLogType string
 
 func (a AccessLogType) Validate() error {
-	switch a {
-	case EnvoyAccessLog, JSONAccessLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid access log format %q", a)
-	}
+	return contour_api_v1alpha1.AccessLogType(a).Validate()
 }
 
 const EnvoyAccessLog AccessLogType = "envoy"
@@ -110,153 +105,22 @@ const JSONAccessLog AccessLogType = "json"
 type AccessLogFields []string
 
 func (a AccessLogFields) Validate() error {
-
-	for key, val := range a.AsFieldMap() {
-		if val == "" {
-			return fmt.Errorf("invalid JSON log field name %s", key)
-		}
-
-		if jsonFields[key] == val {
-			continue
-		}
-
-		err := parseAccessLogFormat(val)
-		if err != nil {
-			return fmt.Errorf("invalid JSON field: %s", err)
-		}
-	}
-
-	return nil
+	return contour_api_v1alpha1.AccessLogJSONFields(a).Validate()
 }
 
 func (a AccessLogFields) AsFieldMap() map[string]string {
-	fieldMap := map[string]string{}
-
-	for _, val := range a {
-		parts := strings.SplitN(val, "=", 2)
-
-		if len(parts) == 1 {
-			operator, foundInFieldMapping := jsonFields[val]
-			_, isSimpleOperator := envoySimpleOperators[strings.ToUpper(val)]
-
-			switch {
-			case isSimpleOperator && !foundInFieldMapping:
-				// Operator name is known to be simple, upcase and wrap it in percents.
-				fieldMap[val] = fmt.Sprintf("%%%s%%", strings.ToUpper(val))
-			case foundInFieldMapping:
-				// Operator name has a known mapping, store the result of the mapping.
-				fieldMap[val] = operator
-			default:
-				// Operator name not found, save as emptystring and let validation catch it later.
-				fieldMap[val] = ""
-			}
-		} else {
-			// Value is a full key:value pair, store it as is.
-			fieldMap[parts[0]] = parts[1]
-		}
-	}
-
-	return fieldMap
-}
-
-func validateAccessLogFormatString(format string) error {
-	// Empty format means use default format, defined by Envoy.
-	if format == "" {
-		return nil
-	}
-	err := parseAccessLogFormat(format)
-	if err != nil {
-		return fmt.Errorf("invalid access log format: %s", err)
-	}
-	if !strings.HasSuffix(format, "\n") {
-		return fmt.Errorf("invalid access log format: must end in newline")
-	}
-	return nil
-}
-
-// commandOperatorRegexp parses the command operators used in Envoy access log configuration
-//
-// Capture Groups:
-// Given string "the start time is %START_TIME(%s):3% wow!"
-//
-//   0. Whole match "%START_TIME(%s):3%"
-//   1. Full operator: "START_TIME(%s):3%"
-//   2. Operator Name: "START_TIME"
-//   3. Arguments: "(%s)"
-//   4. Truncation length: ":3"
-var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
-
-func parseAccessLogFormat(format string) error {
-
-	// FindAllStringSubmatch will always return a slice with matches where every slice is a slice
-	// of submatches with length of 5 (number of capture groups + 1).
-	tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
-	if len(tokens) == 0 {
-		return nil
-	}
-
-	for _, f := range tokens {
-		op := f[2]
-		if op == "" {
-			return fmt.Errorf("invalid Envoy format: %s", f)
-		}
-
-		_, okSimple := envoySimpleOperators[op]
-		_, okComplex := envoyComplexOperators[op]
-		if !okSimple && !okComplex {
-			return fmt.Errorf("invalid Envoy format: %s, invalid Envoy operator: %s", f, op)
-		}
-
-		if (op == "REQ" || op == "RESP" || op == "TRAILER" || op == "REQ_WITHOUT_QUERY" || op == "ENVIRONMENT") && f[3] == "" {
-			return fmt.Errorf("invalid Envoy format: %s, arguments required for operator: %s", f, op)
-		}
-
-		// START_TIME cannot not have truncation length.
-		if op == "START_TIME" && f[4] != "" {
-			return fmt.Errorf("invalid Envoy format: %s, operator %s cannot have truncation length", f, op)
-		}
-	}
-
-	return nil
+	return contour_api_v1alpha1.AccessLogJSONFields(a).AsFieldMap()
 }
 
 // AccessLogFormatterExtensions returns a list of formatter extension names required by the access log format.
-//
-// Note: When adding support for new formatter, update the list of extensions here and
-// add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
-// Currently only one extension exist in Envoy.
 func (p Parameters) AccessLogFormatterExtensions() []string {
-	// Function that finds out if command operator is present in a format string.
-	contains := func(format, command string) bool {
-		tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
-		for _, t := range tokens {
-			if t[2] == command {
-				return true
-			}
-		}
-		return false
+	el := &contour_api_v1alpha1.EnvoyLogging{
+		AccessLogFormat:       contour_api_v1alpha1.AccessLogType(p.AccessLogFormat),
+		AccessLogFormatString: p.AccessLogFormatString,
+		AccessLogJSONFields:   contour_api_v1alpha1.AccessLogJSONFields(p.AccessLogFields),
+		AccessLogLevel:        contour_api_v1alpha1.AccessLogLevel(p.AccessLogLevel),
 	}
-
-	extensionsMap := make(map[string]bool)
-	switch p.AccessLogFormat {
-	case EnvoyAccessLog:
-		if contains(p.AccessLogFormatString, "REQ_WITHOUT_QUERY") {
-			extensionsMap["envoy.formatter.req_without_query"] = true
-		}
-	case JSONAccessLog:
-		for _, f := range p.AccessLogFields.AsFieldMap() {
-			if contains(f, "REQ_WITHOUT_QUERY") {
-				extensionsMap["envoy.formatter.req_without_query"] = true
-			}
-		}
-	}
-
-	var extensions []string
-	for k := range extensionsMap {
-		extensions = append(extensions, k)
-	}
-
-	return extensions
+	return el.AccessLogFormatterExtensions()
 }
 
 // HTTPVersionType is the name of a supported HTTP version.
@@ -749,12 +613,7 @@ func (p *MetricsServerParameters) HasTLS() bool {
 type AccessLogLevel string
 
 func (a AccessLogLevel) Validate() error {
-	switch a {
-	case LogLevelDisabled, LogLevelError, LogLevelInfo:
-		return nil
-	default:
-		return fmt.Errorf("invalid access log level %q", a)
-	}
+	return contour_api_v1alpha1.AccessLogLevel(a).Validate()
 }
 
 const LogLevelInfo AccessLogLevel = "info" // Default log level.
@@ -787,7 +646,7 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if err := validateAccessLogFormatString(p.AccessLogFormatString); err != nil {
+	if err := contour_api_v1alpha1.AccessLogFormatString(p.AccessLogFormatString).Validate(); err != nil {
 		return err
 	}
 

@@ -309,49 +309,6 @@ func runGatewayTests() {
 		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
-	Describe("Gateway with one TLS listener with Mode=Terminate", func() {
-		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-			gatewayClass := getGatewayClass()
-			gw := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "tls-terminate",
-				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName(gatewayClass.Name),
-					Listeners: []gatewayapi_v1beta1.Listener{
-						{
-							Name:     "tls-terminate",
-							Protocol: gatewayapi_v1beta1.TLSProtocolType,
-							Port:     gatewayapi_v1beta1.PortNumber(443),
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
-								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-									gatewayapi.CertificateRef("tlscert", ""),
-								},
-							},
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
-								},
-							},
-						},
-					},
-				},
-			}
-			return testWithGateway(gw, gatewayClass, func(namespace string) {
-				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
-					BeforeEach(func() {
-						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
-					})
-
-					body(namespace)
-				})
-			})
-		}
-
-		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("terminate.tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
-	})
-
 	Describe("Gateway with multiple HTTPS listeners, each with a different hostname and TLS cert", func() {
 		testWithMultipleHTTPSListenersGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()

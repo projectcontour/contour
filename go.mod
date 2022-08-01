@@ -7,14 +7,16 @@ require (
 	github.com/bombsimon/logrusr/v2 v2.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.8.0+incompatible
-	github.com/envoyproxy/go-control-plane v0.10.2-0.20220415162322-2533dce4323f
+	github.com/envoyproxy/go-control-plane v0.10.3-0.20220715065308-8bcd7ee0191a
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.7
 	github.com/google/go-github/v39 v39.0.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.5.1
+	github.com/mhausenblas/yages v0.0.0-20181104055001-8d495d7135de
 	github.com/onsi/ginkgo/v2 v2.0.0
 	github.com/onsi/gomega v1.18.1
 	github.com/prometheus/client_golang v1.12.1

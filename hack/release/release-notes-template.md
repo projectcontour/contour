@@ -51,12 +51,12 @@ The simplest way to install {{ .Version }} is to apply one of the example config
 
 With Gateway API:
 ```bash
-kubectl apply -f https://github.com/projectcontour/contour/blob/{{ .Version }}/examples/render/contour-gateway.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway.yaml
 ```
 
 Without Gateway API:
 ```bash
-kubectl apply -f https://github.com/projectcontour/contour/blob/{{ .Version }}/examples/render/contour.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour.yaml
 ```
 {{ else }}
 For a fresh install of Contour, consult the [getting started documentation](https://projectcontour.io/getting-started/).

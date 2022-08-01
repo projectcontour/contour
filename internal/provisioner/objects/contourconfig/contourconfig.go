@@ -17,8 +17,8 @@ import (
 	"context"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +29,7 @@ import (
 
 // EnsureContourConfig ensures that a ContourConfiguration exists for the given contour.
 func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	current, err := current(ctx, cli, contour)
+	current, err := current(ctx, cli, contour.Namespace, contour.ContourConfigurationName())
 
 	switch {
 	// Legitimate error: return it
@@ -88,32 +88,19 @@ func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour
 
 // EnsureContourConfigDeleted deletes a ContourConfig for the provided contour, if the configured owner labels exist.
 func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	current, err := current(ctx, cli, contour)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
+	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+		return current(ctx, cli, namespace, name)
 	}
+	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourConfigurationName(), getter)
 
-	if labels.Exist(current, model.OwnerLabels(contour)) {
-		if err := cli.Delete(ctx, current); err != nil {
-			if errors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
-	}
-
-	return nil
 }
 
 // current gets the ContourConfiguration for the provided contour from the api server.
-func current(ctx context.Context, cli client.Client, contour *model.Contour) (*contour_api_v1alpha1.ContourConfiguration, error) {
+func current(ctx context.Context, cli client.Client, namespace, name string) (*contour_api_v1alpha1.ContourConfiguration, error) {
 	current := &contour_api_v1alpha1.ContourConfiguration{}
 	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.ContourConfigurationName(),
+		Namespace: namespace,
+		Name:      name,
 	}
 
 	if err := cli.Get(ctx, key, current); err != nil {
