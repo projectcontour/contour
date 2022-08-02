@@ -27,27 +27,17 @@ func TestSafeRegexMatch(t *testing.T) {
 	}{
 		"blank regex": {
 			regex: "",
-			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-				},
-			},
+			want:  &matcher.RegexMatcher{},
 		},
 		"simple": {
 			regex: "chrome",
 			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-				},
 				Regex: "chrome",
 			},
 		},
 		"regex meta": {
 			regex: "[a-z]+$",
 			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-				},
 				Regex: "[a-z]+$", // meta characters are not escaped.
 			},
 		},

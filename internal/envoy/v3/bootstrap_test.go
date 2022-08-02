@@ -157,6 +157,12 @@ func TestBootstrap(t *testing.T) {
  	  "resource_api_version": "V3"
     }
   },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+    }
+  },
   "admin": {
     "access_log": [
       {
@@ -337,6 +343,12 @@ func TestBootstrap(t *testing.T) {
       "resource_api_version": "V3"
     }
   },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+    }
+  },
   "admin": {
     "access_log": [
       {
@@ -515,6 +527,12 @@ func TestBootstrap(t *testing.T) {
         ]
       },
       "resource_api_version": "V3"
+    }
+  },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
     }
   },
   "admin": {
@@ -698,6 +716,12 @@ func TestBootstrap(t *testing.T) {
 	  "resource_api_version": "V3"
     }
   },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+    }
+  },
   "admin": {
     "access_log": [
       {
@@ -877,6 +901,12 @@ func TestBootstrap(t *testing.T) {
         ]
       },
 	  "resource_api_version": "V3"
+    }
+  },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
     }
   },
   "admin": {
@@ -1060,6 +1090,12 @@ func TestBootstrap(t *testing.T) {
 	  "resource_api_version": "V3"
     }
   },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+    }
+  },
   "admin": {
     "access_log": [
       {
@@ -1241,6 +1277,12 @@ func TestBootstrap(t *testing.T) {
         ]
       },
 	  "resource_api_version": "V3"
+    }
+  },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
     }
   },
   "admin": {
@@ -1460,6 +1502,12 @@ func TestBootstrap(t *testing.T) {
 	  "resource_api_version": "V3"
     }
   },
+  "default_regex_engine": {
+    "name": "envoy.regex_engines.google_re2",
+    "typed_config": {
+      "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+    }
+  },
   "admin": {
     "access_log": [
       {
@@ -1673,6 +1721,12 @@ func TestBootstrap(t *testing.T) {
               ]
             },
             "resource_api_version": "V3"
+          }
+        },
+        "default_regex_engine": {
+          "name": "envoy.regex_engines.google_re2",
+          "typed_config": {
+            "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
           }
         },
         "admin": {

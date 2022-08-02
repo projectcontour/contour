@@ -21,9 +21,6 @@ import (
 // SafeRegexMatch does not escape regex meta characters.
 func SafeRegexMatch(regex string) *matcher.RegexMatcher {
 	return &matcher.RegexMatcher{
-		EngineType: &matcher.RegexMatcher_GoogleRe2{
-			GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-		},
 		Regex: regex,
 	}
 }
