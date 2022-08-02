@@ -314,7 +314,11 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			Name: "envoy.filters.http.lua",
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-					InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
+					DefaultSourceCode: &envoy_core_v3.DataSource{
+						Specifier: &envoy_core_v3.DataSource_InlineString{
+							InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+						},
+					},
 				}),
 			},
 		},
@@ -669,7 +673,11 @@ end
 		Name: "envoy.filters.http.lua",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-				InlineCode: fmt.Sprintf(code, target),
+				DefaultSourceCode: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineString{
+						InlineString: fmt.Sprintf(code, target),
+					},
+				},
 			}),
 		},
 	}
