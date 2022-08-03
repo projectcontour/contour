@@ -46,7 +46,7 @@ const (
 	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
 
 	// GRPCServerImage is the image to use for tests that require a gRPC server.
-	GRPCServerImage = "ghcr.io/sunjaybhatia/yages:v0.1.0"
+	GRPCServerImage = "ghcr.io/projectcontour/yages:v0.1.0"
 )
 
 // Fixtures holds references to all of the E2E fixtures helpers.
