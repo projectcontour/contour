@@ -46,7 +46,7 @@ const (
 	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
 
 	// GRPCServerImage is the image to use for tests that require a gRPC server.
-	GRPCServerImage = "quay.io/mhausenblas/yages:0.1.0"
+	GRPCServerImage = "ghcr.io/sunjaybhatia/yages:v0.1.0"
 )
 
 // Fixtures holds references to all of the E2E fixtures helpers.
@@ -459,8 +459,8 @@ func (g *GRPC) Deploy(ns, name string) func() {
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
-									TCPSocket: &corev1.TCPSocketAction{
-										Port: intstr.FromString("grpc"),
+									Exec: &corev1.ExecAction{
+										Command: []string{"/grpc-health-probe", "-addr=localhost:9000"},
 									},
 								},
 							},
