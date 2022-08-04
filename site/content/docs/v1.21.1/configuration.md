@@ -57,7 +57,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--leader-election-resource-namespace`                   | The namespace of the resource (Lease) leader election will lease.      |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
-| `--log-format=<text|json>`                               | Log output format for Contour. Either text (default) or json.          |
+| `--log-format=<text\|json>`                              | Log output format for Contour. Either text (default) or json.          |
 
 ## Configuration File
 
