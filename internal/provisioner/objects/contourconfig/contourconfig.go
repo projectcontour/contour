@@ -21,7 +21,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,44 +28,42 @@ import (
 
 // EnsureContourConfig ensures that a ContourConfiguration exists for the given contour.
 func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	current, err := current(ctx, cli, contour.Namespace, contour.ContourConfigurationName())
-
-	switch {
-	// Legitimate error: return it
-	case err != nil && !errors.IsNotFound(err):
-		return err
-	// ContourConfiguration not found: create it
-	case errors.IsNotFound(err):
-		contourConfig := &contour_api_v1alpha1.ContourConfiguration{
+	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
+		cfg := &contour_api_v1alpha1.ContourConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: contour.Namespace,
-				Name:      contour.ContourConfigurationName(),
+				Name:      name,
 				Labels:    model.OwnerLabels(contour),
 			},
 		}
 
 		// Take any user-provided Config as a base.
 		if contour.Spec.RuntimeSettings != nil {
-			contourConfig.Spec = *contour.Spec.RuntimeSettings
+			cfg.Spec = *contour.Spec.RuntimeSettings
 		}
 
 		// Override Gateway-specific settings to ensure the Contour is
 		// being configured correctly for the Gateway being provisioned.
-		setGatewayConfig(contourConfig, contour)
+		setGatewayConfig(cfg, contour)
+		return cfg
+	}
 
-		return cli.Create(ctx, contourConfig)
-	// Already exists: ensure it has the relevant fields set correctly.
-	default:
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desired client.Object) error {
+		current := currentObj.(*contour_api_v1alpha1.ContourConfiguration)
 		maybeUpdated := current.DeepCopy()
-
 		setGatewayConfig(maybeUpdated, contour)
 
 		if !equality.Semantic.DeepEqual(current, maybeUpdated) {
 			return cli.Update(ctx, maybeUpdated)
 		}
-
 		return nil
 	}
+
+	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+		return current(ctx, cli, namespace, name)
+	}
+
+	return objects.EnsureObject(ctx, cli, contour, contour.ContourConfigurationName(), getter, maker, updater)
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {

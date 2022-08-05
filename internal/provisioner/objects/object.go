@@ -15,6 +15,7 @@ package objects
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -46,12 +47,18 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 	}
 }
 
-// objectGetter gets an object given a namespace and name.
-type objectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
+// ObjectGetter gets an object given a namespace and name.
+type ObjectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
+
+// ObjectMaker make a specific resource with the given name.
+type ObjectMaker func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object
+
+// ObjectUpdater update the current resource to desired if need.
+type ObjectUpdater func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error
 
 // EnsureObjectDeleted ensures that an object with the given namespace and name is deleted
 // if Contour owner labels exist.
-func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter objectGetter) error {
+func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter ObjectGetter) error {
 	obj, err := getter(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -66,4 +73,33 @@ func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 	return err
+}
+
+// EnsureObject ensures that an object with the given namespace and name is created or updated
+func EnsureObject(
+	ctx context.Context,
+	cli client.Client,
+	contour *model.Contour,
+	name string,
+	getter ObjectGetter,
+	maker ObjectMaker,
+	updater ObjectUpdater) error {
+	desired := maker(ctx, cli, contour, name)
+
+	current, err := getter(ctx, cli, contour.Namespace, name)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, name, err)
+	}
+
+	if errors.IsNotFound(err) {
+		if err = cli.Create(ctx, desired); err != nil {
+			return fmt.Errorf("failed to create resource %s/%s: %w", contour.Namespace, name, err)
+		}
+		return nil
+	}
+
+	if err = updater(ctx, cli, contour, current, desired); err != nil {
+		return fmt.Errorf("failed to update service %s/%s: %w", contour.Namespace, name, err)
+	}
+	return nil
 }
