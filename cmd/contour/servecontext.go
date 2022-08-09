@@ -247,7 +247,7 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 }
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
-//  (of the form "HTTP/xx") into a slice of unique version constants.
+// (of the form "HTTP/xx") into a slice of unique version constants.
 func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) []envoy_v3.HTTPVersionType {
 	wanted := map[envoy_v3.HTTPVersionType]struct{}{}
 

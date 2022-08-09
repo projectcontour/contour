@@ -278,11 +278,11 @@ func (s AccessLogFormatString) Validate() error {
 // Capture Groups:
 // Given string "the start time is %START_TIME(%s):3% wow!"
 //
-//   0. Whole match "%START_TIME(%s):3%"
-//   1. Full operator: "START_TIME(%s):3%"
-//   2. Operator Name: "START_TIME"
-//   3. Arguments: "(%s)"
-//   4. Truncation length: ":3"
+//  0. Whole match "%START_TIME(%s):3%"
+//  1. Full operator: "START_TIME(%s):3%"
+//  2. Operator Name: "START_TIME"
+//  3. Arguments: "(%s)"
+//  4. Truncation length: ":3"
 var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
 
 func parseAccessLogFormatString(format string) error {
