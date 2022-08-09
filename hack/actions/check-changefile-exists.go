@@ -19,7 +19,6 @@
 //
 // Checks that the required changelog file exists in the
 // changelogs/unreleased directory.
-//
 package main
 
 import (
