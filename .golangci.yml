@@ -1,7 +1,5 @@
 run:
   timeout: 10m
-  skip-files:
-    - apis/projectcontour/v1/kubeconditions.go # copy-pasted from k8s.io/apimachinery, has invalid header
 
 linters:
   enable:

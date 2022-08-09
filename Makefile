@@ -180,7 +180,7 @@ lint-codespell:
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,tools
 
 # The inline config is needed to allow the Gateway API validating webhook YAML
 # (which we import directly from the Gateway API repo) to pass.
