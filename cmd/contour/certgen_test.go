@@ -17,7 +17,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -262,7 +261,7 @@ func TestOutputFileMode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			outputDir, err := ioutil.TempDir("", "")
+			outputDir, err := os.MkdirTemp("", "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(outputDir)
 			tc.cc.OutputDir = outputDir

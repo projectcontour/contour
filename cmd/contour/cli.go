@@ -18,7 +18,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
@@ -66,7 +66,7 @@ func (c *Client) dial() *grpc.ClientConn {
 		}
 		// Create a certificate pool from the certificate authority
 		certPool := x509.NewCertPool()
-		ca, err := ioutil.ReadFile(c.CAFile)
+		ca, err := os.ReadFile(c.CAFile)
 		if err != nil {
 			c.Log.WithError(err).Fatal("failed to read CA cert")
 		}

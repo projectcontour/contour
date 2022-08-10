@@ -19,7 +19,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -187,7 +187,7 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) 
 			return nil, err
 		}
 
-		ca, err := ioutil.ReadFile(contourXDSTLS.CAFile)
+		ca, err := os.ReadFile(contourXDSTLS.CAFile)
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +247,8 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 }
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
-//  (of the form "HTTP/xx") into a slice of unique version constants.
+//
+//	(of the form "HTTP/xx") into a slice of unique version constants.
 func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) []envoy_v3.HTTPVersionType {
 	wanted := map[envoy_v3.HTTPVersionType]struct{}{}
 
