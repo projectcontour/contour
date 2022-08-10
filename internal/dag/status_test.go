@@ -3871,7 +3871,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -4015,7 +4015,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -4103,7 +4103,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -4191,7 +4191,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -4279,7 +4279,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -4368,7 +4368,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant",
 						},
 					},
@@ -5616,7 +5616,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"nonexistent-secret\" referent is invalid: Secret not found",
 						},
 					},
