@@ -30,9 +30,9 @@ func HostReplaceHeader(hp *dag.HeadersPolicy) string {
 // Timeout converts a timeout.Setting to a protobuf.Duration
 // that's appropriate for Envoy. In general (though there are
 // exceptions), Envoy uses the following semantics:
-//	- not passing a value means "use Envoy default"
-//	- explicitly passing a 0 means "disable this timeout"
-//	- passing a positive value uses that value
+//   - not passing a value means "use Envoy default"
+//   - explicitly passing a 0 means "disable this timeout"
+//   - passing a positive value uses that value
 func Timeout(d timeout.Setting) *duration.Duration {
 	switch {
 	case d.UseDefault():

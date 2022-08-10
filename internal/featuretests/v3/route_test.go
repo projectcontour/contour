@@ -34,33 +34,33 @@ import (
 
 // projectcontour/contour#172. Updating an object from
 //
-// apiVersion: networking/v1
-// kind: Ingress
-// metadata:
-//   name: kuard
-// spec:
-//   defaultBackend:
-//     service:
-//       name: kuard
-//       port:
-//         number: 80
+//	apiVersion: networking/v1
+//	kind: Ingress
+//	metadata:
+//	  name: kuard
+//	spec:
+//	  defaultBackend:
+//	    service:
+//	      name: kuard
+//	      port:
+//	        number: 80
 //
 // to
 //
-// apiVersion: networking/v1
-// kind: Ingress
-// metadata:
-//   name: kuard
-// spec:
-//   rules:
-//   - http:
-//       paths:
-//       - path: /testing
-//         backend:
-//           service:
-//             name: kuard
-//             port:
-//               number: 80
+//	apiVersion: networking/v1
+//	kind: Ingress
+//	metadata:
+//	  name: kuard
+//	spec:
+//	  rules:
+//	  - http:
+//	      paths:
+//	      - path: /testing
+//	        backend:
+//	          service:
+//	            name: kuard
+//	            port:
+//	              number: 80
 //
 // fails to update the virtualhost cache.
 func TestEditIngress(t *testing.T) {
@@ -133,20 +133,20 @@ func TestEditIngress(t *testing.T) {
 // projectcontour/contour#101
 // The path /hello should point to default/hello/80 on "*"
 //
-// apiVersion: networking/v1
-// kind: Ingress
-// metadata:
-//   name: hello
-// spec:
-//   rules:
-//   - http:
-// 	 paths:
-//       - path: /hello
-//         backend:
-//           service:
-//             name: hello
-//             port:
-//               number: 80
+//	apiVersion: networking/v1
+//	kind: Ingress
+//	metadata:
+//	  name: hello
+//	spec:
+//	  rules:
+//	  - http:
+//		 paths:
+//	      - path: /hello
+//	        backend:
+//	          service:
+//	            name: hello
+//	            port:
+//	              number: 80
 func TestIngressPathRouteWithoutHost(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
@@ -583,20 +583,20 @@ func TestIssue257(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
-	// apiVersion: networking/v1
-	// kind: Ingress
-	// metadata:
-	//   name: kuard-ing
-	//   labels:
-	//     app: kuard
-	//   annotations:
-	//     kubernetes.io/ingress.class: contour
-	// spec:
-	//   defaultBackend:
-	//     service:
-	//       name: kuard
-	//       port:
-	//         number: 80
+	//	apiVersion: networking/v1
+	//	kind: Ingress
+	//	metadata:
+	//	  name: kuard-ing
+	//	  labels:
+	//	    app: kuard
+	//	  annotations:
+	//	    kubernetes.io/ingress.class: contour
+	//	spec:
+	//	  defaultBackend:
+	//	    service:
+	//	      name: kuard
+	//	      port:
+	//	        number: 80
 	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
@@ -620,25 +620,25 @@ func TestIssue257(t *testing.T) {
 		),
 	), nil)
 
-	// apiVersion: networking/v1
-	// kind: Ingress
-	// metadata:
-	//   name: kuard-ing
-	//   labhls:
-	//     app: kuard
-	//   annotations:
-	//     kubernetes.io/ingress.class: contour
-	// spec:
-	//  rules:
-	//  - host: kuard.db.gd-ms.com
-	//    http:
-	//      paths:
-	//      - backend:
-	//         service:
-	//           name: kuard
-	//           port:
-	//             number: 80
-	//        path: /
+	//	apiVersion: networking/v1
+	//	kind: Ingress
+	//	metadata:
+	//	  name: kuard-ing
+	//	  labhls:
+	//	    app: kuard
+	//	  annotations:
+	//	    kubernetes.io/ingress.class: contour
+	//	spec:
+	//	 rules:
+	//	 - host: kuard.db.gd-ms.com
+	//	   http:
+	//	     paths:
+	//	     - backend:
+	//	        service:
+	//	          name: kuard
+	//	          port:
+	//	            number: 80
+	//	       path: /
 	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
@@ -1088,22 +1088,23 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 }
 
 // issue 606: spec.rules.host without a http key causes panic.
-// apiVersion: networking/v1
-// kind: Ingress
-// metadata:
-//   name: test-ingress3
-// spec:
-//   rules:
-//   - host: test1.test.com
-//   - host: test2.test.com
-//     http:
-//       paths:
-//       - backend:
-//           service:
-//             name: network-test
-//             port:
-//               number: 9001
-//         path: /
+//
+//	apiVersion: networking/v1
+//	kind: Ingress
+//	metadata:
+//	  name: test-ingress3
+//	spec:
+//	  rules:
+//	  - host: test1.test.com
+//	  - host: test2.test.com
+//	    http:
+//	      paths:
+//	      - backend:
+//	          service:
+//	            name: network-test
+//	            port:
+//	              number: 9001
+//	        path: /
 //
 // note: this test caused a panic in dag.Builder, but testing the
 // context of RDS is a good place to start.

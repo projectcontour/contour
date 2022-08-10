@@ -130,10 +130,10 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 // headerMatchConditionsValid validates that the header conditions within a
 // slice of MatchConditions are valid. Specifically, it returns an error for
 // any of the following scenarios:
-//	- more than 1 'exact' condition for the same header
-//	- a 'present' and a 'notpresent' condition for the same header
-//	- an 'exact' and a 'notexact' condition for the same header, with the same values
-//	- a 'contains' and a 'notcontains' condition for the same header, with the same values
+//   - more than 1 'exact' condition for the same header
+//   - a 'present' and a 'notpresent' condition for the same header
+//   - an 'exact' and a 'notexact' condition for the same header, with the same values
+//   - a 'contains' and a 'notcontains' condition for the same header, with the same values
 //
 // Note that there are additional, more complex scenarios that we could check for here. For
 // example, "exact: foo" and "notcontains: <any substring of foo>" are contradictory.
