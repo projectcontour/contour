@@ -1,3 +1,16 @@
+// Copyright Project Contour Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //go:build none
 // +build none
 
@@ -26,6 +39,7 @@ func must(err error) {
 }
 
 func run(cmd []string) {
+	// nolint:gosec
 	c := exec.Command(cmd[0], cmd[1:]...)
 
 	c.Stdin = os.Stdin
@@ -39,6 +53,7 @@ func run(cmd []string) {
 
 func capture(cmd []string) string {
 	out := bytes.Buffer{}
+	// nolint:gosec
 	c := exec.Command(cmd[0], cmd[1:]...)
 
 	c.Stdin = nil
@@ -65,7 +80,7 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
+	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
 // InsertAfter is like yaml.ElementAppender except it inserts after the named node.
@@ -124,7 +139,7 @@ func updateConfigForSite(filePath string, vers string) error {
 		log.Fatalf("%s", err)
 	}
 
-	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
+	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
 func updateIndexFile(filePath, oldVers, newVers string) error {
@@ -135,7 +150,7 @@ func updateIndexFile(filePath, oldVers, newVers string) error {
 
 	upd := strings.ReplaceAll(string(data), "version: "+oldVers, "version: "+newVers)
 
-	return ioutil.WriteFile(filePath, []byte(upd), 0644)
+	return ioutil.WriteFile(filePath, []byte(upd), 0600)
 }
 
 func main() {
@@ -299,7 +314,7 @@ func parseChangelogFilename(filename string) (Entry, error) {
 	// We may have more than 3 parts if the GitHub username itself
 	// contains a '-'.
 	if len(parts) < 3 {
-		return Entry{}, fmt.Errorf("invalid name format %q\n", filename)
+		return Entry{}, fmt.Errorf("invalid name format %q", filename)
 	}
 
 	return Entry{
