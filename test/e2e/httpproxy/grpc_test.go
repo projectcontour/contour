@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	//nolint:staticcheck
 	proto_convert "github.com/golang/protobuf/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"

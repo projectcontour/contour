@@ -20,7 +20,9 @@ import (
 	"net"
 	"os"
 
+	//nolint:staticcheck
 	"github.com/golang/protobuf/jsonpb"
+	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/pkg/config"
 )

@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
+	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/protobuf/types/known/structpb"
