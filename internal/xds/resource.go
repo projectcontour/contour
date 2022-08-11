@@ -16,7 +16,6 @@ package xds
 import (
 	"sync/atomic"
 
-	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 )
 

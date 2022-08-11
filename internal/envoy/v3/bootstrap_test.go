@@ -20,9 +20,7 @@ import (
 	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 
-	//nolint:staticcheck
 	"github.com/golang/protobuf/jsonpb"
-	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
