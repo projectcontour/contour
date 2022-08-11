@@ -19,7 +19,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -187,7 +187,7 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) 
 			return nil, err
 		}
 
-		ca, err := ioutil.ReadFile(contourXDSTLS.CAFile)
+		ca, err := os.ReadFile(contourXDSTLS.CAFile)
 		if err != nil {
 			return nil, err
 		}
