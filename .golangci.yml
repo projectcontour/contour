@@ -46,7 +46,7 @@ issues:
   - linters:
     - staticcheck
     text: >-
-      SA1019: package github.com/golang/protobuf/
+      SA1019: "github.com/golang/protobuf
   - linters:
     - golint
     text: "var `ingress_https` should be `ingressHTTPS`"
