@@ -1,7 +1,5 @@
 run:
   timeout: 10m
-  skip-files:
-    - apis/projectcontour/v1/kubeconditions.go # copy-pasted from k8s.io/apimachinery, has invalid header
 
 linters:
   enable:
@@ -47,7 +45,8 @@ issues:
   # And we can't nolint them by line, because https://github.com/golangci/golangci-lint/issues/741
   - linters:
     - staticcheck
-    text: "SA1019: package github.com/golang/protobuf"
+    text: >-
+      SA1019: "github.com/golang/protobuf
   - linters:
     - golint
     text: "var `ingress_https` should be `ingressHTTPS`"

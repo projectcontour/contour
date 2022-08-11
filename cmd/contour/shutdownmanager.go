@@ -104,7 +104,7 @@ func newShutdownContext() *shutdownContext {
 
 // healthzHandler handles the /healthz endpoint which is used for the shutdown-manager's liveness probe.
 func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := w.Write([]byte("OK")); err != nil {
+	if _, err := w.Write([]byte(http.StatusText(http.StatusOK))); err != nil {
 		s.WithField("context", "healthzHandler").Error(err)
 	}
 }
@@ -125,7 +125,7 @@ func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *
 				s.shutdownReadyCheckInterval)
 		case err == nil:
 			l.Infof("detected file %s; sending HTTP response", s.shutdownReadyFile)
-			if _, err := w.Write([]byte("OK")); err != nil {
+			if _, err := w.Write([]byte(http.StatusText(http.StatusOK))); err != nil {
 				l.Error(err)
 			}
 			return
