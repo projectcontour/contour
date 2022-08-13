@@ -52,6 +52,10 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		Default(config.metricsBindAddress).
 		StringVar(&config.metricsBindAddress)
 
+	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
+		Default(config.leaderElectionNamespace).
+		StringVar(&config.leaderElectionNamespace)
+
 	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
 		BoolVar(&config.leaderElection)
 
@@ -82,6 +86,10 @@ type gatewayProvisionerConfig struct {
 	// leaderElectionID determines the name of the configmap that leader election will
 	// use for holding the leader lock.
 	leaderElectionID string
+
+	// leaderElectionNamespace determines the namespace in which the leader
+	// election resource will be created.
+	leaderElectionNamespace string
 
 	// gatewayControllerName defines the controller string that this gateway provisioner instance
 	// will process GatewayClasses and Gateways for.
@@ -127,6 +135,7 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 		LeaderElection:             provisionerConfig.leaderElection,
 		LeaderElectionResourceLock: "leases",
 		LeaderElectionID:           provisionerConfig.leaderElectionID,
+		LeaderElectionNamespace:    provisionerConfig.leaderElectionNamespace,
 		MetricsBindAddress:         provisionerConfig.metricsBindAddress,
 		Logger:                     ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
