@@ -27,8 +27,16 @@ import (
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
-func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
+func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, healthPort intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
+	if err != nil {
+		return nil, err
+	}
+
+	if healthPort.IntVal == 0 && healthPort.StrVal == "" {
+		healthPort = port
+	}
+	_, healthSvcPort, err := cache.LookupService(meta, healthPort)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +58,7 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, 
 			ServiceName:      svc.Name,
 			ServiceNamespace: svc.Namespace,
 			ServicePort:      svcPort,
+			HealthPort:       healthSvcPort,
 			Weight:           1,
 		},
 		Protocol:           upstreamProtocol(svc, svcPort),

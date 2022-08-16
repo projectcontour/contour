@@ -1250,7 +1250,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 	}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendObjectRef.Port)), p.source, p.EnableExternalNameService)
+	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendObjectRef.Port)), intstr.FromInt(int(*backendObjectRef.Port)), p.source, p.EnableExternalNameService)
 	if err != nil {
 		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
 	}
