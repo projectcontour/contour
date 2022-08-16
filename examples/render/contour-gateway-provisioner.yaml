@@ -3033,6 +3033,12 @@ spec:
                               - name
                               type: object
                             type: array
+                          healthPort:
+                            description: HealthPort is the port for this service healthcheck.
+                              if the field were not specified,it is the same as Port.
+                            maximum: 65536
+                            minimum: 1
+                            type: integer
                           mirror:
                             description: If Mirror is true the Service will receive
                               a read only mirror of the traffic for this route.
@@ -3377,6 +3383,12 @@ spec:
                             - name
                             type: object
                           type: array
+                        healthPort:
+                          description: HealthPort is the port for this service healthcheck.
+                            if the field were not specified,it is the same as Port.
+                          maximum: 65536
+                          minimum: 1
+                          type: integer
                         mirror:
                           description: If Mirror is true the Service will receive
                             a read only mirror of the traffic for this route.

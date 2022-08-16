@@ -160,7 +160,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			port = intstr.FromInt(int(be.Service.Port.Number))
 		}
 
-		s, err := p.dag.EnsureService(m, port, p.source, p.EnableExternalNameService)
+		s, err := p.dag.EnsureService(m, port, port, p.source, p.EnableExternalNameService)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).

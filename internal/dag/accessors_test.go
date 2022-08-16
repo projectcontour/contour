@@ -41,6 +41,29 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "includehealth",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+				},
+				{
+					Name:       "heath",
+					Protocol:   "TCP",
+					Port:       8998,
+					TargetPort: intstr.FromInt(8998),
+				},
+			},
+		},
+	}
+
 	externalNameValid := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "externalnamevalid",
@@ -77,6 +100,7 @@ func TestBuilderLookupService(t *testing.T) {
 
 	services := map[types.NamespacedName]*v1.Service{
 		{Name: "service1", Namespace: "default"}:              s1,
+		{Name: "servicehealthcheck", Namespace: "default"}:    s2,
 		{Name: "externalnamevalid", Namespace: "default"}:     externalNameValid,
 		{Name: "externalnamelocalhost", Namespace: "default"}: externalNameLocalhost,
 	}
@@ -84,6 +108,7 @@ func TestBuilderLookupService(t *testing.T) {
 	tests := map[string]struct {
 		types.NamespacedName
 		port                  intstr.IntOrString
+		healthPort            intstr.IntOrString
 		enableExternalNameSvc bool
 		want                  *Service
 		wantErr               error
@@ -113,10 +138,22 @@ func TestBuilderLookupService(t *testing.T) {
 			port:           intstr.FromString("8080"),
 			wantErr:        errors.New(`service "default/nonexistent-service" not found`),
 		},
-		"when port does not exist an error is returned": {
+		"when service port does not exist an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
 			port:           intstr.FromString("9999"),
 			wantErr:        errors.New(`port "9999" on service "default/service1" not matched`),
+		},
+		"when health port and service port are different": {
+			NamespacedName: types.NamespacedName{Name: "servicehealthcheck", Namespace: "default"},
+			port:           intstr.FromString("8080"),
+			healthPort:     intstr.FromString("8998"),
+			want:           healthService(s2),
+		},
+		"when health port does not exist an error is returned": {
+			NamespacedName: types.NamespacedName{Name: "servicehealthcheck", Namespace: "default"},
+			port:           intstr.FromString("8080"),
+			healthPort:     intstr.FromString("8999"),
+			wantErr:        errors.New(`port "8999" on service "default/servicehealthcheck" not matched`),
 		},
 		"When ExternalName Services are not disabled no error is returned": {
 			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
@@ -127,6 +164,12 @@ func TestBuilderLookupService(t *testing.T) {
 					ServiceName:      "externalnamevalid",
 					ServiceNamespace: "default",
 					ServicePort: v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(80),
+					},
+					HealthPort: v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -161,7 +204,7 @@ func TestBuilderLookupService(t *testing.T) {
 
 			var dag DAG
 
-			got, gotErr := dag.EnsureService(tc.NamespacedName, tc.port, &b.Source, tc.enableExternalNameSvc)
+			got, gotErr := dag.EnsureService(tc.NamespacedName, tc.port, tc.healthPort, &b.Source, tc.enableExternalNameSvc)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, gotErr)
 		})

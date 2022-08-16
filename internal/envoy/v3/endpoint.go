@@ -30,6 +30,13 @@ func LBEndpoint(addr *envoy_core_v3.Address) *envoy_endpoint_v3.LbEndpoint {
 	}
 }
 
+//HealthCheckConfig returns an *envoy_endpoint_v3.Endpoint_HealthCheckConfig with a single
+func HealthCheckConfig(port int32) *envoy_endpoint_v3.Endpoint_HealthCheckConfig {
+	return &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+		PortValue: uint32(port),
+	}
+}
+
 // Endpoints returns a slice of LocalityLbEndpoints.
 // The slice contains one entry, with one LbEndpoint per
 // *envoy_core_v3.Address supplied.

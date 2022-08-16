@@ -697,6 +697,12 @@ type Service struct {
 	// +kubebuilder:validation:ExclusiveMinimum=false
 	// +kubebuilder:validation:ExclusiveMaximum=true
 	Port int `json:"port"`
+	// HealthPort is the port for this service healthcheck.
+	// if the field were not specified,it is the same as Port.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65536
+	HealthPort int `json:"healthPort,omitempty"`
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
 	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
 	// +kubebuilder:validation:Enum=h2;h2c;tls

@@ -767,6 +767,8 @@ type WeightedService struct {
 	ServiceNamespace string
 	// ServicePort is the port to which we forward traffic.
 	ServicePort v1.ServicePort
+	// HealthPort is the port for healthcheck.
+	HealthPort v1.ServicePort
 }
 
 // ServiceCluster capture the set of Kubernetes Services that will
