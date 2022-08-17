@@ -59,7 +59,7 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, ep *v1.Endpoints) []*
 				continue
 			}
 
-			//Set healthCheckPort only when port and healthPort are different.
+			// Set healthCheckPort only when port and healthPort are different.
 			if healthPort.Name != "" && healthPort.Name == p.Name && port.Name != healthPort.Name {
 				healthCheckPort = p.Port
 			}
