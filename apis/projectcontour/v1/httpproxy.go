@@ -698,7 +698,7 @@ type Service struct {
 	// +kubebuilder:validation:ExclusiveMaximum=true
 	Port int `json:"port"`
 	// HealthPort is the port for this service healthcheck.
-	// if the field were not specified,it is the same as Port.
+	// if the field were not specified, it is the same as Port.
 	//
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65536

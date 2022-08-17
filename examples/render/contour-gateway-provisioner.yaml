@@ -3035,7 +3035,7 @@ spec:
                             type: array
                           healthPort:
                             description: HealthPort is the port for this service healthcheck.
-                              if the field were not specified,it is the same as Port.
+                              if the field were not specified, it is the same as Port.
                             maximum: 65536
                             minimum: 1
                             type: integer
@@ -3385,7 +3385,7 @@ spec:
                           type: array
                         healthPort:
                           description: HealthPort is the port for this service healthcheck.
-                            if the field were not specified,it is the same as Port.
+                            if the field were not specified, it is the same as Port.
                           maximum: 65536
                           minimum: 1
                           type: integer
