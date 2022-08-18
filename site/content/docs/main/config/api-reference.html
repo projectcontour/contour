@@ -4860,6 +4860,25 @@ NodePlacement
 <p>NodePlacement describes node scheduling configuration of Contour pods.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ingressClassName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IngressClassName is the name of the IngressClass used by
+Contour will process all ingress objects without an ingre
+or ingress objects with an annotation matching ingress-cl
+specified, Contour will only process ingress objects that
+class.</p>
+<p>For additional IngressClass details, refer to:
+<a href="https://projectcontour.io/docs/main/config/annotations/">https://projectcontour.io/docs/main/config/annotations/</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.DebugConfig">DebugConfig

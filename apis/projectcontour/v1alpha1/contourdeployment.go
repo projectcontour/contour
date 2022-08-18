@@ -59,6 +59,20 @@ type ContourSettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// IngressClassName is the name of the IngressClass used by
+	// Contour will process all ingress objects without an ingre
+	// or ingress objects with an annotation matching ingress-cl
+	// specified, Contour will only process ingress objects that
+	// class.
+	//
+	// For additional IngressClass details, refer to:
+	//   https://projectcontour.io/docs/main/config/annotations/
+	//
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +optional
+	IngressClassName *string `json:"ingressClassName,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,

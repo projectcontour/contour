@@ -251,6 +251,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			contourModel.Spec.IngressClassName = gatewayClassParams.Spec.Contour.IngressClassName
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {

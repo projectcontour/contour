@@ -660,6 +660,7 @@ type Config struct {
 	NodePorts                 []NodePort
 	GatewayControllerName     *string
 	EnableExternalNameService *bool
+	IngressClassName          *string
 }
 
 // New makes a Contour object using the provided ns/name for the object's
@@ -699,6 +700,11 @@ func New(cfg Config) *Contour {
 	if cfg.EnableExternalNameService != nil {
 		cntr.Spec.EnableExternalNameService = cfg.EnableExternalNameService
 	}
+
+	if cfg.IngressClassName != nil {
+		cntr.Spec.IngressClassName = cfg.IngressClassName
+	}
+
 	return cntr
 }
 
