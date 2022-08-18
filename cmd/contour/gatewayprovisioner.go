@@ -20,7 +20,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/internal/provisioner/parse"
-	"github.com/projectcontour/contour/pkg/config"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -54,7 +53,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		StringVar(&conf.metricsBindAddress)
 
 	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
-		Default(config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")).
+		Default("projectcontour").
 		StringVar(&conf.leaderElectionNamespace)
 
 	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
