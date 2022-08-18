@@ -1,0 +1,1 @@
+add the flag to enable Kubernetes client debug logging with log level.
