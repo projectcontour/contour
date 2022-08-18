@@ -1,0 +1,1 @@
+Add the flag to enable debug logging
