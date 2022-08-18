@@ -1924,6 +1924,12 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
+        "default_regex_engine": {
+          "name": "envoy.regex_engines.google_re2",
+          "typed_config": {
+            "@type": "type.googleapis.com/envoy.extensions.regex_engines.v3.GoogleRE2"
+          }
+        },
         "dynamic_resources": {
           "lds_config": {
             "api_config_source": {
