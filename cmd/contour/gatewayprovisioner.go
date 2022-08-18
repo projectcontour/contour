@@ -31,39 +31,40 @@ import (
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
 	cmd := app.Command("gateway-provisioner", "Run contour gateway provisioner.")
 
-	conf := &gatewayProvisionerConfig{
-		contourImage:          "ghcr.io/projectcontour/contour:main",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.23.0",
-		metricsBindAddress:    ":8080",
-		leaderElection:        false,
-		leaderElectionID:      "0d879e31.projectcontour.io",
-		gatewayControllerName: "projectcontour.io/gateway-controller",
+	config := &gatewayProvisionerConfig{
+		contourImage:            "ghcr.io/projectcontour/contour:main",
+		envoyImage:              "docker.io/envoyproxy/envoy:v1.23.0",
+		metricsBindAddress:      ":8080",
+		leaderElection:          false,
+		leaderElectionID:        "0d879e31.projectcontour.io",
+		gatewayControllerName:   "projectcontour.io/gateway-controller",
+		leaderElectionNamespace: "projectcontour",
 	}
 
 	cmd.Flag("contour-image", "The container image used for the managed Contour.").
-		Default(conf.contourImage).
-		StringVar(&conf.contourImage)
+		Default(config.contourImage).
+		StringVar(&config.contourImage)
 
 	cmd.Flag("envoy-image", "The container image used for the managed Envoy.").
-		Default(conf.envoyImage).
-		StringVar(&conf.envoyImage)
+		Default(config.envoyImage).
+		StringVar(&config.envoyImage)
 
 	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to 0 to disable serving metrics.").
-		Default(conf.metricsBindAddress).
-		StringVar(&conf.metricsBindAddress)
+		Default(config.metricsBindAddress).
+		StringVar(&config.metricsBindAddress)
 
 	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
-		Default("projectcontour").
-		StringVar(&conf.leaderElectionNamespace)
+		Default(config.leaderElectionNamespace).
+		StringVar(&config.leaderElectionNamespace)
 
 	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
-		BoolVar(&conf.leaderElection)
+		BoolVar(&config.leaderElection)
 
 	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
-		Default(conf.gatewayControllerName).
-		StringVar(&conf.gatewayControllerName)
+		Default(config.gatewayControllerName).
+		StringVar(&config.gatewayControllerName)
 
-	return cmd, conf
+	return cmd, config
 }
 
 type gatewayProvisionerConfig struct {
