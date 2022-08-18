@@ -150,6 +150,11 @@ type ContourSpec struct {
 	// +optional
 	IngressClassName *string `json:"ingressClassName,omitempty"`
 
+	// Enable debug logging.
+	//
+	// +optional
+	Debug bool `json:"debug,omitempty"`
+
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
 	// See each field for additional details.

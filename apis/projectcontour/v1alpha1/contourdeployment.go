@@ -59,6 +59,11 @@ type ContourSettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// Enable debug logging.
+	//
+	// +optional
+	Debug bool `json:"debug,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,

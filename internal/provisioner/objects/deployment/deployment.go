@@ -98,6 +98,11 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
 		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
 	}
+
+	if contour.Spec.Debug {
+		args = append(args, "--debug")
+	}
+
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		switch {

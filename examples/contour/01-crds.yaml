@@ -854,6 +854,9 @@ spec:
                   associated resources, including things like replica count for the
                   Deployment, and node placement constraints for the pods.
                 properties:
+                  debug:
+                    description: Enable debug logging.
+                    type: boolean
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Contour pods.
