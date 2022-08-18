@@ -171,6 +171,14 @@ type ContourSpec struct {
 
 	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
 	EnvoyWorkloadType WorkloadType
+
+	// KubernetesDebug Enable Kubernetes client debug logging with log level. If unset,
+	// defaults to 0.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9
+	// +optional
+	KubernetesDebug uint8 `json:"kubernetesDebug,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
