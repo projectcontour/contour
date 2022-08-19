@@ -308,12 +308,12 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 	}
 
 	if contour.EnvoyRuntimeSettingsExists() {
-		for _, c := range initContainers {
-			c.VolumeMounts = append(c.VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
+		for i := range initContainers {
+			initContainers[i].VolumeMounts = append(initContainers[i].VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
 		}
 
-		for _, c := range containers {
-			c.VolumeMounts = append(c.VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
+		for j := range containers {
+			containers[j].VolumeMounts = append(containers[j].VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
 		}
 	}
 
