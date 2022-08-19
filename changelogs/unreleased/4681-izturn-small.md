@@ -1,0 +1,1 @@
+add the field podAnnotations to crd/ContourConfiguration to enable adding more annotations to pod/envoy
