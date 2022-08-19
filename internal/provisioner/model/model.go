@@ -731,3 +731,12 @@ func MakeNodePorts(ports map[string]int) []NodePort {
 	}
 	return nodePorts
 }
+
+// EnvoyRuntimeSettingsExists returns true if the runtime settings is specified for Envoy.
+func (c *Contour) EnvoyRuntimeSettingsExists() bool {
+	if c.Spec.RuntimeSettings != nil &&
+		c.Spec.RuntimeSettings.Envoy != nil {
+		return true
+	}
+	return false
+}

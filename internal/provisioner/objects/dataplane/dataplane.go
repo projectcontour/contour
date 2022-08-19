@@ -381,6 +381,13 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 	}
 
+	if contour.EnvoyRuntimeSettingsExists() {
+		for k, v := range contour.Spec.RuntimeSettings.Envoy.PodAnnotations {
+			// if there is a same name pair, overwrite it
+			ds.Spec.Template.ObjectMeta.Annotations[k] = v
+		}
+	}
+
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
@@ -463,6 +470,12 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
+	if contour.EnvoyRuntimeSettingsExists() {
+		for k, v := range contour.Spec.RuntimeSettings.Envoy.PodAnnotations {
+			// if there is a same name pair, overwrite it
+			deployment.Spec.Template.ObjectMeta.Annotations[k] = v
+		}
+	}
 	if contour.EnvoyNodeSelectorExists() {
 		deployment.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
