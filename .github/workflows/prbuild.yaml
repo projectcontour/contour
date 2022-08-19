@@ -1,7 +1,7 @@
 name: Build and Test Pull Request
 
 # Trigger the workflow on push or pull request
-on: 
+on:
   push:
   pull_request:
     types: [opened, synchronize]
@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Codespell
-        uses: codespell-project/actions-codespell@master
+        uses: codespell-project/actions-codespell@v1.0
         with:
           skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
           ignore_words_file: './.codespell.ignorewords'
@@ -74,7 +74,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}    
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   build-image:
     needs:
       - lint

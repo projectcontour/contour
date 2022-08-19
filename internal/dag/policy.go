@@ -58,13 +58,13 @@ const (
 
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
-func retryOn(ro []contour_api_v1.RetryOn) string {
-	if len(ro) == 0 {
+func retryOn(ron []contour_api_v1.RetryOn) string {
+	if len(ron) == 0 {
 		return "5xx"
 	}
 
-	ss := make([]string, len(ro))
-	for i, value := range ro {
+	ss := make([]string, len(ron))
+	for i, value := range ron {
 		ss[i] = string(value)
 	}
 	return strings.Join(ss, ",")
