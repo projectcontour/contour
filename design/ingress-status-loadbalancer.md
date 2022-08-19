@@ -27,7 +27,7 @@ There are two components to this solution
 1. Discovering the loadbalancer information
 2. Writing the loadbalancer information to the ingress objects.
 
-The former, the discovery will need to support 
+The former, the discovery will need to support
 
 1. Hard coded IP/address details (actually a list, and it can be an address or an IP)
 2. Discovering information from the service document.
@@ -38,7 +38,7 @@ While the hard coded name approach sounds simpler, and is, it will likely not be
 This is for several reasons.
 
 - The hard coded address model implies either the cluster is running on prem, or using host networking.
-- The hard coded IP model requires the administator to know the IP addresses of the _envoy_ service (not the contour service) which may change over time. 
+- The hard coded IP model requires the administrator to know the IP addresses of the _envoy_ service (not the contour service) which may change over time.
 
 The configuration will likely go into Contour's configuration file.
 
@@ -77,7 +77,7 @@ The discovery worker should look something like this pseudocode:
 1. worker starts up, blocks on leadership election.
 2. when elected leader it checks the mode.
     * if discovery is hard coded in the config file it transmits these addresses over a channel to the other worker, then goes to sleep until deposed and/or shutdown.
-    * if discovery is dynamic it opens a watcher on the specified (defaults, config file, cli flags, in that order) service document and each time it changes sends the address details to the other worker until deposed or shutdown. 
+    * if discovery is dynamic it opens a watcher on the specified (defaults, config file, cli flags, in that order) service document and each time it changes sends the address details to the other worker until deposed or shutdown.
 
 Open question: if the service document goes away, should we transmit an empty set of addresses to the status worker to indicate it should remove the status.loadbalancer details?
 
@@ -94,7 +94,7 @@ The status worker should look something like this pseudocode:
 4. for each ingress observed, if the even is an add or update, we patch it with the latest set of addresses. For deletes, we do nothing.
 
 The open question is how to deal with the discovery worker sending a new set of addresses after the initial pass.
-It feels like we need to keep a side cache of ingress objects we have previously seen to go back and bulk update all the ingresses' seen so far.  
+It feels like we need to keep a side cache of ingress objects we have previously seen to go back and bulk update all the ingresses' seen so far.
 
 ## Security Considerations
 
