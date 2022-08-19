@@ -244,8 +244,8 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				{
 					Name:      envoyAdminVolName,
 					MountPath: filepath.Join("/", envoyAdminVolMntDir),
-				},
-			},
+				}},
+
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.LifecycleHandler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -305,6 +305,16 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
 		},
+	}
+
+	if contour.EnvoyRuntimeSettingsExists() {
+		for _, c := range initContainers {
+			c.VolumeMounts = append(c.VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
+		}
+
+		for _, c := range containers {
+			c.VolumeMounts = append(c.VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
+		}
 	}
 
 	return initContainers, containers
@@ -381,6 +391,10 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 	}
 
+	if contour.EnvoyRuntimeSettingsExists() {
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
+			contour.Spec.RuntimeSettings.Envoy.ExtraVolumes...)
+	}
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
@@ -451,6 +465,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 							},
 						},
 					},
+
 					ServiceAccountName:            contour.EnvoyRBACNames().ServiceAccount,
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
@@ -461,6 +476,11 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 				},
 			},
 		},
+	}
+
+	if contour.EnvoyRuntimeSettingsExists() {
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes,
+			contour.Spec.RuntimeSettings.Envoy.ExtraVolumes...)
 	}
 
 	if contour.EnvoyNodeSelectorExists() {

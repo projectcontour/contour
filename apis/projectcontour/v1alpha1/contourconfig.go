@@ -15,6 +15,8 @@ package v1alpha1
 
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -292,6 +294,14 @@ type EnvoyConfig struct {
 	// Network holds various configurable Envoy network values.
 	// +optional
 	Network *NetworkParameters `json:"network,omitempty"`
+
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 }
 
 // LogLevel is the logging levels available.

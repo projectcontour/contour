@@ -87,6 +87,15 @@ func (c *Contour) ContourTolerationsExist() bool {
 	return false
 }
 
+// EnvoyRuntimeSettingsExists returns true if the runtime settings is specified for Envoy.
+func (c *Contour) EnvoyRuntimeSettingsExists() bool {
+	if c.Spec.RuntimeSettings != nil &&
+		c.Spec.RuntimeSettings.Envoy != nil {
+		return true
+	}
+	return false
+}
+
 // EnvoyNodeSelectorExists returns true if a nodeSelector is specified for Envoy.
 func (c *Contour) EnvoyNodeSelectorExists() bool {
 	if c.Spec.NodePlacement != nil &&
