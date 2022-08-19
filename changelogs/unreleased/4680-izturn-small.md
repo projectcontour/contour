@@ -1,0 +1,1 @@
+add the fields extraVolumes & extraVolumeMounts to crd/ContourConfiguration to let pod/envoy can mount more volumes
