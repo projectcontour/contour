@@ -32,7 +32,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		i    *networking_v1.Ingress
 		want *RetryPolicy
 	}{
-		"no anotations": {
+		"no annotations": {
 			i:    &networking_v1.Ingress{},
 			want: nil,
 		},
