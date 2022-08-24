@@ -1,1 +1,1 @@
-Add a new flag `leader-election-namspace` for gateway-provisioner
+Add a new flag `leader-election-namespace` for gateway-provisioner

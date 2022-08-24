@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/internal/provisioner/parse"
+	"github.com/projectcontour/contour/pkg/config"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -31,40 +32,39 @@ import (
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
 	cmd := app.Command("gateway-provisioner", "Run contour gateway provisioner.")
 
-	config := &gatewayProvisionerConfig{
-		contourImage:            "ghcr.io/projectcontour/contour:main",
-		envoyImage:              "docker.io/envoyproxy/envoy:v1.23.0",
-		metricsBindAddress:      ":8080",
-		leaderElection:          false,
-		leaderElectionID:        "0d879e31.projectcontour.io",
-		gatewayControllerName:   "projectcontour.io/gateway-controller",
-		leaderElectionNamespace: "projectcontour",
+	provisionerConfig := &gatewayProvisionerConfig{
+		contourImage:          "ghcr.io/projectcontour/contour:main",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.23.0",
+		metricsBindAddress:    ":8080",
+		leaderElection:        false,
+		leaderElectionID:      "0d879e31.projectcontour.io",
+		gatewayControllerName: "projectcontour.io/gateway-controller",
 	}
 
 	cmd.Flag("contour-image", "The container image used for the managed Contour.").
-		Default(config.contourImage).
-		StringVar(&config.contourImage)
+		Default(provisionerConfig.contourImage).
+		StringVar(&provisionerConfig.contourImage)
 
 	cmd.Flag("envoy-image", "The container image used for the managed Envoy.").
-		Default(config.envoyImage).
-		StringVar(&config.envoyImage)
+		Default(provisionerConfig.envoyImage).
+		StringVar(&provisionerConfig.envoyImage)
 
 	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to 0 to disable serving metrics.").
-		Default(config.metricsBindAddress).
-		StringVar(&config.metricsBindAddress)
+		Default(provisionerConfig.metricsBindAddress).
+		StringVar(&provisionerConfig.metricsBindAddress)
 
 	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
-		Default(config.leaderElectionNamespace).
-		StringVar(&config.leaderElectionNamespace)
+		Default(config.GetenvOr("CONTOUR_PROVISIONER_NAMESPACE", "projectcontour")).
+		StringVar(&provisionerConfig.leaderElectionNamespace)
 
 	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
-		BoolVar(&config.leaderElection)
+		BoolVar(&provisionerConfig.leaderElection)
 
 	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
-		Default(config.gatewayControllerName).
-		StringVar(&config.gatewayControllerName)
+		Default(provisionerConfig.gatewayControllerName).
+		StringVar(&provisionerConfig.gatewayControllerName)
 
-	return cmd, config
+	return cmd, provisionerConfig
 }
 
 type gatewayProvisionerConfig struct {
