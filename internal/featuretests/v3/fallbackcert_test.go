@@ -293,7 +293,7 @@ func TestFallbackCertificate(t *testing.T) {
 		TypeUrl: secretType,
 		Resources: resources(t,
 			&envoy_tls_v3.Secret{
-				Name: "admin/fallbacksecret/68621186db",
+				Name: "admin/fallbacksecret/0567f551af",
 				Type: &envoy_tls_v3.Secret_TlsCertificate{
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{
@@ -310,7 +310,7 @@ func TestFallbackCertificate(t *testing.T) {
 				},
 			},
 			&envoy_tls_v3.Secret{
-				Name: "default/secret/68621186db",
+				Name: "default/secret/0567f551af",
 				Type: &envoy_tls_v3.Secret_TlsCertificate{
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{
