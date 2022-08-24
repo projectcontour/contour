@@ -67,6 +67,8 @@ jobs:
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
           echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: generate
+        env:
+          GATEWAY_API_VERSION: "release-0.5"
         run: |
           make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh
