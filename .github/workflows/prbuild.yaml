@@ -345,6 +345,7 @@ jobs:
       - name: Gateway API conformance tests
         env:
           LOAD_PREBUILT_IMAGE: "true"
+          GATEWAY_API_VERSION: "release-0.5"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make gateway-conformance
