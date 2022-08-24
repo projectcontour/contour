@@ -5616,7 +5616,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"nonexistent-secret\" referent is invalid: Secret not found",
 						},
 					},

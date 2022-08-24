@@ -695,7 +695,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 			listenerName,
 			gatewayapi_v1beta1.ListenerConditionResolvedRefs,
 			metav1.ConditionFalse,
-			gatewayapi_v1beta1.ListenerReasonRefNotPermitted,
+			gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef,
 			fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q referent is invalid: %s", certificateRef.Name, err),
 		)
 		return nil
