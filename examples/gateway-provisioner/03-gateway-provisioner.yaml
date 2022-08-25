@@ -30,7 +30,7 @@ spec:
             cpu: 100m
             memory: 70Mi
         env:
-        - name:  
+        - name: CONTOUR_PROVISIONER_NAMESPACE
           valueFrom:
             fieldRef:
               apiVersion: v1
