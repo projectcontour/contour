@@ -194,6 +194,7 @@ func TestRetryPolicy(t *testing.T) {
 func TestTimeoutPolicy(t *testing.T) {
 	tests := map[string]struct {
 		tp                       *contour_api_v1.TimeoutPolicy
+		clusterConnectTimeout    time.Duration
 		wantRouteTimeoutPolicy   RouteTimeoutPolicy
 		wantClusterTimeoutPolicy ClusterTimeoutPolicy
 		wantErr                  bool
@@ -242,6 +243,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			},
 			wantClusterTimeoutPolicy: ClusterTimeoutPolicy{
 				IdleConnectionTimeout: timeout.DurationSetting(900 * time.Second),
+				ConnectTimeout:        0,
 			},
 		},
 		"infinite idle connection timeout": {
@@ -250,6 +252,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			},
 			wantClusterTimeoutPolicy: ClusterTimeoutPolicy{
 				IdleConnectionTimeout: timeout.DisabledSetting(),
+				ConnectTimeout:        0,
 			},
 		},
 		"invalid idle connection timeout": {
@@ -258,11 +261,17 @@ func TestTimeoutPolicy(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		"no timeout policy for route but global connection timeout configured for clusters": {
+			clusterConnectTimeout: 5 * time.Second,
+			wantClusterTimeoutPolicy: ClusterTimeoutPolicy{
+				ConnectTimeout: 5 * time.Second,
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotRouteTimeoutPolicy, gotClusterTimeoutPolicy, gotErr := timeoutPolicy(tc.tp, 0)
+			gotRouteTimeoutPolicy, gotClusterTimeoutPolicy, gotErr := timeoutPolicy(tc.tp, tc.clusterConnectTimeout)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {
