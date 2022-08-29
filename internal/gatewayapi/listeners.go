@@ -32,10 +32,11 @@ type ValidateListenersResult struct {
 
 // ValidateListeners validates protocols, ports and hostnames on a set of listeners.
 // It ensures that:
-//	- all protocols are supported
-//	- each listener group (grouped by protocol, with HTTPS & TLS going together) uses a single port
-//	- listener hostnames are syntactically valid
-//  - hostnames within each listener group are unique
+//   - all protocols are supported
+//   - each listener group (grouped by protocol, with HTTPS & TLS going together) uses a single port
+//   - listener hostnames are syntactically valid
+//   - hostnames within each listener group are unique
+//
 // It returns the insecure & secure ports to use, as well as conditions for all invalid listeners.
 // If a listener is not in the "InvalidListenerConditions" map, it is assumed to be valid according
 // to the above rules.

@@ -35,18 +35,18 @@ import (
 //
 // The theory of operation of the loadBalancerStatusWriter is as follows:
 //
-// 1. On startup the loadBalancerStatusWriter waits to be elected leader.
-// 2. Once elected leader, the loadBalancerStatusWriter waits to receive a
-//    v1.LoadBalancerStatus value.
-// 3. Once a v1.LoadBalancerStatus value has been received, the
-//    cached address is updated so that it will be applied to objects
-//    received in any subsequent informer events.
-// 4. All Ingress, HTTPProxy and Gateway objects are listed from the informer
-//    cache and an attempt is made to update their status with the new
-//    address. This update may end up being a no-op in which case it
-//    doesn't make an API server call.
-// 5. If the worker is stopped, the informer continues but no further
-//    status updates are made.
+//  1. On startup the loadBalancerStatusWriter waits to be elected leader.
+//  2. Once elected leader, the loadBalancerStatusWriter waits to receive a
+//     v1.LoadBalancerStatus value.
+//  3. Once a v1.LoadBalancerStatus value has been received, the
+//     cached address is updated so that it will be applied to objects
+//     received in any subsequent informer events.
+//  4. All Ingress, HTTPProxy and Gateway objects are listed from the informer
+//     cache and an attempt is made to update their status with the new
+//     address. This update may end up being a no-op in which case it
+//     doesn't make an API server call.
+//  5. If the worker is stopped, the informer continues but no further
+//     status updates are made.
 type loadBalancerStatusWriter struct {
 	log                   logrus.FieldLogger
 	cache                 cache.Cache
