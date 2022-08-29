@@ -1,1 +1,0 @@
-Update Envoy to v1.23.1. This fixes an issue where the arm64 variant of the Envoy image was not built properly. See the [release notes](https://www.envoyproxy.io/docs/envoy/v1.23.1/version_history/v1.23/v1.23.1) for additional information.
