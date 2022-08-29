@@ -430,7 +430,7 @@ func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duratio
 				IdleStreamTimeout: timeout.DefaultSetting(),
 			}, ClusterTimeoutPolicy{
 				IdleConnectionTimeout: timeout.DefaultSetting(),
-				ConnectTimeout:        0,
+				ConnectTimeout:        connectTimeout,
 			},
 			nil
 	}
