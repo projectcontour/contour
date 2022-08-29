@@ -608,7 +608,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -1915,7 +1915,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -3970,7 +3970,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -4330,7 +4330,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.

@@ -63,11 +63,11 @@ func DurationSetting(duration time.Duration) Setting {
 
 // Parse parses string representations of timeout settings that we pass
 // in various places in a standard way:
-//	- an empty string means "use the default".
-//	- any valid representation of "0" means "use the default".
-//	- a valid Go duration string is used as the specific timeout value.
-//	- "infinity" or "infinite" means "disable the timeout".
-//	- any other value results in an error.
+//   - an empty string means "use the default".
+//   - any valid representation of "0" means "use the default".
+//   - a valid Go duration string is used as the specific timeout value.
+//   - "infinity" or "infinite" means "disable the timeout".
+//   - any other value results in an error.
 func Parse(timeout string) (Setting, error) {
 	// An empty string is interpreted as no explicit timeout specified, so
 	// use the Envoy default.
@@ -96,10 +96,10 @@ func Parse(timeout string) (Setting, error) {
 // ParseMaxAge parses string representations of "max age" values used mostly
 // in cache related settings. An example of this is the MaxAge field of the
 // CORS policy:
-//	- an empty string means "use the default".
-//	- 0 means "disable cache".
-//	- a valid Go duration string is used as the specific timeout value.
-//	- any other input means "use the default".
+//   - an empty string means "use the default".
+//   - 0 means "disable cache".
+//   - a valid Go duration string is used as the specific timeout value.
+//   - any other input means "use the default".
 func ParseMaxAge(timeout string) (Setting, error) {
 	if timeout == "" {
 		return DefaultSetting(), nil
