@@ -252,7 +252,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			contourModel.Spec.KubernetesDebug = gatewayClassParams.Spec.Contour.KubernetesDebug
+			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {

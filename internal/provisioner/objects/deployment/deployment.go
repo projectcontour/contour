@@ -97,7 +97,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--contour-config-name=%s", contour.ContourConfigurationName()),
 		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
 		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
-		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesDebug),
+		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesLogLevel),
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.
