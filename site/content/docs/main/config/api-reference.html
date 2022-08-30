@@ -4862,15 +4862,18 @@ NodePlacement
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>debug</code>
+<code>logLevel</code>
 <br>
 <em>
-bool
+<a href="#projectcontour.io/v1alpha1.LogLevel">
+LogLevel
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Enable debug logging.</p>
+<p>LogLevel sets the log level for Contour
+Allowed values are &ldquo;info&rdquo;, &ldquo;debug&rdquo;.</p>
 </td>
 </tr>
 </tbody>
@@ -6051,6 +6054,10 @@ string
 </table>
 <h3 id="projectcontour.io/v1alpha1.LogLevel">LogLevel
 (<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
 <p>
 <p>LogLevel is the logging levels available.</p>
 </p>
