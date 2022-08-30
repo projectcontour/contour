@@ -11969,5 +11969,11 @@ spec:
           requests:
             cpu: 100m
             memory: 70Mi
+        env:
+        - name: CONTOUR_PROVISIONER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
       serviceAccountName: contour-gateway-provisioner
       terminationGracePeriodSeconds: 10
