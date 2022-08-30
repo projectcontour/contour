@@ -60,10 +60,12 @@ type ContourSettings struct {
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
 
-	// Enable debug logging.
+	// LogLevel sets the log level for Contour
+	// Allowed values are "info", "debug".
 	//
 	// +optional
-	Debug bool `json:"debug,omitempty"`
+	// +kubebuilder:default=info
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,

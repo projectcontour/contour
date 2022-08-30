@@ -150,10 +150,12 @@ type ContourSpec struct {
 	// +optional
 	IngressClassName *string `json:"ingressClassName,omitempty"`
 
-	// Enable debug logging.
+	// LogLevel sets the log level for Contour
+	// Allowed values are "info", "debug".
 	//
 	// +optional
-	Debug bool `json:"debug,omitempty"`
+	// +kubebuilder:default=info
+	LogLevel contourv1alpha1.LogLevel `json:"logLevel,omitempty"`
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//

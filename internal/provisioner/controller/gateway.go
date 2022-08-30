@@ -252,7 +252,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			contourModel.Spec.Debug = gatewayClassParams.Spec.Contour.Debug
+			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {

@@ -1,1 +1,1 @@
-Add the flag to enable debug logging
+Add the flag to set the log level for Contour
