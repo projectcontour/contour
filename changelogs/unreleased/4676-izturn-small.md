@@ -1,1 +1,1 @@
-Add the flag to set the log level for Contour
+Add Contour log level configurability to ContourDeployment resource.
