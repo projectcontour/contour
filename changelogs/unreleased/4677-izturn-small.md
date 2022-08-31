@@ -1,1 +1,1 @@
-add the flag to enable Kubernetes client debug logging with log level.
+Add Kubernetes client debug log level configurability to ContourDeployment resource.
