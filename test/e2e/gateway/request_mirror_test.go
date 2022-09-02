@@ -33,7 +33,8 @@ import (
 )
 
 func testRequestMirrorRule(namespace string) {
-	Specify("mirrors can be specified on route rule", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4650
+	Specify("mirrors can be specified on route rule", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-primary")
