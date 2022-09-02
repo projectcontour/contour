@@ -174,10 +174,6 @@ type ContourSpec struct {
 
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
-	//
-	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:validation:Maximum=9
-	// +optional
 	KubernetesLogLevel uint8 `json:"kubernetesLogLevel,omitempty"`
 }
 
@@ -696,6 +692,7 @@ func New(cfg Config) *Contour {
 					},
 				},
 			},
+			KubernetesLogLevel: 1,
 		},
 	}
 	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
