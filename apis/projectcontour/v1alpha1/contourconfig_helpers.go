@@ -57,7 +57,6 @@ func (x XDSServerType) Validate() error {
 	}
 }
 
-
 func (d ClusterDNSFamilyType) Validate() error {
 	switch d {
 	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily:
