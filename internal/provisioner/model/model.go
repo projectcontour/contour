@@ -154,7 +154,6 @@ type ContourSpec struct {
 	// Allowed values are "info", "debug".
 	//
 	// +optional
-	// +kubebuilder:default=info
 	LogLevel contourv1alpha1.LogLevel `json:"logLevel,omitempty"`
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
@@ -680,6 +679,7 @@ func New(cfg Config) *Contour {
 		},
 		Spec: ContourSpec{
 			ContourReplicas: cfg.Replicas,
+			LogLevel:        contourv1alpha1.DebugLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,

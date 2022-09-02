@@ -147,6 +147,8 @@ func TestDesiredDeployment(t *testing.T) {
 		}
 	}
 
+	checkContainerHasArg(t, container, "--debug")
+
 	arg := fmt.Sprintf("--ingress-class-name=%s", *cntr.Spec.IngressClassName)
 	checkContainerHasArg(t, container, arg)
 	checkDeploymentHasNodeSelector(t, deploy, nil)
@@ -181,4 +183,5 @@ func TestNodePlacementDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, selectors)
 	checkDeploymentHasTolerations(t, deploy, tolerations)
+
 }

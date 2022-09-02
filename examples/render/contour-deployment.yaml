@@ -1064,7 +1064,6 @@ spec:
                   Deployment, and node placement constraints for the pods.
                 properties:
                   logLevel:
-                    default: info
                     description: LogLevel sets the log level for Contour Allowed values
                       are "info", "debug".
                     type: string

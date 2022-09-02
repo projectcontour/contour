@@ -14,9 +14,31 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// LogLevel is the logging levels available.
+type LogLevel string
+
+const (
+	// InfoLog sets the log level for Contour to `info`.
+	InfoLog LogLevel = "info"
+
+	// DebugLog sets the log level for Contour to `debug`.
+	DebugLog LogLevel = "debug"
+)
+
+func (l LogLevel) Validate() error {
+	switch l {
+	case InfoLog, DebugLog:
+		return nil
+	default:
+		return fmt.Errorf("invalid log level %q", l)
+	}
+}
 
 // ContourDeploymentSpec specifies options for how a Contour
 // instance should be provisioned.
@@ -64,7 +86,6 @@ type ContourSettings struct {
 	// Allowed values are "info", "debug".
 	//
 	// +optional
-	// +kubebuilder:default=info
 	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
