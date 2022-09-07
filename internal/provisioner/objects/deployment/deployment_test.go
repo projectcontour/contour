@@ -132,6 +132,9 @@ func TestDesiredDeployment(t *testing.T) {
 		}
 	}
 
+	// Change the default Kubernetes log level to test --kubernetes-debug.
+	cntr.Spec.KubernetesLogLevel = 7
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 
