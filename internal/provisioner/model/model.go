@@ -679,7 +679,7 @@ func New(cfg Config) *Contour {
 		},
 		Spec: ContourSpec{
 			ContourReplicas: cfg.Replicas,
-			LogLevel:        contourv1alpha1.DebugLog,
+			LogLevel:        contourv1alpha1.InfoLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,

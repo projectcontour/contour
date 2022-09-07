@@ -78,6 +78,16 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
+func checkContainerHasNoArg(t *testing.T, container *corev1.Container, arg string) {
+	t.Helper()
+
+	for _, a := range container.Args {
+		if a == arg {
+			t.Errorf("container shouldn't have argument %q", arg)
+		}
+	}
+}
+
 func checkContainerHasImage(t *testing.T, container *corev1.Container, image string) {
 	t.Helper()
 
@@ -147,7 +157,7 @@ func TestDesiredDeployment(t *testing.T) {
 		}
 	}
 
-	checkContainerHasArg(t, container, "--debug")
+	checkContainerHasNoArg(t, container, "--debug")
 
 	arg := fmt.Sprintf("--ingress-class-name=%s", *cntr.Spec.IngressClassName)
 	checkContainerHasArg(t, container, arg)
