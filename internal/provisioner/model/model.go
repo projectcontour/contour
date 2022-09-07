@@ -171,6 +171,10 @@ type ContourSpec struct {
 
 	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
 	EnvoyWorkloadType WorkloadType
+
+	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
+	// defaults to 0.
+	KubernetesLogLevel uint8 `json:"kubernetesLogLevel,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -688,6 +692,7 @@ func New(cfg Config) *Contour {
 					},
 				},
 			},
+			KubernetesLogLevel: 0,
 		},
 	}
 	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
