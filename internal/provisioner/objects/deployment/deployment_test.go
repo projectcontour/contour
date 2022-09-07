@@ -117,12 +117,7 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 	// Change the default ports to test Envoy service port args.
@@ -171,6 +166,8 @@ func TestDesiredDeployment(t *testing.T) {
 
 func TestNodePlacementDeployment(t *testing.T) {
 	name := "selector-test"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+
 	selectors := map[string]string{"node-role": "contour"}
 	tolerations := []corev1.Toleration{
 		{
@@ -180,12 +177,7 @@ func TestNodePlacementDeployment(t *testing.T) {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+
 	cntr.Spec.NodePlacement = &model.NodePlacement{
 		Contour: &model.ContourNodePlacement{
 			NodeSelector: selectors,

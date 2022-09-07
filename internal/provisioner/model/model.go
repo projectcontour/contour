@@ -661,59 +661,6 @@ const (
 	ContourAvailableConditionType = "Available"
 )
 
-// Config is the configuration of a Contour.
-type Config struct {
-	Name                      string
-	Namespace                 string
-	Replicas                  int32
-	NetworkType               NetworkPublishingType
-	NodePorts                 []NodePort
-	GatewayControllerName     *string
-	EnableExternalNameService *bool
-}
-
-// New makes a Contour object using the provided ns/name for the object's
-// namespace/name, pubType for the network publishing type of Envoy, and
-// Envoy container ports 8080/8443.
-func New(cfg Config) *Contour {
-	cntr := &Contour{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cfg.Namespace,
-			Name:      cfg.Name,
-		},
-		Spec: ContourSpec{
-			ContourReplicas: cfg.Replicas,
-			LogLevel:        contourv1alpha1.InfoLog,
-			NetworkPublishing: NetworkPublishing{
-				Envoy: EnvoyNetworkPublishing{
-					Type: cfg.NetworkType,
-					ContainerPorts: []ContainerPort{
-						{
-							Name:       "http",
-							PortNumber: int32(8080),
-						},
-						{
-							Name:       "https",
-							PortNumber: int32(8443),
-						},
-					},
-				},
-			},
-			KubernetesLogLevel: 0,
-		},
-	}
-	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
-		cntr.Spec.NetworkPublishing.Envoy.NodePorts = cfg.NodePorts
-	}
-	if cfg.GatewayControllerName != nil {
-		cntr.Spec.GatewayControllerName = cfg.GatewayControllerName
-	}
-	if cfg.EnableExternalNameService != nil {
-		cntr.Spec.EnableExternalNameService = cfg.EnableExternalNameService
-	}
-	return cntr
-}
-
 // OwningSelector returns a label selector using "projectcontour.io/owning-gateway-name".
 func OwningSelector(contour *Contour) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
