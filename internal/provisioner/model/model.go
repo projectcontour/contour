@@ -692,7 +692,7 @@ func New(cfg Config) *Contour {
 					},
 				},
 			},
-			KubernetesLogLevel: 1,
+			KubernetesLogLevel: 0,
 		},
 	}
 	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
