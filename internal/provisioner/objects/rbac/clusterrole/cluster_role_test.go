@@ -45,12 +45,7 @@ func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[s
 
 func TestDesiredClusterRole(t *testing.T) {
 	name := "test-cr"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	cr := desiredClusterRole(name, cntr)
 	checkClusterRoleName(t, cr, name)
 	ownerLabels := map[string]string{

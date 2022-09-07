@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 
@@ -78,16 +79,6 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
-func checkContainerHasNoArg(t *testing.T, container *corev1.Container, arg string) {
-	t.Helper()
-
-	for _, a := range container.Args {
-		if a == arg {
-			t.Errorf("container shouldn't have argument %q", arg)
-		}
-	}
-}
-
 func checkContainerHasImage(t *testing.T, container *corev1.Container, image string) {
 	t.Helper()
 
@@ -117,12 +108,7 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 	// Change the default ports to test Envoy service port args.
@@ -136,6 +122,12 @@ func TestDesiredDeployment(t *testing.T) {
 			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8444)
 		}
 	}
+
+	// Change the Kubernetes log level to test --kubernetes-debug.
+	cntr.Spec.KubernetesLogLevel = 7
+
+	// Change the Contour log level to test --debug.
+	cntr.Spec.LogLevel = v1alpha1.DebugLog
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
@@ -157,7 +149,7 @@ func TestDesiredDeployment(t *testing.T) {
 		}
 	}
 
-	checkContainerHasNoArg(t, container, "--debug")
+	checkContainerHasArg(t, container, "--debug")
 
 	arg := fmt.Sprintf("--ingress-class-name=%s", *cntr.Spec.IngressClassName)
 	checkContainerHasArg(t, container, arg)
@@ -171,6 +163,8 @@ func TestDesiredDeployment(t *testing.T) {
 
 func TestNodePlacementDeployment(t *testing.T) {
 	name := "selector-test"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+
 	selectors := map[string]string{"node-role": "contour"}
 	tolerations := []corev1.Toleration{
 		{
@@ -180,12 +174,7 @@ func TestNodePlacementDeployment(t *testing.T) {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+
 	cntr.Spec.NodePlacement = &model.NodePlacement{
 		Contour: &model.ContourNodePlacement{
 			NodeSelector: selectors,
