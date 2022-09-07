@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
@@ -98,6 +99,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
 		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
 		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesLogLevel),
+	}
+
+	if contour.Spec.LogLevel == v1alpha1.DebugLog {
+		args = append(args, "--debug")
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.

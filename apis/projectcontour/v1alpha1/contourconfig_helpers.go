@@ -57,15 +57,6 @@ func (x XDSServerType) Validate() error {
 	}
 }
 
-func (l LogLevel) Validate() error {
-	switch l {
-	case InfoLog, DebugLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid log level %q", l)
-	}
-}
-
 func (d ClusterDNSFamilyType) Validate() error {
 	switch d {
 	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily:

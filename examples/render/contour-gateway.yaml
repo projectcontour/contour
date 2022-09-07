@@ -1074,6 +1074,10 @@ spec:
                     maximum: 9
                     minimum: 0
                     type: integer
+                  logLevel:
+                    description: LogLevel sets the log level for Contour Allowed values
+                      are "info", "debug".
+                    type: string
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Contour pods.

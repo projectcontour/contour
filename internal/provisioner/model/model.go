@@ -150,6 +150,12 @@ type ContourSpec struct {
 	// +optional
 	IngressClassName *string `json:"ingressClassName,omitempty"`
 
+	// LogLevel sets the log level for Contour
+	// Allowed values are "info", "debug".
+	//
+	// +optional
+	LogLevel contourv1alpha1.LogLevel `json:"logLevel,omitempty"`
+
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
 	// See each field for additional details.
@@ -677,6 +683,7 @@ func New(cfg Config) *Contour {
 		},
 		Spec: ContourSpec{
 			ContourReplicas: cfg.Replicas,
+			LogLevel:        contourv1alpha1.InfoLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,
