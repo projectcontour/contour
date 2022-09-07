@@ -161,6 +161,10 @@ func TestDesiredDeployment(t *testing.T) {
 
 	arg := fmt.Sprintf("--ingress-class-name=%s", *cntr.Spec.IngressClassName)
 	checkContainerHasArg(t, container, arg)
+
+	arg = fmt.Sprintf("--kubernetes-debug=%d", cntr.Spec.KubernetesLogLevel)
+	checkContainerHasArg(t, container, arg)
+
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
 }
