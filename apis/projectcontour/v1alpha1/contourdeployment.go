@@ -136,6 +136,59 @@ const (
 	WorkloadTypeDeployment = "Deployment"
 )
 
+// Port is the schema to specify a network port for a Service.
+type Port struct {
+	// Name is an IANA_SVC_NAME within the Service.
+	//
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	Name string `json:"name"`
+
+	// Port is the network port number to expose on the envoy service.
+	// The number must be greater than 0 and less than 65536.
+	//
+	// it will be reteieve from GatewayAPI/Gateway's listeners
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port int32 `json:"port"`
+
+	// NodePort is the network port number to expose for the NodePort Service.
+	// If unspecified, a port number will be assigned from the the cluster's
+	// nodeport service range, i.e. --service-node-port-range flag
+	// (default: 30000-32767).
+	//
+	// If specified, the number must:
+	//
+	// 1. Not be used by another NodePort Service.
+	// 2. Be within the cluster's nodeport service range, i.e. --service-node-port-range
+	//    flag (default: 30000-32767).
+	// 3. Be a valid network port number, i.e. greater than 0 and less than 65536.
+	//
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	NodePort *int32 `json:"nodePort,omitempty"`
+
+	// ContainerPort is the network port number to expose for a container.
+	// A container port gives the system additional information about network
+	// connections a container uses, but is primarily informational.
+	// The number must be greater than 0 and less than 65536.
+	//
+	// Not specifying a port here DOES NOT prevent that port from being exposed by Envoy. Any port which is
+	// listening on the default "0.0.0.0" address inside the Envoy container will be accessible
+	// from the network. Names and port numbers must be unique in the list container ports. Two
+	// ports must be specified, one named "http" for Envoy's insecure service and one named
+	// "https" for Envoy's secure service.
+	// the default are:
+	// - http: 8080
+	// - https: 8443
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	ContainerPort int32 `json:"containerPort"`
+}
+
 // NetworkPublishing defines the schema for publishing to a network.
 type NetworkPublishing struct {
 	// NetworkPublishingType is the type of publishing strategy to use. Valid values are:
@@ -176,6 +229,11 @@ type NetworkPublishing struct {
 	//
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+
+	// Ports is a list of network ports to expose on the envoy service
+	//
+	// +optional
+	Ports []Port `json:"ports,omitempty"`
 }
 
 // NetworkPublishingType is a way to publish network endpoints.

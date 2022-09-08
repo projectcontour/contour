@@ -1153,6 +1153,67 @@ spec:
                     description: NetworkPublishing defines how to expose Envoy to
                       a network.
                     properties:
+                      ports:
+                        description: Ports is a list of network ports to expose on
+                          the envoy service
+                        items:
+                          description: Port is the schema to specify a network port
+                            for a Service.
+                          properties:
+                            containerPort:
+                              description: "ContainerPort is the network port number
+                                to expose for a container. A container port gives
+                                the system additional information about network connections
+                                a container uses, but is primarily informational.
+                                The number must be greater than 0 and less than 65536.
+                                \n Not specifying a port here DOES NOT prevent that
+                                port from being exposed by Envoy. Any port which is
+                                listening on the default \"0.0.0.0\" address inside
+                                the Envoy container will be accessible from the network.
+                                Names and port numbers must be unique in the list
+                                container ports. Two ports must be specified, one
+                                named \"http\" for Envoy's insecure service and one
+                                named \"https\" for Envoy's secure service. the default
+                                are: - http: 8080 - https: 8443"
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            name:
+                              description: Name is an IANA_SVC_NAME within the Service.
+                              maxLength: 253
+                              minLength: 1
+                              type: string
+                            nodePort:
+                              description: "NodePort is the network port number to
+                                expose for the NodePort Service. If unspecified, a
+                                port number will be assigned from the the cluster's
+                                nodeport service range, i.e. --service-node-port-range
+                                flag (default: 30000-32767). \n If specified, the
+                                number must: \n 1. Not be used by another NodePort
+                                Service. 2. Be within the cluster's nodeport service
+                                range, i.e. --service-node-port-range    flag (default:
+                                30000-32767). 3. Be a valid network port number, i.e.
+                                greater than 0 and less than 65536."
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            port:
+                              description: "Port is the network port number to expose
+                                on the envoy service. The number must be greater than
+                                0 and less than 65536. \n it will be reteieve from
+                                GatewayAPI/Gateway's listeners"
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                          required:
+                          - containerPort
+                          - name
+                          - port
+                          type: object
+                        type: array
                       serviceAnnotations:
                         additionalProperties:
                           type: string

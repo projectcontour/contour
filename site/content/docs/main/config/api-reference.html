@@ -6375,6 +6375,21 @@ map[string]string
 the provisioned Envoy service.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ports</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.Port">
+[]Port
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports is a list of network ports to expose on the envoy service</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.NetworkPublishingType">NetworkPublishingType
@@ -6526,6 +6541,97 @@ bool
 <em>(Optional)</em>
 <p>ApplyToIngress determines if the Policies will apply to ingress objects</p>
 <p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.Port">Port
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing</a>)
+</p>
+<p>
+<p>Port is the schema to specify a network port for a Service.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is an IANA_SVC_NAME within the Service.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>port</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Port is the network port number to expose on the envoy service.
+The number must be greater than 0 and less than 65536.</p>
+<p>it will be reteieve from GatewayAPI/Gateway&rsquo;s listeners</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>nodePort</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodePort is the network port number to expose for the NodePort Service.
+If unspecified, a port number will be assigned from the the cluster&rsquo;s
+nodeport service range, i.e. &ndash;service-node-port-range flag
+(default: 30000-32767).</p>
+<p>If specified, the number must:</p>
+<ol>
+<li>Not be used by another NodePort Service.</li>
+<li>Be within the cluster&rsquo;s nodeport service range, i.e. &ndash;service-node-port-range
+flag (default: 30000-32767).</li>
+<li>Be a valid network port number, i.e. greater than 0 and less than 65536.</li>
+</ol>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>containerPort</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>ContainerPort is the network port number to expose for a container.
+A container port gives the system additional information about network
+connections a container uses, but is primarily informational.
+The number must be greater than 0 and less than 65536.</p>
+<p>Not specifying a port here DOES NOT prevent that port from being exposed by Envoy. Any port which is
+listening on the default &ldquo;0.0.0.0&rdquo; address inside the Envoy container will be accessible
+from the network. Names and port numbers must be unique in the list container ports. Two
+ports must be specified, one named &ldquo;http&rdquo; for Envoy&rsquo;s insecure service and one named
+&ldquo;https&rdquo; for Envoy&rsquo;s secure service.
+the default are:
+- http: 8080
+- https: 8443</p>
 </td>
 </tr>
 </tbody>

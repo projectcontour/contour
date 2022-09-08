@@ -257,32 +257,50 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
 		}
 
-		if gatewayClassParams.Spec.Envoy != nil {
+		envoyParams := gatewayClassParams.Spec.Envoy
+		if envoyParams != nil {
 			// Workload type
 			// Note, the values have already been validated by the gatewayclass controller
 			// so just check for the existence of a value here.
-			if gatewayClassParams.Spec.Envoy.WorkloadType != "" {
-				contourModel.Spec.EnvoyWorkloadType = gatewayClassParams.Spec.Envoy.WorkloadType
+			if envoyParams.WorkloadType != "" {
+				contourModel.Spec.EnvoyWorkloadType = envoyParams.WorkloadType
 			}
 
 			// Deployment replicas
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
-				gatewayClassParams.Spec.Envoy.Replicas > 0 {
-				contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas
+			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+				envoyParams.Replicas > 0 {
+				contourModel.Spec.EnvoyReplicas = envoyParams.Replicas
 			}
 
+			envoy := &contourModel.Spec.NetworkPublishing.Envoy
+
 			// Network publishing
-			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
+			if networkPublishing := envoyParams.NetworkPublishing; networkPublishing != nil {
 				// Note, the values have already been validated by the gatewayclass controller
 				// so just check for the existence of a value here.
 				if networkPublishing.Type != "" {
-					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+					envoy.Type = networkPublishing.Type
 				}
-				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
+				envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
+
+				envoy.ContainerPorts = make([]model.ContainerPort, 0, len(networkPublishing.Ports))
+				envoy.NodePorts = make([]model.NodePort, 0, len(networkPublishing.Ports))
+
+				for _, v := range networkPublishing.Ports {
+					envoy.ContainerPorts = append(envoy.ContainerPorts, model.ContainerPort{
+						Name:       v.Name,
+						PortNumber: v.ContainerPort,
+					})
+					envoy.NodePorts = append(envoy.NodePorts, model.NodePort{
+						Name:       v.Name,
+						PortNumber: v.NodePort,
+					})
+
+				}
 			}
 
 			// Node placement
-			if nodePlacement := gatewayClassParams.Spec.Envoy.NodePlacement; nodePlacement != nil {
+			if nodePlacement := envoyParams.NodePlacement; nodePlacement != nil {
 				if contourModel.Spec.NodePlacement == nil {
 					contourModel.Spec.NodePlacement = &model.NodePlacement{}
 				}
