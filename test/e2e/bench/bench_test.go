@@ -251,8 +251,8 @@ var _ = Describe("Benchmark", func() {
 				AddReportEntry(experiment.Name, experiment)
 
 				// Warm up Envoy on each worker node to ensure no outliers.
-				deployApp("warmup")
-				deployHTTPProxy("warmup")
+				deployApp("warm-up")
+				deployHTTPProxy("warm-up")
 				nodes := &corev1.NodeList{}
 				labelSelector := &client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.NodeSelector),
@@ -269,7 +269,7 @@ var _ = Describe("Benchmark", func() {
 					require.NotEmpty(f.T(), nodeExternalIP, "did not find an external ip for node %s", node.Name)
 
 					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-						Host:        "warmup.projectcontour.io",
+						Host:        "warm-up.projectcontour.io",
 						OverrideURL: "http://" + nodeExternalIP,
 						Condition:   e2e.HasStatusCode(200),
 					})

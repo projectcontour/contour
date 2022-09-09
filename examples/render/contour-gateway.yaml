@@ -822,7 +822,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -1068,6 +1068,16 @@ spec:
                   associated resources, including things like replica count for the
                   Deployment, and node placement constraints for the pods.
                 properties:
+                  kubernetesLogLevel:
+                    description: KubernetesLogLevel Enable Kubernetes client debug
+                      logging with log level. If unset, defaults to 0.
+                    maximum: 9
+                    minimum: 0
+                    type: integer
+                  logLevel:
+                    description: LogLevel sets the log level for Contour Allowed values
+                      are "info", "debug".
+                    type: string
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Contour pods.
@@ -2129,7 +2139,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -4184,7 +4194,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -4544,7 +4554,7 @@ spec:
                     be indicated in the Reason field. There must be zero entries in
                     the `errors` slice in this case. \n `Valid`, `status: false` means
                     that the object has had one or more fatal errors during processing
-                    into Contour.  The details of the errors will be present under
+                    into Contour. The details of the errors will be present under
                     the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`. \n For DetailedConditions of types
                     other than `Valid`, the Condition must be in the negative polarity.
@@ -5162,7 +5172,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.23.0
+        image: docker.io/envoyproxy/envoy:v1.23.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
@@ -12172,7 +12182,7 @@ webhooks:
     rules:
       - operations: [ "CREATE" , "UPDATE" ]
         apiGroups: [ "gateway.networking.k8s.io" ]
-        apiVersions: [ "v1alpha2" ]
+        apiVersions: [ "v1alpha2", "v1beta1" ]
         resources: [ "gateways", "gatewayclasses", "httproutes" ]
     failurePolicy: Fail
     sideEffects: None

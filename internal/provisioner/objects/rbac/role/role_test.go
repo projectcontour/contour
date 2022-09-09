@@ -45,12 +45,7 @@ func checkRoleLabels(t *testing.T, role *rbacv1.Role, expected map[string]string
 
 func TestDesiredControllerRole(t *testing.T) {
 	name := "role-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	role := desiredControllerRole(name, cntr)
 	checkRoleName(t, role, name)
 	ownerLabels := map[string]string{

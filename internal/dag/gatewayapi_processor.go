@@ -675,7 +675,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 				listenerName,
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
 				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef,
+				gatewayapi_v1beta1.ListenerReasonRefNotPermitted,
 				fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q namespace must match the Gateway's namespace or be covered by a ReferencePolicy/ReferenceGrant", certificateRef.Name),
 			)
 			return nil
@@ -800,13 +800,13 @@ func isSecretRef(certificateRef gatewayapi_v1beta1.SecretObjectReference) bool {
 
 // computeHosts returns the set of hostnames to match for a route. Both the result
 // and the error slice should be considered:
-// 	- if the set of hostnames is non-empty, it should be used for matching (may be ["*"]).
-//	- if the set of hostnames is empty, there was no intersection between the listener
-//	  hostname and the route hostnames, and the route should be marked "Accepted: false".
-//	- if the list of errors is non-empty, one or more hostnames was syntactically
-//	  invalid and some condition should be added to the route. This shouldn't be
-//	  possible because of kubebuilder+admission webhook validation but we're being
-//    defensive here.
+//   - if the set of hostnames is non-empty, it should be used for matching (may be ["*"]).
+//   - if the set of hostnames is empty, there was no intersection between the listener
+//     hostname and the route hostnames, and the route should be marked "Accepted: false".
+//   - if the list of errors is non-empty, one or more hostnames was syntactically
+//     invalid and some condition should be added to the route. This shouldn't be
+//     possible because of kubebuilder+admission webhook validation but we're being
+//     defensive here.
 func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.Hostname, listenerHostname string) (sets.String, []error) {
 	// The listener hostname is assumed to be valid because it's been run
 	// through the `gatewayapi.ValidateListeners` logic, so we don't need

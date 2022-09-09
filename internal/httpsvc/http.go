@@ -20,9 +20,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -75,12 +75,13 @@ func (svc *Service) Start(ctx context.Context) (err error) {
 	}
 
 	s := http.Server{
-		Addr:           net.JoinHostPort(svc.Addr, strconv.Itoa(svc.Port)),
-		Handler:        &svc.ServeMux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   5 * time.Minute, // allow for long trace requests
-		MaxHeaderBytes: 1 << 11,         // 8kb should be enough for anyone
-		TLSConfig:      tlsConfig,
+		Addr:              net.JoinHostPort(svc.Addr, strconv.Itoa(svc.Port)),
+		Handler:           &svc.ServeMux,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second, // To mitigate Slowloris attacks: https://www.cloudflare.com/learning/ddos/ddos-attack-tools/slowloris/
+		WriteTimeout:      5 * time.Minute,  // allow for long trace requests
+		MaxHeaderBytes:    1 << 11,          // 8kb should be enough for anyone
+		TLSConfig:         tlsConfig,
 	}
 
 	go func() {
@@ -116,7 +117,7 @@ func (svc *Service) tlsConfig() (*tls.Config, error) {
 		var certPool *x509.CertPool
 		if svc.CABundle != "" {
 			clientAuth = tls.RequireAndVerifyClientCert
-			ca, err := ioutil.ReadFile(svc.CABundle)
+			ca, err := os.ReadFile(svc.CABundle)
 			if err != nil {
 				return nil, err
 			}
