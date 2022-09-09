@@ -244,8 +244,8 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				{
 					Name:      envoyAdminVolName,
 					MountPath: filepath.Join("/", envoyAdminVolMntDir),
-				}},
-
+				},
+			},
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.LifecycleHandler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -307,16 +307,13 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
-	if contour.EnvoyRuntimeSettingsExists() {
-		for i := range initContainers {
-			initContainers[i].VolumeMounts = append(initContainers[i].VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
-		}
-
-		for j := range containers {
-			containers[j].VolumeMounts = append(containers[j].VolumeMounts, contour.Spec.RuntimeSettings.Envoy.ExtraVolumeMounts...)
-		}
+	for i := range initContainers {
+		initContainers[i].VolumeMounts = append(initContainers[i].VolumeMounts, contour.Spec.EnvoyExtraVolumeMounts...)
 	}
 
+	for j := range containers {
+		containers[j].VolumeMounts = append(containers[j].VolumeMounts, contour.Spec.EnvoyExtraVolumeMounts...)
+	}
 	return initContainers, containers
 }
 
@@ -391,10 +388,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 	}
 
-	if contour.EnvoyRuntimeSettingsExists() {
-		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
-			contour.Spec.RuntimeSettings.Envoy.ExtraVolumes...)
-	}
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, contour.Spec.EnvoyExtraVolumes...)
+
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
@@ -465,7 +460,6 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 							},
 						},
 					},
-
 					ServiceAccountName:            contour.EnvoyRBACNames().ServiceAccount,
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
@@ -478,10 +472,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
-	if contour.EnvoyRuntimeSettingsExists() {
-		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes,
-			contour.Spec.RuntimeSettings.Envoy.ExtraVolumes...)
-	}
+	deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, contour.Spec.EnvoyExtraVolumes...)
 
 	if contour.EnvoyNodeSelectorExists() {
 		deployment.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector

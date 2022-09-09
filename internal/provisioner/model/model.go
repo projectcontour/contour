@@ -87,15 +87,6 @@ func (c *Contour) ContourTolerationsExist() bool {
 	return false
 }
 
-// EnvoyRuntimeSettingsExists returns true if the runtime settings is specified for Envoy.
-func (c *Contour) EnvoyRuntimeSettingsExists() bool {
-	if c.Spec.RuntimeSettings != nil &&
-		c.Spec.RuntimeSettings.Envoy != nil {
-		return true
-	}
-	return false
-}
-
 // EnvoyNodeSelectorExists returns true if a nodeSelector is specified for Envoy.
 func (c *Contour) EnvoyNodeSelectorExists() bool {
 	if c.Spec.NodePlacement != nil &&
@@ -175,6 +166,12 @@ type ContourSpec struct {
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
 	KubernetesLogLevel uint8
+
+	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
+	EnvoyExtraVolumes []corev1.Volume
+
+	// EnvoyExtraVolumeMounts holds the extra volume mounts to add to envoy's pod(normally used with envoyExtraVolumes).
+	EnvoyExtraVolumeMounts []corev1.VolumeMount
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
