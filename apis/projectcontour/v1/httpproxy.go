@@ -293,27 +293,32 @@ type CORSHeaderValue string
 // CORSPolicy allows setting the CORS policy
 type CORSPolicy struct {
 	// Specifies whether the resource allows credentials.
-	//  +optional
+	// +optional
 	AllowCredentials bool `json:"allowCredentials,omitempty"`
 	// AllowOrigin specifies the origins that will be allowed to do CORS requests. "*" means
 	// allow any origin.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
 	AllowOrigin []string `json:"allowOrigin"`
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
 	AllowMethods []CORSHeaderValue `json:"allowMethods"`
 	// AllowHeaders specifies the content for the *access-control-allow-headers* header.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:MinItems=1
 	AllowHeaders []CORSHeaderValue `json:"allowHeaders,omitempty"`
 	// ExposeHeaders Specifies the content for the *access-control-expose-headers* header.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:MinItems=1
 	ExposeHeaders []CORSHeaderValue `json:"exposeHeaders,omitempty"`
 	// MaxAge indicates for how long the results of a preflight request can be cached.
 	// MaxAge durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
 	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 	// Only positive values are allowed while 0 disables the cache requiring a preflight OPTIONS
 	// check for all cross-origin requests.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|0)$`
 	MaxAge string `json:"maxAge,omitempty"`
 }
 
