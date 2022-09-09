@@ -1062,6 +1062,12 @@ spec:
             description: ContourDeploymentSpec specifies options for how a Contour
               instance should be provisioned.
             properties:
+              componentLabels:
+                additionalProperties:
+                  type: string
+                description: ComponentLabels is a set of labels to add to the provisioned
+                  Contour component.
+                type: object
               contour:
                 description: Contour specifies deployment-time settings for the Contour
                   part of the installation, i.e. the xDS server/control plane and
