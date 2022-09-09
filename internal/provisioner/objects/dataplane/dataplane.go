@@ -334,9 +334,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
-					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{},
+					Annotations: contour.Spec.EnvoyPodAnnotations,
 					Labels:      EnvoyPodSelector(contour).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
@@ -377,10 +375,6 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 	}
 
-	for k, v := range contour.Spec.EnvoyPodAnnotations {
-		// same annotation’s name, overwrite it
-		ds.Spec.Template.ObjectMeta.Annotations[k] = v
-	}
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
@@ -414,7 +408,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{},
+					Annotations: contour.Spec.EnvoyPodAnnotations,
 					Labels:      EnvoyPodSelector(contour).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
@@ -457,10 +451,6 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
-	for k, v := range contour.Spec.EnvoyPodAnnotations {
-		// same annotation's name, overwrite it
-		deployment.Spec.Template.ObjectMeta.Annotations[k] = v
-	}
 	if contour.EnvoyNodeSelectorExists() {
 		deployment.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
