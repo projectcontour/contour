@@ -153,12 +153,8 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
@@ -182,6 +178,8 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 func TestNodePlacementDaemonSet(t *testing.T) {
 	name := "selector-test"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+
 	selectors := map[string]string{"node-role": "envoy"}
 	tolerations := []corev1.Toleration{
 		{
@@ -191,12 +189,7 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+
 	cntr.Spec.NodePlacement = &model.NodePlacement{
 		Envoy: &model.EnvoyNodePlacement{
 			NodeSelector: selectors,

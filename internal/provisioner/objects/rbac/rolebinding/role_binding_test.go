@@ -65,12 +65,7 @@ func checkRoleBindingRole(t *testing.T, rb *rbacv1.RoleBinding, expected string)
 
 func TestDesiredRoleBinding(t *testing.T) {
 	name := "job-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	rbName := "test-rb"
 	svcAcct := "test-svc-acct-ref"
 	roleRef := "test-role-ref"

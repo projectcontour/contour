@@ -298,17 +298,6 @@ type EnvoyConfig struct {
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
-// LogLevel is the logging levels available.
-type LogLevel string
-
-const (
-	// InfoLog sets the log level for Contour to `info`.
-	InfoLog LogLevel = "info"
-
-	// DebugLog sets the log level for Contour to `debug`.
-	DebugLog LogLevel = "debug"
-)
-
 // DebugConfig contains Contour specific troubleshooting options.
 type DebugConfig struct {
 	// Defines the Contour debug address interface.
