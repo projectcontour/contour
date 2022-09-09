@@ -94,6 +94,16 @@ func checkDaemonSetHasLabels(t *testing.T, ds *appsv1.DaemonSet, expected map[st
 	t.Errorf("daemonset has unexpected %q labels", ds.Labels)
 }
 
+func checkDaemonSetHasPodAnnotations(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Annotations, expected) {
+		return
+	}
+
+	t.Errorf("daemonset has unexpected %q pod annotations", ds.Spec.Template.Annotations)
+}
+
 func checkContainerHasPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
 	t.Helper()
 
@@ -174,6 +184,8 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
 	checkDaemonSecurityContext(t, ds)
+	checkDaemonSetHasPodAnnotations(t, ds, cntr.Spec.EnvoyPodAnnotations)
+
 }
 
 func TestNodePlacementDaemonSet(t *testing.T) {

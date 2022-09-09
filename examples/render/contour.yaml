@@ -501,12 +501,6 @@ spec:
                         format: int32
                         type: integer
                     type: object
-                  podAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: PodAnnotations holds the annotations that will be
-                      add to the pod.
-                    type: object
                   service:
                     description: "Service holds Envoy service parameters for setting
                       Ingress status. \n Contour's default is { namespace: \"projectcontour\",
@@ -1246,6 +1240,12 @@ spec:
                           type: object
                         type: array
                     type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: PodAnnotations holds the annotations that will be
+                      add to the envoy‘s pod.
+                    type: object
                   replicas:
                     description: Replicas is the desired number of Envoy replicas.
                       If WorkloadType is not "Deployment", this field is ignored.
@@ -1522,12 +1522,6 @@ spec:
                               for more information. \n Contour's default is 0."
                             format: int32
                             type: integer
-                        type: object
-                      podAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: PodAnnotations holds the annotations that will
-                          be add to the pod.
                         type: object
                       service:
                         description: "Service holds Envoy service parameters for setting

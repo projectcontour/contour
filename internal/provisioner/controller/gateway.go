@@ -292,6 +292,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			for k, v := range gatewayClassParams.Spec.Envoy.PodAnnotations {
+				contourModel.Spec.EnvoyPodAnnotations[k] = v
+			}
 		}
 	}
 

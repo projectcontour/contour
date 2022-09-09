@@ -123,6 +123,10 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// PodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

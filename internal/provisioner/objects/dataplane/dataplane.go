@@ -336,12 +336,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{
-						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   "8002",
-						"prometheus.io/path":   "/stats/prometheus",
-					},
-					Labels: EnvoyPodSelector(contour).MatchLabels,
+					Annotations: map[string]string{},
+					Labels:      EnvoyPodSelector(contour).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers:     containers,
@@ -381,13 +377,10 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 	}
 
-	if contour.EnvoyRuntimeSettingsExists() {
-		for k, v := range contour.Spec.RuntimeSettings.Envoy.PodAnnotations {
-			// if there is a same name pair, overwrite it
-			ds.Spec.Template.ObjectMeta.Annotations[k] = v
-		}
+	for k, v := range contour.Spec.EnvoyPodAnnotations {
+		// same annotation’s name, overwrite it
+		ds.Spec.Template.ObjectMeta.Annotations[k] = v
 	}
-
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
 	}
@@ -421,14 +414,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
-					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{
-						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   "8002",
-						"prometheus.io/path":   "/stats/prometheus",
-					},
-					Labels: EnvoyPodSelector(contour).MatchLabels,
+					Annotations: map[string]string{},
+					Labels:      EnvoyPodSelector(contour).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
 					// TODO anti-affinity
@@ -470,11 +457,9 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
-	if contour.EnvoyRuntimeSettingsExists() {
-		for k, v := range contour.Spec.RuntimeSettings.Envoy.PodAnnotations {
-			// if there is a same name pair, overwrite it
-			deployment.Spec.Template.ObjectMeta.Annotations[k] = v
-		}
+	for k, v := range contour.Spec.EnvoyPodAnnotations {
+		// same annotation's name, overwrite it
+		deployment.Spec.Template.ObjectMeta.Annotations[k] = v
 	}
 	if contour.EnvoyNodeSelectorExists() {
 		deployment.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector

@@ -292,10 +292,6 @@ type EnvoyConfig struct {
 	// Network holds various configurable Envoy network values.
 	// +optional
 	Network *NetworkParameters `json:"network,omitempty"`
-
-	// PodAnnotations holds the annotations that will be add to the pod.
-	// +optional
-	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // DebugConfig contains Contour specific troubleshooting options.
