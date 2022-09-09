@@ -234,6 +234,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// ContourConfiguration
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
+		// if there is a same name pair, overwrite it
+		for k, v := range gatewayClassParams.Spec.ComponentLabels {
+			contourModel.Spec.ComponentLabels[k] = v
+		}
+
 		if gatewayClassParams.Spec.Contour != nil {
 			// Deployment replicas
 			if gatewayClassParams.Spec.Contour.Replicas > 0 {
@@ -252,9 +257,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			if gatewayClassParams.Spec.Contour.LogLevel != "" {
-				contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
-			}
+			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
 		}
@@ -285,20 +288,25 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 				envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
 
-				envoy.ContainerPorts = make([]model.ContainerPort, 0, len(networkPublishing.Ports))
-				envoy.NodePorts = make([]model.NodePort, 0, len(networkPublishing.Ports))
+				portNum := len(networkPublishing.Ports)
 
-				for _, v := range networkPublishing.Ports {
-					envoy.ContainerPorts = append(envoy.ContainerPorts, model.ContainerPort{
-						Name:       v.Name,
-						PortNumber: v.ContainerPort,
-					})
-					envoy.NodePorts = append(envoy.NodePorts, model.NodePort{
-						Name:       v.Name,
-						PortNumber: v.NodePort,
-					})
+				// if no user-defined ports, use the default,
+				if portNum > 0 {
+					envoy.ContainerPorts = make([]model.ContainerPort, 0, portNum)
+					envoy.NodePorts = make([]model.NodePort, 0, portNum)
+					for _, v := range networkPublishing.Ports {
+						envoy.ContainerPorts = append(envoy.ContainerPorts, model.ContainerPort{
+							Name:       v.Name,
+							PortNumber: v.ContainerPort,
+						})
+						envoy.NodePorts = append(envoy.NodePorts, model.NodePort{
+							Name:       v.Name,
+							PortNumber: v.NodePort,
+						})
 
+					}
 				}
+
 			}
 
 			// Node placement
