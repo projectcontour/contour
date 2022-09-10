@@ -257,6 +257,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 			},
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
+			Resources:                contour.Spec.EnvoyResources,
 		},
 	}
 

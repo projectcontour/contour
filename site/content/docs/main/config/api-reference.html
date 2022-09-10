@@ -4890,6 +4890,23 @@ LogLevel
 Allowed values are &ldquo;info&rdquo;, &ldquo;debug&rdquo;.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>resources</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Compute Resources required by contour container.
+Cannot be updated.
+More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.DebugConfig">DebugConfig
@@ -5469,6 +5486,23 @@ NodePlacement
 <td>
 <em>(Optional)</em>
 <p>NodePlacement describes node scheduling configuration of Envoy pods.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>resources</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Compute Resources required by envoy container.
+Cannot be updated.
+More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 </td>
 </tr>
 </tbody>

@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func checkDeploymentHasEnvVar(t *testing.T, deploy *appsv1.Deployment, name string) {
@@ -106,11 +107,32 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 	t.Errorf("deployment has unexpected tolerations %v", expected)
 }
 
+func checkDeploymentHasResourceRequirements(t *testing.T, deploy *appsv1.Deployment, expected corev1.ResourceRequirements) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(deploy.Spec.Template.Spec.Containers[0].Resources, expected) {
+		return
+	}
+	t.Errorf("daemonset has unexpected resource requirements %v", expected)
+}
+
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
+
+	resQutoa := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("400m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("25Mi"),
+		},
+	}
+	cntr.Spec.ContourResources = resQutoa
 	// Change the default ports to test Envoy service port args.
 	insecurePort := objects.EnvoyInsecureContainerPort
 	securePort := objects.EnvoySecureContainerPort
@@ -159,6 +181,7 @@ func TestDesiredDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
+	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
 }
 
 func TestNodePlacementDeployment(t *testing.T) {

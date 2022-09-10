@@ -166,6 +166,9 @@ type ContourSpec struct {
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
 	KubernetesLogLevel uint8
+
+	EnvoyResources   corev1.ResourceRequirements
+	ContourResources corev1.ResourceRequirements
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
