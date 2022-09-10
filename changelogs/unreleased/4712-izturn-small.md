@@ -1,0 +1,1 @@
+Add resource requirements configurability to ContourDeployment to enable resource quota for containers.
