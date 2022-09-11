@@ -97,7 +97,7 @@ type ContourSettings struct {
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
 
-	// Strategy describes the deployment strategy to use to replace existing pods with new ones.
+	// Strategy describes the deployment strategy to use to replace existing Contour pods with new ones.
 	// +optional
 	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }
