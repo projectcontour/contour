@@ -20,7 +20,6 @@ import (
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
-	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
@@ -209,13 +208,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			RevisionHistoryLimit:    pointer.Int32(10),
 			// Ensure the deployment adopts only its own pods.
 			Selector: ContourDeploymentPodSelector(contour),
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge:       opintstr.PointerTo(intstr.FromString("50%")),
-					MaxUnavailable: opintstr.PointerTo(intstr.FromString("25%")),
-				},
-			},
+			Strategy: contour.Spec.ContourStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to

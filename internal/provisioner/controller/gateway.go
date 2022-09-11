@@ -255,6 +255,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
+
+			if gatewayClassParams.Spec.Contour.Strategy != nil {
+				contourModel.Spec.ContourStrategy = *gatewayClassParams.Spec.Contour.Strategy
+			}
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
@@ -292,6 +296,17 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+				gatewayClassParams.Spec.Envoy.Strategy != nil {
+				contourModel.Spec.EnvoyStrategy = *gatewayClassParams.Spec.Envoy.Strategy
+			}
+
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
+				gatewayClassParams.Spec.Envoy.UpdateStrategy != nil {
+				contourModel.Spec.EnvoyUpdateStrategy = *gatewayClassParams.Spec.Envoy.UpdateStrategy
+			}
+
 		}
 	}
 

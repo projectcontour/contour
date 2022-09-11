@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
-	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
@@ -325,13 +324,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
-			Selector: EnvoyPodSelector(contour),
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: opintstr.PointerTo(intstr.FromString("10%")),
-				},
-			},
+			Selector:       EnvoyPodSelector(contour),
+			UpdateStrategy: contour.Spec.EnvoyUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
@@ -406,12 +400,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge: opintstr.PointerTo(intstr.FromString("10%")),
-				},
-			},
+			Strategy: contour.Spec.EnvoyStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to

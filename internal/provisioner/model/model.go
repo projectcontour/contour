@@ -15,8 +15,12 @@ package model
 
 import (
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
+
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
 
@@ -51,6 +55,25 @@ func Default(namespace, name string) *Contour {
 							PortNumber: 8443,
 						},
 					},
+				},
+			},
+			EnvoyUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: opintstr.PointerTo(intstr.FromString("10%")),
+				},
+			},
+			EnvoyStrategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxSurge: opintstr.PointerTo(intstr.FromString("10%")),
+				},
+			},
+			ContourStrategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxSurge:       opintstr.PointerTo(intstr.FromString("50%")),
+					MaxUnavailable: opintstr.PointerTo(intstr.FromString("25%")),
 				},
 			},
 		},
@@ -166,6 +189,19 @@ type ContourSpec struct {
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
 	KubernetesLogLevel uint8
+
+	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
+	// when envoy be running as a `Deployment`,it's must be nil
+	// +optional
+	EnvoyUpdateStrategy appsv1.DaemonSetUpdateStrategy
+
+	// The deployment strategy to use to replace existing Envoy pods with new ones.
+	// when envoy be running as a `DaemonSet`,it's must be nil
+	EnvoyStrategy appsv1.DeploymentStrategy
+
+	// The deployment strategy to use to replace existing Contour pods with new ones.
+	// when envoy be running as a `DaemonSet`,it's must be nil
+	ContourStrategy appsv1.DeploymentStrategy
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

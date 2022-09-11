@@ -945,6 +945,57 @@ spec:
                     format: int32
                     minimum: 0
                     type: integer
+                  strategy:
+                    description: Strategy describes the deployment strategy to use
+                      to replace existing pods with new ones.
+                    properties:
+                      rollingUpdate:
+                        description: 'Rolling update config params. Present only if
+                          DeploymentStrategyType = RollingUpdate. --- TODO: Update
+                          this to follow our convention for oneOf, whatever we decide
+                          it to be.'
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of pods that can be scheduled
+                              above the desired number of pods. Value can be an absolute
+                              number (ex: 5) or a percentage of desired pods (ex:
+                              10%). This can not be 0 if MaxUnavailable is 0. Absolute
+                              number is calculated from percentage by rounding up.
+                              Defaults to 25%. Example: when this is set to 30%, the
+                              new ReplicaSet can be scaled up immediately when the
+                              rolling update starts, such that the total number of
+                              old and new pods do not exceed 130% of desired pods.
+                              Once old pods have been killed, new ReplicaSet can be
+                              scaled up further, ensuring that total number of pods
+                              running at any time during the update is at most 130%
+                              of desired pods.'
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of pods that can be unavailable
+                              during the update. Value can be an absolute number (ex:
+                              5) or a percentage of desired pods (ex: 10%). Absolute
+                              number is calculated from percentage by rounding down.
+                              This can not be 0 if MaxSurge is 0. Defaults to 25%.
+                              Example: when this is set to 30%, the old ReplicaSet
+                              can be scaled down to 70% of desired pods immediately
+                              when the rolling update starts. Once new pods are ready,
+                              old ReplicaSet can be scaled down further, followed
+                              by scaling up the new ReplicaSet, ensuring that the
+                              total number of pods available at all times during the
+                              update is at least 70% of desired pods.'
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      type:
+                        description: Type of deployment. Can be "Recreate" or "RollingUpdate".
+                          Default is RollingUpdate.
+                        type: string
+                    type: object
                 type: object
               envoy:
                 description: Envoy specifies deployment-time settings for the Envoy
@@ -1051,6 +1102,125 @@ spec:
                     format: int32
                     minimum: 0
                     type: integer
+                  strategy:
+                    description: Strategy describes the deployment strategy to use
+                      to replace existing Envoy pods with new ones. when envoy be
+                      running as a `DaemonSet`,it's must be nil
+                    properties:
+                      rollingUpdate:
+                        description: 'Rolling update config params. Present only if
+                          DeploymentStrategyType = RollingUpdate. --- TODO: Update
+                          this to follow our convention for oneOf, whatever we decide
+                          it to be.'
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of pods that can be scheduled
+                              above the desired number of pods. Value can be an absolute
+                              number (ex: 5) or a percentage of desired pods (ex:
+                              10%). This can not be 0 if MaxUnavailable is 0. Absolute
+                              number is calculated from percentage by rounding up.
+                              Defaults to 25%. Example: when this is set to 30%, the
+                              new ReplicaSet can be scaled up immediately when the
+                              rolling update starts, such that the total number of
+                              old and new pods do not exceed 130% of desired pods.
+                              Once old pods have been killed, new ReplicaSet can be
+                              scaled up further, ensuring that total number of pods
+                              running at any time during the update is at most 130%
+                              of desired pods.'
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of pods that can be unavailable
+                              during the update. Value can be an absolute number (ex:
+                              5) or a percentage of desired pods (ex: 10%). Absolute
+                              number is calculated from percentage by rounding down.
+                              This can not be 0 if MaxSurge is 0. Defaults to 25%.
+                              Example: when this is set to 30%, the old ReplicaSet
+                              can be scaled down to 70% of desired pods immediately
+                              when the rolling update starts. Once new pods are ready,
+                              old ReplicaSet can be scaled down further, followed
+                              by scaling up the new ReplicaSet, ensuring that the
+                              total number of pods available at all times during the
+                              update is at least 70% of desired pods.'
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      type:
+                        description: Type of deployment. Can be "Recreate" or "RollingUpdate".
+                          Default is RollingUpdate.
+                        type: string
+                    type: object
+                  updateStrategy:
+                    description: An update strategy to replace existing Envoy DaemonSet
+                      pods with new pods. when envoy be running as a `Deployment`,it's
+                      must be nil
+                    properties:
+                      rollingUpdate:
+                        description: 'Rolling update config params. Present only if
+                          type = "RollingUpdate". --- TODO: Update this to follow
+                          our convention for oneOf, whatever we decide it to be. Same
+                          as Deployment `strategy.rollingUpdate`. See https://github.com/kubernetes/kubernetes/issues/35345'
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of nodes with an existing
+                              available DaemonSet pod that can have an updated DaemonSet
+                              pod during during an update. Value can be an absolute
+                              number (ex: 5) or a percentage of desired pods (ex:
+                              10%). This can not be 0 if MaxUnavailable is 0. Absolute
+                              number is calculated from percentage by rounding up
+                              to a minimum of 1. Default value is 0. Example: when
+                              this is set to 30%, at most 30% of the total number
+                              of nodes that should be running the daemon pod (i.e.
+                              status.desiredNumberScheduled) can have their a new
+                              pod created before the old pod is marked as deleted.
+                              The update starts by launching new pods on 30% of nodes.
+                              Once an updated pod is available (Ready for at least
+                              minReadySeconds) the old DaemonSet pod on that node
+                              is marked deleted. If the old pod becomes unavailable
+                              for any reason (Ready transitions to false, is evicted,
+                              or is drained) an updated pod is immediatedly created
+                              on that node without considering surge limits. Allowing
+                              surge implies the possibility that the resources consumed
+                              by the daemonset on any given node can double if the
+                              readiness check fails, and so resource intensive daemonsets
+                              should take into account that they may cause evictions
+                              during disruption. This is beta field and enabled/disabled
+                              by DaemonSetUpdateSurge feature gate.'
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: 'The maximum number of DaemonSet pods that
+                              can be unavailable during the update. Value can be an
+                              absolute number (ex: 5) or a percentage of total number
+                              of DaemonSet pods at the start of the update (ex: 10%).
+                              Absolute number is calculated from percentage by rounding
+                              up. This cannot be 0 if MaxSurge is 0 Default value
+                              is 1. Example: when this is set to 30%, at most 30%
+                              of the total number of nodes that should be running
+                              the daemon pod (i.e. status.desiredNumberScheduled)
+                              can have their pods stopped for an update at any given
+                              time. The update starts by stopping at most 30% of those
+                              DaemonSet pods and then brings up new DaemonSet pods
+                              in their place. Once the new pods are available, it
+                              then proceeds onto other DaemonSet pods, thus ensuring
+                              that at least 70% of original number of DaemonSet pods
+                              are available at all times during the update.'
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      type:
+                        description: Type of daemon set update. Can be "RollingUpdate"
+                          or "OnDelete". Default is RollingUpdate.
+                        type: string
+                    type: object
                   workloadType:
                     description: WorkloadType is the type of workload to install Envoy
                       as. Choices are DaemonSet and Deployment. If unset, defaults

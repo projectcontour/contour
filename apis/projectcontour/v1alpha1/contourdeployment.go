@@ -16,6 +16,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -95,6 +96,10 @@ type ContourSettings struct {
 	//
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
+
+	// Strategy describes the deployment strategy to use to replace existing pods with new ones.
+	// +optional
+	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,
@@ -123,6 +128,16 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
+	// when envoy be running as a `Deployment`,it's must be nil
+	// +optional
+	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
+
+	// Strategy describes the deployment strategy to use to replace existing Envoy pods with new ones.
+	// when envoy be running as a `DaemonSet`,it's must be nil
+	// +optional
+	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

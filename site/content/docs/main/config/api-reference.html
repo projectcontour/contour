@@ -4890,6 +4890,21 @@ LogLevel
 Allowed values are &ldquo;info&rdquo;, &ldquo;debug&rdquo;.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>strategy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#deploymentstrategy-v1-apps">
+Kubernetes apps/v1.DeploymentStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Strategy describes the deployment strategy to use to replace existing pods with new ones.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.DebugConfig">DebugConfig
@@ -5469,6 +5484,38 @@ NodePlacement
 <td>
 <em>(Optional)</em>
 <p>NodePlacement describes node scheduling configuration of Envoy pods.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>updateStrategy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#daemonsetupdatestrategy-v1-apps">
+Kubernetes apps/v1.DaemonSetUpdateStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>An update strategy to replace existing Envoy DaemonSet pods with new pods.
+when envoy be running as a <code>Deployment</code>,it&rsquo;s must be nil</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>strategy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#deploymentstrategy-v1-apps">
+Kubernetes apps/v1.DeploymentStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Strategy describes the deployment strategy to use to replace existing Envoy pods with new ones.
+when envoy be running as a <code>DaemonSet</code>,it&rsquo;s must be nil</p>
 </td>
 </tr>
 </tbody>
