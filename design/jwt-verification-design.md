@@ -164,8 +164,7 @@ This [excellent blog post](https://www.jpmorgan.com/technology/technology-blog/p
 Contour [may pursue adding support for the OAuth2 filter](https://github.com/projectcontour/contour/issues/2664), but it will be designed and implemented separately.
 
 
-## Defining JWT verification rules separately from routes
-
+### Defining JWT verification rules separately from routes
 An alternate API design is to define JWT verification rules separately from routing rules, as shown in the below YAML:
 
 ```yaml
@@ -208,6 +207,33 @@ This design has the potential benefit of reducing duplication in the routing rul
 It also allows the user to have direct control over the order in which JWT rules are applied, versus being subject to Contour's rules for sorting routes.
 
 However, this design results in two separate places where route-related behavior are defined, and also creates cognitive overhead for users by having two separate ways of ordering match criteria.
+
+### Options for working with HTTPProxy Inclusion
+
+#### Option 1: Routes on included HTTPProxies opt into JWT verification
+This option largely follows the design laid out above.
+JWT providers are defined on the root HTTPProxy.
+Routes on either the root HTTPProxy, or any included HTTPProxies, can then opt into JWT verification by specifying `jwtProvider: [name]`.
+
+This option puts the responsibility for opting into JWT verification on the owner of the child HTTPProxy.
+
+#### Option 2: Inclusions of HTTPProxies opt into JWT verification
+In this option, the `Include` type itself can opt into JWT verification, by specifying `jwtProvider: [name]`.
+All routes in the included HTTPProxy are then opted into JWT verification.
+An additional field is added to routes to explicitly opt out of JWT verification (`disableJWTVerification: true`).
+
+This option allows the owner of the root HTTPProxy to opt the child HTTPProxy's routes into JWT verification.
+The downside of this model is that it is somewhat inconsistent with the single HTTPProxy model, where routes have to explicitly opt into verification.
+
+#### Option 3: Single JWT provider per root HTTPProxy, enabled by default, with opt-out option
+In this option, each root HTTPProxy only allows a single JWT provider.
+All routes in the root HTTPProxy, as well as its included HTTPProxies, have JWT verification enabled by default.
+An additional field is added to routes to explicitly opt out of JWT verification (`disableJWTVerification: true`).
+
+This option allows the owner of the root HTTPProxy to opt all routes (including any child HTTPProxies' routes) into JWT verification.
+The owner of the child HTTPProxies can still opt out specific routes if needed.
+
+The downside of this option is that it does limit each root HTTPProxy to a single provider.
 
 ## Compatibility
 JWT verification will be an optional feature that is disabled by default.
