@@ -38,6 +38,8 @@ If this field is absent, JWTs will not be verified for requests handled by the r
 Contour will validate the contents of `spec.virtualhost.jwtProviders` and `spec.routes.jwtProvider` if present, and will configure the JWT authentication filter on the HTTP Connection Manager for the relevant virtual host.
 Contour will also add a CDS cluster for the remote JWKS, as required by [the Envoy configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/jwt_authn/v3/config.proto#envoy-v3-api-msg-extensions-filters-http-jwt-authn-v3-remotejwks).
 
+JWT verification will only be supported for TLS-enabled virtual hosts because (a) JWTs generally should not be transmitted in cleartext; and (b) all plain HTTP virtual hosts share a single HTTP Connection Manager & associated filter config, which creates challenges when configuring different JWT verification providers and rules for different virtual hosts.
+This constraint *may* be revisited at a later date if a compelling use case is identified.
 
 ## Detailed Design
 The detailed structure of the new fields is shown via YAML below:
@@ -65,16 +67,23 @@ spec:
           - audience-1
           - audience-2
         # remoteJWKS is an HTTP endpoint that returns the JWKS
-        # to use to verify the JWT signature.
+        # to use to verify the JWT signature. Exactly one of
+        # remoteJWKS or localJWKS must be set.
         remoteJWKS:
           httpURI:
             uri: https://example.com/jwks.json
             timeout: 1s
+            # Upstream TLS validation options. If not provided,
+            # the TLS server cert will not be verified.
+            validation:
+              caSecret: ca-crt
+              subjectName: example.com
           # cacheDuration is how long to cache the fetched JWKS
           # locally.
           cacheDuration: 5m
         # localJWKS can be used instead of remoteJWKS and defines
         # an in-cluster secret containing the JWKS for this provider.
+        # Exactly one of localJWKS or remoteJWKS must be set.
         localJWKS:
           secretName: my-jwks
           key: jwks.json
