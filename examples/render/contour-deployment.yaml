@@ -1143,7 +1143,7 @@ spec:
                     type: integer
                   strategy:
                     description: Strategy describes the deployment strategy to use
-                      to replace existing pods with new ones.
+                      to replace existing Contour pods with new ones.
                     properties:
                       rollingUpdate:
                         description: 'Rolling update config params. Present only if
