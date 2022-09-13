@@ -121,6 +121,7 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deploymen
 
 # Install Gateway API CRDs and webhook.
 ${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
+${KUBECTL} apply -f "${REPO}/examples/gateway/00-namespace.yaml"
 ${KUBECTL} apply -f "${REPO}/examples/gateway/01-admission_webhook.yaml"
 ${KUBECTL} apply -f "${REPO}/examples/gateway/02-certificate_config.yaml"
 ${KUBECTL} wait --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server --for=condition=Available
