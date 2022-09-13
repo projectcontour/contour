@@ -295,8 +295,13 @@ type CORSPolicy struct {
 	// Specifies whether the resource allows credentials.
 	// +optional
 	AllowCredentials bool `json:"allowCredentials,omitempty"`
-	// AllowOrigin specifies the origins that will be allowed to do CORS requests. "*" means
-	// allow any origin.
+	// AllowOrigin specifies the origins that will be allowed to do CORS requests.
+	// Allowed values include "*" which signifies any origin is allowed, an exact
+	// origin of the form "scheme://host[:port]" (where port is optional), or a valid
+	// regex pattern.
+	// Note that regex patterns are validated and a simple "glob" pattern (e.g. *.foo.com)
+	// will be rejected or produce unexpected matches when applied as a regex.
+	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
 	AllowOrigin []string `json:"allowOrigin"`

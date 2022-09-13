@@ -3827,7 +3827,12 @@ spec:
                         type: array
                       allowOrigin:
                         description: AllowOrigin specifies the origins that will be
-                          allowed to do CORS requests. "*" means allow any origin.
+                          allowed to do CORS requests. Allowed values include "*"
+                          which signifies any origin is allowed, an exact origin of
+                          the form "scheme://host[:port]" (where port is optional),
+                          or a valid regex pattern. Note that regex patterns are validated
+                          and a simple "glob" pattern (e.g. *.foo.com) will be rejected
+                          or produce unexpected matches when applied as a regex.
                         items:
                           type: string
                         minItems: 1
