@@ -31,11 +31,13 @@ This field will only be supported for virtual hosts for which Envoy is terminati
 The structure of this field will be similar to the [Envoy filter's providers field](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/jwt_authn/v3/config.proto#envoy-v3-api-msg-extensions-filters-http-jwt-authn-v3-jwtauthentication), with some simplifications. 
 Specifically, a provider will define an issuer, 0+ audiences, and a JSON Web Key Set (JWKS) that can be used to verify a JWT (see [the Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/jwt_authn/v3/config.proto#envoy-v3-api-msg-extensions-filters-http-jwt-authn-v3-jwtprovider) for more information).
 Any number of providers can be defined for a virtual host, to allow different routes to be verified differently.
+At most one provider can be marked as the "default", meaning it will automatically be applied as a requirement to all routes unless they explicitly opt out (more below).
 
-`HTTPProxy` routes will also get a new optional field, `spec.routes.jwtProvider`, to name a provider defined in the virtual host that should be used to verify JWTs on requests handled by the route.
-If this field is absent, JWTs will not be verified for requests handled by the route.
+`HTTPProxy` routes will also get a new optional field, `spec.routes.jwtVerificationPolicy`, to provide details on how to apply JWT verification.
+The JWT verification policy will allow a specific named provider to be required for the route if there is no default or if a provider other than the default should apply for the route.
+It will also allow explicitly opting out of using the proxy's default provider.
 
-Contour will validate the contents of `spec.virtualhost.jwtProviders` and `spec.routes.jwtProvider` if present, and will configure the JWT authentication filter on the HTTP Connection Manager for the relevant virtual host.
+Contour will validate the contents of `spec.virtualhost.jwtProviders` and `spec.routes.jwtVerificationPolicy` if present, and will configure the JWT authentication filter on the HTTP Connection Manager for the relevant virtual host.
 Contour will also add a CDS cluster for the remote JWKS, as required by [the Envoy configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/jwt_authn/v3/config.proto#envoy-v3-api-msg-extensions-filters-http-jwt-authn-v3-remotejwks).
 
 JWT verification will only be supported for TLS-enabled virtual hosts because (a) JWTs generally should not be transmitted in cleartext; and (b) all plain HTTP virtual hosts share a single HTTP Connection Manager & associated filter config, which creates challenges when configuring different JWT verification providers and rules for different virtual hosts.
@@ -225,7 +227,7 @@ It also allows the user to have direct control over the order in which JWT rules
 
 However, this design results in two separate places where route-related behavior are defined, and also creates cognitive overhead for users by having two separate ways of ordering match criteria.
 
-### Options for working with HTTPProxy Inclusion
+### Options considered for working with HTTPProxy Inclusion
 
 #### Option 1: Routes on included HTTPProxies opt into JWT verification
 This option largely follows the design laid out above.
@@ -255,3 +257,215 @@ The downside of this option is that it does limit each root HTTPProxy to a singl
 ## Compatibility
 JWT verification will be an optional feature that is disabled by default.
 Existing users should not be affected by its addition.
+
+## Appendix 1: Examples
+
+**HTTPProxy with a single provider, marked as the default:**
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification-proxy
+spec:
+  virtualhost:
+    fqdn: example.com
+    tls:
+      secretName: tls-cert
+    jwtProviders:
+      # This provider is marked as the default so
+      # will be applied to all routes unless they
+      # opt out.
+      - name: provider-1
+        default: true
+        issuer: example.com
+        audiences:
+          - audience-1
+          - audience-2
+        remoteJWKS:
+          httpURI:
+            uri: https://example.com/jwks.json
+            timeout: 1s
+          cacheDuration: 5m
+  routes:
+    # The first route has the default "provider-1"
+    # provider applied as a requirement.
+    - conditions:
+        - prefix: /
+      services:
+        - name: s1
+          port: 80
+    # The "/css" route disables all JWT verification.
+    - conditions:
+        - prefix: /css
+      jwtVerificationPolicy:
+        disabled: true
+      services:
+        - name: s1
+          port: 80
+```
+
+**HTTPProxy with a single provider, NOT marked as the default:**
+
+```yaml
+# Note, this proxy definition is functionally the same
+# as the previous example, but it uses opt-in behavior
+# instead of opt-out behavior.
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification-proxy
+spec:
+  virtualhost:
+    fqdn: example.com
+    tls:
+      secretName: tls-cert
+    jwtProviders:
+      - name: provider-1
+        issuer: example.com
+        audiences:
+          - audience-1
+          - audience-2
+        remoteJWKS:
+          httpURI:
+            uri: https://example.com/jwks.json
+            timeout: 1s
+          cacheDuration: 5m
+  routes:
+    # The first route has "provider-1"
+    # specified as a requirement.
+    - conditions:
+        - prefix: /
+      jwtVerificationPolicy:
+        require: provider-1
+      services:
+        - name: s1
+          port: 80
+    # The "/css" route does not have JWT
+    # verification applied because there
+    # is no default provider and it does
+    # not explicitly specify one.
+    - conditions:
+        - prefix: /css
+      services:
+        - name: s1
+          port: 80
+```
+
+**HTTPProxy with multiple providers, with one marked as the default:**
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification-proxy
+spec:
+  virtualhost:
+    fqdn: example.com
+    tls:
+      secretName: tls-cert
+    jwtProviders:
+      # This provider is marked as the default so
+      # will be applied to all routes unless they
+      # opt out.
+      - name: provider-1
+        default: true
+        issuer: example.com
+        audiences:
+          - audience-1
+          - audience-2
+        remoteJWKS:
+          httpURI:
+            uri: https://example.com/jwks.json
+            timeout: 1s
+          cacheDuration: 5m
+      # This is another provider that routes can
+      # opt into.
+      - name: provider-2
+        issuer: foo.com
+        remoteJWKS:
+          httpURI:
+            uri: https://foo.com/jwks.json
+            timeout: 1s
+          cacheDuration: 5m
+  routes:
+    # The first route has the default "provider-1"
+    # provider applied as a requirement.
+    - conditions:
+        - prefix: /
+      services:
+        - name: s1
+          port: 80
+    # The "/foo" route requires "provider-2" instead
+    # of the default.
+    - conditions:
+        - prefix: /foo
+      jwtVerificationPolicy:
+        require: provider-2
+      services:
+        - name: s2
+          port: 80
+    # The "/css" route disables all JWT verification.
+    - conditions:
+        - prefix: /css
+      jwtVerificationPolicy:
+        disabled: true
+      services:
+        - name: s1
+          port: 80
+```
+
+**HTTPProxy with a single provider, marked as the default, using inclusion:**
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification-root-proxy
+spec:
+  virtualhost:
+    fqdn: example.com
+    tls:
+      secretName: tls-cert
+    jwtProviders:
+      # This provider is marked as the default so
+      # will be applied to all routes in both the
+      # root proxy and its included proxies unless
+      # they opt out.
+      - name: provider-1
+        default: true
+        issuer: example.com
+        audiences:
+          - audience-1
+          - audience-2
+        remoteJWKS:
+          httpURI:
+            uri: https://example.com/jwks.json
+            timeout: 1s
+          cacheDuration: 5m
+  includes:
+    - name: jwt-verification-child-proxy
+      conditions:
+        - prefix: /service-1
+---  
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification-child-proxy
+  routes:
+    # The first route has the default "provider-1"
+    # provider applied as a requirement.
+    - conditions:
+        - prefix: /
+      services:
+        - name: s1
+          port: 80
+    # The "/css" route disables all JWT verification.
+    - conditions:
+        - prefix: /css
+      jwtVerificationPolicy:
+        disabled: true
+      services:
+        - name: s1
+          port: 80
+```
