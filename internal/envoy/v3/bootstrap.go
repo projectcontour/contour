@@ -275,7 +275,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 							Name: "envoy.resource_monitors.fixed_heap",
 							TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
 								Threshold: &envoy_config_overload_v3.ThresholdTrigger{
-									Value: 0.90,
+									Value: 0.95,
 								},
 							},
 						},

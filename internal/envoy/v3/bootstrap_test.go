@@ -2033,7 +2033,7 @@ func TestBootstrap(t *testing.T) {
                 {
                   "name": "envoy.resource_monitors.fixed_heap",
                   "threshold": {
-                    "value": 0.9
+                    "value": 0.95
                   }
                 }
               ]
