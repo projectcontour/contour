@@ -58,6 +58,10 @@ spec:
       - 
         # name is a unique name for the provider.
         name: provider-1
+        # default is whether or not this provider should be applied
+        # to routes by default. At most one provider can have this
+        # flag set to true.
+        default: true
         # issuer (optional) must match the "iss" field in the JWT.
         # If not specified, the "iss" field is not checked.
         issuer: foo.com
@@ -94,17 +98,28 @@ spec:
     # at https://example.com/jwks.json).
     - conditions:
         - prefix: /
-      jwtProvider: provider-1
+      jwtVerificationPolicy:
+        # requires opts into requiring a particular provider if it
+        # is not the default. In this case, it can be omitted since
+        # provider-1 is the default; it's shown only for explanation.
+        requires: provider-1
+        # disabled allows disabling JWT verification for specific
+        # routes. In this case, it can be omitted because it's false,
+        # but it's shown for explanation. 
+        disabled: false
       services:
         - name: s1
           port: 80
-    # This route does *not* have a jwtProvider defined, so requests
+    # This route disables JWT verification (it would otherwise be applied
+    # by default, requiring the default provider-1), so requests
     # with paths starting with /js are excluded from JWT verification.
     # Note that Contour orders routes such that longer prefixes take
     # priority over shorter prefixes, so requests starting with /js will
     # be handled by this route rather than the previous catch-all route.
     - conditions:
         - prefix: /js
+      jwtVerificationPolicy:
+        disabled: true
       services:
         - name: s1
           port: 80
@@ -131,6 +146,7 @@ spec:
       secretName: tls-cert
     jwtProviders:
       - name: provider-1
+        default: true
         issuer: example.com
         audiences:
           - audience-1
@@ -143,12 +159,13 @@ spec:
   routes:
     - conditions:
         - prefix: /
-      jwtProvider: provider-1
       services:
         - name: s1
           port: 80
     - conditions:
         - prefix: /css
+      jwtVerificationPolicy:
+        disabled: true
       services:
         - name: s1
           port: 80
