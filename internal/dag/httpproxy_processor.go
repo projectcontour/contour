@@ -159,6 +159,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 
+	if len(proxy.Spec.VirtualHost.JWTProviders) > 0 {
+		if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
+			validCond.AddError(contour_api_v1.ConditionTypeJWTVerificationError, "JWTVerificationNotPermitted",
+				"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS")
+			return
+		}
+
+	}
+
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if tls.Passthrough && tls.EnableFallbackCertificate {

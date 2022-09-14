@@ -2699,7 +2699,7 @@ func TestDAGStatus(t *testing.T) {
 	jwtVerificationValidProxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
-			Name:      "jwt-verification-duplicate-provider-names",
+			Name:      "jwt-verification-valid-proxy",
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
@@ -3114,8 +3114,158 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	// TODO non-TLS vhost, JWT providers defined
-	// TODO TLS-passthrough vhosts, JWT providers defined
+	jwtVerificationInvalidTLSNotConfigured := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-tls-not-configured",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTProvider: "provider-1",
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid TLS not configured", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidTLSNotConfigured,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidTLSNotConfigured): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"JWTVerificationNotPermitted",
+					"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS",
+				),
+		},
+	})
+
+	jwtVerificationInvalidTLSPassthroughConfigured := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-tls-passthrough-configured",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					Passthrough: true,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTProvider: "provider-1",
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid TLS passthrough configured", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidTLSPassthroughConfigured,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidTLSPassthroughConfigured): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"JWTVerificationNotPermitted",
+					"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS",
+				),
+		},
+	})
+
+	jwtVerificationInvalidTLSFallbackConfigured := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-tls-fallback-configured",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					EnableFallbackCertificate: true,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTProvider: "provider-1",
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid TLS fallback configured", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidTLSFallbackConfigured,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidTLSFallbackConfigured): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"JWTVerificationNotPermitted",
+					"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS",
+				),
+		},
+	})
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
