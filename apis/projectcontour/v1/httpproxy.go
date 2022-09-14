@@ -256,6 +256,15 @@ type JWTProvider struct {
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
+	// Whether the provider should apply to all
+	// routes in the HTTPProxy/its includes by
+	// default. At most one provider can be marked
+	// as the default. If no provider is marked
+	// as the default, individual routes must explicitly
+	// identify the provider they require.
+	// +optional
+	Default bool `json:"default,omitempty"`
+
 	// Issuer that JWTs are required to have in the "iss" field.
 	// If not provided, JWT issuers are not checked.
 	// +optional
@@ -441,10 +450,26 @@ type Route struct {
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
 
-	// JWTProvider is the name of the JWT Provider defined in the virtual host
-	// to use for verifying JWTs on requests to this route.
+	// The policy for verifying JWTs for requests to this route.
 	// +optional
-	JWTProvider string `json:"jwtProvider,omitempty"`
+	JWTVerificationPolicy *JWTVerificationPolicy `json:"jwtVerificationPolicy,omitempty"`
+}
+
+type JWTVerificationPolicy struct {
+	// Require names a specific JWT provider (defined in the virtual host)
+	// to require for the route. If specified, this field overrides the
+	// default provider if one exists. If this field is not specified,
+	// the default provider will be required if one exists. At most one of
+	// this field or the "disabled" field can be specified.
+	// +optional
+	Require string `json:"require,omitempty"`
+
+	// Disabled defines whether to disable all JWT verification for this
+	// route. This can be used to opt specific routes out of the default
+	// JWT provider for the HTTPProxy. At most one of this field or the
+	// "require" field can be specified.
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 type HTTPDirectResponsePolicy struct {

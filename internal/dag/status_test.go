@@ -2724,7 +2724,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					JWTProvider: "provider-1",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 					Conditions: []contour_api_v1.MatchCondition{{
 						Prefix: "/foo",
 					}},
@@ -2804,6 +2804,68 @@ func TestDAGStatus(t *testing.T) {
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"DuplicateProviderName",
 					"Spec.VirtualHost.JWTProviders is invalid: duplicate name provider-1",
+				),
+		},
+	})
+
+	jwtVerificationMultipleDefaults := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-multiple-defaults",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name:    "provider-1",
+						Default: true,
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+					{
+						Name:    "provider-2",
+						Default: true,
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification multiple default providers", testcase{
+		objs: []interface{}{
+			jwtVerificationMultipleDefaults,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationMultipleDefaults): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"MultipleDefaultProvidersSpecified",
+					"Spec.VirtualHost.JWTProviders is invalid: at most one provider can be set as the default",
 				),
 		},
 	})
@@ -3039,7 +3101,7 @@ func TestDAGStatus(t *testing.T) {
 						Name: "home",
 						Port: 8080,
 					}},
-					JWTProvider: "provider-1",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 				},
 			},
 		},
@@ -3085,7 +3147,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					JWTProvider: "nonexistent-provider",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "nonexistent-provider"},
 					Conditions: []contour_api_v1.MatchCondition{{
 						Prefix: "/foo",
 					}},
@@ -3135,7 +3197,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					JWTProvider: "provider-1",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 					Conditions: []contour_api_v1.MatchCondition{{
 						Prefix: "/foo",
 					}},
@@ -3187,7 +3249,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					JWTProvider: "provider-1",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 					Conditions: []contour_api_v1.MatchCondition{{
 						Prefix: "/foo",
 					}},
@@ -3239,7 +3301,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					JWTProvider: "provider-1",
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 					Conditions: []contour_api_v1.MatchCondition{{
 						Prefix: "/foo",
 					}},
@@ -3263,6 +3325,62 @@ func TestDAGStatus(t *testing.T) {
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"JWTVerificationNotPermitted",
 					"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS",
+				),
+		},
+	})
+
+	jwtVerificationInvalidRequireAndDisabledSpecified := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-require-and-disabled-specified",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{
+						Require:  "provider-1",
+						Disabled: true,
+					},
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid route specifies both requires and disabled", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRequireAndDisabledSpecified,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRequireAndDisabledSpecified): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"InvalidJWTVerificationPolicy",
+					"route's JWT verification policy cannot specify both require and disabled",
 				),
 		},
 	})

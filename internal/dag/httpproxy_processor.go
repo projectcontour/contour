@@ -130,6 +130,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	defer commit()
 
+	var defaultJWTProvider string
+
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
 		p.orphaned[k8s.NamespacedNameOf(proxy)] = true
@@ -355,6 +357,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				providerNames.Insert(jwtProvider.Name)
 
+				if jwtProvider.Default {
+					if len(defaultJWTProvider) > 0 {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "MultipleDefaultProvidersSpecified",
+							"Spec.VirtualHost.JWTProviders is invalid: at most one provider can be set as the default")
+						return
+					}
+					defaultJWTProvider = jwtProvider.Name
+				}
+
 				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.HTTPURI.URI)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
@@ -424,7 +435,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		}
 	}
 
-	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled)
+	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
 	insecure := p.dag.EnsureVirtualHost(host)
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
@@ -523,6 +534,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	conditions []contour_api_v1.MatchCondition,
 	visited []*contour_api_v1.HTTPProxy,
 	enforceTLS bool,
+	defaultJWTProvider string,
 ) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
@@ -592,7 +604,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		inc, incCommit := p.dag.StatusCache.ProxyAccessor(includedProxy)
 		incValidCond := inc.ConditionFor(status.ValidCondition)
-		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS)...)
+		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS, defaultJWTProvider)...)
 		incCommit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -862,7 +874,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(rootProxy.Spec.VirtualHost.Fqdn))
 		}
 
-		r.JWTProvider = route.JWTProvider
+		jwt := route.JWTVerificationPolicy
+		switch {
+		case jwt != nil && len(route.JWTVerificationPolicy.Require) > 0 && route.JWTVerificationPolicy.Disabled:
+			validCond.AddError(contour_api_v1.ConditionTypeJWTVerificationError, "InvalidJWTVerificationPolicy",
+				"route's JWT verification policy cannot specify both require and disabled")
+			return nil
+		case jwt != nil && len(route.JWTVerificationPolicy.Require) > 0:
+			r.JWTProvider = jwt.Require
+		case jwt != nil && jwt.Disabled:
+			r.JWTProvider = ""
+		default:
+			r.JWTProvider = defaultJWTProvider
+		}
 
 		routes = append(routes, r)
 	}

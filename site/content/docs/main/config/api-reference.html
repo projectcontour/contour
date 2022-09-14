@@ -1942,6 +1942,24 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>default</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether the provider should apply to all
+routes in the HTTPProxy/its includes by
+default. At most one provider can be marked
+as the default. If no provider is marked
+as the default, individual routes must explicitly
+identify the provider they require.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>issuer</code>
 <br>
 <em>
@@ -1980,6 +1998,57 @@ RemoteJWKS
 </td>
 <td>
 <p>Remote JWKS to use for verifying JWT signatures.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.JWTVerificationPolicy">JWTVerificationPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>require</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Require names a specific JWT provider (defined in the virtual host)
+to require for the route. If specified, this field overrides the
+default provider if one exists. If this field is not specified,
+the default provider will be required if one exists. At most one of
+this field or the &ldquo;disabled&rdquo; field can be specified.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disabled defines whether to disable all JWT verification for this
+route. This can be used to opt specific routes out of the default
+JWT provider for the HTTPProxy. At most one of this field or the
+&ldquo;require&rdquo; field can be specified.</p>
 </td>
 </tr>
 </tbody>
@@ -3100,16 +3169,17 @@ HTTPDirectResponsePolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>jwtProvider</code>
+<code>jwtVerificationPolicy</code>
 <br>
 <em>
-string
+<a href="#projectcontour.io/v1.JWTVerificationPolicy">
+JWTVerificationPolicy
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>JWTProvider is the name of the JWT Provider defined in the virtual host
-to use for verifying JWTs on requests to this route.</p>
+<p>The policy for verifying JWTs for requests to this route.</p>
 </td>
 </tr>
 </tbody>
