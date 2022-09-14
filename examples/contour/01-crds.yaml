@@ -854,6 +854,16 @@ spec:
                   associated resources, including things like replica count for the
                   Deployment, and node placement constraints for the pods.
                 properties:
+                  kubernetesLogLevel:
+                    description: KubernetesLogLevel Enable Kubernetes client debug
+                      logging with log level. If unset, defaults to 0.
+                    maximum: 9
+                    minimum: 0
+                    type: integer
+                  logLevel:
+                    description: LogLevel sets the log level for Contour Allowed values
+                      are "info", "debug".
+                    type: string
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Contour pods.

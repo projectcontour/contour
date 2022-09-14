@@ -13,6 +13,7 @@
 #       examples/contour/03-contour.yaml
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
+#       examples/gateway/00-namespace.yaml
 #       examples/gateway/01-admission_webhook.yaml
 #       examples/gateway/02-certificate_config.yaml
 #       examples/gateway/03-gatewayclass.yaml
@@ -1068,6 +1069,16 @@ spec:
                   associated resources, including things like replica count for the
                   Deployment, and node placement constraints for the pods.
                 properties:
+                  kubernetesLogLevel:
+                    description: KubernetesLogLevel Enable Kubernetes client debug
+                      logging with log level. If unset, defaults to 0.
+                    maximum: 9
+                    minimum: 0
+                    type: integer
+                  logLevel:
+                    description: LogLevel sets the log level for Contour Allowed values
+                      are "info", "debug".
+                    type: string
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Contour pods.
@@ -5162,7 +5173,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.23.0
+        image: docker.io/envoyproxy/envoy:v1.23.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
@@ -12161,6 +12172,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: gateway-system
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -12172,7 +12184,7 @@ webhooks:
     rules:
       - operations: [ "CREATE" , "UPDATE" ]
         apiGroups: [ "gateway.networking.k8s.io" ]
-        apiVersions: [ "v1alpha2" ]
+        apiVersions: [ "v1alpha2", "v1beta1" ]
         resources: [ "gateways", "gatewayclasses", "httproutes" ]
     failurePolicy: Fail
     sideEffects: None
@@ -12249,11 +12261,6 @@ spec:
           secret:
             secretName: gateway-api-admission
 
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gateway-system
 ---
 apiVersion: v1
 kind: ServiceAccount

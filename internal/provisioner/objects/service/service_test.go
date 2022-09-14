@@ -134,12 +134,7 @@ func checkServiceHasLoadBalancerAddress(t *testing.T, svc *corev1.Service, addre
 
 func TestDesiredContourService(t *testing.T) {
 	name := "svc-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	svc := DesiredContourService(cntr)
 	xdsPort := objects.XDSPort
 	checkServiceHasPort(t, svc, xdsPort)
@@ -154,13 +149,9 @@ func TestDesiredEnvoyService(t *testing.T) {
 	allocationIDs := []string{"eipalloc-0123456789", "eipalloc-1234567890"}
 	resourceGroup := "contour-rg-test"
 	subnet := "contour-subnet-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.NodePortServicePublishingType,
-		NodePorts:   model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444}),
-	}
-	cntr := model.New(cfg)
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.NodePortServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.NodePorts = model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444})
 	cntr.Spec.NetworkPublishing.Envoy.ServicePorts = []model.ServicePort{
 		{
 			Name:       "http",

@@ -64,17 +64,12 @@ func checkClusterRoleBindingRole(t *testing.T, crb *rbacv1.ClusterRoleBinding, e
 }
 
 func TestDesiredClusterRoleBinding(t *testing.T) {
-	crbName := "test-crb"
-	cfg := model.Config{
-		Name:        crbName,
-		Namespace:   fmt.Sprintf("%s-ns", crbName),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
+	name := "test-crb"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	testSvcAcct := "test-svc-acct-ref"
 	testRoleRef := "test-role-ref"
-	crb := desiredClusterRoleBinding(crbName, testRoleRef, testSvcAcct, cntr)
-	checkClusterRoleBindingName(t, crb, crbName)
+	crb := desiredClusterRoleBinding(name, testRoleRef, testSvcAcct, cntr)
+	checkClusterRoleBindingName(t, crb, name)
 	ownerLabels := map[string]string{
 		model.OwningGatewayNameLabel: cntr.Name,
 	}
