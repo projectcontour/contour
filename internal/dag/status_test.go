@@ -21,6 +21,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -2694,6 +2695,427 @@ func TestDAGStatus(t *testing.T) {
 				`Spec.VirtualHost.CORSPolicy: invalid allowed origin "**": allowed origin is invalid exact match and invalid regex match`),
 		},
 	})
+
+	jwtVerificationValidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-duplicate-provider-names",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name:      "provider-1",
+						Issuer:    "jwt.example.com",
+						Audiences: []string{"foo", "bar"},
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI:     "https://jwt.example.com/jwks.json",
+								Timeout: "10s",
+							},
+							CacheDuration: "1h",
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTProvider: "provider-1",
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification valid proxy", testcase{
+		objs: []interface{}{
+			jwtVerificationValidProxy,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationValidProxy): fixture.NewValidCondition().Valid(),
+		},
+	})
+
+	jwtVerificationDuplicateProviders := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-duplicate-provider-names",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification duplicate provider names", testcase{
+		objs: []interface{}{
+			jwtVerificationDuplicateProviders,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationDuplicateProviders): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"DuplicateProviderName",
+					"Spec.VirtualHost.JWTProviders is invalid: duplicate name provider-1",
+				),
+		},
+	})
+
+	jwtVerificationInvalidRemoteJWKSURI := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-remote-jwks-uri",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: ":/invalid-uri",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid remote JWKS URI", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRemoteJWKSURI,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRemoteJWKSURI): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSURIInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI is invalid: parse \":/invalid-uri\": missing protocol scheme",
+				),
+		},
+	})
+
+	jwtVerificationInvalidRemoteJWKSScheme := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-remote-jwks-scheme",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "ftp://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid remote JWKS scheme", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRemoteJWKSScheme,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRemoteJWKSScheme): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSSchemeInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI has invalid scheme \"ftp\", must be http or https",
+				),
+		},
+	})
+
+	jwtVerificationInvalidRemoteJWKSTimeout := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-remote-jwks-timeout",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI:     "http://jwt.example.com/jwks.json",
+								Timeout: "invalid-timeout-string",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid remote JWKS timeout", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRemoteJWKSTimeout,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRemoteJWKSTimeout): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSTimeoutInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.Timeout is invalid: time: invalid duration \"invalid-timeout-string\"",
+				),
+		},
+	})
+
+	jwtVerificationInvalidRemoteJWKSCacheDuration := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-remote-jwks-cache-duration",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "http://jwt.example.com/jwks.json",
+							},
+							CacheDuration: "invalid-duration-string",
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid remote JWKS cache duration", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRemoteJWKSCacheDuration,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRemoteJWKSCacheDuration): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSCacheDurationInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.CacheDuration is invalid: time: invalid duration \"invalid-duration-string\"",
+				),
+		},
+	})
+
+	jwtVerificationNoProvidersRouteHasRef := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-no-providers-route-has-ref",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+					JWTProvider: "provider-1",
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification no providers defined, route has provider ref", testcase{
+		objs: []interface{}{
+			jwtVerificationNoProvidersRouteHasRef,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationNoProvidersRouteHasRef): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"JWTProviderNotDefined",
+					"Route references an undefined JWT provider \"provider-1\"",
+				),
+		},
+	})
+
+	jwtVerificationRouteReferencesNonexistentProvider := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-route-references-nonexistent-provider",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							HTTPURI: contour_api_v1.HTTPURI{
+								URI: "http://jwt.example.com/jwks.json",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTProvider: "nonexistent-provider",
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification route references nonexistent provider", testcase{
+		objs: []interface{}{
+			jwtVerificationRouteReferencesNonexistentProvider,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationRouteReferencesNonexistentProvider): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"JWTProviderNotDefined",
+					"Route references an undefined JWT provider \"nonexistent-provider\"",
+				),
+		},
+	})
+
+	// TODO non-TLS vhost, JWT providers defined
+	// TODO TLS-passthrough vhosts, JWT providers defined
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
