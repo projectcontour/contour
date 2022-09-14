@@ -528,8 +528,12 @@ bool
 </em>
 </td>
 <td>
-<p>AllowOrigin specifies the origins that will be allowed to do CORS requests. &ldquo;*&rdquo; means
-allow any origin.</p>
+<p>AllowOrigin specifies the origins that will be allowed to do CORS requests.
+Allowed values include &ldquo;*&rdquo; which signifies any origin is allowed, an exact
+origin of the form &ldquo;scheme://host[:port]&rdquo; (where port is optional), or a valid
+regex pattern.
+Note that regex patterns are validated and a simple &ldquo;glob&rdquo; pattern (e.g. *.foo.com)
+will be rejected or produce unexpected matches when applied as a regex.</p>
 </td>
 </tr>
 <tr>
