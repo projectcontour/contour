@@ -755,28 +755,22 @@ func FilterJWTAuth(jwtPolicy *dag.JWTVerificationPolicy) *http.HttpFilter {
 				},
 			},
 		}
-	}
 
-	// Sort rules to ensure rules with more specific match criteria
-	// are applied first.
-	sort.Stable(sorter.For(jwtPolicy.Rules))
+		// Set up a requirement map so that per-route filter config can refer
+		// to a requirement by name. This is nicer than specifying rules here,
+		// because it likely results in less Envoy config overall (don't have
+		// to duplicate every route match in the jwt_authn config), and it means
+		// we don't have to implement another sorter to sort JWT rules -- the
+		// sorting already being done to routes covers it.
 
-	for _, rule := range jwtPolicy.Rules {
-		rr := &envoy_jwt_v3.RequirementRule{
-			Match: PathRouteMatch(rule.PathMatchCondition),
+		if jwtConfig.RequirementMap == nil {
+			jwtConfig.RequirementMap = map[string]*envoy_jwt_v3.JwtRequirement{}
 		}
-
-		if len(rule.ProviderName) > 0 {
-			rr.RequirementType = &envoy_jwt_v3.RequirementRule_Requires{
-				Requires: &envoy_jwt_v3.JwtRequirement{
-					RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
-						ProviderName: rule.ProviderName,
-					},
-				},
-			}
+		jwtConfig.RequirementMap[provider.Name] = &envoy_jwt_v3.JwtRequirement{
+			RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
+				ProviderName: provider.Name,
+			},
 		}
-
-		jwtConfig.Rules = append(jwtConfig.Rules, rr)
 	}
 
 	return &http.HttpFilter{

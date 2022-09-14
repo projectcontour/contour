@@ -24,6 +24,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
@@ -118,6 +119,18 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 			}
+		}
+
+		// If JWT verification is enabled, add per-route filter
+		// config referencing a requirement in the main filter
+		// config.
+		if len(dagRoute.JWTProvider) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
+			})
 		}
 
 		return rt

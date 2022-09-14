@@ -21,7 +21,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -31,6 +31,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/anypb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,7 +50,7 @@ func TestJWTVerification(t *testing.T) {
 	}
 	rh.OnAdd(sec1)
 
-	s1 := fixture.NewService("backend").
+	s1 := fixture.NewService("s1").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
@@ -124,8 +125,9 @@ func TestJWTVerification(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 
-	// Now we should have the JWT authentication filter and
-	// a cluster for the JWKS URI.
+	// Now we should have the JWT authentication filter,
+	// a cluster for the JWKS URI and the route should have
+	// a reference to the requirement.
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
@@ -155,19 +157,10 @@ func TestJWTVerification(t *testing.T) {
 									},
 								},
 							},
-							Rules: []*envoy_jwt_v3.RequirementRule{
-								{
-									Match: &routev3.RouteMatch{
-										PathSpecifier: &routev3.RouteMatch_Prefix{
-											Prefix: "/",
-										},
-									},
-									RequirementType: &envoy_jwt_v3.RequirementRule_Requires{
-										Requires: &envoy_jwt_v3.JwtRequirement{
-											RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
-												ProviderName: "provider-1",
-											},
-										},
+							RequirementMap: map[string]*envoy_jwt_v3.JwtRequirement{
+								"provider-1": {
+									RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
+										ProviderName: "provider-1",
 									},
 								},
 							},
@@ -225,6 +218,24 @@ func TestJWTVerification(t *testing.T) {
 					},
 				},
 			},
+		),
+	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"https/jwt.example.com",
+				envoy_v3.VirtualHost("jwt.example.com",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: map[string]*anypb.Any{
+							"envoy.filters.http.jwt_authn": protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+								RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: "provider-1"},
+							}),
+						},
+					},
+				),
+			),
 		),
 	})
 
@@ -301,26 +312,10 @@ func TestJWTVerification(t *testing.T) {
 									},
 								},
 							},
-							Rules: []*envoy_jwt_v3.RequirementRule{
-								{
-									Match: &routev3.RouteMatch{
-										PathSpecifier: &routev3.RouteMatch_Prefix{
-											Prefix: "/css",
-										},
-									},
-								},
-								{
-									Match: &routev3.RouteMatch{
-										PathSpecifier: &routev3.RouteMatch_Prefix{
-											Prefix: "/",
-										},
-									},
-									RequirementType: &envoy_jwt_v3.RequirementRule_Requires{
-										Requires: &envoy_jwt_v3.JwtRequirement{
-											RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
-												ProviderName: "provider-1",
-											},
-										},
+							RequirementMap: map[string]*envoy_jwt_v3.JwtRequirement{
+								"provider-1": {
+									RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
+										ProviderName: "provider-1",
 									},
 								},
 							},
@@ -329,6 +324,28 @@ func TestJWTVerification(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
+		),
+	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"https/jwt.example.com",
+				envoy_v3.VirtualHost("jwt.example.com",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/css"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: map[string]*anypb.Any{
+							"envoy.filters.http.jwt_authn": protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+								RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: "provider-1"},
+							}),
+						},
+					},
+				),
+			),
 		),
 	})
 }
