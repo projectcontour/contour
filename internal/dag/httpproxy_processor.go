@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -1057,6 +1059,57 @@ func toCORSPolicy(policy *contour_api_v1.CORSPolicy) (*CORSPolicy, error) {
 	if policy == nil {
 		return nil, nil
 	}
+
+	if len(policy.AllowOrigin) == 0 {
+		return nil, errors.New("invalid allowed origin configuration with length 0")
+	}
+	allowOriginMatches := make([]CORSAllowOriginMatch, 0, len(policy.AllowOrigin))
+	toAllowOriginMatch := func(ao string) (CORSAllowOriginMatch, error) {
+		// Short circuit common case.
+		if ao == "*" {
+			return CORSAllowOriginMatch{
+				Type:  CORSAllowOriginMatchExact,
+				Value: ao,
+			}, nil
+		}
+
+		// Parse allowed origin as URL, to check if it should be an
+		// exact match or regex.
+		// If there is a parsing error, or we don't have a properly
+		// formatted exact Origin header, then try to parse as a regex.
+		// Exact Origin headers should only be allowed as scheme://host[:port]
+		// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+		parsedURL, parseURLErr := url.Parse(ao)
+		if parseURLErr != nil ||
+			parsedURL.Scheme == "" || parsedURL.Host == "" ||
+			parsedURL.Scheme+"://"+parsedURL.Host != ao {
+			_, regexErr := regexp.Compile(ao)
+			if regexErr != nil {
+				return CORSAllowOriginMatch{}, errors.New("allowed origin is invalid exact match and invalid regex match")
+			}
+			return CORSAllowOriginMatch{
+				Type:  CORSAllowOriginMatchRegex,
+				Value: ao,
+			}, nil
+		}
+
+		return CORSAllowOriginMatch{
+			Type:  CORSAllowOriginMatchExact,
+			Value: ao,
+		}, nil
+	}
+	for _, ao := range policy.AllowOrigin {
+		match, err := toAllowOriginMatch(ao)
+		if err != nil {
+			return nil, fmt.Errorf("invalid allowed origin %q: %w", ao, err)
+		}
+		allowOriginMatches = append(allowOriginMatches, match)
+	}
+
+	if len(policy.AllowMethods) == 0 {
+		return nil, errors.New("invalid allowed methods configuration with length 0")
+	}
+
 	maxAge, err := timeout.ParseMaxAge(policy.MaxAge)
 	if err != nil {
 		return nil, err
@@ -1064,11 +1117,12 @@ func toCORSPolicy(policy *contour_api_v1.CORSPolicy) (*CORSPolicy, error) {
 	if maxAge.Duration().Seconds() < 0 {
 		return nil, fmt.Errorf("invalid max age value %q", policy.MaxAge)
 	}
+
 	return &CORSPolicy{
 		AllowCredentials: policy.AllowCredentials,
 		AllowHeaders:     toStringSlice(policy.AllowHeaders),
 		AllowMethods:     toStringSlice(policy.AllowMethods),
-		AllowOrigin:      policy.AllowOrigin,
+		AllowOrigin:      allowOriginMatches,
 		ExposeHeaders:    toStringSlice(policy.ExposeHeaders),
 		MaxAge:           maxAge,
 	}, nil

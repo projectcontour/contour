@@ -507,14 +507,21 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 
 	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
-		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher.StringMatcher{
+		m := &matcher.StringMatcher{}
+		switch ao.Type {
+		case dag.CORSAllowOriginMatchExact:
 			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
 			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
-			MatchPattern: &matcher.StringMatcher_Exact{
-				Exact: ao,
-			},
-			IgnoreCase: true,
-		})
+			m.MatchPattern = &matcher.StringMatcher_Exact{
+				Exact: ao.Value,
+			}
+			m.IgnoreCase = true
+		case dag.CORSAllowOriginMatchRegex:
+			m.MatchPattern = &matcher.StringMatcher_SafeRegex{
+				SafeRegex: SafeRegexMatch(ao.Value),
+			}
+		}
+		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, m)
 	}
 	return rcp
 }

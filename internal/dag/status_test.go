@@ -2657,6 +2657,43 @@ func TestDAGStatus(t *testing.T) {
 					"must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
 		},
 	})
+
+	invalidAllowOrigin := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+			Name:      "invalid-alloworigin",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				CORSPolicy: &contour_api_v1.CORSPolicy{
+					AllowOrigin:  []string{"example-2.com", "**"},
+					AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Services: []contour_api_v1.Service{
+						{
+							Name: fixture.ServiceRootsKuard.Name,
+							Port: 8080,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	run(t, "proxy with invalid allow origin is invalid", testcase{
+		objs: []interface{}{invalidAllowOrigin, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{
+				Name:      invalidAllowOrigin.Name,
+				Namespace: invalidAllowOrigin.Namespace,
+			}: fixture.NewValidCondition().WithError(contour_api_v1.ConditionTypeCORSError, "PolicyDidNotParse",
+				`Spec.VirtualHost.CORSPolicy: invalid allowed origin "**": allowed origin is invalid exact match and invalid regex match`),
+		},
+	})
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
