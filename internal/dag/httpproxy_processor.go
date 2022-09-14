@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // defaultMaxRequestBytes specifies default value maxRequestBytes for AuthorizationServer
@@ -331,6 +332,75 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					}
 				}
 			}
+
+			providerNames := sets.NewString()
+			for _, jwtProvider := range proxy.Spec.VirtualHost.JWTProviders {
+				if svhost.JWTVerificationPolicy == nil {
+					svhost.JWTVerificationPolicy = &JWTVerificationPolicy{}
+				}
+
+				if providerNames.Has(jwtProvider.Name) {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "DuplicateProviderName",
+						"Spec.VirtualHost.JWTProviders is invalid: duplicate name %s", jwtProvider.Name)
+					return
+				}
+				providerNames.Insert(jwtProvider.Name)
+
+				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.HTTPURI.URI)
+				if err != nil {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI is invalid: %s", err)
+					return
+				}
+
+				if jwksURL.Scheme != "http" && jwksURL.Scheme != "https" {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSSchemeInvalid",
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
+					return
+				}
+
+				jwksTimeout := time.Second
+				if len(jwtProvider.RemoteJWKS.HTTPURI.Timeout) > 0 {
+					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.HTTPURI.Timeout)
+					if err != nil {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSTimeoutInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.Timeout is invalid: %s", err)
+						return
+					}
+
+					jwksTimeout = res
+				}
+
+				var cacheDuration *time.Duration
+				if len(jwtProvider.RemoteJWKS.CacheDuration) > 0 {
+					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.CacheDuration)
+					if err != nil {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCacheDurationInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.CacheDuration is invalid: %s", err)
+						return
+					}
+
+					cacheDuration = &res
+				}
+
+				svhost.JWTVerificationPolicy.Providers = append(svhost.JWTVerificationPolicy.Providers, JWTProvider{
+					Name:      jwtProvider.Name,
+					Issuer:    jwtProvider.Issuer,
+					Audiences: jwtProvider.Audiences,
+					RemoteJWKS: RemoteJWKS{
+						HTTPURI: HTTPURI{
+							URI:     jwtProvider.RemoteJWKS.HTTPURI.URI,
+							Timeout: jwksTimeout,
+						},
+						Cluster: DNSNameCluster{
+							Address:         jwksURL.Hostname(),
+							Scheme:          jwksURL.Scheme,
+							DNSLookupFamily: string(p.DNSLookupFamily),
+						},
+						CacheDuration: cacheDuration,
+					},
+				})
+			}
 		}
 	}
 
@@ -380,6 +450,49 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		secure.RateLimitPolicy = rlp
 
 		addRoutes(secure, routes)
+
+		// Process JWT verification requirements.
+		for _, route := range routes {
+			// JWT verification not enabled for the vhost: error if the route
+			// specifies a JWT provider.
+			if secure.JWTVerificationPolicy == nil {
+				if len(route.JWTProvider) == 0 {
+					continue
+				}
+
+				validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "JWTProviderNotDefined",
+					"Route references an undefined JWT provider %q", route.JWTProvider)
+				return
+			}
+
+			// JWT verification enabled for the vhost: error if the route
+			// specifies a JWT provider that does not exist.
+			if len(route.JWTProvider) > 0 {
+				var found bool
+				for _, provider := range secure.JWTVerificationPolicy.Providers {
+					if provider.Name == route.JWTProvider {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "JWTProviderNotDefined",
+						"Route references an undefined JWT provider %q", route.JWTProvider)
+					return
+				}
+			}
+
+			// Add a JWTRule for the route whether it specified a JWT provider
+			// or not, because routes without a provider need to be explicitly
+			// excluded from verification in case they are exceptions to a more
+			// general route that does enable verification.
+			secure.JWTVerificationPolicy.Rules = append(secure.JWTVerificationPolicy.Rules, JWTRule{
+				PathMatchCondition:    route.PathMatchCondition,
+				HeaderMatchConditions: route.HeaderMatchConditions,
+				ProviderName:          route.JWTProvider,
+			})
+		}
 	}
 }
 
@@ -739,6 +852,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		if strings.HasPrefix(rootProxy.Spec.VirtualHost.Fqdn, "*.") {
 			r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(rootProxy.Spec.VirtualHost.Fqdn))
 		}
+
+		r.JWTProvider = route.JWTProvider
 
 		routes = append(routes, r)
 	}

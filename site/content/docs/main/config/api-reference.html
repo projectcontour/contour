@@ -1551,6 +1551,50 @@ The prefix must start with a leading slash.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HTTPURI">HTTPURI
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RemoteJWKS">RemoteJWKS</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>uri</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The URI for the JWKS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How long to wait for a response from the URI.
+If not specified, a default of 1s applies.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HeaderHashOptions">HeaderHashOptions
 </h3>
 <p>
@@ -1863,6 +1907,79 @@ When applied, they are merged using AND, with one exception:
 There can be only one Prefix MatchCondition per Conditions slice.
 More than one Prefix, or contradictory Conditions, will make the
 include invalid.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.JWTProvider">JWTProvider
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>JWTProvider defines how to verify JWTs on requests.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Unique name for the provider.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>issuer</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Issuer that JWTs are required to have in the &ldquo;iss&rdquo; field.
+If not provided, JWT issuers are not checked.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>audiences</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Audiences that JWTs are allowed to have in the &ldquo;aud&rdquo; field.
+If not provided, JWT audiences are not checked.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>remoteJWKS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RemoteJWKS">
+RemoteJWKS
+</a>
+</em>
+</td>
+<td>
+<p>Remote JWKS to use for verifying JWT signatures.</p>
 </td>
 </tr>
 </tbody>
@@ -2319,6 +2436,53 @@ service (RLS) for a rate limit decision on each request.</p>
 &ldquo;remote_address&rdquo; and a value equal to the client&rsquo;s IP address
 (from x-forwarded-for).</p>
 </p>
+<h3 id="projectcontour.io/v1.RemoteJWKS">RemoteJWKS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.JWTProvider">JWTProvider</a>)
+</p>
+<p>
+<p>RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>httpURI</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPURI">
+HTTPURI
+</a>
+</em>
+</td>
+<td>
+<p>The URI and associated info for the JWKS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>cacheDuration</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How long to cache the JWKS locally. If not specified,
+Envoy&rsquo;s default of 5m applies.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.ReplacePrefix">ReplacePrefix
 </h3>
 <p>
@@ -2932,6 +3096,20 @@ HTTPDirectResponsePolicy
 <td>
 <em>(Optional)</em>
 <p>DirectResponsePolicy returns an arbitrary HTTP response directly.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>jwtProvider</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>JWTProvider is the name of the JWT Provider defined in the virtual host
+to use for verifying JWTs on requests to this route.</p>
 </td>
 </tr>
 </tbody>
@@ -3766,6 +3944,21 @@ RateLimitPolicy
 <td>
 <em>(Optional)</em>
 <p>The policy for rate limiting on the virtual host.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>jwtProviders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.JWTProvider">
+[]JWTProvider
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.</p>
 </td>
 </tr>
 </tbody>

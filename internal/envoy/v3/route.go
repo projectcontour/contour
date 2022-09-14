@@ -151,7 +151,18 @@ func routeAuthzContext(settings map[string]string) *any.Any {
 
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
-	switch c := route.PathMatchCondition.(type) {
+	routeMatch := PathRouteMatch(route.PathMatchCondition)
+
+	routeMatch.Headers = headerMatcher(route.HeaderMatchConditions)
+	routeMatch.QueryParameters = queryParamMatcher(route.QueryParamMatchConditions)
+
+	return routeMatch
+}
+
+// PathRouteMatch creates a *envoy_route_v3.RouteMatch with *only* a PathSpecifier
+// populated.
+func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.RouteMatch {
+	switch c := pathMatchCondition.(type) {
 	case *dag.RegexMatchCondition:
 		return &envoy_route_v3.RouteMatch{
 			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
@@ -159,8 +170,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
 				SafeRegex: SafeRegexMatch("^" + c.Regex),
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
 		switch c.PrefixMatchType {
@@ -169,8 +178,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
 					PathSeparatedPrefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		case dag.PrefixMatchString:
 			fallthrough
@@ -179,8 +186,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		}
 	case *dag.ExactMatchCondition:
@@ -188,14 +193,9 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
 				Path: c.Path,
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	default:
-		return &envoy_route_v3.RouteMatch{
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
-		}
+		return &envoy_route_v3.RouteMatch{}
 	}
 }
 

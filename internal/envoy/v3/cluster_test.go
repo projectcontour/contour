@@ -19,6 +19,7 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/proto"
@@ -559,6 +560,110 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
+			want := clusterDefaults()
+
+			proto.Merge(want, tc.want)
+
+			protobuf.ExpectEqual(t, want, got)
+		})
+	}
+}
+
+func TestDNSNameCluster(t *testing.T) {
+	tests := map[string]struct {
+		cluster *dag.DNSNameCluster
+		want    *envoy_cluster_v3.Cluster
+	}{
+		"plain HTTP cluster": {
+			cluster: &dag.DNSNameCluster{
+				Address:         "foo.projectcontour.io",
+				Scheme:          "http",
+				DNSLookupFamily: "auto",
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "dnsname/http/foo.projectcontour.io",
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/http/foo.projectcontour.io",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: SocketAddress("foo.projectcontour.io", 80),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"plain HTTP cluster with DNS lookup family of v4": {
+			cluster: &dag.DNSNameCluster{
+				Address:         "foo.projectcontour.io",
+				Scheme:          "http",
+				DNSLookupFamily: "v4",
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "dnsname/http/foo.projectcontour.io",
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_V4_ONLY,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/http/foo.projectcontour.io",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: SocketAddress("foo.projectcontour.io", 80),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"HTTPS cluster": {
+			cluster: &dag.DNSNameCluster{
+				Address:         "foo.projectcontour.io",
+				Scheme:          "https",
+				DNSLookupFamily: "auto",
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "dnsname/https/foo.projectcontour.io",
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/https/foo.projectcontour.io",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: SocketAddress("foo.projectcontour.io", 443),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil)),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := DNSNameCluster(tc.cluster)
 			want := clusterDefaults()
 
 			proto.Merge(want, tc.want)

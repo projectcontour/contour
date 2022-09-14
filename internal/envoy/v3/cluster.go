@@ -162,6 +162,48 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	return cluster
 }
 
+// DNSNameCluster builds a envoy_cluster_v3.Cluster for the given *dag.DNSNameCluster.
+func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
+	cluster := clusterDefaults()
+
+	cluster.Name = envoy.DNSNameClusterName(c)
+	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
+	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
+		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
+	}
+
+	var port int
+	var transportSocket *envoy_core_v3.TransportSocket
+	switch c.Scheme {
+	case "http":
+		port = 80
+	case "https":
+		port = 443
+		// TODO TLS validation
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(nil, c.Address, nil))
+	}
+
+	cluster.LoadAssignment = &envoy_endpoint_v3.ClusterLoadAssignment{
+		ClusterName: envoy.DNSNameClusterName(c),
+		Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+			{
+				LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+					{
+						HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+							Endpoint: &envoy_endpoint_v3.Endpoint{
+								Address: SocketAddress(c.Address, port),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	cluster.TransportSocket = transportSocket
+
+	return cluster
+}
+
 // StaticClusterLoadAssignment creates a *envoy_endpoint_v3.ClusterLoadAssignment pointing to the external DNS address of the service
 func StaticClusterLoadAssignment(service *dag.Service) *envoy_endpoint_v3.ClusterLoadAssignment {
 	addr := SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port))

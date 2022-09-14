@@ -283,6 +283,10 @@ type Route struct {
 	// Redirect allows for a 301 Redirect to be the response
 	// to a route request vs. routing to an envoy cluster.
 	Redirect *Redirect
+
+	// JWTProvider names a JWT provider defined on the virtual
+	// host to be used to validate JWTs on requests to this route.
+	JWTProvider string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -636,6 +640,50 @@ type SecureVirtualHost struct {
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+
+	// JWTVerificationPolicy specifies configuration for performing
+	// JWT verification on requests.
+	JWTVerificationPolicy *JWTVerificationPolicy
+}
+
+type JWTVerificationPolicy struct {
+	// Providers specify how to verify JWTs.
+	Providers []JWTProvider
+
+	// Rules match requests to their JWT verification requirements.
+	Rules []JWTRule
+}
+
+type JWTProvider struct {
+	Name       string
+	Issuer     string
+	Audiences  []string
+	RemoteJWKS RemoteJWKS
+}
+
+type RemoteJWKS struct {
+	HTTPURI       HTTPURI
+	Cluster       DNSNameCluster
+	CacheDuration *time.Duration
+}
+
+type HTTPURI struct {
+	URI     string
+	Timeout time.Duration
+}
+
+// DNSNameCluster is a cluster that routes directly to a DNS
+// name (i.e. not a Kubernetes service).
+type DNSNameCluster struct {
+	Address         string
+	Scheme          string
+	DNSLookupFamily string
+}
+
+type JWTRule struct {
+	PathMatchCondition    MatchCondition
+	HeaderMatchConditions []HeaderMatchCondition
+	ProviderName          string
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

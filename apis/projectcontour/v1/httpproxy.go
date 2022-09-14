@@ -244,6 +244,55 @@ type VirtualHost struct {
 	// The policy for rate limiting on the virtual host.
 	// +optional
 	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
+	// +optional
+	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
+}
+
+// JWTProvider defines how to verify JWTs on requests.
+type JWTProvider struct {
+	// Unique name for the provider.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// Issuer that JWTs are required to have in the "iss" field.
+	// If not provided, JWT issuers are not checked.
+	// +optional
+	Issuer string `json:"issuer,omitempty"`
+
+	// Audiences that JWTs are allowed to have in the "aud" field.
+	// If not provided, JWT audiences are not checked.
+	// +optional
+	Audiences []string `json:"audiences,omitempty"`
+
+	// Remote JWKS to use for verifying JWT signatures.
+	// +kubebuilder:validation:Required
+	RemoteJWKS RemoteJWKS `json:"remoteJWKS"`
+}
+
+// RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
+type RemoteJWKS struct {
+	// The URI and associated info for the JWKS.
+	// +kubebuilder:validation:Required
+	HTTPURI HTTPURI `json:"httpURI"`
+	// How long to cache the JWKS locally. If not specified,
+	// Envoy's default of 5m applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	CacheDuration string `json:"cacheDuration,omitempty"`
+}
+
+type HTTPURI struct {
+	// The URI for the JWKS.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	URI string `json:"uri"`
+	// How long to wait for a response from the URI.
+	// If not specified, a default of 1s applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	Timeout string `json:"timeout,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -391,6 +440,11 @@ type Route struct {
 	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+
+	// JWTProvider is the name of the JWT Provider defined in the virtual host
+	// to use for verifying JWTs on requests to this route.
+	// +optional
+	JWTProvider string `json:"jwtProvider,omitempty"`
 }
 
 type HTTPDirectResponsePolicy struct {

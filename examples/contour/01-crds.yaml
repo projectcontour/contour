@@ -2462,6 +2462,11 @@ spec:
                       required:
                       - path
                       type: object
+                    jwtProvider:
+                      description: JWTProvider is the name of the JWT Provider defined
+                        in the virtual host to use for verifying JWTs on requests
+                        to this route.
+                      type: string
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
@@ -3658,6 +3663,58 @@ spec:
                       to the fqdn.
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  jwtProviders:
+                    description: Providers to use for verifying JSON Web Tokens (JWTs)
+                      on the virtual host.
+                    items:
+                      description: JWTProvider defines how to verify JWTs on requests.
+                      properties:
+                        audiences:
+                          description: Audiences that JWTs are allowed to have in
+                            the "aud" field. If not provided, JWT audiences are not
+                            checked.
+                          items:
+                            type: string
+                          type: array
+                        issuer:
+                          description: Issuer that JWTs are required to have in the
+                            "iss" field. If not provided, JWT issuers are not checked.
+                          type: string
+                        name:
+                          description: Unique name for the provider.
+                          minLength: 1
+                          type: string
+                        remoteJWKS:
+                          description: Remote JWKS to use for verifying JWT signatures.
+                          properties:
+                            cacheDuration:
+                              description: How long to cache the JWKS locally. If
+                                not specified, Envoy's default of 5m applies.
+                              pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                              type: string
+                            httpURI:
+                              description: The URI and associated info for the JWKS.
+                              properties:
+                                timeout:
+                                  description: How long to wait for a response from
+                                    the URI. If not specified, a default of 1s applies.
+                                  pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                                  type: string
+                                uri:
+                                  description: The URI for the JWKS.
+                                  minLength: 1
+                                  type: string
+                              required:
+                              - uri
+                              type: object
+                          required:
+                          - httpURI
+                          type: object
+                      required:
+                      - name
+                      - remoteJWKS
+                      type: object
+                    type: array
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
                     properties:
