@@ -153,7 +153,7 @@ Contour configures Envoy to automatically convert [gRPC-Web](https://github.com/
 This is a convenience addition to make usage of gRPC web application client libraries and the like easier.
 
 Note that you still must provide configuration of the upstream protocol to have gRPC-Web requests converted to gRPC to the upstream app.
-If your upstream application does not infact support gRPC, you may get a protocol error.
+If your upstream application does not in fact support gRPC, you may get a protocol error.
 In that case, please see [this issue](https://github.com/projectcontour/contour/issues/4290). 
 
 For example, with the example deployment and routing configuration provided above, an example HTTP/1.1 request and response via `curl` looks like:
