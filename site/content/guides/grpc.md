@@ -170,4 +170,11 @@ curl \
 ```
 
 This `curl` command sends and receives gRPC messages as base 64 encoded text over HTTP/1.1.
-Piping the output to `base64 -d | od -c` we can see the raw gRPC response as text.
+Piping the output to `base64 -d | od -c` we can see the raw text gRPC response:
+
+```
+0000000  \0  \0  \0  \0 006  \n 004   p   o   n   g 200  \0  \0  \0 036
+0000020   g   r   p   c   -   s   t   a   t   u   s   :   0  \r  \n   g
+0000040   r   p   c   -   m   e   s   s   a   g   e   :  \r  \n
+0000056
+```
