@@ -92,6 +92,9 @@ Using the sample deployment above along with this HTTPProxy example, you can tes
 grpcurl -plaintext -authority=my-grpc-service.foo.com <load balancer IP and port if needed> yages.Echo/Ping
 ```
 
+If implementing a streaming RPC, it is likely you will need to adjust per-route timeouts to ensure streams are kept alive for the appropriate durations needed.
+Relevant timeout fields to adjust include the HTTPProxy `spec.routes[].timeoutPolicy.response` field which defaults to 15s and should be increased as well as the global timeout policy configurations in the Contour configuration file `timeouts.request-timeout` and `timeouts.max-connection-duration`.
+
 ## Ingress v1 Configuration
 
 To configure routing for gRPC requests with Ingress v1, you must add an annotation on the upstream Service resource as below.
