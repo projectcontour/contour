@@ -224,7 +224,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						"prometheus.io/scrape": "true",
 						"prometheus.io/port":   fmt.Sprintf("%d", metricsPort),
 					},
-					Labels: ContourDeploymentPodSelector(contour).MatchLabels,
+					Labels: contourPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					// TODO [danehans]: Readdress anti-affinity when https://github.com/projectcontour/contour/issues/2997
@@ -321,4 +321,14 @@ func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector 
 			"app": contour.ContourDeploymentName(),
 		},
 	}
+}
+
+// contourPodLabels returns the labels for contour's pods, there are pod selector &
+// common labels
+func contourPodLabels(contour *model.Contour) map[string]string {
+	labels := ContourDeploymentPodSelector(contour).MatchLabels
+	for k, v := range model.CommonLabels(contour) {
+		labels[k] = v
+	}
+	return labels
 }

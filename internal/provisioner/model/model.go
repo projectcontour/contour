@@ -53,11 +53,7 @@ func Default(namespace, name string) *Contour {
 					},
 				},
 			},
-			ComponentLabels: map[string]string{
-				"app.kubernetes.io/name":       "contour",
-				"app.kubernetes.io/component":  "ingress-controller",
-				"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
-			},
+			CommonLabels: map[string]string{},
 		},
 	}
 }
@@ -172,8 +168,8 @@ type ContourSpec struct {
 	// defaults to 0.
 	KubernetesLogLevel uint8
 
-	// ComponentLabels is a set of labels to add to the provisioned Contour component.
-	ComponentLabels map[string]string
+	// CommonLabels is a set of labels to add to the provisioned Contour resource(s).
+	CommonLabels map[string]string
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -41,7 +41,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: contour.Namespace,
 				Name:      contour.ContourConfigurationName(),
-				Labels:    model.OwnerLabels(contour),
+				Labels:    model.CommonLabels(contour),
 			},
 		}
 

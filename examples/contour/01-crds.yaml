@@ -848,11 +848,11 @@ spec:
             description: ContourDeploymentSpec specifies options for how a Contour
               instance should be provisioned.
             properties:
-              componentLabels:
+              commonLabels:
                 additionalProperties:
                   type: string
-                description: ComponentLabels is a set of labels to add to the provisioned
-                  Contour component.
+                description: CommonLabels is a set of labels to add to the provisioned
+                  Contour resources.
                 type: object
               contour:
                 description: Contour specifies deployment-time settings for the Contour

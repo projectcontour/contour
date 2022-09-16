@@ -129,6 +129,10 @@ func TestDesiredDeployment(t *testing.T) {
 	// Change the Contour log level to test --debug.
 	cntr.Spec.LogLevel = v1alpha1.DebugLog
 
+	cntr.Spec.CommonLabels = map[string]string{
+		"key": "value",
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 

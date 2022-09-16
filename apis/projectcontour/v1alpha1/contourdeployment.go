@@ -67,9 +67,9 @@ type ContourDeploymentSpec struct {
 	// +optional
 	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
 
-	// ComponentLabels is a set of labels to add to the provisioned Contour component.
+	// CommonLabels is a set of labels to add to the provisioned Contour resources.
 	// +optional
-	ComponentLabels map[string]string `json:"componentLabels,omitempty"`
+	CommonLabels map[string]string `json:"commonLabels,omitempty"`
 }
 
 // ContourSettings contains settings for the Contour part of the installation,

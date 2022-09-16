@@ -61,7 +61,7 @@ func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      name,
-			Labels:    model.OwnerLabels(contour),
+			Labels:    model.CommonLabels(contour),
 		},
 	}
 }

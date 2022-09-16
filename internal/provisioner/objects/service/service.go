@@ -166,7 +166,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourServiceName(),
-			Labels:    model.OwnerLabels(contour),
+			Labels:    model.CommonLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -211,7 +211,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 			Namespace:   contour.Namespace,
 			Name:        contour.EnvoyServiceName(),
 			Annotations: map[string]string{},
-			Labels:      model.OwnerLabels(contour),
+			Labels:      model.CommonLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,

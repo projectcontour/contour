@@ -235,8 +235,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
 		// if there is a same name pair, overwrite it
-		for k, v := range gatewayClassParams.Spec.ComponentLabels {
-			contourModel.Spec.ComponentLabels[k] = v
+		for k, v := range gatewayClassParams.Spec.CommonLabels {
+			contourModel.Spec.CommonLabels[k] = v
 		}
 
 		if gatewayClassParams.Spec.Contour != nil {
