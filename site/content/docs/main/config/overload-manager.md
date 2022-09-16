@@ -14,7 +14,7 @@ The appropriate number of bytes can be different from system to system.
 After the feature is enabled, following two overload actions are configured to Envoy:
 
 * Shrink heap action is executed when 95% of the maximum heap size is reached.
-* Envoy will stop accepting requests when 99% of the maximum heap size is reached.
+* Envoy will stop accepting requests when 98% of the maximum heap size is reached.
 
 When requests are denied due to high memory pressure, `503 Service Unavailable` will be returned with a response body containing text `envoy overloaded`.
 Shrink heap action will try to free unused heap memory, eventually allowing requests to be processed again.
