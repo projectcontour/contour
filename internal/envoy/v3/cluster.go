@@ -20,7 +20,6 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/ptypes/any"
@@ -59,7 +58,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	default:
 		// external name set, use hard coded DNS name
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
-		cluster.LoadAssignment = StaticClusterLoadAssignment(service)
+		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -183,37 +182,10 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(nil, c.Address, nil))
 	}
 
-	cluster.LoadAssignment = &envoy_endpoint_v3.ClusterLoadAssignment{
-		ClusterName: envoy.DNSNameClusterName(c),
-		Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
-			{
-				LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
-					{
-						HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-							Endpoint: &envoy_endpoint_v3.Endpoint{
-								Address: SocketAddress(c.Address, port),
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, port))
 	cluster.TransportSocket = transportSocket
 
 	return cluster
-}
-
-// StaticClusterLoadAssignment creates a *envoy_endpoint_v3.ClusterLoadAssignment pointing to the external DNS address of the service
-func StaticClusterLoadAssignment(service *dag.Service) *envoy_endpoint_v3.ClusterLoadAssignment {
-	addr := SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port))
-	return &envoy_endpoint_v3.ClusterLoadAssignment{
-		Endpoints: Endpoints(addr),
-		ClusterName: xds.ClusterLoadAssignmentName(
-			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
-			service.Weighted.ServicePort.Name,
-		),
-	}
 }
 
 func edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
