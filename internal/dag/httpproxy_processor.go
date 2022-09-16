@@ -346,10 +346,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			providerNames := sets.NewString()
 			for _, jwtProvider := range proxy.Spec.VirtualHost.JWTProviders {
-				if svhost.JWTVerificationPolicy == nil {
-					svhost.JWTVerificationPolicy = &JWTVerificationPolicy{}
-				}
-
 				if providerNames.Has(jwtProvider.Name) {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "DuplicateProviderName",
 						"Spec.VirtualHost.JWTProviders is invalid: duplicate name %s", jwtProvider.Name)
@@ -403,7 +399,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					cacheDuration = &res
 				}
 
-				svhost.JWTVerificationPolicy.Providers = append(svhost.JWTVerificationPolicy.Providers, JWTProvider{
+				svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
 					Name:      jwtProvider.Name,
 					Issuer:    jwtProvider.Issuer,
 					Audiences: jwtProvider.Audiences,
@@ -475,7 +471,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		for _, route := range routes {
 			// JWT verification not enabled for the vhost: error if the route
 			// specifies a JWT provider.
-			if secure.JWTVerificationPolicy == nil {
+			if len(secure.JWTProviders) == 0 {
 				if len(route.JWTProvider) == 0 {
 					continue
 				}
@@ -489,7 +485,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			// specifies a JWT provider that does not exist.
 			if len(route.JWTProvider) > 0 {
 				var found bool
-				for _, provider := range secure.JWTVerificationPolicy.Providers {
+				for _, provider := range secure.JWTProviders {
 					if provider.Name == route.JWTProvider {
 						found = true
 						break
@@ -502,16 +498,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 			}
-
-			// Add a JWTRule for the route whether it specified a JWT provider
-			// or not, because routes without a provider need to be explicitly
-			// excluded from verification in case they are exceptions to a more
-			// general route that does enable verification.
-			secure.JWTVerificationPolicy.Rules = append(secure.JWTVerificationPolicy.Rules, JWTRule{
-				PathMatchCondition:    route.PathMatchCondition,
-				HeaderMatchConditions: route.HeaderMatchConditions,
-				ProviderName:          route.JWTProvider,
-			})
 		}
 	}
 }

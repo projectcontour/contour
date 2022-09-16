@@ -641,17 +641,8 @@ type SecureVirtualHost struct {
 	// for buffering request data sent to AuthorizationServer
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 
-	// JWTVerificationPolicy specifies configuration for performing
-	// JWT verification on requests.
-	JWTVerificationPolicy *JWTVerificationPolicy
-}
-
-type JWTVerificationPolicy struct {
-	// Providers specify how to verify JWTs.
-	Providers []JWTProvider
-
-	// Rules match requests to their JWT verification requirements.
-	Rules []JWTRule
+	// JWTProviders specify how to verify JWTs.
+	JWTProviders []JWTProvider
 }
 
 type JWTProvider struct {

@@ -726,14 +726,17 @@ func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout ti
 
 // FilterJWTAuth returns a `jwt_authn` filter configured with the
 // requested parameters.
-func FilterJWTAuth(jwtPolicy *dag.JWTVerificationPolicy) *http.HttpFilter {
-	jwtConfig := envoy_jwt_v3.JwtAuthentication{}
+func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
+	if len(jwtProviders) == 0 {
+		return nil
+	}
 
-	for _, provider := range jwtPolicy.Providers {
-		if jwtConfig.Providers == nil {
-			jwtConfig.Providers = map[string]*envoy_jwt_v3.JwtProvider{}
-		}
+	jwtConfig := envoy_jwt_v3.JwtAuthentication{
+		Providers:      map[string]*envoy_jwt_v3.JwtProvider{},
+		RequirementMap: map[string]*envoy_jwt_v3.JwtRequirement{},
+	}
 
+	for _, provider := range jwtProviders {
 		var cacheDuration *durationpb.Duration
 		if provider.RemoteJWKS.CacheDuration != nil {
 			cacheDuration = protobuf.Duration(*provider.RemoteJWKS.CacheDuration)
@@ -762,10 +765,6 @@ func FilterJWTAuth(jwtPolicy *dag.JWTVerificationPolicy) *http.HttpFilter {
 		// to duplicate every route match in the jwt_authn config), and it means
 		// we don't have to implement another sorter to sort JWT rules -- the
 		// sorting already being done to routes covers it.
-
-		if jwtConfig.RequirementMap == nil {
-			jwtConfig.RequirementMap = map[string]*envoy_jwt_v3.JwtRequirement{}
-		}
 		jwtConfig.RequirementMap[provider.Name] = &envoy_jwt_v3.JwtRequirement{
 			RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
 				ProviderName: provider.Name,
