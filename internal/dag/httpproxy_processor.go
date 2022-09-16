@@ -399,6 +399,27 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					cacheDuration = &res
 				}
 
+				// Check for a specified port and use it, else use the
+				// standard ports by scheme.
+				var port int
+				switch {
+				case len(jwksURL.Port()) > 0:
+					p, err := strconv.Atoi(jwksURL.Port())
+					if err != nil {
+						// This theoretically shouldn't be possible as jwksURL.Port() will
+						// only return a value if it's numeric, but we need to convert to
+						// int anyway so handle the error.
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSPortInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: %s", err)
+						return
+					}
+					port = p
+				case jwksURL.Scheme == "http":
+					port = 80
+				case jwksURL.Scheme == "https":
+					port = 443
+				}
+
 				svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
 					Name:      jwtProvider.Name,
 					Issuer:    jwtProvider.Issuer,
@@ -409,6 +430,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 						Cluster: DNSNameCluster{
 							Address:         jwksURL.Hostname(),
 							Scheme:          jwksURL.Scheme,
+							Port:            port,
 							DNSLookupFamily: string(p.DNSLookupFamily),
 						},
 						CacheDuration: cacheDuration,

@@ -578,6 +578,150 @@ func TestJWTVerification(t *testing.T) {
 			),
 		),
 	})
+
+	// JWKS with a non-standard port
+	proxy6 := fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "jwt.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: "secret",
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name:   "provider-1",
+						Issuer: "issuer.jwt.example.com",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI:           "https://jwt.example.com:8443/jwks.json",
+							Timeout:       "7s",
+							CacheDuration: "30s",
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+				JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
+			}},
+		})
+
+	rh.OnUpdate(proxy5, proxy6)
+
+	// the JWKS cluster should reflect the non-standard port.
+	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("jwt.example.com", sec1,
+						jwtAuthnFilterFor("jwt.example.com", &envoy_jwt_v3.JwtAuthentication{
+							Providers: map[string]*envoy_jwt_v3.JwtProvider{
+								"provider-1": {
+									Issuer: "issuer.jwt.example.com",
+									JwksSourceSpecifier: &envoy_jwt_v3.JwtProvider_RemoteJwks{
+										RemoteJwks: &envoy_jwt_v3.RemoteJwks{
+											HttpUri: &envoy_core_v3.HttpUri{
+												Uri: "https://jwt.example.com:8443/jwks.json",
+												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
+													Cluster: "dnsname/https/jwt.example.com",
+												},
+												Timeout: protobuf.Duration(7 * time.Second),
+											},
+											CacheDuration: protobuf.Duration(30 * time.Second),
+										},
+									},
+								},
+							},
+							RequirementMap: map[string]*envoy_jwt_v3.JwtRequirement{
+								"provider-1": {
+									RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
+										ProviderName: "provider-1",
+									},
+								},
+							},
+						}),
+						nil, "h2", "http/1.1"),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			&envoy_cluster_v3.Cluster{
+				Name: "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
+					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
+				},
+				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
+				},
+				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/https/jwt.example.com",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: &envoy_core_v3.Address{
+												Address: &envoy_core_v3.Address_SocketAddress{
+													SocketAddress: &envoy_core_v3.SocketAddress{
+														Protocol: envoy_core_v3.SocketAddress_TCP,
+														Address:  "jwt.example.com",
+														PortSpecifier: &envoy_core_v3.SocketAddress_PortValue{
+															PortValue: uint32(8443),
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				TransportSocket: &envoy_core_v3.TransportSocket{
+					Name: "envoy.transport_sockets.tls",
+					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
+							Sni:              "jwt.example.com",
+						}),
+					},
+				},
+			},
+		),
+	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"https/jwt.example.com",
+				envoy_v3.VirtualHost("jwt.example.com",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: map[string]*anypb.Any{
+							"envoy.filters.http.jwt_authn": protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+								RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: "provider-1"},
+							}),
+						},
+					},
+				),
+			),
+		),
+	})
+
 }
 
 func TestJWTVerification_Inclusion(t *testing.T) {

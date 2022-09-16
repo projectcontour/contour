@@ -171,18 +171,13 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
 	}
 
-	var port int
 	var transportSocket *envoy_core_v3.TransportSocket
-	switch c.Scheme {
-	case "http":
-		port = 80
-	case "https":
-		port = 443
+	if c.Scheme == "https" {
 		// TODO TLS validation
 		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(nil, c.Address, nil))
 	}
 
-	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, port))
+	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))
 	cluster.TransportSocket = transportSocket
 
 	return cluster

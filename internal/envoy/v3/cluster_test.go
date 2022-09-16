@@ -578,6 +578,7 @@ func TestDNSNameCluster(t *testing.T) {
 			cluster: &dag.DNSNameCluster{
 				Address:         "foo.projectcontour.io",
 				Scheme:          "http",
+				Port:            80,
 				DNSLookupFamily: "auto",
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -606,6 +607,7 @@ func TestDNSNameCluster(t *testing.T) {
 			cluster: &dag.DNSNameCluster{
 				Address:         "foo.projectcontour.io",
 				Scheme:          "http",
+				Port:            80,
 				DNSLookupFamily: "v4",
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -634,6 +636,7 @@ func TestDNSNameCluster(t *testing.T) {
 			cluster: &dag.DNSNameCluster{
 				Address:         "foo.projectcontour.io",
 				Scheme:          "https",
+				Port:            443,
 				DNSLookupFamily: "auto",
 			},
 			want: &envoy_cluster_v3.Cluster{

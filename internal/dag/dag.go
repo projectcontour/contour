@@ -664,6 +664,7 @@ type RemoteJWKS struct {
 type DNSNameCluster struct {
 	Address         string
 	Scheme          string
+	Port            int
 	DNSLookupFamily string
 }
 
