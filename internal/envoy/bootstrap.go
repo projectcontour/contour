@@ -90,6 +90,10 @@ type BootstrapConfig struct {
 	// DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
 	// Either v4, v6 or auto.
 	DNSLookupFamily string
+
+	// MaximumHeapSizeBytes specifies the number of bytes that overload manager allows heap to grow to.
+	// When reaching the set threshold, new connections are denied.
+	MaximumHeapSizeBytes uint64
 }
 
 // GetXdsAddress returns the address configured or defaults to "127.0.0.1"
