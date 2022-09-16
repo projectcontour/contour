@@ -105,10 +105,8 @@ func TestJWTVerification(t *testing.T) {
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -253,10 +251,8 @@ func TestJWTVerification(t *testing.T) {
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -363,10 +359,8 @@ func TestJWTVerification(t *testing.T) {
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -473,10 +467,8 @@ func TestJWTVerification(t *testing.T) {
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -484,10 +476,8 @@ func TestJWTVerification(t *testing.T) {
 						Name:   "provider-2",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -668,10 +658,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -826,10 +814,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -946,10 +932,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -1066,10 +1050,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},
@@ -1077,10 +1059,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Name:   "provider-2",
 						Issuer: "issuer.jwt.example.com",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "7s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
 							CacheDuration: "30s",
 						},
 					},

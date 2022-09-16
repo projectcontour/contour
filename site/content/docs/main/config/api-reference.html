@@ -1551,50 +1551,6 @@ The prefix must start with a leading slash.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.HTTPURI">HTTPURI
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RemoteJWKS">RemoteJWKS</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>uri</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>The URI for the JWKS.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>timeout</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>How long to wait for a response from the URI.
-If not specified, a default of 1s applies.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1.HeaderHashOptions">HeaderHashOptions
 </h3>
 <p>
@@ -2524,16 +2480,28 @@ service (RLS) for a rate limit decision on each request.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>httpURI</code>
+<code>uri</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.HTTPURI">
-HTTPURI
-</a>
+string
 </em>
 </td>
 <td>
-<p>The URI and associated info for the JWKS.</p>
+<p>The URI for the JWKS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How long to wait for a response from the URI.
+If not specified, a default of 1s applies.</p>
 </td>
 </tr>
 <tr>

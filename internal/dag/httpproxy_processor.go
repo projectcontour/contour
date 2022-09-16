@@ -362,25 +362,25 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					defaultJWTProvider = jwtProvider.Name
 				}
 
-				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.HTTPURI.URI)
+				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI is invalid: %s", err)
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI is invalid: %s", err)
 					return
 				}
 
 				if jwksURL.Scheme != "http" && jwksURL.Scheme != "https" {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSSchemeInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
 					return
 				}
 
 				jwksTimeout := time.Second
-				if len(jwtProvider.RemoteJWKS.HTTPURI.Timeout) > 0 {
-					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.HTTPURI.Timeout)
+				if len(jwtProvider.RemoteJWKS.Timeout) > 0 {
+					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.Timeout)
 					if err != nil {
 						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSTimeoutInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.Timeout is invalid: %s", err)
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.Timeout is invalid: %s", err)
 						return
 					}
 
@@ -404,10 +404,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					Issuer:    jwtProvider.Issuer,
 					Audiences: jwtProvider.Audiences,
 					RemoteJWKS: RemoteJWKS{
-						HTTPURI: HTTPURI{
-							URI:     jwtProvider.RemoteJWKS.HTTPURI.URI,
-							Timeout: jwksTimeout,
-						},
+						URI:     jwtProvider.RemoteJWKS.URI,
+						Timeout: jwksTimeout,
 						Cluster: DNSNameCluster{
 							Address:         jwksURL.Hostname(),
 							Scheme:          jwksURL.Scheme,

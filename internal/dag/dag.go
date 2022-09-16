@@ -653,14 +653,10 @@ type JWTProvider struct {
 }
 
 type RemoteJWKS struct {
-	HTTPURI       HTTPURI
+	URI           string
+	Timeout       time.Duration
 	Cluster       DNSNameCluster
 	CacheDuration *time.Duration
-}
-
-type HTTPURI struct {
-	URI     string
-	Timeout time.Duration
 }
 
 // DNSNameCluster is a cluster that routes directly to a DNS

@@ -3728,23 +3728,17 @@ spec:
                                 not specified, Envoy's default of 5m applies.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
                               type: string
-                            httpURI:
-                              description: The URI and associated info for the JWKS.
-                              properties:
-                                timeout:
-                                  description: How long to wait for a response from
-                                    the URI. If not specified, a default of 1s applies.
-                                  pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
-                                  type: string
-                                uri:
-                                  description: The URI for the JWKS.
-                                  minLength: 1
-                                  type: string
-                              required:
-                              - uri
-                              type: object
+                            timeout:
+                              description: How long to wait for a response from the
+                                URI. If not specified, a default of 1s applies.
+                              pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                              type: string
+                            uri:
+                              description: The URI for the JWKS.
+                              minLength: 1
+                              type: string
                           required:
-                          - httpURI
+                          - uri
                           type: object
                       required:
                       - name

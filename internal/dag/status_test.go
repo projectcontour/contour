@@ -2713,10 +2713,8 @@ func TestDAGStatus(t *testing.T) {
 						Issuer:    "jwt.example.com",
 						Audiences: []string{"foo", "bar"},
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "https://jwt.example.com/jwks.json",
-								Timeout: "10s",
-							},
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "10s",
 							CacheDuration: "1h",
 						},
 					},
@@ -2763,17 +2761,13 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -2824,18 +2818,14 @@ func TestDAGStatus(t *testing.T) {
 						Name:    "provider-1",
 						Default: true,
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 					{
 						Name:    "provider-2",
 						Default: true,
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -2885,9 +2875,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: ":/invalid-uri",
-							},
+							URI: ":/invalid-uri",
 						},
 					},
 				},
@@ -2917,7 +2905,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSURIInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI is invalid: parse \":/invalid-uri\": missing protocol scheme",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI is invalid: parse \":/invalid-uri\": missing protocol scheme",
 				),
 		},
 	})
@@ -2937,9 +2925,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "ftp://jwt.example.com/jwks.json",
-							},
+							URI: "ftp://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -2969,7 +2955,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSSchemeInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.URI has invalid scheme \"ftp\", must be http or https",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme \"ftp\", must be http or https",
 				),
 		},
 	})
@@ -2989,10 +2975,8 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI:     "http://jwt.example.com/jwks.json",
-								Timeout: "invalid-timeout-string",
-							},
+							URI:     "http://jwt.example.com/jwks.json",
+							Timeout: "invalid-timeout-string",
 						},
 					},
 				},
@@ -3022,7 +3006,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSTimeoutInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.HTTPURI.Timeout is invalid: time: invalid duration \"invalid-timeout-string\"",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.Timeout is invalid: time: invalid duration \"invalid-timeout-string\"",
 				),
 		},
 	})
@@ -3042,9 +3026,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "http://jwt.example.com/jwks.json",
-							},
+							URI:           "http://jwt.example.com/jwks.json",
 							CacheDuration: "invalid-duration-string",
 						},
 					},
@@ -3138,9 +3120,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "http://jwt.example.com/jwks.json",
-							},
+							URI: "http://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -3188,9 +3168,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -3240,9 +3218,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -3292,9 +3268,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},
@@ -3344,9 +3318,7 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name: "provider-1",
 						RemoteJWKS: contour_api_v1.RemoteJWKS{
-							HTTPURI: contour_api_v1.HTTPURI{
-								URI: "https://jwt.example.com/jwks.json",
-							},
+							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 				},

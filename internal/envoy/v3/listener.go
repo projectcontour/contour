@@ -748,11 +748,11 @@ func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 			JwksSourceSpecifier: &envoy_jwt_v3.JwtProvider_RemoteJwks{
 				RemoteJwks: &envoy_jwt_v3.RemoteJwks{
 					HttpUri: &envoy_core_v3.HttpUri{
-						Uri: provider.RemoteJWKS.HTTPURI.URI,
+						Uri: provider.RemoteJWKS.URI,
 						HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 							Cluster: envoy.DNSNameClusterName(&provider.RemoteJWKS.Cluster),
 						},
-						Timeout: protobuf.Duration(provider.RemoteJWKS.HTTPURI.Timeout),
+						Timeout: protobuf.Duration(provider.RemoteJWKS.Timeout),
 					},
 					CacheDuration: cacheDuration,
 				},

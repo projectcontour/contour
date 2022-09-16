@@ -282,26 +282,22 @@ type JWTProvider struct {
 
 // RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
 type RemoteJWKS struct {
-	// The URI and associated info for the JWKS.
-	// +kubebuilder:validation:Required
-	HTTPURI HTTPURI `json:"httpURI"`
-	// How long to cache the JWKS locally. If not specified,
-	// Envoy's default of 5m applies.
-	// +optional
-	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
-	CacheDuration string `json:"cacheDuration,omitempty"`
-}
-
-type HTTPURI struct {
 	// The URI for the JWKS.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	URI string `json:"uri"`
+
 	// How long to wait for a response from the URI.
 	// If not specified, a default of 1s applies.
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
 	Timeout string `json:"timeout,omitempty"`
+
+	// How long to cache the JWKS locally. If not specified,
+	// Envoy's default of 5m applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	CacheDuration string `json:"cacheDuration,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
