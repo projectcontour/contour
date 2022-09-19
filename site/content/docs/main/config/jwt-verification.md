@@ -167,5 +167,5 @@ For more information on the HTTPProxy API for JWT verification, see:
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/jwt_authn_filter
 [2]: /docs/{{< param version >}}/config/inclusion-delegation/
-[8]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTProvider
-[9]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTVerificationPolicy
+[3]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTProvider
+[4]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTVerificationPolicy
