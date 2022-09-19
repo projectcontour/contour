@@ -30,7 +30,7 @@ At a high level, this document proposes modeling ingress configuration as a grap
 
 ## Delegation
 
-The working model for delegation is DNS. 
+The working model for delegation is DNS.
 As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`.
 Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
 
@@ -154,8 +154,8 @@ spec:
 
 ### Load Balancing
 
-Each upstream service can have a load balancing strategy applied to determine which host is selected for the request. 
-The following list are the options available to choose from: 
+Each upstream service can have a load balancing strategy applied to determine which host is selected for the request.
+The following list are the options available to choose from:
 
 - **RoundRobin:** Each healthy upstream host is selected in round robin order
 - **WeightedLeastRequest:** The least request load balancer uses an O(1) algorithm which selects two random healthy hosts and picks the host which has fewer active requests. _Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired_
@@ -165,10 +165,10 @@ More documentation on Envoy's lb support can be found here: [https://www.envoypr
 
 ### Healthcheck
 
-Active health checking can be configured on a per upstream cluster basis. 
-Contour will only support HTTP health checking along with various settings (check interval, failures required before marking a host unhealthy, successes required before marking a host healthy, etc.). 
-During HTTP health checking Envoy will send an HTTP request to the upstream host. 
-It expects a 200 response if the host is healthy. 
+Active health checking can be configured on a per upstream cluster basis.
+Contour will only support HTTP health checking along with various settings (check interval, failures required before marking a host unhealthy, successes required before marking a host healthy, etc.).
+During HTTP health checking Envoy will send an HTTP request to the upstream host.
+It expects a 200 response if the host is healthy.
 The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
 It is also important to note these are health checks that Envoy is implementing and are separate from any other system such as those that exist in Kubernetes.
 
@@ -185,7 +185,7 @@ The delegation rules applied are as follows
 
 ## Validation rules
 
-The validation rules applied in this design are as follows. 
+The validation rules applied in this design are as follows.
 Some of these rules may be relaxed in future designs.
 
 If a validation error is encountered, the entire object is rejected. Partial application of the valid portions of the configuration is **not** attempted.
@@ -194,24 +194,24 @@ If a validation error is encountered, the entire object is rejected. Partial app
 ## Authorization
 
 It is important to highlight that both root and vertex IngressRoute objects are of the same type.
-This is a departure from other designs which treat the permission to create a VirtualHost type object and a Route type object as separate. 
+This is a departure from other designs which treat the permission to create a VirtualHost type object and a Route type object as separate.
 The DAG design treats the delegation from one IngressRoute to another as permission to create routes.
 
 ### Enforcing Mode
 
-While the IngressRoute delegation allows for Administrators to limit route usage by namespace, it does not restrict where the `root` IngressRoutes can be created. 
+While the IngressRoute delegation allows for Administrators to limit route usage by namespace, it does not restrict where the `root` IngressRoutes can be created.
 Contour should allow for an `enforcing` mode which takes in a set of namespaces where root IngressRoutes are valid.
-Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces. 
+Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces.
 This would most likely be accomplished with a command line flag (`--root-namespaces=[]`) or ConfigMap.
 
 ### Disable v1beta1.Ingress
 
 In the scenario where teams want to utilize the `IngressRoute` CRD it may be beneficial to disable Contour from processing `Ingress` resources.
-This can be accomplished by restricting users via RBAC from having permissions to create these types of resources. 
+This can be accomplished by restricting users via RBAC from having permissions to create these types of resources.
 
 ## Reporting status
 
-Status about the object should be reported by using a scheme within the IngressRoute named `status`. There are a few different statuses that can reported. 
+Status about the object should be reported by using a scheme within the IngressRoute named `status`. There are a few different statuses that can reported.
 
 ### Orphaned Status
 
@@ -248,7 +248,7 @@ status:
 ### Invalid Status
 
 IngressRoutes may be considered invalid if they encounter an edge case which makes them conflict with other IngressRoutes.
-In the event this happens, both IngressRoute objects are rejected and their status field is updated. 
+In the event this happens, both IngressRoute objects are rejected and their status field is updated.
 
 An example of an invalid IngressRoute object:
 
@@ -270,7 +270,7 @@ For example, the `kube-system/heptio` IngressRoute holds information about `hept
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
-  name: heptio 
+  name: heptio
   namespace: kube-system
 spec:
   virtualhost:
@@ -285,7 +285,7 @@ spec:
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
-  name: wordpress 
+  name: wordpress
   namespace: heptio-wordpress
 spec:
   routes:
@@ -302,10 +302,10 @@ However, because the `spec.virtualhost.tls` is present only in root objects, the
 This also implies that the IngressRoute root and the TLS Secret must live in the same namespace.
 However as mentioned above, the entire routespace (/ onwards) can be delegated to another namespace, which allows operators to define virtual hosts and their TLS configuration in one namespace, and delegate the operation of those virtual hosts to another namespace.
 
-Since defining a TLS section of a root IngressRoute tells Contour that it should set up a TLS listener and serve the provided TLS certificate/key, it's inherent that all requests be served over TLS. 
+Since defining a TLS section of a root IngressRoute tells Contour that it should set up a TLS listener and serve the provided TLS certificate/key, it's inherent that all requests be served over TLS.
 This results in any request to an insecure endpoint will receive a 301 http status code informing the client to redirect to the secure endpoint. No additional parameters need to be set for this functionality other than specifying TLS on the IngressRoute.
 
-Additionally, it may be necessary to serve specific routes over an insecure endpoint. 
+Additionally, it may be necessary to serve specific routes over an insecure endpoint.
 An example would be the challenges sent from LetsEncyrpt. Specific routes can set the permitInsecure parameter which will let that route serve insecure or secure traffic (Meaning no 301 redirects).
 
 ### Parameters
@@ -321,8 +321,8 @@ An example would be the challenges sent from LetsEncyrpt. Specific routes can se
 ## Blue-Green deployments
 
 Blue-green deployment is a technique that reduces downtime and risk by running two identical production environments called Blue and Green.
-This can be accomplished by creating two delegated Ingress resources, one for Blue and one for Green. 
-The Green IngressRoute would essentially be an Orphan route, then the user would swap the delegate IngressResource from pointing from the Blue to the Green so that traffic switches. 
+This can be accomplished by creating two delegated Ingress resources, one for Blue and one for Green.
+The Green IngressRoute would essentially be an Orphan route, then the user would swap the delegate IngressResource from pointing from the Blue to the Green so that traffic switches.
 
 ## Canary Deployments
 

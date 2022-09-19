@@ -28,8 +28,8 @@ This design looks to add a new component to Contour which will allow for a way t
 
 ## High-Level Design
 
-Implement a new sub-command to Contour named `envoy shutdown-manager` which will handle sending the healthcheck fail request 
-to Envoy and then begin polling the http/https listeners for active connections from the `/stats` endpoint available on 
+Implement a new sub-command to Contour named `envoy shutdown-manager` which will handle sending the healthcheck fail request
+to Envoy and then begin polling the http/https listeners for active connections from the `/stats` endpoint available on
 `localhost:9001`.
 
 Additionally, an optional `min-open-connections` parameter will be added which will allow users to define the minimum number of
@@ -41,7 +41,7 @@ This lifecycle hook blocks the process during this cleanup time and then returns
 ## Detailed Design
 
 - Implement new sub-command in Contour called `envoy shutdown-manager`
-- This command will expose an http endpoint over a specific port (e.g. `8090`) and path `/shutdown`. 
+- This command will expose an http endpoint over a specific port (e.g. `8090`) and path `/shutdown`.
 - A new container will be added to the Envoy Daemonset pod which will run this new sub-command
 - This new container as well as the Envoy container will be updated to use an http preStop hook (see example below)
 - When the pod gets a request to shutdown, the `preStop` hook will send a request to `localhost:8090/shutdown` which will tell Envoy to begin draining connections as well as start polling for active connections and will block until that reaches zero or the `min-open-connections` is met
@@ -75,7 +75,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - command:                          # <----- New Pod
-        - /bin/shutdown-manager          
+        - /bin/shutdown-manager
         image: stevesloka/envoyshutdown
         imagePullPolicy: Always
         lifecycle:
@@ -84,7 +84,7 @@ spec:
               path: /shutdown
               port: 8090
               scheme: HTTP
-         livenessProbe:                  # <------ Liveness probe  
+         livenessProbe:                  # <------ Liveness probe
            httpGet:
              path: /healthz
              port: 8090
@@ -203,7 +203,7 @@ spec:
 
 ## Alternatives Considered
 
-- Bash scripts could be used to do this, however it's more difficult to implement and hard to test. 
+- Bash scripts could be used to do this, however it's more difficult to implement and hard to test.
 - Instead of using the http preStop hook, we could call a binary to do the checks, however, it's difficult to get this into the Envoy container reliably (we'd have to use some shared volume)
 
 ## Security Considerations

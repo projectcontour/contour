@@ -67,7 +67,7 @@ spec:
       strategy: Cookie
       weight: 50
 ```
-An interesting situation occurs if multiple weighted backends choose disparate load balancing strategies: 
+An interesting situation occurs if multiple weighted backends choose disparate load balancing strategies:
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -127,7 +127,7 @@ The `Route` helper, when presented with a Route that dispatches to one or more C
 
 ### Cookie design
 
-The cookie assigned by Contour will have the following properties; 
+The cookie assigned by Contour will have the following properties;
 
 - Name: `X-Contour-Session-Affinity`.
 Given there is no way to reuse a session cookie provided by the application (believe me, I spent days trying to do this) we always configure a cookie named `X-Contour-Session-Affinity`.
@@ -140,7 +140,7 @@ This seems reasonable as the fragility with session affinity means there is litt
 Further, there is no reasonable `Expires` value as none are correct;
 If the cookie expires too shortly then sessions will be abruptly lost.
 If the cookie's expiry is too long then we risk unbalancing the backend as sessions will be naturally attracted to the longest living server in the group.
-Making this value configurable simply pushes this insoluble problem to our users. 
+Making this value configurable simply pushes this insoluble problem to our users.
 - Path: `/`.
 The cookie applies to all routes on this virtual host in the hope that other `strategy: Cookie` backends, assuming they dispatch to the same set of servers will share the same affinity cookie.
 For example consider two routes, `/cart` and `/checkout` are served by the same Kubernetes service.

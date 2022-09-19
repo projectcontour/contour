@@ -160,7 +160,7 @@ In order to enable the CORS filter in Envoy we will update `contour/internal/env
 ## Alternatives Considered
 
 ### Delegate all the CORS related logic to the applications
-All the CORS related tasks could be handled in each application using an application level middleware or similar. However, it isn't something people usually want to do at this level for the following reasons: 
+All the CORS related tasks could be handled in each application using an application level middleware or similar. However, it isn't something people usually want to do at this level for the following reasons:
 
 - This kind of configuration doesn't usually rely on developers because they are mainly focused on developing the services (the what), and not on which domains those services are going to be deployed on (the where), nor which security rules should be applied. This is usually a task for the Ops/DevOps/DevSecOps teams and that's the reason why all the reverse proxies out there provide this functionality alongside SSL termination, gzip compression and so on.
 - In microservices driven architectures probably all the microservices will share the same CORS policy. It's much easier to manage this for multiple services if the policy isn't embedded in the application.
@@ -171,7 +171,7 @@ It would be great if we could just enable a flag and apply some sane defaults. U
 
 - **allowOrigin:** We could avoid this field and use '*' as the default value. However, as this opens the route for any domain, people would probably want to be able to set more restrictive values.
 - **allowMethods:** We could allow all the methods (GET, PUT, POST, DELETE, PATCH, OPTIONS) and get rid of this field.
-- **allowHeaders:** This is a very application specific setting. For instance, if a service is going to be consumed by JQuery clients, you'll probably want to allow the `X-Requested-With` header while for grpc-web services, you'll want to allow headers like `x-grpc-web` or `grpc-timeout`. 
+- **allowHeaders:** This is a very application specific setting. For instance, if a service is going to be consumed by JQuery clients, you'll probably want to allow the `X-Requested-With` header while for grpc-web services, you'll want to allow headers like `x-grpc-web` or `grpc-timeout`.
 - **exposeHeaders:** This is a very application specific setting as well. You might want to expose different headers depending on the application and the technologies used.
 - **allowCredentials:** Setting a default value for this field is tricky because it has [some implications](https://www.w3.org/TR/2014/REC-cors-20140116/#supports-credentials).
 - **MaxAge:** We could get rid of this field and set a default value. As a reference, Firefox specifies a 24 hours default value while Chromium sets it to 10 minutes.

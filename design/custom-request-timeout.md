@@ -2,7 +2,7 @@
 
 **Status**: _Accepted_
 
-This document describes the design of a new resource in IngressRoute for custom request timeout and retries. 
+This document describes the design of a new resource in IngressRoute for custom request timeout and retries.
 
 # Goals
 
@@ -18,7 +18,7 @@ This document describes the design of a new resource in IngressRoute for custom 
 Contour supports custom request timeout and custom retry attempts via [Ingress Annotations](https://github.com/projectcontour/contour/blob/main/docs/annotations.md).
 We wish to expose the same same functionality has been requested via IngressRoute as well.
 
-Additionally, request and retry behavior apply to any interaction that 
+Additionally, request and retry behavior apply to any interaction that
 
 # High-level design
 
@@ -66,7 +66,7 @@ spec:
 
 The naming conventions of the proposed YAML fields are inspired from [HTTP Timeouts](https://tools.ietf.org/id/draft-thomson-hybi-http-timeout-00.html#rfc.section.4).
 
-These proposed YAML resources are defined with being generic as motivation so that any ingress controller can use these 
+These proposed YAML resources are defined with being generic as motivation so that any ingress controller can use these
 fields of IngressRoute and setup the ingress, not just limited to contour-envoy only.
 
 # Detailed Design
@@ -112,15 +112,15 @@ type JsonDuration struct {
 }
 
 func (d *JsonDuration) UnmarshalJSON(b []byte) (err error) {
-	
+
 	timeStr := strings.Trim(string(b), `"`)
 	duration, err := time.ParseDuration(timeStr)
-	
+
 	if err != nil && timeStr == "infinity" {
 		duration = -1
 		err = nil
 	}
-	
+
 	if err == nil {
 		// only if correctly parsed, we update the Duration. Else, Duration is initialized as nil
 		d.Duration = &duration
@@ -146,13 +146,13 @@ func (d *JsonDuration) Time() (timeout time.Duration, valid bool) {
 		// timeout was correctly parsed, hence valid input
 		timeout, valid = *d.Duration, true
 	}
-	
+
 	return
 }
 ```
 
 ## Intermediate form in the DAG for the routes
-We store unmarshalled structs from ingress' and ingressroute's yaml into a common dag struct route for both. 
+We store unmarshalled structs from ingress' and ingressroute's yaml into a common dag struct route for both.
 
 Consolidate timeout and retry members of dag's Route struct to their own respective struct. Though the names
 `TimeoutPolicy` and `RetryPolicy` are reused, this isn't the same as described in the previous section.
@@ -192,7 +192,7 @@ the future additions if made can be neatly encapsulated.
 ## Communicating from DAG to Envoy
 
 Now that we have the DAG built, we need to communicate the state of the routes to Envoy. This happens in `RouteRoute`
-function of `contour/internal/envoy/route.go` 
+function of `contour/internal/envoy/route.go`
 
 We would use the following to map value from DAG's route to protobuf
 
@@ -270,7 +270,7 @@ spec:
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
-      
+
 ---
 apiVersion: v1
 kind: Service
@@ -329,7 +329,7 @@ increase by sending a curl request inside the Envoy's container - `curl http://l
 4. [Better performances: the case for timeouts](https://odino.org/better-performance-the-case-for-timeouts/)
 5. [Microservices Pattern with Envoy - Timeout and Retries](https://blog.christianposta.com/microservices/02-microservices-patterns-with-envoy-proxy-part-ii-timeouts-and-retries/)
 6. [httpbin.org](https://httpbin.org/#/)
-6. [Appscode Sample for Timeout Configuration](https://appscode.com/products/voyager/8.0.1/guides/ingress/configuration/default-timeouts/) 
+6. [Appscode Sample for Timeout Configuration](https://appscode.com/products/voyager/8.0.1/guides/ingress/configuration/default-timeouts/)
 
 # Future work
 _TBD_

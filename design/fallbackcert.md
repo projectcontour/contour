@@ -3,14 +3,14 @@
 Status: Accepted
 
 Contour supports virtual host based routing over TLS and utilizes SNI which allows multiple fqdn's to be used on the same network endpoint.
-Unfortunately, some requests are sent and do not have the SNI server name set. 
+Unfortunately, some requests are sent and do not have the SNI server name set.
 When this happens, the request fails since the request does not match any routing rules applied to Envoy.
 
 This design doc looks to enable a fallback certificate, such that when a request is received at Envoy, it will still route to the proper set of endpoints even though standard SNI logic isn't applied.
 
 ## Goals
 
-- Allow fallback certificate to be defined 
+- Allow fallback certificate to be defined
 - Enable the fallback cert only for specific vhosts
 
 ## Non Goals
@@ -50,9 +50,9 @@ Envoy processes `FilterChainMataches` with `SNI` matches before transport protoc
 Next this catch-all filter chain takes a `route_config_name` reference in the `envoy.http_connection_manager`.
 For all non-http requests, an Envoy RDS config named `ingress_http` is configured with  all the routes.
 For each virtual host that has enabled the `EnableFallbackCertificate` flag a new RDS route table will be created which will contain all the routes for vhosts which have opted into the fallback certificate.
-If supplied, the `minimum-protocol-version` defined in the `TLS` section of the Contour configuration file will be used for the fallback filter chain, otherwise the default will be used. 
+If supplied, the `minimum-protocol-version` defined in the `TLS` section of the Contour configuration file will be used for the fallback filter chain, otherwise the default will be used.
 
-#### Example fallback route: 
+#### Example fallback route
 
 ```json
 {
@@ -103,7 +103,7 @@ If supplied, the `minimum-protocol-version` defined in the `TLS` section of the 
 ```
 
 #### New catch-all filter chain
- 
+
 ```go
  &envoy_api_v2_listener.FilterChain{
     Filters: filters,
@@ -132,7 +132,7 @@ type TLS struct {
 	// backing cluster.
 	// +optional
 	Passthrough bool `json:"passthrough,omitempty"`
-    
+
     // +optional
     EnableFallbackCertificate bool `json:"enableFallbackCertificate,omitempty""`
 }

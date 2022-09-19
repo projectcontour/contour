@@ -54,7 +54,7 @@ spec:
     targetNamespaces: ["*"]
 ```
 
-In this example permission to reference `kube-system/example-com-wildcard` is delegated to Ingress/IngressRoute objects in the `dev-example` and `www-example` namespaces, `kube-system/google-com` is delegated to Ingress/IngressRoute's in the `finance` namespace, and `kube-system/dev-wildcard` is delegated to _all_ namespaces.  
+In this example permission to reference `kube-system/example-com-wildcard` is delegated to Ingress/IngressRoute objects in the `dev-example` and `www-example` namespaces, `kube-system/google-com` is delegated to Ingress/IngressRoute's in the `finance` namespace, and `kube-system/dev-wildcard` is delegated to _all_ namespaces.
 
 ### Ingress extensions
 
@@ -77,7 +77,7 @@ If the appropriate secret delegation is in place Contour will use the fully qual
 Alternative designs that extended the IngressRoute specification to allow referencing Secrets by name _and_ namespace were rejected because there was no way to effectively prevent anyone with the permission to construct an IngressRoute object in their own namespace from utilizing the TLS certificate from another namespace.
 While it would not be possible for the author to read the contents of the other namespace's secret--only Contour would have that permission--this would allow an attacker to present a certificate from a namespace they do not have permission to read as their own.
 In the case of a wildcard certificate this is beneficial--it's actually what we want--but also opens up the possibility, when combined with DNS spoofing, of presenting an alternate site using the _real_ SSL certificate, leading to cookie hijacking and MITM attacks.
-	
+
 ## Security Considerations
 
 Delegation is a necessary security measure because it allows namespace owners to explicitly delegate the permission to reference secrets in their namespace without granting permission to actually _read_ the contents of the certificate.

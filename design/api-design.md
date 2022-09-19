@@ -87,7 +87,7 @@ func Stream() {
         for {
                 select {
                 case <- quit:
-                        // clean up and return 
+                        // clean up and return
                 case <- updatesignal:
                         req := new(FetchRequest)
                         res := Fetch(req)

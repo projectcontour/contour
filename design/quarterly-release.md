@@ -3,7 +3,7 @@
 Status: Accepted
 
 ## Abstract
-Move Contour and Contour Operator to a longer release cadence to cushion for release planning, align Contour releases with Contour Operator releases, align with downstream consumers, and improve feature planning. 
+Move Contour and Contour Operator to a longer release cadence to cushion for release planning, align Contour releases with Contour Operator releases, align with downstream consumers, and improve feature planning.
 
 Please see [#3634](https://github.com/projectcontour/contour/issues/3634) for more discussion.
 
@@ -24,7 +24,7 @@ Please see [#3634](https://github.com/projectcontour/contour/issues/3634) for mo
 *  The first version to be covered by this schedule will be Contour v1.20. Please see the "Rollout Process" section below for details.
 *  The following will be reasons we will consider issuing a patch release:
    * CVE reported for Contour or an upstream component of Contour like Envoy
-   * Critical bugs 
+  * Critical bugs
    * Feature enhancement requests with enough community support. This will require an exceptional circumstance and a lot of community support.
 * If we issue a patch release for the latest minor version, we will also backport it to all supported versions.
 * We will also make at least one Release Candidate (RC) build available before each *minor* release, to enable Contour's downstream consumers to test and validate before Contour releases. This RC build will be released at least two weeks before a minor release.

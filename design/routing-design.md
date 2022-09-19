@@ -21,7 +21,7 @@ Compare this to the way Contour builds its DAG. For each HTTPProxy record, Conto
 
 Additionally, Contour's delegation model follows how DNS is implemented. As the owner of a DNS domain, for example `.io`, I _delegate_ to another nameserver the responsibility for handing the subdomain `projectcontour.io`.
 Any nameserver can hold a record for `projectcontour.io`, but without the linkage from the parent `.io` TLD, its information is unreachable and non authoritative.
-Delegation can be applied to many different fields, not just vhost. 
+Delegation can be applied to many different fields, not just vhost.
 
 Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details.
 The vertices of a graph do not contain virtual host information. Instead they are reachable from a root only by delegation.
@@ -36,7 +36,7 @@ Detailed information regarding how Delegation functions can be found later on in
 
 The delegation concept is a key component to enable teams within a single Kubernetes cluster as well as provide security for ingress limiting what users can specify within the cluster.
 Delegation allows for portions of a HTTP request to be delegated to a Kubernetes namespace.
-This allows teams to self-manage in a safe way portions of the http request. Users that do not have authority (or have not be delegated), cannot affect the routing configuration; their requests will be dropped. 
+This allows teams to self-manage in a safe way portions of the http request. Users that do not have authority (or have not be delegated), cannot affect the routing configuration; their requests will be dropped.
 
 ##### Root HTTPProxies
 
@@ -49,11 +49,11 @@ Another design decision is that now TLS certificates, typically referenced via K
 
 A delegated HTTPProxy lives in each team namespace.
 Teams can self-manage their own resources based upon what has been delegated to them.
-Users can also create their own delegations to support their application infrastructure as they see fit. 
+Users can also create their own delegations to support their application infrastructure as they see fit.
 
 ###### Includes & Conditions
 
-Conditions define possible routing decisions for a request, which include things like pathPrefix, headers, etc are all options for a Condition. 
+Conditions define possible routing decisions for a request, which include things like pathPrefix, headers, etc are all options for a Condition.
 
 Includes define how specific routing parameters (or `conditions:`) are delegated to other HTTPProxies.
 Each include defines what Namespace / HTTPProxy name should apply a set of Conditions defined.
@@ -97,11 +97,11 @@ Routing via Header allows Contour to route traffic by more than just fqdn or pat
 - Allow for routing of platform to different backends. When a request come from an iOS device it should route to "backend-iOS" and requests from an Android device should route to "backend-Android". Each of these backends are managed by different teams and live in separate namespaces.
 
 - Requests to a specific path `/weather` are handled by a backend, however, specific users are allowed to opt-in to a beta version. When authenticated, an additional header is added which identifies the user as a member of the "beta" program. Requests to the `/weather` path with the appropriate header (e.g. `X-Beta: true`) will route to `backend-beta`, all other requests will route to `backend-prod`.
-  
+
 - Similar to a opt-in beta version previously described, another header routing option is to route specific tenants to different backends. This may be to allows users to have a high tier of compute or run in segregated sections to limit where the data lives. When authenticated, an additional header is added which identifies the user as part of OrgA. The request is routed to the appropriate backend matching the user's organization membership.
-  
+
 - API Version Numbers in the header: Using a header to route requests to different backends based upon the header value (e.g. `apiversion: v2.0` vs `apiversion:v2.1-beta`)
-  
+
 - Does an Auth header exist in the request regardless of the value?
 
 - Some headers will require a regex style expression for matching. If user wanted to target Chrome browsers, here's a sample header. We'd need to specify the `Chrome` bit out of the header value:
@@ -153,7 +153,7 @@ includes:
   namespace: infotech
   conditions:
   - prefix: /blog/tech/info
-``` 
+```
 
 Another example of an issue if routes are defined on includes and conflict.
 The ordering that Contour places these into will result in the more specific route getting traffic (i.e. `/blog/tech/info`) before the wildcard route:
@@ -171,7 +171,7 @@ spec:
    services:
    - name: s2
      port: 80
-``` 
+```
 
 #### Use Cases
 
@@ -191,7 +191,7 @@ A `Header` condition type is specified and the following types are permitted:
 - **notcontains**: Matches that the value does not exist somewhere in the value of the header
 - **present**: Header exists in the request (value is ignored)
 
-Example: 
+Example:
 ```yaml
 spec:
   routes:
@@ -209,7 +209,7 @@ In the following example, you can define for path `/foo` and send traffic to dif
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example
 spec:
   routes:
@@ -229,7 +229,7 @@ spec:
     services:
     - name: backend-b
       port: 9999
-  - conditions: 
+  - conditions:
       - prefix: /foo
     services:
     - name: backend-default
@@ -256,7 +256,7 @@ The following example shows how requests to a specific path with a specific head
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example
 spec:
   includes:
@@ -290,7 +290,7 @@ spec:
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example-teama
   namespace: teama
 spec:
@@ -303,7 +303,7 @@ spec:
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example-teamb
   namespace: teamb
 spec:
@@ -333,7 +333,7 @@ A prefix-based match means a request will route if the first part of the defined
 For example, if a path prefix `/foo` is specified, it will match `/foo`, `/foo/bar`, as well as `/foobar`.
 Basically, anything after `/foo` unless additional routes are further defined.
 
-Users can specify a prefix match by utilizing the `prefix` attribute in the `condition` spec of a route definition. 
+Users can specify a prefix match by utilizing the `prefix` attribute in the `condition` spec of a route definition.
 
 Route delegation is possible with prefix matching.
 
@@ -342,7 +342,7 @@ Route delegation is possible with prefix matching.
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example
 spec:
   routes:
@@ -355,18 +355,18 @@ spec:
 
 #### Exact Match
 
-Matching on a path prefix is not always desired if the application owner intends that only predefined paths will match. 
+Matching on a path prefix is not always desired if the application owner intends that only predefined paths will match.
 For example, if a exact path `/app` is specified, it will only match `/app`, all other paths will not match this route.
-Users can specify an exact match by utilizing the `path` attribute in the match spec of a route definition. 
+Users can specify an exact match by utilizing the `path` attribute in the match spec of a route definition.
 
-Route delegation is still possible with an exact match since the path is still delegated, only the matching logic is changes between prefix or exact path matching. 
+Route delegation is still possible with an exact match since the path is still delegated, only the matching logic is changes between prefix or exact path matching.
 
 ##### Example:
 
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example
 spec:
   routes:
@@ -392,7 +392,7 @@ If this is encountered, Contour will set the status to be error for the correspo
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example
 spec:
   - includes:
@@ -407,7 +407,7 @@ spec:
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: example-child
 spec:
   routes:

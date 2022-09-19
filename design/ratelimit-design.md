@@ -85,7 +85,7 @@ rateLimitPolicy:
     # See ref. https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/v3/token_bucket.proto#envoy-v3-api-msg-type-v3-tokenbucket.
     unit: second
     # burst defines how many additional requests above the baseline requests
-    # are allowed in a short period of time. This, along with "requests", 
+    # are allowed in a short period of time. This, along with "requests",
     # programs the "max_tokens" field on the Envoy local rate limit filter.
     # See ref. https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/v3/token_bucket.proto#envoy-v3-api-msg-type-v3-tokenbucket.
     burst: 20
@@ -112,7 +112,7 @@ rateLimitPolicy:
         - requestHeader:
             descriptorKey: steve-ratelimit
             headerName: x-steve-ratelimit
-        
+
     # This descriptor is always generated since it's just a static value.
     - items:
         - genericKey:
@@ -235,7 +235,7 @@ Like other Envoy statistics, these are exposed in Prometheus-compatible format a
 Lyft has open-sourced a [reference external RLS implementation](https://github.com/envoyproxy/ratelimit/).
 We considered tightly integrating with this specific RLS implementation, to provide a more streamlined UX for configuring rate limits.
 A CRD could be used -- either `HTTPProxy` or a stand-alone one -- to define actual rate limits, and a controller could convert the CRDs into configuration in the Lyft RLS format.
-This option was discarded (for now) because we have potential users who are interested in using other rate limiting services, so just providing an integration with the Lyft implementation is not sufficient. 
+This option was discarded (for now) because we have potential users who are interested in using other rate limiting services, so just providing an integration with the Lyft implementation is not sufficient.
 Future work could still be done to enable rate limits to be defined via CRD (as part of `HTTPProxy`, or stand-alone) and automatically configured with 1+ underlying RLS implementations.
 
 ### Contour as external RLS
@@ -313,9 +313,9 @@ spec:
   prefix: /backend/
   service: quote
   labels:
-    ambassador:    
-      - request_label_group:      
-        - x-ambassador-test-allow:        
+    ambassador:
+      - request_label_group:
+        - x-ambassador-test-allow:
           header: "x-ambassador-test-allow"
           omit_if_not_present: true
 ```
@@ -342,7 +342,7 @@ metadata:
   namespace: gloo-system
 spec:
   # ...
-  
+
   ratelimitServer:
     ratelimitServerRef:
       name: ...        # rate-limit server upstream name
@@ -350,7 +350,7 @@ spec:
     requestTimeout: ...      # optional, default 100ms
     denyOnFail: ...          # optional, default false
     rateLimitBeforeAuth: ... # optional, default false
-  
+
   # ...
 ```
 

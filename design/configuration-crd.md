@@ -6,7 +6,7 @@ The other are flags which are passed to Contour.
 Contour's configmap configuration file has grown to the point where moving to a CRD will enable a better user experience as well as allowing Contour to react to changes in its configuration faster.
 
 This design proposes two new CRDs, one that represents a `ContourConfiguration` (Short name `ContourConfig`) and another which represents a `ContourDeployment`, both which are namespaced.
-The Contour configuration mirrors how the configmap functions today. 
+The Contour configuration mirrors how the configmap functions today.
 A Contour Deployment is managed by a controller (aka Operator) which uses the details of the CRD spec to deploy a fully managed instance of Contour inside a cluster.
 
 ## Benefits
@@ -35,7 +35,7 @@ spec:
     port: 8001
     insecure: false
     tls:
-      caFile: 
+      caFile:
       certFile:
       keyFile:
   ingress:
@@ -44,14 +44,14 @@ spec:
   debug:
     address: 127.0.0.1
     port: 6060
-    logLevel: Info 
+    logLevel: Info
     kubernetesLogLevel: 0
   health:
     address: 0.0.0.0
     port: 8000
   metrics:
     address: 0.0.0.0
-    port: 8002    
+    port: 8002
   envoy:
     listener:
       useProxyProtocol: false
@@ -67,7 +67,7 @@ spec:
     service:
       name: contour
       namespace: projectcontour
-    http: 
+    http:
       address: 0.0.0.0
       port: 80
       accessLog: /dev/STDOUT
@@ -110,7 +110,7 @@ spec:
       controllerName: projectcontour.io/projectcontour/contour
   httpproxy:
     disablePermitInsecure: false
-    rootNamespaces: 
+    rootNamespaces:
       - foo
       - bar
     fallbackCertificate:
@@ -138,16 +138,16 @@ status:
 ## Converting from Configmap
 
 Contour will provide a way internally to move to the new CRD and not require users to manually migrate to the new CRD format.
-Contour will provide a new command or external tool (similar to ir2proxy) which will migrate between the specs accordingly. 
+Contour will provide a new command or external tool (similar to ir2proxy) which will migrate between the specs accordingly.
 
 ## Contour Deployment
 
 A managed version of Contour was made available with the `Contour Operator`.
 Since Contour will manage Envoy instances, the Operator will now manage instances of Contour.
-The details of how an instance of Contour should be deployed within a cluster will be defined in the second CRD named `ContourDeployment`. 
-The `spec.confguration` of this object will be the same struct defined in the `ContourConfiguration`. 
+The details of how an instance of Contour should be deployed within a cluster will be defined in the second CRD named `ContourDeployment`.
+The `spec.confguration` of this object will be the same struct defined in the `ContourConfiguration`.
 
-A controller will watch for these objects to be created and take action on them accordingly to make desired state in the cluster match the configuration on the spec. 
+A controller will watch for these objects to be created and take action on them accordingly to make desired state in the cluster match the configuration on the spec.
 
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
@@ -192,13 +192,13 @@ As soon as the configuration does become valid, Contour will start up its contro
 
 Contour will initially start implementation by restarting the Contour pod and allowing Kubernetes to restart itself when the config file changes.
 Should the configuration be invalid, Contour will start up, set status on the ContourConfig CRD and then crash.
-Kubernetes will crash-loop until the configuration is valid, however, due to the nature of the exponential backoff, updates to the Configuration CRD will not be realized until the next restart loop, or Contour is restarted manually. 
+Kubernetes will crash-loop until the configuration is valid, however, due to the nature of the exponential backoff, updates to the Configuration CRD will not be realized until the next restart loop, or Contour is restarted manually.
 
 ## Versioning
 
-Initially, the CRDs will use the `v1alpha1` api group to allow for changes to the specs before they are released as a full `v1` spec. 
-It's possible that we find issues along the way developing the new controllers and migrating to this new configuration method. 
-Having a way to change the spec should we need to will be helpful on the path to a full v1 version. 
+Initially, the CRDs will use the `v1alpha1` api group to allow for changes to the specs before they are released as a full `v1` spec.
+It's possible that we find issues along the way developing the new controllers and migrating to this new configuration method.
+Having a way to change the spec should we need to will be helpful on the path to a full v1 version.
 
 Once we get to `v1` we have hard compatibility requirements - no more breaking changes without a major version rev.
 This should result in increased review scrutiny for proposed changes to the CRD spec.

@@ -46,7 +46,7 @@ An error encountered while processing an HTTPProxy spec where:
 
 - Contour stops processing the rest of the spec
 - Contour does not program any part of the HTTPProxy in Envoy
-  
+
 For example, an invalid FQDN.
 
 ### Non-Fatal Error
@@ -69,7 +69,7 @@ For example, invalid retry settings on a route (the route is still programmed, b
 
 ## High-Level Design
 Contour will set the error or warning condition when a problem is encountered, but do its best to still serve valid configurations.
-The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditions.Warnings`. 
+The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditions.Warnings`.
 
 Details on how Conditions are implemented can be found in the [HTTPProxy Status Conditions Design Doc](https://github.com/projectcontour/contour/blob/main/design/httpproxy-status-conditions.md#high-level-design).
 
@@ -81,7 +81,7 @@ If an include does not have a matching HTTPProxy.Name or HTTPProxy.Namespace, th
 Any requests matching the `Conditions` on the `Spec.Include` will return a `502` to the requester.
 
 If the include was valid previously and is now no longer valid, the routes which the include previously enabled will no longer be valid.
-All requests to the path specified in the `spec.conditions.prefix` will return a `502` HTTP status code. 
+All requests to the path specified in the `spec.conditions.prefix` will return a `502` HTTP status code.
 
 #### Include Summary
 
@@ -91,7 +91,7 @@ All requests to the path specified in the `spec.conditions.prefix` will return a
 | Child Delegated    | Orphaned            | No response since requests can't route         | Warning    |
 
 ### Invalid Route
-If a route contains configuration errors or warnings, the following table outlines how Contour will react and what response will be sent.  
+If a route contains configuration errors or warnings, the following table outlines how Contour will react and what response will be sent.
 
 #### Route Summary
 
@@ -134,7 +134,7 @@ _Note: Work has started to implementing some of this work in: https://github.com
 ### Admission Controller
 An admission controller could be utilized to do these checks before the object is written to API.
 This would require a way to look at a DAG to verify status information and would require further thought into how to implement but would provide the best user experience.
-This could also be later layered onto Contour without changing any logic defined in this proposal. 
+This could also be later layered onto Contour without changing any logic defined in this proposal.
 
 ### HTTPProxyInstance
 Another alternative is to keep a copy of a "last know good configuration" for each HTTPProxy resource.

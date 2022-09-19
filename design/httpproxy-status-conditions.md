@@ -286,7 +286,7 @@ headerConditionsValid
   - "cannot specify contradictory 'exact' and 'notexact' conditions for the same route and header"
   - "cannot specify contradictory 'contains' and 'notcontains' conditions for the same route and header"
   - "cannot specify contradictory 'contains' and 'notcontains' conditions for the same route and header"
-  - 
+-
 
 headersPolicy, requestheaderspolicy
   - "duplicate header addition: %q", key

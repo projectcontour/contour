@@ -62,7 +62,7 @@ Contour considers a Gateway to describe a single Envoy deployment. Contour expec
 Contour will update the status of both the `Gateway` & `GatewayClass`. When a `ControllerName` is not supplied, Contour will not do Gateway API processing.
 Contour will merge Listeners within its Gateway. (See the detailed design for the exact rules Contour will use for this.)
 
-Right now it is expected that one instance of Contour maps to a single fleet of Envoy instances. 
+Right now it is expected that one instance of Contour maps to a single fleet of Envoy instances.
 Similarly, one GatewayClass maps to a single Gateway regardless if provisioned manually or via the operator.
 
 ![drawing](images/gatewayapi-contour-overview.jpg)
@@ -84,7 +84,7 @@ Because of this, Contour will watch all events associated with its named Gateway
 
 ## Combining Gateway API with other configuration
 
-When it calculates the Envoy configuration using the DAG, Contour layers different types of configuration in order. Currently, Ingress is overwritten by HTTPProxy. 
+When it calculates the Envoy configuration using the DAG, Contour layers different types of configuration in order. Currently, Ingress is overwritten by HTTPProxy.
 If an Ingress and a HTTPProxy specify the exact same route, the HTTPProxy will win.
 
 Once we have the Gateway API available as well, the processing order will be Ingress is overwritten by HTTPProxy, and is overwritten by the Gateway API.
@@ -186,13 +186,13 @@ Contour will have an entry added to the config CRD for the `ControllerName` it s
 
 ```
 gateway:
-  controllerName: 
+  controllerName:
   name: gatewayname  # <--- deprecate
   namespace: gatewaynamespace  # <-- deprecate
 ```
 
 Contour will look for a Gateway + GatewayClass that matches the `ControllerName` field specified in the configuration CRD.
-If it does not find a matching Gateway/GatewayClass, then it will begin processing GatewayAPI resources once they are available. 
+If it does not find a matching Gateway/GatewayClass, then it will begin processing GatewayAPI resources once they are available.
 
 Should two different `Gateway` or `GatewayClasses` be found matching the same ControllerName, then Contour will utilize the oldest created object and set a status on the other(s) which describes that object as being rejected.
 
@@ -206,7 +206,7 @@ _NOTE: The fields name & namespace will be deprecated from the configuration fil
 ##### Changes to Configuration
 
 Contour will need to take into account any changes to the Contour Configuration CRD. We can take advantage of nested reconciliation loops.
-Contour startup may look like: 
+Contour startup may look like:
 
   - validate flags/env vars etc. required to connect to k8s API
   - run outer reconciliation loop/controller to get config from CRD and start up/stop dependent controllers for ingress/gateway resources, ingress/gateway resource controllers run.
@@ -229,7 +229,7 @@ gateway:
   controllerName: projectcontour.io/ingress-controller
 ```
 
-If Envoy is intended to be managed then the `managed` struct inside the `envoy` object needs to be populated with a configuration matching the desired environment. For example, if deploying to an AWS environment, the `publishing` struct needs to be configured to configure an AWS Load Balancer. Similarly, this could be configured to utilize `NodePorts` for exposing Envoy. In any case, this must be configured and has no defaults. 
+If Envoy is intended to be managed then the `managed` struct inside the `envoy` object needs to be populated with a configuration matching the desired environment. For example, if deploying to an AWS environment, the `publishing` struct needs to be configured to configure an AWS Load Balancer. Similarly, this could be configured to utilize `NodePorts` for exposing Envoy. In any case, this must be configured and has no defaults.
 
 _NOTE: Typically Envoy is deployed as a Daemonset, but not required (could also be a Deployment), so the term fleet is used to identify the set of Kubernetes managed pods which represent an Envoy instance._
 
@@ -311,7 +311,7 @@ When users want to deploy Contour without the Operator, then they have the abili
 
 #### Upgrades
 
-Since Contour manages Envoy, during an upgrade path, Contour is always updated first before Envoy. This requires Contour to not use new Envoy features until they've been out in Envoy for at least a release, or alternatively have a way for Contour's xDS server to understand Envoy versions and not send invalid config to an older instance of Envoy. 
+Since Contour manages Envoy, during an upgrade path, Contour is always updated first before Envoy. This requires Contour to not use new Envoy features until they've been out in Envoy for at least a release, or alternatively have a way for Contour's xDS server to understand Envoy versions and not send invalid config to an older instance of Envoy.
 
 #### Operator with GatewayAPI (Envoy is managed by convention)
 

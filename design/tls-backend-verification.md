@@ -48,8 +48,8 @@ kind: IngressRoute
 metadata:
   name: secure-backend
 spec:
-  virtualhost: 
-    fqdn: www.example.com  
+  virtualhost:
+    fqdn: www.example.com
   routes:
     - match: /
       services:
@@ -57,7 +57,7 @@ spec:
           port: 8443
           validation:
             caSecret: my-certificate-authority
-            subjectName: backend.example.com 
+            subjectName: backend.example.com
 ```
 
 ## Detailed Design
@@ -91,7 +91,7 @@ type UpstreamValidation struct {
 
 	// Certificate holds a reference to the Secret containing the CA to be used to
 	// verify the upstream connection.
-	Certificate *Secret 	
+ Certificate *Secret
 
 	// SubjectName holds the subject name which Envoy will check against the
 	// certificate presented by the upstream.
