@@ -225,7 +225,6 @@ envoy:
   networkPublishing:
     type: LoadBalancerService
     scope: External
-    type: AWS
 gateway:
   controllerName: projectcontour.io/ingress-controller
 ```
