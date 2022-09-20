@@ -375,6 +375,35 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
+				var uv *PeerValidationContext
+
+				if jwtProvider.RemoteJWKS.UpstreamValidation != nil {
+					if jwksURL.Scheme == "http" {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation must not be specified when URI scheme is http.")
+						return
+					}
+
+					// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
+					// is not the proxy's namespace, check if the referenced secret is permitted to be
+					// delegated to the proxy's namespace.
+					// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
+					caCertNamespacedName := k8s.NamespacedNameFrom(jwtProvider.RemoteJWKS.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+
+					if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCACertificateNotDelegated",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+						return
+					}
+
+					uv, err = p.source.LookupUpstreamValidation(jwtProvider.RemoteJWKS.UpstreamValidation, caCertNamespacedName)
+					if err != nil {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: %s", err)
+						return
+					}
+				}
+
 				jwksTimeout := time.Second
 				if len(jwtProvider.RemoteJWKS.Timeout) > 0 {
 					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.Timeout)
@@ -428,10 +457,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 						URI:     jwtProvider.RemoteJWKS.URI,
 						Timeout: jwksTimeout,
 						Cluster: DNSNameCluster{
-							Address:         jwksURL.Hostname(),
-							Scheme:          jwksURL.Scheme,
-							Port:            port,
-							DNSLookupFamily: string(p.DNSLookupFamily),
+							Address:            jwksURL.Hostname(),
+							Scheme:             jwksURL.Scheme,
+							Port:               port,
+							DNSLookupFamily:    string(p.DNSLookupFamily),
+							UpstreamValidation: uv,
 						},
 						CacheDuration: cacheDuration,
 					},

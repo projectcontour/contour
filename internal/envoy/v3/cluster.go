@@ -173,8 +173,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	var transportSocket *envoy_core_v3.TransportSocket
 	if c.Scheme == "https" {
-		// TODO TLS validation
-		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(nil, c.Address, nil))
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
 	}
 
 	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))

@@ -662,10 +662,11 @@ type RemoteJWKS struct {
 // DNSNameCluster is a cluster that routes directly to a DNS
 // name (i.e. not a Kubernetes service).
 type DNSNameCluster struct {
-	Address         string
-	Scheme          string
-	Port            int
-	DNSLookupFamily string
+	Address            string
+	Scheme             string
+	Port               int
+	DNSLookupFamily    string
+	UpstreamValidation *PeerValidationContext
 }
 
 type JWTRule struct {

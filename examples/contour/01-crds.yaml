@@ -3723,6 +3723,24 @@ spec:
                               description: The URI for the JWKS.
                               minLength: 1
                               type: string
+                            validation:
+                              description: UpstreamValidation defines how to verify
+                                the JWKS's TLS certificate.
+                              properties:
+                                caSecret:
+                                  description: Name or namespaced name of the Kubernetes
+                                    secret used to validate the certificate presented
+                                    by the backend. The secret must contain key named
+                                    ca.crt.
+                                  type: string
+                                subjectName:
+                                  description: Key which is expected to be present
+                                    in the 'subjectAltName' of the presented certificate.
+                                  type: string
+                              required:
+                              - caSecret
+                              - subjectName
+                              type: object
                           required:
                           - uri
                           type: object
