@@ -423,8 +423,9 @@ func (g *GRPC) Deploy(ns, name string) func() {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "grpc-echo",
-							Image: GRPCServerImage,
+							Name:            "grpc-echo",
+							Image:           GRPCServerImage,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
