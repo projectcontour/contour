@@ -5,9 +5,9 @@ layout: page
 
 ## Example gRPC Service
 
-The below examples use the [gRPC server](https://github.com/projectcontour/yages) used in Contour end to end tests.
+The below examples use the [gRPC server][1] used in Contour end to end tests.
 The server implements a service `yages.Echo` with two methods `Ping` and `Reverse`.
-It also implements the [gRPC health checking service](https://pkg.go.dev/google.golang.org/grpc/health/grpc_health_v1) (see [here](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) for more details) and is bundled with the [gRPC health probe](https://github.com/grpc-ecosystem/grpc-health-probe).
+It also implements the [gRPC health checking service][2] (see [here][3] for more details) and is bundled with the [gRPC health probe][4].
 
 An example base deployment and service for a gRPC server utilizing plaintext HTTP/2 are provided here:
 
@@ -86,7 +86,7 @@ spec:
       protocol: h2c
 ```
 
-Using the sample deployment above along with this HTTPProxy example, you can test calling this plaintext gRPC server with the following [grpccurl](https://github.com/fullstorydev/grpcurl) command:
+Using the sample deployment above along with this HTTPProxy example, you can test calling this plaintext gRPC server with the following [grpccurl][5] command:
 
 ```
 grpcurl -plaintext -authority=my-grpc-service.foo.com <load balancer IP and port if needed> yages.Echo/Ping
@@ -147,17 +147,17 @@ spec:
 
 At the moment, configuring gRPC routes with Gateway API resources is achieved by the same method as with Ingress v1: annotation to select a protocol and port on a Service referenced by HTTPRoute `spec.rules[].backendRefs`.
 
-Gateway API does include a specific resource [GRPCRoute](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1alpha2.GRPCRoute) for routing gRPC requests.
+Gateway API does include a specific resource [GRPCRoute][6] for routing gRPC requests.
 This may be supported in future versions of Contour.
 
 ## gRPC-Web
 
-Contour configures Envoy to automatically convert [gRPC-Web](https://github.com/grpc/grpc-web) HTTP/1 requests to gRPC over HTTP/2 RPC calls to an upstream service.
+Contour configures Envoy to automatically convert [gRPC-Web][7] HTTP/1 requests to gRPC over HTTP/2 RPC calls to an upstream service.
 This is a convenience addition to make usage of gRPC web application client libraries and the like easier.
 
 Note that you still must provide configuration of the upstream protocol to have gRPC-Web requests converted to gRPC to the upstream app.
 If your upstream application does not in fact support gRPC, you may get a protocol error.
-In that case, please see [this issue](https://github.com/projectcontour/contour/issues/4290). 
+In that case, please see [this issue][8].
 
 For example, with the example deployment and routing configuration provided above, an example HTTP/1.1 request and response via `curl` looks like:
 
@@ -181,3 +181,12 @@ Piping the output to `base64 -d | od -c` we can see the raw text gRPC response:
 0000040   r   p   c   -   m   e   s   s   a   g   e   :  \r  \n
 0000056
 ```
+
+[1]: https://github.com/projectcontour/yages
+[2]: https://pkg.go.dev/google.golang.org/grpc/health/grpc_health_v1
+[3]: https://github.com/grpc/grpc/blob/master/doc/health-checking.md
+[4]: https://github.com/grpc-ecosystem/grpc-health-probe
+[5]: https://github.com/fullstorydev/grpcurl
+[6]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1alpha2.GRPCRoute
+[7]: https://github.com/grpc/grpc-web
+[8]: https://github.com/projectcontour/contour/issues/4290
