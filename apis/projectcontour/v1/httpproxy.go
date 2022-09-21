@@ -244,6 +244,60 @@ type VirtualHost struct {
 	// The policy for rate limiting on the virtual host.
 	// +optional
 	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
+	// +optional
+	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
+}
+
+// JWTProvider defines how to verify JWTs on requests.
+type JWTProvider struct {
+	// Unique name for the provider.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// Whether the provider should apply to all
+	// routes in the HTTPProxy/its includes by
+	// default. At most one provider can be marked
+	// as the default. If no provider is marked
+	// as the default, individual routes must explicitly
+	// identify the provider they require.
+	// +optional
+	Default bool `json:"default,omitempty"`
+
+	// Issuer that JWTs are required to have in the "iss" field.
+	// If not provided, JWT issuers are not checked.
+	// +optional
+	Issuer string `json:"issuer,omitempty"`
+
+	// Audiences that JWTs are allowed to have in the "aud" field.
+	// If not provided, JWT audiences are not checked.
+	// +optional
+	Audiences []string `json:"audiences,omitempty"`
+
+	// Remote JWKS to use for verifying JWT signatures.
+	// +kubebuilder:validation:Required
+	RemoteJWKS RemoteJWKS `json:"remoteJWKS"`
+}
+
+// RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
+type RemoteJWKS struct {
+	// The URI for the JWKS.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	URI string `json:"uri"`
+
+	// How long to wait for a response from the URI.
+	// If not specified, a default of 1s applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	Timeout string `json:"timeout,omitempty"`
+
+	// How long to cache the JWKS locally. If not specified,
+	// Envoy's default of 5m applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	CacheDuration string `json:"cacheDuration,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -391,6 +445,27 @@ type Route struct {
 	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+
+	// The policy for verifying JWTs for requests to this route.
+	// +optional
+	JWTVerificationPolicy *JWTVerificationPolicy `json:"jwtVerificationPolicy,omitempty"`
+}
+
+type JWTVerificationPolicy struct {
+	// Require names a specific JWT provider (defined in the virtual host)
+	// to require for the route. If specified, this field overrides the
+	// default provider if one exists. If this field is not specified,
+	// the default provider will be required if one exists. At most one of
+	// this field or the "disabled" field can be specified.
+	// +optional
+	Require string `json:"require,omitempty"`
+
+	// Disabled defines whether to disable all JWT verification for this
+	// route. This can be used to opt specific routes out of the default
+	// JWT provider for the HTTPProxy. At most one of this field or the
+	// "require" field can be specified.
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 type HTTPDirectResponsePolicy struct {

@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // defaultMaxRequestBytes specifies default value maxRequestBytes for AuthorizationServer
@@ -129,6 +130,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	defer commit()
 
+	var defaultJWTProvider string
+
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
 		p.orphaned[k8s.NamespacedNameOf(proxy)] = true
@@ -156,6 +159,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		validCond.AddError(contour_api_v1.ConditionTypeSpecError, "NothingDefined",
 			"HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
 		return
+	}
+
+	if len(proxy.Spec.VirtualHost.JWTProviders) > 0 {
+		if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
+			validCond.AddError(contour_api_v1.ConditionTypeJWTVerificationError, "JWTVerificationNotPermitted",
+				"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS")
+			return
+		}
+
 	}
 
 	var tlsEnabled bool
@@ -331,6 +343,100 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					}
 				}
 			}
+
+			providerNames := sets.NewString()
+			for _, jwtProvider := range proxy.Spec.VirtualHost.JWTProviders {
+				if providerNames.Has(jwtProvider.Name) {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "DuplicateProviderName",
+						"Spec.VirtualHost.JWTProviders is invalid: duplicate name %s", jwtProvider.Name)
+					return
+				}
+				providerNames.Insert(jwtProvider.Name)
+
+				if jwtProvider.Default {
+					if len(defaultJWTProvider) > 0 {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "MultipleDefaultProvidersSpecified",
+							"Spec.VirtualHost.JWTProviders is invalid: at most one provider can be set as the default")
+						return
+					}
+					defaultJWTProvider = jwtProvider.Name
+				}
+
+				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
+				if err != nil {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI is invalid: %s", err)
+					return
+				}
+
+				if jwksURL.Scheme != "http" && jwksURL.Scheme != "https" {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSSchemeInvalid",
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
+					return
+				}
+
+				jwksTimeout := time.Second
+				if len(jwtProvider.RemoteJWKS.Timeout) > 0 {
+					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.Timeout)
+					if err != nil {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSTimeoutInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.Timeout is invalid: %s", err)
+						return
+					}
+
+					jwksTimeout = res
+				}
+
+				var cacheDuration *time.Duration
+				if len(jwtProvider.RemoteJWKS.CacheDuration) > 0 {
+					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.CacheDuration)
+					if err != nil {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCacheDurationInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.CacheDuration is invalid: %s", err)
+						return
+					}
+
+					cacheDuration = &res
+				}
+
+				// Check for a specified port and use it, else use the
+				// standard ports by scheme.
+				var port int
+				switch {
+				case len(jwksURL.Port()) > 0:
+					p, err := strconv.Atoi(jwksURL.Port())
+					if err != nil {
+						// This theoretically shouldn't be possible as jwksURL.Port() will
+						// only return a value if it's numeric, but we need to convert to
+						// int anyway so handle the error.
+						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSPortInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: %s", err)
+						return
+					}
+					port = p
+				case jwksURL.Scheme == "http":
+					port = 80
+				case jwksURL.Scheme == "https":
+					port = 443
+				}
+
+				svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
+					Name:      jwtProvider.Name,
+					Issuer:    jwtProvider.Issuer,
+					Audiences: jwtProvider.Audiences,
+					RemoteJWKS: RemoteJWKS{
+						URI:     jwtProvider.RemoteJWKS.URI,
+						Timeout: jwksTimeout,
+						Cluster: DNSNameCluster{
+							Address:         jwksURL.Hostname(),
+							Scheme:          jwksURL.Scheme,
+							Port:            port,
+							DNSLookupFamily: string(p.DNSLookupFamily),
+						},
+						CacheDuration: cacheDuration,
+					},
+				})
+			}
 		}
 	}
 
@@ -345,7 +451,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		}
 	}
 
-	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled)
+	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
 	insecure := p.dag.EnsureVirtualHost(host)
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
@@ -380,6 +486,39 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		secure.RateLimitPolicy = rlp
 
 		addRoutes(secure, routes)
+
+		// Process JWT verification requirements.
+		for _, route := range routes {
+			// JWT verification not enabled for the vhost: error if the route
+			// specifies a JWT provider.
+			if len(secure.JWTProviders) == 0 {
+				if len(route.JWTProvider) == 0 {
+					continue
+				}
+
+				validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "JWTProviderNotDefined",
+					"Route references an undefined JWT provider %q", route.JWTProvider)
+				return
+			}
+
+			// JWT verification enabled for the vhost: error if the route
+			// specifies a JWT provider that does not exist.
+			if len(route.JWTProvider) > 0 {
+				var found bool
+				for _, provider := range secure.JWTProviders {
+					if provider.Name == route.JWTProvider {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "JWTProviderNotDefined",
+						"Route references an undefined JWT provider %q", route.JWTProvider)
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -401,6 +540,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	conditions []contour_api_v1.MatchCondition,
 	visited []*contour_api_v1.HTTPProxy,
 	enforceTLS bool,
+	defaultJWTProvider string,
 ) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
@@ -470,7 +610,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		inc, incCommit := p.dag.StatusCache.ProxyAccessor(includedProxy)
 		incValidCond := inc.ConditionFor(status.ValidCondition)
-		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS)...)
+		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS, defaultJWTProvider)...)
 		incCommit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -738,6 +878,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		// labels. This match ignores a port in the hostname in case it is present.
 		if strings.HasPrefix(rootProxy.Spec.VirtualHost.Fqdn, "*.") {
 			r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(rootProxy.Spec.VirtualHost.Fqdn))
+		}
+
+		jwt := route.JWTVerificationPolicy
+		switch {
+		case jwt != nil && len(route.JWTVerificationPolicy.Require) > 0 && route.JWTVerificationPolicy.Disabled:
+			validCond.AddError(contour_api_v1.ConditionTypeJWTVerificationError, "InvalidJWTVerificationPolicy",
+				"route's JWT verification policy cannot specify both require and disabled")
+			return nil
+		case jwt != nil && len(route.JWTVerificationPolicy.Require) > 0:
+			r.JWTProvider = jwt.Require
+		case jwt != nil && jwt.Disabled:
+			r.JWTProvider = ""
+		default:
+			r.JWTProvider = defaultJWTProvider
 		}
 
 		routes = append(routes, r)

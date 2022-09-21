@@ -184,6 +184,21 @@ func (d *DAG) GetClusters() []*Cluster {
 	return res
 }
 
+func (d *DAG) GetDNSNameClusters() []*DNSNameCluster {
+	var res []*DNSNameCluster
+
+	for _, listener := range d.Listeners {
+		for _, svhost := range listener.SecureVirtualHosts {
+			for _, provider := range svhost.JWTProviders {
+				provider := provider
+				res = append(res, &provider.RemoteJWKS.Cluster)
+			}
+		}
+	}
+
+	return res
+}
+
 func (d *DAG) GetServiceClusters() []*ServiceCluster {
 	var res []*ServiceCluster
 
