@@ -662,6 +662,55 @@ func TestDNSNameCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil)),
 			},
 		},
+		"HTTPS cluster with upstream validation": {
+			cluster: &dag.DNSNameCluster{
+				Address:         "foo.projectcontour.io",
+				Scheme:          "https",
+				Port:            443,
+				DNSLookupFamily: "auto",
+				UpstreamValidation: &dag.PeerValidationContext{
+					CACertificate: &dag.Secret{
+						Object: &v1.Secret{
+							Data: map[string][]byte{
+								"ca.crt": []byte("ca-cert"),
+							},
+						},
+					},
+					SubjectName: "foo.projectcontour.io",
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "dnsname/https/foo.projectcontour.io",
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/https/foo.projectcontour.io",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: SocketAddress("foo.projectcontour.io", 443),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(&dag.PeerValidationContext{
+					CACertificate: &dag.Secret{
+						Object: &v1.Secret{
+							Data: map[string][]byte{
+								"ca.crt": []byte("ca-cert"),
+							},
+						},
+					},
+					SubjectName: "foo.projectcontour.io",
+				}, "foo.projectcontour.io", nil)),
+			},
+		},
 	}
 
 	for name, tc := range tests {

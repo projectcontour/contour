@@ -34,9 +34,8 @@ spec:
           - audience-1
           - audience-2
         remoteJWKS:
-          httpURI:
-            uri: https://example.com/jwks.json
-            timeout: 1s
+          uri: https://example.com/jwks.json
+          timeout: 1s
           cacheDuration: 5m
   routes:
     ...
@@ -77,6 +76,15 @@ spec:
 
 In the above example, the default route requires requests to carry JWTs that can be verified using provider-1.
 The second route _excludes_ requests to paths starting with `/css` from JWT verification, because it does not have a JWT verification policy.
+
+### Configuring TLS validation for the JWKS server
+
+By default, the JWKS server's TLS certificate will not be validated, but validation can be requested by setting the `spec.virtualhost.jwtProviders[].remoteJWKS.validation` field.
+This field has mandatory `caSecret` and `subjectName` fields, which specify the trusted root certificates with which to validate the server certificate and the expected server name.
+The `caSecret` can be a namespaced name of the form `<namespace>/<secret-name>`.
+If the CA secret's namespace is not the same namespace as the `HTTPProxy` resource, [TLS Certificate Delegation][5] must be used to allow the owner of the CA certificate secret to delegate, for the purposes of referencing the CA certificate in a different namespace, permission to Contour to read the Secret object from another namespace.
+
+**Note:** If `spec.virtualhost.jwtProviders[].remoteJWKS.validation` is present, `spec.virtualhost.jwtProviders[].remoteJWKS.uri` must have a scheme of `https`.
 
 ## Setting a default provider
 
@@ -169,3 +177,4 @@ For more information on the HTTPProxy API for JWT verification, see:
 [2]: /docs/{{< param version >}}/config/inclusion-delegation/
 [3]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTProvider
 [4]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.JWTVerificationPolicy
+[5]: tls-delegation.md

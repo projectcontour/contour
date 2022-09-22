@@ -287,6 +287,10 @@ type RemoteJWKS struct {
 	// +kubebuilder:validation:MinLength=1
 	URI string `json:"uri"`
 
+	// UpstreamValidation defines how to verify the JWKS's TLS certificate.
+	// +optional
+	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
+
 	// How long to wait for a response from the URI.
 	// If not specified, a default of 1s applies.
 	// +optional

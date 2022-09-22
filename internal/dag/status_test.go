@@ -3356,6 +3356,251 @@ func TestDAGStatus(t *testing.T) {
 				),
 		},
 	})
+
+	jwtVerificationUpstreamValidationForHTTPJWKS := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-upstream-validation-for-http-jwks",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI: "http://jwt.example.com/jwks.json",
+							UpstreamValidation: &contour_api_v1.UpstreamValidation{
+								CACertificate: "foo",
+								SubjectName:   "jwt.example.com",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{
+						Require: "provider-1",
+					},
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid upstream validation specified for HTTP JWKS", testcase{
+		objs: []interface{}{
+			jwtVerificationUpstreamValidationForHTTPJWKS,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationUpstreamValidationForHTTPJWKS): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSUpstreamValidationInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation must not be specified when URI scheme is http.",
+				),
+		},
+	})
+
+	jwtVerificationUpstreamValidationCACertDoesNotExist := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-upstream-validation-cacert-does-not-exist",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI: "https://jwt.example.com/jwks.json",
+							UpstreamValidation: &contour_api_v1.UpstreamValidation{
+								CACertificate: "nonexistent",
+								SubjectName:   "jwt.example.com",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{
+						Require: "provider-1",
+					},
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid upstream validation CA cert does not exist", testcase{
+		objs: []interface{}{
+			jwtVerificationUpstreamValidationCACertDoesNotExist,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationUpstreamValidationCACertDoesNotExist): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSUpstreamValidationInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/nonexistent\": Secret not found",
+				),
+		},
+	})
+
+	jwksInvalidCACert := &v1.Secret{
+		ObjectMeta: fixture.ObjectMeta("roots/cacert"),
+		Data: map[string][]byte{
+			"wrong-key": []byte(fixture.CERTIFICATE),
+		},
+	}
+
+	jwtVerificationUpstreamValidationCACertInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-upstream-validation-cacert-invalid",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI: "https://jwt.example.com/jwks.json",
+							UpstreamValidation: &contour_api_v1.UpstreamValidation{
+								CACertificate: "cacert",
+								SubjectName:   "jwt.example.com",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{
+						Require: "provider-1",
+					},
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid upstream validation CA cert invalid", testcase{
+		objs: []interface{}{
+			jwtVerificationUpstreamValidationCACertInvalid,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+			jwksInvalidCACert,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationUpstreamValidationCACertInvalid): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSUpstreamValidationInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/cacert\": Secret not found",
+				),
+		},
+	})
+
+	jwksCACertDifferentNamespace := &v1.Secret{
+		ObjectMeta: fixture.ObjectMeta("default/cacert"),
+		Data: map[string][]byte{
+			"ca.crt": []byte(fixture.CERTIFICATE),
+		},
+	}
+
+	jwtVerificationUpstreamValidationCACertNotDelegated := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-upstream-validation-cacert-not-delegated",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI: "https://jwt.example.com/jwks.json",
+							UpstreamValidation: &contour_api_v1.UpstreamValidation{
+								CACertificate: "default/cacert",
+								SubjectName:   "jwt.example.com",
+							},
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{
+						Require: "provider-1",
+					},
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid upstream validation CA cert not delegated", testcase{
+		objs: []interface{}{
+			jwtVerificationUpstreamValidationCACertNotDelegated,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+			jwksCACertDifferentNamespace,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationUpstreamValidationCACertNotDelegated): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSCACertificateNotDelegated",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret \"default/cacert\" is not configured for certificate delegation",
+				),
+		},
+	})
+
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
