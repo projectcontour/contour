@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -89,7 +90,7 @@ func runGatewayTests() {
 
 	// Creates specified gateway in namespace and runs namespaced test
 	// body. Modifies contour config to point to gateway.
-	testWithGateway := func(gateway *gatewayapi_v1beta1.Gateway, gatewayClass *gatewayapi_v1beta1.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+	testWithGateway := func(gateway *gatewayapi_v1beta1.Gateway, gatewayClass *gatewayapi_v1beta1.GatewayClass, body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
 			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.ControllerName), func() {
 				BeforeEach(func() {
@@ -124,7 +125,7 @@ func runGatewayTests() {
 					require.NoError(f.T(), f.DeleteGateway(gateway, false))
 				})
 
-				body(namespace)
+				body(namespace, types.NamespacedName{Namespace: namespace, Name: gateway.Name})
 			})
 		}
 	}
@@ -173,7 +174,7 @@ func runGatewayTests() {
 	})
 
 	Describe("Gateway with one HTTP listener", func() {
-		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		testWithHTTPGateway := func(body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -221,7 +222,7 @@ func runGatewayTests() {
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
-		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 
 			gw := &gatewayapi_v1beta1.Gateway{
@@ -265,13 +266,13 @@ func runGatewayTests() {
 					},
 				},
 			}
-			return testWithGateway(gw, gatewayClass, func(namespace string) {
+			return testWithGateway(gw, gatewayClass, func(namespace string, gateway types.NamespacedName) {
 				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
 					BeforeEach(func() {
 						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
 					})
 
-					body(namespace)
+					body(namespace, gateway)
 				})
 			})
 		}
@@ -380,7 +381,7 @@ func runGatewayTests() {
 				},
 			}
 
-			return testWithGateway(gateway, gatewayClass, func(namespace string) {
+			return testWithGateway(gateway, gatewayClass, func(namespace string, gateway types.NamespacedName) {
 				BeforeEach(func() {
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "tlscert-1", "https-1.gateway.projectcontour.io")
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "tlscert-2", "https-2.gateway.projectcontour.io")
