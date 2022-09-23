@@ -25,10 +25,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func testTLSRoutePassthrough(namespace string) {
+func testTLSRoutePassthrough(namespace string, gateway types.NamespacedName) {
 	Specify("SNI matching can be used for routing", func() {
 		t := f.T()
 
@@ -43,7 +44,7 @@ func testTLSRoutePassthrough(namespace string) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-						gatewayapi.GatewayParentRefV1Alpha2("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRefV1Alpha2(gateway.Namespace, gateway.Name),
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"passthrough.tlsroute.gatewayapi.projectcontour.io"},

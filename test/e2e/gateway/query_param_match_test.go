@@ -22,10 +22,11 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testGatewayQueryParamMatch(namespace string) {
+func testGatewayQueryParamMatch(namespace string, gateway types.NamespacedName) {
 	Specify("query param matching works", func() {
 		t := f.T()
 
@@ -43,7 +44,7 @@ func testGatewayQueryParamMatch(namespace string) {
 				Hostnames: []gatewayapi_v1beta1.Hostname{"queryparams.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
-						gatewayapi.GatewayParentRef("", "http"),
+						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
