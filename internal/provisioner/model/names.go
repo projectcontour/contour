@@ -96,7 +96,7 @@ func (c *Contour) ComponentLabels() map[string]string {
 }
 
 // CommonLabels returns labels for Contour resources.
-func CommonLabels(c *Contour) map[string]string {
+func  CommonLabels(c *Contour) map[string]string {
 	labels := map[string]string{}
 
 	// Add owner labels

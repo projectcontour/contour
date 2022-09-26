@@ -327,7 +327,7 @@ func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector 
 // common labels
 func contourPodLabels(contour *model.Contour) map[string]string {
 	labels := ContourDeploymentPodSelector(contour).MatchLabels
-	for k, v := range model.CommonLabels(contour) {
+	for k, v := range contour.ComponentLabels() {
 		labels[k] = v
 	}
 	return labels
