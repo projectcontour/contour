@@ -14,12 +14,16 @@ jobs:
     - uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+        days-before-pr-stale: 14
+        days-before-pr-close: 30
+        stale-pr-label: 'lifecycle/stale'
         stale-pr-message: >
           Marking this PR stale since there has been no activity for 14
-          days. It will be closed if there is no activity for another
-          30 days.
-        stale-pr-label: 'lifecycle/stale'
-        days-before-stale: 14
-        days-before-close: 30
-        days-before-issue-stale: -1 # disable marking issues as stale
-        days-before-issue-close: -1 # disable closing stale issues
+          days. It will be closed if there is no activity for 30 days.
+        days-before-issue-stale: 60
+        days-before-issue-close: 90
+        stale-issue-label: 'lifecycle/stale'
+        exempt-issue-labels: 'help wanted,good first issue'
+        stale-issue-message: >
+          Marking this Issue stale since there has been no activity for 60
+          days. It will be closed if there is no activity for 90 days.
