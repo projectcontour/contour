@@ -123,18 +123,13 @@ type ContourSpec struct {
 	// NetworkPublishing defines the schema for publishing Contour to a network.
 	//
 	// See each field for additional details.
-	//
-	// +kubebuilder:default={envoy: {type: LoadBalancerService, containerPorts: {{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}}}
-	NetworkPublishing NetworkPublishing `json:"networkPublishing,omitempty"`
+	NetworkPublishing NetworkPublishing
 
 	// GatewayControllerName is used to determine which GatewayClass
 	// Contour reconciles. The string takes the form of
 	// "projectcontour.io/<namespace>/contour". If unset, Contour will not
 	// reconcile Gateway API resources.
-	//
-	// +kubebuilder:validation:MaxLength=253
-	// +optional
-	GatewayControllerName *string `json:"gatewayControllerName,omitempty"`
+	GatewayControllerName *string
 
 	// IngressClassName is the name of the IngressClass used by Contour. If unset,
 	// Contour will process all ingress objects without an ingress class annotation
@@ -144,33 +139,33 @@ type ContourSpec struct {
 	//
 	// For additional IngressClass details, refer to:
 	//   https://projectcontour.io/docs/main/config/annotations/#ingress-class
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=253
-	// +optional
-	IngressClassName *string `json:"ingressClassName,omitempty"`
+	IngressClassName *string
+
+	// LogLevel sets the log level for Contour
+	// Allowed values are "info", "debug".
+	LogLevel contourv1alpha1.LogLevel
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
 	// See each field for additional details.
-	//
-	// +optional
-	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+	NodePlacement *NodePlacement
 
 	// EnableExternalNameService enables ExternalName Services.
 	// ExternalName Services are disabled by default due to CVE-2021-XXXXX
 	// You can re-enable them by setting this setting to "true".
 	// This is not recommended without understanding the security implications.
 	// Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.
-	//
-	// +optional
-	EnableExternalNameService *bool `json:"enableExternalNameService,omitempty"`
+	EnableExternalNameService *bool
 
 	// RuntimeSettings is any user-defined ContourConfigurationSpec to use when provisioning.
 	RuntimeSettings *contourv1alpha1.ContourConfigurationSpec
 
 	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
 	EnvoyWorkloadType WorkloadType
+
+	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
+	// defaults to 0.
+	KubernetesLogLevel uint8
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -187,14 +182,10 @@ const (
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.
 type NodePlacement struct {
 	// Contour describes node scheduling configuration of Contour pods.
-	//
-	// +optional
-	Contour *ContourNodePlacement `json:"contour,omitempty"`
+	Contour *ContourNodePlacement
 
 	// Envoy describes node scheduling configuration of Envoy pods.
-	//
-	// +optional
-	Envoy *EnvoyNodePlacement `json:"envoy,omitempty"`
+	Envoy *EnvoyNodePlacement
 }
 
 // ContourNodePlacement describes node scheduling configuration for Contour pods.
@@ -207,9 +198,7 @@ type ContourNodePlacement struct {
 	// as labels (it can have additional labels as well).
 	//
 	// If unset, the Contour pod(s) will be scheduled to any available node.
-	//
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string
 
 	// Tolerations work with taints to ensure that Envoy pods are not scheduled
 	// onto inappropriate nodes. One or more taints are applied to a node; this
@@ -220,9 +209,7 @@ type ContourNodePlacement struct {
 	//
 	// See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 	// for additional details.
-	//
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration
 }
 
 // EnvoyNodePlacement describes node scheduling configuration for Envoy pods.
@@ -235,9 +222,7 @@ type EnvoyNodePlacement struct {
 	// labels (it can have additional labels as well).
 	//
 	// If unset, the Envoy pod(s) will be scheduled to any available node.
-	//
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string
 
 	// Tolerations work with taints to ensure that Envoy pods are not scheduled
 	// onto inappropriate nodes. One or more taints are applied to a node; this
@@ -247,18 +232,14 @@ type EnvoyNodePlacement struct {
 	//
 	// See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 	// for additional details.
-	//
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration
 }
 
 // NamespaceSpec defines the schema of a Contour namespace.
 type NamespaceSpec struct {
 	// Name is the name of the namespace to run Contour and dependent
 	// resources. If unset, defaults to "projectcontour".
-	//
-	// +kubebuilder:default=projectcontour
-	Name string `json:"name,omitempty"`
+	Name string
 
 	// RemoveOnDeletion will remove the namespace when the Contour is
 	// deleted. If set to True, deletion will not occur if any of the
@@ -270,9 +251,7 @@ type NamespaceSpec struct {
 	// 2. Another Contour exists in the namespace.
 	//
 	// 3. The namespace does not contain the Contour owning label.
-	//
-	// +kubebuilder:default=false
-	RemoveOnDeletion bool `json:"removeOnDeletion,omitempty"`
+	RemoveOnDeletion bool
 }
 
 // NetworkPublishing defines the schema for publishing Contour to a network.
@@ -286,13 +265,10 @@ type NetworkPublishing struct {
 	//     portNumber: 8080
 	//   - name: https
 	//     portNumber: 8443
-	//
-	// +kubebuilder:default={type: LoadBalancerService, loadBalancer: {scope: External, providerParameters: {type: AWS}}, containerPorts: {{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}}
-	Envoy EnvoyNetworkPublishing `json:"envoy,omitempty"`
+	Envoy EnvoyNetworkPublishing
 }
 
 // EnvoyNetworkPublishing defines the schema to publish Envoy to a network.
-// +union
 type EnvoyNetworkPublishing struct {
 	// Type is the type of publishing strategy to use. Valid values are:
 	//
@@ -328,9 +304,7 @@ type EnvoyNetworkPublishing struct {
 	// LoadBalancerService.
 	//
 	// If unspecified, defaults to an external Classic AWS ELB.
-	//
-	// +kubebuilder:default={scope: External, providerParameters: {type: AWS}}
-	LoadBalancer LoadBalancerStrategy `json:"loadBalancer,omitempty"`
+	LoadBalancer LoadBalancerStrategy
 
 	// ServicePorts is a list of ports to expose on the Envoy service.
 	// TODO(sk) ServicePorts, NodePorts and ContainerPorts should collapse
@@ -353,11 +327,7 @@ type EnvoyNetworkPublishing struct {
 	// Names and port numbers must be unique in the list. Two ports must be specified,
 	// one named "http" for Envoy's insecure service and one named "https" for Envoy's
 	// secure service.
-	//
-	// +kubebuilder:validation:MinItems=2
-	// +kubebuilder:validation:MaxItems=2
-	// +optional
-	NodePorts []NodePort `json:"nodePorts,omitempty"`
+	NodePorts []NodePort
 
 	// ContainerPorts is a list of container ports to expose from the Envoy container(s).
 	// Exposing a port here gives the system additional information about the network
@@ -367,17 +337,7 @@ type EnvoyNetworkPublishing struct {
 	// from the network. Names and port numbers must be unique in the list container ports. Two
 	// ports must be specified, one named "http" for Envoy's insecure service and one named
 	// "https" for Envoy's secure service.
-	//
-	// TODO [danehans]: Update minItems to 1, requiring only https when the following issue
-	// is fixed: https://github.com/projectcontour/contour/issues/2577.
-	//
-	// TODO [danehans]: Increase maxItems when https://github.com/projectcontour/contour/pull/3263
-	// is implemented.
-	//
-	// +kubebuilder:validation:MinItems=2
-	// +kubebuilder:validation:MaxItems=2
-	// +kubebuilder:default={{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}
-	ContainerPorts []ContainerPort `json:"containerPorts,omitempty"`
+	ContainerPorts []ContainerPort
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
@@ -403,15 +363,11 @@ const (
 type LoadBalancerStrategy struct {
 	// Scope indicates the scope at which the load balancer is exposed.
 	// Possible values are "External" and "Internal".
-	//
-	// +kubebuilder:default=External
-	Scope LoadBalancerScope `json:"scope,omitempty"`
+	Scope LoadBalancerScope
 
 	// ProviderParameters contains load balancer information specific to
 	// the underlying infrastructure provider.
-	//
-	// +kubebuilder:default={type: "AWS"}
-	ProviderParameters ProviderLoadBalancerParameters `json:"providerParameters,omitempty"`
+	ProviderParameters ProviderLoadBalancerParameters
 
 	// LoadBalancerIP is the IP (or hostname) to request
 	// for the LoadBalancer service.
@@ -434,48 +390,35 @@ var (
 
 // ProviderLoadBalancerParameters holds desired load balancer information
 // specific to the underlying infrastructure provider.
-//
-// +union
 type ProviderLoadBalancerParameters struct {
 	// Type is the underlying infrastructure provider for the load balancer.
 	// Allowed values are "AWS", "Azure", and "GCP".
-	//
-	// +unionDiscriminator
-	// +kubebuilder:default=AWS
-	Type LoadBalancerProviderType `json:"type,omitempty"`
+	Type LoadBalancerProviderType
 
 	// AWS provides configuration settings that are specific to AWS
 	// load balancers.
 	//
 	// If empty, defaults will be applied. See specific aws fields for
 	// details about their defaults.
-	//
-	// +optional
-	AWS *AWSLoadBalancerParameters `json:"aws,omitempty"`
+	AWS *AWSLoadBalancerParameters
 
 	// Azure provides configuration settings that are specific to Azure
 	// load balancers.
 	//
 	// If empty, defaults will be applied. See specific azure fields for
 	// details about their defaults.
-	//
-	// +optional
-	Azure *AzureLoadBalancerParameters `json:"azure,omitempty"`
+	Azure *AzureLoadBalancerParameters
 
 	// GCP provides configuration settings that are specific to GCP
 	// load balancers.
 	//
 	// If empty, defaults will be applied. See specific gcp fields for
 	// details about their defaults.
-	//
-	// +optional
-	GCP *GCPLoadBalancerParameters `json:"gcp,omitempty"`
+	GCP *GCPLoadBalancerParameters
 }
 
 // LoadBalancerProviderType is the underlying infrastructure provider for the
 // load balancer. Allowed values are "AWS", "Azure", and "GCP".
-//
-// +kubebuilder:validation:Enum=AWS;Azure;GCP
 type LoadBalancerProviderType string
 
 const (
@@ -503,9 +446,7 @@ type AWSLoadBalancerParameters struct {
 	//     https://docs.aws.amazon.com/AmazonECS/latest/developerguide/load-balancer-types.html#nlb
 	//
 	// If unset, defaults to "Classic".
-	//
-	// +kubebuilder:default=Classic
-	Type AWSLoadBalancerType `json:"type,omitempty"`
+	Type AWSLoadBalancerType
 
 	// AllocationIDs is a list of Allocation IDs of Elastic IP addresses that are
 	// to be assigned to the Network Load Balancer. Works only with type NLB.
@@ -516,13 +457,10 @@ type AWSLoadBalancerParameters struct {
 	// Example: "eipalloc-<xxxxxxxxxxxxxxxxx>"
 	//
 	// See: https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html
-	//
-	// +optional
-	AllocationIDs []string `json:"allocationIds,omitempty"`
+	AllocationIDs []string
 }
 
 // AWSLoadBalancerType is the type of AWS load balancer to manage.
-// +kubebuilder:validation:Enum=Classic;NLB
 type AWSLoadBalancerType string
 
 const (
@@ -541,21 +479,13 @@ type AzureLoadBalancerParameters struct {
 	// See:
 	// 	 https://docs.microsoft.com/en-us/azure/aks/static-ip#create-a-service-using-the-static-ip-address
 	// 	 https://docs.microsoft.com/en-us/azure/aks/internal-lb#specify-an-ip-address
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=253
-	// +optional
-	Address *string `json:"address,omitempty"`
+	Address *string
 
 	// ResourceGroup is the resource group name where the "address" resides. Relevant
 	// only if scope is "External".
 	//
 	// Omit if desired IP is created in same resource group as AKS cluster.
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=90
-	// +optional
-	ResourceGroup *string `json:"resourceGroup,omitempty"`
+	ResourceGroup *string
 
 	// Subnet is the subnet name where the "address" resides. Relevant only
 	// if scope is "Internal" and desired IP does not reside in same subnet as AKS.
@@ -563,11 +493,7 @@ type AzureLoadBalancerParameters struct {
 	// Omit if desired IP is in same subnet as AKS cluster.
 	//
 	// See: https://docs.microsoft.com/en-us/azure/aks/internal-lb#specify-an-ip-address
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=80
-	// +optional
-	Subnet *string `json:"subnet,omitempty"`
+	Subnet *string
 }
 
 type GCPLoadBalancerParameters struct {
@@ -577,11 +503,7 @@ type GCPLoadBalancerParameters struct {
 	// See:
 	// 	 https://cloud.google.com/kubernetes-engine/docs/tutorials/configuring-domain-name-static-ip#use_a_service
 	// 	 https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing#lb_subnet
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=253
-	// +optional
-	Address *string `json:"address,omitempty"`
+	Address *string
 
 	// Subnet is the subnet name where the "address" resides. Relevant only
 	// if scope is "Internal" and desired IP does not reside in same subnet as GKE
@@ -590,11 +512,7 @@ type GCPLoadBalancerParameters struct {
 	// Omit if desired IP is in same subnet as GKE cluster.
 	//
 	// See: https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing#lb_subnet
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	// +optional
-	Subnet *string `json:"subnet,omitempty"`
+	Subnet *string
 }
 
 type ServicePort struct {
@@ -605,10 +523,7 @@ type ServicePort struct {
 // NodePort is the schema to specify a network port for a NodePort Service.
 type NodePort struct {
 	// Name is an IANA_SVC_NAME within the NodePort Service.
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=253
-	Name string `json:"name"`
+	Name string
 
 	// PortNumber is the network port number to expose for the NodePort Service.
 	// If unspecified, a port number will be assigned from the the cluster's
@@ -621,11 +536,7 @@ type NodePort struct {
 	// 2. Be within the cluster's nodeport service range, i.e. --service-node-port-range
 	//    flag (default: 30000-32767).
 	// 3. Be a valid network port number, i.e. greater than 0 and less than 65536.
-	//
-	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=65535
-	PortNumber *int32 `json:"portNumber,omitempty"`
+	PortNumber *int32
 }
 
 // ContainerPort is the schema to specify a network port for a container.
@@ -633,16 +544,11 @@ type NodePort struct {
 // connections a container uses, but is primarily informational.
 type ContainerPort struct {
 	// Name is an IANA_SVC_NAME within the pod.
-	//
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=253
-	Name string `json:"name"`
+	Name string
 
 	// PortNumber is the network port number to expose on the envoy pod.
 	// The number must be greater than 0 and less than 65536.
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=65535
-	PortNumber int32 `json:"portNumber"`
+	PortNumber int32
 }
 
 const (
@@ -650,57 +556,6 @@ const (
 	// and available.
 	ContourAvailableConditionType = "Available"
 )
-
-// Config is the configuration of a Contour.
-type Config struct {
-	Name                      string
-	Namespace                 string
-	Replicas                  int32
-	NetworkType               NetworkPublishingType
-	NodePorts                 []NodePort
-	GatewayControllerName     *string
-	EnableExternalNameService *bool
-}
-
-// New makes a Contour object using the provided ns/name for the object's
-// namespace/name, pubType for the network publishing type of Envoy, and
-// Envoy container ports 8080/8443.
-func New(cfg Config) *Contour {
-	cntr := &Contour{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cfg.Namespace,
-			Name:      cfg.Name,
-		},
-		Spec: ContourSpec{
-			ContourReplicas: cfg.Replicas,
-			NetworkPublishing: NetworkPublishing{
-				Envoy: EnvoyNetworkPublishing{
-					Type: cfg.NetworkType,
-					ContainerPorts: []ContainerPort{
-						{
-							Name:       "http",
-							PortNumber: int32(8080),
-						},
-						{
-							Name:       "https",
-							PortNumber: int32(8443),
-						},
-					},
-				},
-			},
-		},
-	}
-	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
-		cntr.Spec.NetworkPublishing.Envoy.NodePorts = cfg.NodePorts
-	}
-	if cfg.GatewayControllerName != nil {
-		cntr.Spec.GatewayControllerName = cfg.GatewayControllerName
-	}
-	if cfg.EnableExternalNameService != nil {
-		cntr.Spec.EnableExternalNameService = cfg.EnableExternalNameService
-	}
-	return cntr
-}
 
 // OwningSelector returns a label selector using "projectcontour.io/owning-gateway-name".
 func OwningSelector(contour *Contour) *metav1.LabelSelector {

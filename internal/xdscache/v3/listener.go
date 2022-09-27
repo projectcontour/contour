@@ -418,6 +418,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 						vh.AuthorizationServerWithRequestBody,
 					)
 				}
+
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
@@ -430,6 +431,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
 					AddFilter(authFilter).
+					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).

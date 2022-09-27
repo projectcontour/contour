@@ -25,6 +25,7 @@ import (
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
@@ -446,6 +447,25 @@ func authzFilterFor(
 			Name: "envoy.filters.http.ext_authz",
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(authz),
+			},
+		}).
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		Get()
+}
+
+func jwtAuthnFilterFor(
+	vhost string,
+	jwt *envoy_jwt_v3.JwtAuthentication,
+) *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		AddFilter(&http.HttpFilter{
+			Name: "envoy.filters.http.jwt_authn",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(jwt),
 			},
 		}).
 		RouteConfigName(path.Join("https", vhost)).

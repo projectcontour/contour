@@ -42,7 +42,8 @@ import (
 )
 
 func testGRPCServicePlaintext(namespace string) {
-	Specify("requests to a gRPC service configured with plaintext work as expected", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4707
+	Specify("requests to a gRPC service configured with plaintext work as expected", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
@@ -98,7 +99,9 @@ func testGRPCServicePlaintext(namespace string) {
 			retryOpts := []grpc_retry.CallOption{
 				// Retry if Envoy returns unavailable, the upstream
 				// may not be healthy yet.
-				grpc_retry.WithCodes(codes.Unavailable),
+				// Also retry if we get the unimplemented status, see:
+				// https://github.com/projectcontour/contour/issues/4707
+				grpc_retry.WithCodes(codes.Unavailable, codes.Unimplemented),
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
 				grpc_retry.WithMax(20),
 			}

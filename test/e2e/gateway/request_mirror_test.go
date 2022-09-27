@@ -32,8 +32,9 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testRequestMirrorRule(namespace string) {
-	Specify("mirrors can be specified on route rule", func() {
+func testRequestMirrorRule(namespace string, gateway types.NamespacedName) {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4650
+	Specify("mirrors can be specified on route rule", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-primary")
@@ -48,7 +49,7 @@ func testRequestMirrorRule(namespace string) {
 				Hostnames: []gatewayapi_v1beta1.Hostname{"requestmirrorrule.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
-						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
