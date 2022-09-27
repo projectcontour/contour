@@ -274,8 +274,9 @@ jobs:
           make check-coverage
       - name: codeCoverage
         if: ${{ success() }}
-        run: |
-          CODECOV_NAME=coverage.out bash <(curl -s https://codecov.io/bash)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.out
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
