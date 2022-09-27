@@ -452,7 +452,7 @@ This configuration file configures the Envoy container to connect to Contour and
 The next section outlines all the available flags that can be passed to the `contour bootstrap` command which are used to customize
 the configuration file to match the environment in which Envoy is deployed.
 
-### Flags
+### Bootstrap Flags
 
 There are flags that can be passed to `contour bootstrap` that help configure how Envoy
 connects to Contour:
@@ -471,6 +471,7 @@ connects to Contour:
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
+| <nobr>--overload-max-heap              | ""                | Defines the maximum heap size in bytes until Envoy overload manager stops accepting new connections. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml

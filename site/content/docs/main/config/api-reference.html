@@ -528,8 +528,12 @@ bool
 </em>
 </td>
 <td>
-<p>AllowOrigin specifies the origins that will be allowed to do CORS requests. &ldquo;*&rdquo; means
-allow any origin.</p>
+<p>AllowOrigin specifies the origins that will be allowed to do CORS requests.
+Allowed values include &ldquo;*&rdquo; which signifies any origin is allowed, an exact
+origin of the form &ldquo;scheme://host[:port]&rdquo; (where port is optional), or a valid
+regex pattern.
+Note that regex patterns are validated and a simple &ldquo;glob&rdquo; pattern (e.g. *.foo.com)
+will be rejected or produce unexpected matches when applied as a regex.</p>
 </td>
 </tr>
 <tr>
@@ -1863,6 +1867,148 @@ include invalid.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.JWTProvider">JWTProvider
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>JWTProvider defines how to verify JWTs on requests.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Unique name for the provider.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>default</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether the provider should apply to all
+routes in the HTTPProxy/its includes by
+default. At most one provider can be marked
+as the default. If no provider is marked
+as the default, individual routes must explicitly
+identify the provider they require.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>issuer</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Issuer that JWTs are required to have in the &ldquo;iss&rdquo; field.
+If not provided, JWT issuers are not checked.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>audiences</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Audiences that JWTs are allowed to have in the &ldquo;aud&rdquo; field.
+If not provided, JWT audiences are not checked.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>remoteJWKS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RemoteJWKS">
+RemoteJWKS
+</a>
+</em>
+</td>
+<td>
+<p>Remote JWKS to use for verifying JWT signatures.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.JWTVerificationPolicy">JWTVerificationPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>require</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Require names a specific JWT provider (defined in the virtual host)
+to require for the route. If specified, this field overrides the
+default provider if one exists. If this field is not specified,
+the default provider will be required if one exists. At most one of
+this field or the &ldquo;disabled&rdquo; field can be specified.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disabled defines whether to disable all JWT verification for this
+route. This can be used to opt specific routes out of the default
+JWT provider for the HTTPProxy. At most one of this field or the
+&ldquo;require&rdquo; field can be specified.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.LoadBalancerPolicy">LoadBalancerPolicy
 </h3>
 <p>
@@ -2315,6 +2461,80 @@ service (RLS) for a rate limit decision on each request.</p>
 &ldquo;remote_address&rdquo; and a value equal to the client&rsquo;s IP address
 (from x-forwarded-for).</p>
 </p>
+<h3 id="projectcontour.io/v1.RemoteJWKS">RemoteJWKS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.JWTProvider">JWTProvider</a>)
+</p>
+<p>
+<p>RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>uri</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The URI for the JWKS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>validation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.UpstreamValidation">
+UpstreamValidation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpstreamValidation defines how to verify the JWKS&rsquo;s TLS certificate.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How long to wait for a response from the URI.
+If not specified, a default of 1s applies.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>cacheDuration</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How long to cache the JWKS locally. If not specified,
+Envoy&rsquo;s default of 5m applies.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.ReplacePrefix">ReplacePrefix
 </h3>
 <p>
@@ -2928,6 +3148,21 @@ HTTPDirectResponsePolicy
 <td>
 <em>(Optional)</em>
 <p>DirectResponsePolicy returns an arbitrary HTTP response directly.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>jwtVerificationPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.JWTVerificationPolicy">
+JWTVerificationPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for verifying JWTs for requests to this route.</p>
 </td>
 </tr>
 </tbody>
@@ -3637,6 +3872,7 @@ If not supplied, Envoy&rsquo;s default value of 1h applies.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RemoteJWKS">RemoteJWKS</a>, 
 <a href="#projectcontour.io/v1.Service">Service</a>, 
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
 </p>
@@ -3775,6 +4011,21 @@ RateLimitPolicy
 <td>
 <em>(Optional)</em>
 <p>The policy for rate limiting on the virtual host.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>jwtProviders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.JWTProvider">
+[]JWTProvider
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.</p>
 </td>
 </tr>
 </tbody>
@@ -4871,6 +5122,36 @@ NodePlacement
 <td>
 <em>(Optional)</em>
 <p>NodePlacement describes node scheduling configuration of Contour pods.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>kubernetesLogLevel</code>
+<br>
+<em>
+byte
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
+defaults to 0.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>logLevel</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LogLevel">
+LogLevel
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LogLevel sets the log level for Contour
+Allowed values are &ldquo;info&rdquo;, &ldquo;debug&rdquo;.</p>
 </td>
 </tr>
 </tbody>
@@ -6051,6 +6332,10 @@ string
 </table>
 <h3 id="projectcontour.io/v1alpha1.LogLevel">LogLevel
 (<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
 <p>
 <p>LogLevel is the logging levels available.</p>
 </p>

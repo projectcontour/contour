@@ -283,6 +283,10 @@ type Route struct {
 	// Redirect allows for a 301 Redirect to be the response
 	// to a route request vs. routing to an envoy cluster.
 	Redirect *Redirect
+
+	// JWTProvider names a JWT provider defined on the virtual
+	// host to be used to validate JWTs on requests to this route.
+	JWTProvider string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -466,12 +470,37 @@ type HeaderValueMatchDescriptorEntry struct {
 // that contains the remote address (i.e. client IP).
 type RemoteAddressDescriptorEntry struct{}
 
+// CORSAllowOriginMatchType differentiates different CORS origin matching
+// methods.
+type CORSAllowOriginMatchType int
+
+const (
+	// CORSAllowOriginMatchExact will match an origin exactly.
+	// Wildcard "*" matches should be configured as exact matches.
+	CORSAllowOriginMatchExact CORSAllowOriginMatchType = iota
+
+	// CORSAllowOriginMatchRegex denote a regex pattern will be used
+	// to match the origin in a request.
+	CORSAllowOriginMatchRegex
+)
+
+// CORSAllowOriginMatch specifies how allowed origins should be matched.
+type CORSAllowOriginMatch struct {
+	// Type is the type of matching to perform.
+	// Wildcard matches are treated as exact matches.
+	Type CORSAllowOriginMatchType
+
+	// Value is the pattern to match against, the specifics of which
+	// will depend on the type of match.
+	Value string
+}
+
 // CORSPolicy allows setting the CORS policy
 type CORSPolicy struct {
 	// Specifies whether the resource allows credentials.
 	AllowCredentials bool
 	// AllowOrigin specifies the origins that will be allowed to do CORS requests.
-	AllowOrigin []string
+	AllowOrigin []CORSAllowOriginMatch
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	AllowMethods []string
 	// AllowHeaders specifies the content for the *access-control-allow-headers* header.
@@ -611,6 +640,39 @@ type SecureVirtualHost struct {
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+
+	// JWTProviders specify how to verify JWTs.
+	JWTProviders []JWTProvider
+}
+
+type JWTProvider struct {
+	Name       string
+	Issuer     string
+	Audiences  []string
+	RemoteJWKS RemoteJWKS
+}
+
+type RemoteJWKS struct {
+	URI           string
+	Timeout       time.Duration
+	Cluster       DNSNameCluster
+	CacheDuration *time.Duration
+}
+
+// DNSNameCluster is a cluster that routes directly to a DNS
+// name (i.e. not a Kubernetes service).
+type DNSNameCluster struct {
+	Address            string
+	Scheme             string
+	Port               int
+	DNSLookupFamily    string
+	UpstreamValidation *PeerValidationContext
+}
+
+type JWTRule struct {
+	PathMatchCondition    MatchCondition
+	HeaderMatchConditions []HeaderMatchCondition
+	ProviderName          string
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

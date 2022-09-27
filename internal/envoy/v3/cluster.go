@@ -20,7 +20,6 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/ptypes/any"
@@ -59,7 +58,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	default:
 		// external name set, use hard coded DNS name
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
-		cluster.LoadAssignment = StaticClusterLoadAssignment(service)
+		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -162,16 +161,25 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	return cluster
 }
 
-// StaticClusterLoadAssignment creates a *envoy_endpoint_v3.ClusterLoadAssignment pointing to the external DNS address of the service
-func StaticClusterLoadAssignment(service *dag.Service) *envoy_endpoint_v3.ClusterLoadAssignment {
-	addr := SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port))
-	return &envoy_endpoint_v3.ClusterLoadAssignment{
-		Endpoints: Endpoints(addr),
-		ClusterName: xds.ClusterLoadAssignmentName(
-			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
-			service.Weighted.ServicePort.Name,
-		),
+// DNSNameCluster builds a envoy_cluster_v3.Cluster for the given *dag.DNSNameCluster.
+func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
+	cluster := clusterDefaults()
+
+	cluster.Name = envoy.DNSNameClusterName(c)
+	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
+	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
+		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
 	}
+
+	var transportSocket *envoy_core_v3.TransportSocket
+	if c.Scheme == "https" {
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
+	}
+
+	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))
+	cluster.TransportSocket = transportSocket
+
+	return cluster
 }
 
 func edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
