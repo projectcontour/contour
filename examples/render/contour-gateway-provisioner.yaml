@@ -7043,7 +7043,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -7070,7 +7070,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -7085,7 +7085,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -7121,7 +7121,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -7181,7 +7181,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -7554,7 +7554,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -7581,7 +7581,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -7594,7 +7594,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -7628,7 +7628,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -7683,7 +7683,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -8646,7 +8646,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -8673,7 +8673,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -8688,7 +8688,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -8724,7 +8724,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -8784,7 +8784,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -9156,7 +9156,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -9183,7 +9183,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -9196,7 +9196,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -9230,7 +9230,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -9285,7 +9285,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
