@@ -194,6 +194,7 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 	if len(current.Spec.Ports) != len(expected.Spec.Ports) {
 		updated.Spec.Ports = expected.Spec.Ports
 		changed = true
+		return updated, changed
 	}
 
 	for i, p := range current.Spec.Ports {
