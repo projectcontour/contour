@@ -18,7 +18,7 @@ jobs:
         days-before-pr-stale: 14
         days-before-pr-close: 30
         stale-pr-label: 'lifecycle/stale'
-        stale-pr-message: >
+        stale-pr-message: |
           The Contour project currently lacks enough contributors to adequately respond to all PRs.
 
           This bot triages PRs according to the following rules:
@@ -33,7 +33,7 @@ jobs:
           - Offer to help out with triage
 
           Please send feedback to the #contour channel in the Kubernetes Slack
-        close-pr-message: >
+        close-pr-message: |
           The Contour project currently lacks enough contributors to adequately respond to all PRs.
 
           This bot triages PRs according to the following rules:
@@ -52,7 +52,7 @@ jobs:
         days-before-issue-close: 30
         stale-issue-label: 'lifecycle/stale'
         exempt-issue-labels: 'help wanted,good first issue,priority/important-soon,kind/flake'
-        stale-issue-message: >
+        stale-issue-message: |
           The Contour project currently lacks enough contributors to adequately respond to all Issues.
 
           This bot triages Issues according to the following rules:
@@ -67,7 +67,7 @@ jobs:
           - Offer to help out with triage
 
           Please send feedback to the #contour channel in the Kubernetes Slack
-        close-issue-message: >
+        close-issue-message: |
           The Contour project currently lacks enough contributors to adequately respond to all Issues.
 
           This bot triages Issues according to the following rules:
