@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -1056,7 +1057,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 	}
 
 	var programmed bool
-	for _, rule := range route.Spec.Rules {
+	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
 		for _, match := range rule.Matches {
@@ -1154,15 +1155,23 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			}
 		}
 
+		// Priority is used to ensure if there are multiple matching route rules
+		// within an HTTPRoute, the one that comes first in the list has
+		// precedence. We subtract the index of the rule from MaxUint8 to ensure
+		// rules that come first have a higher priority. All dag.Routes generated
+		// from this HTTPRoute rule matches have the same priority.
+		priority := math.MaxUint8 - uint8(ruleIndex)
+
 		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
 		// Note that we can end up with multiple routes here since the match conditions are
 		// logically "OR"-ed, which we express as multiple routes, each with one of the
 		// conditions, all with the same action.
 		var routes []*Route
+
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect)
+			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1360,7 +1369,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1426,6 +1435,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			QueryParamMatchConditions: mc.queryParams,
 			RequestHeadersPolicy:      headerPolicy,
 			MirrorPolicy:              mirrorPolicy,
+			Priority:                  priority,
 		})
 	}
 
@@ -1446,7 +1456,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, redirect *gatewayapi_v1beta1.HTTPRequestRedirectFilter) []*Route {
+func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, redirect *gatewayapi_v1beta1.HTTPRequestRedirectFilter, priority uint8) []*Route {
 	var hostname string
 	if redirect.Hostname != nil {
 		hostname = string(*redirect.Hostname)
@@ -1475,6 +1485,7 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
 		routes = append(routes, &Route{
+			Priority: priority,
 			Redirect: &Redirect{
 				Hostname:   hostname,
 				Scheme:     scheme,
