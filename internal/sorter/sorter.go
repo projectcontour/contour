@@ -118,7 +118,6 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 
 	// HeaderMatchConditions are equal length: compare item by item.
 	pair := make([]dag.HeaderMatchCondition, 2)
-
 	for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
 		pair[0] = lhs.HeaderMatchConditions[i]
 		pair[1] = rhs.HeaderMatchConditions[i]
@@ -128,11 +127,19 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 		}
 	}
 
-	// If there is no difference in the header match conditions, compare the length
-	// of the query param match conditions. Note that this is sufficient for implementing
-	// the Gateway API spec, but this may need to be enhanced if we add query param
-	// match support to HTTPProxy.
-	return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
+	// One route has a longer QueryParamMatchConditions slice.
+	if len(lhs.QueryParamMatchConditions) != len(rhs.QueryParamMatchConditions) {
+		return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
+	}
+
+	// QueryParamMatchConditions are equal length: compare name item by item.
+	for i := 0; i < len(lhs.QueryParamMatchConditions); i++ {
+		if lhs.QueryParamMatchConditions[i].Name != rhs.QueryParamMatchConditions[i].Name {
+			return lhs.QueryParamMatchConditions[i].Name < rhs.QueryParamMatchConditions[i].Name
+		}
+	}
+
+	return false
 }
 
 // Sorts the given Route slice in place. Routes are ordered first by
