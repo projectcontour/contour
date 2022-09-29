@@ -534,7 +534,7 @@ func TestNodePortServiceChanged(t *testing.T) {
 		{
 			description: "if the number of ports changed",
 			mutate: func(svc *corev1.Service) {
-				svc.Spec.Ports = svc.Spec.Ports[:len(svc.Spec.Ports)-1]
+				svc.Spec.Ports = append(svc.Spec.Ports, svc.Spec.Ports[0])
 			},
 			expect: true,
 		},
