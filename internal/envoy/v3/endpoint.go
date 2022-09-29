@@ -33,10 +33,41 @@ func LBEndpoint(addr *envoy_core_v3.Address) *envoy_endpoint_v3.LbEndpoint {
 	}
 }
 
+// HealthCheckLBEndpoint creates a new LbEndpoint include healthCheckConfig
+func HealthCheckLBEndpoint(addr *envoy_core_v3.Address, healthCheckPort int32) *envoy_endpoint_v3.LbEndpoint {
+	return &envoy_endpoint_v3.LbEndpoint{
+		HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+			Endpoint: &envoy_endpoint_v3.Endpoint{
+				Address:           addr,
+				HealthCheckConfig: HealthCheckConfig(healthCheckPort),
+			},
+		},
+	}
+}
+
+func WeightedHealthcheckEndpoints(weight uint32, healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := HealthcheckEndpoints(healthcheckPort, addrs...)
+	lbendpoints[0].LoadBalancingWeight = protobuf.UInt32(weight)
+	return lbendpoints
+}
+
+func HealthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := make([]*envoy_endpoint_v3.LbEndpoint, 0, len(addrs))
+	for _, addr := range addrs {
+		lbendpoints = append(lbendpoints, HealthCheckLBEndpoint(addr, healthcheckPort))
+	}
+	return []*envoy_endpoint_v3.LocalityLbEndpoints{{
+		LbEndpoints: lbendpoints,
+	}}
+}
+
 // HealthCheckConfig returns an *envoy_endpoint_v3.Endpoint_HealthCheckConfig with a single
-func HealthCheckConfig(port int32) *envoy_endpoint_v3.Endpoint_HealthCheckConfig {
+func HealthCheckConfig(healthCheckPort int32) *envoy_endpoint_v3.Endpoint_HealthCheckConfig {
+	if healthCheckPort == 0 {
+		return nil
+	}
 	return &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
-		PortValue: uint32(port),
+		PortValue: uint32(healthCheckPort),
 	}
 }
 
