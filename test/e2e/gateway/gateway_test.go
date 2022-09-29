@@ -204,8 +204,6 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
-		f.NamespacedTest("gateway-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
-
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
 		f.NamespacedTest("gateway-route-parent-refs", testWithHTTPGateway(testRouteParentRefs))
