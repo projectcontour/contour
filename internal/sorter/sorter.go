@@ -133,6 +133,8 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 	}
 
 	// QueryParamMatchConditions are equal length: compare name item by item.
+	// We can do this simple comparison since we only have one match type, will
+	// need to expand this with a sorter for query params if we introduce more.
 	for i := 0; i < len(lhs.QueryParamMatchConditions); i++ {
 		if lhs.QueryParamMatchConditions[i].Name != rhs.QueryParamMatchConditions[i].Name {
 			return lhs.QueryParamMatchConditions[i].Name < rhs.QueryParamMatchConditions[i].Name
