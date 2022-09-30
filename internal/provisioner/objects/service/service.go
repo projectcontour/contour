@@ -27,7 +27,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -130,17 +129,27 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.C
 // EnsureContourServiceDeleted ensures that a Contour Service for the
 // provided contour is deleted if Contour owner labels exist.
 func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeleted(ctx, cli, contour, contour.ContourServiceName())
+	obj := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourServiceName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
 }
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeleted(ctx, cli, contour, contour.EnvoyServiceName())
-}
+	obj := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyServiceName(),
+		},
+	}
 
-func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, name, current)
+	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
@@ -294,20 +303,6 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	}
 
 	return svc
-}
-
-// current returns the current Contour/Envoy Service for the provided contour.
-func current(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
-	current := &corev1.Service{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.

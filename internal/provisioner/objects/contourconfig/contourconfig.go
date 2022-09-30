@@ -22,7 +22,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -77,21 +76,13 @@ func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour
 
 // EnsureContourConfigDeleted deletes a ContourConfig for the provided contour, if the configured owner labels exist.
 func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourConfigurationName(), current)
-
-}
-
-// current gets the ContourConfiguration for the provided contour from the api server.
-func current(ctx context.Context, cli client.Client, namespace, name string) (*contour_api_v1alpha1.ContourConfiguration, error) {
-	current := &contour_api_v1alpha1.ContourConfiguration{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
+	obj := &contour_api_v1alpha1.ContourConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourConfigurationName(),
+		},
 	}
 
-	if err := cli.Get(ctx, key, current); err != nil {
-		return nil, err
-	}
+	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
 
-	return current, nil
 }

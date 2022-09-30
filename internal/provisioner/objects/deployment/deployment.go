@@ -28,7 +28,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +69,14 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
 func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), current)
+	obj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourDeploymentName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using
@@ -267,19 +273,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 
 	return deploy
-}
-
-// current returns the Deployment resource for the provided contour.
-func current(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.Deployment, error) {
-	deploy := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, deploy); err != nil {
-		return nil, err
-	}
-	return deploy, nil
 }
 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,

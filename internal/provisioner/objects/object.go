@@ -53,23 +53,26 @@ func EnsureObjectDeleted[T client.Object](
 	ctx context.Context,
 	cli client.Client,
 	contour *model.Contour,
-	name string,
-	getObject func(ctx context.Context, cli client.Client, namespace, name string) (T, error),
+	objPlaceholder T,
 ) error {
-	obj, err := getObject(ctx, cli, contour.Namespace, name)
-	if err != nil {
+	if err := cli.Get(ctx, client.ObjectKeyFromObject(objPlaceholder), objPlaceholder); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if !labels.Exist(obj, model.OwnerLabels(contour)) {
+
+	if !labels.Exist(objPlaceholder, model.OwnerLabels(contour)) {
 		return nil
 	}
-	if err = cli.Delete(ctx, obj); err == nil || errors.IsNotFound(err) {
-		return nil
+
+	if err := cli.Delete(ctx, objPlaceholder); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
 	}
-	return err
+
+	return nil
 }
 
 // EnsureObject ensures that an object with the given namespace and name is created or updated

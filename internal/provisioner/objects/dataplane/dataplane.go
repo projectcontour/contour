@@ -27,7 +27,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,11 +104,26 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	// we don't know which one was actually created, since we're not yet
 	// using finalizers so the Gateway spec is unavailable to us at deletion
 	// time.
-	if err := objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), currentDaemonSet); err != nil {
+
+	dsObj := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyDataPlaneName(),
+		},
+	}
+
+	if err := objects.EnsureObjectDeleted(ctx, cli, contour, dsObj); err != nil {
 		return err
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), currentDeployment)
+	deployObj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyDataPlaneName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, contour, deployObj)
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
@@ -456,32 +470,6 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 	}
 
 	return deployment
-}
-
-// currentDaemonSet returns the current DaemonSet resource for the provided contour.
-func currentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.DaemonSet, error) {
-	ds := &appsv1.DaemonSet{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, ds); err != nil {
-		return nil, err
-	}
-	return ds, nil
-}
-
-// currentDeployment returns the current Deployment resource for the provided contour.
-func currentDeployment(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.Deployment, error) {
-	ds := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, ds); err != nil {
-		return nil, err
-	}
-	return ds, nil
 }
 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
