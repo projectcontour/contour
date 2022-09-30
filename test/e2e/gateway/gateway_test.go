@@ -206,8 +206,6 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
-		f.NamespacedTest("gateway-route-parent-refs", testWithHTTPGateway(testRouteParentRefs))
-
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 
 		f.NamespacedTest("gateway-request-mirror-rule", testWithHTTPGateway(testRequestMirrorRule))
