@@ -15,7 +15,6 @@ package dag
 
 import (
 	"fmt"
-	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -1157,10 +1156,11 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 		// Priority is used to ensure if there are multiple matching route rules
 		// within an HTTPRoute, the one that comes first in the list has
-		// precedence. We subtract the index of the rule from MaxUint8 to ensure
-		// rules that come first have a higher priority. All dag.Routes generated
-		// from this HTTPRoute rule matches have the same priority.
-		priority := math.MaxUint8 - uint8(ruleIndex)
+		// precedence. We treat lower values as higher priority so we use the
+		// index of the rule to ensure rules that come first have a higher
+		// priority. All dag.Routes generated from a single HTTPRoute rule have
+		// the same priority.
+		priority := uint8(ruleIndex)
 
 		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
 		// Note that we can end up with multiple routes here since the match conditions are

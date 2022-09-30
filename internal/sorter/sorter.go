@@ -123,8 +123,9 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 
 	// If there are the same number of header and query parameter matches, sort
 	// based on the priority of the route.
+	// Note: lower values mean a higher priority.
 	if lhs.Priority != rhs.Priority {
-		return lhs.Priority > rhs.Priority
+		return lhs.Priority < rhs.Priority
 	}
 
 	// HeaderMatchConditions are equal length: compare item by item.

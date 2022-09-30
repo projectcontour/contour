@@ -229,7 +229,8 @@ type Route struct {
 	QueryParamMatchConditions []QueryParamMatchCondition
 
 	// Priority specifies the relative priority of the Route when compared to other
-	// Routes that may have equivalent match conditions.
+	// Routes that may have equivalent match conditions. A lower value here means the
+	// Route has a higher priority.
 	Priority uint8
 
 	Clusters []*Cluster

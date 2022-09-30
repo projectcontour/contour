@@ -159,7 +159,7 @@ func TestSortRoutesPriority(t *testing.T) {
 	want := []*dag.Route{
 		{
 			// Highest priority so this sorts first.
-			Priority:           math.MaxUint8,
+			Priority:           0,
 			PathMatchCondition: matchPrefixSegment("/"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				presentHeader("a-header-name"),
@@ -169,14 +169,14 @@ func TestSortRoutesPriority(t *testing.T) {
 			// This route sorts ahead of the next one since the priority
 			// is higher, even though the header match would normally
 			// sort it after.
-			Priority:           5,
+			Priority:           1,
 			PathMatchCondition: matchPrefixSegment("/"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				presentHeader("z-header-name"),
 			},
 		},
 		{
-			Priority:           4,
+			Priority:           2,
 			PathMatchCondition: matchPrefixSegment("/"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				presentHeader("a-header-name"),
@@ -186,7 +186,7 @@ func TestSortRoutesPriority(t *testing.T) {
 			// This route sorts ahead of the next one since the priority
 			// is higher, even though the query match would normally
 			// sort it after.
-			Priority:           4,
+			Priority:           2,
 			PathMatchCondition: matchPrefixSegment("/"),
 			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
 				{Name: "z-query-param", Value: "query-value"},
@@ -209,7 +209,7 @@ func TestSortRoutesPriority(t *testing.T) {
 			},
 		},
 		{
-			Priority:           0,
+			Priority:           math.MaxUint8,
 			PathMatchCondition: matchPrefixSegment("/"),
 		},
 	}
