@@ -109,20 +109,12 @@ var (
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-		return updateContourServiceIfNeeded(ctx, cli, contour, current, desired)
-	}
-
-	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), current, updater)
+	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), current, updateContourServiceIfNeeded)
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired)
-	}
-
-	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), current, updater)
+	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), current, updateEnvoyServiceIfNeeded)
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the

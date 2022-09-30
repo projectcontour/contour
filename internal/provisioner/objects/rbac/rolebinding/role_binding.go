@@ -35,11 +35,7 @@ import (
 func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
 	desired := desiredRoleBinding(name, svcAct, role, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.RoleBinding) error {
-		return updateRoleBindingIfNeeded(ctx, cli, contour, current, desired)
-	}
-
-	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRoleBinding, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRoleBinding, updateRoleBindingIfNeeded)
 }
 
 // desiredRoleBinding constructs an instance of the desired RoleBinding resource

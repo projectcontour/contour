@@ -65,21 +65,12 @@ const (
 // EnsureDataPlane ensures an Envoy data plane (daemonset or deployment) exists for the given contour.
 func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
 
-	var (
-		getter  objects.ObjectGetter
-		updater objects.ObjectUpdater
-		desired client.Object
-	)
-
 	switch contour.Spec.EnvoyWorkloadType {
 	// If a Deployment was specified, provision a Deployment.
 	case model.WorkloadTypeDeployment:
-		desired = desiredDeployment(contour, contourImage, envoyImage)
+		desired := desiredDeployment(contour, contourImage, envoyImage)
 
-		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-			current := currentObj.(*appsv1.Deployment)
-			desired := desiredObj.(*appsv1.Deployment)
-
+		updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
 			differ := equality.DeploymentSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -88,16 +79,13 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		getter = currentDeployment
+		return objects.EnsureObject(ctx, cli, contour, desired, currentDeployment, updater)
 
 	// The default workload type is a DaemonSet.
 	default:
-		desired = DesiredDaemonSet(contour, contourImage, envoyImage)
+		desired := DesiredDaemonSet(contour, contourImage, envoyImage)
 
-		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-			current := currentObj.(*appsv1.DaemonSet)
-			desired := desiredObj.(*appsv1.DaemonSet)
-
+		updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
 			differ := equality.DaemonSetSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -106,11 +94,8 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		getter = currentDaemonSet
+		return objects.EnsureObject(ctx, cli, contour, desired, currentDaemonSet, updater)
 	}
-
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
-
 }
 
 // EnsureDataPlaneDeleted ensures the daemonset or deployment for the provided contour is deleted
@@ -393,7 +378,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 	return ds
 }
 
-func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) client.Object {
+func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *appsv1.Deployment {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
 	deployment := &appsv1.Deployment{
@@ -474,7 +459,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 }
 
 // currentDaemonSet returns the current DaemonSet resource for the provided contour.
-func currentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+func currentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.DaemonSet, error) {
 	ds := &appsv1.DaemonSet{}
 	key := types.NamespacedName{
 		Namespace: namespace,
@@ -487,7 +472,7 @@ func currentDaemonSet(ctx context.Context, cli client.Client, namespace, name st
 }
 
 // currentDeployment returns the current Deployment resource for the provided contour.
-func currentDeployment(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+func currentDeployment(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.Deployment, error) {
 	ds := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: namespace,
