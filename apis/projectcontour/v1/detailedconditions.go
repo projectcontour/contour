@@ -144,6 +144,9 @@ const (
 	// ConditionTypeCORSError describes an error condition related to CORS.
 	ConditionTypeCORSError = "CORSError"
 
+	// ConditionTypeJWTVerificationError describes an error condition related to JWT verification.
+	ConditionTypeJWTVerificationError = "JWTVerificationError"
+
 	// ConditionTypeIncludeError describes an error condition with
 	// inclusion of another HTTPProxy resource.
 	ConditionTypeIncludeError = "IncludeError"

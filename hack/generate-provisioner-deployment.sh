@@ -14,6 +14,7 @@ exec > >(git stripspace >"$TARGET")
 # FILES defines the set of source files to render together.
 readonly FILES="examples/contour/01-crds.yaml
 examples/gateway/00-crds.yaml
+examples/gateway/00-namespace.yaml
 examples/gateway/01-admission_webhook.yaml
 examples/gateway/02-certificate_config.yaml
 examples/gateway-provisioner/*.yaml"
@@ -41,6 +42,10 @@ for y in $FILES ; do
     # Since the Gateway YAMLs are pulled from the Gateway API repo, the manifests do not start with "---".
     case $y in
     */gateway/00-crds.yaml)  
+      echo "---"
+      ;;
+
+    */gateway/00-namespace.yaml)
       echo "---"
       ;;
 

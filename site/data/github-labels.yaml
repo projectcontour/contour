@@ -157,6 +157,11 @@ default:
       addedBy: label
       previously:
         - name: "waiting for upstream"
+    - color: "FF7B7B"
+      description: Categorizes the issue or PR as blocked because it needs changes in Gateway API.
+      name: blocked/needs-gateway-api
+      target: both
+      addedBy: label
 
 # Kind.
     - color: e11d21
