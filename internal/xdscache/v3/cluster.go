@@ -92,5 +92,12 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 		}
 	}
 
+	for _, cluster := range root.GetDNSNameClusters() {
+		name := envoy.DNSNameClusterName(cluster)
+		if _, ok := clusters[name]; !ok {
+			clusters[name] = envoy_v3.DNSNameCluster(cluster)
+		}
+	}
+
 	c.Update(clusters)
 }

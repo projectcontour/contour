@@ -18,16 +18,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	networking_v1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // isStatusEqual checks that two objects of supported Kubernetes types
 // have equivalent Status structs.
-//
-// Currently supports:
-// networking.k8s.io/ingress/v1
-// projectcontour.io/v1 (HTTPProxy only)
-// networking.x-k8s.io/v1alpha1 (GatewayClass and Gateway only)
 func isStatusEqual(objA, objB interface{}) bool {
 	switch a := objA.(type) {
 	case *networking_v1.Ingress:
@@ -50,14 +47,28 @@ func isStatusEqual(objA, objB interface{}) bool {
 	case *gatewayapi_v1beta1.GatewayClass:
 		if b, ok := objB.(*gatewayapi_v1beta1.GatewayClass); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
 	case *gatewayapi_v1beta1.Gateway:
 		if b, ok := objB.(*gatewayapi_v1beta1.Gateway); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				return true
+			}
+		}
+	case *gatewayapi_v1beta1.HTTPRoute:
+		if b, ok := objB.(*gatewayapi_v1beta1.HTTPRoute); ok {
+			if cmp.Equal(a.Status, b.Status,
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				return true
+			}
+		}
+	case *gatewayapi_v1alpha2.TLSRoute:
+		if b, ok := objB.(*gatewayapi_v1alpha2.TLSRoute); ok {
+			if cmp.Equal(a.Status, b.Status,
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}

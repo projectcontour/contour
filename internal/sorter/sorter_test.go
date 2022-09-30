@@ -283,7 +283,7 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 	assert.Equal(t, want, have)
 }
 
-func TestSortRoutesMostQueryParams(t *testing.T) {
+func TestSortRoutesQueryParams(t *testing.T) {
 	want := []*dag.Route{
 		{
 
@@ -292,6 +292,26 @@ func TestSortRoutesMostQueryParams(t *testing.T) {
 				{Name: "query-param-1", Value: "query-value-1"},
 				{Name: "query-param-2", Value: "query-value-2"},
 				{Name: "query-param-3", Value: "query-value-3"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			// If same number of matches, sort on element-by-element
+			// comparison of each query param name provided.
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "aaa-query-param-1", Value: "query-value-1"},
+				{Name: "query-param-2", Value: "query-value-2"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			// If same number of matches, sort on element-by-element
+			// comparison of each query param name provided.
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "query-param-1", Value: "query-value-1"},
+				{Name: "bbb-query-param-2", Value: "query-value-2"},
 			},
 		},
 		{

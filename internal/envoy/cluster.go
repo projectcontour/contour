@@ -130,3 +130,7 @@ func AnyPositive(first uint32, rest ...uint32) bool {
 	}
 	return false
 }
+
+func DNSNameClusterName(cluster *dag.DNSNameCluster) string {
+	return strings.Join([]string{"dnsname", cluster.Scheme, cluster.Address}, "/")
+}

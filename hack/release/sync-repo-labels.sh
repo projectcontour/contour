@@ -52,6 +52,6 @@ labelsync \
     --debug \
     --confirm \
     --orgs projectcontour \
-    --skip projectcontour/toc \
+    --skip projectcontour/toc,projectcontour/yages \
     --config "${yaml}" \
     --token "${token}"
