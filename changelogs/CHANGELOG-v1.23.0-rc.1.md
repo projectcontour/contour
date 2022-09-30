@@ -10,7 +10,6 @@ Feedback and bug reports are welcome!
 - [Minor Changes](#minor-changes)
 - [Other Changes](#other-changes)
 - [Docs Changes](#docs-changes)
-- [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 - [Community Thanks!](#community-thanks)
