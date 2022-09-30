@@ -170,7 +170,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
-	checkDaemonSetHasLabels(t, ds, ds.Labels)
+	checkDaemonSetHasLabels(t, ds, cntr.AppLabels())
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		checkContainerHasPort(t, ds, port.PortNumber)
 	}

@@ -47,12 +47,12 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 	names := contour.ContourRBACNames()
 
 	// Ensure service account.
-	if _, err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
+	if err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
 		return fmt.Errorf("failed to ensure service account %s/%s: %w", contour.Namespace, names.ServiceAccount, err)
 	}
 
 	// Ensure cluster role & binding.
-	if _, err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour); err != nil {
+	if err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour); err != nil {
 		return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 	}
 	if err := clusterrolebinding.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
@@ -60,13 +60,12 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 	}
 
 	// Ensure role & binding.
-	if _, err := role.EnsureControllerRole(ctx, cli, names.Role, contour); err != nil {
+	if err := role.EnsureControllerRole(ctx, cli, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role %s/%s: %w", contour.Namespace, names.Role, err)
 	}
 	if err := rolebinding.EnsureRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role binding %s/%s: %w", contour.Namespace, names.RoleBinding, err)
 	}
-
 	return nil
 }
 
@@ -74,10 +73,9 @@ func ensureEnvoyRBAC(ctx context.Context, cli client.Client, contour *model.Cont
 	names := contour.EnvoyRBACNames()
 
 	// Ensure service account.
-	if _, err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
+	if err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
 		return fmt.Errorf("failed to ensure service account %s/%s: %w", contour.Namespace, names.ServiceAccount, err)
 	}
-
 	return nil
 }
 

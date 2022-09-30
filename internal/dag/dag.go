@@ -228,6 +228,11 @@ type Route struct {
 	// match on the querystring parameters.
 	QueryParamMatchConditions []QueryParamMatchCondition
 
+	// Priority specifies the relative priority of the Route when compared to other
+	// Routes that may have equivalent match conditions. A lower value here means the
+	// Route has a higher priority.
+	Priority uint8
+
 	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed

@@ -116,6 +116,18 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 		return len(lhs.HeaderMatchConditions) > len(rhs.HeaderMatchConditions)
 	}
 
+	// One route has a longer QueryParamMatchConditions slice.
+	if len(lhs.QueryParamMatchConditions) != len(rhs.QueryParamMatchConditions) {
+		return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
+	}
+
+	// If there are the same number of header and query parameter matches, sort
+	// based on the priority of the route.
+	// Note: lower values mean a higher priority.
+	if lhs.Priority != rhs.Priority {
+		return lhs.Priority < rhs.Priority
+	}
+
 	// HeaderMatchConditions are equal length: compare item by item.
 	pair := make([]dag.HeaderMatchCondition, 2)
 	for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
@@ -125,11 +137,6 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 		if headerMatchConditionSorter(pair).Less(0, 1) {
 			return true
 		}
-	}
-
-	// One route has a longer QueryParamMatchConditions slice.
-	if len(lhs.QueryParamMatchConditions) != len(rhs.QueryParamMatchConditions) {
-		return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
 	}
 
 	// QueryParamMatchConditions are equal length: compare name item by item.

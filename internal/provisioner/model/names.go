@@ -98,13 +98,13 @@ func (c *Contour) AppLabels() map[string]string {
 func CommonLabels(c *Contour) map[string]string {
 	labels := map[string]string{}
 
-	// Add owner labels
-	for k, v := range OwnerLabels(c) {
+	// Add user-defined labels
+	for k, v := range c.Spec.ResourceLabels {
 		labels[k] = v
 	}
 
-	// Add user-defined labels
-	for k, v := range c.Spec.ResourceLabels {
+	// Add owner labels
+	for k, v := range OwnerLabels(c) {
 		labels[k] = v
 	}
 

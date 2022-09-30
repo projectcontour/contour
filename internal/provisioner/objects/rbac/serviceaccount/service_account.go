@@ -20,10 +20,10 @@ import (
 	utilequality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,24 +31,15 @@ import (
 
 // EnsureServiceAccount ensures a ServiceAccount resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
-func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*corev1.ServiceAccount, error) {
+func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := DesiredServiceAccount(name, contour)
-	current, err := CurrentServiceAccount(ctx, cli, contour.Namespace, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			updated, err := createServiceAccount(ctx, cli, desired)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create service account %s/%s: %w", desired.Namespace, desired.Name, err)
-			}
-			return updated, nil
-		}
-		return nil, fmt.Errorf("failed to get service account %s/%s: %w", desired.Namespace, desired.Name, err)
+
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
+		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current.(*corev1.ServiceAccount), desired.(*corev1.ServiceAccount))
+		return err
 	}
-	updated, err := updateSvcAcctIfNeeded(ctx, cli, contour, current, desired)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update service account %s/%s: %w", desired.Namespace, desired.Name, err)
-	}
-	return updated, nil
+
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentServiceAccount, updater)
 }
 
 // DesiredServiceAccount generates the desired ServiceAccount resource for the
@@ -67,7 +58,7 @@ func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 }
 
 // CurrentServiceAccount returns the current ServiceAccount for the provided ns/name.
-func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name string) (*corev1.ServiceAccount, error) {
+func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name string) (client.Object, error) {
 	current := &corev1.ServiceAccount{}
 	key := types.NamespacedName{
 		Namespace: ns,
@@ -78,14 +69,6 @@ func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name stri
 		return nil, err
 	}
 	return current, nil
-}
-
-// createServiceAccount creates a ServiceAccount resource for the provided sa.
-func createServiceAccount(ctx context.Context, cli client.Client, sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-	if err := cli.Create(ctx, sa); err != nil {
-		return nil, fmt.Errorf("failed to create service account %s/%s: %w", sa.Namespace, sa.Name, err)
-	}
-	return sa, nil
 }
 
 // updateSvcAcctIfNeeded updates a ServiceAccount resource if current does not match desired,
