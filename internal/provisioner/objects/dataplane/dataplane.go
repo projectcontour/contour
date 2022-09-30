@@ -70,7 +70,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 	case model.WorkloadTypeDeployment:
 		desired := desiredDeployment(contour, contourImage, envoyImage)
 
-		updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
+		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
 			differ := equality.DeploymentSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -79,13 +79,13 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, contour, desired, currentDeployment, updater)
+		return objects.EnsureObject(ctx, cli, &appsv1.Deployment{}, desired, updater)
 
 	// The default workload type is a DaemonSet.
 	default:
 		desired := DesiredDaemonSet(contour, contourImage, envoyImage)
 
-		updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
+		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.DaemonSet) error {
 			differ := equality.DaemonSetSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -94,7 +94,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, contour, desired, currentDaemonSet, updater)
+		return objects.EnsureObject(ctx, cli, &appsv1.DaemonSet{}, desired, updater)
 	}
 }
 

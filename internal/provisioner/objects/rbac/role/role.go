@@ -34,12 +34,12 @@ import (
 func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := desiredControllerRole(name, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.Role) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.Role) error {
 		_, err := updateRoleIfNeeded(ctx, cli, contour, current, desired)
 		return err
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRole, updater)
+	return objects.EnsureObject(ctx, cli, &rbacv1.Role{}, desired, updater)
 }
 
 // desiredControllerRole constructs an instance of the desired Role resource with the

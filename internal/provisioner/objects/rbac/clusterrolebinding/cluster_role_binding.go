@@ -35,11 +35,12 @@ import (
 func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, roleRef, svcAct string, contour *model.Contour) error {
 	desired := desiredClusterRoleBinding(name, roleRef, svcAct, contour)
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (*rbacv1.ClusterRoleBinding, error) {
-		return CurrentClusterRoleBinding(ctx, cli, name)
+	// Enclose contour.
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.ClusterRoleBinding) error {
+		return updateClusterRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updateClusterRoleBindingIfNeeded)
+	return objects.EnsureObject(ctx, cli, &rbacv1.ClusterRoleBinding{}, desired, updater)
 }
 
 // desiredClusterRoleBinding constructs an instance of the desired ClusterRoleBinding

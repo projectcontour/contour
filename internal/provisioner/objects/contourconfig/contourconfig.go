@@ -45,7 +45,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 	// being configured correctly for the Gateway being provisioned.
 	setGatewayConfig(desired, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
 		maybeUpdated := current.DeepCopy()
 		setGatewayConfig(maybeUpdated, contour)
 
@@ -55,7 +55,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, current, updater)
+	return objects.EnsureObject(ctx, cli, new(contour_api_v1alpha1.ContourConfiguration), desired, updater)
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {

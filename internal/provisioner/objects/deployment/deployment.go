@@ -55,7 +55,7 @@ const (
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredDeployment(contour, image)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
 		differ := equality.DeploymentSelectorsDiffer(current, desired)
 		if differ {
 			return EnsureDeploymentDeleted(ctx, cli, contour)
@@ -64,7 +64,7 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, current, updater)
+	return objects.EnsureObject(ctx, cli, &appsv1.Deployment{}, desired, updater)
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour

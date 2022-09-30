@@ -34,12 +34,12 @@ import (
 func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := DesiredServiceAccount(name, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.ServiceAccount) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.ServiceAccount) error {
 		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current, desired)
 		return err
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, CurrentServiceAccount, updater)
+	return objects.EnsureObject(ctx, cli, &corev1.ServiceAccount{}, desired, updater)
 }
 
 // DesiredServiceAccount generates the desired ServiceAccount resource for the

@@ -76,26 +76,27 @@ func EnsureObjectDeleted[T client.Object](
 func EnsureObject[T client.Object](
 	ctx context.Context,
 	cli client.Client,
-	contour *model.Contour,
+	currentObjPlaceholder T,
 	desired T,
-	getObject func(ctx context.Context, cli client.Client, namespace, name string) (T, error),
-	updateObject func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired T) error,
+	updateObject func(ctx context.Context, cli client.Client, current, desired T) error,
 ) error {
+	// Rename just for clarity.
+	current := currentObjPlaceholder
 
-	current, err := getObject(ctx, cli, contour.Namespace, desired.GetName())
+	err := cli.Get(ctx, client.ObjectKeyFromObject(desired), current)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
+		return fmt.Errorf("failed to get resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
 	}
 
 	if errors.IsNotFound(err) {
 		if err = cli.Create(ctx, desired); err != nil {
-			return fmt.Errorf("failed to create resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
+			return fmt.Errorf("failed to create resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
 		}
 		return nil
 	}
 
-	if err = updateObject(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
+	if err = updateObject(ctx, cli, current, desired); err != nil {
+		return fmt.Errorf("failed to update resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
 	}
 	return nil
 }

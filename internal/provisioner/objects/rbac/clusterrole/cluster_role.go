@@ -39,11 +39,12 @@ const (
 func EnsureClusterRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := desiredClusterRole(name, contour)
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (*rbacv1.ClusterRole, error) {
-		return CurrentClusterRole(ctx, cli, name)
+	// Enclose contour.
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.ClusterRole) error {
+		return updateClusterRoleIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updateClusterRoleIfNeeded)
+	return objects.EnsureObject(ctx, cli, &rbacv1.ClusterRole{}, desired, updater)
 }
 
 // desiredClusterRole constructs an instance of the desired ClusterRole resource with
