@@ -140,7 +140,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkContainerHasImage(t, container, testContourImage)
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
-	checkDeploymentHasLabels(t, deploy, deploy.Labels)
+	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
 
 	for _, port := range container.Ports {
 		if port.Name == "http" && port.ContainerPort != insecurePort {
