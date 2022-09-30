@@ -28,25 +28,22 @@ import (
 
 // EnsureContourConfig ensures that a ContourConfiguration exists for the given contour.
 func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		cfg := &contour_api_v1alpha1.ContourConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: contour.Namespace,
-				Name:      name,
-				Labels:    model.OwnerLabels(contour),
-			},
-		}
-
-		// Take any user-provided Config as a base.
-		if contour.Spec.RuntimeSettings != nil {
-			cfg.Spec = *contour.Spec.RuntimeSettings
-		}
-
-		// Override Gateway-specific settings to ensure the Contour is
-		// being configured correctly for the Gateway being provisioned.
-		setGatewayConfig(cfg, contour)
-		return cfg
+	desired := &contour_api_v1alpha1.ContourConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourConfigurationName(),
+			Labels:    model.OwnerLabels(contour),
+		},
 	}
+
+	// Take any user-provided Config as a base.
+	if contour.Spec.RuntimeSettings != nil {
+		desired.Spec = *contour.Spec.RuntimeSettings
+	}
+
+	// Override Gateway-specific settings to ensure the Contour is
+	// being configured correctly for the Gateway being provisioned.
+	setGatewayConfig(desired, contour)
 
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desired client.Object) error {
 		current := currentObj.(*contour_api_v1alpha1.ContourConfiguration)
@@ -63,7 +60,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return current(ctx, cli, namespace, name)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, contour.ContourConfigurationName(), getter, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {

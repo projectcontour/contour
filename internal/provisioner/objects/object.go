@@ -50,9 +50,6 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 // ObjectGetter gets an object given a namespace and name.
 type ObjectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
 
-// ObjectMaker make a specific resource with the given name.
-type ObjectMaker func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object
-
 // ObjectUpdater update the current resource to desired if need.
 type ObjectUpdater func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error
 
@@ -80,26 +77,24 @@ func EnsureObject(
 	ctx context.Context,
 	cli client.Client,
 	contour *model.Contour,
-	name string,
+	desired client.Object,
 	getter ObjectGetter,
-	maker ObjectMaker,
 	updater ObjectUpdater) error {
-	desired := maker(ctx, cli, contour, name)
 
-	current, err := getter(ctx, cli, contour.Namespace, name)
+	current, err := getter(ctx, cli, contour.Namespace, desired.GetName())
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, name, err)
+		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
 	}
 
 	if errors.IsNotFound(err) {
 		if err = cli.Create(ctx, desired); err != nil {
-			return fmt.Errorf("failed to create resource %s/%s: %w", contour.Namespace, name, err)
+			return fmt.Errorf("failed to create resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
 		}
 		return nil
 	}
 
 	if err = updater(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update service %s/%s: %w", contour.Namespace, name, err)
+		return fmt.Errorf("failed to update service %s/%s: %w", contour.Namespace, desired.GetName(), err)
 	}
 	return nil
 }

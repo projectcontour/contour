@@ -109,28 +109,20 @@ var (
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return DesiredContourService(contour)
-	}
-
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
 		return updateContourServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, contour.ContourServiceName(), currentService, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), currentService, updater)
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return DesiredEnvoyService(contour)
-	}
-
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
 		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, contour.EnvoyServiceName(), currentService, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), currentService, updater)
 }
 
 func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {

@@ -33,15 +33,13 @@ import (
 // ns/name and contour namespace/name for the owning contour labels.
 // The RoleBinding will use svcAct for the subject and role for the role reference.
 func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return desiredRoleBinding(name, svcAct, role, contour)
-	}
+	desired := desiredRoleBinding(name, svcAct, role, contour)
 
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
 		return updateRoleBindingIfNeeded(ctx, cli, contour, current.(*rbacv1.RoleBinding), desired.(*rbacv1.RoleBinding))
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, name, CurrentRoleBinding, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRoleBinding, updater)
 }
 
 // desiredRoleBinding constructs an instance of the desired RoleBinding resource

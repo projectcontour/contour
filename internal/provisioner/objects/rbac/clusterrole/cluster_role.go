@@ -37,9 +37,7 @@ const (
 // EnsureClusterRole ensures a ClusterRole resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
 func EnsureClusterRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return desiredClusterRole(name, contour)
-	}
+	desired := desiredClusterRole(name, contour)
 
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
 		return updateClusterRoleIfNeeded(ctx, cli, contour, current.(*rbacv1.ClusterRole), desired.(*rbacv1.ClusterRole))
@@ -49,7 +47,7 @@ func EnsureClusterRole(ctx context.Context, cli client.Client, name string, cont
 		return CurrentClusterRole(ctx, cli, name)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, name, getter, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
 }
 
 // desiredClusterRole constructs an instance of the desired ClusterRole resource with

@@ -66,17 +66,15 @@ const (
 func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
 
 	var (
-		maker   objects.ObjectMaker
 		getter  objects.ObjectGetter
 		updater objects.ObjectUpdater
+		desired client.Object
 	)
 
 	switch contour.Spec.EnvoyWorkloadType {
 	// If a Deployment was specified, provision a Deployment.
 	case model.WorkloadTypeDeployment:
-		maker = func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-			return desiredDeployment(contour, contourImage, envoyImage)
-		}
+		desired = desiredDeployment(contour, contourImage, envoyImage)
 
 		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
 			current := currentObj.(*appsv1.Deployment)
@@ -94,9 +92,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 
 	// The default workload type is a DaemonSet.
 	default:
-		maker = func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-			return DesiredDaemonSet(contour, contourImage, envoyImage)
-		}
+		desired = DesiredDaemonSet(contour, contourImage, envoyImage)
 
 		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
 			current := currentObj.(*appsv1.DaemonSet)
@@ -113,7 +109,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 		getter = CurrentDaemonSet
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, contour.EnvoyDataPlaneName(), getter, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
 
 }
 

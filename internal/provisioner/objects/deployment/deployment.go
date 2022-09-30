@@ -53,9 +53,7 @@ const (
 
 // EnsureDeployment ensures a deployment using image exists for the given contour.
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return DesiredDeployment(contour, image)
-	}
+	desired := DesiredDeployment(contour, image)
 
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
 		current := currentObj.(*appsv1.Deployment)
@@ -69,7 +67,7 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, contour.ContourDeploymentName(), CurrentDeployment, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentDeployment, updater)
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour

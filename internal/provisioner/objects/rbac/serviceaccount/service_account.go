@@ -32,16 +32,14 @@ import (
 // EnsureServiceAccount ensures a ServiceAccount resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
 func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
-	maker := func(ctx context.Context, cli client.Client, contour *model.Contour, name string) client.Object {
-		return DesiredServiceAccount(name, contour)
-	}
+	desired := DesiredServiceAccount(name, contour)
 
 	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
 		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current.(*corev1.ServiceAccount), desired.(*corev1.ServiceAccount))
 		return err
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, name, CurrentServiceAccount, maker, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentServiceAccount, updater)
 }
 
 // DesiredServiceAccount generates the desired ServiceAccount resource for the
