@@ -129,7 +129,7 @@ func TestDesiredDeployment(t *testing.T) {
 	// Change the Contour log level to test --debug.
 	cntr.Spec.LogLevel = v1alpha1.DebugLog
 
-	cntr.Spec.CommonLabels = map[string]string{
+	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "value",
 	}
 

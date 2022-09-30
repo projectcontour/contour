@@ -154,7 +154,7 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-	cntr.Spec.CommonLabels = map[string]string{
+	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "val",
 	}
 

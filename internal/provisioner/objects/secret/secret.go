@@ -57,7 +57,7 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 	}
 
 	for _, secret := range secrets {
-		// Add owner & user-definied labels.
+		// Add owner & user-defined labels.
 		if secret.Labels == nil {
 			secret.Labels = model.CommonLabels(contour)
 		} else {

@@ -53,7 +53,7 @@ func Default(namespace, name string) *Contour {
 					},
 				},
 			},
-			CommonLabels: map[string]string{},
+			ResourceLabels: map[string]string{},
 		},
 	}
 }
@@ -168,8 +168,8 @@ type ContourSpec struct {
 	// defaults to 0.
 	KubernetesLogLevel uint8
 
-	// CommonLabels is a set of labels to add to the provisioned Contour resource(s).
-	CommonLabels map[string]string
+	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
+	ResourceLabels map[string]string
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -346,8 +346,6 @@ type EnvoyNetworkPublishing struct {
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
 }
-
-//
 
 type NetworkPublishingType = contourv1alpha1.NetworkPublishingType
 

@@ -201,7 +201,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourDeploymentName(),
-			Labels:    contour.ComponentLabels(),
+			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: pointer.Int32(600),
@@ -324,10 +324,10 @@ func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector 
 }
 
 // contourPodLabels returns the labels for contour's pods, there are pod selector &
-// common labels
+// app labels
 func contourPodLabels(contour *model.Contour) map[string]string {
 	labels := ContourDeploymentPodSelector(contour).MatchLabels
-	for k, v := range contour.ComponentLabels() {
+	for k, v := range contour.AppLabels() {
 		labels[k] = v
 	}
 	return labels

@@ -290,8 +290,8 @@ func (in *ContourDeploymentSpec) DeepCopyInto(out *ContourDeploymentSpec) {
 		*out = new(ContourConfigurationSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.CommonLabels != nil {
-		in, out := &in.CommonLabels, &out.CommonLabels
+	if in.ResourceLabels != nil {
+		in, out := &in.ResourceLabels, &out.ResourceLabels
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
