@@ -201,31 +201,31 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 				changed = true
 			}
 		}
+	}
 
-		if !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector) {
-			updated.Spec.Selector = expected.Spec.Selector
-			changed = true
-		}
+	if !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector) {
+		updated.Spec.Selector = expected.Spec.Selector
+		changed = true
+	}
 
-		if !apiequality.Semantic.DeepEqual(current.Spec.ExternalTrafficPolicy, expected.Spec.ExternalTrafficPolicy) {
-			updated.Spec.ExternalTrafficPolicy = expected.Spec.ExternalTrafficPolicy
-			changed = true
-		}
+	if !apiequality.Semantic.DeepEqual(current.Spec.ExternalTrafficPolicy, expected.Spec.ExternalTrafficPolicy) {
+		updated.Spec.ExternalTrafficPolicy = expected.Spec.ExternalTrafficPolicy
+		changed = true
+	}
 
-		if !apiequality.Semantic.DeepEqual(current.Spec.SessionAffinity, expected.Spec.SessionAffinity) {
-			updated.Spec.SessionAffinity = expected.Spec.SessionAffinity
-			changed = true
-		}
+	if !apiequality.Semantic.DeepEqual(current.Spec.SessionAffinity, expected.Spec.SessionAffinity) {
+		updated.Spec.SessionAffinity = expected.Spec.SessionAffinity
+		changed = true
+	}
 
-		if !apiequality.Semantic.DeepEqual(current.Spec.Type, expected.Spec.Type) {
-			updated.Spec.Type = expected.Spec.Type
-			changed = true
-		}
+	if !apiequality.Semantic.DeepEqual(current.Spec.Type, expected.Spec.Type) {
+		updated.Spec.Type = expected.Spec.Type
+		changed = true
+	}
 
-		if !apiequality.Semantic.DeepEqual(current.Annotations, expected.Annotations) {
-			updated.Annotations = expected.Annotations
-			changed = true
-		}
+	if !apiequality.Semantic.DeepEqual(current.Annotations, expected.Annotations) {
+		updated.Annotations = expected.Annotations
+		changed = true
 	}
 
 	if !changed {
