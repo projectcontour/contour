@@ -35,11 +35,11 @@ import (
 func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, roleRef, svcAct string, contour *model.Contour) error {
 	desired := desiredClusterRoleBinding(name, roleRef, svcAct, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateClusterRoleBindingIfNeeded(ctx, cli, contour, current.(*rbacv1.ClusterRoleBinding), desired.(*rbacv1.ClusterRoleBinding))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRoleBinding) error {
+		return updateClusterRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+	getter := func(ctx context.Context, cli client.Client, namespace, name string) (*rbacv1.ClusterRoleBinding, error) {
 		return CurrentClusterRoleBinding(ctx, cli, name)
 	}
 
@@ -77,7 +77,7 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 
 // CurrentClusterRoleBinding returns the current ClusterRoleBinding for the
 // provided name.
-func CurrentClusterRoleBinding(ctx context.Context, cli client.Client, name string) (client.Object, error) {
+func CurrentClusterRoleBinding(ctx context.Context, cli client.Client, name string) (*rbacv1.ClusterRoleBinding, error) {
 	current := &rbacv1.ClusterRoleBinding{}
 	key := types.NamespacedName{Name: name}
 	err := cli.Get(ctx, key, current)

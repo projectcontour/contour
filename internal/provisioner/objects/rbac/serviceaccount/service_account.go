@@ -34,8 +34,8 @@ import (
 func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := DesiredServiceAccount(name, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current.(*corev1.ServiceAccount), desired.(*corev1.ServiceAccount))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.ServiceAccount) error {
+		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current, desired)
 		return err
 	}
 
@@ -58,7 +58,7 @@ func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 }
 
 // CurrentServiceAccount returns the current ServiceAccount for the provided ns/name.
-func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name string) (client.Object, error) {
+func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name string) (*corev1.ServiceAccount, error) {
 	current := &corev1.ServiceAccount{}
 	key := types.NamespacedName{
 		Namespace: ns,

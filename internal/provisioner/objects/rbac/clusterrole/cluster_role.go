@@ -39,11 +39,11 @@ const (
 func EnsureClusterRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := desiredClusterRole(name, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateClusterRoleIfNeeded(ctx, cli, contour, current.(*rbacv1.ClusterRole), desired.(*rbacv1.ClusterRole))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRole) error {
+		return updateClusterRoleIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+	getter := func(ctx context.Context, cli client.Client, namespace, name string) (*rbacv1.ClusterRole, error) {
 		return CurrentClusterRole(ctx, cli, name)
 	}
 
@@ -96,7 +96,7 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 }
 
 // CurrentClusterRole returns the current ClusterRole for the provided name.
-func CurrentClusterRole(ctx context.Context, cli client.Client, name string) (client.Object, error) {
+func CurrentClusterRole(ctx context.Context, cli client.Client, name string) (*rbacv1.ClusterRole, error) {
 	current := &rbacv1.ClusterRole{}
 	key := types.NamespacedName{Name: name}
 	err := cli.Get(ctx, key, current)

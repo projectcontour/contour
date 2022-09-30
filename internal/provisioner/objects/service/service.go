@@ -109,8 +109,8 @@ var (
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateContourServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+		return updateContourServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
 	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), current, updater)
@@ -118,8 +118,8 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
 	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), current, updater)
@@ -295,7 +295,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 }
 
 // current returns the current Contour/Envoy Service for the provided contour.
-func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+func current(ctx context.Context, cli client.Client, namespace, name string) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: namespace,

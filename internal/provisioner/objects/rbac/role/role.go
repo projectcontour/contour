@@ -34,8 +34,8 @@ import (
 func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
 	desired := desiredControllerRole(name, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		_, err := updateRoleIfNeeded(ctx, cli, contour, current.(*rbacv1.Role), desired.(*rbacv1.Role))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.Role) error {
+		_, err := updateRoleIfNeeded(ctx, cli, contour, current, desired)
 		return err
 	}
 
@@ -73,7 +73,7 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 }
 
 // CurrentRole returns the current Role for the provided ns/name.
-func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (client.Object, error) {
+func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.Role, error) {
 	current := &rbacv1.Role{}
 	key := types.NamespacedName{
 		Namespace: ns,

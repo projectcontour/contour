@@ -45,8 +45,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 	// being configured correctly for the Gateway being provisioned.
 	setGatewayConfig(desired, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desired client.Object) error {
-		current := currentObj.(*contour_api_v1alpha1.ContourConfiguration)
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
 		maybeUpdated := current.DeepCopy()
 		setGatewayConfig(maybeUpdated, contour)
 
@@ -83,7 +82,7 @@ func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour 
 }
 
 // current gets the ContourConfiguration for the provided contour from the api server.
-func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+func current(ctx context.Context, cli client.Client, namespace, name string) (*contour_api_v1alpha1.ContourConfiguration, error) {
 	current := &contour_api_v1alpha1.ContourConfiguration{}
 	key := types.NamespacedName{
 		Namespace: namespace,

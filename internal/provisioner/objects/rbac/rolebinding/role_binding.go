@@ -35,8 +35,8 @@ import (
 func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
 	desired := desiredRoleBinding(name, svcAct, role, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateRoleBindingIfNeeded(ctx, cli, contour, current.(*rbacv1.RoleBinding), desired.(*rbacv1.RoleBinding))
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.RoleBinding) error {
+		return updateRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
 	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRoleBinding, updater)
@@ -73,7 +73,7 @@ func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *model.Contour
 }
 
 // CurrentRoleBinding returns the current RoleBinding for the provided ns/name.
-func CurrentRoleBinding(ctx context.Context, cli client.Client, ns, name string) (client.Object, error) {
+func CurrentRoleBinding(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.RoleBinding, error) {
 	current := &rbacv1.RoleBinding{}
 	key := types.NamespacedName{
 		Namespace: ns,

@@ -47,16 +47,16 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 	}
 }
 
-// ObjectGetter gets an object given a namespace and name.
-type ObjectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
-
-// ObjectUpdater update the current resource to desired if need.
-type ObjectUpdater func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error
-
 // EnsureObjectDeleted ensures that an object with the given namespace and name is deleted
 // if Contour owner labels exist.
-func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter ObjectGetter) error {
-	obj, err := getter(ctx, cli, contour.Namespace, name)
+func EnsureObjectDeleted[T client.Object](
+	ctx context.Context,
+	cli client.Client,
+	contour *model.Contour,
+	name string,
+	getObject func(ctx context.Context, cli client.Client, namespace, name string) (T, error),
+) error {
+	obj, err := getObject(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -73,15 +73,16 @@ func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.
 }
 
 // EnsureObject ensures that an object with the given namespace and name is created or updated
-func EnsureObject(
+func EnsureObject[T client.Object](
 	ctx context.Context,
 	cli client.Client,
 	contour *model.Contour,
-	desired client.Object,
-	getter ObjectGetter,
-	updater ObjectUpdater) error {
+	desired T,
+	getObject func(ctx context.Context, cli client.Client, namespace, name string) (T, error),
+	updateObject func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired T) error,
+) error {
 
-	current, err := getter(ctx, cli, contour.Namespace, desired.GetName())
+	current, err := getObject(ctx, cli, contour.Namespace, desired.GetName())
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
 	}
@@ -93,8 +94,8 @@ func EnsureObject(
 		return nil
 	}
 
-	if err = updater(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update service %s/%s: %w", contour.Namespace, desired.GetName(), err)
+	if err = updateObject(ctx, cli, contour, current, desired); err != nil {
+		return fmt.Errorf("failed to update resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
 	}
 	return nil
 }

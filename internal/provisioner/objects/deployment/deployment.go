@@ -55,10 +55,7 @@ const (
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredDeployment(contour, image)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-		current := currentObj.(*appsv1.Deployment)
-		desired := desiredObj.(*appsv1.Deployment)
-
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
 		differ := equality.DeploymentSelectorsDiffer(current, desired)
 		if differ {
 			return EnsureDeploymentDeleted(ctx, cli, contour)
@@ -273,7 +270,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 }
 
 // current returns the Deployment resource for the provided contour.
-func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+func current(ctx context.Context, cli client.Client, namespace, name string) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: namespace,
