@@ -1,1 +1,1 @@
-Add Kubernetes common labels configurability to ContourDeployment resource.
+Add Kubernetes resource labels configurability to ContourDeployment resource.
