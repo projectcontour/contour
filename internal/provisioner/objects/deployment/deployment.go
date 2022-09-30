@@ -67,13 +67,13 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, CurrentDeployment, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, current, updater)
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
 func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), CurrentDeployment)
+	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), current)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using
@@ -272,8 +272,8 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	return deploy
 }
 
-// CurrentDeployment returns the Deployment resource for the provided contour.
-func CurrentDeployment(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+// current returns the Deployment resource for the provided contour.
+func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: namespace,

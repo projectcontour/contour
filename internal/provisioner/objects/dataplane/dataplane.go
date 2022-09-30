@@ -106,7 +106,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		getter = CurrentDaemonSet
+		getter = currentDaemonSet
 	}
 
 	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
@@ -120,7 +120,7 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	// we don't know which one was actually created, since we're not yet
 	// using finalizers so the Gateway spec is unavailable to us at deletion
 	// time.
-	if err := objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), CurrentDaemonSet); err != nil {
+	if err := objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), currentDaemonSet); err != nil {
 		return err
 	}
 
@@ -473,8 +473,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 	return deployment
 }
 
-// CurrentDaemonSet returns the current DaemonSet resource for the provided contour.
-func CurrentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+// currentDaemonSet returns the current DaemonSet resource for the provided contour.
+func currentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
 	ds := &appsv1.DaemonSet{}
 	key := types.NamespacedName{
 		Namespace: namespace,

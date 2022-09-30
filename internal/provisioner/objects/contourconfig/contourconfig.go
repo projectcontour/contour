@@ -56,11 +56,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-		return current(ctx, cli, namespace, name)
-	}
-
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
+	return objects.EnsureObject(ctx, cli, contour, desired, current, updater)
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {
@@ -82,15 +78,12 @@ func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour
 
 // EnsureContourConfigDeleted deletes a ContourConfig for the provided contour, if the configured owner labels exist.
 func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-		return current(ctx, cli, namespace, name)
-	}
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourConfigurationName(), getter)
+	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourConfigurationName(), current)
 
 }
 
 // current gets the ContourConfiguration for the provided contour from the api server.
-func current(ctx context.Context, cli client.Client, namespace, name string) (*contour_api_v1alpha1.ContourConfiguration, error) {
+func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
 	current := &contour_api_v1alpha1.ContourConfiguration{}
 	key := types.NamespacedName{
 		Namespace: namespace,

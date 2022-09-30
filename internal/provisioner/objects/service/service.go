@@ -113,7 +113,7 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 		return updateContourServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), currentService, updater)
+	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), current, updater)
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
@@ -122,11 +122,7 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.C
 		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), currentService, updater)
-}
-
-func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, name, currentService)
+	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), current, updater)
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
@@ -139,6 +135,10 @@ func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	return ensureServiceDeleted(ctx, cli, contour, contour.EnvoyServiceName())
+}
+
+func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
+	return objects.EnsureObjectDeleted(ctx, cli, contour, name, current)
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
@@ -294,8 +294,8 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	return svc
 }
 
-// currentContourService returns the current Contour/Envoy Service for the provided contour.
-func currentService(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
+// current returns the current Contour/Envoy Service for the provided contour.
+func current(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: namespace,
