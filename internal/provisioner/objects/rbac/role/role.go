@@ -20,38 +20,26 @@ import (
 	equality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ensureRole(ctx context.Context, cli client.Client, name string, contour *model.Contour, desired *rbacv1.Role) (*rbacv1.Role, error) {
-	current, err := CurrentRole(ctx, cli, contour.Namespace, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			updated, err := createRole(ctx, cli, desired)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create role %s/%s: %w", desired.Namespace, desired.Name, err)
-			}
-			return updated, nil
-		}
-		return nil, fmt.Errorf("failed to get role %s/%s: %w", desired.Namespace, desired.Name, err)
-	}
-	updated, err := updateRoleIfNeeded(ctx, cli, contour, current, desired)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update role %s/%s: %w", desired.Namespace, desired.Name, err)
-	}
-	return updated, nil
-}
-
 // EnsureControllerRole ensures a Role resource exists with the for the Contour
 // controller.
-func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*rbacv1.Role, error) {
-	return ensureRole(ctx, cli, name, contour, desiredControllerRole(name, contour))
+func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
+	desired := desiredControllerRole(name, contour)
+
+	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
+		_, err := updateRoleIfNeeded(ctx, cli, contour, current.(*rbacv1.Role), desired.(*rbacv1.Role))
+		return err
+	}
+
+	return objects.EnsureObject(ctx, cli, contour, desired, CurrentRole, updater)
 }
 
 // desiredControllerRole constructs an instance of the desired Role resource with the
@@ -85,7 +73,7 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 }
 
 // CurrentRole returns the current Role for the provided ns/name.
-func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.Role, error) {
+func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (client.Object, error) {
 	current := &rbacv1.Role{}
 	key := types.NamespacedName{
 		Namespace: ns,
@@ -96,14 +84,6 @@ func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (*rbac
 		return nil, err
 	}
 	return current, nil
-}
-
-// createRole creates a Role resource for the provided role.
-func createRole(ctx context.Context, cli client.Client, role *rbacv1.Role) (*rbacv1.Role, error) {
-	if err := cli.Create(ctx, role); err != nil {
-		return nil, fmt.Errorf("failed to create role %s/%s: %w", role.Namespace, role.Name, err)
-	}
-	return role, nil
 }
 
 // updateRoleIfNeeded updates a Role resource if current does not match desired,
