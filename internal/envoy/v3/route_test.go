@@ -853,6 +853,7 @@ func TestRouteConfiguration(t *testing.T) {
 					},
 					Append: protobuf.Bool(true),
 				}},
+				RequestHeadersToRemove: []string{"x-forwarded-host"},
 			},
 		},
 		"one virtualhost": {
@@ -872,6 +873,7 @@ func TestRouteConfiguration(t *testing.T) {
 					},
 					Append: protobuf.Bool(true),
 				}},
+				RequestHeadersToRemove: []string{"x-forwarded-host"},
 			},
 		},
 	}
