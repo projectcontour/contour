@@ -79,13 +79,28 @@ func (c *Contour) EnvoyRBACNames() RBACNames {
 	}
 }
 
-// ComponentLabels returns labels for a Contour component.
-func (c *Contour) ComponentLabels() map[string]string {
-	labels := map[string]string{
-		"app.kubernetes.io/name":       "contour",
-		"app.kubernetes.io/instance":   c.Name,
-		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
+// AppLabels returns labels for a Contour resources(Deployment/DaemonSet).
+func (c *Contour) AppLabels() map[string]string {
+	labels := map[string]string{}
+	for k, v := range CommonLabels(c) {
+		labels[k] = v
+	}
+
+	labels["app.kubernetes.io/instance"] = c.Name
+	labels["app.kubernetes.io/name"] = "contour"
+	labels["app.kubernetes.io/component"] = "ingress-controller"
+	labels["app.kubernetes.io/managed-by"] = "contour-gateway-provisioner"
+
+	return labels
+}
+
+// CommonLabels returns labels for Contour resources.
+func CommonLabels(c *Contour) map[string]string {
+	labels := map[string]string{}
+
+	// Add user-defined labels
+	for k, v := range c.Spec.ResourceLabels {
+		labels[k] = v
 	}
 
 	// Add owner labels
