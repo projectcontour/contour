@@ -26,8 +26,8 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testGatewayQueryParamMatch(namespace string, gateway types.NamespacedName) {
-	Specify("query param matching works", func() {
+func testGatewayMultipleQueryParamMatch(namespace string, gateway types.NamespacedName) {
+	Specify("first of multiple query params in a request is used for routing", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-1")
@@ -60,35 +60,17 @@ func testGatewayQueryParamMatch(namespace string, gateway types.NamespacedName) 
 						},
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-2", 80, 1),
 					},
-					{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
-							{QueryParams: gatewayapi.HTTPQueryParamMatches(map[string]string{"animal": "dolphin", "color": "red"})},
-						},
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-3", 80, 1),
-					},
-					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-4", 80, 1),
-					},
 				},
 			},
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := map[string]string{
-			"/?animal=whale":                     "echo-1",
-			"/?animal=whale&foo=bar":             "echo-1", // extra irrelevant parameters have no impact
-			"/?animal=whale&animal=dolphin":      "echo-1", // the first occurrence of a given key in a querystring is used for matching
-			"/?animal=dolphin":                   "echo-2",
-			"/?animal=dolphin&animal=whale":      "echo-2", // the first occurrence of a given key in a querystring is used for matching
-			"/?animal=dolphin&color=blue":        "echo-2", // all matches must match for a route to be selected
-			"/?animal=dolphin&color=red":         "echo-3",
-			"/?animal=dolphin&color=red&foo=bar": "echo-3", // extra irrelevant parameters have no impact
-			"/?animal=horse":                     "echo-4", // non-matching values do not match
-			"/?animal=whalesay":                  "echo-4", // value matching is exact, not prefix
-			"/?animal=bluedolphin":               "echo-4", // value matching is exact, not suffix
-			"/?color=blue":                       "echo-4",
-			"/?nomatch=true":                     "echo-4",
+			// These test cases are for documenting Envoy's behavior when
+			// handling requests with multiple query params with the same key:
+			// The first occurrence is used for matching.
+			"/?animal=whale&animal=dolphin": "echo-1",
+			"/?animal=dolphin&animal=whale": "echo-2",
 		}
 
 		for path, expectedService := range cases {

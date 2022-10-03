@@ -200,19 +200,11 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("gateway-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
 
-		f.NamespacedTest("gateway-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
-
-		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayQueryParamMatch))
-
-		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidBackendRef))
+		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayMultipleQueryParamMatch))
 
 		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
-		f.NamespacedTest("gateway-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
-
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
-
-		f.NamespacedTest("gateway-route-parent-refs", testWithHTTPGateway(testRouteParentRefs))
 
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 
