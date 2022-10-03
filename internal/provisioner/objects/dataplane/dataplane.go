@@ -319,7 +319,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.ComponentLabels(),
+			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
@@ -340,7 +340,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 						"prometheus.io/port":   "8002",
 						"prometheus.io/path":   "/stats/prometheus",
 					},
-					Labels: EnvoyPodSelector(contour).MatchLabels,
+					Labels: envoyPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					Containers:     containers,
@@ -398,7 +398,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.ComponentLabels(),
+			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas:             pointer.Int32(contour.Spec.EnvoyReplicas),
@@ -420,7 +420,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 						"prometheus.io/port":   "8002",
 						"prometheus.io/path":   "/stats/prometheus",
 					},
-					Labels: EnvoyPodSelector(contour).MatchLabels,
+					Labels: envoyPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					// TODO anti-affinity
@@ -537,4 +537,13 @@ func EnvoyPodSelector(contour *model.Contour) *metav1.LabelSelector {
 			"app": contour.EnvoyDataPlaneName(),
 		},
 	}
+}
+
+// envoyPodLabels returns the labels for envoy's pods
+func envoyPodLabels(contour *model.Contour) map[string]string {
+	labels := EnvoyPodSelector(contour).MatchLabels
+	for k, v := range contour.AppLabels() {
+		labels[k] = v
+	}
+	return labels
 }

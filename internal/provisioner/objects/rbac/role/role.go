@@ -53,7 +53,7 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      name,
-			Labels:    model.OwnerLabels(contour),
+			Labels:    model.CommonLabels(contour),
 		},
 	}
 	verbCGU := []string{"create", "get", "update"}

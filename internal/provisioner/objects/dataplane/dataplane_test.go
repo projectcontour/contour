@@ -154,6 +154,9 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.ResourceLabels = map[string]string{
+		"key": "val",
+	}
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
@@ -167,7 +170,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
-	checkDaemonSetHasLabels(t, ds, ds.Labels)
+	checkDaemonSetHasLabels(t, ds, cntr.AppLabels())
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		checkContainerHasPort(t, ds, port.PortNumber)
 	}
