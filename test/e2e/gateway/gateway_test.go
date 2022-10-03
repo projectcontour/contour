@@ -20,6 +20,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
 	"testing"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -45,8 +46,10 @@ const ReconcileModeController = "controller"
 // to reconcile a specific named Gateway.
 const ReconcileModeGateway = "gateway"
 
-var f = e2e.NewFramework(false)
-var reconcileMode = ReconcileModeController
+var (
+	f             = e2e.NewFramework(false)
+	reconcileMode string
+)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -54,6 +57,12 @@ func TestGatewayAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	var found bool
+	reconcileMode, found = os.LookupEnv("CONTOUR_E2E_GATEWAY_RECONCILE_MODE")
+	if !found {
+		reconcileMode = ReconcileModeGateway
+	}
+
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
@@ -66,17 +75,6 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Gateway API", func() {
-	// Run all tests for both gateway reconciliation modes.
-	for _, mode := range []string{ReconcileModeController, ReconcileModeGateway} {
-		reconcileMode = mode
-
-		Context(fmt.Sprintf("Reconcile mode %s", mode), func() {
-			runGatewayTests()
-		})
-	}
-})
-
-func runGatewayTests() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
@@ -394,7 +392,7 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
 	})
-}
+})
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
