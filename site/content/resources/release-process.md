@@ -268,7 +268,6 @@ A release-candidate requires:
 - a branch off of `main` for the release-candidate
 - YAML to be customized
 - a release tag to be created
-- an Operator release
 - a GitHub release with release notes
 - public communication
 - cleanup
@@ -307,7 +306,7 @@ This process is easier than managing a `release-*` branch and having to cherry-p
     ```bash
     go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
-1. Proofread the release notes and do any reordering, rewording, reformatting necessary. Note that you will likely have to delete changelog entries that were not part of this patch release, as well as empty sections in the changelog.
+1. Proofread the release notes and do any reordering, rewording, reformatting necessary.
 1. Commit all changes, push the branch to `github.com/projectcontour/contour`.
 
 ### Update YAML and tag release
