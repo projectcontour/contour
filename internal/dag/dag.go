@@ -821,6 +821,8 @@ type Cluster struct {
 
 	// TimeoutPolicy specifies how to handle timeouts for this cluster.
 	TimeoutPolicy ClusterTimeoutPolicy
+
+	SlowStartConfig *SlowStartConfig
 }
 
 // WeightedService represents the load balancing weight of a
@@ -1006,4 +1008,15 @@ func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {
 		MatchType: HeaderMatchTypeRegex,
 		Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(fqdn[1:]),
 	}
+}
+
+// SlowStartConfig holds configuration for gradually increasing amount of traffic to a newly added endpoint.
+type SlowStartConfig struct {
+	Window           time.Duration
+	Aggression       float64
+	MinWeightPercent uint32
+}
+
+func (s *SlowStartConfig) String() string {
+	return fmt.Sprintf("%s%f%d", s.Window.String(), s.Aggression, s.MinWeightPercent)
 }

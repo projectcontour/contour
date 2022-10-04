@@ -870,6 +870,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
+			slowStartConfig, err := slowStartConfig(service.SlowStart)
+			if err != nil {
+				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
+					"%s on slow start", err)
+				return nil
+			}
+
 			c := &Cluster{
 				Upstream:              s,
 				LoadBalancerPolicy:    lbPolicy,
@@ -884,6 +891,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 				TimeoutPolicy:         ctp,
+				SlowStartConfig:       slowStartConfig,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -1430,4 +1438,30 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func slowStartConfig(slowStart *contour_api_v1.SlowStart) (*SlowStartConfig, error) {
+	// If slow start is not configured, return nil.
+	if slowStart == nil {
+		return nil, nil
+	}
+
+	window, err := time.ParseDuration(slowStart.Window)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing window: %s", err)
+	}
+
+	aggression := float64(1.0)
+	if slowStart.Aggression != "" {
+		aggression, err = strconv.ParseFloat(slowStart.Aggression, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing aggression: %s", err)
+		}
+	}
+
+	return &SlowStartConfig{
+		Window:           window,
+		Aggression:       aggression,
+		MinWeightPercent: slowStart.MinimumWeightPercent,
+	}, nil
 }

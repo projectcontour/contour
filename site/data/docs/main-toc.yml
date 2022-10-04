@@ -47,6 +47,8 @@ toc:
         url: /config/jwt-verification
       - page: Annotations Reference
         url: /config/annotations
+      - page: Slow Start Mode
+        url: /config/slow-start
       - page: API Reference
         url: /config/api
   - title: Deployment

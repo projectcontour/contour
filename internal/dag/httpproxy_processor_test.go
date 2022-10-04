@@ -292,3 +292,57 @@ func TestToCORSPolicy(t *testing.T) {
 	}
 
 }
+
+func TestSlowStart(t *testing.T) {
+	tests := map[string]struct {
+		input   *contour_api_v1.SlowStart
+		want    *SlowStartConfig
+		wantErr bool
+	}{
+		"window only": {
+			input: &contour_api_v1.SlowStart{
+				Window: "10s",
+			},
+			want: &SlowStartConfig{
+				Window:           10 * time.Second,
+				Aggression:       1.0,
+				MinWeightPercent: 0, // Default value 10% is set only via CRD defaulting, so we get 0 here.
+			},
+		},
+		"with all fields": {
+			input: &contour_api_v1.SlowStart{
+				Window:               "10s",
+				Aggression:           "1.1",
+				MinimumWeightPercent: 5,
+			},
+			want: &SlowStartConfig{
+				Window:           10 * time.Second,
+				Aggression:       1.1,
+				MinWeightPercent: 5,
+			},
+		},
+		"invalid window, missing unit": {
+			input: &contour_api_v1.SlowStart{
+				Window: "10",
+			},
+			wantErr: true,
+		},
+		"invalid aggression, not float": {
+			input: &contour_api_v1.SlowStart{
+				Window:     "10s",
+				Aggression: "not-a-float",
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := slowStartConfig(tc.input)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

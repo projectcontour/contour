@@ -3311,6 +3311,86 @@ Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
 <p>The policies for rewriting Set-Cookie header attributes.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>slowStart</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.SlowStart">
+SlowStart
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Slow start will gradually increase amount of traffic to a newly added endpoint.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.SlowStart">SlowStart
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Service">Service</a>)
+</p>
+<p>
+<p>SlowStart will gradually increase amount of traffic to a newly added endpoint.
+It works only with RoundRobin and WeightedLeastRequest load balancing strategies.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>window</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The duration of slow start window.
+Duration is expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>aggression</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The speed of traffic increase over the slow start window.
+Defaults to 1.0, so that endpoint would get linearly increasing amount of traffic.
+When increasing the value for this parameter, the speed of traffic ramp-up increases non-linearly.
+The value of aggression parameter should be greater than 0.0.</p>
+<p>More info: <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start">https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>minWeightPercent</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The minimum percentage of origin weight that avoids too small new weight, which may cause endpoints in slow start mode receive no traffic in slow start window.
+If not specified, the default is 10%.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.SubCondition">SubCondition
