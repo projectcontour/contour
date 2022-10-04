@@ -70,6 +70,8 @@ type KubernetesCache struct {
 	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
+	ratelimitpolicies         map[types.NamespacedName]*contour_api_v1alpha1.RateLimitPolicy
+	ratelimitfilters          map[types.NamespacedName]*contour_api_v1alpha1.RateLimitFilter
 
 	Client client.Reader
 
@@ -91,6 +93,8 @@ func (kc *KubernetesCache) init() {
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
+	kc.ratelimitpolicies = make(map[types.NamespacedName]*contour_api_v1alpha1.RateLimitPolicy)
+	kc.ratelimitfilters = make(map[types.NamespacedName]*contour_api_v1alpha1.RateLimitFilter)
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -210,6 +214,12 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			return true
 		case *contour_api_v1alpha1.ExtensionService:
 			kc.extensions[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1alpha1.RateLimitPolicy:
+			kc.ratelimitpolicies[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1alpha1.RateLimitFilter:
+			kc.ratelimitfilters[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *contour_api_v1alpha1.ContourConfiguration:
 			return false

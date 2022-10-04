@@ -20,6 +20,8 @@ import (
 )
 
 var (
+	RateLimitPolicyGVR      = GroupVersion.WithResource("ratelimitpolicies")
+	RateLimitFilterGVR      = GroupVersion.WithResource("ratelimitfilters")
 	ExtensionServiceGVR     = GroupVersion.WithResource("extensionservices")
 	ContourConfigurationGVR = GroupVersion.WithResource("contourconfigurations")
 	ContourDeploymentGVR    = GroupVersion.WithResource("contourdeployments")
@@ -39,6 +41,10 @@ var (
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		GroupVersion,
+		&RateLimitPolicy{},
+		&RateLimitPolicyList{},
+		&RateLimitFilter{},
+		&RateLimitFilterList{},
 		&ExtensionService{},
 		&ExtensionServiceList{},
 		&ContourConfiguration{},

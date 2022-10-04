@@ -4029,6 +4029,10 @@ Resource Types:
 <a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>
 </li><li>
 <a href="#projectcontour.io/v1alpha1.ExtensionService">ExtensionService</a>
+</li><li>
+<a href="#projectcontour.io/v1alpha1.RateLimitFilter">RateLimitFilter</a>
+</li><li>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicy">RateLimitPolicy</a>
 </li></ul>
 <h3 id="projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration
 </h3>
@@ -4597,6 +4601,221 @@ ExtensionServiceStatus
 </em>
 </td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitFilter">RateLimitFilter
+</h3>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>RateLimitFilter</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitFilterSpec">
+RateLimitFilterSpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>status</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyStatus">
+RateLimitPolicyStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitPolicy">RateLimitPolicy
+</h3>
+<p>
+<p>RateLimitPolicy provides a way to apply &hellip;</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>RateLimitPolicy</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicySpec">
+RateLimitPolicySpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>targetRef</code>
+<br>
+<em>
+sigs.k8s.io/gateway-api/apis/v1alpha2.PolicyTargetReference
+</em>
+</td>
+<td>
+<p>TargetRef identifies an API object to apply policy to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>override</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyConfig">
+RateLimitPolicyConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Override defines policy configuration that should override policy
+configuration attached below the targeted resource in the hierarchy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>default</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyConfig">
+RateLimitPolicyConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Default defines default policy configuration for the targeted resource.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>status</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyStatus">
+RateLimitPolicyStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>
@@ -6210,6 +6429,49 @@ use as fallback when a non-SNI request is received.</p>
 </td>
 </tr></tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.HeaderValue">HeaderValue
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.LocalRateLimitPolicy">LocalRateLimitPolicy</a>)
+</p>
+<p>
+<p>HeaderValue represents a header name/value pair</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name represents a key of a header</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value represents the value of a header specified by a key</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.HeadersPolicy">HeadersPolicy
 </h3>
 <p>
@@ -6339,6 +6601,99 @@ string
 <td>
 <em>(Optional)</em>
 <p>Address to set in Ingress object status.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.LocalRateLimitPolicy">LocalRateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.RateLimitFilterSpec">RateLimitFilterSpec</a>, 
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyConfig">RateLimitPolicyConfig</a>)
+</p>
+<p>
+<p>LocalRateLimitPolicy defines local rate limiting parameters.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>requests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<p>Requests defines how many requests per unit of time should
+be allowed before rate limiting occurs.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>unit</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Unit defines the period of time within which requests
+over the limit will be rate limited. Valid values are
+&ldquo;second&rdquo;, &ldquo;minute&rdquo; and &ldquo;hour&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>burst</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Burst defines the number of requests above the requests per
+unit that should be allowed within a short period of time.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseStatusCode</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseStatusCode is the HTTP status code to use for responses
+to rate-limited requests. Codes must be in the 400-599 range
+(inclusive). If not specified, the Envoy default of 429 (Too
+Many Requests) is used.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseHeadersToAdd</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HeaderValue">
+[]HeaderValue
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseHeadersToAdd is an optional list of response headers to
+set when a request is rate-limited.</p>
 </td>
 </tr>
 </tbody>
@@ -6803,6 +7158,171 @@ bool
 <em>(Optional)</em>
 <p>ApplyToIngress determines if the Policies will apply to ingress objects</p>
 <p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitFilterSpec">RateLimitFilterSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.RateLimitFilter">RateLimitFilter</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitPolicyConfig">RateLimitPolicyConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicySpec">RateLimitPolicySpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitPolicySpec">RateLimitPolicySpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicy">RateLimitPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>targetRef</code>
+<br>
+<em>
+sigs.k8s.io/gateway-api/apis/v1alpha2.PolicyTargetReference
+</em>
+</td>
+<td>
+<p>TargetRef identifies an API object to apply policy to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>override</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyConfig">
+RateLimitPolicyConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Override defines policy configuration that should override policy
+configuration attached below the targeted resource in the hierarchy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>default</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicyConfig">
+RateLimitPolicyConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Default defines default policy configuration for the targeted resource.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RateLimitPolicyStatus">RateLimitPolicyStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.RateLimitFilter">RateLimitFilter</a>, 
+<a href="#projectcontour.io/v1alpha1.RateLimitPolicy">RateLimitPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>conditions</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#condition-v1-meta">
+[]Kubernetes meta/v1.Condition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions describe the current conditions of the RateLimitPolicy.</p>
 </td>
 </tr>
 </tbody>

@@ -4358,6 +4358,693 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
+  name: ratelimitfilters.projectcontour.io
+spec:
+  preserveUnknownFields: false
+  group: projectcontour.io
+  names:
+    kind: RateLimitFilter
+    listKind: RateLimitFilterList
+    plural: ratelimitfilters
+    shortNames:
+    - ratelimitfilter
+    - ratelimitfilters
+    singular: ratelimitfilter
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              local:
+                description: Local defines local rate limiting parameters, i.e. parameters
+                  for rate limiting that occurs within each Envoy pod as requests
+                  are handled.
+                properties:
+                  burst:
+                    description: Burst defines the number of requests above the requests
+                      per unit that should be allowed within a short period of time.
+                    format: int32
+                    type: integer
+                  requests:
+                    description: Requests defines how many requests per unit of time
+                      should be allowed before rate limiting occurs.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  responseHeadersToAdd:
+                    description: ResponseHeadersToAdd is an optional list of response
+                      headers to set when a request is rate-limited.
+                    items:
+                      description: HeaderValue represents a header name/value pair
+                      properties:
+                        name:
+                          description: Name represents a key of a header
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value represents the value of a header specified
+                            by a key
+                          minLength: 1
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  responseStatusCode:
+                    description: ResponseStatusCode is the HTTP status code to use
+                      for responses to rate-limited requests. Codes must be in the
+                      400-599 range (inclusive). If not specified, the Envoy default
+                      of 429 (Too Many Requests) is used.
+                    format: int32
+                    maximum: 599
+                    minimum: 400
+                    type: integer
+                  unit:
+                    description: Unit defines the period of time within which requests
+                      over the limit will be rate limited. Valid values are "second",
+                      "minute" and "hour".
+                    enum:
+                    - second
+                    - minute
+                    - hour
+                    type: string
+                required:
+                - requests
+                - unit
+                type: object
+            type: object
+          status:
+            properties:
+              conditions:
+                description: Conditions describe the current conditions of the RateLimitPolicy.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                maxItems: 8
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: ratelimitpolicies.projectcontour.io
+spec:
+  preserveUnknownFields: false
+  group: projectcontour.io
+  names:
+    kind: RateLimitPolicy
+    listKind: RateLimitPolicyList
+    plural: ratelimitpolicies
+    shortNames:
+    - ratelimitpolicy
+    - ratelimitpolicies
+    singular: ratelimitpolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: RateLimitPolicy defines rate limiting parameters.
+        properties:
+          global:
+            description: Global defines global rate limiting parameters, i.e. parameters
+              defining descriptors that are sent to an external rate limit service
+              (RLS) for a rate limit decision on each request.
+            properties:
+              descriptors:
+                description: Descriptors defines the list of descriptors that will
+                  be generated and sent to the rate limit service. Each descriptor
+                  contains 1+ key-value pair entries.
+                items:
+                  description: RateLimitDescriptor defines a list of key-value pair
+                    generators.
+                  properties:
+                    entries:
+                      description: Entries is the list of key-value pair generators.
+                      items:
+                        description: RateLimitDescriptorEntry is a key-value pair
+                          generator. Exactly one field on this struct must be non-nil.
+                        properties:
+                          genericKey:
+                            description: GenericKey defines a descriptor entry with
+                              a static key and value.
+                            properties:
+                              key:
+                                description: Key defines the key of the descriptor
+                                  entry. If not set, the key is set to "generic_key".
+                                type: string
+                              value:
+                                description: Value defines the value of the descriptor
+                                  entry.
+                                minLength: 1
+                                type: string
+                            type: object
+                          remoteAddress:
+                            description: RemoteAddress defines a descriptor entry
+                              with a key of "remote_address" and a value equal to
+                              the client's IP address (from x-forwarded-for).
+                            type: object
+                          requestHeader:
+                            description: RequestHeader defines a descriptor entry
+                              that's populated only if a given header is present on
+                              the request. The descriptor key is static, and the descriptor
+                              value is equal to the value of the header.
+                            properties:
+                              descriptorKey:
+                                description: DescriptorKey defines the key to use
+                                  on the descriptor entry.
+                                minLength: 1
+                                type: string
+                              headerName:
+                                description: HeaderName defines the name of the header
+                                  to look for on the request.
+                                minLength: 1
+                                type: string
+                            type: object
+                          requestHeaderValueMatch:
+                            description: RequestHeaderValueMatch defines a descriptor
+                              entry that's populated if the request's headers match
+                              a set of 1+ match criteria. The descriptor key is "header_match",
+                              and the descriptor value is static.
+                            properties:
+                              expectMatch:
+                                default: true
+                                description: ExpectMatch defines whether the request
+                                  must positively match the match criteria in order
+                                  to generate a descriptor entry (i.e. true), or not
+                                  match the match criteria in order to generate a
+                                  descriptor entry (i.e. false). The default is true.
+                                type: boolean
+                              headers:
+                                description: Headers is a list of 1+ match criteria
+                                  to apply against the request to determine whether
+                                  to populate the descriptor entry or not.
+                                items:
+                                  description: HeaderMatchCondition specifies how
+                                    to conditionally match against HTTP headers. The
+                                    Name field is required, but only one of the remaining
+                                    fields should be be provided.
+                                  properties:
+                                    contains:
+                                      description: Contains specifies a substring
+                                        that must be present in the header value.
+                                      type: string
+                                    exact:
+                                      description: Exact specifies a string that the
+                                        header value must be equal to.
+                                      type: string
+                                    name:
+                                      description: Name is the name of the header
+                                        to match against. Name is required. Header
+                                        names are case insensitive.
+                                      type: string
+                                    notcontains:
+                                      description: NotContains specifies a substring
+                                        that must not be present in the header value.
+                                      type: string
+                                    notexact:
+                                      description: NoExact specifies a string that
+                                        the header value must not be equal to. The
+                                        condition is true if the header has any other
+                                        value.
+                                      type: string
+                                    notpresent:
+                                      description: NotPresent specifies that condition
+                                        is true when the named header is not present.
+                                        Note that setting NotPresent to false does
+                                        not make the condition true if the named header
+                                        is present.
+                                      type: boolean
+                                    present:
+                                      description: Present specifies that condition
+                                        is true when the named header is present,
+                                        regardless of its value. Note that setting
+                                        Present to false does not make the condition
+                                        true if the named header is absent.
+                                      type: boolean
+                                  required:
+                                  - name
+                                  type: object
+                                minItems: 1
+                                type: array
+                              value:
+                                description: Value defines the value of the descriptor
+                                  entry.
+                                minLength: 1
+                                type: string
+                            type: object
+                        type: object
+                      minItems: 1
+                      type: array
+                  type: object
+                minItems: 1
+                type: array
+            type: object
+          local:
+            description: Local defines local rate limiting parameters, i.e. parameters
+              for rate limiting that occurs within each Envoy pod as requests are
+              handled.
+            properties:
+              burst:
+                description: Burst defines the number of requests above the requests
+                  per unit that should be allowed within a short period of time.
+                format: int32
+                type: integer
+              requests:
+                description: Requests defines how many requests per unit of time should
+                  be allowed before rate limiting occurs.
+                format: int32
+                minimum: 1
+                type: integer
+              responseHeadersToAdd:
+                description: ResponseHeadersToAdd is an optional list of response
+                  headers to set when a request is rate-limited.
+                items:
+                  description: HeaderValue represents a header name/value pair
+                  properties:
+                    name:
+                      description: Name represents a key of a header
+                      minLength: 1
+                      type: string
+                    value:
+                      description: Value represents the value of a header specified
+                        by a key
+                      minLength: 1
+                      type: string
+                  required:
+                  - name
+                  - value
+                  type: object
+                type: array
+              responseStatusCode:
+                description: ResponseStatusCode is the HTTP status code to use for
+                  responses to rate-limited requests. Codes must be in the 400-599
+                  range (inclusive). If not specified, the Envoy default of 429 (Too
+                  Many Requests) is used.
+                format: int32
+                maximum: 599
+                minimum: 400
+                type: integer
+              unit:
+                description: Unit defines the period of time within which requests
+                  over the limit will be rate limited. Valid values are "second",
+                  "minute" and "hour".
+                enum:
+                - second
+                - minute
+                - hour
+                type: string
+            required:
+            - requests
+            - unit
+            type: object
+        type: object
+    served: true
+    storage: false
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RateLimitPolicy provides a way to apply ...
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              default:
+                description: Default defines default policy configuration for the
+                  targeted resource.
+                properties:
+                  local:
+                    description: Local defines local rate limiting parameters, i.e.
+                      parameters for rate limiting that occurs within each Envoy pod
+                      as requests are handled.
+                    properties:
+                      burst:
+                        description: Burst defines the number of requests above the
+                          requests per unit that should be allowed within a short
+                          period of time.
+                        format: int32
+                        type: integer
+                      requests:
+                        description: Requests defines how many requests per unit of
+                          time should be allowed before rate limiting occurs.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      responseHeadersToAdd:
+                        description: ResponseHeadersToAdd is an optional list of response
+                          headers to set when a request is rate-limited.
+                        items:
+                          description: HeaderValue represents a header name/value
+                            pair
+                          properties:
+                            name:
+                              description: Name represents a key of a header
+                              minLength: 1
+                              type: string
+                            value:
+                              description: Value represents the value of a header
+                                specified by a key
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                      responseStatusCode:
+                        description: ResponseStatusCode is the HTTP status code to
+                          use for responses to rate-limited requests. Codes must be
+                          in the 400-599 range (inclusive). If not specified, the
+                          Envoy default of 429 (Too Many Requests) is used.
+                        format: int32
+                        maximum: 599
+                        minimum: 400
+                        type: integer
+                      unit:
+                        description: Unit defines the period of time within which
+                          requests over the limit will be rate limited. Valid values
+                          are "second", "minute" and "hour".
+                        enum:
+                        - second
+                        - minute
+                        - hour
+                        type: string
+                    required:
+                    - requests
+                    - unit
+                    type: object
+                type: object
+              override:
+                description: Override defines policy configuration that should override
+                  policy configuration attached below the targeted resource in the
+                  hierarchy.
+                properties:
+                  local:
+                    description: Local defines local rate limiting parameters, i.e.
+                      parameters for rate limiting that occurs within each Envoy pod
+                      as requests are handled.
+                    properties:
+                      burst:
+                        description: Burst defines the number of requests above the
+                          requests per unit that should be allowed within a short
+                          period of time.
+                        format: int32
+                        type: integer
+                      requests:
+                        description: Requests defines how many requests per unit of
+                          time should be allowed before rate limiting occurs.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      responseHeadersToAdd:
+                        description: ResponseHeadersToAdd is an optional list of response
+                          headers to set when a request is rate-limited.
+                        items:
+                          description: HeaderValue represents a header name/value
+                            pair
+                          properties:
+                            name:
+                              description: Name represents a key of a header
+                              minLength: 1
+                              type: string
+                            value:
+                              description: Value represents the value of a header
+                                specified by a key
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                      responseStatusCode:
+                        description: ResponseStatusCode is the HTTP status code to
+                          use for responses to rate-limited requests. Codes must be
+                          in the 400-599 range (inclusive). If not specified, the
+                          Envoy default of 429 (Too Many Requests) is used.
+                        format: int32
+                        maximum: 599
+                        minimum: 400
+                        type: integer
+                      unit:
+                        description: Unit defines the period of time within which
+                          requests over the limit will be rate limited. Valid values
+                          are "second", "minute" and "hour".
+                        enum:
+                        - second
+                        - minute
+                        - hour
+                        type: string
+                    required:
+                    - requests
+                    - unit
+                    type: object
+                type: object
+              targetRef:
+                description: TargetRef identifies an API object to apply policy to.
+                properties:
+                  group:
+                    description: Group is the group of the target resource.
+                    maxLength: 253
+                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    type: string
+                  kind:
+                    description: Kind is kind of the target resource.
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                    type: string
+                  name:
+                    description: Name is the name of the target resource.
+                    maxLength: 253
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the referent. When
+                      unspecified, the local namespace is inferred. Even when policy
+                      targets a resource in a different namespace, it MUST only apply
+                      to traffic originating from the same namespace as the policy.
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - group
+                - kind
+                - name
+                type: object
+            required:
+            - targetRef
+            type: object
+          status:
+            properties:
+              conditions:
+                description: Conditions describe the current conditions of the RateLimitPolicy.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                maxItems: 8
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:
   preserveUnknownFields: false

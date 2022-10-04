@@ -79,6 +79,24 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - ratelimitfilters
+  - ratelimitpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - ratelimitfilters/status
+  - ratelimitpolicies/status
+  verbs:
+  - create
+  - get
+  - update
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

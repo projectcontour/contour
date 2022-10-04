@@ -156,6 +156,24 @@ rules:
   - list
   - watch
 - apiGroups:
+  - projectcontour.io
+  resources:
+  - ratelimitfilters
+  - ratelimitpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - ratelimitfilters/status
+  - ratelimitpolicies/status
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings

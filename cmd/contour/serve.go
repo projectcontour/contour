@@ -461,6 +461,12 @@ func (s *Server) doServe() error {
 		"contourconfigurations":     &contour_api_v1alpha1.ContourConfiguration{},
 		"services":                  &corev1.Service{},
 		"ingresses":                 &networking_v1.Ingress{},
+
+		// Gateway API policies
+		"ratelimitpolicies": &contour_api_v1alpha1.RateLimitPolicy{},
+
+		// Gateway API filters
+		"ratelimitfilters": &contour_api_v1alpha1.RateLimitFilter{},
 	} {
 		if err := informOnResource(r, eventHandler, s.mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", name).Fatal("failed to create informer")
