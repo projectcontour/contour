@@ -4659,9 +4659,6 @@ spec:
                     - minute
                     - hour
                     type: string
-                required:
-                - requests
-                - unit
                 type: object
             type: object
           status:
@@ -5055,9 +5052,6 @@ spec:
                         - minute
                         - hour
                         type: string
-                    required:
-                    - requests
-                    - unit
                     type: object
                 type: object
               override:
@@ -5121,9 +5115,6 @@ spec:
                         - minute
                         - hour
                         type: string
-                    required:
-                    - requests
-                    - unit
                     type: object
                 type: object
               targetRef:

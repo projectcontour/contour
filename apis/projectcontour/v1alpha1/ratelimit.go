@@ -44,7 +44,7 @@ type RateLimitPolicyConfig struct {
 type LocalRateLimitPolicy struct {
 	// Requests defines how many requests per unit of time should
 	// be allowed before rate limiting occurs.
-	// +required
+	// +optional
 	// +kubebuilder:validation:Minimum=1
 	Requests uint32 `json:"requests"`
 
@@ -52,7 +52,7 @@ type LocalRateLimitPolicy struct {
 	// over the limit will be rate limited. Valid values are
 	// "second", "minute" and "hour".
 	// +kubebuilder:validation:Enum=second;minute;hour
-	// +required
+	// +optional
 	Unit string `json:"unit"`
 
 	// Burst defines the number of requests above the requests per
