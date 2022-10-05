@@ -1451,11 +1451,6 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 }
 
 func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {
-	// If slow start is not configured, return nil.
-	if slowStart == nil {
-		return nil, nil
-	}
-
 	window, err := time.ParseDuration(slowStart.Window)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing window: %s", err)
