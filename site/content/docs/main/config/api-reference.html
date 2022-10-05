@@ -3313,11 +3313,11 @@ Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>slowStart</code>
+<code>slowStartPolicy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.SlowStart">
-SlowStart
+<a href="#projectcontour.io/v1.SlowStartPolicy">
+SlowStartPolicy
 </a>
 </em>
 </td>
@@ -3328,15 +3328,15 @@ SlowStart
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.SlowStart">SlowStart
+<h3 id="projectcontour.io/v1.SlowStartPolicy">SlowStartPolicy
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.Service">Service</a>)
 </p>
 <p>
-<p>SlowStart will gradually increase amount of traffic to a newly added endpoint.
-It works only with RoundRobin and WeightedLeastRequest load balancing strategies.</p>
+<p>SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
+It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies, otherwise the configuration is ignored.</p>
 </p>
 <table>
 <thead>
@@ -3387,7 +3387,8 @@ uint32
 </td>
 <td>
 <em>(Optional)</em>
-<p>The minimum percentage of origin weight that avoids too small new weight, which may cause endpoints in slow start mode receive no traffic in slow start window.
+<p>The minimum or starting percentage of traffic to send to new endpoints.
+A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
 If not specified, the default is 10%.</p>
 </td>
 </tr>

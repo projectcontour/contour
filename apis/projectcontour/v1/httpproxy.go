@@ -813,7 +813,7 @@ type Service struct {
 	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
 	// Slow start will gradually increase amount of traffic to a newly added endpoint.
 	// +optional
-	SlowStart *SlowStart `json:"slowStart,omitempty"`
+	SlowStartPolicy *SlowStartPolicy `json:"slowStartPolicy,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
@@ -1172,9 +1172,9 @@ type HTTPProxyList struct {
 	Items           []HTTPProxy `json:"items"`
 }
 
-// SlowStart will gradually increase amount of traffic to a newly added endpoint.
-// It works only with RoundRobin and WeightedLeastRequest load balancing strategies.
-type SlowStart struct {
+// SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
+// It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies, otherwise the configuration is ignored.
+type SlowStartPolicy struct {
 	// The duration of slow start window.
 	// Duration is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
 	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
@@ -1194,7 +1194,8 @@ type SlowStart struct {
 	// +kubebuilder:validation:Pattern=`^([0-9]+([.][0-9]+)?|[.][0-9]+)$`
 	Aggression string `json:"aggression"`
 
-	// The minimum percentage of origin weight that avoids too small new weight, which may cause endpoints in slow start mode receive no traffic in slow start window.
+	// The minimum or starting percentage of traffic to send to new endpoints.
+	// A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
 	// If not specified, the default is 10%.
 	// +optional
 	// +kubebuilder:default=10

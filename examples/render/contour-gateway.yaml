@@ -3368,7 +3368,7 @@ spec:
                                   type: object
                                 type: array
                             type: object
-                          slowStart:
+                          slowStartPolicy:
                             description: Slow start will gradually increase amount
                               of traffic to a newly added endpoint.
                             properties:
@@ -3385,11 +3385,12 @@ spec:
                                 type: string
                               minWeightPercent:
                                 default: 10
-                                description: The minimum percentage of origin weight
-                                  that avoids too small new weight, which may cause
-                                  endpoints in slow start mode receive no traffic
-                                  in slow start window. If not specified, the default
-                                  is 10%.
+                                description: The minimum or starting percentage of
+                                  traffic to send to new endpoints. A non-zero value
+                                  helps avoid a too small initial weight, which may
+                                  cause endpoints in slow start mode to receive no
+                                  traffic in the beginning of the slow start window.
+                                  If not specified, the default is 10%.
                                 format: int32
                                 maximum: 100
                                 minimum: 0
@@ -3746,7 +3747,7 @@ spec:
                                 type: object
                               type: array
                           type: object
-                        slowStart:
+                        slowStartPolicy:
                           description: Slow start will gradually increase amount of
                             traffic to a newly added endpoint.
                           properties:
@@ -3763,11 +3764,12 @@ spec:
                               type: string
                             minWeightPercent:
                               default: 10
-                              description: The minimum percentage of origin weight
-                                that avoids too small new weight, which may cause
-                                endpoints in slow start mode receive no traffic in
-                                slow start window. If not specified, the default is
-                                10%.
+                              description: The minimum or starting percentage of traffic
+                                to send to new endpoints. A non-zero value helps avoid
+                                a too small initial weight, which may cause endpoints
+                                in slow start mode to receive no traffic in the beginning
+                                of the slow start window. If not specified, the default
+                                is 10%.
                               format: int32
                               maximum: 100
                               minimum: 0

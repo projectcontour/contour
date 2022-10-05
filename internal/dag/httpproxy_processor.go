@@ -870,7 +870,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
-			slowStartConfig, err := slowStartConfig(service.SlowStart)
+			slowStartConfig, err := slowStartConfig(service.SlowStartPolicy)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
 					"%s on slow start", err)
@@ -1440,7 +1440,7 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	return directResponse(uint32(direct.StatusCode), direct.Body)
 }
 
-func slowStartConfig(slowStart *contour_api_v1.SlowStart) (*SlowStartConfig, error) {
+func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {
 	// If slow start is not configured, return nil.
 	if slowStart == nil {
 		return nil, nil
@@ -1455,7 +1455,7 @@ func slowStartConfig(slowStart *contour_api_v1.SlowStart) (*SlowStartConfig, err
 	if slowStart.Aggression != "" {
 		aggression, err = strconv.ParseFloat(slowStart.Aggression, 64)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing aggression: %s", err)
+			return nil, fmt.Errorf("error parsing aggression: \"%s\" is not a decimal number", slowStart.Aggression)
 		}
 	}
 

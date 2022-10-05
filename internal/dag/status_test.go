@@ -3601,6 +3601,80 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// proxyWithInvalidSlowStart is invalid because it has invalid window size syntax
+	proxyWithInvalidSlowStartWindow := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "slow-start-invalid-window",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+					SlowStartPolicy: &contour_api_v1.SlowStartPolicy{
+						Window: "invalid",
+					},
+				}},
+			}},
+		},
+	}
+
+	// proxyWithInvalidSlowStart is invalid because it has invalid aggression syntax
+	proxyWithInvalidSlowStartAggression := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "slow-start-invalid-window",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+					SlowStartPolicy: &contour_api_v1.SlowStartPolicy{
+						Window:     "5s",
+						Aggression: "invalid",
+					},
+				}},
+			}},
+		},
+	}
+
+	run(t, "Slow start with invalid window syntax", testcase{
+		objs: []interface{}{
+			proxyWithInvalidSlowStartWindow,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(proxyWithInvalidSlowStartWindow): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeServiceError,
+					"SlowStartInvalid",
+					"error parsing window: time: invalid duration \"invalid\" on slow start",
+				),
+		},
+	})
+
+	run(t, "Slow start with invalid aggression syntax", testcase{
+		objs: []interface{}{
+			proxyWithInvalidSlowStartAggression,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(proxyWithInvalidSlowStartWindow): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeServiceError,
+					"SlowStartInvalid",
+					"error parsing aggression: \"invalid\" is not a decimal number on slow start",
+				),
+		},
+	})
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
