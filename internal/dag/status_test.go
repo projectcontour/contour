@@ -3601,7 +3601,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	// proxyWithInvalidSlowStart is invalid because it has invalid window size syntax
+	// proxyWithInvalidSlowStartWindow is invalid because it has invalid window size syntax.
 	proxyWithInvalidSlowStartWindow := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -3623,11 +3623,11 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	// proxyWithInvalidSlowStart is invalid because it has invalid aggression syntax
+	// proxyWithInvalidSlowStartAggression is invalid because it has invalid aggression syntax.
 	proxyWithInvalidSlowStartAggression := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
-			Name:      "slow-start-invalid-window",
+			Name:      "slow-start-invalid-aggression",
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
@@ -3640,6 +3640,31 @@ func TestDAGStatus(t *testing.T) {
 					SlowStartPolicy: &contour_api_v1.SlowStartPolicy{
 						Window:     "5s",
 						Aggression: "invalid",
+					},
+				}},
+			}},
+		},
+	}
+
+	// proxyWithInvalidSlowStartLBStrategy is invalid because route has LB strategy that does not support slow start.
+	proxyWithInvalidSlowStartLBStrategy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "slow-start-invalid-lb-strategy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: LoadBalancerPolicyCookie,
+				},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+					SlowStartPolicy: &contour_api_v1.SlowStartPolicy{
+						Window: "5s",
 					},
 				}},
 			}},
@@ -3667,11 +3692,26 @@ func TestDAGStatus(t *testing.T) {
 			fixture.ServiceRootsHome,
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			k8s.NamespacedNameOf(proxyWithInvalidSlowStartWindow): fixture.NewValidCondition().
+			k8s.NamespacedNameOf(proxyWithInvalidSlowStartAggression): fixture.NewValidCondition().
 				WithError(
 					contour_api_v1.ConditionTypeServiceError,
 					"SlowStartInvalid",
 					"error parsing aggression: \"invalid\" is not a decimal number on slow start",
+				),
+		},
+	})
+
+	run(t, "Slow start with load balancer strategy that does not support slow start", testcase{
+		objs: []interface{}{
+			proxyWithInvalidSlowStartLBStrategy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(proxyWithInvalidSlowStartLBStrategy): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeServiceError,
+					"SlowStartInvalid",
+					"slow start is only supported with RoundRobin or WeightedLeastRequest load balancer strategy",
 				),
 		},
 	})

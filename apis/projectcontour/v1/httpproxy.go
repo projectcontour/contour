@@ -1173,7 +1173,7 @@ type HTTPProxyList struct {
 }
 
 // SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
-// It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies, otherwise the configuration is ignored.
+// It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies.
 type SlowStartPolicy struct {
 	// The duration of slow start window.
 	// Duration is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).

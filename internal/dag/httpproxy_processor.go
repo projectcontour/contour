@@ -870,11 +870,21 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
-			slowStartConfig, err := slowStartConfig(service.SlowStartPolicy)
-			if err != nil {
-				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
-					"%s on slow start", err)
-				return nil
+			var slowStart *SlowStartConfig
+			if service.SlowStartPolicy != nil {
+				// Currently Envoy implements slow start only for RoundRobin and WeightedLeastRequest LB strategies.
+				if lbPolicy != "" && lbPolicy != LoadBalancerPolicyRoundRobin && lbPolicy != LoadBalancerPolicyWeightedLeastRequest {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
+						"slow start is only supported with RoundRobin or WeightedLeastRequest load balancer strategy")
+					return nil
+				}
+
+				slowStart, err = slowStartConfig(service.SlowStartPolicy)
+				if err != nil {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
+						"%s on slow start", err)
+					return nil
+				}
 			}
 
 			c := &Cluster{
@@ -891,7 +901,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 				TimeoutPolicy:         ctp,
-				SlowStartConfig:       slowStartConfig,
+				SlowStartConfig:       slowStart,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
