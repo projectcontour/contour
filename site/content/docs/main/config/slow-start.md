@@ -25,9 +25,9 @@ spec:
     - services:
         - name: java-app
           port: 80
-          slowStart:
+          slowStartPolicy:
             window: 3s
-            aggression: 1.0
+            aggression: "1.0"
             minWeightPercent: 10
 ```
 
