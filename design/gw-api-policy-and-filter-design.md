@@ -15,11 +15,17 @@ We've outlined the feature parity gap between Contour's HTTPProxy and the existi
 Gateway API does offer a few extension points intended to support many of the features Contour and other ingress controllers provide:
 - [Policy Attachment](https://gateway-api.sigs.k8s.io/references/policy-attachment/)
 - [HTTPRoute filters](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.HTTPRouteFilter)
+- Using a different type than Service in a `BackendRef`
 - [GatewayClass parameters](https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-parameters)
 
 These configuration points are intended for different classes of configuration.
-We will mainly focus on the first two above, though the third is worth mentioning as an option.
-The Contour Gateway Provisioner uses GatewayClass parameters for passing general configuration for an instance of Contour.
+We will mainly focus on the first two above, though the next two are worth mentioning as options.
+
+The Contour Gateway Provisioner uses GatewayClass parameters for passing general configuration for an instance of Contour and is not really a focus of this design.
+
+It is also possible for us to use a different type than Service as the target of a `BackendRef` [`BackendObjectReference`](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.BackendObjectReference).
+For example, this may be a "wrapper" type around a Service that offers additional configuration Service does not have.
+The current [Backend Capabilities GEP](https://github.com/kubernetes-sigs/gateway-api/pull/1430) seems to be using this method to configuring things like TLS between a proxy and backend (which is a bit out of scope of this design, but possible relevant).
 
 Policy attachment is described in detail [here](https://gateway-api.sigs.k8s.io/references/policy-attachment/).
 Policy resources must follow a standard structure, referencing the resource they apply to via a [`targetRef`](https://gateway-api.sigs.k8s.io/references/policy-attachment/#target-reference-api) field.
@@ -72,11 +78,61 @@ We can categorize these a few ways, but to differentiate what should be configur
 #### Features that modify content in the data path
 These features should be considered ones that we use HTTPRoute Filters to implement.
 Similar to the existing Filter types that modify the data path, we can use custom Filters to implement things like:
-- cookie reqriting
+- cookie rewriting
 - direct HTTP responses
 - etc.
 
 Note: I think we should not consider these "Filters" equivalent to Envoy filters in the general sense, as Envoy filters are often associated with a single virtualhost, and these are route-level Filters.
+
+Another way to think about this could be that it applies to configuration that is likely to be specific to an individual route, and unlikely to generally apply across an entire Listener/Gateway.
+
+[Here](https://github.com/projectcontour/contour/pull/4775) is an example spike on configuring rate limiting via HTTPRoute filter `extensionRef`.
+It adds a new CRD `RateLimitFilter` that currently only allows configuring a "local" rate limiting policy.
+The resource can be applied per-route (not per-backendRef in this case) and by nature of the `extensionRef` spec, must live in the *same* namespace as the referencing HTTPRoute.
+
+The relevant sections of the changes to how this would be configured are below:
+
+```yaml
+---
+kind: RateLimitFilter
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  name: local-ratelimit-example
+  namespace: demo
+spec:
+  local:
+    requests: 10
+    unit: minute
+---
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: echo
+  namespace: demo
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: example
+    namespace: demo
+  hostnames:
+  - "filter-example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - kind: Service
+      name: echo
+      port: 80
+    filters:
+    - type: ExtensionRef
+      extensionRef:
+        group: projectcontour.io
+        kind: RateLimitFilter
+        name: local-ratelimit-example
+```
 
 #### Features that aid in operability, traffic distribution, authorization, access control
 The above title is not an exhaustive list, but rather a bit more of a set of examples that help illustrate the category.
