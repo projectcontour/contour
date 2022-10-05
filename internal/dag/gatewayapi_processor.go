@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
@@ -1100,6 +1102,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			headerModifierSeen bool
 			redirect           *gatewayapi_v1beta1.HTTPRequestRedirectFilter
 			mirrorPolicy       *MirrorPolicy
+			rateLimitPolicy    *RateLimitPolicy
 		)
 
 		for _, filter := range rule.Filters {
@@ -1147,10 +1150,49 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 						},
 					}
 				}
+			case gatewayapi_v1beta1.HTTPRouteFilterExtensionRef:
+				if filter.ExtensionRef == nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonErrorsExist, "HTTPRoute.Spec.Rules.Filters: Must specify extensionRef field when type ExtensionRef is used.")
+					continue
+				}
 
+				if string(filter.ExtensionRef.Group) != contour_api_v1alpha1.GroupVersion.Group {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonErrorsExist,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: Invalid extensionRef.group %q.", filter.ExtensionRef.Group))
+					continue
+				}
+
+				if filter.ExtensionRef.Kind != "RateLimitFilter" {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonInvalidKind,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: Invalid extensionRef.kind %q.", filter.ExtensionRef.Kind))
+					continue
+				}
+
+				rlf, ok := p.source.ratelimitfilters[k8s.NamespacedNameFrom(string(filter.ExtensionRef.Name), k8s.DefaultNamespace(route.Namespace))]
+				if !ok {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonBackendNotFound,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: resource named %q not found.", filter.ExtensionRef.Name))
+					continue
+				}
+
+				localRLP, err := localRateLimitPolicy(&contour_api_v1.LocalRateLimitPolicy{
+					Requests:           rlf.Spec.Local.Requests,
+					Unit:               rlf.Spec.Local.Unit,
+					Burst:              rlf.Spec.Local.Burst,
+					ResponseStatusCode: rlf.Spec.Local.ResponseStatusCode,
+					// ResponseHeadersToAdd: rlf.Spec.Local.ResponseHeadersToAdd,
+				})
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonErrorsExist,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: Invalid extensionRef.kind %q.", filter.ExtensionRef.Kind))
+					continue
+				}
+				rateLimitPolicy = &RateLimitPolicy{
+					Local: localRLP,
+				}
 			default:
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType,
-					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, RequestRedirect and RequestMirror are supported.", filter.Type))
+					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, RequestRedirect, RequestMirror, and ExtensionRef are supported.", filter.Type))
 			}
 		}
 
@@ -1171,7 +1213,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		if redirect != nil {
 			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rateLimitPolicy, rule.BackendRefs, routeAccessor, priority)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1369,7 +1411,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, rateLimitPolicy *RateLimitPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1435,6 +1477,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			QueryParamMatchConditions: mc.queryParams,
 			RequestHeadersPolicy:      headerPolicy,
 			MirrorPolicy:              mirrorPolicy,
+			RateLimitPolicy:           rateLimitPolicy,
 			Priority:                  priority,
 		})
 	}
