@@ -97,7 +97,11 @@ else
     address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
 fi
 
-${KUBECTL} apply -f - <<EOF
+# Wrap application of metallb config in retry loop to minimize
+# flakes due to webhook not being ready.
+success=false
+for n in {1..60}; do
+if ${KUBECTL} apply -f - <<EOF
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
@@ -116,6 +120,19 @@ spec:
   ipAddressPools:
   - pool
 EOF
+then
+  success=true
+  break
+fi
+echo "Applying metallb configuration failed, retrying (${n} of 60)"
+sleep 1
+done
+
+if [ $success != "true" ]; then
+  echo "Applying metallb configuration failed"
+  exit 1
+fi
+
 
 
 # Install cert-manager.
