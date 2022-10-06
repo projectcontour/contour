@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
@@ -126,6 +128,32 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 	}
 
+	// Find all policies that apply directly to this Gateway.
+	gwRLPs := []*contour_api_v1alpha1.RateLimitPolicy{}
+
+	// Note: If we support applying policies to a Namespace, we should collect those first
+	// since they reference a more general resource.
+	// This might get tricky if a Gateway and HTTPRoute are in different namespaces, need
+	// to clarify what is the precedence order.
+
+	// Note: may want to store in DAG as a map where they key is the target resource rather
+	// than the ns/name of the policy resource and value is a list of policies for
+	// faster lookup.
+	for _, rlp := range p.source.ratelimitpolicies {
+		// TODO: If not in the same namespace, check if there is a valid
+		// ReferenceGrant.
+
+		if rlp.Spec.TargetRef.Group == gatewayapi_v1beta1.GroupName &&
+			rlp.Spec.TargetRef.Kind == KindGateway &&
+			rlp.Spec.TargetRef.Name == gatewayapi_v1alpha2.ObjectName(p.source.gateway.Name) {
+			gwRLPs = append(gwRLPs, rlp)
+		}
+	}
+
+	// TODO: sort/merge RLPs that target a particular resource.
+	// Sorting/precedence should be done via typical Gateway API fashion, see:
+	// https://gateway-api.sigs.k8s.io/references/policy-attachment/#conflict-resolution
+
 	// Keep track of the number of routes attached
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
@@ -167,7 +195,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				hostCount := 0
 
 				for _, listener := range allowedListeners {
-					attached, hosts := p.computeHTTPRoute(httpRoute, routeParentStatusAccessor, listener)
+					attached, hosts := p.computeHTTPRoute(httpRoute, routeParentStatusAccessor, listener, gwRLPs)
 
 					if attached {
 						listenerAttachedRoutes[string(listener.listener.Name)]++
@@ -1039,7 +1067,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	return programmed, hosts
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.String) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, gwRLPs []*contour_api_v1alpha1.RateLimitPolicy) (bool, sets.String) {
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
@@ -1053,6 +1081,93 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 	// route hostnames, the route is not programmed for this listener.
 	if len(hosts) == 0 {
 		return false, nil
+	}
+
+	var rateLimitPolicy *RateLimitPolicy
+
+	allRLPs := gwRLPs
+
+	// TODO: sort/merge RLPs that target a particular resource.
+	// Sorting/precedence should be done via typical Gateway API fashion, see:
+	// https://gateway-api.sigs.k8s.io/references/policy-attachment/#conflict-resolution
+
+	// TODO: pull this into a helper.
+	for _, rlp := range p.source.ratelimitpolicies {
+		// TODO: If not in the same namespace, check if there is a valid
+		// ReferenceGrant.
+
+		if rlp.Spec.TargetRef.Group == gatewayapi_v1beta1.GroupName &&
+			rlp.Spec.TargetRef.Kind == KindHTTPRoute &&
+			rlp.Spec.TargetRef.Name == gatewayapi_v1alpha2.ObjectName(route.Name) {
+			allRLPs = append(allRLPs, rlp)
+		}
+	}
+
+	if len(allRLPs) > 0 {
+		// Merge RateLimitPolicies according to override/default precedence.
+		// Currently doing so with the assumption policies that come first in the slice
+		// have a higher precedence for overrides and later policies a higher precedence
+		// for defaults.
+		// See: https://gateway-api.sigs.k8s.io/references/policy-attachment/#hierarchy
+		// TODO: Could try to generalize this for multiple Policy types.
+
+		// Note: Using this at the moment as a hack so we can use the existing conversion helpers.
+		finalLocalRLP := new(contour_api_v1.LocalRateLimitPolicy)
+
+		// Cycle through defaults first, and apply them on top of each other in
+		// forwards list order.
+		for _, rlp := range allRLPs {
+			if rlp.Spec.Default == nil {
+				continue
+			}
+
+			if rlp.Spec.Default.Local.Requests != 0 {
+				finalLocalRLP.Requests = rlp.Spec.Default.Local.Requests
+			}
+			if rlp.Spec.Default.Local.Unit != "" {
+				finalLocalRLP.Unit = rlp.Spec.Default.Local.Unit
+			}
+			if rlp.Spec.Default.Local.Burst != 0 {
+				finalLocalRLP.Burst = rlp.Spec.Default.Local.Burst
+			}
+			if rlp.Spec.Default.Local.ResponseStatusCode != 0 {
+				finalLocalRLP.ResponseStatusCode = rlp.Spec.Default.Local.ResponseStatusCode
+			}
+			// TODO: skipped headers for now.
+		}
+
+		// Cycle through overrides next, and apply them on top of each other in
+		// reverse list order.
+		for i := len(allRLPs) - 1; i >= 0; i-- {
+			rlp := allRLPs[i]
+
+			if rlp.Spec.Override == nil {
+				continue
+			}
+
+			if rlp.Spec.Override.Local.Requests != 0 {
+				finalLocalRLP.Requests = rlp.Spec.Override.Local.Requests
+			}
+			if rlp.Spec.Override.Local.Unit != "" {
+				finalLocalRLP.Unit = rlp.Spec.Override.Local.Unit
+			}
+			if rlp.Spec.Override.Local.Burst != 0 {
+				finalLocalRLP.Burst = rlp.Spec.Override.Local.Burst
+			}
+			if rlp.Spec.Override.Local.ResponseStatusCode != 0 {
+				finalLocalRLP.ResponseStatusCode = rlp.Spec.Override.Local.ResponseStatusCode
+			}
+			// TODO: skipped headers for now.
+		}
+
+		lRLP, err := localRateLimitPolicy(finalLocalRLP)
+		if err == nil {
+			rateLimitPolicy = &RateLimitPolicy{
+				Local: lRLP,
+			}
+		}
+		// TODO: Else, add condition here to RateLimitPolicy that this is invalid.
+		// Need to clarify if we should set condition on HTTPRoute for visibility too?
 	}
 
 	var programmed bool
@@ -1171,7 +1286,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		if redirect != nil {
 			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rateLimitPolicy, rule.BackendRefs, routeAccessor, priority)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1369,7 +1484,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, rateLimitPolicy *RateLimitPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1435,6 +1550,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			QueryParamMatchConditions: mc.queryParams,
 			RequestHeadersPolicy:      headerPolicy,
 			MirrorPolicy:              mirrorPolicy,
+			RateLimitPolicy:           rateLimitPolicy,
 			Priority:                  priority,
 		})
 	}
