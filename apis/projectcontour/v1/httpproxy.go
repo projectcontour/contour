@@ -302,6 +302,21 @@ type RemoteJWKS struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
 	CacheDuration string `json:"cacheDuration,omitempty"`
+
+	// The DNS IP address resolution policy for the JWKS URI.
+	// When configured as "v4", the DNS resolver will only perform a lookup
+	// for addresses in the IPv4 family. If "v6" is configured, the DNS resolver
+	// will only perform a lookup for addresses in the IPv6 family.
+	// If "auto" is configured, the DNS resolver will first perform a lookup
+	// for addresses in the IPv6 family and fallback to a lookup for addresses
+	// in the IPv4 family. If not specified, the Contour-wide setting defined
+	// in the config file or ContourConfiguration applies (defaults to "auto").
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+	// for more information.
+	// +optional
+	// +kubebuilder:validation:Enum=auto;v4;v6
+	DNSLookupFamily string `json:"dnsLookupFamily,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on

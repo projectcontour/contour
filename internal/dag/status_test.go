@@ -3062,6 +3062,57 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	jwtVerificationInvalidRemoteJWKSDNSLookupFamily := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-invalid-remote-jwks-dns-lookup-family",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_api_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_api_v1.RemoteJWKS{
+							URI:             "http://jwt.example.com/jwks.json",
+							DNSLookupFamily: "v7",
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification invalid remote JWKS DNS lookup family", testcase{
+		objs: []interface{}{
+			jwtVerificationInvalidRemoteJWKSDNSLookupFamily,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationInvalidRemoteJWKSDNSLookupFamily): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSDNSLookupFamilyInvalid",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value \"v7\", must be auto, v4 or v6",
+				),
+		},
+	})
+
 	jwtVerificationNoProvidersRouteHasRef := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",

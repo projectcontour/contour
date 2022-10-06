@@ -2533,6 +2533,28 @@ string
 Envoy&rsquo;s default of 5m applies.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>dnsLookupFamily</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The DNS IP address resolution policy for the JWKS URI.
+When configured as &ldquo;v4&rdquo;, the DNS resolver will only perform a lookup
+for addresses in the IPv4 family. If &ldquo;v6&rdquo; is configured, the DNS resolver
+will only perform a lookup for addresses in the IPv6 family.
+If &ldquo;auto&rdquo; is configured, the DNS resolver will first perform a lookup
+for addresses in the IPv6 family and fallback to a lookup for addresses
+in the IPv4 family. If not specified, the Contour-wide setting defined
+in the config file or ContourConfiguration applies (defaults to &ldquo;auto&rdquo;).</p>
+<p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily</a>
+for more information.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.ReplacePrefix">ReplacePrefix
