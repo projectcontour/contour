@@ -86,6 +86,29 @@ Note: I think we should not consider these "Filters" equivalent to Envoy filters
 
 Another way to think about this could be that it applies to configuration that is likely to be specific to an individual route, and unlikely to generally apply across an entire Listener/Gateway.
 
+#### Features that aid in operability, traffic distribution, authorization, access control
+The above title is not an exhaustive list, but rather a bit more of a set of examples that help illustrate the category.
+They include configuration that needs to be applied to accomodate a specific workload, e.g. a timeout that needs to be applied to a particular deployment/service.
+These types of features will be implemented via Policy resources that target specific Gateway API or Service resources.
+
+Some examples and discussion of how they may work are below:
+- TBD
+
+### Status
+While it is not explicitly statued in the Gateway API documentation, Contour should follow the conventions in setting Status Conditions being established by Gateway API.
+We should utilize an `Attached` or `Accepted` Condition that signifies whether a Policy or Filter resource has been applied.
+This encompasses validity, whether it is applied to an allowed resource type, and whether it is an allowed cross-namespace reference.
+More detailed error conditions may be added as well to point out specific errors.
+
+## Alternatives Considered
+
+### Filter vs. Policy Examples
+In these examples we consider a feature that can be configured using different mechanisms and the merits or drawbacks of each.
+
+In particular, using rate limiting as a case study is quite interesting because of how it can be categorized as a feature and how it ultimately must be configured in Envoy.
+Envoy provides per-route rate limiting settings, not per-cluster or per-virtualhost.
+
+#### Rate Limiting: Filter
 [Here](https://github.com/projectcontour/contour/pull/4775) is an example spike on configuring rate limiting via HTTPRoute filter `extensionRef`.
 It adds a new CRD `RateLimitFilter` that currently only allows configuring a "local" rate limiting policy.
 The resource can be applied per-route (not per-backendRef in this case) and by nature of the `extensionRef` spec, must live in the *same* namespace as the referencing HTTPRoute.
@@ -134,22 +157,48 @@ spec:
         name: local-ratelimit-example
 ```
 
-#### Features that aid in operability, traffic distribution, authorization, access control
-The above title is not an exhaustive list, but rather a bit more of a set of examples that help illustrate the category.
-THey include configuration that needs to be applied to accomodate a specific workload, e.g. a timeout that needs to be applied to a particular deployment/service.
-These types of features will be implemented via Policy resources that target specific Gateway API or Service resources.
+[This comment](https://github.com/projectcontour/contour/pull/4775#issuecomment-1268982038) around this implementation option is quite relevant.
+Implementing features such as this as a Filter feels quite straightforward, especially if users don't ultimately want/need the flexibility/defaulting etc. that a Policy setup would give.
 
-Some examples and discussion of how they may work are below:
-- TBD
+#### Rate Limiting: Policy
+[Here](https://github.com/projectcontour/contour/pull/4776) is an example spike on configuring rate limiting via Policy resource.
+It adds a new CRD `RateLimitPolicy` that currently only allows configuring a "local" rate limiting policy.
 
-### Status
-While it is not explicitly statued in the Gateway API documentation, Contour should follow the conventions in setting Status Conditions being established by Gateway API.
-We should utilize an `Attached` or `Accepted` Condition that signifies whether a Policy or Filter resource has been applied.
-This encompasses validity, whether it is applied to an allowed resource type, and whether it is an allowed cross-namespace reference.
-More detailed error conditions may be added as well to point out specific errors.
+In the example YAML in the PR linked, we have a Gateway with a RateLimitPolicy attached as well as two HTTPRoutes, one of which has a RateLimitPolicy attached.
+We can see how different settings can be overridden/defaulted in a hierarchy, with some settings defaulted at the Gateway level that can be overridden by more specific resources.
+This potentially gives users a huge amount of flexibility *and* operators control over critical settings.
+We can concievably have a kubectl plugin or other visualization that shows exactly what settings are enabled on a particular route.
 
-## Alternatives Considered
-TBD
+Cross-namespace references also are possible with Policies, though not implemented in this example, but possible in the future with Policy resources accompanied by ReferenceGrants.
+
+Overall this option has more moving pieces, but is very powerful.
+In addition, it does not directly affect the core Gateway API resources, but rather is a meta-resource on top of them that adds additional functionality.
+This may be desirable for some.
+
+#### Rate Limiting: Custom BackendObjectReference type
+This option involves wrapping a Service that requires a rate limit with a resource that specifies a rate limit.
+
+I'm not entirely sure this will properly work, as we can't today implement per-cluster rate limits in Envoy, though there may be a clever way in the API we could get it to work.
+
+Implementing features using this method (and with Filters to be fair) does mean we affect the core resources, making it a bit harder to swap one's configuration between Gateway API implementations.
+
+### Idea: Replace parts of Contour global configuration with Policies
+An option for simplifying the ContourConfiguration and ContourDeployment CRDs could be to split some of the relevant fields it contains out into Policy resources that are applicable to a Gateway.
+
+This way, there is a more succinct and focused place for users to apply configuration, and we can acheive some goals of having more dynamic configuration for some Contour settings.
+The configuration file/configuration CRDs should end up just being what is needed to get Contour/Envoy started.
+
+The Gateway Provisioner could give you a base/default Policy if none existed or users could come with their own.
+
+Thinking out loud, this might alleviate some of the weirdness around how GatewayClass parameters maybe shouldn't be reconciled when things change.
+
+Some examples of things that might be applicable here to remove from the global config and move to a Gateway policy are:
+- Timeout policy
+- HTTP header policy
+- TLS parameters
+- Envoy "Cluster" settings
+- Envoy "Listener" settings
+- etc.
 
 ## Security Considerations
 
@@ -157,7 +206,10 @@ TBD
 It is not specified explicitly in the Gateway API documentation, but if Policy or Filter custom resources live in a separate namespace from the resource it references/is referenced by, we will likely need to ensure the appropriate ReferenceGrant is present that allows the resources to be "attached."
 
 ## Compatibility
-TBD
+
+### Portability between Gateway API implementations
+Policy resources reference core resources, whereas Filters or BackendObjectResource references are referenced by core resources.
+Policies have the advantage of likely not affecting core functionality (e.g. routing rules and other features that are standardized), since swapping between implementations will not mean the new implementation will encounter references to resource kinds it does not know how to process.
 
 ## Implementation
 
