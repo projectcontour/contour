@@ -870,6 +870,23 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
+			var slowStart *SlowStartConfig
+			if service.SlowStartPolicy != nil {
+				// Currently Envoy implements slow start only for RoundRobin and WeightedLeastRequest LB strategies.
+				if lbPolicy != "" && lbPolicy != LoadBalancerPolicyRoundRobin && lbPolicy != LoadBalancerPolicyWeightedLeastRequest {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
+						"slow start is only supported with RoundRobin or WeightedLeastRequest load balancer strategy")
+					return nil
+				}
+
+				slowStart, err = slowStartConfig(service.SlowStartPolicy)
+				if err != nil {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "SlowStartInvalid",
+						"%s on slow start", err)
+					return nil
+				}
+			}
+
 			c := &Cluster{
 				Upstream:              s,
 				LoadBalancerPolicy:    lbPolicy,
@@ -884,6 +901,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 				TimeoutPolicy:         ctp,
+				SlowStartConfig:       slowStart,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -1430,4 +1448,25 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {
+	window, err := time.ParseDuration(slowStart.Window)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing window: %s", err)
+	}
+
+	aggression := float64(1.0)
+	if slowStart.Aggression != "" {
+		aggression, err = strconv.ParseFloat(slowStart.Aggression, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing aggression: \"%s\" is not a decimal number", slowStart.Aggression)
+		}
+	}
+
+	return &SlowStartConfig{
+		Window:           window,
+		Aggression:       aggression,
+		MinWeightPercent: slowStart.MinimumWeightPercent,
+	}, nil
 }

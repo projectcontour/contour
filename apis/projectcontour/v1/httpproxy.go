@@ -811,6 +811,9 @@ type Service struct {
 	// The policies for rewriting Set-Cookie header attributes.
 	// +optional
 	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
+	// Slow start will gradually increase amount of traffic to a newly added endpoint.
+	// +optional
+	SlowStartPolicy *SlowStartPolicy `json:"slowStartPolicy,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
@@ -1167,4 +1170,36 @@ type HTTPProxyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 	Items           []HTTPProxy `json:"items"`
+}
+
+// SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
+// It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies.
+type SlowStartPolicy struct {
+	// The duration of slow start window.
+	// Duration is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// +required
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	Window string `json:"window"`
+
+	// The speed of traffic increase over the slow start window.
+	// Defaults to 1.0, so that endpoint would get linearly increasing amount of traffic.
+	// When increasing the value for this parameter, the speed of traffic ramp-up increases non-linearly.
+	// The value of aggression parameter should be greater than 0.0.
+	//
+	// More info: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start
+	//
+	// +optional
+	// +kubebuilder:default=`1.0`
+	// +kubebuilder:validation:Pattern=`^([0-9]+([.][0-9]+)?|[.][0-9]+)$`
+	Aggression string `json:"aggression"`
+
+	// The minimum or starting percentage of traffic to send to new endpoints.
+	// A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
+	// If not specified, the default is 10%.
+	// +optional
+	// +kubebuilder:default=10
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	MinimumWeightPercent uint32 `json:"minWeightPercent"`
 }
