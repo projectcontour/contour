@@ -9,7 +9,8 @@ Optional field `minWeightPercent` can be set to change the minimum percent of ta
 It is used to avoid too small new weight, which may cause endpoint to receive no traffic in beginning of the slow start window.
 
 Slow start mode can be useful for example with JVM based applications, that might otherwise get overwhelmed during JIT warm-up period.
-Application might perform worse immediately after pod start or after container restarts.
+Such applications may respond to requests slowly or return errors immediately after pod start or after container restarts.
+User impact of this behavior can be mitigated by using slow start configuration to gradually increase traffic to recently started service endpoints.
 
 The following example configures slow start mode for a service:
 
