@@ -166,6 +166,8 @@ It adds a new CRD `RateLimitPolicy` that currently only allows configuring a "lo
 
 In the example YAML in the PR linked, we have a Gateway with a RateLimitPolicy attached as well as two HTTPRoutes, one of which has a RateLimitPolicy attached.
 We can see how different settings can be overridden/defaulted in a hierarchy, with some settings defaulted at the Gateway level that can be overridden by more specific resources.
+Policies cannot yet target specific route rules, however, to achieve the equivalent of the Filter case, where a rate limit applies to a single route rule, you can follow the example and create a Policy that targets an HTTPRoute which has a single route rule.
+
 This potentially gives users a huge amount of flexibility *and* operators control over critical settings.
 We can concievably have a kubectl plugin or other visualization that shows exactly what settings are enabled on a particular route.
 
@@ -174,6 +176,8 @@ Cross-namespace references also are possible with Policies, though not implement
 Overall this option has more moving pieces, but is very powerful.
 In addition, it does not directly affect the core Gateway API resources, but rather is a meta-resource on top of them that adds additional functionality.
 This may be desirable for some.
+
+It is also worth noting, we don't necessarily have to allow a Policy to target all resources, we can constrain this and as mentioned in implementation notes, it might be a lot easier to iterate this way.
 
 #### Rate Limiting: Custom BackendObjectReference type
 This option involves wrapping a Service that requires a rate limit with a resource that specifies a rate limit.
