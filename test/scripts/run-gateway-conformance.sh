@@ -58,5 +58,5 @@ else
   git clone https://github.com/kubernetes-sigs/gateway-api
   cd gateway-api
   git checkout "${GATEWAY_API_VERSION}"
-  go test ./conformance -gateway-class=contour
+  go test ./conformance -gateway-class=contour -supported-features=HTTPRouteQueryParamMatching,HTTPRouteMethodMatching
 fi
