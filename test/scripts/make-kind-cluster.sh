@@ -71,15 +71,6 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
   ${KUBECTL} version
 fi
 
-# Push test images into the cluster. Do this up-front
-# so that the first test does not incur the cost of 
-# pulling them. Helps avoid flakes.
-images=$(grep "Image = " $(find "$REPO/test/e2e" -name "fixtures.go") | awk '{print $3}' | tr -d '"')
-for image in ${images}; do
-  docker pull "${image}"
-  kind::cluster::load "${image}"
-done
-
 # Install metallb.
 ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.5/config/manifests/metallb-native.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n metallb-system deployment/controller --for=condition=Available
