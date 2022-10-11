@@ -1,0 +1,1 @@
+Add Kubernetes resource labels configurability to ContourDeployment resource.

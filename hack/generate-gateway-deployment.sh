@@ -55,6 +55,10 @@ for y in "${REPO}/examples/gateway/"*.yaml ; do
       echo "---"
       ;;
 
+    */00-namespace.yaml)
+      echo "---"
+      ;;
+
     */01-admission_webhook.yaml)  
       echo "---"
       ;;

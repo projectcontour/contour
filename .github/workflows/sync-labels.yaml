@@ -10,6 +10,8 @@ on:
     types: [closed]
     paths:
     - "site/_data/github-labels.yaml"
+  # Allow manual runs
+  workflow_dispatch:
 
 jobs:
   sync:

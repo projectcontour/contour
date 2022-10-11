@@ -54,6 +54,9 @@ func Clustername(cluster *dag.Cluster) string {
 	if !cluster.TimeoutPolicy.IdleConnectionTimeout.UseDefault() {
 		buf += cluster.TimeoutPolicy.IdleConnectionTimeout.Duration().String()
 	}
+	if cluster.SlowStartConfig != nil {
+		buf += cluster.SlowStartConfig.String()
+	}
 
 	// This isn't a crypto hash, we just want a unique name.
 	hash := sha1.Sum([]byte(buf)) // nolint:gosec
@@ -129,4 +132,8 @@ func AnyPositive(first uint32, rest ...uint32) bool {
 		}
 	}
 	return false
+}
+
+func DNSNameClusterName(cluster *dag.DNSNameCluster) string {
+	return strings.Join([]string{"dnsname", cluster.Scheme, cluster.Address}, "/")
 }

@@ -39,10 +39,16 @@ toc:
         url: /config/rate-limiting
       - page: Access logging
         url: /config/access-logging
-      - page: Annotations Reference
-        url: /config/annotations
       - page: Cookie Rewriting
         url: /config/cookie-rewriting
+      - page: Overload Manager
+        url: /config/overload-manager
+      - page: JWT Verification
+        url: /config/jwt-verification
+      - page: Annotations Reference
+        url: /config/annotations
+      - page: Slow Start Mode
+        url: /config/slow-start
       - page: API Reference
         url: /config/api
   - title: Deployment
