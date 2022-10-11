@@ -1,1 +1,1 @@
-add the fields extraVolumes & extraVolumeMounts to crd/ContourConfiguration to let pod/envoy can mount more volumes
+add the fields extraVolumes & extraVolumeMounts to crd/ContourDeployment to enable Envoy pods to mount additional volumes

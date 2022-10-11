@@ -306,10 +306,6 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
-	for i := range initContainers {
-		initContainers[i].VolumeMounts = append(initContainers[i].VolumeMounts, contour.Spec.EnvoyExtraVolumeMounts...)
-	}
-
 	for j := range containers {
 		containers[j].VolumeMounts = append(containers[j].VolumeMounts, contour.Spec.EnvoyExtraVolumeMounts...)
 	}
