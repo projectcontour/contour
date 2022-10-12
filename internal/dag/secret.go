@@ -35,114 +35,76 @@ const (
 // validTLSSecret returns an error if the Secret is not of type TLS or
 // if it doesn't contain valid certificate and private key material in
 // the tls.crt and tls.key keys.
-func validTLSSecret(secret *Secret) error {
-	// Use cached validation result, if it exists.
-	if secret.ValidTLSSecret != nil {
-		return secret.ValidTLSSecret.Error
-	}
-
+func validTLSSecret(secret *v1.Secret) error {
 	// Must be of type TLS (TODO can we relax this? https://github.com/projectcontour/contour/issues/3180)
 	// Must have isValid tls.crt and tls.key data
-	isValid := func(secret *v1.Secret) error {
-		if secret.Type != v1.SecretTypeTLS {
-			return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
-		}
 
-		data, ok := secret.Data[v1.TLSCertKey]
-		if !ok {
-			return errors.New("missing TLS certificate")
-		}
-
-		if err := validateServingBundle(data); err != nil {
-			return fmt.Errorf("invalid TLS certificate: %v", err)
-		}
-
-		data, ok = secret.Data[v1.TLSPrivateKeyKey]
-		if !ok {
-			return errors.New("missing TLS private key")
-		}
-
-		if err := validatePrivateKey(data); err != nil {
-			return fmt.Errorf("invalid TLS private key: %v", err)
-		}
-
-		return nil
+	if secret.Type != v1.SecretTypeTLS {
+		return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
 	}
 
-	// Set validation result on the cached Secret and return it.
-	secret.ValidTLSSecret = &SecretValidationStatus{
-		Error: isValid(secret.Object),
+	data, ok := secret.Data[v1.TLSCertKey]
+	if !ok {
+		return errors.New("missing TLS certificate")
 	}
 
-	return secret.ValidTLSSecret.Error
+	if err := validateServingBundle(data); err != nil {
+		return fmt.Errorf("invalid TLS certificate: %v", err)
+	}
+
+	data, ok = secret.Data[v1.TLSPrivateKeyKey]
+	if !ok {
+		return errors.New("missing TLS private key")
+	}
+
+	if err := validatePrivateKey(data); err != nil {
+		return fmt.Errorf("invalid TLS private key: %v", err)
+	}
+
+	return nil
 }
 
-// validCA returns an error if the Secret is not of type Opaque or TLS or
+// validCASecret returns an error if the Secret is not of type Opaque or TLS or
 // if it doesn't contain a valid CA bundle in the ca.crt key.
-func validCA(secret *Secret) error {
-	// Use cached validation result, if it exists.
-	if secret.ValidCASecret != nil {
-		return secret.ValidCASecret.Error
-	}
-
+func validCASecret(secret *v1.Secret) error {
 	// Must be of type Opaque or TLS
 	// Must have valid ca.crt data
-	isValid := func(secret *v1.Secret) error {
-		if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
-			return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
-		}
 
-		if len(secret.Data[CACertificateKey]) == 0 {
-			return fmt.Errorf("empty %q key", CACertificateKey)
-		}
-
-		if err := validateCABundle(secret.Data[CACertificateKey]); err != nil {
-			return fmt.Errorf("invalid CA certificate bundle: %v", err)
-		}
-
-		return nil
+	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
 	}
 
-	// Set validation result on the cached Secret and return it.
-	secret.ValidCASecret = &SecretValidationStatus{
-		Error: isValid(secret.Object),
+	if len(secret.Data[CACertificateKey]) == 0 {
+		return fmt.Errorf("empty %q key", CACertificateKey)
 	}
 
-	return secret.ValidCASecret.Error
+	if err := validateCABundle(secret.Data[CACertificateKey]); err != nil {
+		return fmt.Errorf("invalid CA certificate bundle: %v", err)
+	}
+
+	return nil
 }
 
-// validCRL returns an error if the Secret is not of type Opaque or TLS or
+// validCRLSecret returns an error if the Secret is not of type Opaque or TLS or
 // if it doesn't contain a valid CRL in the crl.pem key.
-func validCRL(secret *Secret) error {
-	// Use cached validation result, if it exists.
-	if secret.ValidCRLSecret != nil {
-		return secret.ValidCRLSecret.Error
-	}
+func validCRLSecret(secret *v1.Secret) error {
 
 	// Must be of type Opaque or TLS
 	// Must have isValid crl.pem data
-	isValid := func(secret *v1.Secret) error {
-		if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
-			return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
-		}
 
-		if len(secret.Data[CRLKey]) == 0 {
-			return fmt.Errorf("empty %q key", CRLKey)
-		}
-
-		if err := validateCRL(secret.Data[CRLKey]); err != nil {
-			return err
-		}
-
-		return nil
+	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
 	}
 
-	// Set validation result on the cached Secret and return it.
-	secret.ValidCRLSecret = &SecretValidationStatus{
-		Error: isValid(secret.Object),
+	if len(secret.Data[CRLKey]) == 0 {
+		return fmt.Errorf("empty %q key", CRLKey)
 	}
 
-	return secret.ValidCRLSecret.Error
+	if err := validateCRL(secret.Data[CRLKey]); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // containsPEMHeader returns true if the given slice contains a string

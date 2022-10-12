@@ -349,11 +349,9 @@ func TestValidSecrets(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			s := &Secret{Object: tc.secret}
-
-			assert.Equal(t, tc.tlsSecretError, validTLSSecret(s))
-			assert.Equal(t, tc.caSecretError, validCA(s))
-			assert.Equal(t, tc.crlSecretError, validCRL(s))
+			assert.Equal(t, tc.tlsSecretError, validTLSSecret(tc.secret))
+			assert.Equal(t, tc.caSecretError, validCASecret(tc.secret))
+			assert.Equal(t, tc.crlSecretError, validCRLSecret(tc.secret))
 		})
 	}
 }

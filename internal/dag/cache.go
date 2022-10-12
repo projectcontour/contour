@@ -516,18 +516,63 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 		string(ref.Name) == secret.Name
 }
 
-// LookupSecret returns a Secret if present or nil if the underlying kubernetes
-// secret fails validation or is missing.
-func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*Secret) error) (*Secret, error) {
+func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
 	}
 
-	if err := validate(sec); err != nil {
-		return nil, err
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidTLSSecret == nil {
+		sec.ValidTLSSecret = &SecretValidationStatus{
+			Error: validTLSSecret(sec.Object),
+		}
 	}
 
+	if err := sec.ValidTLSSecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
+}
+
+func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidCASecret == nil {
+		sec.ValidCASecret = &SecretValidationStatus{
+			Error: validCASecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidCASecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
+}
+
+func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidCRLSecret == nil {
+		sec.ValidCRLSecret = &SecretValidationStatus{
+			Error: validCRLSecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidCRLSecret.Error; err != nil {
+		return nil, err
+	}
 	return sec, nil
 }
 
@@ -537,7 +582,7 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		return nil, nil
 	}
 
-	cacert, err := kc.LookupSecret(caCertificate, validCA)
+	cacert, err := kc.LookupCASecret(caCertificate)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)

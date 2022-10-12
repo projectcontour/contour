@@ -199,7 +199,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
+			sec, err := p.source.LookupTLSSecret(secretName)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -243,7 +243,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
+				sec, err = p.source.LookupTLSSecret(*p.FallbackCertificate)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
 						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
@@ -276,7 +276,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-					cacert, err := p.source.LookupSecret(secretName, validCA)
+					cacert, err := p.source.LookupCASecret(secretName)
 					if err != nil {
 						// PeerValidationContext is requested, but cert is missing or not configured.
 						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
@@ -290,7 +290,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				if tls.ClientValidation.CertificateRevocationList != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace))
-					crl, err := p.source.LookupSecret(secretName, validCRL)
+					crl, err := p.source.LookupCRLSecret(secretName)
 					if err != nil {
 						// CRL is missing or not configured.
 						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
@@ -887,7 +887,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
+				clientCertSecret, err = p.source.LookupTLSSecret(*p.ClientCertificate)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
