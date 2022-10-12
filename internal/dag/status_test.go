@@ -3524,6 +3524,7 @@ func TestDAGStatus(t *testing.T) {
 
 	jwksInvalidCACert := &v1.Secret{
 		ObjectMeta: fixture.ObjectMeta("roots/cacert"),
+		Type:       v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"wrong-key": []byte(fixture.CERTIFICATE),
 		},
@@ -3582,7 +3583,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSUpstreamValidationInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/cacert\": Secret not valid in a way that doesn't throw an error",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/cacert\": empty \"ca.crt\" key",
 				),
 		},
 	})
