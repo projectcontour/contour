@@ -103,18 +103,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	maybeInsert := func(obj interface{}) bool {
 		switch obj := obj.(type) {
 		case *v1.Secret:
-			valid, err := isValidSecret(obj)
-			if !valid {
-				if err != nil {
-					kc.WithField("name", obj.GetName()).
-						WithField("namespace", obj.GetNamespace()).
-						WithField("kind", "Secret").
-						WithField("version", k8s.VersionOf(obj)).
-						Error(err)
-				}
-				return false
-			}
-
 			kc.secrets[k8s.NamespacedNameOf(obj)] = obj
 			return kc.secretTriggersRebuild(obj)
 		case *v1.Service:
@@ -532,6 +520,11 @@ func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
+	}
+
+	ok, err := isValidSecret(sec)
+	if !ok {
+		return nil, err
 	}
 
 	if err := validate(sec); err != nil {
