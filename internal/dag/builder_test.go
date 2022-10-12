@@ -9675,7 +9675,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: secret(cert1),
 							},
 						},
 					),
@@ -9703,7 +9703,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: secret(cert1),
 							},
 						},
 					),
@@ -9766,7 +9766,7 @@ func TestDAGInsert(t *testing.T) {
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
-								CACertificate:            &Secret{Object: cert1},
+								CACertificate:            secret(cert1),
 							},
 						},
 					),
@@ -9797,8 +9797,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
-								CRL:           &Secret{Object: crl},
+								CACertificate: secret(cert1),
+								CRL:           secret(crl),
 							},
 						},
 					),
@@ -9829,8 +9829,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:         &Secret{Object: cert1},
-								CRL:                   &Secret{Object: crl},
+								CACertificate:         secret(cert1),
+								CRL:                   secret(crl),
 								OnlyVerifyLeafCertCrl: true,
 							},
 						},
@@ -13258,6 +13258,9 @@ func clustermap(services ...*v1.Service) []*Cluster {
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
 		Object: s,
+		ValidationStatus: &SecretValidationStatus{
+			Valid: true,
+		},
 	}
 }
 

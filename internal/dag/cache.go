@@ -59,7 +59,7 @@ type KubernetesCache struct {
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
-	secrets                   map[types.NamespacedName]*v1.Secret
+	secrets                   map[types.NamespacedName]*Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services                  map[types.NamespacedName]*v1.Service
 	namespaces                map[string]*v1.Namespace
@@ -82,7 +82,7 @@ type KubernetesCache struct {
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
-	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
+	kc.secrets = make(map[types.NamespacedName]*Secret)
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
@@ -103,7 +103,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	maybeInsert := func(obj interface{}) bool {
 		switch obj := obj.(type) {
 		case *v1.Secret:
-			kc.secrets[k8s.NamespacedNameOf(obj)] = obj
+			// Secret validation status is intentionally cleared, it needs
+			// to be re-validated after an insert.
+			kc.secrets[k8s.NamespacedNameOf(obj)] = &Secret{Object: obj}
 			return kc.secretTriggersRebuild(obj)
 		case *v1.Service:
 			kc.services[k8s.NamespacedNameOf(obj)] = obj
@@ -522,20 +524,41 @@ func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func
 		return nil, fmt.Errorf("Secret not found")
 	}
 
-	ok, err := isValidSecret(sec)
-	if !ok {
+	// No cached validation status: recompute validity
+	if sec.ValidationStatus == nil {
+		// Right now isValidSecret sometimes returns (false, nil)
+		// for secrets that are not valid for use in Contour. This
+		// is done because validation was previously done up-front
+		// on all Secrets and we didn't want to log an error for
+		// all of them. This should be revised so that's not a valid
+		// return.
+		valid, err := isValidSecret(sec.Object)
+		if err != nil {
+			sec.ValidationStatus = &SecretValidationStatus{
+				Valid: false,
+				Error: err,
+			}
+		} else if !valid {
+			sec.ValidationStatus = &SecretValidationStatus{
+				Valid: false,
+				Error: errors.New("Secret not valid in a way that doesn't throw an error"),
+			}
+		} else {
+			sec.ValidationStatus = &SecretValidationStatus{
+				Valid: true,
+			}
+		}
+	}
+
+	if !sec.ValidationStatus.Valid {
+		return nil, sec.ValidationStatus.Error
+	}
+
+	if err := validate(sec.Object); err != nil {
 		return nil, err
 	}
 
-	if err := validate(sec); err != nil {
-		return nil, err
-	}
-
-	s := &Secret{
-		Object: sec,
-	}
-
-	return s, nil
+	return sec, nil
 }
 
 func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName) (*PeerValidationContext, error) {

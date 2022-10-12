@@ -3582,7 +3582,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSUpstreamValidationInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/cacert\": Secret not found",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: invalid CA Secret \"roots/cacert\": Secret not valid in a way that doesn't throw an error",
 				),
 		},
 	})
