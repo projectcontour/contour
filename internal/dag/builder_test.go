@@ -13257,10 +13257,10 @@ func clustermap(services ...*v1.Service) []*Cluster {
 
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
-		Object: s,
-		ValidationStatus: &SecretValidationStatus{
-			Valid: true,
-		},
+		Object:         s,
+		ValidTLSSecret: &SecretValidationStatus{Valid: true},
+		ValidCASecret:  &SecretValidationStatus{Valid: true},
+		ValidCRLSecret: &SecretValidationStatus{Valid: true},
 	}
 }
 

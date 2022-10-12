@@ -729,6 +729,7 @@ func TestJWTVerification(t *testing.T) {
 
 	rh.OnAdd(&corev1.Secret{
 		ObjectMeta: fixture.ObjectMeta("default/cacert"),
+		Type:       v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},

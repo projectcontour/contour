@@ -31,90 +31,138 @@ const CACertificateKey = "ca.crt"
 const CRLKey = "crl.pem"
 
 // validTLSSecret returns an error if the Secret is not of type TLS or if it doesn't contain certificate and private key material.
-func validTLSSecret(s *v1.Secret) error {
-	if s.Type != v1.SecretTypeTLS {
-		return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
+func validTLSSecret(secret *Secret) error {
+	if secret.ValidTLSSecret != nil {
+		return secret.ValidTLSSecret.Error
 	}
-	_, err := isValidSecret(s)
-	return err
-}
 
-// isValidSecret returns true if the secret is interesting and well
-// formed. TLS certificate/key pairs must be secrets of type
-// "kubernetes.io/tls". Certificate bundles may be "kubernetes.io/tls"
-// or generic (type "Opaque" or "") secrets.
-func isValidSecret(secret *v1.Secret) (bool, error) {
-	switch secret.Type {
-	// We will accept TLS secrets that also have the 'ca.crt' payload.
-	case v1.SecretTypeTLS:
+	valid := func(secret *v1.Secret) error {
+		// Must be of type TLS (TODO can we relax this? https://github.com/projectcontour/contour/issues/3180)
+		// Must have valid tls.crt and tls.key data
+		if secret.Type != v1.SecretTypeTLS {
+			return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
+		}
+
 		data, ok := secret.Data[v1.TLSCertKey]
 		if !ok {
-			return false, errors.New("missing TLS certificate")
+			return errors.New("missing TLS certificate")
 		}
 
 		if err := validateServingBundle(data); err != nil {
-			return false, fmt.Errorf("invalid TLS certificate: %v", err)
+			return fmt.Errorf("invalid TLS certificate: %v", err)
 		}
 
 		data, ok = secret.Data[v1.TLSPrivateKeyKey]
 		if !ok {
-			return false, errors.New("missing TLS private key")
+			return errors.New("missing TLS private key")
 		}
 
 		if err := validatePrivateKey(data); err != nil {
-			return false, fmt.Errorf("invalid TLS private key: %v", err)
+			return fmt.Errorf("invalid TLS private key: %v", err)
 		}
 
-	// Generic secrets may have 'ca.crt' or `crl.pem`.
-	case v1.SecretTypeOpaque, "":
-		// Note that we can't return an error in the first two cases
-		// because we have to watch all the secrets in the cluster, and most
-		// will be Opaque Secrets that Contour doesn't care about.
-		if _, ok := secret.Data[v1.TLSCertKey]; ok {
-			return false, nil
-		}
-		if _, ok := secret.Data[v1.TLSPrivateKeyKey]; ok {
-			return false, nil
-		}
-
-		// If there's an Opaque Secret with a `ca.crt` key, and it's zero
-		// length, Contour can't use it, so return an error.
-		data, containsCA := secret.Data[CACertificateKey]
-		if containsCA && len(data) == 0 {
-			return false, errors.New("can't use zero-length ca.crt value")
-		}
-
-		data, containsCRL := secret.Data[CRLKey]
-		if containsCRL {
-			if len(data) == 0 {
-				return false, errors.New("can't use zero-length crl.pem value")
-			}
-			if err := validateCRL(data); err != nil {
-				return false, err
-			}
-		}
-
-		// Secret has neither CA nor CRL.
-		if !(containsCA || containsCRL) {
-			return false, nil // Not an error.
-		}
-
-	default:
-		return false, nil
-
+		return nil
 	}
 
-	// If the secret we propose to accept has a CA bundle key,
-	// validate that it is PEM certificate(s). Note that the
-	// CA bundle on TLS secrets is allowed to be an empty string
-	// (see https://github.com/projectcontour/contour/issues/1644).
-	if data := secret.Data[CACertificateKey]; len(data) > 0 {
-		if err := validateCABundle(data); err != nil {
-			return false, fmt.Errorf("invalid CA certificate bundle: %v", err)
+	if err := valid(secret.Object); err != nil {
+		secret.ValidTLSSecret = &SecretValidationStatus{
+			Valid: false,
+			Error: err,
 		}
+
+		return err
 	}
 
-	return true, nil
+	secret.ValidTLSSecret = &SecretValidationStatus{
+		Valid: true,
+	}
+
+	return nil
+}
+
+func validCA(secret *Secret) error {
+	// Must be of type Opaque or TLS
+	// Must have valid ca.crt data
+
+	if secret.ValidCASecret != nil {
+		return secret.ValidCASecret.Error
+	}
+
+	valid := func(secret *v1.Secret) error {
+		if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
+			return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
+		}
+
+		if len(secret.Data[CACertificateKey]) == 0 {
+			return fmt.Errorf("empty %q key", CACertificateKey)
+		}
+
+		// If the secret we propose to accept has a CA bundle key,
+		// validate that it is PEM certificate(s). Note that the
+		// CA bundle on TLS secrets is allowed to be an empty string
+		// (see https://github.com/projectcontour/contour/issues/1644).
+
+		if err := validateCABundle(secret.Data[CACertificateKey]); err != nil {
+			return fmt.Errorf("invalid CA certificate bundle: %v", err)
+		}
+
+		return nil
+	}
+
+	if err := valid(secret.Object); err != nil {
+		secret.ValidCASecret = &SecretValidationStatus{
+			Valid: false,
+			Error: err,
+		}
+
+		return err
+	}
+
+	secret.ValidCASecret = &SecretValidationStatus{
+		Valid: true,
+	}
+
+	return nil
+}
+
+func validCRL(secret *Secret) error {
+	// Must be of type Opaque or TLS
+	// Must have valid crl.pem data
+
+	if secret.ValidCRLSecret != nil {
+		return secret.ValidCRLSecret.Error
+	}
+
+	valid := func(secret *v1.Secret) error {
+		if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
+			return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
+		}
+
+		if len(secret.Data[CRLKey]) == 0 {
+			return fmt.Errorf("empty %q key", CRLKey)
+		}
+
+		if err := validateCRL(secret.Data[CRLKey]); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	if err := valid(secret.Object); err != nil {
+		secret.ValidCRLSecret = &SecretValidationStatus{
+			Valid: false,
+			Error: err,
+		}
+
+		return err
+	}
+
+	secret.ValidCRLSecret = &SecretValidationStatus{
+		Valid: true,
+	}
+
+	return nil
 }
 
 // containsPEMHeader returns true if the given slice contains a string

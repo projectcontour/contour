@@ -518,43 +518,13 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 
 // LookupSecret returns a Secret if present or nil if the underlying kubernetes
 // secret fails validation or is missing.
-func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
+func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*Secret) error) (*Secret, error) {
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
 	}
 
-	// No cached validation status: recompute validity
-	if sec.ValidationStatus == nil {
-		// Right now isValidSecret sometimes returns (false, nil)
-		// for secrets that are not valid for use in Contour. This
-		// is done because validation was previously done up-front
-		// on all Secrets and we didn't want to log an error for
-		// all of them. This should be revised so that's not a valid
-		// return.
-		valid, err := isValidSecret(sec.Object)
-		if err != nil {
-			sec.ValidationStatus = &SecretValidationStatus{
-				Valid: false,
-				Error: err,
-			}
-		} else if !valid {
-			sec.ValidationStatus = &SecretValidationStatus{
-				Valid: false,
-				Error: errors.New("Secret not valid in a way that doesn't throw an error"),
-			}
-		} else {
-			sec.ValidationStatus = &SecretValidationStatus{
-				Valid: true,
-			}
-		}
-	}
-
-	if !sec.ValidationStatus.Valid {
-		return nil, sec.ValidationStatus.Error
-	}
-
-	if err := validate(sec.Object); err != nil {
+	if err := validate(sec); err != nil {
 		return nil, err
 	}
 
@@ -617,22 +587,6 @@ func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targ
 		}
 	}
 	return false
-}
-
-func validCA(s *v1.Secret) error {
-	if len(s.Data[CACertificateKey]) == 0 {
-		return fmt.Errorf("empty %q key", CACertificateKey)
-	}
-
-	return nil
-}
-
-func validCRL(s *v1.Secret) error {
-	if len(s.Data[CRLKey]) == 0 {
-		return fmt.Errorf("empty %q key", CRLKey)
-	}
-
-	return nil
 }
 
 // LookupService returns the Kubernetes service and port matching the provided parameters,
