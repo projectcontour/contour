@@ -3988,6 +3988,11 @@ spec:
                             is marked as the default, individual routes must explicitly
                             identify the provider they require.
                           type: boolean
+                        forwardJWT:
+                          description: Whether the JWT should be forwarded to the
+                            backend service after successful verification. By default,
+                            the JWT is not forwarded.
+                          type: boolean
                         issuer:
                           description: Issuer that JWTs are required to have in the
                             "iss" field. If not provided, JWT issuers are not checked.

@@ -757,6 +757,7 @@ func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 					CacheDuration: cacheDuration,
 				},
 			},
+			Forward: provider.ForwardJWT,
 		}
 
 		// Set up a requirement map so that per-route filter config can refer

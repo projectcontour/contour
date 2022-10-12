@@ -655,6 +655,7 @@ type JWTProvider struct {
 	Issuer     string
 	Audiences  []string
 	RemoteJWKS RemoteJWKS
+	ForwardJWT bool
 }
 
 type RemoteJWKS struct {

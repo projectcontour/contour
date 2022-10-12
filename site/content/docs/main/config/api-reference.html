@@ -1956,6 +1956,21 @@ RemoteJWKS
 <p>Remote JWKS to use for verifying JWT signatures.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>forwardJWT</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether the JWT should be forwarded to the backend
+service after successful verification. By default,
+the JWT is not forwarded.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.JWTVerificationPolicy">JWTVerificationPolicy

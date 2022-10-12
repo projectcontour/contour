@@ -37,11 +37,13 @@ spec:
           uri: https://example.com/jwks.json
           timeout: 1s
           cacheDuration: 5m
+        forwardJWT: true
   routes:
     ...
 ```
 
 The provider above requires JWTs to have an issuer of example.com, an audience of either audience-1 or audience-2, and a signature that can be verified using the configured JWKS.
+It also forwards the JWT to the backend via the `Authorization` header after successful verification.
 
 To apply a JWT provider as a requirement to a given route, specify a `jwtVerificationPolicy` for the route:
 
