@@ -17,12 +17,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
+
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -265,6 +267,16 @@ func TestGatewayClassReconcile(t *testing.T) {
 						WorkloadType: "invalid-workload-type",
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
 							Type: "invalid-networkpublishing-type",
+						},
+						ExtraVolumeMounts: []corev1.VolumeMount{
+							{
+								Name: "volume-a",
+							},
+						},
+						ExtraVolumes: []corev1.Volume{
+							{
+								Name: "volume-b",
+							},
 						},
 					},
 				},
