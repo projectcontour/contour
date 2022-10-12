@@ -56,6 +56,10 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 			},
 			&dag.ListenerProcessor{},
 		}
+
+		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{
+			{Namespace: secret.Namespace, Name: secret.Name},
+		}
 	}
 }
 

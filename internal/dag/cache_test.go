@@ -985,7 +985,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 				Type: v1.SecretTypeTLS,
 			},
-			want: true,
+			want: false,
 		},
 		"remove service": {
 			cache: cache(&v1.Service{

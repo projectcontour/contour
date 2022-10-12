@@ -258,9 +258,8 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.secrets[m]
 		delete(kc.secrets, m)
-		return ok
+		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.services[m]
