@@ -973,7 +973,6 @@ func (s *Secret) PrivateKey() []byte {
 }
 
 type SecretValidationStatus struct {
-	Valid bool
 	Error error
 }
 

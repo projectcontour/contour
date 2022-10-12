@@ -13261,21 +13261,21 @@ func clustermap(services ...*v1.Service) []*Cluster {
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
 		Object:         s,
-		ValidTLSSecret: &SecretValidationStatus{Valid: true},
+		ValidTLSSecret: &SecretValidationStatus{},
 	}
 }
 
 func caSecret(s *v1.Secret) *Secret {
 	return &Secret{
 		Object:        s,
-		ValidCASecret: &SecretValidationStatus{Valid: true},
+		ValidCASecret: &SecretValidationStatus{},
 	}
 }
 
 func crlSecret(s *v1.Secret) *Secret {
 	return &Secret{
 		Object:         s,
-		ValidCRLSecret: &SecretValidationStatus{Valid: true},
+		ValidCRLSecret: &SecretValidationStatus{},
 	}
 }
 
