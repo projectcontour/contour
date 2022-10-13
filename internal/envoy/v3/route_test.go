@@ -980,7 +980,7 @@ func TestCORSPolicy(t *testing.T) {
 	}{
 		"only required properties set": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:  []string{"*"},
+				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 			},
 			want: &envoy_route_v3.CorsPolicy{
@@ -995,9 +995,37 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:     "GET,POST,PUT",
 			},
 		},
+		"allow origin regex and specific": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin: []dag.CORSAllowOriginMatch{
+					{Type: dag.CORSAllowOriginMatchRegex, Value: `.*\.foo\.com`},
+					{Type: dag.CORSAllowOriginMatchExact, Value: "https://bar.com"},
+				},
+				AllowMethods: []string{"GET"},
+			},
+			want: &envoy_route_v3.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_SafeRegex{
+							SafeRegex: &matcher.RegexMatcher{
+								Regex: `.*\.foo\.com`,
+							},
+						},
+					},
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "https://bar.com",
+						},
+						IgnoreCase: true,
+					},
+				},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET",
+			},
+		},
 		"allow credentials": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:      []string{"*"},
+				AllowOrigin:      []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods:     []string{"GET", "POST", "PUT"},
 				AllowCredentials: true,
 			},
@@ -1015,7 +1043,7 @@ func TestCORSPolicy(t *testing.T) {
 		},
 		"allow headers": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:  []string{"*"},
+				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				AllowHeaders: []string{"header-1", "header-2"},
 			},
@@ -1034,7 +1062,7 @@ func TestCORSPolicy(t *testing.T) {
 		},
 		"expose headers": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:   []string{"*"},
+				AllowOrigin:   []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods:  []string{"GET", "POST", "PUT"},
 				ExposeHeaders: []string{"header-1", "header-2"},
 			},
@@ -1053,7 +1081,7 @@ func TestCORSPolicy(t *testing.T) {
 		},
 		"max age": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:  []string{"*"},
+				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DurationSetting(10 * time.Minute),
 			},
@@ -1072,7 +1100,7 @@ func TestCORSPolicy(t *testing.T) {
 		},
 		"default max age": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:  []string{"*"},
+				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DefaultSetting(),
 			},
@@ -1090,7 +1118,7 @@ func TestCORSPolicy(t *testing.T) {
 		},
 		"max age disabled": {
 			cp: &dag.CORSPolicy{
-				AllowOrigin:  []string{"*"},
+				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DisabledSetting(),
 			},

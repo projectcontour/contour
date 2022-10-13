@@ -14,6 +14,7 @@
 package sorter
 
 import (
+	"math"
 	"math/rand"
 	"sort"
 	"testing"
@@ -147,6 +148,76 @@ func presentHeader(name string) dag.HeaderMatchCondition {
 		Name:      name,
 		MatchType: dag.HeaderMatchTypePresent,
 	}
+}
+
+// Routes that have a higher priority should be sorted first when compared to
+// others that have identical path matches, number of header matches, and
+// number of query matches.
+// This is mainly to support Gateway API route match preference.
+// See: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.HTTPRouteRule
+func TestSortRoutesPriority(t *testing.T) {
+	want := []*dag.Route{
+		{
+			// Highest priority so this sorts first.
+			Priority:           0,
+			PathMatchCondition: matchPrefixSegment("/"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("a-header-name"),
+			},
+		},
+		{
+			// This route sorts ahead of the next one since the priority
+			// is higher, even though the header match would normally
+			// sort it after.
+			Priority:           1,
+			PathMatchCondition: matchPrefixSegment("/"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("z-header-name"),
+			},
+		},
+		{
+			Priority:           2,
+			PathMatchCondition: matchPrefixSegment("/"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("a-header-name"),
+			},
+		},
+		{
+			// This route sorts ahead of the next one since the priority
+			// is higher, even though the query match would normally
+			// sort it after.
+			Priority:           2,
+			PathMatchCondition: matchPrefixSegment("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "z-query-param", Value: "query-value"},
+			},
+		},
+		{
+			// Same priority as the next one, so sorted on query param match
+			// name.
+			Priority:           3,
+			PathMatchCondition: matchPrefixSegment("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "a-query-param", Value: "query-value"},
+			},
+		},
+		{
+			Priority:           3,
+			PathMatchCondition: matchPrefixSegment("/"),
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "b-query-param", Value: "query-value"},
+			},
+		},
+		{
+			Priority:           math.MaxUint8,
+			PathMatchCondition: matchPrefixSegment("/"),
+		},
+	}
+
+	have := shuffleRoutes(want)
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
 }
 
 func TestSortRoutesPathMatch(t *testing.T) {
@@ -283,7 +354,7 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 	assert.Equal(t, want, have)
 }
 
-func TestSortRoutesMostQueryParams(t *testing.T) {
+func TestSortRoutesQueryParams(t *testing.T) {
 	want := []*dag.Route{
 		{
 
@@ -292,6 +363,26 @@ func TestSortRoutesMostQueryParams(t *testing.T) {
 				{Name: "query-param-1", Value: "query-value-1"},
 				{Name: "query-param-2", Value: "query-value-2"},
 				{Name: "query-param-3", Value: "query-value-3"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			// If same number of matches, sort on element-by-element
+			// comparison of each query param name provided.
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "aaa-query-param-1", Value: "query-value-1"},
+				{Name: "query-param-2", Value: "query-value-2"},
+			},
+		},
+		{
+
+			PathMatchCondition: matchExact("/"),
+			// If same number of matches, sort on element-by-element
+			// comparison of each query param name provided.
+			QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+				{Name: "query-param-1", Value: "query-value-1"},
+				{Name: "bbb-query-param-2", Value: "query-value-2"},
 			},
 		},
 		{

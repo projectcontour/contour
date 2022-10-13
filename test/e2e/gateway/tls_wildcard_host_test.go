@@ -24,10 +24,11 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testTLSWildcardHost(namespace string) {
+func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
 	Specify("wildcard hostname matching works with TLS", func() {
 		t := f.T()
 		hostSuffix := "wildcardhost.gateway.projectcontour.io"
@@ -44,7 +45,8 @@ func testTLSWildcardHost(namespace string) {
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
-							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							Namespace:   gatewayapi.NamespacePtr(gateway.Namespace),
+							Name:        gatewayapi_v1beta1.ObjectName(gateway.Name),
 							SectionName: gatewayapi.SectionNamePtr("secure"),
 						},
 					},

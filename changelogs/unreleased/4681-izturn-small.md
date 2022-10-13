@@ -1,1 +1,1 @@
-add the field podAnnotations to crd/ContourConfiguration to enable adding more annotations to pod/envoy
+Add Kubernetes annotations configurability to ContourDeployment resource. to enable customize pod annotations for pod/envoy

@@ -231,8 +231,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if gatewayClassParams != nil {
-		// ContourConfiguration
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
+
+		// if there is a same name pair, overwrite it
+		for k, v := range gatewayClassParams.Spec.ResourceLabels {
+			contourModel.Spec.ResourceLabels[k] = v
+		}
 
 		if gatewayClassParams.Spec.Contour != nil {
 			// Deployment replicas
@@ -293,6 +297,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
+			// Pod Annotations
 			for k, v := range gatewayClassParams.Spec.Envoy.PodAnnotations {
 				contourModel.Spec.EnvoyPodAnnotations[k] = v
 			}

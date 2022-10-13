@@ -4,6 +4,7 @@
 # Generated from:
 #       examples/contour/01-crds.yaml
 #       examples/gateway/00-crds.yaml
+#       examples/gateway/00-namespace.yaml
 #       examples/gateway/01-admission_webhook.yaml
 #       examples/gateway/02-certificate_config.yaml
 #       examples/gateway-provisioner/00-common.yaml
@@ -1063,6 +1064,12 @@ spec:
                       to DaemonSet.
                     type: string
                 type: object
+              resourceLabels:
+                additionalProperties:
+                  type: string
+                description: ResourceLabels is a set of labels to add to the provisioned
+                  Contour resources.
+                type: object
               runtimeSettings:
                 description: RuntimeSettings is a ContourConfiguration spec to be
                   used when provisioning a Contour instance that will influence aspects
@@ -1634,13 +1641,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
@@ -2481,6 +2489,26 @@ spec:
                       required:
                       - path
                       type: object
+                    jwtVerificationPolicy:
+                      description: The policy for verifying JWTs for requests to this
+                        route.
+                      properties:
+                        disabled:
+                          description: Disabled defines whether to disable all JWT
+                            verification for this route. This can be used to opt specific
+                            routes out of the default JWT provider for the HTTPProxy.
+                            At most one of this field or the "require" field can be
+                            specified.
+                          type: boolean
+                        require:
+                          description: Require names a specific JWT provider (defined
+                            in the virtual host) to require for the route. If specified,
+                            this field overrides the default provider if one exists.
+                            If this field is not specified, the default provider will
+                            be required if one exists. At most one of this field or
+                            the "disabled" field can be specified.
+                          type: string
+                      type: object
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
@@ -3145,6 +3173,43 @@ spec:
                                   type: object
                                 type: array
                             type: object
+                          slowStartPolicy:
+                            description: Slow start will gradually increase amount
+                              of traffic to a newly added endpoint.
+                            properties:
+                              aggression:
+                                default: "1.0"
+                                description: "The speed of traffic increase over the
+                                  slow start window. Defaults to 1.0, so that endpoint
+                                  would get linearly increasing amount of traffic.
+                                  When increasing the value for this parameter, the
+                                  speed of traffic ramp-up increases non-linearly.
+                                  The value of aggression parameter should be greater
+                                  than 0.0. \n More info: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start"
+                                pattern: ^([0-9]+([.][0-9]+)?|[.][0-9]+)$
+                                type: string
+                              minWeightPercent:
+                                default: 10
+                                description: The minimum or starting percentage of
+                                  traffic to send to new endpoints. A non-zero value
+                                  helps avoid a too small initial weight, which may
+                                  cause endpoints in slow start mode to receive no
+                                  traffic in the beginning of the slow start window.
+                                  If not specified, the default is 10%.
+                                format: int32
+                                maximum: 100
+                                minimum: 0
+                                type: integer
+                              window:
+                                description: The duration of slow start window. Duration
+                                  is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  Valid time units are "ns", "us" (or "µs"), "ms",
+                                  "s", "m", "h".
+                                pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                                type: string
+                            required:
+                            - window
+                            type: object
                           validation:
                             description: UpstreamValidation defines how to verify
                               the backend service's certificate
@@ -3487,6 +3552,43 @@ spec:
                                 type: object
                               type: array
                           type: object
+                        slowStartPolicy:
+                          description: Slow start will gradually increase amount of
+                            traffic to a newly added endpoint.
+                          properties:
+                            aggression:
+                              default: "1.0"
+                              description: "The speed of traffic increase over the
+                                slow start window. Defaults to 1.0, so that endpoint
+                                would get linearly increasing amount of traffic. When
+                                increasing the value for this parameter, the speed
+                                of traffic ramp-up increases non-linearly. The value
+                                of aggression parameter should be greater than 0.0.
+                                \n More info: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start"
+                              pattern: ^([0-9]+([.][0-9]+)?|[.][0-9]+)$
+                              type: string
+                            minWeightPercent:
+                              default: 10
+                              description: The minimum or starting percentage of traffic
+                                to send to new endpoints. A non-zero value helps avoid
+                                a too small initial weight, which may cause endpoints
+                                in slow start mode to receive no traffic in the beginning
+                                of the slow start window. If not specified, the default
+                                is 10%.
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            window:
+                              description: The duration of slow start window. Duration
+                                is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                                Valid time units are "ns", "us" (or "µs"), "ms", "s",
+                                "m", "h".
+                              pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                              type: string
+                          required:
+                          - window
+                          type: object
                         validation:
                           description: UpstreamValidation defines how to verify the
                             backend service's certificate
@@ -3623,6 +3725,7 @@ spec:
                             string headers returned by a cross-domain request.
                           pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
                           type: string
+                        minItems: 1
                         type: array
                       allowMethods:
                         description: AllowMethods specifies the content for the *access-control-allow-methods*
@@ -3632,12 +3735,19 @@ spec:
                             string headers returned by a cross-domain request.
                           pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
                           type: string
+                        minItems: 1
                         type: array
                       allowOrigin:
                         description: AllowOrigin specifies the origins that will be
-                          allowed to do CORS requests. "*" means allow any origin.
+                          allowed to do CORS requests. Allowed values include "*"
+                          which signifies any origin is allowed, an exact origin of
+                          the form "scheme://host[:port]" (where port is optional),
+                          or a valid regex pattern. Note that regex patterns are validated
+                          and a simple "glob" pattern (e.g. *.foo.com) will be rejected
+                          or produce unexpected matches when applied as a regex.
                         items:
                           type: string
+                        minItems: 1
                         type: array
                       exposeHeaders:
                         description: ExposeHeaders Specifies the content for the *access-control-expose-headers*
@@ -3647,6 +3757,7 @@ spec:
                             string headers returned by a cross-domain request.
                           pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
                           type: string
+                        minItems: 1
                         type: array
                       maxAge:
                         description: MaxAge indicates for how long the results of
@@ -3656,6 +3767,7 @@ spec:
                           "h". Only positive values are allowed while 0 disables the
                           cache requiring a preflight OPTIONS check for all cross-origin
                           requests.
+                        pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|0)$
                         type: string
                     required:
                     - allowMethods
@@ -3667,6 +3779,95 @@ spec:
                       to the fqdn.
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  jwtProviders:
+                    description: Providers to use for verifying JSON Web Tokens (JWTs)
+                      on the virtual host.
+                    items:
+                      description: JWTProvider defines how to verify JWTs on requests.
+                      properties:
+                        audiences:
+                          description: Audiences that JWTs are allowed to have in
+                            the "aud" field. If not provided, JWT audiences are not
+                            checked.
+                          items:
+                            type: string
+                          type: array
+                        default:
+                          description: Whether the provider should apply to all routes
+                            in the HTTPProxy/its includes by default. At most one
+                            provider can be marked as the default. If no provider
+                            is marked as the default, individual routes must explicitly
+                            identify the provider they require.
+                          type: boolean
+                        issuer:
+                          description: Issuer that JWTs are required to have in the
+                            "iss" field. If not provided, JWT issuers are not checked.
+                          type: string
+                        name:
+                          description: Unique name for the provider.
+                          minLength: 1
+                          type: string
+                        remoteJWKS:
+                          description: Remote JWKS to use for verifying JWT signatures.
+                          properties:
+                            cacheDuration:
+                              description: How long to cache the JWKS locally. If
+                                not specified, Envoy's default of 5m applies.
+                              pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                              type: string
+                            dnsLookupFamily:
+                              description: "The DNS IP address resolution policy for
+                                the JWKS URI. When configured as \"v4\", the DNS resolver
+                                will only perform a lookup for addresses in the IPv4
+                                family. If \"v6\" is configured, the DNS resolver
+                                will only perform a lookup for addresses in the IPv6
+                                family. If \"auto\" is configured, the DNS resolver
+                                will first perform a lookup for addresses in the IPv6
+                                family and fallback to a lookup for addresses in the
+                                IPv4 family. If not specified, the Contour-wide setting
+                                defined in the config file or ContourConfiguration
+                                applies (defaults to \"auto\"). \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+                                for more information."
+                              enum:
+                              - auto
+                              - v4
+                              - v6
+                              type: string
+                            timeout:
+                              description: How long to wait for a response from the
+                                URI. If not specified, a default of 1s applies.
+                              pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
+                              type: string
+                            uri:
+                              description: The URI for the JWKS.
+                              minLength: 1
+                              type: string
+                            validation:
+                              description: UpstreamValidation defines how to verify
+                                the JWKS's TLS certificate.
+                              properties:
+                                caSecret:
+                                  description: Name or namespaced name of the Kubernetes
+                                    secret used to validate the certificate presented
+                                    by the backend. The secret must contain key named
+                                    ca.crt.
+                                  type: string
+                                subjectName:
+                                  description: Key which is expected to be present
+                                    in the 'subjectAltName' of the presented certificate.
+                                  type: string
+                              required:
+                              - caSecret
+                              - subjectName
+                              type: object
+                          required:
+                          - uri
+                          type: object
+                      required:
+                      - name
+                      - remoteJWKS
+                      type: object
+                    type: array
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
                     properties:
@@ -4566,7 +4767,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -4997,7 +5198,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -6415,7 +6616,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -6877,7 +7078,9 @@ spec:
                                           description: Port specifies the destination
                                             port number to use for this resource.
                                             Port is required when the referent is
-                                            a Kubernetes Service. For other resources,
+                                            a Kubernetes Service. In this case, the
+                                            port number is the service port number,
+                                            not the target port. For other resources,
                                             destination port might be derived from
                                             the referent resource or this field.
                                           format: int32
@@ -6945,7 +7148,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -6972,7 +7175,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -6987,7 +7190,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -7023,7 +7226,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -7083,7 +7286,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -7136,9 +7339,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -7390,9 +7594,11 @@ spec:
                                   port:
                                     description: Port specifies the destination port
                                       number to use for this resource. Port is required
-                                      when the referent is a Kubernetes Service. For
-                                      other resources, destination port might be derived
-                                      from the referent resource or this field.
+                                      when the referent is a Kubernetes Service. In
+                                      this case, the port number is the service port
+                                      number, not the target port. For other resources,
+                                      destination port might be derived from the referent
+                                      resource or this field.
                                     format: int32
                                     maximum: 65535
                                     minimum: 1
@@ -7453,7 +7659,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -7480,7 +7686,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -7493,7 +7699,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -7527,7 +7733,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -7582,7 +7788,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -8475,7 +8681,9 @@ spec:
                                           description: Port specifies the destination
                                             port number to use for this resource.
                                             Port is required when the referent is
-                                            a Kubernetes Service. For other resources,
+                                            a Kubernetes Service. In this case, the
+                                            port number is the service port number,
+                                            not the target port. For other resources,
                                             destination port might be derived from
                                             the referent resource or this field.
                                           format: int32
@@ -8543,7 +8751,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -8570,7 +8778,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -8585,7 +8793,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -8621,7 +8829,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -8681,7 +8889,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -8734,9 +8942,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -8987,9 +9196,11 @@ spec:
                                   port:
                                     description: Port specifies the destination port
                                       number to use for this resource. Port is required
-                                      when the referent is a Kubernetes Service. For
-                                      other resources, destination port might be derived
-                                      from the referent resource or this field.
+                                      when the referent is a Kubernetes Service. In
+                                      this case, the port number is the service port
+                                      number, not the target port. For other resources,
+                                      destination port might be derived from the referent
+                                      resource or this field.
                                     format: int32
                                     maximum: 65535
                                     minimum: 1
@@ -9050,7 +9261,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -9077,7 +9288,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -9090,7 +9301,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -9124,7 +9335,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -9179,7 +9390,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -9638,7 +9849,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -9788,7 +9999,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencepolicies.gateway.networking.k8s.io
@@ -9943,7 +10154,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -10152,9 +10363,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -10436,7 +10648,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -10694,9 +10906,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -10978,7 +11191,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -11187,9 +11400,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -11471,6 +11685,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: gateway-system
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -11530,7 +11745,7 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.5.0
+          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.5.1
           imagePullPolicy: Always
           args:
             - -logtostderr
@@ -11559,11 +11774,6 @@ spec:
           secret:
             secretName: gateway-api-admission
 
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gateway-system
 ---
 apiVersion: v1
 kind: ServiceAccount

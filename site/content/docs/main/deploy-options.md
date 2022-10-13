@@ -227,7 +227,7 @@ $ kubectl delete ns contour-operator
 [4]: /guides/proxy-proto.md
 [5]: https://github.com/kubernetes-up-and-running/kuard
 [7]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/02-service-envoy.yaml
-[8]: /getting-started.md
+[8]: /getting-started
 [9]: config/fundamentals.md
 [10]: /guides/deploy-aws-nlb.md
 [11]: redeploy-envoy.md

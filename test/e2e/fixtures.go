@@ -38,10 +38,6 @@ import (
 )
 
 const (
-	// Note that these image references MUST use a tag, not a digest, in order for
-	// the pre-loading into kind to work, since loading + referencing
-	// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
-
 	// EchoServerImage is the image to use as a backend fixture.
 	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
 
@@ -423,8 +419,9 @@ func (g *GRPC) Deploy(ns, name string) func() {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "grpc-echo",
-							Image: GRPCServerImage,
+							Name:            "grpc-echo",
+							Image:           GRPCServerImage,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",

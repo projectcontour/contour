@@ -4,6 +4,7 @@ name: Release Note Label Check
 on: 
   pull_request:
     types: [opened, labeled, unlabeled, synchronize]
+    branches: [main]
 
 env:
   GOPROXY: https://proxy.golang.org/
