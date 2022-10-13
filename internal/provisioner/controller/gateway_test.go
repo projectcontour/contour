@@ -1110,7 +1110,7 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.True(t, errors.IsNotFound(err))
 			},
 		},
-		"If ContourDeployment.Spec.Envoy.PodAnnotations is specified, the Envoy pods' have annotations for promethues & user-defined": {
+		"If ContourDeployment.Spec.Envoy.PodAnnotations is specified, the Envoy pods' have annotations for prometheus & user-defined": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
