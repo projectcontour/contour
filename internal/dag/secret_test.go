@@ -345,6 +345,20 @@ func TestValidSecrets(t *testing.T) {
 			caSecretError:  errors.New(`empty "ca.crt" key`),
 			crlSecretError: errors.New(`empty "crl.pem" key`),
 		},
+		"kubernetes.io/dockercfg Secret, with TLS cert, CA cert and CRL": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeDockercfg,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+					CRLKey:              []byte(fixture.CRL),
+				},
+			},
+			tlsSecretError: errors.New(`secret type is not "kubernetes.io/tls"`),
+			caSecretError:  errors.New(`secret type is not "kubernetes.io/tls" or "Opaque"`),
+			crlSecretError: errors.New(`secret type is not "kubernetes.io/tls" or "Opaque"`),
+		},
 	}
 
 	for name, tc := range tests {
