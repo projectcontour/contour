@@ -296,6 +296,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			// volume mount
+			contourModel.Spec.EnvoyExtraVolumeMounts = append(contourModel.Spec.EnvoyExtraVolumeMounts, gatewayClassParams.Spec.Envoy.ExtraVolumeMounts...)
+			contourModel.Spec.EnvoyExtraVolumes = append(contourModel.Spec.EnvoyExtraVolumes, gatewayClassParams.Spec.Envoy.ExtraVolumes...)
+
 		}
 	}
 

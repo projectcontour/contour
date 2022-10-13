@@ -127,6 +127,14 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
