@@ -278,6 +278,12 @@ type JWTProvider struct {
 	// Remote JWKS to use for verifying JWT signatures.
 	// +kubebuilder:validation:Required
 	RemoteJWKS RemoteJWKS `json:"remoteJWKS"`
+
+	// Whether the JWT should be forwarded to the backend
+	// service after successful verification. By default,
+	// the JWT is not forwarded.
+	// +optional
+	ForwardJWT bool `json:"forwardJWT,omitempty"`
 }
 
 // RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
