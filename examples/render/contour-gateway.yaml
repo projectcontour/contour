@@ -2845,8 +2845,8 @@ spec:
                   podAnnotations:
                     additionalProperties:
                       type: string
-                    description: PodAnnotations holds the annotations that will be
-                      add to the envoy‘s pod.
+                    description: PodAnnotations defines annotations to add to the
+                      Envoy pods.
                     type: object
                   replicas:
                     description: Replicas is the desired number of Envoy replicas.
