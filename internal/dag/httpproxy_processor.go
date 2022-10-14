@@ -263,6 +263,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			if tls.ClientValidation != nil {
 				dv := &PeerValidationContext{
 					SkipClientCertValidation: tls.ClientValidation.SkipClientCertValidation,
+					OnlyRequestClientCert:    tls.ClientValidation.OnlyRequestClientCert,
 				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))

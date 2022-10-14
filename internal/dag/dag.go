@@ -540,6 +540,9 @@ type PeerValidationContext struct {
 	// OnlyVerifyLeafCertCrl when set to true, only the certificate at the end of the
 	// certificate chain will be subject to validation by CRL.
 	OnlyVerifyLeafCertCrl bool
+	// OnlyRequestClientCert when set to true will ensure Envoy does not require
+	// that the client sends a certificate but if one is sent it will process it.
+	OnlyRequestClientCert bool
 }
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.

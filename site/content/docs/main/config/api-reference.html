@@ -977,6 +977,23 @@ bool
 certificate chain will be subject to validation by CRL.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>onlyRequestClientCert</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OnlyRequestClientCert when set to true will request a client certificate
+but allow the connection to continue if the client does not provide one.
+If a client certificate is sent, it will be verified according to the
+other properties, which includes disabling validation if
+SkipClientCertValidation is set. Defaults to false.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.ExtensionServiceReference">ExtensionServiceReference

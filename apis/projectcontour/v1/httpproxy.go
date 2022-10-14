@@ -1131,6 +1131,14 @@ type DownstreamValidation struct {
 	// certificate chain will be subject to validation by CRL.
 	// +optional
 	OnlyVerifyLeafCertCrl bool `json:"crlOnlyVerifyLeafCert"`
+
+	// OnlyRequestClientCert when set to true will request a client certificate
+	// but allow the connection to continue if the client does not provide one.
+	// If a client certificate is sent, it will be verified according to the
+	// other properties, which includes disabling validation if
+	// SkipClientCertValidation is set. Defaults to false.
+	// +optional
+	OnlyRequestClientCert bool `json:"onlyRequestClientCert"`
 }
 
 // HTTPProxyStatus reports the current state of the HTTPProxy.

@@ -6521,6 +6521,35 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy24 is downstream validation, optional cert validation
+	proxy24 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:         cert1.Name,
+						OnlyRequestClientCert: true,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// invalid because tcpproxy both includes another and
 	// has a list of services.
 	proxy37 := &contour_api_v1.HTTPProxy{
@@ -9768,6 +9797,38 @@ func TestDAGInsert(t *testing.T) {
 								CACertificate:         &Secret{Object: cert1},
 								CRL:                   &Secret{Object: crl},
 								OnlyVerifyLeafCertCrl: true,
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with optional client validation": {
+			objs: []interface{}{
+				proxy24, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate:         &Secret{Object: cert1},
+								OnlyRequestClientCert: true,
 							},
 						},
 					),

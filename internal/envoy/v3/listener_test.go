@@ -323,6 +323,20 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 	}
+	peerValidationContextOptionalClientCertValidationWithCA := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		OnlyRequestClientCert: true,
+	}
 	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
 		CACertificate: &dag.Secret{
 			Object: &v1.Secret{
@@ -463,6 +477,18 @@ func TestDownstreamTLSContext(t *testing.T) {
 					ValidationContextType:          validationContextSkipVerifyWithCA,
 				},
 				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+		"optional client cert validation with ca": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContext,
+				},
+				RequireClientCertificate: protobuf.Bool(false),
 			},
 		},
 		"Downstream validation with CRL check": {
