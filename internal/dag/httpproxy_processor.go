@@ -479,6 +479,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 						},
 						CacheDuration: cacheDuration,
 					},
+					ForwardJWT: jwtProvider.ForwardJWT,
 				})
 			}
 		}

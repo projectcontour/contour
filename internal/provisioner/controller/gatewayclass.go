@@ -181,6 +181,19 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 					invalidParamsMessages = append(invalidParamsMessages, msg)
 				}
 			}
+
+			if params.Spec.Envoy.ExtraVolumeMounts != nil {
+				volumes := map[string]struct{}{}
+				for _, vol := range params.Spec.Envoy.ExtraVolumes {
+					volumes[vol.Name] = struct{}{}
+				}
+				for _, mnt := range params.Spec.Envoy.ExtraVolumeMounts {
+					if _, ok := volumes[mnt.Name]; !ok {
+						msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.extraVolumeMounts, mount to unknown volume: %q", mnt.Name)
+						invalidParamsMessages = append(invalidParamsMessages, msg)
+					}
+				}
+			}
 		}
 
 		if len(invalidParamsMessages) > 0 {

@@ -128,7 +128,15 @@ type EnvoySettings struct {
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
 
-	// PodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Envoy pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }

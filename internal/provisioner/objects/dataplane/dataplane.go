@@ -306,6 +306,9 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		},
 	}
 
+	for j := range containers {
+		containers[j].VolumeMounts = append(containers[j].VolumeMounts, contour.Spec.EnvoyExtraVolumeMounts...)
+	}
 	return initContainers, containers
 }
 
@@ -375,6 +378,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			},
 		},
 	}
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, contour.Spec.EnvoyExtraVolumes...)
 
 	if contour.EnvoyNodeSelectorExists() {
 		ds.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
@@ -453,6 +458,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			},
 		},
 	}
+
+	deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, contour.Spec.EnvoyExtraVolumes...)
 
 	if contour.EnvoyNodeSelectorExists() {
 		deployment.Spec.Template.Spec.NodeSelector = contour.Spec.NodePlacement.Envoy.NodeSelector
