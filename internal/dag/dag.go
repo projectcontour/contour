@@ -228,6 +228,11 @@ type Route struct {
 	// match on the querystring parameters.
 	QueryParamMatchConditions []QueryParamMatchCondition
 
+	// Priority specifies the relative priority of the Route when compared to other
+	// Routes that may have equivalent match conditions. A lower value here means the
+	// Route has a higher priority.
+	Priority uint8
+
 	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
@@ -650,6 +655,7 @@ type JWTProvider struct {
 	Issuer     string
 	Audiences  []string
 	RemoteJWKS RemoteJWKS
+	ForwardJWT bool
 }
 
 type RemoteJWKS struct {
@@ -816,6 +822,8 @@ type Cluster struct {
 
 	// TimeoutPolicy specifies how to handle timeouts for this cluster.
 	TimeoutPolicy ClusterTimeoutPolicy
+
+	SlowStartConfig *SlowStartConfig
 }
 
 // WeightedService represents the load balancing weight of a
@@ -1003,4 +1011,15 @@ func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {
 		MatchType: HeaderMatchTypeRegex,
 		Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(fqdn[1:]),
 	}
+}
+
+// SlowStartConfig holds configuration for gradually increasing amount of traffic to a newly added endpoint.
+type SlowStartConfig struct {
+	Window           time.Duration
+	Aggression       float64
+	MinWeightPercent uint32
+}
+
+func (s *SlowStartConfig) String() string {
+	return fmt.Sprintf("%s%f%d", s.Window.String(), s.Aggression, s.MinWeightPercent)
 }

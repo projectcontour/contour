@@ -66,6 +66,10 @@ type ContourDeploymentSpec struct {
 	//
 	// +optional
 	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resources.
+	// +optional
+	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 }
 
 // ContourSettings contains settings for the Contour part of the installation,
@@ -123,6 +127,14 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -107,6 +107,25 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 
 	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout)
 
+	if c.SlowStartConfig != nil {
+		switch cluster.LbPolicy {
+		case envoy_cluster_v3.Cluster_LEAST_REQUEST:
+			cluster.LbConfig = &envoy_cluster_v3.Cluster_LeastRequestLbConfig_{
+				LeastRequestLbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig{
+					SlowStartConfig: slowStartConfig(c.SlowStartConfig),
+				},
+			}
+		case envoy_cluster_v3.Cluster_ROUND_ROBIN:
+			cluster.LbConfig = &envoy_cluster_v3.Cluster_RoundRobinLbConfig_{
+				RoundRobinLbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig{
+					SlowStartConfig: slowStartConfig(c.SlowStartConfig),
+				},
+			}
+		default:
+			// Slow start is only supported for round robin and weighted least request.
+		}
+	}
+
 	return cluster
 }
 
@@ -310,5 +329,19 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 
 	return map[string]*any.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(&options),
+	}
+}
+
+// slowStartConfig returns the slow start configuration.
+func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_cluster_v3.Cluster_SlowStartConfig {
+	return &envoy_cluster_v3.Cluster_SlowStartConfig{
+		SlowStartWindow: protobuf.Duration(slowStartConfig.Window),
+		Aggression: &envoy_core_v3.RuntimeDouble{
+			DefaultValue: slowStartConfig.Aggression,
+			RuntimeKey:   "contour.slowstart.aggression",
+		},
+		MinWeightPercent: &envoy_type.Percent{
+			Value: float64(slowStartConfig.MinWeightPercent),
+		},
 	}
 }

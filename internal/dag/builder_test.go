@@ -1126,6 +1126,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}, {
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/blog"),
 							BackendRefs: gatewayapi.HTTPBackendRef("blogsvc", 80, 1),
+						}, {
+							Matches: append(
+								gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/another"),
+								gatewayapi_v1beta1.HTTPRouteMatch{
+									Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "X-Foo-Header", "some_value"),
+								},
+							),
+							BackendRefs: gatewayapi.HTTPBackendRef("blogsvc", 80, 1),
 						}},
 					},
 				},
@@ -1135,8 +1143,28 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io",
-							prefixrouteHTTPRoute("/", service(kuardService)), segmentPrefixHTTPRoute("/blog", service(blogService))),
+						virtualhost(
+							"test.projectcontour.io",
+							prefixrouteHTTPRoute("/", service(kuardService)),
+							&Route{
+								PathMatchCondition: prefixSegment("/blog"),
+								Clusters:           clustersWeight(service(blogService)),
+								Priority:           1,
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/another"),
+								Clusters:           clustersWeight(service(blogService)),
+								Priority:           2,
+							},
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								HeaderMatchConditions: []HeaderMatchCondition{
+									{Name: "X-Foo-Header", Value: "some_value", MatchType: "exact"},
+								},
+								Clusters: clustersWeight(service(blogService)),
+								Priority: 2,
+							},
+						),
 					),
 				},
 			),

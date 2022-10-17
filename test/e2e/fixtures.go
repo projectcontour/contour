@@ -38,10 +38,6 @@ import (
 )
 
 const (
-	// Note that these image references MUST use a tag, not a digest, in order for
-	// the pre-loading into kind to work, since loading + referencing
-	// an image by digest is not supported (see https://github.com/kubernetes-sigs/kind/issues/2394).
-
 	// EchoServerImage is the image to use as a backend fixture.
 	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
 

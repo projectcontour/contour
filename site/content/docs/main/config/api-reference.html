@@ -1956,6 +1956,21 @@ RemoteJWKS
 <p>Remote JWKS to use for verifying JWT signatures.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>forwardJWT</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether the JWT should be forwarded to the backend
+service after successful verification. By default,
+the JWT is not forwarded.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.JWTVerificationPolicy">JWTVerificationPolicy
@@ -2531,6 +2546,28 @@ string
 <em>(Optional)</em>
 <p>How long to cache the JWKS locally. If not specified,
 Envoy&rsquo;s default of 5m applies.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>dnsLookupFamily</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The DNS IP address resolution policy for the JWKS URI.
+When configured as &ldquo;v4&rdquo;, the DNS resolver will only perform a lookup
+for addresses in the IPv4 family. If &ldquo;v6&rdquo; is configured, the DNS resolver
+will only perform a lookup for addresses in the IPv6 family.
+If &ldquo;auto&rdquo; is configured, the DNS resolver will first perform a lookup
+for addresses in the IPv6 family and fallback to a lookup for addresses
+in the IPv4 family. If not specified, the Contour-wide setting defined
+in the config file or ContourConfiguration applies (defaults to &ldquo;auto&rdquo;).</p>
+<p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily</a>
+for more information.</p>
 </td>
 </tr>
 </tbody>
@@ -3322,6 +3359,87 @@ Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
 <td>
 <em>(Optional)</em>
 <p>The policies for rewriting Set-Cookie header attributes.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>slowStartPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.SlowStartPolicy">
+SlowStartPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Slow start will gradually increase amount of traffic to a newly added endpoint.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.SlowStartPolicy">SlowStartPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Service">Service</a>)
+</p>
+<p>
+<p>SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
+It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>window</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The duration of slow start window.
+Duration is expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>aggression</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The speed of traffic increase over the slow start window.
+Defaults to 1.0, so that endpoint would get linearly increasing amount of traffic.
+When increasing the value for this parameter, the speed of traffic ramp-up increases non-linearly.
+The value of aggression parameter should be greater than 0.0.</p>
+<p>More info: <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start">https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>minWeightPercent</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The minimum or starting percentage of traffic to send to new endpoints.
+A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
+If not specified, the default is 10%.</p>
 </td>
 </tr>
 </tbody>
@@ -4404,6 +4522,19 @@ provisioning a Contour instance that will influence aspects of
 the Contour instance&rsquo;s runtime behavior.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>resourceLabels</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResourceLabels is a set of labels to add to the provisioned Contour resources.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5040,6 +5171,19 @@ ContourConfigurationSpec
 <p>RuntimeSettings is a ContourConfiguration spec to be used when
 provisioning a Contour instance that will influence aspects of
 the Contour instance&rsquo;s runtime behavior.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>resourceLabels</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResourceLabels is a set of labels to add to the provisioned Contour resources.</p>
 </td>
 </tr>
 </tbody>
@@ -5733,6 +5877,36 @@ NodePlacement
 <td>
 <em>(Optional)</em>
 <p>NodePlacement describes node scheduling configuration of Envoy pods.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extraVolumes</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtraVolumes holds the extra volumes to add.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extraVolumeMounts</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).</p>
 </td>
 </tr>
 </tbody>

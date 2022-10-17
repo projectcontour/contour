@@ -185,34 +185,36 @@ func main() {
 		}
 	}
 
-	log.Printf("Cloning versioned documentation ...")
+	if !isPrereleaseVersion(newVers) {
+		log.Printf("Cloning versioned documentation ...")
 
-	// Jekyll hates it when the TOC file name contains a dot.
-	tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", newVers), ".", "-")
-	oldTocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", oldVers), ".", "-")
+		// Jekyll hates it when the TOC file name contains a dot.
+		tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", newVers), ".", "-")
+		oldTocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", oldVers), ".", "-")
 
-	// Make a versioned copy of the oldVers docs.
-	run([]string{"cp", "-r", fmt.Sprintf("site/content/docs/%s", oldVers), fmt.Sprintf("site/content/docs/%s", newVers)})
-	run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", newVers)})
+		// Make a versioned copy of the oldVers docs.
+		run([]string{"cp", "-r", fmt.Sprintf("site/content/docs/%s", oldVers), fmt.Sprintf("site/content/docs/%s", newVers)})
+		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", newVers)})
 
-	// Update site/content/docs/<newVers>/_index.md content.
-	must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", newVers), oldVers, newVers))
-	run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", newVers)})
+		// Update site/content/docs/<newVers>/_index.md content.
+		must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", newVers), oldVers, newVers))
+		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", newVers)})
 
-	// Make a versioned TOC for the docs.
-	run([]string{"cp", "-r", fmt.Sprintf("site/data/docs/%s.yml", oldTocName), fmt.Sprintf("site/data/docs/%s.yml", tocName)})
-	run([]string{"git", "add", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
+		// Make a versioned TOC for the docs.
+		run([]string{"cp", "-r", fmt.Sprintf("site/data/docs/%s.yml", oldTocName), fmt.Sprintf("site/data/docs/%s.yml", tocName)})
+		run([]string{"git", "add", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
 
-	// Insert the versioned TOC.
-	must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, tocName))
-	run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
+		// Insert the versioned TOC.
+		must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, tocName))
+		run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
 
-	// Insert the versioned docs into the main site layout.
-	must(updateConfigForSite("site/config.yaml", newVers))
-	run([]string{"git", "add", "site/config.yaml"})
+		// Insert the versioned docs into the main site layout.
+		must(updateConfigForSite("site/config.yaml", newVers))
+		run([]string{"git", "add", "site/config.yaml"})
 
-	// Now commit everything
-	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
+		// Now commit everything
+		run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
+	}
 
 	must(generateReleaseNotes(newVers, kubeMinVers, kubeMaxVers))
 	run([]string{"git", "add", "changelogs/*"})
@@ -222,12 +224,9 @@ func main() {
 func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
 	d := Data{
 		Version:              version,
+		Prerelease:           isPrereleaseVersion(version),
 		KubernetesMinVersion: kubeMinVersion,
 		KubernetesMaxVersion: kubeMaxVersion,
-	}
-
-	if strings.Contains(d.Version, "alpha") || strings.Contains(d.Version, "beta") || strings.Contains(d.Version, "rc") {
-		d.Prerelease = true
 	}
 
 	dirEntries, err := os.ReadDir("changelogs/unreleased")
@@ -305,6 +304,10 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 	}
 
 	return nil
+}
+
+func isPrereleaseVersion(version string) bool {
+	return strings.Contains(version, "alpha") || strings.Contains(version, "beta") || strings.Contains(version, "rc")
 }
 
 func parseChangelogFilename(filename string) (Entry, error) {
