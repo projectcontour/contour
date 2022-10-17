@@ -52,7 +52,7 @@ func TestGroupFirstReturnValueIsReturnedToRunsCaller(t *testing.T) {
 func TestGroupAddContext(t *testing.T) {
 	var g Group
 	wait := make(chan int)
-	g.Add(func(<-chan struct{}) error {
+	g.AddContext(func(ctx context.Context) error {
 		<-wait
 		return io.EOF
 	})
