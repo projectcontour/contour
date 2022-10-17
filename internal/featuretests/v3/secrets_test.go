@@ -154,7 +154,8 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
-	c.Request(secretType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res = c.Request(secretType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	assertEqualVersion(t, "2", res)
@@ -170,10 +171,27 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	c.Request(secretType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res = c.Request(secretType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	assertEqualVersion(t, "2", res)
+
+	// Verify that deleting an unreferenced secret does not
+	// bump the current version_info.
+	rh.OnDelete(s2)
+	res = c.Request(secretType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, secret(s1)),
+	})
+	assertEqualVersion(t, "2", res)
+
+	// Verify that deleting a referenced secret does
+	// bump the current version_info.
+	rh.OnDelete(s1)
+	res = c.Request(secretType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{})
+	assertEqualVersion(t, "3", res)
 }
 
 // issue 1169, an invalid certificate should not be
