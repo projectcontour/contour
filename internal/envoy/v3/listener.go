@@ -160,6 +160,7 @@ type httpConnectionManagerBuilder struct {
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	mergeSlashes                  bool
+	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
 }
 
@@ -236,6 +237,11 @@ func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpCon
 // MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
 func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
 	b.mergeSlashes = enabled
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) ForwardClientCertificate(details *dag.ClientCertificateDetails) *httpConnectionManagerBuilder {
+	b.forwardClientCertificate = details
 	return b
 }
 
@@ -472,6 +478,16 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		cm.StatPrefix = b.metricsPrefix
 	} else {
 		cm.StatPrefix = b.routeConfigName
+	}
+	if b.forwardClientCertificate != nil {
+		cm.ForwardClientCertDetails = http.HttpConnectionManager_SANITIZE_SET
+		cm.SetCurrentClientCertDetails = &http.HttpConnectionManager_SetCurrentClientCertDetails{
+			Subject: protobuf.Bool(b.forwardClientCertificate.Subject),
+			Cert:    b.forwardClientCertificate.Cert,
+			Chain:   b.forwardClientCertificate.Chain,
+			Dns:     b.forwardClientCertificate.DNS,
+			Uri:     b.forwardClientCertificate.URI,
+		}
 	}
 
 	return &envoy_listener_v3.Filter{

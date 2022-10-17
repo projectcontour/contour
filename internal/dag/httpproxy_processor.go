@@ -265,6 +265,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					SkipClientCertValidation:  tls.ClientValidation.SkipClientCertValidation,
 					OptionalClientCertificate: tls.ClientValidation.OptionalClientCertificate,
 				}
+				if tls.ClientValidation.ForwardClientCertificate != nil {
+					dv.ForwardClientCertificate = &ClientCertificateDetails{
+						Subject: tls.ClientValidation.ForwardClientCertificate.Subject,
+						Cert:    tls.ClientValidation.ForwardClientCertificate.Cert,
+						Chain:   tls.ClientValidation.ForwardClientCertificate.Chain,
+						DNS:     tls.ClientValidation.ForwardClientCertificate.DNS,
+						URI:     tls.ClientValidation.ForwardClientCertificate.URI,
+					}
+				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
 					cacert, err := p.source.LookupSecret(secretName, validCA)
