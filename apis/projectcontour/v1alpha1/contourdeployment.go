@@ -135,6 +135,10 @@ type EnvoySettings struct {
 	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
 	// +optional
 	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Envoy pods.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

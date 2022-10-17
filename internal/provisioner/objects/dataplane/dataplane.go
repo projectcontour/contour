@@ -338,12 +338,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{
-						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   "8002",
-						"prometheus.io/path":   "/stats/prometheus",
-					},
-					Labels: envoyPodLabels(contour),
+					Annotations: envoyPodAnnotations(contour),
+					Labels:      envoyPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					Containers:     containers,
@@ -420,12 +416,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{
-						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   "8002",
-						"prometheus.io/path":   "/stats/prometheus",
-					},
-					Labels: envoyPodLabels(contour),
+					Annotations: envoyPodAnnotations(contour),
+					Labels:      envoyPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					// TODO anti-affinity
@@ -553,4 +545,18 @@ func envoyPodLabels(contour *model.Contour) map[string]string {
 		labels[k] = v
 	}
 	return labels
+}
+
+// envoyPodAnnotations returns the annotations for envoy's pods
+func envoyPodAnnotations(contour *model.Contour) map[string]string {
+	annotations := map[string]string{}
+	for k, v := range contour.Spec.EnvoyPodAnnotations {
+		annotations[k] = v
+	}
+
+	annotations["prometheus.io/scrape"] = "true"
+	annotations["prometheus.io/port"] = "8002"
+	annotations["prometheus.io/path"] = "/stats/prometheus"
+
+	return annotations
 }

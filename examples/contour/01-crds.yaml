@@ -2627,6 +2627,12 @@ spec:
                           type: object
                         type: array
                     type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: PodAnnotations defines annotations to add to the
+                      Envoy pods.
+                    type: object
                   replicas:
                     description: Replicas is the desired number of Envoy replicas.
                       If WorkloadType is not "Deployment", this field is ignored.
