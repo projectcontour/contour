@@ -99,6 +99,12 @@ type ContourSettings struct {
 	//
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
+
+	// Compute Resources required by contour container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,
@@ -139,6 +145,12 @@ type EnvoySettings struct {
 	// PodAnnotations defines annotations to add to the Envoy pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// Compute Resources required by envoy container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

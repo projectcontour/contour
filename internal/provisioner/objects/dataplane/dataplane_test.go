@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func checkDaemonSetHasEnvVar(t *testing.T, ds *appsv1.DaemonSet, container, name string) {
@@ -165,13 +166,21 @@ func checkDaemonSetHasVolume(t *testing.T, ds *appsv1.DaemonSet, vol corev1.Volu
 
 }
 
+func checkDaemonSetHasResourceRequirements(t *testing.T, ds *appsv1.DaemonSet, expected corev1.ResourceRequirements) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Spec.Containers[1].Resources, expected) {
+		return
+	}
+	t.Errorf("daemonset has unexpected resource requirements %v", expected)
+}
 func checkDaemonSetHasTolerations(t *testing.T, ds *appsv1.DaemonSet, expected []corev1.Toleration) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Spec.Tolerations, expected) {
 		return
 	}
-	t.Errorf("deployment has unexpected tolerations %v", expected)
+	t.Errorf("daemonset has unexpected tolerations %v", expected)
 }
 
 func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
@@ -213,6 +222,18 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+
+	resQutoa := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("400m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("25Mi"),
+		},
+	}
+	cntr.Spec.EnvoyResources = resQutoa
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasImage(t, container, testEnvoyImage)
@@ -233,6 +254,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
 
+	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 }
 
 func TestNodePlacementDaemonSet(t *testing.T) {

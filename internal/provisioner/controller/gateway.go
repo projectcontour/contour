@@ -256,6 +256,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
+			contourModel.Spec.ContourResources = gatewayClassParams.Spec.Contour.Resources
+
 			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
@@ -305,6 +307,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			for k, v := range gatewayClassParams.Spec.Envoy.PodAnnotations {
 				contourModel.Spec.EnvoyPodAnnotations[k] = v
 			}
+
+			contourModel.Spec.EnvoyResources = gatewayClassParams.Spec.Envoy.Resources
 		}
 	}
 

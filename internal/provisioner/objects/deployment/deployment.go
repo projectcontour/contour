@@ -189,6 +189,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 				ReadOnly:  true,
 			},
 		},
+		Resources: contour.Spec.ContourResources,
 	}
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

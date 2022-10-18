@@ -180,6 +180,12 @@ type ContourSpec struct {
 
 	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
 	EnvoyPodAnnotations map[string]string
+
+	// Compute Resources required by envoy container.
+	EnvoyResources corev1.ResourceRequirements
+
+	// Compute Resources required by contour container.
+	ContourResources corev1.ResourceRequirements
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
