@@ -81,3 +81,37 @@ TCP Health check policy configuration parameters:
 - `timeoutSeconds`: The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
 - `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
 - `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
+
+## Specify the service health check port
+
+contour supports configuring an optional health check port for services.
+
+By default, the service's health check port is the same as the service's routing port.If the service's health check port and routing port are different, you can configure the health check port separately.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+      - name: s1-health
+        port: 80
+        healthPort: 8998
+      - name: s2-health
+        port: 80
+```
+
+In this example, envoy will send a health check request to port `8998` of the `s1-health` service and port `80` of the `s2-health` service respectively . If the host is healthy, envoy will forward traffic to the `s1-health` service on port `80` and to the `s2-health` service on port `80`.
