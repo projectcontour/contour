@@ -53,6 +53,8 @@ func Default(namespace, name string) *Contour {
 					},
 				},
 			},
+			ResourceLabels:      map[string]string{},
+			EnvoyPodAnnotations: map[string]string{},
 		},
 	}
 }
@@ -166,6 +168,18 @@ type ContourSpec struct {
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
 	KubernetesLogLevel uint8
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
+	ResourceLabels map[string]string
+
+	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
+	EnvoyExtraVolumes []corev1.Volume
+
+	// EnvoyExtraVolumeMounts holds the extra volume mounts to add to envoy's pod(normally used with envoyExtraVolumes).
+	EnvoyExtraVolumeMounts []corev1.VolumeMount
+
+	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	EnvoyPodAnnotations map[string]string
 
 	// Compute Resources required by envoy container.
 	EnvoyResources corev1.ResourceRequirements

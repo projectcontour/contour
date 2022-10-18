@@ -24,6 +24,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
@@ -120,6 +121,18 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			}
 		}
 
+		// If JWT verification is enabled, add per-route filter
+		// config referencing a requirement in the main filter
+		// config.
+		if len(dagRoute.JWTProvider) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
+			})
+		}
+
 		return rt
 	}
 }
@@ -151,7 +164,18 @@ func routeAuthzContext(settings map[string]string) *any.Any {
 
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
-	switch c := route.PathMatchCondition.(type) {
+	routeMatch := PathRouteMatch(route.PathMatchCondition)
+
+	routeMatch.Headers = headerMatcher(route.HeaderMatchConditions)
+	routeMatch.QueryParameters = queryParamMatcher(route.QueryParamMatchConditions)
+
+	return routeMatch
+}
+
+// PathRouteMatch creates a *envoy_route_v3.RouteMatch with *only* a PathSpecifier
+// populated.
+func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.RouteMatch {
+	switch c := pathMatchCondition.(type) {
 	case *dag.RegexMatchCondition:
 		return &envoy_route_v3.RouteMatch{
 			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
@@ -159,8 +183,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
 				SafeRegex: SafeRegexMatch("^" + c.Regex),
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
 		switch c.PrefixMatchType {
@@ -169,8 +191,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
 					PathSeparatedPrefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		case dag.PrefixMatchString:
 			fallthrough
@@ -179,8 +199,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		}
 	case *dag.ExactMatchCondition:
@@ -188,14 +206,9 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
 				Path: c.Path,
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	default:
-		return &envoy_route_v3.RouteMatch{
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
-		}
+		return &envoy_route_v3.RouteMatch{}
 	}
 }
 
@@ -507,14 +520,21 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 
 	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
-		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher.StringMatcher{
+		m := &matcher.StringMatcher{}
+		switch ao.Type {
+		case dag.CORSAllowOriginMatchExact:
 			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
 			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
-			MatchPattern: &matcher.StringMatcher_Exact{
-				Exact: ao,
-			},
-			IgnoreCase: true,
-		})
+			m.MatchPattern = &matcher.StringMatcher_Exact{
+				Exact: ao.Value,
+			}
+			m.IgnoreCase = true
+		case dag.CORSAllowOriginMatchRegex:
+			m.MatchPattern = &matcher.StringMatcher_SafeRegex{
+				SafeRegex: SafeRegexMatch(ao.Value),
+			}
+		}
+		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, m)
 	}
 	return rcp
 }

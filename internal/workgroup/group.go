@@ -40,6 +40,7 @@ func (g *Group) Add(fn func(<-chan struct{}) error) {
 func (g *Group) AddContext(fn func(context.Context) error) {
 	g.fn = append(g.fn, func(stop <-chan struct{}) error {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		res := make(chan error)
 
 		// run the function & send the result on res
@@ -47,8 +48,12 @@ func (g *Group) AddContext(fn func(context.Context) error) {
 			res <- fn(ctx)
 		}()
 
-		// wait for stop
-		<-stop
+		// wait for stop or if the current function returns a result, return it.
+		select {
+		case <-stop:
+		case err := <-res:
+			return err
+		}
 
 		// cancel fn(ctx)
 		cancel()

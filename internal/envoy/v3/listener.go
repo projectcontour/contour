@@ -29,6 +29,7 @@ import (
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
@@ -45,6 +46,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type HTTPVersionType = http.HttpConnectionManager_CodecType
@@ -718,6 +720,63 @@ func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout ti
 		Name: "envoy.filters.http.ext_authz",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
+		},
+	}
+}
+
+// FilterJWTAuth returns a `jwt_authn` filter configured with the
+// requested parameters.
+func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
+	if len(jwtProviders) == 0 {
+		return nil
+	}
+
+	jwtConfig := envoy_jwt_v3.JwtAuthentication{
+		Providers:      map[string]*envoy_jwt_v3.JwtProvider{},
+		RequirementMap: map[string]*envoy_jwt_v3.JwtRequirement{},
+	}
+
+	for _, provider := range jwtProviders {
+		var cacheDuration *durationpb.Duration
+		if provider.RemoteJWKS.CacheDuration != nil {
+			cacheDuration = protobuf.Duration(*provider.RemoteJWKS.CacheDuration)
+		}
+
+		jwtConfig.Providers[provider.Name] = &envoy_jwt_v3.JwtProvider{
+			Issuer:    provider.Issuer,
+			Audiences: provider.Audiences,
+			JwksSourceSpecifier: &envoy_jwt_v3.JwtProvider_RemoteJwks{
+				RemoteJwks: &envoy_jwt_v3.RemoteJwks{
+					HttpUri: &envoy_core_v3.HttpUri{
+						Uri: provider.RemoteJWKS.URI,
+						HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
+							Cluster: envoy.DNSNameClusterName(&provider.RemoteJWKS.Cluster),
+						},
+						Timeout: protobuf.Duration(provider.RemoteJWKS.Timeout),
+					},
+					CacheDuration: cacheDuration,
+				},
+			},
+			Forward: provider.ForwardJWT,
+		}
+
+		// Set up a requirement map so that per-route filter config can refer
+		// to a requirement by name. This is nicer than specifying rules here,
+		// because it likely results in less Envoy config overall (don't have
+		// to duplicate every route match in the jwt_authn config), and it means
+		// we don't have to implement another sorter to sort JWT rules -- the
+		// sorting already being done to routes covers it.
+		jwtConfig.RequirementMap[provider.Name] = &envoy_jwt_v3.JwtRequirement{
+			RequiresType: &envoy_jwt_v3.JwtRequirement_ProviderName{
+				ProviderName: provider.Name,
+			},
+		}
+	}
+
+	return &http.HttpFilter{
+		Name: "envoy.filters.http.jwt_authn",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&jwtConfig),
 		},
 	}
 }

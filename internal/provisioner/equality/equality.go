@@ -194,12 +194,12 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 	if len(current.Spec.Ports) != len(expected.Spec.Ports) {
 		updated.Spec.Ports = expected.Spec.Ports
 		changed = true
-	}
-
-	for i, p := range current.Spec.Ports {
-		if !apiequality.Semantic.DeepEqual(p, expected.Spec.Ports[i]) {
-			updated.Spec.Ports = expected.Spec.Ports
-			changed = true
+	} else {
+		for i, p := range current.Spec.Ports {
+			if !apiequality.Semantic.DeepEqual(p, expected.Spec.Ports[i]) {
+				updated.Spec.Ports = expected.Spec.Ports
+				changed = true
+			}
 		}
 	}
 

@@ -95,6 +95,16 @@ func checkDaemonSetHasLabels(t *testing.T, ds *appsv1.DaemonSet, expected map[st
 	t.Errorf("daemonset has unexpected %q labels", ds.Labels)
 }
 
+func checkDaemonSetHasPodAnnotations(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Template.ObjectMeta.Annotations, expected) {
+		return
+	}
+
+	t.Errorf("daemonset has unexpected %q pod annotations", ds.Spec.Template.Annotations)
+}
+
 func checkContainerHasPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
 	t.Helper()
 
@@ -124,6 +134,36 @@ func checkDaemonSetHasNodeSelector(t *testing.T, ds *appsv1.DaemonSet, expected 
 		return
 	}
 	t.Errorf("deployment has unexpected node selector %q", expected)
+}
+
+func checkDaemonSetHasVolume(t *testing.T, ds *appsv1.DaemonSet, vol corev1.Volume, volMount corev1.VolumeMount) {
+	t.Helper()
+
+	hasVol := false
+	hasVolMount := false
+
+	for _, v := range ds.Spec.Template.Spec.Volumes {
+		if v.Name == vol.Name {
+			hasVol = true
+			if !apiequality.Semantic.DeepEqual(v, vol) {
+				t.Errorf("daemonset has unexpected volume %q", vol)
+			}
+		}
+	}
+
+	for _, v := range ds.Spec.Template.Spec.Containers[0].VolumeMounts {
+		if v.Name == volMount.Name {
+			hasVolMount = true
+			if !apiequality.Semantic.DeepEqual(v, volMount) {
+				t.Errorf("daemonset has unexpected volume mount %q", vol)
+			}
+		}
+	}
+
+	if !(hasVol && hasVolMount) {
+		t.Errorf("daemonset has not found volume or volumeMount")
+	}
+
 }
 
 func checkDaemonSetHasResourceRequirements(t *testing.T, ds *appsv1.DaemonSet, expected corev1.ResourceRequirements) {
@@ -163,6 +203,22 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.ResourceLabels = map[string]string{
+		"key": "val",
+	}
+	cntr.Spec.EnvoyPodAnnotations = map[string]string{
+		"annotation": "value",
+	}
+
+	volTest := corev1.Volume{
+		Name: "vol-test-mount",
+	}
+	volTestMount := corev1.VolumeMount{
+		Name: volTest.Name,
+	}
+
+	cntr.Spec.EnvoyExtraVolumes = append(cntr.Spec.EnvoyExtraVolumes, volTest)
+	cntr.Spec.EnvoyExtraVolumeMounts = append(cntr.Spec.EnvoyExtraVolumeMounts, volTestMount)
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
@@ -188,13 +244,15 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
-	checkDaemonSetHasLabels(t, ds, ds.Labels)
+	checkDaemonSetHasLabels(t, ds, cntr.AppLabels())
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		checkContainerHasPort(t, ds, port.PortNumber)
 	}
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
 	checkDaemonSecurityContext(t, ds)
+	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
+	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 }

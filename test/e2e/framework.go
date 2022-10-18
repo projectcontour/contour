@@ -39,6 +39,7 @@ import (
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -274,6 +275,7 @@ func (f *Framework) T() ginkgo.GinkgoTInterface {
 	return f.t
 }
 
+type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
 type NamespacedTestBody func(string)
 type TestBody func()
 

@@ -14,12 +14,71 @@ jobs:
     - uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-pr-message: >
-          Marking this PR stale since there has been no activity for 14
-          days. It will be closed if there is no activity for another
-          30 days.
+        exempt-all-milestones: true
+        days-before-pr-stale: 14
+        days-before-pr-close: 30
         stale-pr-label: 'lifecycle/stale'
-        days-before-stale: 14
-        days-before-close: 30
-        days-before-issue-stale: -1 # disable marking issues as stale
-        days-before-issue-close: -1 # disable closing stale issues
+        stale-pr-message: |
+          The Contour project currently lacks enough contributors to adequately respond to all PRs.
+
+          This bot triages PRs according to the following rules:
+
+          - After 14d of inactivity, lifecycle/stale is applied
+          - After 30d of inactivity since lifecycle/stale was applied, the PR is closed
+
+          You can:
+
+          - Mark this PR as fresh by commenting or pushing a commit
+          - Close this PR
+          - Offer to help out with triage
+
+          Please send feedback to the #contour channel in the Kubernetes Slack
+        close-pr-message: |
+          The Contour project currently lacks enough contributors to adequately respond to all PRs.
+
+          This bot triages PRs according to the following rules:
+
+          - After 14d of inactivity, lifecycle/stale is applied
+          - After 30d of inactivity since lifecycle/stale was applied, the PR is closed
+
+          You can:
+
+          - Mark this PR as fresh by commenting or pushing a commit
+          - Close this PR
+          - Offer to help out with triage
+
+          Please send feedback to the #contour channel in the Kubernetes Slack
+        days-before-issue-stale: 60
+        days-before-issue-close: 30
+        stale-issue-label: 'lifecycle/stale'
+        exempt-issue-labels: 'help wanted,good first issue,priority/important-soon,kind/flake'
+        stale-issue-message: |
+          The Contour project currently lacks enough contributors to adequately respond to all Issues.
+
+          This bot triages Issues according to the following rules:
+
+          - After 60d of inactivity, lifecycle/stale is applied
+          - After 30d of inactivity since lifecycle/stale was applied, the Issue is closed
+
+          You can:
+
+          - Mark this Issue as fresh by commenting
+          - Close this Issue
+          - Offer to help out with triage
+
+          Please send feedback to the #contour channel in the Kubernetes Slack
+        close-issue-message: |
+          The Contour project currently lacks enough contributors to adequately respond to all Issues.
+
+          This bot triages Issues according to the following rules:
+
+          - After 60d of inactivity, lifecycle/stale is applied
+          - After 30d of inactivity since lifecycle/stale was applied, the Issue is closed
+
+          You can:
+
+          - Mark this Issue as fresh by commenting
+          - Close this Issue
+          - Offer to help out with triage
+
+          Please send feedback to the #contour channel in the Kubernetes Slack

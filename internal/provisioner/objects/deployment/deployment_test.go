@@ -151,6 +151,10 @@ func TestDesiredDeployment(t *testing.T) {
 	// Change the Contour log level to test --debug.
 	cntr.Spec.LogLevel = v1alpha1.DebugLog
 
+	cntr.Spec.ResourceLabels = map[string]string{
+		"key": "value",
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 
@@ -158,7 +162,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkContainerHasImage(t, container, testContourImage)
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
-	checkDeploymentHasLabels(t, deploy, deploy.Labels)
+	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
 
 	for _, port := range container.Ports {
 		if port.Name == "http" && port.ContainerPort != insecurePort {
