@@ -24,16 +24,26 @@ import (
 type LogLevel string
 
 const (
-	// InfoLog sets the log level for Contour to `info`.
-	InfoLog LogLevel = "info"
 
-	// DebugLog sets the log level for Contour to `debug`.
+	// TraceLog sets the log level for Envoy to `trace`.
+	TraceLog LogLevel = "trace"
+	// DebugLog sets the log level for Contour/Envoy to `debug`.
 	DebugLog LogLevel = "debug"
+	// InfoLog sets the log level for Contour/Envoy to `info`.
+	InfoLog LogLevel = "info"
+	// WarnLog sets the log level for Envoy to `warn`.
+	WarnLog LogLevel = "warn"
+	// ErrorLog sets the log level for Envoy to `error`.
+	ErrorLog LogLevel = "error"
+	// CriticalLog sets the log level for Envoy to `critical`.
+	CriticalLog LogLevel = "critical"
+	// OffLog disable logging for Envoy.
+	OffLog LogLevel = "off"
 )
 
 func (l LogLevel) Validate() error {
 	switch l {
-	case InfoLog, DebugLog:
+	case TraceLog, DebugLog, InfoLog, WarnLog, ErrorLog, CriticalLog, OffLog:
 		return nil
 	default:
 		return fmt.Errorf("invalid log level %q", l)
@@ -151,6 +161,12 @@ type EnvoySettings struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// LogLevel sets the log level for Envoy
+	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
+	//
+	// +optional
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
