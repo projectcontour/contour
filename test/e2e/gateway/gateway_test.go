@@ -20,6 +20,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
 	"testing"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -32,6 +33,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -44,8 +46,10 @@ const ReconcileModeController = "controller"
 // to reconcile a specific named Gateway.
 const ReconcileModeGateway = "gateway"
 
-var f = e2e.NewFramework(false)
-var reconcileMode = ReconcileModeController
+var (
+	f             = e2e.NewFramework(false)
+	reconcileMode string
+)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -53,6 +57,12 @@ func TestGatewayAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	var found bool
+	reconcileMode, found = os.LookupEnv("CONTOUR_E2E_GATEWAY_RECONCILE_MODE")
+	if !found {
+		reconcileMode = ReconcileModeGateway
+	}
+
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
@@ -65,17 +75,6 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Gateway API", func() {
-	// Run all tests for both gateway reconciliation modes.
-	for _, mode := range []string{ReconcileModeController, ReconcileModeGateway} {
-		reconcileMode = mode
-
-		Context(fmt.Sprintf("Reconcile mode %s", mode), func() {
-			runGatewayTests()
-		})
-	}
-})
-
-func runGatewayTests() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
@@ -89,7 +88,7 @@ func runGatewayTests() {
 
 	// Creates specified gateway in namespace and runs namespaced test
 	// body. Modifies contour config to point to gateway.
-	testWithGateway := func(gateway *gatewayapi_v1beta1.Gateway, gatewayClass *gatewayapi_v1beta1.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+	testWithGateway := func(gateway *gatewayapi_v1beta1.Gateway, gatewayClass *gatewayapi_v1beta1.GatewayClass, body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
 			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.ControllerName), func() {
 				BeforeEach(func() {
@@ -124,7 +123,7 @@ func runGatewayTests() {
 					require.NoError(f.T(), f.DeleteGateway(gateway, false))
 				})
 
-				body(namespace)
+				body(namespace, types.NamespacedName{Namespace: namespace, Name: gateway.Name})
 			})
 		}
 	}
@@ -173,7 +172,7 @@ func runGatewayTests() {
 	})
 
 	Describe("Gateway with one HTTP listener", func() {
-		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		testWithHTTPGateway := func(body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -201,19 +200,11 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
 
-		f.NamespacedTest("gateway-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
-
-		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayQueryParamMatch))
-
-		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidBackendRef))
+		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayMultipleQueryParamMatch))
 
 		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
-		f.NamespacedTest("gateway-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
-
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
-
-		f.NamespacedTest("gateway-route-parent-refs", testWithHTTPGateway(testRouteParentRefs))
 
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 
@@ -221,7 +212,7 @@ func runGatewayTests() {
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
-		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 
 			gw := &gatewayapi_v1beta1.Gateway{
@@ -265,13 +256,13 @@ func runGatewayTests() {
 					},
 				},
 			}
-			return testWithGateway(gw, gatewayClass, func(namespace string) {
+			return testWithGateway(gw, gatewayClass, func(namespace string, gateway types.NamespacedName) {
 				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
 					BeforeEach(func() {
 						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
 					})
 
-					body(namespace)
+					body(namespace, gateway)
 				})
 			})
 		}
@@ -380,7 +371,7 @@ func runGatewayTests() {
 				},
 			}
 
-			return testWithGateway(gateway, gatewayClass, func(namespace string) {
+			return testWithGateway(gateway, gatewayClass, func(namespace string, gateway types.NamespacedName) {
 				BeforeEach(func() {
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "tlscert-1", "https-1.gateway.projectcontour.io")
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "tlscert-2", "https-2.gateway.projectcontour.io")
@@ -393,7 +384,7 @@ func runGatewayTests() {
 
 		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
 	})
-}
+})
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".

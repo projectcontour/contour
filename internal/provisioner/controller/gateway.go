@@ -231,8 +231,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if gatewayClassParams != nil {
-		// ContourConfiguration
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
+
+		// if there is a same name pair, overwrite it
+		for k, v := range gatewayClassParams.Spec.ResourceLabels {
+			contourModel.Spec.ResourceLabels[k] = v
+		}
 
 		if gatewayClassParams.Spec.Contour != nil {
 			// Deployment replicas
@@ -251,6 +255,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			contourModel.Spec.ContourResources = gatewayClassParams.Spec.Contour.Resources
 
 			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
@@ -296,6 +302,17 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Tolerations:  nodePlacement.Tolerations,
 				}
 			}
+
+			// volume mount
+			contourModel.Spec.EnvoyExtraVolumeMounts = append(contourModel.Spec.EnvoyExtraVolumeMounts, gatewayClassParams.Spec.Envoy.ExtraVolumeMounts...)
+			contourModel.Spec.EnvoyExtraVolumes = append(contourModel.Spec.EnvoyExtraVolumes, gatewayClassParams.Spec.Envoy.ExtraVolumes...)
+
+			// Pod Annotations
+			for k, v := range gatewayClassParams.Spec.Envoy.PodAnnotations {
+				contourModel.Spec.EnvoyPodAnnotations[k] = v
+			}
+
+			contourModel.Spec.EnvoyResources = gatewayClassParams.Spec.Envoy.Resources
 
 			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
 				gatewayClassParams.Spec.Envoy.Strategy != nil {

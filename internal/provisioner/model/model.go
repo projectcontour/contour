@@ -76,6 +76,8 @@ func Default(namespace, name string) *Contour {
 					MaxUnavailable: opintstr.PointerTo(intstr.FromString("25%")),
 				},
 			},
+			ResourceLabels:      map[string]string{},
+			EnvoyPodAnnotations: map[string]string{},
 		},
 	}
 }
@@ -202,6 +204,24 @@ type ContourSpec struct {
 	// The deployment strategy to use to replace existing Contour pods with new ones.
 	// when envoy be running as a `DaemonSet`,it's must be nil
 	ContourStrategy appsv1.DeploymentStrategy
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
+	ResourceLabels map[string]string
+
+	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
+	EnvoyExtraVolumes []corev1.Volume
+
+	// EnvoyExtraVolumeMounts holds the extra volume mounts to add to envoy's pod(normally used with envoyExtraVolumes).
+	EnvoyExtraVolumeMounts []corev1.VolumeMount
+
+	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	EnvoyPodAnnotations map[string]string
+
+	// Compute Resources required by envoy container.
+	EnvoyResources corev1.ResourceRequirements
+
+	// Compute Resources required by contour container.
+	ContourResources corev1.ResourceRequirements
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func checkDeploymentHasEnvVar(t *testing.T, deploy *appsv1.Deployment, name string) {
@@ -106,6 +107,15 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 	t.Errorf("deployment has unexpected tolerations %v", expected)
 }
 
+func checkDeploymentHasResourceRequirements(t *testing.T, deploy *appsv1.Deployment, expected corev1.ResourceRequirements) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(deploy.Spec.Template.Spec.Containers[0].Resources, expected) {
+		return
+	}
+	t.Errorf("daemonset has unexpected resource requirements %v", expected)
+}
+
 func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected appsv1.DeploymentStrategy) {
 	t.Helper()
 
@@ -120,6 +130,18 @@ func TestDesiredDeployment(t *testing.T) {
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
+
+	resQutoa := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("400m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("25Mi"),
+		},
+	}
+	cntr.Spec.ContourResources = resQutoa
 	// Change the default ports to test Envoy service port args.
 	insecurePort := objects.EnvoyInsecureContainerPort
 	securePort := objects.EnvoySecureContainerPort
@@ -138,6 +160,10 @@ func TestDesiredDeployment(t *testing.T) {
 	// Change the Contour log level to test --debug.
 	cntr.Spec.LogLevel = v1alpha1.DebugLog
 
+	cntr.Spec.ResourceLabels = map[string]string{
+		"key": "value",
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 
@@ -145,7 +171,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkContainerHasImage(t, container, testContourImage)
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
-	checkDeploymentHasLabels(t, deploy, deploy.Labels)
+	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
 
 	for _, port := range container.Ports {
 		if port.Name == "http" && port.ContainerPort != insecurePort {
@@ -168,6 +194,7 @@ func TestDesiredDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
+	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourStrategy)
 }
 

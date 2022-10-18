@@ -67,6 +67,10 @@ type ContourDeploymentSpec struct {
 	//
 	// +optional
 	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resources.
+	// +optional
+	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 }
 
 // ContourSettings contains settings for the Contour part of the installation,
@@ -96,6 +100,12 @@ type ContourSettings struct {
 	//
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
+
+	// Compute Resources required by contour container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Strategy describes the deployment strategy to use to replace existing Contour pods with new ones.
 	// +optional
@@ -128,6 +138,24 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Envoy pods.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// Compute Resources required by envoy container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
 	// when envoy be running as a `Deployment`,it's must be nil

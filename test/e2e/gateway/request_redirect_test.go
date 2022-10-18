@@ -25,11 +25,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testRequestRedirectRule(namespace string) {
+func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
@@ -44,7 +45,7 @@ func testRequestRedirectRule(namespace string) {
 				Hostnames: []gatewayapi_v1beta1.Hostname{"requestredirectrule.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
-						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{

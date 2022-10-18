@@ -244,6 +244,85 @@ type VirtualHost struct {
 	// The policy for rate limiting on the virtual host.
 	// +optional
 	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
+	// +optional
+	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
+}
+
+// JWTProvider defines how to verify JWTs on requests.
+type JWTProvider struct {
+	// Unique name for the provider.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// Whether the provider should apply to all
+	// routes in the HTTPProxy/its includes by
+	// default. At most one provider can be marked
+	// as the default. If no provider is marked
+	// as the default, individual routes must explicitly
+	// identify the provider they require.
+	// +optional
+	Default bool `json:"default,omitempty"`
+
+	// Issuer that JWTs are required to have in the "iss" field.
+	// If not provided, JWT issuers are not checked.
+	// +optional
+	Issuer string `json:"issuer,omitempty"`
+
+	// Audiences that JWTs are allowed to have in the "aud" field.
+	// If not provided, JWT audiences are not checked.
+	// +optional
+	Audiences []string `json:"audiences,omitempty"`
+
+	// Remote JWKS to use for verifying JWT signatures.
+	// +kubebuilder:validation:Required
+	RemoteJWKS RemoteJWKS `json:"remoteJWKS"`
+
+	// Whether the JWT should be forwarded to the backend
+	// service after successful verification. By default,
+	// the JWT is not forwarded.
+	// +optional
+	ForwardJWT bool `json:"forwardJWT,omitempty"`
+}
+
+// RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
+type RemoteJWKS struct {
+	// The URI for the JWKS.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	URI string `json:"uri"`
+
+	// UpstreamValidation defines how to verify the JWKS's TLS certificate.
+	// +optional
+	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
+
+	// How long to wait for a response from the URI.
+	// If not specified, a default of 1s applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	Timeout string `json:"timeout,omitempty"`
+
+	// How long to cache the JWKS locally. If not specified,
+	// Envoy's default of 5m applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	CacheDuration string `json:"cacheDuration,omitempty"`
+
+	// The DNS IP address resolution policy for the JWKS URI.
+	// When configured as "v4", the DNS resolver will only perform a lookup
+	// for addresses in the IPv4 family. If "v6" is configured, the DNS resolver
+	// will only perform a lookup for addresses in the IPv6 family.
+	// If "auto" is configured, the DNS resolver will first perform a lookup
+	// for addresses in the IPv6 family and fallback to a lookup for addresses
+	// in the IPv4 family. If not specified, the Contour-wide setting defined
+	// in the config file or ContourConfiguration applies (defaults to "auto").
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+	// for more information.
+	// +optional
+	// +kubebuilder:validation:Enum=auto;v4;v6
+	DNSLookupFamily string `json:"dnsLookupFamily,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -293,27 +372,37 @@ type CORSHeaderValue string
 // CORSPolicy allows setting the CORS policy
 type CORSPolicy struct {
 	// Specifies whether the resource allows credentials.
-	//  +optional
+	// +optional
 	AllowCredentials bool `json:"allowCredentials,omitempty"`
-	// AllowOrigin specifies the origins that will be allowed to do CORS requests. "*" means
-	// allow any origin.
+	// AllowOrigin specifies the origins that will be allowed to do CORS requests.
+	// Allowed values include "*" which signifies any origin is allowed, an exact
+	// origin of the form "scheme://host[:port]" (where port is optional), or a valid
+	// regex pattern.
+	// Note that regex patterns are validated and a simple "glob" pattern (e.g. *.foo.com)
+	// will be rejected or produce unexpected matches when applied as a regex.
+	//
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
 	AllowOrigin []string `json:"allowOrigin"`
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
 	AllowMethods []CORSHeaderValue `json:"allowMethods"`
 	// AllowHeaders specifies the content for the *access-control-allow-headers* header.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:MinItems=1
 	AllowHeaders []CORSHeaderValue `json:"allowHeaders,omitempty"`
 	// ExposeHeaders Specifies the content for the *access-control-expose-headers* header.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:MinItems=1
 	ExposeHeaders []CORSHeaderValue `json:"exposeHeaders,omitempty"`
 	// MaxAge indicates for how long the results of a preflight request can be cached.
 	// MaxAge durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
 	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 	// Only positive values are allowed while 0 disables the cache requiring a preflight OPTIONS
 	// check for all cross-origin requests.
-	//  +optional
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|0)$`
 	MaxAge string `json:"maxAge,omitempty"`
 }
 
@@ -381,6 +470,27 @@ type Route struct {
 	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+
+	// The policy for verifying JWTs for requests to this route.
+	// +optional
+	JWTVerificationPolicy *JWTVerificationPolicy `json:"jwtVerificationPolicy,omitempty"`
+}
+
+type JWTVerificationPolicy struct {
+	// Require names a specific JWT provider (defined in the virtual host)
+	// to require for the route. If specified, this field overrides the
+	// default provider if one exists. If this field is not specified,
+	// the default provider will be required if one exists. At most one of
+	// this field or the "disabled" field can be specified.
+	// +optional
+	Require string `json:"require,omitempty"`
+
+	// Disabled defines whether to disable all JWT verification for this
+	// route. This can be used to opt specific routes out of the default
+	// JWT provider for the HTTPProxy. At most one of this field or the
+	// "require" field can be specified.
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 type HTTPDirectResponsePolicy struct {
@@ -722,6 +832,9 @@ type Service struct {
 	// The policies for rewriting Set-Cookie header attributes.
 	// +optional
 	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
+	// Slow start will gradually increase amount of traffic to a newly added endpoint.
+	// +optional
+	SlowStartPolicy *SlowStartPolicy `json:"slowStartPolicy,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
@@ -1078,4 +1191,36 @@ type HTTPProxyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 	Items           []HTTPProxy `json:"items"`
+}
+
+// SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
+// It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies.
+type SlowStartPolicy struct {
+	// The duration of slow start window.
+	// Duration is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// +required
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	Window string `json:"window"`
+
+	// The speed of traffic increase over the slow start window.
+	// Defaults to 1.0, so that endpoint would get linearly increasing amount of traffic.
+	// When increasing the value for this parameter, the speed of traffic ramp-up increases non-linearly.
+	// The value of aggression parameter should be greater than 0.0.
+	//
+	// More info: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/slow_start
+	//
+	// +optional
+	// +kubebuilder:default=`1.0`
+	// +kubebuilder:validation:Pattern=`^([0-9]+([.][0-9]+)?|[.][0-9]+)$`
+	Aggression string `json:"aggression"`
+
+	// The minimum or starting percentage of traffic to send to new endpoints.
+	// A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
+	// If not specified, the default is 10%.
+	// +optional
+	// +kubebuilder:default=10
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	MinimumWeightPercent uint32 `json:"minWeightPercent"`
 }
