@@ -86,7 +86,8 @@ TCP Health check policy configuration parameters:
 
 contour supports configuring an optional health check port for services.
 
-By default, the service's health check port is the same as the service's routing port.If the service's health check port and routing port are different, you can configure the health check port separately.
+By default, the service's health check port is the same as the service's routing port.
+If the service's health check port and routing port are different, you can configure the health check port separately.
 
 ```yaml
 apiVersion: projectcontour.io/v1

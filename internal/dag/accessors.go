@@ -33,12 +33,12 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, 
 		return nil, err
 	}
 
-	if healthPort.IntVal == 0 && healthPort.StrVal == "" {
-		healthPort = port
-	}
-	_, healthSvcPort, err := cache.LookupService(meta, healthPort)
-	if err != nil {
-		return nil, err
+	healthSvcPort := svcPort
+	if (healthPort.IntVal != 0 || healthPort.StrVal != "") && healthPort != port {
+		_, healthSvcPort, err = cache.LookupService(meta, healthPort)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = validateExternalName(svc, enableExternalNameSvc)
