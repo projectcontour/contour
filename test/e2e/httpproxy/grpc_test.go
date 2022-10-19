@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	proto_convert "github.com/golang/protobuf/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -226,7 +225,7 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 		require.Greater(t, len(body), currentPos+dataLen)
 
 		content := new(yages.Content)
-		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], proto_convert.MessageV2(content)))
+		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], content))
 		response.content = content
 		currentPos += dataLen
 	}

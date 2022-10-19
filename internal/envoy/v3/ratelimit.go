@@ -22,18 +22,18 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // LocalRateLimitConfig returns a config for the HTTP local rate
 // limit filter.
-func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *any.Any {
+func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *anypb.Any {
 	if config == nil {
 		return nil
 	}

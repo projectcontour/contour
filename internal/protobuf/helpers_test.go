@@ -16,12 +16,12 @@ package protobuf
 import (
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestU32Nil(t *testing.T) {
-	assert.Equal(t, (*wrappers.UInt32Value)(nil), UInt32OrNil(0))
+	assert.Equal(t, (*wrapperspb.UInt32Value)(nil), UInt32OrNil(0))
 	assert.Equal(t, UInt32(1), UInt32OrNil(1))
 }
 

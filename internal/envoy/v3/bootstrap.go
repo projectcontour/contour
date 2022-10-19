@@ -36,11 +36,11 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -412,7 +412,7 @@ func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_disc
 	}
 
 	return &envoy_service_discovery_v3.DiscoveryResponse{
-		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
+		Resources: []*anypb.Any{protobuf.MustMarshalAny(secret)},
 	}
 }
 
@@ -443,6 +443,6 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 	}
 
 	return &envoy_service_discovery_v3.DiscoveryResponse{
-		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
+		Resources: []*anypb.Any{protobuf.MustMarshalAny(secret)},
 	}
 }

@@ -22,12 +22,12 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
+	"google.golang.org/protobuf/types/known/anypb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -293,7 +293,7 @@ func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily
 	return envoy_cluster_v3.Cluster_AUTO
 }
 
-func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*any.Any {
+func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*anypb.Any {
 	// Keep Envoy defaults by not setting protocol options at all if not necessary.
 	if explicitHTTPVersion == HTTPVersionAuto && idleConnectionTimeout.UseDefault() {
 		return nil
@@ -327,7 +327,7 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: protobuf.Duration(idleConnectionTimeout.Duration())}
 	}
 
-	return map[string]*any.Any{
+	return map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(&options),
 	}
 }

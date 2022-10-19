@@ -19,31 +19,30 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Duration converts a time.Duration to a pointer to a duration.Duration.
-func Duration(d time.Duration) *duration.Duration {
-	return &duration.Duration{
+func Duration(d time.Duration) *durationpb.Duration {
+	return &durationpb.Duration{
 		Seconds: int64(d / time.Second),
 		Nanos:   int32(d % time.Second),
 	}
 }
 
 // UInt32 converts a uint32 to a pointer to a wrappers.UInt32Value.
-func UInt32(val uint32) *wrappers.UInt32Value {
-	return &wrappers.UInt32Value{
+func UInt32(val uint32) *wrapperspb.UInt32Value {
+	return &wrapperspb.UInt32Value{
 		Value: val,
 	}
 }
 
 // UInt32OrDefault returns a wrapped UInt32Value. If val is 0, def is wrapped and returned.
-func UInt32OrDefault(val uint32, def uint32) *wrappers.UInt32Value {
+func UInt32OrDefault(val uint32, def uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
 		return UInt32(def)
@@ -53,7 +52,7 @@ func UInt32OrDefault(val uint32, def uint32) *wrappers.UInt32Value {
 }
 
 // UInt32OrNil returns a wrapped UInt32Value. If val is 0, nil is returned
-func UInt32OrNil(val uint32) *wrappers.UInt32Value {
+func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
 		return nil
@@ -63,8 +62,8 @@ func UInt32OrNil(val uint32) *wrappers.UInt32Value {
 }
 
 // Bool converts a bool to a pointer to a wrappers.BoolValue.
-func Bool(val bool) *wrappers.BoolValue {
-	return &wrappers.BoolValue{
+func Bool(val bool) *wrapperspb.BoolValue {
+	return &wrapperspb.BoolValue{
 		Value: val,
 	}
 }
@@ -89,8 +88,8 @@ func AsMessages(messages interface{}) []proto.Message {
 
 // MustMarshalAny marshals a protobuf into an any.Any type, panicking
 // if that operation fails.
-func MustMarshalAny(pb proto.Message) *any.Any {
-	a, err := anypb.New(proto.MessageV2(pb))
+func MustMarshalAny(pb proto.Message) *anypb.Any {
+	a, err := anypb.New(pb)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -106,12 +105,12 @@ func AnyMessageTypeOf(msg proto.Message) string {
 
 // MustMarshalJSON marshals msg to indented JSON.
 func MustMarshalJSON(msg proto.Message) string {
-	m := jsonpb.Marshaler{Indent: "  "}
+	m := protojson.MarshalOptions{Indent: "  "}
 
-	str, err := m.MarshalToString(msg)
+	res, err := m.Marshal(msg)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal %T: %s", msg, err))
 	}
 
-	return str
+	return string(res)
 }

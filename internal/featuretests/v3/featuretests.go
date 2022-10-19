@@ -31,8 +31,6 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
@@ -54,6 +52,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -265,14 +265,14 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 
 // routeResources returns the given routes as a slice of any.Any
 // resources, appropriately sorted.
-func routeResources(t *testing.T, routes ...*envoy_route_v3.RouteConfiguration) []*any.Any {
+func routeResources(t *testing.T, routes ...*envoy_route_v3.RouteConfiguration) []*anypb.Any {
 	sort.Stable(sorter.For(routes))
 	return resources(t, protobuf.AsMessages(routes)...)
 }
 
-func resources(t *testing.T, protos ...proto.Message) []*any.Any {
+func resources(t *testing.T, protos ...proto.Message) []*anypb.Any {
 	t.Helper()
-	anys := make([]*any.Any, 0, len(protos))
+	anys := make([]*anypb.Any, 0, len(protos))
 	for _, pb := range protos {
 		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}

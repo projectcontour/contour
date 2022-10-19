@@ -31,13 +31,13 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -197,7 +197,7 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 }
 
 func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
-	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
@@ -230,7 +230,7 @@ func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, h
 		}
 	}
 
-	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
@@ -349,8 +349,8 @@ func withRedirect() *envoy_route_v3.Route_Redirect {
 	}
 }
 
-func withFilterConfig(name string, message proto.Message) map[string]*any.Any {
-	return map[string]*any.Any{
+func withFilterConfig(name string, message proto.Message) map[string]*anypb.Any {
+	return map[string]*anypb.Any{
 		name: protobuf.MustMarshalAny(message),
 	}
 }

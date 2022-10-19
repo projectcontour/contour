@@ -21,13 +21,13 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1812,7 +1812,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
-							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowCredentials: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",
@@ -1881,7 +1881,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
-							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowCredentials: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",
@@ -1905,7 +1905,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
-							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowCredentials: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",
@@ -2281,7 +2281,7 @@ func TestRouteVisit(t *testing.T) {
 									Key:   "In-Foo",
 									Value: "bar",
 								},
-								Append: &wrappers.BoolValue{
+								Append: &wrapperspb.BoolValue{
 									Value: false,
 								},
 							}},
@@ -2291,7 +2291,7 @@ func TestRouteVisit(t *testing.T) {
 									Key:   "Out-Foo",
 									Value: "bar",
 								},
-								Append: &wrappers.BoolValue{
+								Append: &wrapperspb.BoolValue{
 									Value: false,
 								},
 							}},

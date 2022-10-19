@@ -20,12 +20,12 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -225,7 +225,7 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Foo",
 										Value: "bar",
 									},
-									Append: &wrappers.BoolValue{
+									Append: &wrapperspb.BoolValue{
 										Value: false,
 									},
 								}, {
@@ -233,7 +233,7 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Sauce",
 										Value: "spicy",
 									},
-									Append: &wrappers.BoolValue{
+									Append: &wrapperspb.BoolValue{
 										Value: false,
 									},
 								}},
@@ -243,7 +243,7 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Blah",
 										Value: "boo",
 									},
-									Append: &wrappers.BoolValue{
+									Append: &wrapperspb.BoolValue{
 										Value: false,
 									},
 								}},

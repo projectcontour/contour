@@ -34,7 +34,6 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -42,6 +41,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/anypb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -1558,7 +1558,7 @@ func TestBuilderValidation(t *testing.T) {
 	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: &any.Any{
+			TypedConfig: &anypb.Any{
 				TypeUrl: "foo",
 			},
 		},
@@ -1572,7 +1572,7 @@ func TestBuilderValidation(t *testing.T) {
 	badBuilder.filters = append(badBuilder.filters, &http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: &any.Any{
+			TypedConfig: &anypb.Any{
 				TypeUrl: "foo",
 			},
 		},

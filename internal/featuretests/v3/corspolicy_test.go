@@ -19,10 +19,10 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -58,7 +58,7 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
 					&envoy_route_v3.CorsPolicy{
-						AllowCredentials: &wrappers.BoolValue{Value: false},
+						AllowCredentials: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -99,7 +99,7 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
 					&envoy_route_v3.CorsPolicy{
-						AllowCredentials: &wrappers.BoolValue{Value: false},
+						AllowCredentials: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{
 							{
 								MatchPattern: &matcher.StringMatcher_Exact{
@@ -156,7 +156,7 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
@@ -198,7 +198,7 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						AllowMethods:     "GET,POST,OPTIONS",
 					},
 					&envoy_route_v3.Route{
@@ -241,7 +241,7 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						AllowHeaders:     "custom-header-1,custom-header-2",
 						AllowMethods:     "GET",
 					},
@@ -286,7 +286,7 @@ func TestCorsPolicy(t *testing.T) {
 							IgnoreCase: true,
 						},
 						},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						ExposeHeaders:    "custom-header-1,custom-header-2",
 						AllowMethods:     "GET",
 					},
@@ -330,7 +330,7 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						MaxAge:           "600",
 						AllowMethods:     "GET",
 					},
@@ -374,7 +374,7 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						MaxAge:           "0",
 						AllowMethods:     "GET",
 					},

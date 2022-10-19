@@ -27,12 +27,12 @@ import (
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/ptypes/any"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
@@ -49,7 +49,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	}
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
 		if evh.TypedPerFilterConfig == nil {
-			evh.TypedPerFilterConfig = map[string]*any.Any{}
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
 		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 	}
@@ -100,7 +100,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 		}
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
 			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*any.Any{}
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
 			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
@@ -110,12 +110,12 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			// Apply per-route authorization policy modifications.
 			if dagRoute.AuthDisabled {
 				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*any.Any{}
+					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
 			} else if len(dagRoute.AuthContext) > 0 {
 				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*any.Any{}
+					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 			}
@@ -126,7 +126,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 		// config.
 		if len(dagRoute.JWTProvider) > 0 {
 			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*any.Any{}
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
 			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
 				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
@@ -138,7 +138,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
-func routeAuthzDisabled() *any.Any {
+func routeAuthzDisabled() *anypb.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
@@ -150,7 +150,7 @@ func routeAuthzDisabled() *any.Any {
 
 // routeAuthzContext returns a per-route config to pass the given
 // context entries in the check request.
-func routeAuthzContext(settings map[string]string) *any.Any {
+func routeAuthzContext(settings map[string]string) *anypb.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
@@ -420,7 +420,7 @@ func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderVal
 				Key:   key,
 				Value: value,
 			},
-			Append: &wrappers.BoolValue{
+			Append: &wrapperspb.BoolValue{
 				Value: app,
 			},
 		})
@@ -454,7 +454,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		}
 		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {
 			if c.TypedPerFilterConfig == nil {
-				c.TypedPerFilterConfig = map[string]*any.Any{}
+				c.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
 			c.TypedPerFilterConfig["envoy.filters.http.lua"] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
@@ -626,7 +626,7 @@ func containsMatch(s string) *envoy_route_v3.HeaderMatcher_StringMatch {
 	}
 }
 
-func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
+func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
 	// Merge route and cluster policies
 	mergedPolicies := map[string]dag.CookieRewritePolicy{}
 	for _, p := range append(routePolicies, clusterPolicies...) {
