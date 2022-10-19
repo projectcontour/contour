@@ -1,1 +1,1 @@
-Update Envoy to v1.24.0.
+Update Envoy to v1.24.0. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.24.0/version_history/v1.24/v1.24.0) for more information.
