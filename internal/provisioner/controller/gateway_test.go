@@ -1015,7 +1015,8 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					Envoy: &contourv1alpha1.EnvoySettings{
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
-							Type: contourv1alpha1.ClusterIPServicePublishingType,
+							Type:                  contourv1alpha1.ClusterIPServicePublishingType,
+							ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
 							ServiceAnnotations: map[string]string{
 								"key-1": "val-1",
 								"key-2": "val-2",

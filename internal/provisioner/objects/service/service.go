@@ -250,7 +250,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	epType := contour.Spec.NetworkPublishing.Envoy.Type
 	if epType == model.LoadBalancerServicePublishingType ||
 		epType == model.NodePortServicePublishingType {
-		svc.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
+		svc.Spec.ExternalTrafficPolicy = contour.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy
 	}
 	switch epType {
 	case model.LoadBalancerServicePublishingType:

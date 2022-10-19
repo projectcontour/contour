@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -178,6 +180,14 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				default:
 					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.type %q, must be LoadBalancerService, NoderPortService or ClusterIPService",
 						params.Spec.Envoy.NetworkPublishing.Type)
+					invalidParamsMessages = append(invalidParamsMessages, msg)
+				}
+
+				switch params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy {
+				case "", corev1.ServiceExternalTrafficPolicyTypeCluster, corev1.ServiceExternalTrafficPolicyTypeLocal:
+				default:
+					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.externalTrafficPolicy %q, must be Local or Cluster",
+						params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy)
 					invalidParamsMessages = append(invalidParamsMessages, msg)
 				}
 			}
