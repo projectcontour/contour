@@ -1,0 +1,1 @@
+Update Envoy to v1.24.0.
