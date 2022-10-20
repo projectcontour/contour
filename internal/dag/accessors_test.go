@@ -55,7 +55,7 @@ func TestBuilderLookupService(t *testing.T) {
 					TargetPort: intstr.FromInt(8080),
 				},
 				{
-					Name:       "heath",
+					Name:       "health",
 					Protocol:   "TCP",
 					Port:       8998,
 					TargetPort: intstr.FromInt(8998),

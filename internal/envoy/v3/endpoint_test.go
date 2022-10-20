@@ -37,8 +37,10 @@ func TestHealthCheckLBEndpoint(t *testing.T) {
 	want := &envoy_endpoint_v3.LbEndpoint{
 		HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
 			Endpoint: &envoy_endpoint_v3.Endpoint{
-				Address:           SocketAddress("microsoft.com", 81),
-				HealthCheckConfig: HealthCheckConfig(8998),
+				Address: SocketAddress("microsoft.com", 81),
+				HealthCheckConfig: &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+					PortValue: uint32(8998),
+				},
 			},
 		},
 	}
