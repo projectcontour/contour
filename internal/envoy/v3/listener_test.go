@@ -335,7 +335,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 				},
 			},
 		},
-		OnlyRequestClientCert: true,
+		OptionalClientCertificate: true,
 	}
 	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
 		CACertificate: &dag.Secret{

@@ -450,8 +450,8 @@ func testClientCertAuth(namespace string) {
 					TLS: &contourv1.TLS{
 						SecretName: "echo-with-optional-auth",
 						ClientValidation: &contourv1.DownstreamValidation{
-							OnlyRequestClientCert: true,
-							CACertificate:         "echo-with-auth",
+							OptionalClientCertificate: true,
+							CACertificate:             "echo-with-auth",
 						},
 					},
 				},
@@ -481,8 +481,8 @@ func testClientCertAuth(namespace string) {
 					TLS: &contourv1.TLS{
 						SecretName: "echo-with-optional-auth-no-ca",
 						ClientValidation: &contourv1.DownstreamValidation{
-							OnlyRequestClientCert:    true,
-							SkipClientCertValidation: true,
+							OptionalClientCertificate: true,
+							SkipClientCertValidation:  true,
 						},
 					},
 				},

@@ -6533,8 +6533,8 @@ func TestDAGInsert(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName: sec1.Name,
 					ClientValidation: &contour_api_v1.DownstreamValidation{
-						CACertificate:         cert1.Name,
-						OnlyRequestClientCert: true,
+						CACertificate:             cert1.Name,
+						OptionalClientCertificate: true,
 					},
 				},
 			},
@@ -9827,8 +9827,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:         &Secret{Object: cert1},
-								OnlyRequestClientCert: true,
+								CACertificate:             &Secret{Object: cert1},
+								OptionalClientCertificate: true,
 							},
 						},
 					),

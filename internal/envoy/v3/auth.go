@@ -125,7 +125,7 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion envoy_v3_
 			peerValidationContext.GetCRL(), peerValidationContext.OnlyVerifyLeafCertCrl)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
-			context.RequireClientCertificate = protobuf.Bool(!peerValidationContext.OnlyRequestClientCert)
+			context.RequireClientCertificate = protobuf.Bool(!peerValidationContext.OptionalClientCertificate)
 		}
 	}
 

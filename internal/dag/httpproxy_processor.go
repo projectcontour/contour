@@ -262,8 +262,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			// Fill in DownstreamValidation when external client validation is enabled.
 			if tls.ClientValidation != nil {
 				dv := &PeerValidationContext{
-					SkipClientCertValidation: tls.ClientValidation.SkipClientCertValidation,
-					OnlyRequestClientCert:    tls.ClientValidation.OnlyRequestClientCert,
+					SkipClientCertValidation:  tls.ClientValidation.SkipClientCertValidation,
+					OptionalClientCertificate: tls.ClientValidation.OptionalClientCertificate,
 				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))

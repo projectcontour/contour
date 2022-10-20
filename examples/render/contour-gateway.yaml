@@ -5981,9 +5981,9 @@ spec:
                               secrets are limited to 1MiB in size.
                             minLength: 1
                             type: string
-                          onlyRequestClientCert:
-                            description: OnlyRequestClientCert when set to true will
-                              request a client certificate but allow the connection
+                          optionalClientCertificate:
+                            description: OptionalClientCertificate when set to true
+                              will request a client certificate but allow the connection
                               to continue if the client does not provide one. If a
                               client certificate is sent, it will be verified according
                               to the other properties, which includes disabling validation

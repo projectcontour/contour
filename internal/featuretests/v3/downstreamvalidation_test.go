@@ -328,8 +328,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName: serverTLSSecret.Name,
 					ClientValidation: &contour_api_v1.DownstreamValidation{
-						CACertificate:         clientCASecret.Name,
-						OnlyRequestClientCert: true,
+						CACertificate:             clientCASecret.Name,
+						OptionalClientCertificate: true,
 					},
 				},
 			},
@@ -355,7 +355,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 					CACertificate: &dag.Secret{
 						Object: clientCASecret,
 					},
-					OnlyRequestClientCert: true,
+					OptionalClientCertificate: true,
 				},
 				"h2", "http/1.1",
 			),

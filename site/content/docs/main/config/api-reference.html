@@ -979,7 +979,7 @@ certificate chain will be subject to validation by CRL.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>onlyRequestClientCert</code>
+<code>optionalClientCertificate</code>
 <br>
 <em>
 bool
@@ -987,7 +987,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>OnlyRequestClientCert when set to true will request a client certificate
+<p>OptionalClientCertificate when set to true will request a client certificate
 but allow the connection to continue if the client does not provide one.
 If a client certificate is sent, it will be verified according to the
 other properties, which includes disabling validation if

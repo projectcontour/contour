@@ -166,7 +166,7 @@ Its mandatory attribute `caSecret` contains a name of an existing Kubernetes Sec
 The data value of the key `ca.crt` must be a PEM-encoded certificate bundle and it must contain all the trusted CA certificates that are to be used for validating the client certificate.
 If the Opaque Secret also contains one of either `tls.crt` or `tls.key` keys, it will be ignored.
 
-By default, client certificates are required but some applications might support different authentication schemes. In that case you can set the `onlyRequestClientCert` field to `true`. A client certificate will be requested, but the connection is allowed to continue if the client does not provide one. If a client certificate is sent, it will be verified according to the other properties, which includes disabling validations if `skipClientCertValidation` is set.
+By default, client certificates are required but some applications might support different authentication schemes. In that case you can set the `optionalClientCertificate` field to `true`. A client certificate will be requested, but the connection is allowed to continue if the client does not provide one. If a client certificate is sent, it will be verified according to the other properties, which includes disabling validations if `skipClientCertValidation` is set.
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -180,7 +180,7 @@ spec:
       secretName: secret
       clientValidation:
         caSecret: client-root-ca
-        onlyRequestClientCert: true
+        optionalClientCertificate: true
   routes:
     - services:
         - name: s1
