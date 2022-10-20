@@ -66,9 +66,9 @@ func tcpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 
 func durationOrDefault(d, def time.Duration) *durationpb.Duration {
 	if d != 0 {
-		return protobuf.Duration(d)
+		return durationpb.New(d)
 	}
-	return protobuf.Duration(def)
+	return durationpb.New(def)
 }
 
 func codecClientType(cluster *dag.Cluster) typev3.CodecClientType {

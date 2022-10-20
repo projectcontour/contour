@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -1219,7 +1220,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -1295,7 +1296,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 0),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
 											),
-											TotalWeight: protobuf.UInt32(50),
+											TotalWeight: wrapperspb.UInt32(50),
 										},
 									},
 								},
@@ -1372,7 +1373,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 22),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
 											),
-											TotalWeight: protobuf.UInt32(72),
+											TotalWeight: wrapperspb.UInt32(72),
 										},
 									},
 								},
@@ -1482,7 +1483,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -1646,7 +1647,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -1761,7 +1762,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2404,7 +2405,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2423,7 +2424,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2574,7 +2575,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2593,7 +2594,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2612,7 +2613,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2763,7 +2764,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2782,7 +2783,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2801,7 +2802,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -2818,7 +2819,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -3008,7 +3009,7 @@ func TestRouteVisit(t *testing.T) {
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
 											),
-											TotalWeight: protobuf.UInt32(2),
+											TotalWeight: wrapperspb.UInt32(2),
 										},
 									},
 								},
@@ -3280,7 +3281,7 @@ func websocketroute(c string) *envoy_route_v3.Route_Route {
 
 func routetimeout(cluster string, timeout time.Duration) *envoy_route_v3.Route_Route {
 	r := routecluster(cluster)
-	r.Route.Timeout = protobuf.Duration(timeout)
+	r.Route.Timeout = durationpb.New(timeout)
 	return r
 }
 
@@ -3290,10 +3291,10 @@ func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
-		r.Route.RetryPolicy.NumRetries = protobuf.UInt32(numRetries)
+		r.Route.RetryPolicy.NumRetries = wrapperspb.UInt32(numRetries)
 	}
 	if perTryTimeout > 0 {
-		r.Route.RetryPolicy.PerTryTimeout = protobuf.Duration(perTryTimeout)
+		r.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
 	}
 	return r
 }
@@ -3342,7 +3343,7 @@ func weightedClusters(first, second *envoy_route_v3.WeightedCluster_ClusterWeigh
 func weightedCluster(name string, weight uint32) *envoy_route_v3.WeightedCluster_ClusterWeight {
 	return &envoy_route_v3.WeightedCluster_ClusterWeight{
 		Name:   name,
-		Weight: protobuf.UInt32(weight),
+		Weight: wrapperspb.UInt32(weight),
 	}
 }
 

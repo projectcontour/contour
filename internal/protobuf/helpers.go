@@ -15,39 +15,20 @@
 package protobuf
 
 import (
-	"fmt"
 	"reflect"
-	"time"
 
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
-
-// Duration converts a time.Duration to a pointer to a duration.Duration.
-func Duration(d time.Duration) *durationpb.Duration {
-	return &durationpb.Duration{
-		Seconds: int64(d / time.Second),
-		Nanos:   int32(d % time.Second),
-	}
-}
-
-// UInt32 converts a uint32 to a pointer to a wrappers.UInt32Value.
-func UInt32(val uint32) *wrapperspb.UInt32Value {
-	return &wrapperspb.UInt32Value{
-		Value: val,
-	}
-}
 
 // UInt32OrDefault returns a wrapped UInt32Value. If val is 0, def is wrapped and returned.
 func UInt32OrDefault(val uint32, def uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
-		return UInt32(def)
+		return wrapperspb.UInt32(def)
 	default:
-		return UInt32(val)
+		return wrapperspb.UInt32(val)
 	}
 }
 
@@ -57,14 +38,7 @@ func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	case 0:
 		return nil
 	default:
-		return UInt32(val)
-	}
-}
-
-// Bool converts a bool to a pointer to a wrappers.BoolValue.
-func Bool(val bool) *wrapperspb.BoolValue {
-	return &wrapperspb.BoolValue{
-		Value: val,
+		return wrapperspb.UInt32(val)
 	}
 }
 
@@ -95,22 +69,4 @@ func MustMarshalAny(pb proto.Message) *anypb.Any {
 	}
 
 	return a
-}
-
-// AnyMessageTypeOf returns the any.Any type of msg.
-func AnyMessageTypeOf(msg proto.Message) string {
-	a := MustMarshalAny(msg)
-	return a.TypeUrl
-}
-
-// MustMarshalJSON marshals msg to indented JSON.
-func MustMarshalJSON(msg proto.Message) string {
-	m := protojson.MarshalOptions{Indent: "  "}
-
-	res, err := m.Marshal(msg)
-	if err != nil {
-		panic(fmt.Sprintf("failed to marshal %T: %s", msg, err))
-	}
-
-	return string(res)
 }

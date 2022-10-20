@@ -34,6 +34,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -3079,7 +3080,7 @@ func TestListenerVisit(t *testing.T) {
 							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 								Domain:          "contour",
 								FailureModeDeny: true,
-								Timeout:         protobuf.Duration(7 * time.Second),
+								Timeout:         durationpb.New(7 * time.Second),
 								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 									GrpcService: &envoy_core_v3.GrpcService{
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -3166,7 +3167,7 @@ func TestListenerVisit(t *testing.T) {
 							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 								Domain:          "contour",
 								FailureModeDeny: true,
-								Timeout:         protobuf.Duration(7 * time.Second),
+								Timeout:         durationpb.New(7 * time.Second),
 								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 									GrpcService: &envoy_core_v3.GrpcService{
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -3205,7 +3206,7 @@ func TestListenerVisit(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
-									Timeout:         protobuf.Duration(7 * time.Second),
+									Timeout:         durationpb.New(7 * time.Second),
 									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -3313,7 +3314,7 @@ func TestListenerVisit(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
-									Timeout:         protobuf.Duration(7 * time.Second),
+									Timeout:         durationpb.New(7 * time.Second),
 									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -3352,7 +3353,7 @@ func TestListenerVisit(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
-									Timeout:         protobuf.Duration(7 * time.Second),
+									Timeout:         durationpb.New(7 * time.Second),
 									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -3386,7 +3387,7 @@ func TestListenerVisit(t *testing.T) {
 								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
-									Timeout:         protobuf.Duration(7 * time.Second),
+									Timeout:         durationpb.New(7 * time.Second),
 									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{

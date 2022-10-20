@@ -24,7 +24,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -664,9 +664,9 @@ func weightedclusters(clusters []weightedcluster) *envoy_route_v3.WeightedCluste
 		total += c.weight
 		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   c.name,
-			Weight: protobuf.UInt32(c.weight),
+			Weight: wrapperspb.UInt32(c.weight),
 		})
 	}
-	wc.TotalWeight = protobuf.UInt32(total)
+	wc.TotalWeight = wrapperspb.UInt32(total)
 	return &wc
 }

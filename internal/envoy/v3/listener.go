@@ -47,6 +47,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type HTTPVersionType = http.HttpConnectionManager_CodecType
@@ -437,10 +438,10 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 			AllowChunkedLength: b.allowChunkedLength,
 		},
 
-		UseRemoteAddress:  protobuf.Bool(true),
+		UseRemoteAddress:  wrapperspb.Bool(true),
 		XffNumTrustedHops: b.numTrustedHops,
 
-		NormalizePath: protobuf.Bool(true),
+		NormalizePath: wrapperspb.Bool(true),
 
 		// We can ignore any port number supplied in the Host/:authority header
 		// before processing by filters or routing.
@@ -465,7 +466,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// Envoy timeouts, explicitly passing a 0 here *would not* disable the timeout; it needs to be
 	// omitted entirely.
 	if !b.maxConnectionDuration.IsDisabled() && !b.maxConnectionDuration.UseDefault() {
-		cm.CommonHttpProtocolOptions.MaxConnectionDuration = protobuf.Duration(b.maxConnectionDuration.Duration())
+		cm.CommonHttpProtocolOptions.MaxConnectionDuration = durationpb.New(b.maxConnectionDuration.Duration())
 	}
 
 	if len(b.accessLoggers) > 0 {
@@ -482,7 +483,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	if b.forwardClientCertificate != nil {
 		cm.ForwardClientCertDetails = http.HttpConnectionManager_SANITIZE_SET
 		cm.SetCurrentClientCertDetails = &http.HttpConnectionManager_SetCurrentClientCertDetails{
-			Subject: protobuf.Bool(b.forwardClientCertificate.Subject),
+			Subject: wrapperspb.Bool(b.forwardClientCertificate.Subject),
 			Cert:    b.forwardClientCertificate.Cert,
 			Chain:   b.forwardClientCertificate.Chain,
 			Dns:     b.forwardClientCertificate.DNS,
@@ -525,7 +526,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 	tcpProxy := &tcp.TcpProxy{
 		StatPrefix:  statPrefix,
 		AccessLog:   accesslogger,
-		IdleTimeout: protobuf.Duration(9001 * time.Second),
+		IdleTimeout: durationpb.New(9001 * time.Second),
 	}
 
 	var totalWeight uint32
@@ -755,7 +756,7 @@ func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 	for _, provider := range jwtProviders {
 		var cacheDuration *durationpb.Duration
 		if provider.RemoteJWKS.CacheDuration != nil {
-			cacheDuration = protobuf.Duration(*provider.RemoteJWKS.CacheDuration)
+			cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)
 		}
 
 		jwtConfig.Providers[provider.Name] = &envoy_jwt_v3.JwtProvider{
@@ -768,7 +769,7 @@ func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 						HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 							Cluster: envoy.DNSNameClusterName(&provider.RemoteJWKS.Cluster),
 						},
-						Timeout: protobuf.Duration(provider.RemoteJWKS.Timeout),
+						Timeout: durationpb.New(provider.RemoteJWKS.Timeout),
 					},
 					CacheDuration: cacheDuration,
 				},

@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -42,8 +43,8 @@ func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *
 		StatPrefix: statPrefix,
 		TokenBucket: &envoy_type_v3.TokenBucket{
 			MaxTokens:     config.MaxTokens,
-			TokensPerFill: protobuf.UInt32(config.TokensPerFill),
-			FillInterval:  protobuf.Duration(config.FillInterval),
+			TokensPerFill: wrapperspb.UInt32(config.TokensPerFill),
+			FillInterval:  durationpb.New(config.FillInterval),
 		},
 		ResponseHeadersToAdd: headerValueList(config.ResponseHeadersToAdd, false),
 		FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{

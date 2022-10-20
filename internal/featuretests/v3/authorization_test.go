@@ -30,7 +30,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -46,7 +46,7 @@ func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v3.ExtAuthz_Gr
 					Authority:   strings.ReplaceAll(name, "/", "."),
 				},
 			},
-			Timeout: protobuf.Duration(defaultResponseTimeout),
+			Timeout: durationpb.New(defaultResponseTimeout),
 		},
 	}
 }
@@ -73,7 +73,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 	rh.OnAdd(p)
 
 	cluster := grpcCluster("extension/auth/extension")
-	cluster.GrpcService.Timeout = protobuf.Duration(10 * time.Minute)
+	cluster.GrpcService.Timeout = durationpb.New(10 * time.Minute)
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,

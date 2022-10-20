@@ -15,7 +15,6 @@ package envoy
 
 import (
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -40,10 +39,10 @@ func Timeout(d timeout.Setting) *durationpb.Duration {
 		return nil
 	case d.IsDisabled():
 		// Explicitly pass a 0.
-		return protobuf.Duration(0)
+		return durationpb.New(0)
 	default:
 		// Pass the duration value.
-		return protobuf.Duration(d.Duration())
+		return durationpb.New(d.Duration())
 	}
 }
 

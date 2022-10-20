@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -352,7 +353,7 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
 				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 					Name: rhp.CookieHashOptions.CookieName,
-					Ttl:  protobuf.Duration(rhp.CookieHashOptions.TTL),
+					Ttl:  durationpb.New(rhp.CookieHashOptions.TTL),
 					Path: rhp.CookieHashOptions.Path,
 				},
 			}
@@ -392,7 +393,7 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 		RetriableStatusCodes: r.RetryPolicy.RetriableStatusCodes,
 	}
 	if r.RetryPolicy.NumRetries > 0 {
-		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
+		rp.NumRetries = wrapperspb.UInt32(r.RetryPolicy.NumRetries)
 	}
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
@@ -442,7 +443,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 
 		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   envoy.Clustername(cluster),
-			Weight: protobuf.UInt32(cluster.Weight),
+			Weight: wrapperspb.UInt32(cluster.Weight),
 		}
 		if cluster.RequestHeadersPolicy != nil {
 			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
@@ -467,7 +468,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		}
 		total = uint32(len(route.Clusters))
 	}
-	wc.TotalWeight = protobuf.UInt32(total)
+	wc.TotalWeight = wrapperspb.UInt32(total)
 
 	sort.Stable(sorter.For(wc.Clusters))
 	return &wc
@@ -506,7 +507,7 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 		return nil
 	}
 	rcp := &envoy_route_v3.CorsPolicy{
-		AllowCredentials: protobuf.Bool(cp.AllowCredentials),
+		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
 		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
 		AllowMethods:     strings.Join(cp.AllowMethods, ","),
 		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
@@ -549,7 +550,7 @@ func appendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
 			Key:   key,
 			Value: value,
 		},
-		Append: protobuf.Bool(true),
+		Append: wrapperspb.Bool(true),
 	}
 }
 

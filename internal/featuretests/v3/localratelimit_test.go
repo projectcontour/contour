@@ -25,7 +25,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -145,8 +145,8 @@ func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
-				TokensPerFill: protobuf.UInt32(100),
-				FillInterval:  protobuf.Duration(time.Minute),
+				TokensPerFill: wrapperspb.UInt32(100),
+				FillInterval:  durationpb.New(time.Minute),
 			},
 			FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 				DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -236,8 +236,8 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
-						TokensPerFill: protobuf.UInt32(5),
-						FillInterval:  protobuf.Duration(time.Second),
+						TokensPerFill: wrapperspb.UInt32(5),
+						FillInterval:  durationpb.New(time.Second),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -261,8 +261,8 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
-						TokensPerFill: protobuf.UInt32(100),
-						FillInterval:  protobuf.Duration(time.Minute),
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -361,8 +361,8 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
-						TokensPerFill: protobuf.UInt32(5),
-						FillInterval:  protobuf.Duration(time.Second),
+						TokensPerFill: wrapperspb.UInt32(5),
+						FillInterval:  durationpb.New(time.Second),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -386,8 +386,8 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
-						TokensPerFill: protobuf.UInt32(100),
-						FillInterval:  protobuf.Duration(time.Minute),
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -410,8 +410,8 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
-				TokensPerFill: protobuf.UInt32(100),
-				FillInterval:  protobuf.Duration(time.Minute),
+				TokensPerFill: wrapperspb.UInt32(100),
+				FillInterval:  durationpb.New(time.Minute),
 			},
 			FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 				DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -480,8 +480,8 @@ func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour)
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
-						TokensPerFill: protobuf.UInt32(100),
-						FillInterval:  protobuf.Duration(time.Minute),
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -566,8 +566,8 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
-						TokensPerFill: protobuf.UInt32(100),
-						FillInterval:  protobuf.Duration(time.Minute),
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
