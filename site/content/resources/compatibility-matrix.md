@@ -148,7 +148,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [71]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.2
 [72]: https://github.com/projectcontour/contour-operator/releases/tag/v1.22.0
 [73]: https://github.com/projectcontour/contour-operator/releases/tag/v1.22.1
-[73]: https://github.com/projectcontour/contour-operator/releases/tag/v1.23.0
+[74]: https://github.com/projectcontour/contour-operator/releases/tag/v1.23.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix
