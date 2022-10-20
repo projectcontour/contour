@@ -62,6 +62,7 @@ kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
 
 # Install Contour
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/01-contour-config.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/01-crds.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-rbac.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-role-contour.yaml
@@ -84,108 +85,6 @@ for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contou
 
   ${KUBECTL} apply -f "$file"
 done
-
-# The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
-# This is ok to create the config after the Contour deployment.
-${KUBECTL} apply -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: contour
-  namespace: projectcontour
-data:
-  contour.yaml: |
-    gateway:
-      controllerName: projectcontour.io/ingress-controller
-    rateLimitService:
-      extensionService: projectcontour/ratelimit
-      domain: contour
-      failOpen: false
-    tls:
-      fallback-certificate:
-        name: fallback-cert
-        namespace: projectcontour
-EOF
-
-# Install fallback cert
-
-${KUBECTL} apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned
-spec:
-  selfSigned: {}
-EOF
-
-${KUBECTL} apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: fallback-cert
-  namespace: projectcontour
-spec:
-  dnsNames:
-  - fallback.projectcontour.io
-  secretName: fallback-cert
-  issuerRef:
-    name: selfsigned
-    kind: ClusterIssuer
-EOF
-
-${KUBECTL} apply -f - <<EOF
-apiVersion: projectcontour.io/v1
-kind: TLSCertificateDelegation
-metadata:
-  name: fallback-cert
-  namespace: projectcontour
-spec:
-  delegations:
-  - secretName: fallback-cert
-    targetNamespaces:
-    - "*"
-EOF
-
-# Wait for the fallback certificate to issue.
-${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour certificates/fallback-cert --for=condition=Ready
-
-# Define some rate limiting policies to correspond to
-# testsuite/httpproxy/020-global-rate-limiting.yaml.
-${KUBECTL} apply -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ratelimit-config
-  namespace: projectcontour
-data:
-  ratelimit-config.yaml: |
-    domain: contour
-    descriptors:
-      - key: generic_key
-        value: vhostlimit
-        rate_limit:
-          unit: hour
-          requests_per_unit: 1
-      - key: route_limit_key
-        value: routelimit
-        rate_limit:
-          unit: hour
-          requests_per_unit: 1
-      - key: generic_key
-        value: tlsvhostlimit
-        rate_limit:
-          unit: hour
-          requests_per_unit: 1
-      - key: generic_key
-        value: tlsroutelimit
-        rate_limit:
-          unit: hour
-          requests_per_unit: 1
-EOF
-
-# Create the ratelimit deployment, service and extension service.
-${KUBECTL} apply -f ${REPO}/examples/ratelimit/02-ratelimit.yaml
-${KUBECTL} apply -f ${REPO}/examples/ratelimit/03-ratelimit-extsvc.yaml
 
 # Wait for Contour and Envoy to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
