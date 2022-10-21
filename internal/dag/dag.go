@@ -787,7 +787,7 @@ type Service struct {
 // traffic routed to an upstream service.
 type Cluster struct {
 	// Upstream is the backend Kubernetes service traffic arriving
-	// at this Cluster will be forwarded too.
+	// at this Cluster will be forwarded to.
 	Upstream *Service
 
 	// The relative weight of this Cluster compared to its siblings.
