@@ -7,9 +7,9 @@ WORKDIR /contour
 
 ARG BUILD_GOPROXY
 ENV GOPROXY=${BUILD_GOPROXY}
-COPY go.mod go.sum /contour/
-RUN go mod download
 
+COPY go.mod go.mod
+COPY go.sum go.sum
 COPY cmd cmd
 COPY internal internal
 COPY pkg pkg
@@ -24,7 +24,7 @@ ARG BUILD_EXTRA_GO_LDFLAGS
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN make build \
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod make build \
 	    CGO_ENABLED=${BUILD_CGO_ENABLED} \
 		EXTRA_GO_LDFLAGS="${BUILD_EXTRA_GO_LDFLAGS}" \
 		GOOS=${TARGETOS} \
