@@ -310,7 +310,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			contourModel.Spec.EnvoyResources = gatewayClassParams.Spec.Envoy.Resources
 
-			if gatewayClassParams.Spec.Envoy.LogLevel != "" && gatewayClassParams.Spec.Envoy.LogLevel.Validate() == nil {
+			if gatewayClassParams.Spec.Envoy.LogLevel != "" {
 				contourModel.Spec.EnvoyLogLevel = gatewayClassParams.Spec.Envoy.LogLevel
 			}
 

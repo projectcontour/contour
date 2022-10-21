@@ -194,6 +194,12 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 					}
 				}
 			}
+
+			if params.Spec.Envoy.LogLevel != "" && params.Spec.Envoy.LogLevel.Validate() != nil {
+				msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.logLevel %q, must be trace, debug, info, warn, error, critical or off",
+					params.Spec.Envoy.LogLevel)
+				invalidParamsMessages = append(invalidParamsMessages, msg)
+			}
 		}
 
 		if len(invalidParamsMessages) > 0 {
