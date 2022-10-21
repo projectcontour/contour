@@ -80,7 +80,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
+			sec, err := p.source.LookupTLSSecret(secretName)
 			if err != nil {
 				p.WithError(err).
 					WithField("name", ing.GetName()).
@@ -135,7 +135,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	var clientCertSecret *Secret
 	var err error
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
+		clientCertSecret, err = p.source.LookupTLSSecret(*p.ClientCertificate)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).

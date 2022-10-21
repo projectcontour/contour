@@ -4382,6 +4382,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "ca",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
@@ -4392,6 +4393,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "ca",
 			Namespace: "caCertOriginalNs",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
@@ -4402,6 +4404,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "crl",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CRLKey: []byte(fixture.CRL),
 		},
@@ -9535,7 +9538,7 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert1),
+										CACertificate: caSecret(cert1),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9567,7 +9570,7 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert1),
+										CACertificate: caSecret(cert1),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9641,7 +9644,7 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert2),
+										CACertificate: caSecret(cert2),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9675,7 +9678,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 							},
 						},
 					),
@@ -9703,7 +9706,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 							},
 						},
 					),
@@ -9766,7 +9769,7 @@ func TestDAGInsert(t *testing.T) {
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
-								CACertificate:            &Secret{Object: cert1},
+								CACertificate:            caSecret(cert1),
 							},
 						},
 					),
@@ -9797,8 +9800,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
-								CRL:           &Secret{Object: crl},
+								CACertificate: caSecret(cert1),
+								CRL:           crlSecret(crl),
 							},
 						},
 					),
@@ -9829,8 +9832,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:         &Secret{Object: cert1},
-								CRL:                   &Secret{Object: crl},
+								CACertificate:         caSecret(cert1),
+								CRL:                   crlSecret(crl),
 								OnlyVerifyLeafCertCrl: true,
 							},
 						},
@@ -9862,7 +9865,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 								ForwardClientCertificate: &ClientCertificateDetails{
 									Subject: true,
 									Cert:    true,
@@ -9900,7 +9903,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:             &Secret{Object: cert1},
+								CACertificate:             caSecret(cert1),
 								OptionalClientCertificate: true,
 							},
 						},
@@ -13257,7 +13260,22 @@ func clustermap(services ...*v1.Service) []*Cluster {
 
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
-		Object: s,
+		Object:         s,
+		ValidTLSSecret: &SecretValidationStatus{},
+	}
+}
+
+func caSecret(s *v1.Secret) *Secret {
+	return &Secret{
+		Object:        s,
+		ValidCASecret: &SecretValidationStatus{},
+	}
+}
+
+func crlSecret(s *v1.Secret) *Secret {
+	return &Secret{
+		Object:         s,
+		ValidCRLSecret: &SecretValidationStatus{},
 	}
 }
 

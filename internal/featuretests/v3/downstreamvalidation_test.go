@@ -47,6 +47,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			Name:      "clientCASecret",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
@@ -211,6 +212,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			Name:      "crl",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CRLKey: []byte(featuretests.CRL),
 		},

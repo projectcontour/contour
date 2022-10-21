@@ -948,7 +948,10 @@ func (s *ServiceCluster) Rebalance() {
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	Object *v1.Secret
+	Object         *v1.Secret
+	ValidTLSSecret *SecretValidationStatus
+	ValidCASecret  *SecretValidationStatus
+	ValidCRLSecret *SecretValidationStatus
 }
 
 func (s *Secret) Name() string      { return s.Object.Name }
@@ -967,6 +970,10 @@ func (s *Secret) Cert() []byte {
 // PrivateKey returns the secret's tls private key
 func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
+}
+
+type SecretValidationStatus struct {
+	Error error
 }
 
 // HTTPHealthCheckPolicy http health check policy

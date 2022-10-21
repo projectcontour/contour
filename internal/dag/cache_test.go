@@ -43,7 +43,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		obj          interface{}
 		want         bool
 	}{
-		"insert secret": {
+		"insert TLS secret not referenced": {
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -69,54 +69,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert CA secret w/ explanatory text": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					CACertificateKey: []byte(fixture.CERTIFICATE_WITH_TEXT),
-				},
-			},
-			want: true,
-		},
-		"insert CA bundle secret w/ non-PEM data": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: caBundleData(fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE),
-			},
-			want: true,
-		},
-		"insert CA bundle secret w/ no CN for CA": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "caNoCN",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: caBundleData(fixture.CA_CERT_NO_CN),
-			},
-			want: true,
-		},
-
-		"insert CA bundle secret w/ non-PEM data and no certificates": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: caBundleData(),
-			},
-			want: false,
-		},
-
 		"insert secret referenced by ingress": {
 			pre: []interface{}{
 				&networking_v1.Ingress{
@@ -141,30 +93,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert secret referenced by ingress with multiple pem blocks": {
-			pre: []interface{}{
-				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "www",
-						Namespace: "default",
-					},
-					Spec: networking_v1.IngressSpec{
-						TLS: []networking_v1.IngressTLS{{
-							SecretName: "secret",
-						}},
-					},
-				},
-			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeTLS,
-				Data: secretdata(fixture.EC_CERTIFICATE, fixture.EC_PRIVATE_KEY),
-			},
-			want: true,
-		},
 		"insert secret w/ wrong type referenced by ingress": {
 			pre: []interface{}{
 				&networking_v1.Ingress{
@@ -186,7 +114,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: "banana",
 			},
-			want: false,
+			want: true,
 		},
 		"insert secret referenced by ingress via tls delegation": {
 			pre: []interface{}{
@@ -371,7 +299,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert certificate secret": {
+		"insert certificate secret not referenced": {
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ca",
