@@ -5780,6 +5780,30 @@ spec:
                               secrets are limited to 1MiB in size.
                             minLength: 1
                             type: string
+                          forwardClientCertificate:
+                            description: ForwardClientCertificate adds the selected
+                              data from the passed client TLS certificate to the x-forwarded-client-cert
+                              header.
+                            properties:
+                              cert:
+                                description: Client cert in URL encoded PEM format.
+                                type: boolean
+                              chain:
+                                description: Client cert chain (including the leaf
+                                  cert) in URL encoded PEM format.
+                                type: boolean
+                              dns:
+                                description: DNS type Subject Alternative Names of
+                                  the client cert.
+                                type: boolean
+                              subject:
+                                description: Subject of the client cert.
+                                type: boolean
+                              uri:
+                                description: URI type Subject Alternative Name of
+                                  the client cert.
+                                type: boolean
+                            type: object
                           optionalClientCertificate:
                             description: OptionalClientCertificate when set to true
                               will request a client certificate but allow the connection

@@ -6550,6 +6550,41 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy25 is downstream validation, fwd client cert details
+	proxy25 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate: cert1.Name,
+						ForwardClientCertificate: &contour_api_v1.ClientCertificateDetails{
+							Subject: true,
+							Cert:    true,
+							Chain:   true,
+							DNS:     true,
+							URI:     true,
+						},
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// invalid because tcpproxy both includes another and
 	// has a list of services.
 	proxy37 := &contour_api_v1.HTTPProxy{
@@ -9797,6 +9832,44 @@ func TestDAGInsert(t *testing.T) {
 								CACertificate:         &Secret{Object: cert1},
 								CRL:                   &Secret{Object: crl},
 								OnlyVerifyLeafCertCrl: true,
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with client cert forwarding": {
+			objs: []interface{}{
+				proxy25, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate: &Secret{Object: cert1},
+								ForwardClientCertificate: &ClientCertificateDetails{
+									Subject: true,
+									Cert:    true,
+									Chain:   true,
+									DNS:     true,
+									URI:     true,
+								},
 							},
 						},
 					),

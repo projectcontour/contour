@@ -1118,6 +1118,11 @@ type DownstreamValidation struct {
 	// +optional
 	SkipClientCertValidation bool `json:"skipClientCertValidation"`
 
+	// ForwardClientCertificate adds the selected data from the passed client TLS certificate
+	// to the x-forwarded-client-cert header.
+	// +optional
+	ForwardClientCertificate *ClientCertificateDetails `json:"forwardClientCertificate,omitempty"`
+
 	// Name of a Kubernetes opaque secret that contains a concatenated list of PEM encoded CRLs.
 	// The secret must contain key named crl.pem.
 	// This field will be used to verify that a client certificate has not been revoked.
@@ -1139,6 +1144,25 @@ type DownstreamValidation struct {
 	// SkipClientCertValidation is set. Defaults to false.
 	// +optional
 	OptionalClientCertificate bool `json:"optionalClientCertificate"`
+}
+
+// ClientCertificateDetails defines which parts of the client certificate will be forwarded.
+type ClientCertificateDetails struct {
+	// Subject of the client cert.
+	// +optional
+	Subject bool `json:"subject"`
+	// Client cert in URL encoded PEM format.
+	// +optional
+	Cert bool `json:"cert"`
+	// Client cert chain (including the leaf cert) in URL encoded PEM format.
+	// +optional
+	Chain bool `json:"chain"`
+	// DNS type Subject Alternative Names of the client cert.
+	// +optional
+	DNS bool `json:"dns"`
+	// URI type Subject Alternative Name of the client cert.
+	// +optional
+	URI bool `json:"uri"`
 }
 
 // HTTPProxyStatus reports the current state of the HTTPProxy.

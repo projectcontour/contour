@@ -523,6 +523,20 @@ type HeaderValue struct {
 	Value string
 }
 
+// ClientCertificateDetails defines which parts of the client certificate will be forwarded.
+type ClientCertificateDetails struct {
+	// Subject of the client cert.
+	Subject bool
+	// Client cert in URL encoded PEM format.
+	Cert bool
+	// Client cert chain (including the leaf cert) in URL encoded PEM format.
+	Chain bool
+	// DNS type Subject Alternative Names of the client cert.
+	DNS bool
+	// URI type Subject Alternative Name of the client cert.
+	URI bool
+}
+
 // PeerValidationContext defines how to validate the certificate on the upstream service.
 type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
@@ -534,6 +548,9 @@ type PeerValidationContext struct {
 	// SkipClientCertValidation when set to true will ensure Envoy requests but
 	// does not verify peer certificates.
 	SkipClientCertValidation bool
+	// ForwardClientCertificate adds the selected data from the passed client TLS certificate
+	// to the x-forwarded-client-cert header.
+	ForwardClientCertificate *ClientCertificateDetails
 	// CRL holds a reference to the Secret containing the Certificate Revocation List.
 	// It is used to check for revocation of the peer certificate.
 	CRL *Secret

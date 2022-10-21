@@ -263,6 +263,34 @@ spec:
           port: 80
 ```
 
+## Client Certificate Details Forwarding
+
+HTTPProxy supports passing certificate data through the `x-forwarded-client-cert` header to let applications use details from client certificates (e.g. Subject, SAN...). Since the certificate (or the certificate chain) could exceed the web server header size limit, you have the ability to select what specific part of the certificate to expose in the header through the `forwardClientCertificate` field. Read more about the supported values in the [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#x-forwarded-client-cert).
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: with-client-auth
+spec:
+  virtualhost:
+    fqdn: www.example.com
+    tls:
+      secretName: secret
+      clientValidation:
+        caSecret: client-root-ca
+        forwardClientCertificate:
+          subject: true
+          cert: true
+          chain: true
+          dns: true
+          uri: true
+  routes:
+    - services:
+        - name: s1
+          port: 80
+```
+
 ## TLS Session Proxying
 
 HTTPProxy supports proxying of TLS encapsulated TCP sessions.

@@ -406,6 +406,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			var alpnProtos []string
 			var filters []*envoy_listener_v3.Filter
 
+			var forwardClientCertificate *dag.ClientCertificateDetails
+			if vh.DownstreamValidation != nil {
+				forwardClientCertificate = vh.DownstreamValidation.ForwardClientCertificate
+			}
+
 			if vh.TCPProxy == nil {
 				var authFilter *http.HttpFilter
 
@@ -445,6 +450,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+					ForwardClientCertificate(forwardClientCertificate).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -510,6 +516,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+					ForwardClientCertificate(forwardClientCertificate).
 					Get()
 
 				// Default filter chain
