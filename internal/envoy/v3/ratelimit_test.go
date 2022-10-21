@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -62,8 +63,8 @@ func TestLocalRateLimitConfig(t *testing.T) {
 					StatPrefix: "stat-prefix",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     100,
-						TokensPerFill: protobuf.UInt32(50),
-						FillInterval:  protobuf.Duration(time.Second),
+						TokensPerFill: wrapperspb.UInt32(50),
+						FillInterval:  durationpb.New(time.Second),
 					},
 					Status: &envoy_type_v3.HttpStatus{Code: envoy_type_v3.StatusCode_ServiceUnavailable},
 					ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{
@@ -264,7 +265,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				ConfigType: &http.HttpFilter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 						Domain:          "domain",
-						Timeout:         protobuf.Duration(7 * time.Second),
+						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: true,
 						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
@@ -293,7 +294,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				ConfigType: &http.HttpFilter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 						Domain:          "domain",
-						Timeout:         protobuf.Duration(7 * time.Second),
+						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: false,
 						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
@@ -323,7 +324,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				ConfigType: &http.HttpFilter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 						Domain:          "domain",
-						Timeout:         protobuf.Duration(7 * time.Second),
+						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: true,
 						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
@@ -353,7 +354,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				ConfigType: &http.HttpFilter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
 						Domain:          "domain",
-						Timeout:         protobuf.Duration(7 * time.Second),
+						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: false,
 						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{

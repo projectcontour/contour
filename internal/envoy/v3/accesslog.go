@@ -19,9 +19,9 @@ import (
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_req_without_query_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/req_without_query/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	_struct "github.com/golang/protobuf/ptypes/struct"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // FileAccessLogEnvoy returns a new file based access log filter
@@ -77,8 +77,8 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFie
 		filter = filterOnlyErrors()
 	}
 
-	jsonformat := &_struct.Struct{
-		Fields: make(map[string]*_struct.Value),
+	jsonformat := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value),
 	}
 
 	for k, v := range fields.AsFieldMap() {
@@ -104,9 +104,9 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFie
 	}}
 }
 
-func sv(s string) *_struct.Value {
-	return &_struct.Value{
-		Kind: &_struct.Value_StringValue{
+func sv(s string) *structpb.Value {
+	return &structpb.Value{
+		Kind: &structpb.Value_StringValue{
 			StringValue: s,
 		},
 	}

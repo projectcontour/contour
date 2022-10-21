@@ -15,57 +15,30 @@
 package protobuf
 
 import (
-	"fmt"
 	"reflect"
-	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// Duration converts a time.Duration to a pointer to a duration.Duration.
-func Duration(d time.Duration) *duration.Duration {
-	return &duration.Duration{
-		Seconds: int64(d / time.Second),
-		Nanos:   int32(d % time.Second),
-	}
-}
-
-// UInt32 converts a uint32 to a pointer to a wrappers.UInt32Value.
-func UInt32(val uint32) *wrappers.UInt32Value {
-	return &wrappers.UInt32Value{
-		Value: val,
-	}
-}
-
 // UInt32OrDefault returns a wrapped UInt32Value. If val is 0, def is wrapped and returned.
-func UInt32OrDefault(val uint32, def uint32) *wrappers.UInt32Value {
+func UInt32OrDefault(val uint32, def uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
-		return UInt32(def)
+		return wrapperspb.UInt32(def)
 	default:
-		return UInt32(val)
+		return wrapperspb.UInt32(val)
 	}
 }
 
 // UInt32OrNil returns a wrapped UInt32Value. If val is 0, nil is returned
-func UInt32OrNil(val uint32) *wrappers.UInt32Value {
+func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
 		return nil
 	default:
-		return UInt32(val)
-	}
-}
-
-// Bool converts a bool to a pointer to a wrappers.BoolValue.
-func Bool(val bool) *wrappers.BoolValue {
-	return &wrappers.BoolValue{
-		Value: val,
+		return wrapperspb.UInt32(val)
 	}
 }
 
@@ -89,29 +62,11 @@ func AsMessages(messages interface{}) []proto.Message {
 
 // MustMarshalAny marshals a protobuf into an any.Any type, panicking
 // if that operation fails.
-func MustMarshalAny(pb proto.Message) *any.Any {
-	a, err := anypb.New(proto.MessageV2(pb))
+func MustMarshalAny(pb proto.Message) *anypb.Any {
+	a, err := anypb.New(pb)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	return a
-}
-
-// AnyMessageTypeOf returns the any.Any type of msg.
-func AnyMessageTypeOf(msg proto.Message) string {
-	a := MustMarshalAny(msg)
-	return a.TypeUrl
-}
-
-// MustMarshalJSON marshals msg to indented JSON.
-func MustMarshalJSON(msg proto.Message) string {
-	m := jsonpb.Marshaler{Indent: "  "}
-
-	str, err := m.MarshalToString(msg)
-	if err != nil {
-		panic(fmt.Sprintf("failed to marshal %T: %s", msg, err))
-	}
-
-	return str
 }

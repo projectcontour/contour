@@ -9,7 +9,6 @@ require (
 	github.com/docker/distribution v2.8.0+incompatible
 	github.com/envoyproxy/go-control-plane v0.10.3-0.20220715065308-8bcd7ee0191a
 	github.com/go-logr/logr v1.2.3
-	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.8
 	github.com/google/go-github/v39 v39.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0

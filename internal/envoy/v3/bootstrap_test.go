@@ -19,11 +19,11 @@ import (
 
 	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestBootstrap(t *testing.T) {
@@ -2097,7 +2097,7 @@ func TestBootstrap(t *testing.T) {
 }
 
 func unmarshal(t *testing.T, data string, pb proto.Message) {
-	err := jsonpb.UnmarshalString(data, pb)
+	err := protojson.Unmarshal([]byte(data), pb)
 	checkErr(t, err)
 }
 

@@ -35,6 +35,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -152,9 +153,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -183,7 +184,7 @@ func TestJWTVerification(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -305,9 +306,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -413,9 +414,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -523,9 +524,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -538,9 +539,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -637,9 +638,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -668,7 +669,7 @@ func TestJWTVerification(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -790,9 +791,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -821,7 +822,7 @@ func TestJWTVerification(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -954,9 +955,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -985,7 +986,7 @@ func TestJWTVerification(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -1099,9 +1100,9 @@ func TestJWTVerification(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 									Forward: true,
@@ -1131,7 +1132,7 @@ func TestJWTVerification(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -1321,9 +1322,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -1352,7 +1353,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/jwt.example.com",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
@@ -1484,9 +1485,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -1602,9 +1603,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -1722,9 +1723,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},
@@ -1737,9 +1738,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												HttpUpstreamType: &envoy_core_v3.HttpUri_Cluster{
 													Cluster: "dnsname/https/jwt.example.com",
 												},
-												Timeout: protobuf.Duration(7 * time.Second),
+												Timeout: durationpb.New(7 * time.Second),
 											},
-											CacheDuration: protobuf.Duration(30 * time.Second),
+											CacheDuration: durationpb.New(30 * time.Second),
 										},
 									},
 								},

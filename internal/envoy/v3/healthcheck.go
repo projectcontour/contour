@@ -18,10 +18,10 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // httpHealthCheck returns a *envoy_core_v3.HealthCheck value for HTTP Routes
@@ -64,11 +64,11 @@ func tcpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 	}
 }
 
-func durationOrDefault(d, def time.Duration) *duration.Duration {
+func durationOrDefault(d, def time.Duration) *durationpb.Duration {
 	if d != 0 {
-		return protobuf.Duration(d)
+		return durationpb.New(d)
 	}
-	return protobuf.Duration(def)
+	return durationpb.New(def)
 }
 
 func codecClientType(cluster *dag.Cluster) typev3.CodecClientType {

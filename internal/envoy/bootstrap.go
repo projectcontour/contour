@@ -20,9 +20,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/pkg/config"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // SDSResourcesSubdirectory stores the subdirectory name where SDS path resources are stored to.
@@ -158,6 +158,11 @@ func WriteConfig(filename string, config proto.Message) (err error) {
 		}()
 	}
 
-	m := &jsonpb.Marshaler{OrigName: true}
-	return m.Marshal(out, config)
+	res, err := protojson.MarshalOptions{UseProtoNames: true}.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	_, err = out.Write(res)
+	return err
 }

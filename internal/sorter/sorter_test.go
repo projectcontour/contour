@@ -26,8 +26,8 @@ import (
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func shuffleRoutes(routes []*dag.Route) []*dag.Route {
@@ -535,15 +535,15 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 	want := []*envoy_route_v3.WeightedCluster_ClusterWeight{
 		{
 			Name:   "first",
-			Weight: protobuf.UInt32(10),
+			Weight: wrapperspb.UInt32(10),
 		},
 		{
 			Name:   "second",
-			Weight: protobuf.UInt32(10),
+			Weight: wrapperspb.UInt32(10),
 		},
 		{
 			Name:   "second",
-			Weight: protobuf.UInt32(20),
+			Weight: wrapperspb.UInt32(20),
 		},
 	}
 

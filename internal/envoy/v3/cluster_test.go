@@ -22,14 +22,16 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -141,7 +143,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TypedExtensionProtocolOptions: map[string]*any.Any{
+				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
@@ -169,7 +171,7 @@ func TestCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(
 					UpstreamTLSContext(nil, "", nil, "h2"),
 				),
-				TypedExtensionProtocolOptions: map[string]*any.Any{
+				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
@@ -328,7 +330,7 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxConnections: protobuf.UInt32(9000),
+						MaxConnections: wrapperspb.UInt32(9000),
 					}},
 				},
 			},
@@ -355,7 +357,7 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: protobuf.UInt32(4096),
+						MaxPendingRequests: wrapperspb.UInt32(4096),
 					}},
 				},
 			},
@@ -382,7 +384,7 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRequests: protobuf.UInt32(404),
+						MaxRequests: wrapperspb.UInt32(404),
 					}},
 				},
 			},
@@ -409,7 +411,7 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRetries: protobuf.UInt32(7),
+						MaxRetries: wrapperspb.UInt32(7),
 					}},
 				},
 			},
@@ -523,7 +525,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(10 * time.Second),
+				ConnectTimeout: durationpb.New(10 * time.Second),
 			},
 		},
 		"cluster with idle connection timeout set": {
@@ -539,11 +541,11 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TypedExtensionProtocolOptions: map[string]*any.Any{
+				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
-								IdleTimeout: protobuf.Duration(10 * time.Second),
+								IdleTimeout: durationpb.New(10 * time.Second),
 							},
 							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
 								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
@@ -575,7 +577,7 @@ func TestCluster(t *testing.T) {
 				LbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig_{
 					RoundRobinLbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig{
 						SlowStartConfig: &envoy_cluster_v3.Cluster_SlowStartConfig{
-							SlowStartWindow: protobuf.Duration(10 * time.Second),
+							SlowStartWindow: durationpb.New(10 * time.Second),
 							Aggression: &envoy_core_v3.RuntimeDouble{
 								DefaultValue: 1.0,
 								RuntimeKey:   "contour.slowstart.aggression",

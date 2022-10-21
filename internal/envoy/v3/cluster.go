@@ -22,18 +22,19 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
-		ConnectTimeout: protobuf.Duration(2 * time.Second),
+		ConnectTimeout: durationpb.New(2 * time.Second),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
 	}
@@ -102,7 +103,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	}
 
 	if c.TimeoutPolicy.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(c.TimeoutPolicy.ConnectTimeout)
+		cluster.ConnectTimeout = durationpb.New(c.TimeoutPolicy.ConnectTimeout)
 	}
 
 	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout)
@@ -173,7 +174,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	}
 
 	if ext.ClusterTimeoutPolicy.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(ext.ClusterTimeoutPolicy.ConnectTimeout)
+		cluster.ConnectTimeout = durationpb.New(ext.ClusterTimeoutPolicy.ConnectTimeout)
 	}
 	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout)
 
@@ -293,7 +294,7 @@ func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily
 	return envoy_cluster_v3.Cluster_AUTO
 }
 
-func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*any.Any {
+func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*anypb.Any {
 	// Keep Envoy defaults by not setting protocol options at all if not necessary.
 	if explicitHTTPVersion == HTTPVersionAuto && idleConnectionTimeout.UseDefault() {
 		return nil
@@ -324,10 +325,10 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 	}
 
 	if !idleConnectionTimeout.UseDefault() {
-		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: protobuf.Duration(idleConnectionTimeout.Duration())}
+		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: durationpb.New(idleConnectionTimeout.Duration())}
 	}
 
-	return map[string]*any.Any{
+	return map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(&options),
 	}
 }
@@ -335,7 +336,7 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 // slowStartConfig returns the slow start configuration.
 func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_cluster_v3.Cluster_SlowStartConfig {
 	return &envoy_cluster_v3.Cluster_SlowStartConfig{
-		SlowStartWindow: protobuf.Duration(slowStartConfig.Window),
+		SlowStartWindow: durationpb.New(slowStartConfig.Window),
 		Aggression: &envoy_core_v3.RuntimeDouble{
 			DefaultValue: slowStartConfig.Aggression,
 			RuntimeKey:   "contour.slowstart.aggression",

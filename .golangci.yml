@@ -40,13 +40,6 @@ issues:
   - path: zz_generated
     linters:
     - goimports
-  # TODO(youngnick): Disable the deprecation warnings, because of the "github.com/golang/protobuf/proto"
-  # libraries. We can't stop using them yet, because they move from Proto v1 to V2
-  # And we can't nolint them by line, because https://github.com/golangci/golangci-lint/issues/741
-  - linters:
-    - staticcheck
-    text: >-
-      SA1019: "github.com/golang/protobuf
   - linters:
     - golint
     text: "var `ingress_https` should be `ingressHTTPS`"

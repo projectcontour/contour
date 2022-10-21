@@ -19,7 +19,7 @@ import (
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // UpstreamTLSContext creates an envoy_v3_tls.UpstreamTlsContext. By default
@@ -125,7 +125,7 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion envoy_v3_
 			peerValidationContext.GetCRL(), peerValidationContext.OnlyVerifyLeafCertCrl)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
-			context.RequireClientCertificate = protobuf.Bool(!peerValidationContext.OptionalClientCertificate)
+			context.RequireClientCertificate = wrapperspb.Bool(!peerValidationContext.OptionalClientCertificate)
 		}
 	}
 

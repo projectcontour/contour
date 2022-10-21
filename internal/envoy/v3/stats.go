@@ -23,6 +23,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const metricsServerCertSDSName = "metrics-tls-certificate"
@@ -121,7 +122,7 @@ func filterChain(statsPrefix string, transportSocket *envoy_core_v3.TransportSoc
 							TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 						},
 					}},
-					NormalizePath: protobuf.Bool(true),
+					NormalizePath: wrapperspb.Bool(true),
 				}),
 			},
 		}},
@@ -184,7 +185,7 @@ func downstreamTLSContext(clientValidation bool) *envoy_tls_v3.DownstreamTlsCont
 				SdsConfig: ConfigSource("contour"),
 			},
 		}
-		context.RequireClientCertificate = protobuf.Bool(true)
+		context.RequireClientCertificate = wrapperspb.Bool(true)
 	}
 
 	return context
