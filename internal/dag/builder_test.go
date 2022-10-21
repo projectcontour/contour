@@ -9865,7 +9865,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 								ForwardClientCertificate: &ClientCertificateDetails{
 									Subject: true,
 									Cert:    true,
@@ -9903,7 +9903,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:             &Secret{Object: cert1},
+								CACertificate:             caSecret(cert1),
 								OptionalClientCertificate: true,
 							},
 						},
