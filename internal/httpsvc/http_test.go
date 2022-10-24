@@ -48,6 +48,7 @@ func TestHTTPService(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		// Returns once the context is cancelled.
+		// nolint:errcheck
 		svc.Start(ctx)
 
 		wg.Done()
@@ -124,6 +125,7 @@ func TestHTTPSService(t *testing.T) {
 
 	wg.Add(1)
 	go func() {
+		// nolint:errcheck
 		svc.Start(ctx)
 		wg.Done()
 	}()

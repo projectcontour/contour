@@ -155,6 +155,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	wg.Add(1)
 	go func() {
 		// Returns once GracefulStop() is called by the below goroutine.
+		// nolint:errcheck
 		srv.Serve(l)
 
 		wg.Done()
@@ -163,6 +164,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	wg.Add(1)
 	go func() {
 		// Returns once the context is cancelled by the cleanup func.
+		// nolint:errcheck
 		eh.Start(ctx)
 
 		// Close the gRPC server and its listener.
