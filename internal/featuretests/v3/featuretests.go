@@ -20,6 +20,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,7 +42,6 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -149,16 +149,26 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	srv := xds.NewServer(registry)
 	contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 
-	var g workgroup.Group
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
 
-	g.Add(func(stop <-chan struct{}) error {
-		go func() {
-			<-stop
-			srv.GracefulStop()
-		}()
-		return srv.Serve(l) // srv now owns l and will close l before returning
-	})
-	g.AddContext(eh.Start)
+	wg.Add(1)
+	go func() {
+		// Returns once GracefulStop() is called by the below goroutine.
+		srv.Serve(l)
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		// Returns once the context is cancelled by the cleanup func.
+		eh.Start(ctx)
+
+		// Close the gRPC server and its listener.
+		srv.GracefulStop()
+		wg.Done()
+	}()
 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
@@ -169,13 +179,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		Sequence:           eh.Sequence(),
 		statusUpdateCacher: statusUpdateCacher,
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	done := make(chan error)
-	go func() {
-		done <- g.Run(ctx)
-	}()
 
 	return rh, &Contour{
 			T:                 t,
@@ -188,7 +191,8 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			// stop server
 			cancel()
 
-			<-done
+			// wait for everything to gracefully stop.
+			wg.Wait()
 		}
 }
 
