@@ -32,15 +32,12 @@ const (
 	CRLKey = "crl.pem"
 )
 
-// validTLSSecret returns an error if the Secret is not of type TLS or
+// validTLSSecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain valid certificate and private key material in
 // the tls.crt and tls.key keys.
 func validTLSSecret(secret *v1.Secret) error {
-	// Must be of type TLS (TODO can we relax this? https://github.com/projectcontour/contour/issues/3180)
-	// Must have isValid tls.crt and tls.key data
-
-	if secret.Type != v1.SecretTypeTLS {
-		return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
+	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
 	}
 
 	data, ok := secret.Data[v1.TLSCertKey]
@@ -64,12 +61,9 @@ func validTLSSecret(secret *v1.Secret) error {
 	return nil
 }
 
-// validCASecret returns an error if the Secret is not of type Opaque or TLS or
+// validCASecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain a valid CA bundle in the ca.crt key.
 func validCASecret(secret *v1.Secret) error {
-	// Must be of type Opaque or TLS
-	// Must have valid ca.crt data
-
 	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
 		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
 	}
@@ -85,13 +79,9 @@ func validCASecret(secret *v1.Secret) error {
 	return nil
 }
 
-// validCRLSecret returns an error if the Secret is not of type Opaque or TLS or
+// validCRLSecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain a valid CRL in the crl.pem key.
 func validCRLSecret(secret *v1.Secret) error {
-
-	// Must be of type Opaque or TLS
-	// Must have isValid crl.pem data
-
 	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
 		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
 	}
