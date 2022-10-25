@@ -470,9 +470,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = uint32(len(route.Clusters))
 	}
-	wc.TotalWeight = wrapperspb.UInt32(total)
 
 	sort.Stable(sorter.For(wc.Clusters))
 	return &wc

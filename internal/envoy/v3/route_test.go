@@ -136,7 +136,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: wrapperspb.UInt32(90),
 							}},
-							TotalWeight: wrapperspb.UInt32(90),
 						},
 					},
 				},
@@ -179,7 +178,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: wrapperspb.UInt32(90),
 							}},
-							TotalWeight: wrapperspb.UInt32(90),
 						},
 					},
 					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
@@ -252,7 +250,6 @@ func TestRouteRoute(t *testing.T) {
 								}},
 								ResponseHeadersToRemove: []string{"K-Baz"},
 							}},
-							TotalWeight: wrapperspb.UInt32(1),
 						},
 					},
 					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
@@ -437,7 +434,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: wrapperspb.UInt32(1),
 							}},
-							TotalWeight: wrapperspb.UInt32(2),
 						},
 					},
 					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
@@ -733,7 +729,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/nginx/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(1),
 				}},
-				TotalWeight: wrapperspb.UInt32(2),
 			},
 		},
 		"multiple weighted services": {
@@ -772,7 +767,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/nginx/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(20),
 				}},
-				TotalWeight: wrapperspb.UInt32(100),
 			},
 		},
 		"multiple weighted services and one with no weight specified": {
@@ -825,7 +819,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/notraffic/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(0),
 				}},
-				TotalWeight: wrapperspb.UInt32(100),
 			},
 		},
 	}
