@@ -23,6 +23,7 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
@@ -46,7 +47,10 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	evh := VirtualHost(vh.Name, envoyRoutes...)
 
 	if vh.CORSPolicy != nil {
-		evh.Cors = corsPolicy(vh.CORSPolicy)
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.cors"] = protobuf.MustMarshalAny(corsPolicy(vh.CORSPolicy))
 	}
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
 		if evh.TypedPerFilterConfig == nil {
@@ -484,9 +488,13 @@ func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_
 }
 
 // CORSVirtualHost creates a new route.VirtualHost with a CORS policy.
-func CORSVirtualHost(hostname string, corspolicy *envoy_route_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
+func CORSVirtualHost(hostname string, corspolicy *envoy_cors_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
 	vh := VirtualHost(hostname, routes...)
-	vh.Cors = corspolicy
+	if corspolicy != nil {
+		vh.TypedPerFilterConfig = map[string]*anypb.Any{
+			"envoy.filters.http.cors": protobuf.MustMarshalAny(corspolicy),
+		}
+	}
 	return vh
 }
 
@@ -501,12 +509,12 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 	}
 }
 
-// corsPolicy returns a *envoy_route_v3.CorsPolicy
-func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
+// corsPolicy returns a *envoy_cors_v3.CorsPolicy
+func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
-	rcp := &envoy_route_v3.CorsPolicy{
+	ecp := &envoy_cors_v3.CorsPolicy{
 		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
 		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
 		AllowMethods:     strings.Join(cp.AllowMethods, ","),
@@ -514,12 +522,12 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 	}
 
 	if cp.MaxAge.IsDisabled() {
-		rcp.MaxAge = "0"
+		ecp.MaxAge = "0"
 	} else if !cp.MaxAge.UseDefault() {
-		rcp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
+		ecp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
 	}
 
-	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
+	ecp.AllowOriginStringMatch = []*matcher.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
 		m := &matcher.StringMatcher{}
 		switch ao.Type {
@@ -535,9 +543,9 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 				SafeRegex: SafeRegexMatch(ao.Value),
 			}
 		}
-		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, m)
+		ecp.AllowOriginStringMatch = append(ecp.AllowOriginStringMatch, m)
 	}
-	return rcp
+	return ecp
 }
 
 func headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {

@@ -19,12 +19,14 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
@@ -927,7 +929,7 @@ func TestVirtualHost(t *testing.T) {
 func TestCORSVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
-		cp       *envoy_route_v3.CorsPolicy
+		cp       *envoy_cors_v3.CorsPolicy
 		want     *envoy_route_v3.VirtualHost
 	}{
 		"nil cors policy": {
@@ -940,7 +942,7 @@ func TestCORSVirtualHost(t *testing.T) {
 		},
 		"cors policy": {
 			hostname: "www.example.com",
-			cp: &envoy_route_v3.CorsPolicy{
+			cp: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -953,15 +955,17 @@ func TestCORSVirtualHost(t *testing.T) {
 			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com"},
-				Cors: &envoy_route_v3.CorsPolicy{
-					AllowOriginStringMatch: []*matcher.StringMatcher{
-						{
-							MatchPattern: &matcher.StringMatcher_Exact{
-								Exact: "*",
-							},
-							IgnoreCase: true,
-						}},
-					AllowMethods: "GET,POST,PUT",
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.cors": protobuf.MustMarshalAny(&envoy_cors_v3.CorsPolicy{
+						AllowOriginStringMatch: []*matcher.StringMatcher{
+							{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
+							}},
+						AllowMethods: "GET,POST,PUT",
+					}),
 				},
 			},
 		},
@@ -977,14 +981,14 @@ func TestCORSVirtualHost(t *testing.T) {
 func TestCORSPolicy(t *testing.T) {
 	tests := map[string]struct {
 		cp   *dag.CORSPolicy
-		want *envoy_route_v3.CorsPolicy
+		want *envoy_cors_v3.CorsPolicy
 	}{
 		"only required properties set": {
 			cp: &dag.CORSPolicy{
 				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1004,7 +1008,7 @@ func TestCORSPolicy(t *testing.T) {
 				},
 				AllowMethods: []string{"GET"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_SafeRegex{
@@ -1030,7 +1034,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:     []string{"GET", "POST", "PUT"},
 				AllowCredentials: true,
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1048,7 +1052,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				AllowHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1067,7 +1071,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:  []string{"GET", "POST", "PUT"},
 				ExposeHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1086,7 +1090,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DurationSetting(10 * time.Minute),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1105,7 +1109,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DefaultSetting(),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1123,7 +1127,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DisabledSetting(),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{

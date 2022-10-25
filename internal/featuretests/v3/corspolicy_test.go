@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -57,7 +58,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowCredentials: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -98,7 +99,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowCredentials: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{
 							{
@@ -149,7 +150,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -191,7 +192,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -234,7 +235,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -278,7 +279,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -323,7 +324,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -367,7 +368,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
