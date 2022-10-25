@@ -16,9 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.48.0
+          version: v1.50.1
           args: --build-tags=e2e,conformance,gcp,oidc,tools,none
       - uses: act10ns/slack@v1
         with:
