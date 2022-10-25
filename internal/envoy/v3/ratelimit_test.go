@@ -68,8 +68,8 @@ func TestLocalRateLimitConfig(t *testing.T) {
 					},
 					Status: &envoy_type_v3.HttpStatus{Code: envoy_type_v3.StatusCode_ServiceUnavailable},
 					ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{
-						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-1", Value: "foo"}, Append: wrapperspb.Bool(false)},
-						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-2", Value: "bar"}, Append: wrapperspb.Bool(false)},
+						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-1", Value: "foo"}, AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
+						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-2", Value: "bar"}, AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{

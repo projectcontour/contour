@@ -226,17 +226,13 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Foo",
 										Value: "bar",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}, {
 									Header: &envoy_core_v3.HeaderValue{
 										Key:   "K-Sauce",
 										Value: "spicy",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}},
 								RequestHeadersToRemove: []string{"K-Bar"},
 								ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
@@ -244,9 +240,7 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Blah",
 										Value: "boo",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}},
 								ResponseHeadersToRemove: []string{"K-Baz"},
 							}},
@@ -847,7 +841,7 @@ func TestRouteConfiguration(t *testing.T) {
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
-					Append: wrapperspb.Bool(true),
+					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
 			},
 		},
@@ -866,7 +860,7 @@ func TestRouteConfiguration(t *testing.T) {
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
-					Append: wrapperspb.Bool(true),
+					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
 			},
 		},

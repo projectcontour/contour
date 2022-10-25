@@ -419,15 +419,18 @@ func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
 func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
 	var hvs []*envoy_core_v3.HeaderValueOption
 
+	appendAction := envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD
+	if app {
+		appendAction = envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD
+	}
+
 	for key, value := range hvm {
 		hvs = append(hvs, &envoy_core_v3.HeaderValueOption{
 			Header: &envoy_core_v3.HeaderValue{
 				Key:   key,
 				Value: value,
 			},
-			Append: &wrapperspb.BoolValue{
-				Value: app,
-			},
+			AppendAction: appendAction,
 		})
 	}
 
@@ -556,7 +559,7 @@ func appendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
 			Key:   key,
 			Value: value,
 		},
-		Append: wrapperspb.Bool(true),
+		AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 	}
 }
 

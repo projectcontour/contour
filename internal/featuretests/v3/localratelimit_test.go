@@ -587,7 +587,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								Key:   "Header-Name-1",
 								Value: "header-value-1",
 							},
-							Append: wrapperspb.Bool(false),
+							AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						},
 						// a valid Envoy var (%VARNAME%) should
 						// pass through as-is
@@ -596,7 +596,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								Key:   "Header-Name-2",
 								Value: "%HOSTNAME%",
 							},
-							Append: wrapperspb.Bool(false),
+							AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						},
 						// a non-valid Envoy var should have its '%'
 						// symbols escaped
@@ -605,7 +605,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								Key:   "Header-Name-3",
 								Value: "%%NON-ENVOY-VAR%%",
 							},
-							Append: wrapperspb.Bool(false),
+							AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						},
 					},
 				}),

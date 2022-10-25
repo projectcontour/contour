@@ -2277,9 +2277,7 @@ func TestRouteVisit(t *testing.T) {
 									Key:   "In-Foo",
 									Value: "bar",
 								},
-								Append: &wrapperspb.BoolValue{
-									Value: false,
-								},
+								AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 							}},
 							RequestHeadersToRemove: []string{"In-Baz"},
 							ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
@@ -2287,9 +2285,7 @@ func TestRouteVisit(t *testing.T) {
 									Key:   "Out-Foo",
 									Value: "bar",
 								},
-								Append: &wrapperspb.BoolValue{
-									Value: false,
-								},
+								AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 							}},
 							ResponseHeadersToRemove: []string{"Out-Baz"},
 						},
