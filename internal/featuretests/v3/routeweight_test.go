@@ -24,7 +24,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -32,11 +31,6 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
-
-type weightedcluster struct {
-	name   string
-	weight uint32
-}
 
 func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 	rh, c, done := setup(t)
@@ -100,9 +94,9 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 		envoy_v3.VirtualHost("test2.test.com",
 			&envoy_route_v3.Route{
 				Match: routePrefix("/a"),
-				Action: routeweightedcluster(
-					weightedcluster{"default/kuard/80/da39a3ee5e", 60},
-					weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
+				Action: routeWeightedCluster(
+					weightedCluster{"default/kuard/80/da39a3ee5e", 60},
+					weightedCluster{"default/kuard/80/da39a3ee5e", 90}),
 			},
 		),
 	), nil)
@@ -470,9 +464,9 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 		envoy_v3.VirtualHost("test.projectcontour.io",
 			&envoy_route_v3.Route{
 				Match: routeSegmentPrefix("/blog"),
-				Action: routeweightedcluster(
-					weightedcluster{"default/svc1/80/da39a3ee5e", 60},
-					weightedcluster{"default/svc2/80/da39a3ee5e", 90}),
+				Action: routeWeightedCluster(
+					weightedCluster{"default/svc1/80/da39a3ee5e", 60},
+					weightedCluster{"default/svc2/80/da39a3ee5e", 90}),
 			},
 		),
 	), nil)
@@ -645,25 +639,4 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-}
-
-func routeweightedcluster(clusters ...weightedcluster) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-				WeightedClusters: weightedclusters(clusters),
-			},
-		},
-	}
-}
-
-func weightedclusters(clusters []weightedcluster) *envoy_route_v3.WeightedCluster {
-	var wc envoy_route_v3.WeightedCluster
-	for _, c := range clusters {
-		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
-			Name:   c.name,
-			Weight: wrapperspb.UInt32(c.weight),
-		})
-	}
-	return &wc
 }
