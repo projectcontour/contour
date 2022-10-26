@@ -374,15 +374,12 @@ func routeWeightedCluster(clusters ...weightedCluster) *envoy_route_v3.Route_Rou
 
 func weightedClusters(clusters []weightedCluster) *envoy_route_v3.WeightedCluster {
 	var wc envoy_route_v3.WeightedCluster
-	var total uint32
 	for _, c := range clusters {
-		total += c.weight
 		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   c.name,
 			Weight: wrapperspb.UInt32(c.weight),
 		})
 	}
-	wc.TotalWeight = wrapperspb.UInt32(total)
 	return &wc
 }
 

@@ -19,12 +19,14 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
@@ -134,7 +136,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: wrapperspb.UInt32(90),
 							}},
-							TotalWeight: wrapperspb.UInt32(90),
 						},
 					},
 				},
@@ -177,7 +178,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: wrapperspb.UInt32(90),
 							}},
-							TotalWeight: wrapperspb.UInt32(90),
 						},
 					},
 					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
@@ -226,17 +226,13 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Foo",
 										Value: "bar",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}, {
 									Header: &envoy_core_v3.HeaderValue{
 										Key:   "K-Sauce",
 										Value: "spicy",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}},
 								RequestHeadersToRemove: []string{"K-Bar"},
 								ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
@@ -244,13 +240,10 @@ func TestRouteRoute(t *testing.T) {
 										Key:   "K-Blah",
 										Value: "boo",
 									},
-									Append: &wrapperspb.BoolValue{
-										Value: false,
-									},
+									AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 								}},
 								ResponseHeadersToRemove: []string{"K-Baz"},
 							}},
-							TotalWeight: wrapperspb.UInt32(1),
 						},
 					},
 					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
@@ -435,7 +428,6 @@ func TestRouteRoute(t *testing.T) {
 								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: wrapperspb.UInt32(1),
 							}},
-							TotalWeight: wrapperspb.UInt32(2),
 						},
 					},
 					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
@@ -731,7 +723,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/nginx/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(1),
 				}},
-				TotalWeight: wrapperspb.UInt32(2),
 			},
 		},
 		"multiple weighted services": {
@@ -770,7 +761,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/nginx/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(20),
 				}},
-				TotalWeight: wrapperspb.UInt32(100),
 			},
 		},
 		"multiple weighted services and one with no weight specified": {
@@ -823,7 +813,6 @@ func TestWeightedClusters(t *testing.T) {
 					Name:   "default/notraffic/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(0),
 				}},
-				TotalWeight: wrapperspb.UInt32(100),
 			},
 		},
 	}
@@ -852,7 +841,7 @@ func TestRouteConfiguration(t *testing.T) {
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
-					Append: wrapperspb.Bool(true),
+					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
 			},
 		},
@@ -871,7 +860,7 @@ func TestRouteConfiguration(t *testing.T) {
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
-					Append: wrapperspb.Bool(true),
+					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
 			},
 		},
@@ -927,7 +916,7 @@ func TestVirtualHost(t *testing.T) {
 func TestCORSVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
-		cp       *envoy_route_v3.CorsPolicy
+		cp       *envoy_cors_v3.CorsPolicy
 		want     *envoy_route_v3.VirtualHost
 	}{
 		"nil cors policy": {
@@ -940,7 +929,7 @@ func TestCORSVirtualHost(t *testing.T) {
 		},
 		"cors policy": {
 			hostname: "www.example.com",
-			cp: &envoy_route_v3.CorsPolicy{
+			cp: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -953,15 +942,17 @@ func TestCORSVirtualHost(t *testing.T) {
 			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com"},
-				Cors: &envoy_route_v3.CorsPolicy{
-					AllowOriginStringMatch: []*matcher.StringMatcher{
-						{
-							MatchPattern: &matcher.StringMatcher_Exact{
-								Exact: "*",
-							},
-							IgnoreCase: true,
-						}},
-					AllowMethods: "GET,POST,PUT",
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.cors": protobuf.MustMarshalAny(&envoy_cors_v3.CorsPolicy{
+						AllowOriginStringMatch: []*matcher.StringMatcher{
+							{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
+							}},
+						AllowMethods: "GET,POST,PUT",
+					}),
 				},
 			},
 		},
@@ -977,14 +968,14 @@ func TestCORSVirtualHost(t *testing.T) {
 func TestCORSPolicy(t *testing.T) {
 	tests := map[string]struct {
 		cp   *dag.CORSPolicy
-		want *envoy_route_v3.CorsPolicy
+		want *envoy_cors_v3.CorsPolicy
 	}{
 		"only required properties set": {
 			cp: &dag.CORSPolicy{
 				AllowOrigin:  []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1004,7 +995,7 @@ func TestCORSPolicy(t *testing.T) {
 				},
 				AllowMethods: []string{"GET"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_SafeRegex{
@@ -1030,7 +1021,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:     []string{"GET", "POST", "PUT"},
 				AllowCredentials: true,
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1048,7 +1039,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				AllowHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1067,7 +1058,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:  []string{"GET", "POST", "PUT"},
 				ExposeHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1086,7 +1077,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DurationSetting(10 * time.Minute),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1105,7 +1096,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DefaultSetting(),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -1123,7 +1114,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DisabledSetting(),
 			},
-			want: &envoy_route_v3.CorsPolicy{
+			want: &envoy_cors_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
