@@ -826,8 +826,17 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					"service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
+
+			var healthPort int
+			healthPolicy := httpHealthCheckPolicy(route.HealthCheckPolicy)
+			if healthPolicy != nil && service.HealthPort > 0 {
+				healthPort = service.HealthPort
+			} else {
+				healthPort = service.Port
+			}
+
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
@@ -916,7 +925,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				Upstream:              s,
 				LoadBalancerPolicy:    lbPolicy,
 				Weight:                uint32(service.Weight),
-				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
+				HTTPHealthCheckPolicy: healthPolicy,
 				UpstreamValidation:    uv,
 				RequestHeadersPolicy:  reqHP,
 				ResponseHeadersPolicy: respHP,
@@ -1014,8 +1023,16 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
+			var healthPort int
+			healthPolicy := tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy)
+			if healthPolicy != nil && service.HealthPort > 0 {
+				healthPort = service.HealthPort
+			} else {
+				healthPort = service.Port
+			}
+
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference",
 					"Spec.TCPProxy unresolved service reference: %s", err)
@@ -1034,7 +1051,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				Weight:               uint32(service.Weight),
 				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
-				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
+				TCPHealthCheckPolicy: healthPolicy,
 				SNI:                  s.ExternalName,
 				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
