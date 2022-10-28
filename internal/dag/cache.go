@@ -262,9 +262,8 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.services[m]
 		delete(kc.services, m)
-		return ok
+		return kc.serviceTriggersRebuild(obj)
 	case *v1.Namespace:
 		_, ok := kc.namespaces[obj.Name]
 		delete(kc.namespaces, obj.Name)
