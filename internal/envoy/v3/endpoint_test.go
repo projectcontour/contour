@@ -18,6 +18,7 @@ import (
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLBEndpoint(t *testing.T) {
@@ -32,19 +33,14 @@ func TestLBEndpoint(t *testing.T) {
 	protobuf.ExpectEqual(t, want, got)
 }
 
-func TestHealthCheckLBEndpoint(t *testing.T) {
-	got := HealthCheckLBEndpoint(SocketAddress("microsoft.com", 81), 8998)
-	want := &envoy_endpoint_v3.LbEndpoint{
-		HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-			Endpoint: &envoy_endpoint_v3.Endpoint{
-				Address: SocketAddress("microsoft.com", 81),
-				HealthCheckConfig: &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
-					PortValue: uint32(8998),
-				},
-			},
-		},
+func TestHealthCheckConfig(t *testing.T) {
+	got := HealthCheckConfig(8998)
+	want := &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+		PortValue: uint32(8998),
 	}
 	protobuf.ExpectEqual(t, want, got)
+
+	require.Nil(t, HealthCheckConfig(0))
 }
 
 func TestEndpoints(t *testing.T) {
