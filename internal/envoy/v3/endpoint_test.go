@@ -18,6 +18,7 @@ import (
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLBEndpoint(t *testing.T) {
@@ -38,6 +39,8 @@ func TestHealthCheckConfig(t *testing.T) {
 		PortValue: uint32(8998),
 	}
 	protobuf.ExpectEqual(t, want, got)
+
+	require.Nil(t, HealthCheckConfig(0))
 }
 
 func TestEndpoints(t *testing.T) {
