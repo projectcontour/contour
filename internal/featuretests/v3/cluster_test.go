@@ -697,17 +697,10 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-	assertEqualVersion(t, "2", res)
+	assertEqualVersion(t, "1", res)
 
 	// verifying that deleting a Service that is referenced by an HTTPProxy,
 	// triggers a rebuild
 	rh.OnDelete(s1)
-	res = c.Request(clusterType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-	})
-	assertEqualVersion(t, "3", res)
+	assertEqualVersion(t, "2", res)
 }
