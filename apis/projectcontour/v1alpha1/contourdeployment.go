@@ -76,10 +76,15 @@ type ContourDeploymentSpec struct {
 // ContourSettings contains settings for the Contour part of the installation,
 // i.e. the xDS server/control plane and associated resources.
 type ContourSettings struct {
-	// Replicas is the desired number of Contour replicas. If unset,
+	// Deprecated: Use `DeploymentSettings.Replicas`` instead.
+	//
+	// Replicas is the desired number of Contour replicas. If if unset,
 	// defaults to 2.
 	//
+	// if both `DeploymentSettings.Replicas` and this one is setted, use `DeploymentSettings.Replicas`.
+	//
 	// +kubebuilder:validation:Minimum=0
+	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// NodePlacement describes node scheduling configuration of Contour pods.
@@ -107,9 +112,9 @@ type ContourSettings struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Strategy describes the deployment strategy to use to replace existing Contour pods with new ones.
+	// Deployment describes the settings for running contour as a `Deployment`.
 	// +optional
-	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
+	Deployment *DeploymentSettings `json:"deployment,omitempty"`
 }
 
 // DeploymentSettings contains settings for the Deployment.

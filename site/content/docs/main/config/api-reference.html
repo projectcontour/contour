@@ -5367,8 +5367,11 @@ int32
 </em>
 </td>
 <td>
-<p>Replicas is the desired number of Contour replicas. If unset,
+<em>(Optional)</em>
+<p>Deprecated: Use <code>DeploymentSettings.Replicas</code>` instead.</p>
+<p>Replicas is the desired number of Contour replicas. If if unset,
 defaults to 2.</p>
+<p>if both <code>DeploymentSettings.Replicas</code> and this one is setted, use <code>DeploymentSettings.Replicas</code>.</p>
 </td>
 </tr>
 <tr>
@@ -5435,17 +5438,17 @@ More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-res
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>strategy</code>
+<code>deployment</code>
 <br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#deploymentstrategy-v1-apps">
-Kubernetes apps/v1.DeploymentStrategy
+<a href="#projectcontour.io/v1alpha1.DeploymentSettings">
+DeploymentSettings
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Strategy describes the deployment strategy to use to replace existing Contour pods with new ones.</p>
+<p>Deployment describes the settings for running contour as a <code>Deployment</code>.</p>
 </td>
 </tr>
 </tbody>
@@ -5535,6 +5538,7 @@ int
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
 <a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>
@@ -6075,10 +6079,12 @@ int32
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>Deprecated: Use <code>DeploymentSettings.Replicas</code>` instead.</p>
 <p>Replicas is the desired number of Envoy replicas. If WorkloadType
 is not &ldquo;Deployment&rdquo;, this field is ignored. Otherwise, if unset,
 defaults to 2.</p>
-<p>Deprecated: Use DeploymentSettings.Replicas instead.</p>
+<p>if both <code>DeploymentSettings.Replicas</code> and this one is setted, use <code>DeploymentSettings.Replicas</code>.</p>
 </td>
 </tr>
 <tr>

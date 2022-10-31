@@ -719,7 +719,7 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.EqualValues(t, 2, *deploy.Spec.Replicas)
 			},
 		},
-		"If ContourDeployment.Spec.Contour.Replicas is specified, the Contour deployment gets that number of replicas": {
+		"If ContourDeployment.Spec.Contour.Deployment is specified, the Contour deployment gets that settings": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -729,6 +729,12 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					Contour: &contourv1alpha1.ContourSettings{
 						Replicas: 3,
+						Deployment: &contourv1alpha1.DeploymentSettings{
+							Replicas: 4,
+							Strategy: &appsv1.DeploymentStrategy{
+								Type: appsv1.RecreateDeploymentStrategyType,
+							},
+						},
 					},
 				},
 			},
@@ -760,7 +766,9 @@ func TestGatewayReconcile(t *testing.T) {
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
 
 				require.NotNil(t, deploy.Spec.Replicas)
-				assert.EqualValues(t, 3, *deploy.Spec.Replicas)
+				assert.EqualValues(t, 4, *deploy.Spec.Replicas)
+				require.NotNil(t, deploy.Spec.Strategy)
+				assert.EqualValues(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
 			},
 		},
 		"If ContourDeployment.Spec.Contour.NodePlacement is not specified, the Contour deployment has no node selector or tolerations set": {
@@ -1111,7 +1119,7 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment," +
-			"an Envoy deployment is provisioned with the specified number of replicas && strategy that come from DeployemntSettings": {
+			"an Envoy deployment is provisioned with the settings come from DeployemntSettings": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1157,7 +1165,11 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+
+				assert.NotNil(t, deploy.Spec.Replicas)
 				assert.EqualValues(t, 6, *deploy.Spec.Replicas)
+
+				assert.NotNil(t, deploy.Spec.Strategy)
 				assert.EqualValues(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
 
 				// Verify that a daemonset has *not* been created

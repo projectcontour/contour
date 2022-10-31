@@ -341,9 +341,9 @@ func (in *ContourSettings) DeepCopyInto(out *ContourSettings) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
-	if in.Strategy != nil {
-		in, out := &in.Strategy, &out.Strategy
-		*out = new(appsv1.DeploymentStrategy)
+	if in.Deployment != nil {
+		in, out := &in.Deployment, &out.Deployment
+		*out = new(DeploymentSettings)
 		(*in).DeepCopyInto(*out)
 	}
 }

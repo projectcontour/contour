@@ -239,8 +239,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Contour != nil {
+
 			// Deployment replicas
-			if gatewayClassParams.Spec.Contour.Replicas > 0 {
+			if gatewayClassParams.Spec.Contour.Deployment != nil && gatewayClassParams.Spec.Contour.Deployment.Replicas > 0 {
+				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Deployment.Replicas
+
+			} else if gatewayClassParams.Spec.Contour.Replicas > 0 {
 				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
 			}
 
@@ -262,8 +266,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
 
-			if gatewayClassParams.Spec.Contour.Strategy != nil {
-				contourModel.Spec.ContourStrategy = *gatewayClassParams.Spec.Contour.Strategy
+			if gatewayClassParams.Spec.Contour.Deployment != nil &&
+				gatewayClassParams.Spec.Contour.Deployment.Strategy != nil {
+				contourModel.Spec.ContourStrategy = *gatewayClassParams.Spec.Contour.Deployment.Strategy
 			}
 		}
 
