@@ -40,7 +40,7 @@ func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, role
 		return updateClusterRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &rbacv1.ClusterRoleBinding{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.ClusterRoleBinding{})
 }
 
 // desiredClusterRoleBinding constructs an instance of the desired ClusterRoleBinding

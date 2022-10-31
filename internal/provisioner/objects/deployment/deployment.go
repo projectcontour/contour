@@ -63,7 +63,7 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &appsv1.Deployment{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
@@ -76,7 +76,7 @@ func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *mo
 		},
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using

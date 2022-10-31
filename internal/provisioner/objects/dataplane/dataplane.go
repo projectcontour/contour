@@ -78,7 +78,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, &appsv1.Deployment{}, desired, updater)
+		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
 
 	// The default workload type is a DaemonSet.
 	default:
@@ -93,7 +93,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, &appsv1.DaemonSet{}, desired, updater)
+		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.DaemonSet{})
 	}
 }
 
@@ -112,7 +112,7 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 		},
 	}
 
-	if err := objects.EnsureObjectDeleted(ctx, cli, contour, dsObj); err != nil {
+	if err := objects.EnsureObjectDeleted(ctx, cli, dsObj, contour); err != nil {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 		},
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, deployObj)
+	return objects.EnsureObjectDeleted(ctx, cli, deployObj, contour)
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {

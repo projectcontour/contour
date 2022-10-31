@@ -39,7 +39,7 @@ func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, c
 		return err
 	}
 
-	return objects.EnsureObject(ctx, cli, &corev1.ServiceAccount{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &corev1.ServiceAccount{})
 }
 
 // DesiredServiceAccount generates the desired ServiceAccount resource for the

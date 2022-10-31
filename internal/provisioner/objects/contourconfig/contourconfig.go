@@ -54,7 +54,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 
-	return objects.EnsureObject(ctx, cli, new(contour_api_v1alpha1.ContourConfiguration), desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, new(contour_api_v1alpha1.ContourConfiguration))
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {
@@ -83,6 +83,6 @@ func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour 
 		},
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 
 }

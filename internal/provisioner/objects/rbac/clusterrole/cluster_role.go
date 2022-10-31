@@ -44,7 +44,7 @@ func EnsureClusterRole(ctx context.Context, cli client.Client, name string, cont
 		return updateClusterRoleIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &rbacv1.ClusterRole{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.ClusterRole{})
 }
 
 // desiredClusterRole constructs an instance of the desired ClusterRole resource with

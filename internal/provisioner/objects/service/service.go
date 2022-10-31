@@ -113,7 +113,7 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 		return updateContourServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &corev1.Service{}, DesiredContourService(contour), updater)
+	return objects.EnsureObject(ctx, cli, DesiredContourService(contour), updater, &corev1.Service{})
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
@@ -123,7 +123,7 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.C
 		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &corev1.Service{}, DesiredEnvoyService(contour), updater)
+	return objects.EnsureObject(ctx, cli, DesiredEnvoyService(contour), updater, &corev1.Service{})
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
@@ -136,7 +136,7 @@ func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour
 		},
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
@@ -149,7 +149,7 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 		},
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, obj)
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.

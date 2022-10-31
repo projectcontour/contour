@@ -39,7 +39,7 @@ func EnsureControllerRole(ctx context.Context, cli client.Client, name string, c
 		return err
 	}
 
-	return objects.EnsureObject(ctx, cli, &rbacv1.Role{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.Role{})
 }
 
 // desiredControllerRole constructs an instance of the desired Role resource with the

@@ -40,7 +40,7 @@ func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, rol
 		return updateRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, &rbacv1.RoleBinding{}, desired, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.RoleBinding{})
 }
 
 // desiredRoleBinding constructs an instance of the desired RoleBinding resource
