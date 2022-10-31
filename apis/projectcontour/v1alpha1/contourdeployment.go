@@ -81,7 +81,7 @@ type ContourSettings struct {
 	// Replicas is the desired number of Contour replicas. If if unset,
 	// defaults to 2.
 	//
-	// if both `DeploymentSettings.Replicas` and this one is setted, use `DeploymentSettings.Replicas`.
+	// if both `DeploymentSettings.Replicas` and this one is set, use `DeploymentSettings.Replicas`.
 	//
 	// +kubebuilder:validation:Minimum=0
 	// +optional
@@ -152,7 +152,7 @@ type EnvoySettings struct {
 	// is not "Deployment", this field is ignored. Otherwise, if unset,
 	// defaults to 2.
 	//
-	// if both `DeploymentSettings.Replicas` and this one is setted, use `DeploymentSettings.Replicas`.
+	// if both `DeploymentSettings.Replicas` and this one is set, use `DeploymentSettings.Replicas`.
 	//
 	// +kubebuilder:validation:Minimum=0
 	// +optional

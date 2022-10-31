@@ -1007,7 +1007,7 @@ spec:
                     description: "Deprecated: Use `DeploymentSettings.Replicas`` instead.
                       \n Replicas is the desired number of Contour replicas. If if
                       unset, defaults to 2. \n if both `DeploymentSettings.Replicas`
-                      and this one is setted, use `DeploymentSettings.Replicas`."
+                      and this one is set, use `DeploymentSettings.Replicas`."
                     format: int32
                     minimum: 0
                     type: integer
@@ -2882,7 +2882,7 @@ spec:
                       \n Replicas is the desired number of Envoy replicas. If WorkloadType
                       is not \"Deployment\", this field is ignored. Otherwise, if
                       unset, defaults to 2. \n if both `DeploymentSettings.Replicas`
-                      and this one is setted, use `DeploymentSettings.Replicas`."
+                      and this one is set, use `DeploymentSettings.Replicas`."
                     format: int32
                     minimum: 0
                     type: integer

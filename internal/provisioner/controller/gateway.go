@@ -244,7 +244,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if gatewayClassParams.Spec.Contour.Deployment != nil && gatewayClassParams.Spec.Contour.Deployment.Replicas > 0 {
 				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Deployment.Replicas
 
-			} else if gatewayClassParams.Spec.Contour.Replicas > 0 {
+			} else if gatewayClassParams.Spec.Contour.Replicas > 0 { // nolint: staticcheck
+
+				// nolint: staticcheck
 				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
 			}
 
@@ -285,7 +287,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				if gatewayClassParams.Spec.Envoy.Deployment != nil && gatewayClassParams.Spec.Envoy.Deployment.Replicas > 0 {
 					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Deployment.Replicas
 
-				} else if gatewayClassParams.Spec.Envoy.Replicas > 0 {
+				} else if gatewayClassParams.Spec.Envoy.Replicas > 0 { //nolint: staticcheck
+					// nolint: staticcheck
 					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas
 				}
 
