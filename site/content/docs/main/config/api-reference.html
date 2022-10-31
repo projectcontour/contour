@@ -5450,6 +5450,40 @@ Kubernetes apps/v1.DeploymentStrategy
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.DaemonSetSettings">DaemonSetSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>DaemonSetSettings contains settings for the DaemonSet.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>updateStrategy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#daemonsetupdatestrategy-v1-apps">
+Kubernetes apps/v1.DaemonSetUpdateStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Strategy describes the deployment strategy to use to replace existing DaemonSet pods with new pods.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.DebugConfig">DebugConfig
 </h3>
 <p>
@@ -5493,6 +5527,52 @@ int
 <em>(Optional)</em>
 <p>Defines the Contour debug address port.</p>
 <p>Contour&rsquo;s default is 6060.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.DeploymentSettings">DeploymentSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>DeploymentSettings contains settings for the Deployment.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of replicas.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>strategy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#deploymentstrategy-v1-apps">
+Kubernetes apps/v1.DeploymentStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Strategy describes the deployment strategy to use to replace existing pods with new ones.</p>
 </td>
 </tr>
 </tbody>
@@ -5998,6 +6078,7 @@ int32
 <p>Replicas is the desired number of Envoy replicas. If WorkloadType
 is not &ldquo;Deployment&rdquo;, this field is ignored. Otherwise, if unset,
 defaults to 2.</p>
+<p>Deprecated: Use DeploymentSettings.Replicas instead.</p>
 </td>
 </tr>
 <tr>
@@ -6091,34 +6172,34 @@ More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-res
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>updateStrategy</code>
+<code>daemonSet</code>
 <br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#daemonsetupdatestrategy-v1-apps">
-Kubernetes apps/v1.DaemonSetUpdateStrategy
+<a href="#projectcontour.io/v1alpha1.DaemonSetSettings">
+DaemonSetSettings
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>An update strategy to replace existing Envoy DaemonSet pods with new pods.
-when envoy be running as a <code>Deployment</code>,it&rsquo;s must be nil</p>
+<p>DaemonSet describes the settings for running envoy as a <code>DaemonSet</code>.
+if <code>WorkloadType</code> is <code>Deployment</code>,it&rsquo;s must be nil</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>strategy</code>
+<code>deployment</code>
 <br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#deploymentstrategy-v1-apps">
-Kubernetes apps/v1.DeploymentStrategy
+<a href="#projectcontour.io/v1alpha1.DeploymentSettings">
+DeploymentSettings
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Strategy describes the deployment strategy to use to replace existing Envoy pods with new ones.
-when envoy be running as a <code>DaemonSet</code>,it&rsquo;s must be nil</p>
+<p>Deployment describes the settings for running envoy as a <code>Deployment</code>.
+if <code>WorkloadType</code> is <code>DaemonSet</code>,it&rsquo;s must be nil</p>
 </td>
 </tr>
 </tbody>

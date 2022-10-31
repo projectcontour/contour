@@ -1110,6 +1110,68 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.True(t, errors.IsNotFound(err))
 			},
 		},
+		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment," +
+			"an Envoy deployment is provisioned with the specified number of replicas && strategy that come from DeployemntSettings": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						WorkloadType: contourv1alpha1.WorkloadTypeDeployment,
+						Replicas:     7,
+						Deployment: &contourv1alpha1.DeploymentSettings{
+							Replicas: 6,
+							Strategy: &appsv1.DeploymentStrategy{
+								Type: appsv1.RecreateDeploymentStrategyType,
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1beta1.GatewaySpec{
+					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the deployment has been created
+				deploy := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+				assert.EqualValues(t, 6, *deploy.Spec.Replicas)
+				assert.EqualValues(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
+
+				// Verify that a daemonset has *not* been created
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				err := r.client.Get(context.Background(), keyFor(ds), ds)
+				assert.True(t, errors.IsNotFound(err))
+			},
+		},
+
 		"If ContourDeployment.Spec.Envoy.PodAnnotations is specified, the Envoy pods' have annotations for prometheus & user-defined": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
@@ -1152,6 +1214,65 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
 				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key")
+			},
+		},
+
+		"If ContourDeployment.Spec.Envoy.WorkloadType is set to DaemonSet," +
+			"an Envoy daemonset is provisioned with the strategy that come from DaemonsetSettings": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						WorkloadType: contourv1alpha1.WorkloadTypeDaemonSet,
+						DaemonSet: &contourv1alpha1.DaemonSetSettings{
+							UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
+								Type: appsv1.OnDeleteDaemonSetStrategyType,
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1beta1.GatewaySpec{
+					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the daemonset has been created
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
+				assert.EqualValues(t, appsv1.OnDeleteDaemonSetStrategyType, ds.Spec.UpdateStrategy.Type)
+
+				// Verify that a deployment has *not* been created
+				deployment := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				err := r.client.Get(context.Background(), keyFor(deployment), deployment)
+				assert.True(t, errors.IsNotFound(err))
 			},
 		},
 	}

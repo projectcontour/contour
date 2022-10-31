@@ -112,6 +112,25 @@ type ContourSettings struct {
 	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }
 
+// DeploymentSettings contains settings for the Deployment.
+type DeploymentSettings struct {
+	// Replicas is the desired number of replicas.
+	//
+	// +kubebuilder:validation:Minimum=0
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Strategy describes the deployment strategy to use to replace existing pods with new ones.
+	// +optional
+	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
+}
+
+// DaemonSetSettings contains settings for the DaemonSet.
+type DaemonSetSettings struct {
+	// Strategy describes the deployment strategy to use to replace existing DaemonSet pods with new pods.
+	// +optional
+	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
+}
+
 // EnvoySettings contains settings for the Envoy part of the installation,
 // i.e. the xDS client/data plane and associated resources.
 type EnvoySettings struct {
@@ -122,11 +141,16 @@ type EnvoySettings struct {
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
+	// Deprecated: Use `DeploymentSettings.Replicas`` instead.
+	//
 	// Replicas is the desired number of Envoy replicas. If WorkloadType
 	// is not "Deployment", this field is ignored. Otherwise, if unset,
 	// defaults to 2.
 	//
+	// if both `DeploymentSettings.Replicas` and this one is setted, use `DeploymentSettings.Replicas`.
+	//
 	// +kubebuilder:validation:Minimum=0
+	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// NetworkPublishing defines how to expose Envoy to a network.
@@ -157,15 +181,15 @@ type EnvoySettings struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
-	// when envoy be running as a `Deployment`,it's must be nil
+	// DaemonSet describes the settings for running envoy as a `DaemonSet`.
+	// if `WorkloadType` is `Deployment`,it's must be nil
 	// +optional
-	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
+	DaemonSet *DaemonSetSettings `json:"daemonSet,omitempty"`
 
-	// Strategy describes the deployment strategy to use to replace existing Envoy pods with new ones.
-	// when envoy be running as a `DaemonSet`,it's must be nil
+	// Deployment describes the settings for running envoy as a `Deployment`.
+	// if `WorkloadType` is `DaemonSet`,it's must be nil
 	// +optional
-	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
+	Deployment *DeploymentSettings `json:"deployment,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
