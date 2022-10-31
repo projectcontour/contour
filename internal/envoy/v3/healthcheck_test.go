@@ -22,6 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestHealthCheck(t *testing.T) {
@@ -36,10 +38,10 @@ func TestHealthCheck(t *testing.T) {
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
 			want: &envoy_core_v3.HealthCheck{
-				Timeout:            protobuf.Duration(envoy.HCTimeout),
-				Interval:           protobuf.Duration(envoy.HCInterval),
-				UnhealthyThreshold: protobuf.UInt32(3),
-				HealthyThreshold:   protobuf.UInt32(2),
+				Timeout:            durationpb.New(envoy.HCTimeout),
+				Interval:           durationpb.New(envoy.HCInterval),
+				UnhealthyThreshold: wrapperspb.UInt32(3),
+				HealthyThreshold:   wrapperspb.UInt32(2),
 				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						// TODO(dfc) this doesn't seem right
@@ -55,10 +57,10 @@ func TestHealthCheck(t *testing.T) {
 				},
 			},
 			want: &envoy_core_v3.HealthCheck{
-				Timeout:            protobuf.Duration(envoy.HCTimeout),
-				Interval:           protobuf.Duration(envoy.HCInterval),
-				UnhealthyThreshold: protobuf.UInt32(3),
-				HealthyThreshold:   protobuf.UInt32(2),
+				Timeout:            durationpb.New(envoy.HCTimeout),
+				Interval:           durationpb.New(envoy.HCInterval),
+				UnhealthyThreshold: wrapperspb.UInt32(3),
+				HealthyThreshold:   wrapperspb.UInt32(2),
 				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						Path: "/healthy",
@@ -79,10 +81,10 @@ func TestHealthCheck(t *testing.T) {
 				},
 			},
 			want: &envoy_core_v3.HealthCheck{
-				Timeout:            protobuf.Duration(99 * time.Second),
-				Interval:           protobuf.Duration(98 * time.Second),
-				UnhealthyThreshold: protobuf.UInt32(97),
-				HealthyThreshold:   protobuf.UInt32(96),
+				Timeout:            durationpb.New(99 * time.Second),
+				Interval:           durationpb.New(98 * time.Second),
+				UnhealthyThreshold: wrapperspb.UInt32(97),
+				HealthyThreshold:   wrapperspb.UInt32(96),
 				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						Path: "/healthy",
@@ -97,10 +99,10 @@ func TestHealthCheck(t *testing.T) {
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
 			want: &envoy_core_v3.HealthCheck{
-				Timeout:            protobuf.Duration(envoy.HCTimeout),
-				Interval:           protobuf.Duration(envoy.HCInterval),
-				UnhealthyThreshold: protobuf.UInt32(3),
-				HealthyThreshold:   protobuf.UInt32(2),
+				Timeout:            durationpb.New(envoy.HCTimeout),
+				Interval:           durationpb.New(envoy.HCInterval),
+				UnhealthyThreshold: wrapperspb.UInt32(3),
+				HealthyThreshold:   wrapperspb.UInt32(2),
 				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						Host:            "contour-envoy-healthcheck",
@@ -115,10 +117,10 @@ func TestHealthCheck(t *testing.T) {
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
 			want: &envoy_core_v3.HealthCheck{
-				Timeout:            protobuf.Duration(envoy.HCTimeout),
-				Interval:           protobuf.Duration(envoy.HCInterval),
-				UnhealthyThreshold: protobuf.UInt32(3),
-				HealthyThreshold:   protobuf.UInt32(2),
+				Timeout:            durationpb.New(envoy.HCTimeout),
+				Interval:           durationpb.New(envoy.HCInterval),
+				UnhealthyThreshold: wrapperspb.UInt32(3),
+				HealthyThreshold:   wrapperspb.UInt32(2),
 				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 						Host:            "contour-envoy-healthcheck",

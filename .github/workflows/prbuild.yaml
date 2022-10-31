@@ -14,11 +14,14 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+      - uses: actions/setup-go@v3
         with:
-          version: v1.48.0
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.1
           args: --build-tags=e2e,conformance,gcp,oidc,tools,none
       - uses: act10ns/slack@v1
         with:
@@ -31,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Codespell
         uses: codespell-project/actions-codespell@v1.0
         with:
@@ -48,8 +51,8 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -83,9 +86,9 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
       with:
         version: latest
     - name: Build image
@@ -94,7 +97,7 @@ jobs:
       run: |
         make multiarch-build
     - name: Upload image
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: image
         path: image/contour-*.tar
@@ -131,13 +134,13 @@ jobs:
             use_config_crd: "true"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: image
           path: image
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -188,17 +191,17 @@ jobs:
           - kubernetes_version: "kubernetes:n-2"
             node_image: "docker.io/kindest/node:v1.23.12@sha256:9402cf1330bbd3a0d097d2033fa489b2abe40d479cc5ef47d0b6a6960613148a"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # Fetch history for all tags and branches so we can figure out most
           # recent release tag.
           fetch-depth: 0
       - name: Download image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: image
           path: image
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -233,7 +236,7 @@ jobs:
   # ingress-conformance:
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #     - name: add deps to path
   #       run: |
   #         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -248,8 +251,8 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -288,8 +291,8 @@ jobs:
       - codegen
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Windows)
@@ -320,13 +323,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-image]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: image
           path: image
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)

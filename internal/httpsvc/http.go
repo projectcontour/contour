@@ -12,7 +12,7 @@
 // limitations under the License.
 
 // Package httpsvc provides a HTTP/1.x Service which is compatible with the
-// workgroup.Group API.
+// manager.Runnable API.
 package httpsvc
 
 import (
@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Service is a HTTP/1.x endpoint which is compatible with the workgroup.Group API.
+// Service is a HTTP/1.x endpoint which is compatible with the manager.Runnable API.
 type Service struct {
 	Addr string
 	Port int

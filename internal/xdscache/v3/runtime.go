@@ -15,11 +15,11 @@ package v3
 
 import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/proto"
 )
 
 // RuntimeCache manages the contents of the gRPC RTDS cache.

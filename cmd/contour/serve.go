@@ -505,7 +505,7 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	// Create debug service and register with workgroup.
+	// Create debug service and register with mgr.
 	if err := s.setupDebugService(*contourConfiguration.Debug, builder); err != nil {
 		return err
 	}
@@ -698,7 +698,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
 	registry *prometheus.Registry) error {
 
-	// Create metrics service and register with workgroup.
+	// Create metrics service and register with mgr.
 	metricsvc := &httpsvc.Service{
 		Addr:        metricsConfig.Address,
 		Port:        metricsConfig.Port,

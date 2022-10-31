@@ -20,12 +20,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/httpsvc"
-	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
@@ -43,11 +43,15 @@ func TestHTTPService(t *testing.T) {
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	var wg workgroup.Group
-	wg.AddContext(svc.Start)
-	done := make(chan error)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		done <- wg.Run(ctx)
+		// Returns once the context is cancelled.
+		// nolint:errcheck
+		svc.Start(ctx)
+
+		wg.Done()
 	}()
 
 	assert.Eventually(t, func() bool {
@@ -59,8 +63,9 @@ func TestHTTPService(t *testing.T) {
 		return resp.StatusCode == http.StatusOK
 	}, 1*time.Second, 100*time.Millisecond)
 
+	// Gracefully shut down.
 	cancel()
-	<-done
+	wg.Wait()
 }
 
 func TestHTTPSService(t *testing.T) {
@@ -116,11 +121,13 @@ func TestHTTPSService(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 	ctx, cancel := context.WithCancel(context.Background())
-	var wg workgroup.Group
-	wg.AddContext(svc.Start)
-	done := make(chan error)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		done <- wg.Run(ctx)
+		// nolint:errcheck
+		svc.Start(ctx)
+		wg.Done()
 	}()
 
 	// Create HTTPS client with trusted client certificate.
@@ -159,8 +166,9 @@ func TestHTTPSService(t *testing.T) {
 	_, err = tryGet("https://localhost:8001/test", untrustedTLSClientCert, caCertPool) // nolint // false positive: response body must be closed
 	assert.NotNil(t, err)
 
+	// Gracefully shut down.
 	cancel()
-	<-done
+	wg.Wait()
 }
 
 func checkFatalErr(t *testing.T, err error) {

@@ -42,6 +42,10 @@ func TestFallbackCertificate(t *testing.T) {
 			},
 			&dag.ListenerProcessor{},
 		}
+
+		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{
+			{Namespace: "admin", Name: "fallbacksecret"},
+		}
 	})
 	defer done()
 

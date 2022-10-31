@@ -1,1 +1,0 @@
-Add Kubernetes client debug log level configurability to ContourDeployment resource.

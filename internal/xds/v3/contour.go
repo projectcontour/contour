@@ -25,10 +25,9 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -134,9 +133,9 @@ func (s *contourServer) stream(st grpcStream) error {
 				resources = r.Query(req.ResourceNames)
 			}
 
-			any := make([]*any.Any, 0, len(resources))
+			any := make([]*anypb.Any, 0, len(resources))
 			for _, r := range resources {
-				a, err := anypb.New(proto.MessageV2(r))
+				a, err := anypb.New(r)
 				if err != nil {
 					return done(log, err)
 				}

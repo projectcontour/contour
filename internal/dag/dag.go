@@ -523,6 +523,20 @@ type HeaderValue struct {
 	Value string
 }
 
+// ClientCertificateDetails defines which parts of the client certificate will be forwarded.
+type ClientCertificateDetails struct {
+	// Subject of the client cert.
+	Subject bool
+	// Client cert in URL encoded PEM format.
+	Cert bool
+	// Client cert chain (including the leaf cert) in URL encoded PEM format.
+	Chain bool
+	// DNS type Subject Alternative Names of the client cert.
+	DNS bool
+	// URI type Subject Alternative Name of the client cert.
+	URI bool
+}
+
 // PeerValidationContext defines how to validate the certificate on the upstream service.
 type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
@@ -534,12 +548,18 @@ type PeerValidationContext struct {
 	// SkipClientCertValidation when set to true will ensure Envoy requests but
 	// does not verify peer certificates.
 	SkipClientCertValidation bool
+	// ForwardClientCertificate adds the selected data from the passed client TLS certificate
+	// to the x-forwarded-client-cert header.
+	ForwardClientCertificate *ClientCertificateDetails
 	// CRL holds a reference to the Secret containing the Certificate Revocation List.
 	// It is used to check for revocation of the peer certificate.
 	CRL *Secret
 	// OnlyVerifyLeafCertCrl when set to true, only the certificate at the end of the
 	// certificate chain will be subject to validation by CRL.
 	OnlyVerifyLeafCertCrl bool
+	// OptionalClientCertificate when set to true will ensure Envoy does not require
+	// that the client sends a certificate but if one is sent it will process it.
+	OptionalClientCertificate bool
 }
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.
@@ -767,7 +787,7 @@ type Service struct {
 // traffic routed to an upstream service.
 type Cluster struct {
 	// Upstream is the backend Kubernetes service traffic arriving
-	// at this Cluster will be forwarded too.
+	// at this Cluster will be forwarded to.
 	Upstream *Service
 
 	// The relative weight of this Cluster compared to its siblings.
@@ -837,6 +857,8 @@ type WeightedService struct {
 	ServiceNamespace string
 	// ServicePort is the port to which we forward traffic.
 	ServicePort v1.ServicePort
+	// HealthPort is the port for healthcheck.
+	HealthPort v1.ServicePort
 }
 
 // ServiceCluster capture the set of Kubernetes Services that will
@@ -928,7 +950,10 @@ func (s *ServiceCluster) Rebalance() {
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	Object *v1.Secret
+	Object         *v1.Secret
+	ValidTLSSecret *SecretValidationStatus
+	ValidCASecret  *SecretValidationStatus
+	ValidCRLSecret *SecretValidationStatus
 }
 
 func (s *Secret) Name() string      { return s.Object.Name }
@@ -947,6 +972,10 @@ func (s *Secret) Cert() []byte {
 // PrivateKey returns the secret's tls private key
 func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
+}
+
+type SecretValidationStatus struct {
+	Error error
 }
 
 // HTTPHealthCheckPolicy http health check policy

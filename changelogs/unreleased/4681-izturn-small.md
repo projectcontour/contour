@@ -1,1 +1,0 @@
-Add Kubernetes annotations configurability to ContourDeployment resource. to enable customize pod annotations for pod/envoy

@@ -92,7 +92,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 	var clientCertSecret *Secret
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = cache.LookupSecret(*p.ClientCertificate, validTLSSecret)
+		clientCertSecret, err = cache.LookupTLSSecret(*p.ClientCertificate)
 		if err != nil {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 				"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)

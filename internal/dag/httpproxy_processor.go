@@ -199,7 +199,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
+			sec, err := p.source.LookupTLSSecret(secretName)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -243,7 +243,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
+				sec, err = p.source.LookupTLSSecret(*p.FallbackCertificate)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
 						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
@@ -262,11 +262,21 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			// Fill in DownstreamValidation when external client validation is enabled.
 			if tls.ClientValidation != nil {
 				dv := &PeerValidationContext{
-					SkipClientCertValidation: tls.ClientValidation.SkipClientCertValidation,
+					SkipClientCertValidation:  tls.ClientValidation.SkipClientCertValidation,
+					OptionalClientCertificate: tls.ClientValidation.OptionalClientCertificate,
+				}
+				if tls.ClientValidation.ForwardClientCertificate != nil {
+					dv.ForwardClientCertificate = &ClientCertificateDetails{
+						Subject: tls.ClientValidation.ForwardClientCertificate.Subject,
+						Cert:    tls.ClientValidation.ForwardClientCertificate.Cert,
+						Chain:   tls.ClientValidation.ForwardClientCertificate.Chain,
+						DNS:     tls.ClientValidation.ForwardClientCertificate.DNS,
+						URI:     tls.ClientValidation.ForwardClientCertificate.URI,
+					}
 				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-					cacert, err := p.source.LookupSecret(secretName, validCA)
+					cacert, err := p.source.LookupCASecret(secretName)
 					if err != nil {
 						// PeerValidationContext is requested, but cert is missing or not configured.
 						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
@@ -280,7 +290,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				if tls.ClientValidation.CertificateRevocationList != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace))
-					crl, err := p.source.LookupSecret(secretName, validCRL)
+					crl, err := p.source.LookupCRLSecret(secretName)
 					if err != nil {
 						// CRL is missing or not configured.
 						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
@@ -816,8 +826,17 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					"service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
+
+			var healthPort int
+			healthPolicy := httpHealthCheckPolicy(route.HealthCheckPolicy)
+			if healthPolicy != nil && service.HealthPort > 0 {
+				healthPort = service.HealthPort
+			} else {
+				healthPort = service.Port
+			}
+
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
@@ -877,7 +896,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
+				clientCertSecret, err = p.source.LookupTLSSecret(*p.ClientCertificate)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
@@ -906,7 +925,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				Upstream:              s,
 				LoadBalancerPolicy:    lbPolicy,
 				Weight:                uint32(service.Weight),
-				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
+				HTTPHealthCheckPolicy: healthPolicy,
 				UpstreamValidation:    uv,
 				RequestHeadersPolicy:  reqHP,
 				ResponseHeadersPolicy: respHP,
@@ -1004,8 +1023,16 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
+			var healthPort int
+			healthPolicy := tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy)
+			if healthPolicy != nil && service.HealthPort > 0 {
+				healthPort = service.HealthPort
+			} else {
+				healthPort = service.Port
+			}
+
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference",
 					"Spec.TCPProxy unresolved service reference: %s", err)
@@ -1024,7 +1051,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				Weight:               uint32(service.Weight),
 				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
-				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
+				TCPHealthCheckPolicy: healthPolicy,
 				SNI:                  s.ExternalName,
 				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
