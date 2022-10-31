@@ -25,14 +25,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EnsureServiceAccount ensures a ServiceAccount resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
 func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) error {
-	desired := DesiredServiceAccount(name, contour)
+	desired := desiredServiceAccount(name, contour)
 
 	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.ServiceAccount) error {
 		_, err := updateSvcAcctIfNeeded(ctx, cli, contour, current, desired)
@@ -42,9 +41,9 @@ func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, c
 	return objects.EnsureObject(ctx, cli, desired, updater, &corev1.ServiceAccount{})
 }
 
-// DesiredServiceAccount generates the desired ServiceAccount resource for the
+// desiredServiceAccount generates the desired ServiceAccount resource for the
 // given contour.
-func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceAccount {
+func desiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind: rbacv1.ServiceAccountKind,
@@ -55,20 +54,6 @@ func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 			Labels:    model.CommonLabels(contour),
 		},
 	}
-}
-
-// CurrentServiceAccount returns the current ServiceAccount for the provided ns/name.
-func CurrentServiceAccount(ctx context.Context, cli client.Client, ns, name string) (*corev1.ServiceAccount, error) {
-	current := &corev1.ServiceAccount{}
-	key := types.NamespacedName{
-		Namespace: ns,
-		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateSvcAcctIfNeeded updates a ServiceAccount resource if current does not match desired,

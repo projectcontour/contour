@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,18 +69,6 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 		Name:     roleRef,
 	}
 	return crb
-}
-
-// CurrentClusterRoleBinding returns the current ClusterRoleBinding for the
-// provided name.
-func CurrentClusterRoleBinding(ctx context.Context, cli client.Client, name string) (*rbacv1.ClusterRoleBinding, error) {
-	current := &rbacv1.ClusterRoleBinding{}
-	key := types.NamespacedName{Name: name}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateClusterRoleBindingIfNeeded updates a ClusterRoleBinding resource if current

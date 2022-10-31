@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -71,20 +70,6 @@ func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *model.Contour
 	}
 
 	return rb
-}
-
-// CurrentRoleBinding returns the current RoleBinding for the provided ns/name.
-func CurrentRoleBinding(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.RoleBinding, error) {
-	current := &rbacv1.RoleBinding{}
-	key := types.NamespacedName{
-		Namespace: ns,
-		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateRoleBindingIfNeeded updates a RoleBinding resource if current does

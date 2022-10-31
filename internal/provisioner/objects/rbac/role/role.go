@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,20 +69,6 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 		},
 	}
 	return role
-}
-
-// CurrentRole returns the current Role for the provided ns/name.
-func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.Role, error) {
-	current := &rbacv1.Role{}
-	key := types.NamespacedName{
-		Namespace: ns,
-		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateRoleIfNeeded updates a Role resource if current does not match desired,

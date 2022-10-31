@@ -25,7 +25,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -90,17 +89,6 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 			policyRuleFor(contourV1GroupName, createGetUpdate, "httpproxies/status", "extensionservices/status", "contourconfigurations/status"),
 		},
 	}
-}
-
-// CurrentClusterRole returns the current ClusterRole for the provided name.
-func CurrentClusterRole(ctx context.Context, cli client.Client, name string) (*rbacv1.ClusterRole, error) {
-	current := &rbacv1.ClusterRole{}
-	key := types.NamespacedName{Name: name}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateClusterRoleIfNeeded updates a ClusterRole resource if current does not match desired,
