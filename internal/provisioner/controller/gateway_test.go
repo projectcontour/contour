@@ -1051,7 +1051,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
-
+				assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeLocal, svc.Spec.ExternalTrafficPolicy)
 				assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])

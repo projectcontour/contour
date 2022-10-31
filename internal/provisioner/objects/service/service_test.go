@@ -177,14 +177,19 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasPortName(t, svc, "https")
 	checkServiceHasPortProtocol(t, svc, corev1.ProtocolTCP)
 
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
+	svc = DesiredEnvoyService(cntr)
+	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
+
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, corev1.ServiceTypeLoadBalancer)
-	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
+	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeCluster)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Test proxy protocol for AWS Classic load balancer (when provider params are specified).
