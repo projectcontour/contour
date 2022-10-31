@@ -41,12 +41,21 @@ const (
 	OffLog LogLevel = "off"
 )
 
-func (l LogLevel) Validate() error {
+func (l LogLevel) EnvoyValidate() error {
 	switch l {
 	case TraceLog, DebugLog, InfoLog, WarnLog, ErrorLog, CriticalLog, OffLog:
 		return nil
 	default:
-		return fmt.Errorf("invalid log level %q", l)
+		return fmt.Errorf("invalid log level %q for envoy", l)
+	}
+}
+
+func (l LogLevel) ContourValidate() error {
+	switch l {
+	case DebugLog, InfoLog:
+		return nil
+	default:
+		return fmt.Errorf("invalid log level %q for contour", l)
 	}
 }
 
@@ -162,7 +171,7 @@ type EnvoySettings struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// LogLevel sets the log level for Envoy
+	// LogLevel sets the log level for Envoy.
 	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
 	//
 	// +optional
