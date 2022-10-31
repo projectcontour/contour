@@ -5091,6 +5091,12 @@ spec:
                               - name
                               type: object
                             type: array
+                          healthPort:
+                            description: HealthPort is the port for this service healthcheck.
+                              If not specified, Port is used for service healthchecks.
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
                           mirror:
                             description: If Mirror is true the Service will receive
                               a read only mirror of the traffic for this route.
@@ -5472,6 +5478,12 @@ spec:
                             - name
                             type: object
                           type: array
+                        healthPort:
+                          description: HealthPort is the port for this service healthcheck.
+                            If not specified, Port is used for service healthchecks.
+                          maximum: 65535
+                          minimum: 1
+                          type: integer
                         mirror:
                           description: If Mirror is true the Service will receive
                             a read only mirror of the traffic for this route.
@@ -6144,6 +6156,38 @@ spec:
                               secrets are limited to 1MiB in size.
                             minLength: 1
                             type: string
+                          forwardClientCertificate:
+                            description: ForwardClientCertificate adds the selected
+                              data from the passed client TLS certificate to the x-forwarded-client-cert
+                              header.
+                            properties:
+                              cert:
+                                description: Client cert in URL encoded PEM format.
+                                type: boolean
+                              chain:
+                                description: Client cert chain (including the leaf
+                                  cert) in URL encoded PEM format.
+                                type: boolean
+                              dns:
+                                description: DNS type Subject Alternative Names of
+                                  the client cert.
+                                type: boolean
+                              subject:
+                                description: Subject of the client cert.
+                                type: boolean
+                              uri:
+                                description: URI type Subject Alternative Name of
+                                  the client cert.
+                                type: boolean
+                            type: object
+                          optionalClientCertificate:
+                            description: OptionalClientCertificate when set to true
+                              will request a client certificate but allow the connection
+                              to continue if the client does not provide one. If a
+                              client certificate is sent, it will be verified according
+                              to the other properties, which includes disabling validation
+                              if SkipClientCertValidation is set. Defaults to false.
+                            type: boolean
                           skipClientCertValidation:
                             description: SkipClientCertValidation disables downstream
                               client certificate validation. Defaults to false. This
@@ -7197,7 +7241,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.23.1
+        image: docker.io/envoyproxy/envoy:v1.24.0
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

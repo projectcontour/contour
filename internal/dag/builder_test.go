@@ -3354,6 +3354,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService.Name,
 									ServiceNamespace: kuardService.Namespace,
 									ServicePort:      kuardService.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 							&Service{
@@ -3362,6 +3363,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService2.Name,
 									ServiceNamespace: kuardService2.Namespace,
 									ServicePort:      kuardService2.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 							&Service{
@@ -3370,6 +3372,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService3.Name,
 									ServiceNamespace: kuardService3.Namespace,
 									ServicePort:      kuardService3.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 						)),
@@ -3416,6 +3419,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService.Name,
 									ServiceNamespace: kuardService.Namespace,
 									ServicePort:      kuardService.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 							&Service{
@@ -3424,6 +3428,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService2.Name,
 									ServiceNamespace: kuardService2.Namespace,
 									ServicePort:      kuardService2.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 							&Service{
@@ -3432,6 +3437,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									ServiceName:      kuardService3.Name,
 									ServiceNamespace: kuardService3.Namespace,
 									ServicePort:      kuardService3.Spec.Ports[0],
+									HealthPort:       kuardService.Spec.Ports[0],
 								},
 							},
 						)),
@@ -3473,6 +3479,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ServiceName:      kuardService.Name,
 								ServiceNamespace: kuardService.Namespace,
 								ServicePort:      kuardService.Spec.Ports[0],
+								HealthPort:       kuardService.Spec.Ports[0],
 							},
 						})),
 					),
@@ -4382,6 +4389,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "ca",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
@@ -4392,6 +4400,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "ca",
 			Namespace: "caCertOriginalNs",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
@@ -4402,6 +4411,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "crl",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CRLKey: []byte(fixture.CRL),
 		},
@@ -6506,6 +6516,70 @@ func TestDAGInsert(t *testing.T) {
 						CACertificate:             cert1.Name,
 						CertificateRevocationList: crl.Name,
 						OnlyVerifyLeafCertCrl:     true,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy24 is downstream validation, optional cert validation
+	proxy24 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:             cert1.Name,
+						OptionalClientCertificate: true,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy25 is downstream validation, fwd client cert details
+	proxy25 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate: cert1.Name,
+						ForwardClientCertificate: &contour_api_v1.ClientCertificateDetails{
+							Subject: true,
+							Cert:    true,
+							Chain:   true,
+							DNS:     true,
+							URI:     true,
+						},
 					},
 				},
 			},
@@ -9012,6 +9086,7 @@ func TestDAGInsert(t *testing.T) {
 									ServiceName:      s3a.Name,
 									ServiceNamespace: s3a.Namespace,
 									ServicePort:      s3a.Spec.Ports[0],
+									HealthPort:       s3a.Spec.Ports[0],
 								},
 							}),
 						),
@@ -9036,6 +9111,7 @@ func TestDAGInsert(t *testing.T) {
 									ServiceName:      s3b.Name,
 									ServiceNamespace: s3b.Namespace,
 									ServicePort:      s3b.Spec.Ports[0],
+									HealthPort:       s3b.Spec.Ports[0],
 								},
 							}),
 						),
@@ -9060,6 +9136,7 @@ func TestDAGInsert(t *testing.T) {
 									ServiceName:      s3c.Name,
 									ServiceNamespace: s3c.Namespace,
 									ServicePort:      s3c.Spec.Ports[0],
+									HealthPort:       s3c.Spec.Ports[0],
 								},
 							}),
 						),
@@ -9084,6 +9161,7 @@ func TestDAGInsert(t *testing.T) {
 									ServiceName:      s1b.Name,
 									ServiceNamespace: s1b.Namespace,
 									ServicePort:      s1b.Spec.Ports[0],
+									HealthPort:       s1b.Spec.Ports[0],
 								},
 								MaxConnections:     9000,
 								MaxPendingRequests: 4096,
@@ -9112,6 +9190,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s1.Name,
 										ServiceNamespace: s1.Namespace,
 										ServicePort:      s1.Spec.Ports[0],
+										HealthPort:       s1.Spec.Ports[0],
 									},
 								},
 								Weight: 90,
@@ -9123,6 +9202,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s1.Name,
 										ServiceNamespace: s1.Namespace,
 										ServicePort:      s1.Spec.Ports[0],
+										HealthPort:       s1.Spec.Ports[0],
 									},
 								},
 								Weight: 60,
@@ -9150,6 +9230,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 									Weight: 90,
@@ -9160,6 +9241,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 									Weight: 60,
@@ -9467,11 +9549,12 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1a.Name,
 											ServiceNamespace: s1a.Namespace,
 											ServicePort:      s1a.Spec.Ports[0],
+											HealthPort:       s1a.Spec.Ports[0],
 										},
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert1),
+										CACertificate: caSecret(cert1),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9499,11 +9582,12 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1a.Name,
 											ServiceNamespace: s1a.Namespace,
 											ServicePort:      s1a.Spec.Ports[0],
+											HealthPort:       s1a.Spec.Ports[0],
 										},
 									},
 									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert1),
+										CACertificate: caSecret(cert1),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9573,11 +9657,12 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1a.Name,
 											ServiceNamespace: s1a.Namespace,
 											ServicePort:      s1a.Spec.Ports[0],
+											HealthPort:       s1a.Spec.Ports[0],
 										},
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: secret(cert2),
+										CACertificate: caSecret(cert2),
 										SubjectName:   "example.com",
 									},
 								},
@@ -9611,7 +9696,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 							},
 						},
 					),
@@ -9639,7 +9724,7 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
+								CACertificate: caSecret(cert1),
 							},
 						},
 					),
@@ -9702,7 +9787,7 @@ func TestDAGInsert(t *testing.T) {
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
-								CACertificate:            &Secret{Object: cert1},
+								CACertificate:            caSecret(cert1),
 							},
 						},
 					),
@@ -9733,8 +9818,8 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: &Secret{Object: cert1},
-								CRL:           &Secret{Object: crl},
+								CACertificate: caSecret(cert1),
+								CRL:           crlSecret(crl),
 							},
 						},
 					),
@@ -9765,9 +9850,79 @@ func TestDAGInsert(t *testing.T) {
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:         &Secret{Object: cert1},
-								CRL:                   &Secret{Object: crl},
+								CACertificate:         caSecret(cert1),
+								CRL:                   crlSecret(crl),
 								OnlyVerifyLeafCertCrl: true,
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with client cert forwarding": {
+			objs: []interface{}{
+				proxy25, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate: caSecret(cert1),
+								ForwardClientCertificate: &ClientCertificateDetails{
+									Subject: true,
+									Cert:    true,
+									Chain:   true,
+									DNS:     true,
+									URI:     true,
+								},
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination with optional client validation": {
+			objs: []interface{}{
+				proxy24, s1, sec1, cert1, crl,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								Routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								CACertificate:             caSecret(cert1),
+								OptionalClientCertificate: true,
 							},
 						},
 					),
@@ -9899,6 +10054,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -9911,6 +10067,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s4.Name,
 											ServiceNamespace: s4.Namespace,
 											ServicePort:      s4.Spec.Ports[0],
+											HealthPort:       s4.Spec.Ports[0],
 										},
 									},
 								},
@@ -9938,6 +10095,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -9951,6 +10109,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s4.Name,
 											ServiceNamespace: s4.Namespace,
 											ServicePort:      s4.Spec.Ports[0],
+											HealthPort:       s4.Spec.Ports[0],
 										},
 									},
 								},
@@ -9979,6 +10138,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -9992,6 +10152,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s4.Name,
 											ServiceNamespace: s4.Namespace,
 											ServicePort:      s4.Spec.Ports[0],
+											HealthPort:       s4.Spec.Ports[0],
 										},
 									},
 								}},
@@ -10004,6 +10165,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s4.Name,
 											ServiceNamespace: s4.Namespace,
 											ServicePort:      s4.Spec.Ports[0],
+											HealthPort:       s4.Spec.Ports[0],
 										},
 									},
 								},
@@ -10017,6 +10179,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s11.Name,
 											ServiceNamespace: s11.Namespace,
 											ServicePort:      s11.Spec.Ports[0],
+											HealthPort:       s11.Spec.Ports[0],
 										},
 									},
 								}},
@@ -10044,6 +10207,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -10056,6 +10220,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s2.Name,
 											ServiceNamespace: s2.Namespace,
 											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
 										},
 									},
 								},
@@ -10083,6 +10248,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -10095,6 +10261,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s2.Name,
 											ServiceNamespace: s2.Namespace,
 											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
 										},
 									},
 								},
@@ -10122,6 +10289,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -10134,6 +10302,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s2.Name,
 											ServiceNamespace: s2.Namespace,
 											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
 										},
 									},
 								},
@@ -10161,6 +10330,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -10173,6 +10343,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s2.Name,
 											ServiceNamespace: s2.Namespace,
 											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
 										},
 									},
 								},
@@ -10200,6 +10371,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s1.Name,
 											ServiceNamespace: s1.Namespace,
 											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
 										},
 									},
 								},
@@ -10212,6 +10384,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s2.Name,
 											ServiceNamespace: s2.Namespace,
 											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
 										},
 									},
 								},
@@ -10322,6 +10495,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s10.Name,
 											ServiceNamespace: s10.Namespace,
 											ServicePort:      s10.Spec.Ports[1],
+											HealthPort:       s10.Spec.Ports[1],
 										},
 									},
 								},
@@ -10690,6 +10864,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s2.Name,
 										ServiceNamespace: s2.Namespace,
 										ServicePort:      s2.Spec.Ports[0],
+										HealthPort:       s2.Spec.Ports[0],
 									},
 								},
 							}},
@@ -10842,6 +11017,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s1.Name,
 										ServiceNamespace: s1.Namespace,
 										ServicePort:      s1.Spec.Ports[0],
+										HealthPort:       s1.Spec.Ports[0],
 									},
 								},
 							}},
@@ -10955,6 +11131,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s14.Name,
 										ServiceNamespace: s14.Namespace,
 										ServicePort:      s14.Spec.Ports[0],
+										HealthPort:       s14.Spec.Ports[0],
 									},
 								},
 							}},
@@ -10992,6 +11169,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s14.Name,
 										ServiceNamespace: s14.Namespace,
 										ServicePort:      s14.Spec.Ports[0],
+										HealthPort:       s14.Spec.Ports[0],
 									},
 								},
 								SNI: "externalservice.io",
@@ -11026,6 +11204,7 @@ func TestDAGInsert(t *testing.T) {
 											ServiceName:      s14.Name,
 											ServiceNamespace: s14.Namespace,
 											ServicePort:      s14.Spec.Ports[0],
+											HealthPort:       s14.Spec.Ports[0],
 										},
 									},
 									Protocol: "tls",
@@ -11084,6 +11263,7 @@ func TestDAGInsert(t *testing.T) {
 										ServiceName:      s14.Name,
 										ServiceNamespace: s14.Namespace,
 										ServicePort:      s14.Spec.Ports[0],
+										HealthPort:       s14.Spec.Ports[0],
 									},
 								},
 								SNI: "bar.com",
@@ -13107,6 +13287,23 @@ func weightedService(s *v1.Service, weight uint32) *Service {
 			ServiceName:      s.Name,
 			ServiceNamespace: s.Namespace,
 			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[0],
+		},
+	}
+}
+
+func healthService(s *v1.Service) *Service {
+	return weightedHealthService(s, 1)
+}
+
+func weightedHealthService(s *v1.Service, weight uint32) *Service {
+	return &Service{
+		Weighted: WeightedService{
+			Weight:           weight,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[1],
 		},
 	}
 }
@@ -13123,7 +13320,22 @@ func clustermap(services ...*v1.Service) []*Cluster {
 
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
-		Object: s,
+		Object:         s,
+		ValidTLSSecret: &SecretValidationStatus{},
+	}
+}
+
+func caSecret(s *v1.Secret) *Secret {
+	return &Secret{
+		Object:        s,
+		ValidCASecret: &SecretValidationStatus{},
+	}
+}
+
+func crlSecret(s *v1.Secret) *Secret {
+	return &Secret{
+		Object:         s,
+		ValidCRLSecret: &SecretValidationStatus{},
 	}
 }
 

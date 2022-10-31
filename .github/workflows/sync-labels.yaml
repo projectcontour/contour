@@ -21,7 +21,7 @@ jobs:
     # Note, we check out main. We don't want un-merged PRs to whack
     # labels globally.
     - name: Check out main
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: main
     # We need this token in a file so the syncer can consume it from

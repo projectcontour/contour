@@ -17,8 +17,8 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/xds"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -30,6 +30,16 @@ func LBEndpoint(addr *envoy_core_v3.Address) *envoy_endpoint_v3.LbEndpoint {
 				Address: addr,
 			},
 		},
+	}
+}
+
+// HealthCheckConfig returns an *envoy_endpoint_v3.Endpoint_HealthCheckConfig with a single
+func HealthCheckConfig(healthCheckPort int32) *envoy_endpoint_v3.Endpoint_HealthCheckConfig {
+	if healthCheckPort == 0 {
+		return nil
+	}
+	return &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+		PortValue: uint32(healthCheckPort),
 	}
 }
 
@@ -48,7 +58,7 @@ func Endpoints(addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbE
 
 func WeightedEndpoints(weight uint32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
 	lbendpoints := Endpoints(addrs...)
-	lbendpoints[0].LoadBalancingWeight = protobuf.UInt32(weight)
+	lbendpoints[0].LoadBalancingWeight = wrapperspb.UInt32(weight)
 	return lbendpoints
 }
 

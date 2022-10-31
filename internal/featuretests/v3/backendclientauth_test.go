@@ -56,6 +56,10 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 			},
 			&dag.ListenerProcessor{},
 		}
+
+		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{
+			{Namespace: secret.Namespace, Name: secret.Name},
+		}
 	}
 }
 
@@ -65,7 +69,7 @@ func clientSecret() *v1.Secret {
 			Name:      "envoyclientsecret",
 			Namespace: "default",
 		},
-		Type: "kubernetes.io/tls",
+		Type: v1.SecretTypeTLS,
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 }
@@ -76,6 +80,7 @@ func caSecret() *v1.Secret {
 			Name:      "backendcacert",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},

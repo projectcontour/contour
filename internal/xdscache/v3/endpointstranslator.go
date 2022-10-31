@@ -20,7 +20,6 @@ import (
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -28,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
@@ -39,12 +39,14 @@ type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.
 // ep may be nil, in which case, the result is also nil.
-func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancingEndpoint {
+func RecalculateEndpoints(port, healthPort v1.ServicePort, ep *v1.Endpoints) []*LoadBalancingEndpoint {
 	if ep == nil {
 		return nil
 	}
 
 	var lb []*LoadBalancingEndpoint
+	var healthCheckPort int32
+
 	for _, s := range ep.Subsets {
 		// Skip subsets without ready addresses.
 		if len(s.Addresses) < 1 {
@@ -52,9 +54,14 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 		}
 
 		for _, p := range s.Ports {
-			if port.Protocol != p.Protocol && p.Protocol != v1.ProtocolTCP {
+			if (healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol) && p.Protocol != v1.ProtocolTCP {
 				// NOTE: we only support "TCP", which is the default.
 				continue
+			}
+
+			// Set healthCheckPort only when port and healthPort are different.
+			if healthPort.Name != "" && healthPort.Name == p.Name && port.Name != healthPort.Name {
+				healthCheckPort = p.Port
 			}
 
 			// If the port isn't named, it must be the
@@ -73,6 +80,12 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 				addr := envoy_v3.SocketAddress(a.IP, int(p.Port))
 				lb = append(lb, envoy_v3.LBEndpoint(addr))
 			}
+		}
+	}
+
+	if healthCheckPort > 0 {
+		for _, lbEndpoint := range lb {
+			lbEndpoint.GetEndpoint().HealthCheckConfig = envoy_v3.HealthCheckConfig(healthCheckPort)
 		}
 	}
 
@@ -124,7 +137,7 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoad
 		// attach them as a new LocalityEndpoints resource2.
 		for _, w := range cluster.Services {
 			n := types.NamespacedName{Namespace: w.ServiceNamespace, Name: w.ServiceName}
-			if lb := RecalculateEndpoints(w.ServicePort, c.endpoints[n]); lb != nil {
+			if lb := RecalculateEndpoints(w.ServicePort, w.HealthPort, c.endpoints[n]); lb != nil {
 				// Append the new set of endpoints. Users are allowed to set the load
 				// balancing weight to 0, which we reflect to Envoy as nil in order to
 				// assign no load to that locality.

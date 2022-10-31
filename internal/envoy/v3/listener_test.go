@@ -34,7 +34,6 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -42,6 +41,9 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -323,6 +325,20 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 	}
+	peerValidationContextOptionalClientCertValidationWithCA := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		OptionalClientCertificate: true,
+	}
 	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
 		CACertificate: &dag.Secret{
 			Object: &v1.Secret{
@@ -426,7 +442,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContext,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
@@ -438,7 +454,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContext,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
 			},
 		},
 		"skip client cert validation": {
@@ -450,7 +466,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContextSkipVerify,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
 			},
 		},
 		"skip client cert validation with ca": {
@@ -462,7 +478,19 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContextSkipVerifyWithCA,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
+			},
+		},
+		"optional client cert validation with ca": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContext,
+				},
+				RequireClientCertificate: wrapperspb.Bool(false),
 			},
 		},
 		"Downstream validation with CRL check": {
@@ -474,7 +502,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContextWithCRLCheck,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
 			},
 		},
 		"Downstream validation with CRL check but only for leaf-certificate": {
@@ -486,7 +514,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContextWithCRLCheckOnlyLeaf,
 				},
-				RequireClientCertificate: protobuf.Bool(true),
+				RequireClientCertificate: wrapperspb.Bool(true),
 			},
 		},
 	}
@@ -576,6 +604,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		connectionShutdownGracePeriod timeout.Setting
 		allowChunkedLength            bool
 		mergeSlashes                  bool
+		forwardClientCertificate      *dag.ClientCertificateDetails
 		xffNumTrustedHops             uint32
 		want                          *envoy_listener_v3.Filter
 	}{
@@ -617,8 +646,8 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
@@ -667,12 +696,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
-						RequestTimeout:            protobuf.Duration(10 * time.Second),
+						RequestTimeout:            durationpb.New(10 * time.Second),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
 					}),
@@ -717,11 +746,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(90 * time.Second),
+							IdleTimeout: durationpb.New(90 * time.Second),
 						},
 						AccessLog:        FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress: protobuf.Bool(true),
-						NormalizePath:    protobuf.Bool(true),
+						UseRemoteAddress: wrapperspb.Bool(true),
+						NormalizePath:    wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
@@ -770,14 +799,14 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
-						StreamIdleTimeout:         protobuf.Duration(90 * time.Second),
+						StreamIdleTimeout:         durationpb.New(90 * time.Second),
 					}),
 				},
 			},
@@ -820,11 +849,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
-							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
+							MaxConnectionDuration: durationpb.New(90 * time.Second),
 						},
 						AccessLog:        FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress: protobuf.Bool(true),
-						NormalizePath:    protobuf.Bool(true),
+						UseRemoteAddress: wrapperspb.Bool(true),
+						NormalizePath:    wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
@@ -873,8 +902,8 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
@@ -923,14 +952,14 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
-						DelayedCloseTimeout:       protobuf.Duration(90 * time.Second),
+						DelayedCloseTimeout:       durationpb.New(90 * time.Second),
 					}),
 				},
 			},
@@ -974,14 +1003,14 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
-						DrainTimeout:              protobuf.Duration(90 * time.Second),
+						DrainTimeout:              durationpb.New(90 * time.Second),
 					}),
 				},
 			},
@@ -1027,14 +1056,14 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
-						DrainTimeout:              protobuf.Duration(90 * time.Second),
+						DrainTimeout:              durationpb.New(90 * time.Second),
 					}),
 				},
 			},
@@ -1078,13 +1107,137 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
+					}),
+				},
+			},
+		},
+		"enable xfcc": {
+			routename:    "default/kuard",
+			accesslogger: FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+			forwardClientCertificate: &dag.ClientCertificateDetails{
+				Subject: true,
+				Cert:    true,
+				Chain:   true,
+				DNS:     true,
+				URI:     true,
+			},
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix:               "default/kuard",
+						ForwardClientCertDetails: http.HttpConnectionManager_SANITIZE_SET,
+						SetCurrentClientCertDetails: &http.HttpConnectionManager_SetCurrentClientCertDetails{
+							Subject: wrapperspb.Bool(true),
+							Cert:    true,
+							Chain:   true,
+							Dns:     true,
+							Uri:     true,
+						},
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+														Authority:   "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: defaultHTTPFilters,
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
+						PreserveExternalRequestId: true,
+						MergeSlashes:              false,
+					}),
+				},
+			},
+		},
+		"enable partial xfcc": {
+			routename:    "default/kuard",
+			accesslogger: FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+			forwardClientCertificate: &dag.ClientCertificateDetails{
+				Subject: true,
+				DNS:     true,
+				URI:     true,
+			},
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix:               "default/kuard",
+						ForwardClientCertDetails: http.HttpConnectionManager_SANITIZE_SET,
+						SetCurrentClientCertDetails: &http.HttpConnectionManager_SetCurrentClientCertDetails{
+							Subject: wrapperspb.Bool(true),
+							Dns:     true,
+							Uri:     true,
+						},
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+														Authority:   "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: defaultHTTPFilters,
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
+						PreserveExternalRequestId: true,
+						MergeSlashes:              false,
 					}),
 				},
 			},
@@ -1128,8 +1281,8 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
 							StripAnyHostPort: true,
 						},
@@ -1156,6 +1309,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				AllowChunkedLength(tc.allowChunkedLength).
 				MergeSlashes(tc.mergeSlashes).
 				NumTrustedHops(tc.xffNumTrustedHops).
+				ForwardClientCertificate(tc.forwardClientCertificate).
 				DefaultFilters().
 				Get()
 
@@ -1248,7 +1402,7 @@ func TestTCPProxy(t *testing.T) {
 							Cluster: envoy.Clustername(c1),
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil, v1alpha1.LogLevelInfo),
-						IdleTimeout: protobuf.Duration(9001 * time.Second),
+						IdleTimeout: durationpb.New(9001 * time.Second),
 					}),
 				},
 			},
@@ -1277,7 +1431,7 @@ func TestTCPProxy(t *testing.T) {
 							},
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil, v1alpha1.LogLevelInfo),
-						IdleTimeout: protobuf.Duration(9001 * time.Second),
+						IdleTimeout: durationpb.New(9001 * time.Second),
 					}),
 				},
 			},
@@ -1295,7 +1449,7 @@ func TestTCPProxy(t *testing.T) {
 							Cluster: envoy.Clustername(c2),
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil, v1alpha1.LogLevelInfo),
-						IdleTimeout: protobuf.Duration(9001 * time.Second),
+						IdleTimeout: durationpb.New(9001 * time.Second),
 					}),
 				},
 			},
@@ -1321,7 +1475,7 @@ func TestTCPProxy(t *testing.T) {
 							},
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil, v1alpha1.LogLevelInfo),
-						IdleTimeout: protobuf.Duration(9001 * time.Second),
+						IdleTimeout: durationpb.New(9001 * time.Second),
 					}),
 				},
 			},
@@ -1347,7 +1501,7 @@ func TestTCPProxy(t *testing.T) {
 							},
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil, v1alpha1.LogLevelInfo),
-						IdleTimeout: protobuf.Duration(9001 * time.Second),
+						IdleTimeout: durationpb.New(9001 * time.Second),
 					}),
 				},
 			},
@@ -1406,7 +1560,7 @@ func TestBuilderValidation(t *testing.T) {
 	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: &any.Any{
+			TypedConfig: &anypb.Any{
 				TypeUrl: "foo",
 			},
 		},
@@ -1420,7 +1574,7 @@ func TestBuilderValidation(t *testing.T) {
 	badBuilder.filters = append(badBuilder.filters, &http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: &any.Any{
+			TypedConfig: &anypb.Any{
 				TypeUrl: "foo",
 			},
 		},

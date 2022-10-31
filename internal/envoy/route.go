@@ -14,10 +14,9 @@
 package envoy
 
 import (
-	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func HostReplaceHeader(hp *dag.HeadersPolicy) string {
@@ -33,17 +32,17 @@ func HostReplaceHeader(hp *dag.HeadersPolicy) string {
 //   - not passing a value means "use Envoy default"
 //   - explicitly passing a 0 means "disable this timeout"
 //   - passing a positive value uses that value
-func Timeout(d timeout.Setting) *duration.Duration {
+func Timeout(d timeout.Setting) *durationpb.Duration {
 	switch {
 	case d.UseDefault():
 		// Don't pass a value to Envoy.
 		return nil
 	case d.IsDisabled():
 		// Explicitly pass a 0.
-		return protobuf.Duration(0)
+		return durationpb.New(0)
 	default:
 		// Pass the duration value.
-		return protobuf.Duration(d.Duration())
+		return durationpb.New(d.Duration())
 	}
 }
 

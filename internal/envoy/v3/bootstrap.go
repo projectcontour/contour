@@ -36,11 +36,13 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -198,7 +200,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				DnsLookupFamily:      parseDNSLookupFamily(c.DNSLookupFamily),
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.GetXdsGRPCPort())}, "_"),
-				ConnectTimeout:       protobuf.Duration(5 * time.Second),
+				ConnectTimeout:       durationpb.New(5 * time.Second),
 				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_cluster_v3.Cluster_STRICT_DNS),
 				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
@@ -209,31 +211,31 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				},
 				UpstreamConnectionOptions: &envoy_cluster_v3.UpstreamConnectionOptions{
 					TcpKeepalive: &envoy_core_v3.TcpKeepalive{
-						KeepaliveProbes:   protobuf.UInt32(3),
-						KeepaliveTime:     protobuf.UInt32(30),
-						KeepaliveInterval: protobuf.UInt32(5),
+						KeepaliveProbes:   wrapperspb.UInt32(3),
+						KeepaliveTime:     wrapperspb.UInt32(30),
+						KeepaliveInterval: wrapperspb.UInt32(5),
 					},
 				},
 				TypedExtensionProtocolOptions: protocolOptions(HTTPVersion2, timeout.DefaultSetting()),
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						Priority:           envoy_core_v3.RoutingPriority_HIGH,
-						MaxConnections:     protobuf.UInt32(100000),
-						MaxPendingRequests: protobuf.UInt32(100000),
-						MaxRequests:        protobuf.UInt32(60000000),
-						MaxRetries:         protobuf.UInt32(50),
+						MaxConnections:     wrapperspb.UInt32(100000),
+						MaxPendingRequests: wrapperspb.UInt32(100000),
+						MaxRequests:        wrapperspb.UInt32(60000000),
+						MaxRetries:         wrapperspb.UInt32(50),
 					}, {
 						Priority:           envoy_core_v3.RoutingPriority_DEFAULT,
-						MaxConnections:     protobuf.UInt32(100000),
-						MaxPendingRequests: protobuf.UInt32(100000),
-						MaxRequests:        protobuf.UInt32(60000000),
-						MaxRetries:         protobuf.UInt32(50),
+						MaxConnections:     wrapperspb.UInt32(100000),
+						MaxPendingRequests: wrapperspb.UInt32(100000),
+						MaxRequests:        wrapperspb.UInt32(60000000),
+						MaxRetries:         wrapperspb.UInt32(50),
 					}},
 				},
 			}, {
 				Name:                 "envoy-admin",
 				AltStatName:          strings.Join([]string{c.Namespace, "envoy-admin", strconv.Itoa(c.GetAdminPort())}, "_"),
-				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				ConnectTimeout:       durationpb.New(250 * time.Millisecond),
 				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_cluster_v3.Cluster_STATIC),
 				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
@@ -255,7 +257,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 	}
 	if c.MaximumHeapSizeBytes > 0 {
 		bootstrap.OverloadManager = &envoy_config_overload_v3.OverloadManager{
-			RefreshInterval: protobuf.Duration(250 * time.Millisecond),
+			RefreshInterval: durationpb.New(250 * time.Millisecond),
 			ResourceMonitors: []*envoy_config_overload_v3.ResourceMonitor{
 				{
 					Name: "envoy.resource_monitors.fixed_heap",
@@ -412,7 +414,7 @@ func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_disc
 	}
 
 	return &envoy_service_discovery_v3.DiscoveryResponse{
-		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
+		Resources: []*anypb.Any{protobuf.MustMarshalAny(secret)},
 	}
 }
 
@@ -443,6 +445,6 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 	}
 
 	return &envoy_service_discovery_v3.DiscoveryResponse{
-		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
+		Resources: []*anypb.Any{protobuf.MustMarshalAny(secret)},
 	}
 }

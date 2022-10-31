@@ -16,7 +16,7 @@ package xds
 import (
 	"sync/atomic"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // Resource represents a source of proto.Messages that can be registered

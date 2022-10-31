@@ -228,6 +228,50 @@ func testClientCertAuth(namespace string) {
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), echoWithAuthSkipVerifyWithCACert))
 
+		f.Fixtures.Echo.Deploy(namespace, "echo-with-optional-auth")
+
+		// Get a server certificate for echo-with-optional-auth.
+		echoWithOptionalAuth := &certmanagerv1.Certificate{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-with-optional-auth-cert",
+			},
+			Spec: certmanagerv1.CertificateSpec{
+
+				Usages: []certmanagerv1.KeyUsage{
+					certmanagerv1.UsageServerAuth,
+				},
+				DNSNames:   []string{"echo-with-optional-auth.projectcontour.io"},
+				SecretName: "echo-with-optional-auth",
+				IssuerRef: certmanagermetav1.ObjectReference{
+					Name: "ca-projectcontour-io",
+				},
+			},
+		}
+		require.NoError(t, f.Client.Create(context.TODO(), echoWithOptionalAuth))
+
+		f.Fixtures.Echo.Deploy(namespace, "echo-with-optional-auth-no-ca")
+
+		// Get a server certificate for echo-with-optional-auth-no-ca.
+		echoWithOptionalAuthNoCA := &certmanagerv1.Certificate{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-with-optional-auth-no-ca-cert",
+			},
+			Spec: certmanagerv1.CertificateSpec{
+
+				Usages: []certmanagerv1.KeyUsage{
+					certmanagerv1.UsageServerAuth,
+				},
+				DNSNames:   []string{"echo-with-optional-auth-no-ca.projectcontour.io"},
+				SecretName: "echo-with-optional-auth-no-ca",
+				IssuerRef: certmanagermetav1.ObjectReference{
+					Name: "ca-projectcontour-io",
+				},
+			},
+		}
+		require.NoError(t, f.Client.Create(context.TODO(), echoWithOptionalAuthNoCA))
+
 		// Get a client certificate.
 		clientCert := &certmanagerv1.Certificate{
 			ObjectMeta: metav1.ObjectMeta{
@@ -394,6 +438,68 @@ func testClientCertAuth(namespace string) {
 		}
 		f.CreateHTTPProxyAndWaitFor(authSkipVerifyWithCAProxy, e2e.HTTPProxyValid)
 
+		// This proxy requests a client certificate but only verifies it if sent.
+		optionalAuthProxy := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-with-optional-auth",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "echo-with-optional-auth.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo-with-optional-auth",
+						ClientValidation: &contourv1.DownstreamValidation{
+							OptionalClientCertificate: true,
+							CACertificate:             "echo-with-auth",
+						},
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-with-optional-auth",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		f.CreateHTTPProxyAndWaitFor(optionalAuthProxy, e2e.HTTPProxyValid)
+
+		// This proxy requests a client certificate but doesn't verify it if sent.
+		optionalAuthNoCAProxy := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-with-optional-auth-no-ca",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "echo-with-optional-auth-no-ca.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo-with-optional-auth-no-ca",
+						ClientValidation: &contourv1.DownstreamValidation{
+							OptionalClientCertificate: true,
+							SkipClientCertValidation:  true,
+						},
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-with-optional-auth-no-ca",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		f.CreateHTTPProxyAndWaitFor(optionalAuthNoCAProxy, e2e.HTTPProxyValid)
+
 		// get the valid & invalid client certs
 		validClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)
 		invalidClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCertInvalid.Spec.SecretName)
@@ -463,6 +569,37 @@ func testClientCertAuth(namespace string) {
 			},
 			"echo-with-auth-skip-verify-with-ca with echo-client-cert-invalid should succeed": {
 				host:       authSkipVerifyWithCAProxy.Spec.VirtualHost.Fqdn,
+				clientCert: &invalidClientCert,
+				wantErr:    "",
+			},
+
+			"echo-with-optional-auth without a client cert should succeed": {
+				host:       optionalAuthProxy.Spec.VirtualHost.Fqdn,
+				clientCert: nil,
+				wantErr:    "",
+			},
+			"echo-with-optional-auth with echo-client-cert should succeed": {
+				host:       optionalAuthProxy.Spec.VirtualHost.Fqdn,
+				clientCert: &validClientCert,
+				wantErr:    "",
+			},
+			"echo-with-optional-auth with echo-client-cert-invalid should error": {
+				host:       optionalAuthProxy.Spec.VirtualHost.Fqdn,
+				clientCert: &invalidClientCert,
+				wantErr:    "tls: unknown certificate authority",
+			},
+			"echo-with-optional-auth-no-ca without a client cert should succeed": {
+				host:       optionalAuthNoCAProxy.Spec.VirtualHost.Fqdn,
+				clientCert: nil,
+				wantErr:    "",
+			},
+			"echo-with-optional-auth-no-ca with echo-client-cert should succeed": {
+				host:       optionalAuthNoCAProxy.Spec.VirtualHost.Fqdn,
+				clientCert: &validClientCert,
+				wantErr:    "",
+			},
+			"echo-with-optional-auth-no-ca with echo-client-cert-invalid should succeed": {
+				host:       optionalAuthNoCAProxy.Spec.VirtualHost.Fqdn,
 				clientCert: &invalidClientCert,
 				wantErr:    "",
 			},

@@ -22,7 +22,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -419,10 +419,10 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxConnections:     protobuf.UInt32(9000),
-						MaxPendingRequests: protobuf.UInt32(4096),
-						MaxRequests:        protobuf.UInt32(404),
-						MaxRetries:         protobuf.UInt32(7),
+						MaxConnections:     wrapperspb.UInt32(9000),
+						MaxPendingRequests: wrapperspb.UInt32(4096),
+						MaxRequests:        wrapperspb.UInt32(404),
+						MaxRetries:         wrapperspb.UInt32(7),
 					}},
 				},
 			}),
@@ -452,7 +452,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: protobuf.UInt32(9999),
+						MaxPendingRequests: wrapperspb.UInt32(9999),
 					}},
 				},
 			}),

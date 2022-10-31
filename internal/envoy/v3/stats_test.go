@@ -25,6 +25,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestStatsListeners(t *testing.T) {
@@ -100,7 +101,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				},
@@ -144,7 +145,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				}},
@@ -188,7 +189,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				},
@@ -233,7 +234,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				}},
@@ -255,7 +256,7 @@ func TestStatsListeners(t *testing.T) {
 								},
 							},
 						},
-						RequireClientCertificate: protobuf.Bool(true),
+						RequireClientCertificate: wrapperspb.Bool(true),
 					},
 				),
 			}},
@@ -284,7 +285,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				},
@@ -324,7 +325,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				},
@@ -354,7 +355,7 @@ func TestStatsListeners(t *testing.T) {
 									TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
 								},
 							}},
-							NormalizePath: protobuf.Bool(true),
+							NormalizePath: wrapperspb.Bool(true),
 						}),
 					},
 				},

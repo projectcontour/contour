@@ -7,9 +7,8 @@ require (
 	github.com/bombsimon/logrusr/v2 v2.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.8.0+incompatible
-	github.com/envoyproxy/go-control-plane v0.10.3-0.20220715065308-8bcd7ee0191a
+	github.com/envoyproxy/go-control-plane v0.10.3-0.20221018195204-799a7af9e5b9
 	github.com/go-logr/logr v1.2.3
-	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.8
 	github.com/google/go-github/v39 v39.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0

@@ -807,6 +807,13 @@ type Service struct {
 	// +kubebuilder:validation:ExclusiveMinimum=false
 	// +kubebuilder:validation:ExclusiveMaximum=true
 	Port int `json:"port"`
+	// HealthPort is the port for this service healthcheck.
+	// If not specified, Port is used for service healthchecks.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// +optional
+	HealthPort int `json:"healthPort,omitempty"`
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
 	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
 	// +kubebuilder:validation:Enum=h2;h2c;tls
@@ -1118,6 +1125,11 @@ type DownstreamValidation struct {
 	// +optional
 	SkipClientCertValidation bool `json:"skipClientCertValidation"`
 
+	// ForwardClientCertificate adds the selected data from the passed client TLS certificate
+	// to the x-forwarded-client-cert header.
+	// +optional
+	ForwardClientCertificate *ClientCertificateDetails `json:"forwardClientCertificate,omitempty"`
+
 	// Name of a Kubernetes opaque secret that contains a concatenated list of PEM encoded CRLs.
 	// The secret must contain key named crl.pem.
 	// This field will be used to verify that a client certificate has not been revoked.
@@ -1131,6 +1143,33 @@ type DownstreamValidation struct {
 	// certificate chain will be subject to validation by CRL.
 	// +optional
 	OnlyVerifyLeafCertCrl bool `json:"crlOnlyVerifyLeafCert"`
+
+	// OptionalClientCertificate when set to true will request a client certificate
+	// but allow the connection to continue if the client does not provide one.
+	// If a client certificate is sent, it will be verified according to the
+	// other properties, which includes disabling validation if
+	// SkipClientCertValidation is set. Defaults to false.
+	// +optional
+	OptionalClientCertificate bool `json:"optionalClientCertificate"`
+}
+
+// ClientCertificateDetails defines which parts of the client certificate will be forwarded.
+type ClientCertificateDetails struct {
+	// Subject of the client cert.
+	// +optional
+	Subject bool `json:"subject"`
+	// Client cert in URL encoded PEM format.
+	// +optional
+	Cert bool `json:"cert"`
+	// Client cert chain (including the leaf cert) in URL encoded PEM format.
+	// +optional
+	Chain bool `json:"chain"`
+	// DNS type Subject Alternative Names of the client cert.
+	// +optional
+	DNS bool `json:"dns"`
+	// URI type Subject Alternative Name of the client cert.
+	// +optional
+	URI bool `json:"uri"`
 }
 
 // HTTPProxyStatus reports the current state of the HTTPProxy.
