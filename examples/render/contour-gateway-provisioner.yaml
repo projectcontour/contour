@@ -2578,7 +2578,7 @@ spec:
                       type: object
                     type: array
                   logLevel:
-                    description: LogLevel sets the log level for Envoy Allowed values
+                    description: LogLevel sets the log level for Envoy. Allowed values
                       are "trace", "debug", "info", "warn", "error", "critical", "off".
                     type: string
                   networkPublishing:
