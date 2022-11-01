@@ -124,6 +124,13 @@ func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *corev1.Service, pol
 	}
 }
 
+func checkServiceHasNoExternalTrafficPolicy(t *testing.T, svc *corev1.Service) {
+	t.Helper()
+
+	if svc.Spec.ExternalTrafficPolicy != "" {
+		t.Errorf("service has invalid external traffic policy type %s", svc.Spec.ExternalTrafficPolicy)
+	}
+}
 func checkServiceHasLoadBalancerAddress(t *testing.T, svc *corev1.Service, address string) {
 	t.Helper()
 
@@ -179,7 +186,7 @@ func TestDesiredEnvoyService(t *testing.T) {
 
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
 	svc = DesiredEnvoyService(cntr)
-	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
+	checkServiceHasNoExternalTrafficPolicy(t, svc)
 
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).

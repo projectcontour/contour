@@ -196,11 +196,10 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 			Labels:      model.CommonLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:                 ports,
-			Selector:              dataplane.EnvoyPodSelector(contour).MatchLabels,
-			SessionAffinity:       corev1.ServiceAffinityNone,
-			LoadBalancerIP:        contour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP,
-			ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
+			Ports:           ports,
+			Selector:        dataplane.EnvoyPodSelector(contour).MatchLabels,
+			SessionAffinity: corev1.ServiceAffinityNone,
+			LoadBalancerIP:  contour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP,
 		},
 	}
 
