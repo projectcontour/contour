@@ -14,8 +14,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,24 +38,6 @@ const (
 	// OffLog disable logging for Envoy.
 	OffLog LogLevel = "off"
 )
-
-func (l LogLevel) EnvoyValidate() error {
-	switch l {
-	case TraceLog, DebugLog, InfoLog, WarnLog, ErrorLog, CriticalLog, OffLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid log level %q for envoy", l)
-	}
-}
-
-func (l LogLevel) ContourValidate() error {
-	switch l {
-	case DebugLog, InfoLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid log level %q for contour", l)
-	}
-}
 
 // ContourDeploymentSpec specifies options for how a Contour
 // instance should be provisioned.
