@@ -686,7 +686,7 @@ assertEqualVersion(t, "1", res)
 		),
 		TypeUrl: clusterType,
 	})
-
+assertEqualVersion(t, "1", res)
 	// verifying that deleting a Service that is not referenced by an HTTPProxy,
 	// does not trigger a rebuild
 	rh.OnDelete(s2)
