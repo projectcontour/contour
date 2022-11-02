@@ -673,7 +673,7 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-
+assertEqualVersion(t, "1", res)
 	// This service which is added should not cause a DAG rebuild
 	s2 := fixture.NewService("kuard-notreferenced").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
