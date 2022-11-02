@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -193,6 +194,16 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 						invalidParamsMessages = append(invalidParamsMessages, msg)
 					}
 				}
+			}
+
+			switch params.Spec.Envoy.LogLevel {
+			// valid values, nothing to do.
+			case "", v1alpha1.TraceLog, v1alpha1.DebugLog, v1alpha1.InfoLog, v1alpha1.WarnLog, v1alpha1.ErrorLog, v1alpha1.CriticalLog, v1alpha1.OffLog:
+			// invalid value, set message.
+			default:
+				msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.logLevel %q, must be trace, debug, info, warn, error, critical or off",
+					params.Spec.Envoy.LogLevel)
+				invalidParamsMessages = append(invalidParamsMessages, msg)
 			}
 		}
 

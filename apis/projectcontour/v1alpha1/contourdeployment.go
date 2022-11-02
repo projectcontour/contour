@@ -14,8 +14,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,21 +22,22 @@ import (
 type LogLevel string
 
 const (
-	// InfoLog sets the log level for Contour to `info`.
-	InfoLog LogLevel = "info"
 
-	// DebugLog sets the log level for Contour to `debug`.
+	// TraceLog sets the log level for Envoy to `trace`.
+	TraceLog LogLevel = "trace"
+	// DebugLog sets the log level for Contour/Envoy to `debug`.
 	DebugLog LogLevel = "debug"
+	// InfoLog sets the log level for Contour/Envoy to `info`.
+	InfoLog LogLevel = "info"
+	// WarnLog sets the log level for Envoy to `warn`.
+	WarnLog LogLevel = "warn"
+	// ErrorLog sets the log level for Envoy to `error`.
+	ErrorLog LogLevel = "error"
+	// CriticalLog sets the log level for Envoy to `critical`.
+	CriticalLog LogLevel = "critical"
+	// OffLog disable logging for Envoy.
+	OffLog LogLevel = "off"
 )
-
-func (l LogLevel) Validate() error {
-	switch l {
-	case InfoLog, DebugLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid log level %q", l)
-	}
-}
 
 // ContourDeploymentSpec specifies options for how a Contour
 // instance should be provisioned.
@@ -151,6 +150,12 @@ type EnvoySettings struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// LogLevel sets the log level for Envoy.
+	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
+	//
+	// +optional
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -667,7 +667,7 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-
+	res.assertEqualVersion(t, "1")
 	// This service which is added should not cause a DAG rebuild
 	s2 := fixture.NewService("kuard-notreferenced").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -680,7 +680,7 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-
+	res.assertEqualVersion(t, "1")
 	// verifying that deleting a Service that is not referenced by an HTTPProxy,
 	// does not trigger a rebuild
 	rh.OnDelete(s2)
@@ -696,5 +696,6 @@ func TestUnreferencedService(t *testing.T) {
 	// verifying that deleting a Service that is referenced by an HTTPProxy,
 	// triggers a rebuild
 	rh.OnDelete(s1)
+	res = c.Request(clusterType)
 	res.assertEqualVersion(t, "2")
 }
