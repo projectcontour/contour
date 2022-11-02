@@ -3366,6 +3366,20 @@ int
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>healthPort</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HealthPort is the port for this service healthcheck.
+If not specified, Port is used for service healthchecks.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>protocol</code>
 <br>
 <em>
@@ -6060,6 +6074,22 @@ Cannot be updated.
 More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>logLevel</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LogLevel">
+LogLevel
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LogLevel sets the log level for Envoy.
+Allowed values are &ldquo;trace&rdquo;, &ldquo;debug&rdquo;, &ldquo;info&rdquo;, &ldquo;warn&rdquo;, &ldquo;error&rdquo;, &ldquo;critical&rdquo;, &ldquo;off&rdquo;.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS
@@ -6659,7 +6689,8 @@ string
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>
 <p>LogLevel is the logging levels available.</p>
@@ -6671,11 +6702,26 @@ string
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;debug&#34;</p></td>
-<td><p>DebugLog sets the log level for Contour to <code>debug</code>.</p>
+<tbody><tr><td><p>&#34;critical&#34;</p></td>
+<td><p>CriticalLog sets the log level for Envoy to <code>critical</code>.</p>
+</td>
+</tr><tr><td><p>&#34;debug&#34;</p></td>
+<td><p>DebugLog sets the log level for Contour/Envoy to <code>debug</code>.</p>
+</td>
+</tr><tr><td><p>&#34;error&#34;</p></td>
+<td><p>ErrorLog sets the log level for Envoy to <code>error</code>.</p>
 </td>
 </tr><tr><td><p>&#34;info&#34;</p></td>
-<td><p>InfoLog sets the log level for Contour to <code>info</code>.</p>
+<td><p>InfoLog sets the log level for Contour/Envoy to <code>info</code>.</p>
+</td>
+</tr><tr><td><p>&#34;off&#34;</p></td>
+<td><p>OffLog disable logging for Envoy.</p>
+</td>
+</tr><tr><td><p>&#34;trace&#34;</p></td>
+<td><p>TraceLog sets the log level for Envoy to <code>trace</code>.</p>
+</td>
+</tr><tr><td><p>&#34;warn&#34;</p></td>
+<td><p>WarnLog sets the log level for Envoy to <code>warn</code>.</p>
 </td>
 </tr></tbody>
 </table>
