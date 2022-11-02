@@ -203,7 +203,7 @@ This can be useful for separating external vs. internal ingress, for having sepa
 The recommended way to deploy multiple Contour instances is to put each instance in its own namespace.
 This avoids most naming conflicts that would otherwise occur, and provides better logical separation between the instances.
 However, it is also possible to deploy multiple instances in a single namespace if needed; this approach requires more modifications to the example manifests to function properly.
-Each approach is described in detail below, using the `examples/contour` directory's manifests for reference.
+Each approach is described in detail below, using the [examples/contour][17] directory's manifests for reference.
 
 ### In Separate Namespaces (recommended)
 
@@ -216,8 +216,9 @@ In general, this approach requires updating the `namespace` of all resources, as
   - update the namespace of the `ConfigMap`
   - if you have any namespaced references within the ConfigMap contents (e.g. `fallback-certificate`, `envoy-client-certificate`), ensure those point to the correct namespace as well.
 - `01-crds.yaml` will be shared between the two instances; no changes are needed.
-- `02-certgen.yaml`: 
+- `02-job-certgen.yaml`: 
   - update the namespace of all resources
+  - update the namespace of the `ServiceAccount` subject within the `RoleBinding`
 - `02-role-contour.yaml`:
   - update the name of the `ClusterRole` to be unique
   - update the namespace of the `Role`
@@ -247,12 +248,13 @@ This approach requires giving unique names to all resources to avoid conflicts, 
 - `01-contour-config.yaml`:
   - update the name of the `ConfigMap` to be unique
 - `01-crds.yaml` will be shared between the two instances; no changes are needed.
-- `02-certgen.yaml`:
-  - update the names of all resource to be unique
+- `02-job-certgen.yaml`:
+  - update the names of all resources to be unique
   - update the name of the `Role` within the `RoleBinding`'s roleRef to match the unique name used for the `Role`
   - update the name of the `ServiceAccount` within the `RoleBinding`'s subjects to match the unique name used for the `ServiceAccount`
   - update the serviceAccountName of the `Job`
   - add an argument to the container, `--secrets-name-suffix=<unique suffix>`, so the generated TLS secrets have unique names
+  - update the spec.template.metadata.labels on the `Job` to be unique
 - `02-role-contour.yaml`:
   - update the names of the `ClusterRole` and `Role` to be unique
 - `02-rbac.yaml`:
@@ -271,7 +273,7 @@ This approach requires giving unique names to all resources to avoid conflicts, 
   - update the serviceAccountName to match the unique name used in `00-common.yaml`
   - update the `contourcert` volume to reference the unique `Secret` name generated from `02-certgen.yaml` (e.g. `contourcert<unique-suffix>`)
   - update the `contour-config` volume to reference the unique `ConfigMap` name used in `01-contour-config.yaml`
-  - add an argument to the container, `--leader-election-resource=<unique lease name>`, so this Contour instance uses a separate leader election `Lease`
+  - add an argument to the container, `--leader-election-resource-name=<unique lease name>`, so this Contour instance uses a separate leader election `Lease`
   - add an argument to the container, `--envoy-service-name=<unique envoy service name>`, referencing the unique name used in `02-service-envoy.yaml`
   - add an argument to the container, `--ingress-class-name=<unique ingress class>`, so this instance only processes Ingresses/HTTPProxies with the given ingress class.
 - `03-envoy.yaml`:
@@ -330,3 +332,4 @@ $ kubectl delete ns contour-operator
 [14]: {{< param github_url>}}/tree/{{< param version >}}/examples/render/contour-deployment.yaml
 [15]: /resources/upgrading/
 [16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
+[17]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
