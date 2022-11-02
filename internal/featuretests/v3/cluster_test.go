@@ -22,7 +22,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -626,11 +625,6 @@ func TestUnreferencedService(t *testing.T) {
 
 	// Equals(...) only checks resources, so explicitly
 	// check version & nonce here and subsequently.
-	assertEqualVersion := func(t *testing.T, expected string, r *Response) {
-		t.Helper()
-		assert.Equal(t, expected, r.VersionInfo, "got unexpected VersionInfo")
-		assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
-	}
 
 	// This service which is added should cause a DAG rebuild
 	s1 := fixture.NewService("kuard").
@@ -697,10 +691,10 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-	assertEqualVersion(t, "1", res)
+	res.assertEqualVersion(t, "1")
 
 	// verifying that deleting a Service that is referenced by an HTTPProxy,
 	// triggers a rebuild
 	rh.OnDelete(s1)
-	assertEqualVersion(t, "2", res)
+	res.assertEqualVersion(t, "2")
 }
