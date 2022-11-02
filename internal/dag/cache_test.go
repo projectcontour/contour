@@ -1000,7 +1000,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			want: true,
+			want: false,
 		},
 		"remove namespace": {
 			cache: cache(&v1.Namespace{
