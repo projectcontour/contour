@@ -350,6 +350,40 @@ func TestGatewayClassReconcile(t *testing.T) {
 				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
 			},
 		},
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExternalTrafficPolicy gets Accepted: false condition": {
+			gatewayClass: &gatewayv1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+					ParametersRef: &gatewayv1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
+							ExternalTrafficPolicy: "invalid-external-traffic-policy",
+						},
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+			},
+		},
 	}
 
 	for name, tc := range tests {

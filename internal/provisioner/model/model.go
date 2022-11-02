@@ -41,7 +41,8 @@ func Default(namespace, name string) *Contour {
 			EnvoyLogLevel:     contourv1alpha1.InfoLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
-					Type: LoadBalancerServicePublishingType,
+					Type:                  LoadBalancerServicePublishingType,
+					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 					ContainerPorts: []ContainerPort{
 						{
 							Name:       "http",
@@ -366,6 +367,13 @@ type EnvoyNetworkPublishing struct {
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
+
+	// ExternalTrafficPolicy describes how nodes distribute service traffic they
+	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
+	// and LoadBalancer IPs).
+	//
+	// If unset, defaults to "Local".
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType
 }
 
 type NetworkPublishingType = contourv1alpha1.NetworkPublishingType

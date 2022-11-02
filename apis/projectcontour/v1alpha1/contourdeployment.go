@@ -204,6 +204,15 @@ type NetworkPublishing struct {
 	// +optional
 	Type NetworkPublishingType `json:"type,omitempty"`
 
+	// ExternalTrafficPolicy describes how nodes distribute service traffic they
+	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
+	// and LoadBalancer IPs).
+	//
+	// If unset, defaults to "Local".
+	//
+	// +optional
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
+
 	// ServiceAnnotations is the annotations to add to
 	// the provisioned Envoy service.
 	//

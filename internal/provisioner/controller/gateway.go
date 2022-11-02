@@ -284,6 +284,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				if networkPublishing.Type != "" {
 					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
 				}
+
+				if networkPublishing.ExternalTrafficPolicy != "" {
+					contourModel.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = networkPublishing.ExternalTrafficPolicy
+				}
+
 				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
 			}
 
