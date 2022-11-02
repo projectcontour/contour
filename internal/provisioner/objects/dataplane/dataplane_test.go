@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -200,6 +201,17 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 	t.Errorf("deployment has unexpected SecurityContext %v", expected)
 }
 
+func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string) {
+	t.Helper()
+
+	for _, a := range container.Args {
+		if a == arg {
+			return
+		}
+	}
+	t.Errorf("container is missing argument %q", arg)
+}
+
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -222,6 +234,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	testLogLevelArg := "--log-level debug"
 
 	resQutoa := corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
@@ -234,9 +247,15 @@ func TestDesiredDaemonSet(t *testing.T) {
 		},
 	}
 	cntr.Spec.EnvoyResources = resQutoa
+
+	// Change the Envoy log level to test --log-level debug.
+	cntr.Spec.EnvoyLogLevel = v1alpha1.DebugLog
+
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
+	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
+
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)
 	container = checkDaemonSetHasContainer(t, ds, envoyInitContainerName, true)
@@ -255,6 +274,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
+
 }
 
 func TestNodePlacementDaemonSet(t *testing.T) {
