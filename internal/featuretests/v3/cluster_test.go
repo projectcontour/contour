@@ -702,5 +702,6 @@ assertEqualVersion(t, "1", res)
 	// verifying that deleting a Service that is referenced by an HTTPProxy,
 	// triggers a rebuild
 	rh.OnDelete(s1)
+        res = c.Request(clusterType)
 	assertEqualVersion(t, "2", res)
 }
