@@ -292,6 +292,36 @@ To deploy multiple Contour instances, you create multiple `Gateways`, either in 
 
 Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
 
+If you are using `Ingress` or `HTTPProxy`, you will likely want to assign each Contour instance a different ingress class, so they each handle different subsets of `Ingress`/`HTTPProxy` resources.
+To do this, [create two separate GatewayClasses][18], each with a different `ContourDeployment` parametersRef.
+The `ContourDeployment` specs should look like:
+
+```yaml
+kind: ContourDeployment
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  namespace: projectcontour
+  name: ingress-class-1
+spec:
+  runtimeSettings:
+    ingress:
+      classNames:
+        - ingress-class-1
+---
+kind: ContourDeployment
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  namespace: projectcontour
+  name: ingress-class-2
+spec:
+  runtimeSettings:
+    ingress:
+      classNames:
+        - ingress-class-2
+```
+
+Then create each `Gateway` with the appropriate `spec.gatewayClassName`.
+
 ## Running Contour in tandem with another ingress controller
 
 If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress,
@@ -333,3 +363,4 @@ $ kubectl delete ns contour-operator
 [15]: /resources/upgrading/
 [16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
 [17]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
+[18]: /guides/gateway-api/#next-steps
