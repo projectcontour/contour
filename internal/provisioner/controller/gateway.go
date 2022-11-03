@@ -336,7 +336,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyLogLevel = gatewayClassParams.Spec.Envoy.LogLevel
 			}
 
-
 			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
 				gatewayClassParams.Spec.Envoy.Deployment != nil &&
 				gatewayClassParams.Spec.Envoy.Deployment.Strategy != nil {
