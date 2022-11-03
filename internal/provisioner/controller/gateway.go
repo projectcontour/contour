@@ -264,7 +264,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			contourModel.Spec.ContourResources = gatewayClassParams.Spec.Contour.Resources
 
-			contourModel.Spec.LogLevel = gatewayClassParams.Spec.Contour.LogLevel
+			contourModel.Spec.ContourLogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
 
@@ -301,6 +301,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				if networkPublishing.Type != "" {
 					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
 				}
+
+				if networkPublishing.ExternalTrafficPolicy != "" {
+					contourModel.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = networkPublishing.ExternalTrafficPolicy
+				}
+
 				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
 			}
 
@@ -326,6 +331,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			contourModel.Spec.EnvoyResources = gatewayClassParams.Spec.Envoy.Resources
+
+			if gatewayClassParams.Spec.Envoy.LogLevel != "" {
+				contourModel.Spec.EnvoyLogLevel = gatewayClassParams.Spec.Envoy.LogLevel
+			}
+
 
 			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
 				gatewayClassParams.Spec.Envoy.Deployment != nil &&

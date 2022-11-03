@@ -93,7 +93,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesLogLevel),
 	}
 
-	if contour.Spec.LogLevel == v1alpha1.DebugLog {
+	if contour.Spec.ContourLogLevel == v1alpha1.DebugLog {
 		args = append(args, "--debug")
 	}
 

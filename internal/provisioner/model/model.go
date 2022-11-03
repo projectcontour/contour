@@ -42,9 +42,11 @@ func Default(namespace, name string) *Contour {
 			ContourReplicas:   2,
 			EnvoyWorkloadType: WorkloadTypeDaemonSet,
 			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
+			EnvoyLogLevel:     contourv1alpha1.InfoLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
-					Type: LoadBalancerServicePublishingType,
+					Type:                  LoadBalancerServicePublishingType,
+					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 					ContainerPorts: []ContainerPort{
 						{
 							Name:       "http",
@@ -166,9 +168,9 @@ type ContourSpec struct {
 	//   https://projectcontour.io/docs/main/config/annotations/#ingress-class
 	IngressClassName *string
 
-	// LogLevel sets the log level for Contour
+	// ContourLogLevel sets the log level for Contour
 	// Allowed values are "info", "debug".
-	LogLevel contourv1alpha1.LogLevel
+	ContourLogLevel contourv1alpha1.LogLevel
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
@@ -222,6 +224,10 @@ type ContourSpec struct {
 
 	// Compute Resources required by contour container.
 	ContourResources corev1.ResourceRequirements
+
+	// EnvoyLogLevel sets the log level for Envoy
+	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
+	EnvoyLogLevel contourv1alpha1.LogLevel
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -397,6 +403,13 @@ type EnvoyNetworkPublishing struct {
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
+
+	// ExternalTrafficPolicy describes how nodes distribute service traffic they
+	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
+	// and LoadBalancer IPs).
+	//
+	// If unset, defaults to "Local".
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType
 }
 
 type NetworkPublishingType = contourv1alpha1.NetworkPublishingType

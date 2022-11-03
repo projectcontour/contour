@@ -14,6 +14,7 @@
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
 #       examples/gateway/00-namespace.yaml
+#       examples/gateway/01-admission_webhook_local.yaml
 #       examples/gateway/01-admission_webhook.yaml
 #       examples/gateway/02-certificate_config.yaml
 #       examples/gateway/03-gatewayclass.yaml
@@ -2981,10 +2982,20 @@ spec:
                       - name
                       type: object
                     type: array
+                  logLevel:
+                    description: LogLevel sets the log level for Envoy. Allowed values
+                      are "trace", "debug", "info", "warn", "error", "critical", "off".
+                    type: string
                   networkPublishing:
                     description: NetworkPublishing defines how to expose Envoy to
                       a network.
                     properties:
+                      externalTrafficPolicy:
+                        description: "ExternalTrafficPolicy describes how nodes distribute
+                          service traffic they receive on one of the Service's \"externally-facing\"
+                          addresses (NodePorts, ExternalIPs, and LoadBalancer IPs).
+                          \n If unset, defaults to \"Local\"."
+                        type: string
                       serviceAnnotations:
                         additionalProperties:
                           type: string
@@ -14295,6 +14306,93 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: gateway-system
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: gateway-api-admission
+webhooks:
+  - name: validate.gateway.networking.k8s.io
+    matchPolicy: Equivalent
+    rules:
+      - operations: [ "CREATE" , "UPDATE" ]
+        apiGroups: [ "gateway.networking.k8s.io" ]
+        apiVersions: [ "v1alpha2", "v1beta1" ]
+        resources: [ "gateways", "gatewayclasses", "httproutes" ]
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: gateway-api-admission-server
+        namespace: gateway-system
+        path: "/validate"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: gateway-api-webhook-server
+  name: gateway-api-admission-server
+  namespace: gateway-system
+spec:
+  type: ClusterIP
+  ports:
+    - name: https-webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    name: gateway-api-admission-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-api-admission-server
+  namespace: gateway-system
+  labels:
+    name: gateway-api-admission-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gateway-api-admission-server
+  template:
+    metadata:
+      name: gateway-api-admission-server
+      labels:
+        name: gateway-api-admission-server
+    spec:
+      containers:
+        - name: webhook
+          image: release.daocloud.io/skoala/admission-server:v0.5.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - -logtostderr
+            - --tlsCertFile=/etc/certs/cert
+            - --tlsKeyFile=/etc/certs/key
+            - -v=10
+            - 2>&1
+          ports:
+            - containerPort: 8443
+              name: webhook
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 100m
+            requests:
+              memory: 50Mi
+              cpu: 100m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/certs
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: gateway-api-admission
 
 ---
 apiVersion: admissionregistration.k8s.io/v1

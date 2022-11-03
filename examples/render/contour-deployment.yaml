@@ -2975,10 +2975,20 @@ spec:
                       - name
                       type: object
                     type: array
+                  logLevel:
+                    description: LogLevel sets the log level for Envoy. Allowed values
+                      are "trace", "debug", "info", "warn", "error", "critical", "off".
+                    type: string
                   networkPublishing:
                     description: NetworkPublishing defines how to expose Envoy to
                       a network.
                     properties:
+                      externalTrafficPolicy:
+                        description: "ExternalTrafficPolicy describes how nodes distribute
+                          service traffic they receive on one of the Service's \"externally-facing\"
+                          addresses (NodePorts, ExternalIPs, and LoadBalancer IPs).
+                          \n If unset, defaults to \"Local\"."
+                        type: string
                       serviceAnnotations:
                         additionalProperties:
                           type: string

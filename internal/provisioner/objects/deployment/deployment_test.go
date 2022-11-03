@@ -158,7 +158,7 @@ func TestDesiredDeployment(t *testing.T) {
 	cntr.Spec.KubernetesLogLevel = 7
 
 	// Change the Contour log level to test --debug.
-	cntr.Spec.LogLevel = v1alpha1.DebugLog
+	cntr.Spec.ContourLogLevel = v1alpha1.DebugLog
 
 	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "value",

@@ -6178,6 +6178,22 @@ More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-res
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>logLevel</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.LogLevel">
+LogLevel
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LogLevel sets the log level for Envoy.
+Allowed values are &ldquo;trace&rdquo;, &ldquo;debug&rdquo;, &ldquo;info&rdquo;, &ldquo;warn&rdquo;, &ldquo;error&rdquo;, &ldquo;critical&rdquo;, &ldquo;off&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>daemonSet</code>
 <br>
 <em>
@@ -6807,7 +6823,8 @@ string
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>
 <p>LogLevel is the logging levels available.</p>
@@ -6819,11 +6836,26 @@ string
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;debug&#34;</p></td>
-<td><p>DebugLog sets the log level for Contour to <code>debug</code>.</p>
+<tbody><tr><td><p>&#34;critical&#34;</p></td>
+<td><p>CriticalLog sets the log level for Envoy to <code>critical</code>.</p>
+</td>
+</tr><tr><td><p>&#34;debug&#34;</p></td>
+<td><p>DebugLog sets the log level for Contour/Envoy to <code>debug</code>.</p>
+</td>
+</tr><tr><td><p>&#34;error&#34;</p></td>
+<td><p>ErrorLog sets the log level for Envoy to <code>error</code>.</p>
 </td>
 </tr><tr><td><p>&#34;info&#34;</p></td>
-<td><p>InfoLog sets the log level for Contour to <code>info</code>.</p>
+<td><p>InfoLog sets the log level for Contour/Envoy to <code>info</code>.</p>
+</td>
+</tr><tr><td><p>&#34;off&#34;</p></td>
+<td><p>OffLog disable logging for Envoy.</p>
+</td>
+</tr><tr><td><p>&#34;trace&#34;</p></td>
+<td><p>TraceLog sets the log level for Envoy to <code>trace</code>.</p>
+</td>
+</tr><tr><td><p>&#34;warn&#34;</p></td>
+<td><p>WarnLog sets the log level for Envoy to <code>warn</code>.</p>
 </td>
 </tr></tbody>
 </table>
@@ -7096,6 +7128,24 @@ NodePort Service is created to publish the network endpoints.</p>
 ClusterIP Service is created to publish the network endpoints.</p>
 <p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types</a></p>
 <p>If unset, defaults to LoadBalancerService.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>externalTrafficPolicy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#serviceexternaltrafficpolicytype-v1-core">
+Kubernetes core/v1.ServiceExternalTrafficPolicyType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExternalTrafficPolicy describes how nodes distribute service traffic they
+receive on one of the Service&rsquo;s &ldquo;externally-facing&rdquo; addresses (NodePorts, ExternalIPs,
+and LoadBalancer IPs).</p>
+<p>If unset, defaults to &ldquo;Local&rdquo;.</p>
 </td>
 </tr>
 <tr>
