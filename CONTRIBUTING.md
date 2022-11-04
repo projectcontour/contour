@@ -17,7 +17,8 @@ This section describes how to build Contour from source.
 
 1. *Install Go*
 
-    Contour requires [Go 1.16][1] or later.
+    Contour generally uses the most recent minor [Go version][1].
+    Look in the `Makefile` (search for the `BUILD_BASE_IMAGE` variable) to find the specific version being used.
 
 ### Fetch the source
 
