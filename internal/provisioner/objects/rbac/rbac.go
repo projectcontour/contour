@@ -17,15 +17,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrole"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrolebinding"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/role"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/rolebinding"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/serviceaccount"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -89,63 +91,54 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		contour.EnvoyRBACNames(),
 	} {
 		if len(name.RoleBinding) > 0 {
-			rolebinding, err := rolebinding.CurrentRoleBinding(ctx, cli, contour.Namespace, name.RoleBinding)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if rolebinding != nil {
-				deletions = append(deletions, rolebinding)
-			}
+			deletions = append(deletions, &rbacv1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: contour.Namespace,
+					Name:      name.RoleBinding,
+				},
+			})
 		}
 
 		if len(name.Role) > 0 {
-			role, err := role.CurrentRole(ctx, cli, contour.Namespace, name.Role)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if role != nil {
-				deletions = append(deletions, role)
-			}
+			deletions = append(deletions, &rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: contour.Namespace,
+					Name:      name.Role,
+				},
+			})
 		}
 
 		if len(name.ClusterRoleBinding) > 0 {
-			clusterrolebinding, err := clusterrolebinding.CurrentClusterRoleBinding(ctx, cli, name.ClusterRoleBinding)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if clusterrolebinding != nil {
-				deletions = append(deletions, clusterrolebinding)
-			}
+			deletions = append(deletions, &rbacv1.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: contour.Namespace,
+					Name:      name.ClusterRoleBinding,
+				},
+			})
 		}
 
 		if len(name.ClusterRole) > 0 {
-			clusterrole, err := clusterrole.CurrentClusterRole(ctx, cli, name.ClusterRole)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if clusterrole != nil {
-				deletions = append(deletions, clusterrole)
-			}
+			deletions = append(deletions, &rbacv1.ClusterRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: contour.Namespace,
+					Name:      name.ClusterRole,
+				},
+			})
 		}
 
 		if len(name.ServiceAccount) > 0 {
-			serviceaccount, err := serviceaccount.CurrentServiceAccount(ctx, cli, contour.Namespace, name.ServiceAccount)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if serviceaccount != nil {
-				deletions = append(deletions, serviceaccount)
-			}
+			deletions = append(deletions, &corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: contour.Namespace,
+					Name:      name.ServiceAccount,
+				},
+			})
 		}
 	}
 
 	for _, deletion := range deletions {
-		if !labels.Exist(deletion, model.OwnerLabels(contour)) {
-			continue
-		}
-
-		if err := cli.Delete(ctx, deletion); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete %s %s/%s: %w", deletion.GetObjectKind().GroupVersionKind().Kind, deletion.GetNamespace(), deletion.GetName(), err)
+		if err := objects.EnsureObjectDeleted(ctx, cli, deletion, contour); err != nil {
+			return err
 		}
 	}
 

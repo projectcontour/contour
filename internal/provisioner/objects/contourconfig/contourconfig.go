@@ -22,7 +22,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,8 +44,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 	// being configured correctly for the Gateway being provisioned.
 	setGatewayConfig(desired, contour)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desired client.Object) error {
-		current := currentObj.(*contour_api_v1alpha1.ContourConfiguration)
+	updater := func(ctx context.Context, cli client.Client, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
 		maybeUpdated := current.DeepCopy()
 		setGatewayConfig(maybeUpdated, contour)
 
@@ -56,11 +54,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-		return current(ctx, cli, namespace, name)
-	}
-
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, new(contour_api_v1alpha1.ContourConfiguration))
 }
 
 func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {
@@ -82,24 +76,13 @@ func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour
 
 // EnsureContourConfigDeleted deletes a ContourConfig for the provided contour, if the configured owner labels exist.
 func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	getter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-		return current(ctx, cli, namespace, name)
-	}
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourConfigurationName(), getter)
-
-}
-
-// current gets the ContourConfiguration for the provided contour from the api server.
-func current(ctx context.Context, cli client.Client, namespace, name string) (*contour_api_v1alpha1.ContourConfiguration, error) {
-	current := &contour_api_v1alpha1.ContourConfiguration{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
+	obj := &contour_api_v1alpha1.ContourConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourConfigurationName(),
+		},
 	}
 
-	if err := cli.Get(ctx, key, current); err != nil {
-		return nil, err
-	}
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 
-	return current, nil
 }
