@@ -196,6 +196,132 @@ The included `shutdown-manager` can assist with watching Envoy for open connecti
 See the [redeploy envoy][11] docs for more information about how to not drop active connections to Envoy.
 Also see the [upgrade guides][15] on steps to roll out a new version of Contour.
 
+## Running Multiple Instances of Contour
+
+It's possible to run multiple instances of Contour within a single Kubernetes cluster.
+This can be useful for separating external vs. internal ingress, for having separate ingress controllers for different ingress classes, and more.
+The recommended way to deploy multiple Contour instances is to put each instance in its own namespace.
+This avoids most naming conflicts that would otherwise occur, and provides better logical separation between the instances.
+However, it is also possible to deploy multiple instances in a single namespace if needed; this approach requires more modifications to the example manifests to function properly.
+Each approach is described in detail below, using the [examples/contour][17] directory's manifests for reference.
+
+### In Separate Namespaces (recommended)
+
+In general, this approach requires updating the `namespace` of all resources, as well as giving unique names to cluster-scoped resources to avoid conflicts.
+
+- `00-common.yaml`:
+  - update the name of the `Namespace`
+  - update the namespace of both `ServiceAccounts`
+- `01-contour-config.yaml`: 
+  - update the namespace of the `ConfigMap`
+  - if you have any namespaced references within the ConfigMap contents (e.g. `fallback-certificate`, `envoy-client-certificate`), ensure those point to the correct namespace as well.
+- `01-crds.yaml` will be shared between the two instances; no changes are needed.
+- `02-job-certgen.yaml`: 
+  - update the namespace of all resources
+  - update the namespace of the `ServiceAccount` subject within the `RoleBinding`
+- `02-role-contour.yaml`:
+  - update the name of the `ClusterRole` to be unique
+  - update the namespace of the `Role`
+- `02-rbac.yaml`: 
+  - update the name of the `ClusterRoleBinding` to be unique
+  - update the namespace of the `RoleBinding`
+  - update the namespaces of the `ServiceAccount` subject within both resources
+  - update the name of the ClusterRole within the ClusterRoleBinding's roleRef to match the unique name used in `02-role-contour.yaml`
+- `02-service-contour.yaml`:
+  - update the namespace of the `Service`
+- `02-service-envoy.yaml`:
+  - update the namespace of the `Service`
+- `03-contour.yaml`:
+  - update the namespace of the `Deployment`
+  - add an argument to the container, `--ingress-class-name=<unique ingress class>`, so this instance only processes Ingresses/HTTPProxies with the given ingress class.
+- `03-envoy.yaml`:
+  - update the namespace of the `DaemonSet`
+  - remove the two `hostPort` definitions from the container (otherwise, these would conflict between the two instances)
+
+
+### In The Same Namespace
+
+This approach requires giving unique names to all resources to avoid conflicts, and updating all resource references to use the correct names.
+
+- `00-common.yaml`:
+  - update the names of both `ServiceAccounts` to be unique
+- `01-contour-config.yaml`:
+  - update the name of the `ConfigMap` to be unique
+- `01-crds.yaml` will be shared between the two instances; no changes are needed.
+- `02-job-certgen.yaml`:
+  - update the names of all resources to be unique
+  - update the name of the `Role` within the `RoleBinding`'s roleRef to match the unique name used for the `Role`
+  - update the name of the `ServiceAccount` within the `RoleBinding`'s subjects to match the unique name used for the `ServiceAccount`
+  - update the serviceAccountName of the `Job`
+  - add an argument to the container, `--secrets-name-suffix=<unique suffix>`, so the generated TLS secrets have unique names
+  - update the spec.template.metadata.labels on the `Job` to be unique
+- `02-role-contour.yaml`:
+  - update the names of the `ClusterRole` and `Role` to be unique
+- `02-rbac.yaml`:
+  - update the names of the `ClusterRoleBinding` and `RoleBinding` to be unique
+  - update the roleRefs within both resources to reference the unique `Role` and `ClusterRole` names used in `02-role-contour.yaml`
+  - update the subjects within both resources to reference the unique `ServiceAccount` name used in `00-common.yaml`
+- `02-service-contour.yaml`:
+  - update the name of the `Service` to be unique
+  - update the selector to be unique (this must match the labels used in `03-contour.yaml`, below)
+- `02-service-envoy.yaml`:
+  - update the name of the `Service` to be unique
+  - update the selector to be unique (this must match the labels used in `03-envoy.yaml`, below)
+- `03-contour.yaml`:
+  - update the name of the `Deployment` to be unique
+  - update the metadata.labels, the spec.selector.matchLabels, the spec.template.metadata.labels, and the spec.template.spec.affinity.podAntiAffinity labels to match the labels used in `02-service-contour.yaml`
+  - update the serviceAccountName to match the unique name used in `00-common.yaml`
+  - update the `contourcert` volume to reference the unique `Secret` name generated from `02-certgen.yaml` (e.g. `contourcert<unique-suffix>`)
+  - update the `contour-config` volume to reference the unique `ConfigMap` name used in `01-contour-config.yaml`
+  - add an argument to the container, `--leader-election-resource-name=<unique lease name>`, so this Contour instance uses a separate leader election `Lease`
+  - add an argument to the container, `--envoy-service-name=<unique envoy service name>`, referencing the unique name used in `02-service-envoy.yaml`
+  - add an argument to the container, `--ingress-class-name=<unique ingress class>`, so this instance only processes Ingresses/HTTPProxies with the given ingress class.
+- `03-envoy.yaml`:
+  - update the name of the `DaemonSet` to be unique
+  - update the metadata.labels, the spec.selector.matchLabels, and the spec.template.metadata.labels to match the unique labels used in `02-service-envoy.yaml`
+  - update the `--xds-address` argument to the initContainer to use the unique name of the contour Service from `02-service-contour.yaml`
+  - update the serviceAccountName to match the unique name used in `00-common.yaml`
+  - update the `envoycert` volume to reference the unique `Secret` name generated from `02-certgen.yaml` (e.g. `envoycert<unique-suffix>`)
+  - remove the two `hostPort` definitions from the container (otherwise, these would conflict between the two instances)
+
+### Using the Gateway provisioner
+
+The Contour Gateway provisioner also supports deploying multiple instances of Contour, either in the same namespace or different namespaces.
+See [Getting Started with the Gateway provisioner][16] for more information on getting started with the Gateway provisioner.
+To deploy multiple Contour instances, you create multiple `Gateways`, either in the same namespace or in different namespaces.
+
+Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
+
+If you are using `Ingress` or `HTTPProxy`, you will likely want to assign each Contour instance a different ingress class, so they each handle different subsets of `Ingress`/`HTTPProxy` resources.
+To do this, [create two separate GatewayClasses][18], each with a different `ContourDeployment` parametersRef.
+The `ContourDeployment` specs should look like:
+
+```yaml
+kind: ContourDeployment
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  namespace: projectcontour
+  name: ingress-class-1
+spec:
+  runtimeSettings:
+    ingress:
+      classNames:
+        - ingress-class-1
+---
+kind: ContourDeployment
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  namespace: projectcontour
+  name: ingress-class-2
+spec:
+  runtimeSettings:
+    ingress:
+      classNames:
+        - ingress-class-2
+```
+
+Then create each `Gateway` with the appropriate `spec.gatewayClassName`.
+
 ## Running Contour in tandem with another ingress controller
 
 If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress,
@@ -235,3 +361,6 @@ $ kubectl delete ns contour-operator
 [13]: https://projectcontour.io/resources/deprecation-policy/
 [14]: {{< param github_url>}}/tree/{{< param version >}}/examples/render/contour-deployment.yaml
 [15]: /resources/upgrading/
+[16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
+[17]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
+[18]: /guides/gateway-api/#next-steps
