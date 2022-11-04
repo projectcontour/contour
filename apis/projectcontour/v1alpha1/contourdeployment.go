@@ -123,7 +123,7 @@ type DeploymentSettings struct {
 	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Strategy describes the deployment strategy to use to replace existing pods with new ones.
+	// Strategy describes the deployment strategy to use to replace existing pods with new pods.
 	// +optional
 	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }

@@ -865,7 +865,7 @@ spec:
                         type: integer
                       strategy:
                         description: Strategy describes the deployment strategy to
-                          use to replace existing pods with new ones.
+                          use to replace existing pods with new pods.
                         properties:
                           rollingUpdate:
                             description: 'Rolling update config params. Present only
@@ -1118,7 +1118,7 @@ spec:
                         type: integer
                       strategy:
                         description: Strategy describes the deployment strategy to
-                          use to replace existing pods with new ones.
+                          use to replace existing pods with new pods.
                         properties:
                           rollingUpdate:
                             description: 'Rolling update config params. Present only
