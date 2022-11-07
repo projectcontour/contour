@@ -81,7 +81,7 @@ type ClusterDNSFamilyType string
 
 func (c ClusterDNSFamilyType) Validate() error {
 	switch c {
-	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily:
+	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily, AllClusterDNSFamily:
 		return nil
 	default:
 		return fmt.Errorf("invalid cluster DNS lookup family %q", c)
@@ -91,6 +91,7 @@ func (c ClusterDNSFamilyType) Validate() error {
 const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
 const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
 const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+const AllClusterDNSFamily ClusterDNSFamilyType = "all"
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
