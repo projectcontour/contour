@@ -805,11 +805,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
-		// Inform on ReferencePolicies.
-		if err := informOnResource(&gatewayapi_v1alpha2.ReferencePolicy{}, eventHandler, mgr.GetCache()); err != nil {
-			s.log.WithError(err).WithField("resource", "referencepolicies").Fatal("failed to create informer")
-		}
-
 		// Inform on ReferenceGrants.
 		if err := informOnResource(&gatewayapi_v1alpha2.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
