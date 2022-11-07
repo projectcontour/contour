@@ -328,7 +328,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var newConds []metav1.Condition
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionScheduled) {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				return ctrl.Result{}, nil
 			}
@@ -339,20 +339,20 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		newConds = append(newConds, cond)
 	}
 
-	log.Info("setting gateway's Scheduled condition to true")
+	log.Info("setting gateway's Accepted condition to true")
 
 	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionScheduled),
+		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: gateway.Generation,
 		LastTransitionTime: metav1.Now(),
-		Reason:             string(gatewayapi_v1beta1.GatewayReasonScheduled),
-		Message:            "Gateway is scheduled",
+		Reason:             string(gatewayapi_v1beta1.GatewayReasonAccepted),
+		Message:            "Gateway is accepted",
 	})
 
 	if err := r.client.Status().Update(ctx, gateway); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to set gateway %s scheduled condition: %w", req, err)
+		return ctrl.Result{}, fmt.Errorf("failed to set gateway %s Accepted condition: %w", req, err)
 	}
 
 	return ctrl.Result{}, nil

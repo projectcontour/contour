@@ -182,7 +182,7 @@ func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object)
 }
 
 // Reconcile finds all the Gateways for the GatewayClass with an "Accepted: true" condition.
-// It passes the oldest such Gateway to the DAG for processing, and sets a "Scheduled: false"
+// It passes the oldest such Gateway to the DAG for processing, and sets an "Accepted: false"
 // condition on all other Gateways for the accepted GatewayClass.
 func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.WithField("namespace", request.Namespace).WithField("name", request.Name).Info("reconciling gateway")
@@ -257,7 +257,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		}
 	}
 
-	// Set the "Scheduled" condition to false for all gateways
+	// Set the "Accepted" condition to false for all gateways
 	// except the oldest. The oldest will have its status set
 	// by the DAG processor, so don't set it here.
 	for _, gw := range gatewaysForClass {
@@ -275,12 +275,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 						panic(fmt.Sprintf("unsupported object type %T", obj))
 					}
 
-					return setGatewayNotScheduled(gw.DeepCopy())
+					return setGatewayNotAccepted(gw.DeepCopy())
 				}),
 			})
 		} else {
 			// this branch makes testing easier by not going through the StatusUpdater.
-			copy := setGatewayNotScheduled(gw.DeepCopy())
+			copy := setGatewayNotAccepted(gw.DeepCopy())
 			if err := r.client.Status().Update(context.Background(), copy); err != nil {
 				r.log.WithError(err).Error("error updating gateway status")
 				return reconcile.Result{}, fmt.Errorf("error updating status of gateway %s/%s: %v", gw.Namespace, gw.Name, err)
@@ -306,9 +306,9 @@ func isAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	return false
 }
 
-func setGatewayNotScheduled(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1beta1.Gateway {
+func setGatewayNotAccepted(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1beta1.Gateway {
 	newCond := metav1.Condition{
-		Type:               "Scheduled",
+		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
 		Status:             metav1.ConditionFalse,
 		Reason:             "OlderGatewayExists",
 		Message:            "An older Gateway exists for the accepted GatewayClass",
@@ -319,7 +319,7 @@ func setGatewayNotScheduled(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1b
 	for i := range gateway.Status.Conditions {
 		cond := &gateway.Status.Conditions[i]
 
-		if cond.Type != "Scheduled" {
+		if cond.Type != string(gatewayapi_v1beta1.GatewayConditionAccepted) {
 			continue
 		}
 

@@ -25,20 +25,8 @@ func SectionNamePtr(sectionName string) *gatewayapi_v1beta1.SectionName {
 	return &gwSectionName
 }
 
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func SectionNamePtrV1Alpha2(sectionName string) *gatewayapi_v1alpha2.SectionName {
-	gwSectionName := gatewayapi_v1alpha2.SectionName(sectionName)
-	return &gwSectionName
-}
-
 func PortNumPtr(port int) *gatewayapi_v1beta1.PortNumber {
 	pn := gatewayapi_v1beta1.PortNumber(port)
-	return &pn
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func PortNumPtrV1Alpha2(port int) *gatewayapi_v1alpha2.PortNumber {
-	pn := gatewayapi_v1alpha2.PortNumber(port)
 	return &pn
 }
 
@@ -108,21 +96,6 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1beta1.ParentReference
 	return parentRef
 }
 
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func GatewayParentRefV1Alpha2(namespace, name string) gatewayapi_v1alpha2.ParentReference {
-	parentRef := gatewayapi_v1alpha2.ParentReference{
-		Group: GroupPtrV1Alpha2(gatewayapi_v1alpha2.GroupName),
-		Kind:  KindPtrV1Alpha2("Gateway"),
-		Name:  gatewayapi_v1alpha2.ObjectName(name),
-	}
-
-	if namespace != "" {
-		parentRef.Namespace = NamespacePtrV1Alpha2(namespace)
-	}
-
-	return parentRef
-}
-
 func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1beta1.ParentReference {
 	parentRef := GatewayParentRef(namespace, name)
 
@@ -138,31 +111,13 @@ func GroupPtr(group string) *gatewayapi_v1beta1.Group {
 	return &gwGroup
 }
 
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func GroupPtrV1Alpha2(group string) *gatewayapi_v1alpha2.Group {
-	gwGroup := gatewayapi_v1alpha2.Group(group)
-	return &gwGroup
-}
-
 func KindPtr(kind string) *gatewayapi_v1beta1.Kind {
 	gwKind := gatewayapi_v1beta1.Kind(kind)
 	return &gwKind
 }
 
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func KindPtrV1Alpha2(kind string) *gatewayapi_v1alpha2.Kind {
-	gwKind := gatewayapi_v1alpha2.Kind(kind)
-	return &gwKind
-}
-
 func NamespacePtr(namespace string) *gatewayapi_v1beta1.Namespace {
 	gwNamespace := gatewayapi_v1beta1.Namespace(namespace)
-	return &gwNamespace
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func NamespacePtrV1Alpha2(namespace string) *gatewayapi_v1alpha2.Namespace {
-	gwNamespace := gatewayapi_v1alpha2.Namespace(namespace)
 	return &gwNamespace
 }
 
@@ -252,156 +207,14 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	return []gatewayapi_v1alpha2.BackendRef{
 		{
 			BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-				Group: GroupPtrV1Alpha2(""),
-				Kind:  KindPtrV1Alpha2("Service"),
+				Group: GroupPtr(""),
+				Kind:  KindPtr("Service"),
 				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
-				Port:  PortNumPtrV1Alpha2(port),
+				Port:  PortNumPtr(port),
 			},
 			Weight: weight,
 		},
 	}
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeParentRefs(parentRefs []gatewayapi_v1alpha2.ParentReference) []gatewayapi_v1beta1.ParentReference {
-	var res []gatewayapi_v1beta1.ParentReference
-
-	for _, parentRef := range parentRefs {
-		res = append(res, UpgradeParentRef(parentRef))
-	}
-
-	return res
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeParentRef(parentRef gatewayapi_v1alpha2.ParentReference) gatewayapi_v1beta1.ParentReference {
-	upgraded := gatewayapi_v1beta1.ParentReference{}
-
-	if parentRef.Group != nil {
-		upgraded.Group = GroupPtr(string(*parentRef.Group))
-	}
-
-	if parentRef.Kind != nil {
-		upgraded.Kind = KindPtr(string(*parentRef.Kind))
-	}
-
-	if parentRef.Namespace != nil {
-		upgraded.Namespace = NamespacePtr(string(*parentRef.Namespace))
-	}
-
-	upgraded.Name = gatewayapi_v1beta1.ObjectName(parentRef.Name)
-
-	if parentRef.SectionName != nil {
-		upgraded.SectionName = SectionNamePtr(string(*parentRef.SectionName))
-	}
-
-	if parentRef.Port != nil {
-		upgraded.Port = PortNumPtr(int(*parentRef.Port))
-	}
-
-	return upgraded
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeRouteParentStatuses(routeParentStatuses []gatewayapi_v1alpha2.RouteParentStatus) []gatewayapi_v1beta1.RouteParentStatus {
-	var res []gatewayapi_v1beta1.RouteParentStatus
-
-	for _, rps := range routeParentStatuses {
-		res = append(res, UpgradeRouteParentStatus(rps))
-	}
-
-	return res
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeRouteParentStatus(routeParentStatus gatewayapi_v1alpha2.RouteParentStatus) gatewayapi_v1beta1.RouteParentStatus {
-	return gatewayapi_v1beta1.RouteParentStatus{
-		ParentRef:      UpgradeParentRef(routeParentStatus.ParentRef),
-		ControllerName: gatewayapi_v1beta1.GatewayController(routeParentStatus.ControllerName),
-		Conditions:     routeParentStatus.Conditions,
-	}
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func DowngradeRouteParentStatuses(routeParentStatuses []gatewayapi_v1beta1.RouteParentStatus) []gatewayapi_v1alpha2.RouteParentStatus {
-	var res []gatewayapi_v1alpha2.RouteParentStatus
-
-	for _, rps := range routeParentStatuses {
-		res = append(res, gatewayapi_v1alpha2.RouteParentStatus{
-			ParentRef:      downgradeParentRef(rps.ParentRef),
-			ControllerName: gatewayapi_v1alpha2.GatewayController(rps.ControllerName),
-			Conditions:     rps.Conditions,
-		})
-	}
-
-	return res
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func downgradeParentRef(parentRef gatewayapi_v1beta1.ParentReference) gatewayapi_v1alpha2.ParentReference {
-	downgraded := gatewayapi_v1alpha2.ParentReference{}
-
-	if parentRef.Group != nil {
-		downgraded.Group = GroupPtrV1Alpha2(string(*parentRef.Group))
-	}
-
-	if parentRef.Kind != nil {
-		downgraded.Kind = KindPtrV1Alpha2(string(*parentRef.Kind))
-	}
-
-	if parentRef.Namespace != nil {
-		downgraded.Namespace = NamespacePtrV1Alpha2(string(*parentRef.Namespace))
-	}
-
-	downgraded.Name = gatewayapi_v1alpha2.ObjectName(parentRef.Name)
-
-	if parentRef.SectionName != nil {
-		downgraded.SectionName = SectionNamePtrV1Alpha2(string(*parentRef.SectionName))
-	}
-
-	if parentRef.Port != nil {
-		downgraded.Port = PortNumPtrV1Alpha2(int(*parentRef.Port))
-	}
-
-	return downgraded
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeHostnames(hostnames []gatewayapi_v1alpha2.Hostname) []gatewayapi_v1beta1.Hostname {
-	var res []gatewayapi_v1beta1.Hostname
-
-	for _, hostname := range hostnames {
-		res = append(res, gatewayapi_v1beta1.Hostname(hostname))
-	}
-
-	return res
-}
-
-// TODO(sk): delete when Gateway API v1alpha2 support is dropped
-func UpgradeBackendRef(backendRef gatewayapi_v1alpha2.BackendRef) gatewayapi_v1beta1.BackendRef {
-	upgraded := gatewayapi_v1beta1.BackendRef{}
-
-	if backendRef.Group != nil {
-		upgraded.Group = GroupPtr(string(*backendRef.Group))
-	}
-
-	if backendRef.Kind != nil {
-		upgraded.Kind = KindPtr(string(*backendRef.Kind))
-	}
-
-	upgraded.Name = gatewayapi_v1beta1.ObjectName(backendRef.Name)
-
-	if backendRef.Namespace != nil {
-		upgraded.Namespace = NamespacePtr(string(*backendRef.Namespace))
-	}
-
-	if backendRef.Port != nil {
-		upgraded.Port = PortNumPtr(int(*backendRef.Port))
-	}
-
-	upgraded.Weight = backendRef.Weight
-
-	return upgraded
 }
 
 // IsRefToGateway returns whether the provided parent ref is a reference

@@ -207,14 +207,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			defer commit()
 
 			for _, routeParentRef := range tlsRoute.Spec.ParentRefs {
-				upgradedRouteParentRef := gatewayapi.UpgradeParentRef(routeParentRef)
-
 				// If this parent ref is to a different Gateway, ignore it.
-				if !gatewayapi.IsRefToGateway(upgradedRouteParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+				if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
 					continue
 				}
 
-				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(upgradedRouteParentRef)
+				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
 
 				// If the Gateway is invalid, set status on the route and we're done.
 				if gatewayNotReadyCondition != nil {
@@ -224,7 +222,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 				// Get the list of listeners that are (a) included by this parent ref, and
 				// (b) allow the route (based on kind, namespace).
-				allowedListeners := p.getListenersForRouteParentRef(upgradedRouteParentRef, tlsRoute.Namespace, KindTLSRoute, readyListeners, routeParentStatusAccessor)
+				allowedListeners := p.getListenersForRouteParentRef(routeParentRef, tlsRoute.Namespace, KindTLSRoute, readyListeners, routeParentStatusAccessor)
 				if len(allowedListeners) == 0 {
 					continue
 				}
@@ -874,12 +872,12 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.Ro
 }
 
 func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, gatewayNotReadyCondition *metav1.Condition) {
-	// If Contour's running, the Gateway is considered scheduled.
+	// If Contour's running, the Gateway is considered accepted.
 	gwAccessor.AddCondition(
-		gatewayapi_v1beta1.GatewayConditionScheduled,
+		gatewayapi_v1beta1.GatewayConditionAccepted,
 		metav1.ConditionTrue,
-		gatewayapi_v1beta1.GatewayReasonScheduled,
-		"Gateway is scheduled",
+		gatewayapi_v1beta1.GatewayReasonAccepted,
+		"Gateway is accepted",
 	)
 
 	switch {
@@ -921,7 +919,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 }
 
 func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.String) {
-	hosts, errs := p.computeHosts(gatewayapi.UpgradeHostnames(route.Spec.Hostnames), gatewayapi.HostnameDeref(listener.listener.Hostname))
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
 		// invalid hostnames make it through, we're using our best judgment here.
@@ -948,7 +946,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 
 		for _, backendRef := range rule.BackendRefs {
 
-			service, cond := p.validateBackendRef(gatewayapi.UpgradeBackendRef(backendRef), KindTLSRoute, route.Namespace)
+			service, cond := p.validateBackendRef(backendRef, KindTLSRoute, route.Namespace)
 			if cond != nil {
 				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
 				continue
