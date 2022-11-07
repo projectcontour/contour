@@ -125,6 +125,7 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.NoError(t, AutoClusterDNSFamily.Validate())
 	assert.NoError(t, IPv4ClusterDNSFamily.Validate())
 	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
+	assert.NoError(t, AllClusterDNSFamily.Validate())
 }
 
 func TestValidateHeadersPolicy(t *testing.T) {

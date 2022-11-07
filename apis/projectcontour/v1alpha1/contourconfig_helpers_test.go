@@ -96,6 +96,9 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.IPv6ClusterDNSFamily
 		require.NoError(t, c.Validate())
 
+		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.AllClusterDNSFamily
+		require.NoError(t, c.Validate())
+
 		c.Envoy.Cluster.DNSLookupFamily = "foo"
 		require.Error(t, c.Validate())
 
