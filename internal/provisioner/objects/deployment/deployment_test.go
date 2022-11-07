@@ -195,7 +195,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
 	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
-	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourStrategy)
+	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
 }
 
 func TestNodePlacementDeployment(t *testing.T) {

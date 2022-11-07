@@ -75,7 +75,7 @@ type ContourDeploymentSpec struct {
 // ContourSettings contains settings for the Contour part of the installation,
 // i.e. the xDS server/control plane and associated resources.
 type ContourSettings struct {
-	// Deprecated: Use `DeploymentSettings.Replicas`` instead.
+	// Deprecated: Use `DeploymentSettings.Replicas` instead.
 	//
 	// Replicas is the desired number of Contour replicas. If if unset,
 	// defaults to 2.
@@ -116,7 +116,7 @@ type ContourSettings struct {
 	Deployment *DeploymentSettings `json:"deployment,omitempty"`
 }
 
-// DeploymentSettings contains settings for the Deployment.
+// DeploymentSettings contains settings for Deployment resources.
 type DeploymentSettings struct {
 	// Replicas is the desired number of replicas.
 	//
@@ -128,7 +128,7 @@ type DeploymentSettings struct {
 	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 }
 
-// DaemonSetSettings contains settings for the DaemonSet.
+// DaemonSetSettings contains settings for DaemonSet resources.
 type DaemonSetSettings struct {
 	// Strategy describes the deployment strategy to use to replace existing DaemonSet pods with new pods.
 	// +optional
@@ -145,7 +145,7 @@ type EnvoySettings struct {
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
-	// Deprecated: Use `DeploymentSettings.Replicas`` instead.
+	// Deprecated: Use `DeploymentSettings.Replicas` instead.
 	//
 	// Replicas is the desired number of Envoy replicas. If WorkloadType
 	// is not "Deployment", this field is ignored. Otherwise, if unset,

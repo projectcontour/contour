@@ -292,7 +292,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
-	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyUpdateStrategy)
+	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
 }
 
 func TestDesiredDeployment(t *testing.T) {
@@ -302,7 +302,7 @@ func TestDesiredDeployment(t *testing.T) {
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage)
-	checkDeploymentHasStrategy(t, deploy.(*appsv1.Deployment), cntr.Spec.EnvoyStrategy)
+	checkDeploymentHasStrategy(t, deploy.(*appsv1.Deployment), cntr.Spec.EnvoyDeploymentStrategy)
 
 }
 

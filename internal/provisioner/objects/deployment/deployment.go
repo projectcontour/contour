@@ -202,7 +202,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			RevisionHistoryLimit:    pointer.Int32(10),
 			// Ensure the deployment adopts only its own pods.
 			Selector: ContourDeploymentPodSelector(contour),
-			Strategy: contour.Spec.ContourStrategy,
+			Strategy: contour.Spec.ContourDeploymentStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to

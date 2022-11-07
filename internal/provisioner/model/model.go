@@ -59,19 +59,19 @@ func Default(namespace, name string) *Contour {
 					},
 				},
 			},
-			EnvoyUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+			EnvoyDaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxUnavailable: opintstr.PointerTo(intstr.FromString("10%")),
 				},
 			},
-			EnvoyStrategy: appsv1.DeploymentStrategy{
+			EnvoyDeploymentStrategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxSurge: opintstr.PointerTo(intstr.FromString("10%")),
 				},
 			},
-			ContourStrategy: appsv1.DeploymentStrategy{
+			ContourDeploymentStrategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxSurge:       opintstr.PointerTo(intstr.FromString("50%")),
@@ -197,15 +197,15 @@ type ContourSpec struct {
 	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
 	// when envoy be running as a `Deployment`,it's must be nil
 	// +optional
-	EnvoyUpdateStrategy appsv1.DaemonSetUpdateStrategy
+	EnvoyDaemonSetUpdateStrategy appsv1.DaemonSetUpdateStrategy
 
 	// The deployment strategy to use to replace existing Envoy pods with new ones.
 	// when envoy be running as a `DaemonSet`,it's must be nil
-	EnvoyStrategy appsv1.DeploymentStrategy
+	EnvoyDeploymentStrategy appsv1.DeploymentStrategy
 
 	// The deployment strategy to use to replace existing Contour pods with new ones.
 	// when envoy be running as a `DaemonSet`,it's must be nil
-	ContourStrategy appsv1.DeploymentStrategy
+	ContourDeploymentStrategy appsv1.DeploymentStrategy
 
 	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
 	ResourceLabels map[string]string

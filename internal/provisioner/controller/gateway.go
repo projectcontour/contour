@@ -239,13 +239,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Contour != nil {
-
 			// Deployment replicas
 			if gatewayClassParams.Spec.Contour.Deployment != nil && gatewayClassParams.Spec.Contour.Deployment.Replicas > 0 {
 				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Deployment.Replicas
 
 			} else if gatewayClassParams.Spec.Contour.Replicas > 0 { // nolint: staticcheck
-
 				// nolint: staticcheck
 				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
 			}
@@ -270,7 +268,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			if gatewayClassParams.Spec.Contour.Deployment != nil &&
 				gatewayClassParams.Spec.Contour.Deployment.Strategy != nil {
-				contourModel.Spec.ContourStrategy = *gatewayClassParams.Spec.Contour.Deployment.Strategy
+				contourModel.Spec.ContourDeploymentStrategy = *gatewayClassParams.Spec.Contour.Deployment.Strategy
 			}
 		}
 
@@ -339,13 +337,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
 				gatewayClassParams.Spec.Envoy.Deployment != nil &&
 				gatewayClassParams.Spec.Envoy.Deployment.Strategy != nil {
-				contourModel.Spec.EnvoyStrategy = *gatewayClassParams.Spec.Envoy.Deployment.Strategy
+				contourModel.Spec.EnvoyDeploymentStrategy = *gatewayClassParams.Spec.Envoy.Deployment.Strategy
 			}
 
 			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
 				gatewayClassParams.Spec.Envoy.DaemonSet != nil &&
 				gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy != nil {
-				contourModel.Spec.EnvoyUpdateStrategy = *gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy
+				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy
 			}
 
 		}

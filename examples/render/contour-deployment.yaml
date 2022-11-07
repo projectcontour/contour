@@ -1199,7 +1199,7 @@ spec:
                         type: array
                     type: object
                   replicas:
-                    description: "Deprecated: Use `DeploymentSettings.Replicas`` instead.
+                    description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
                       \n Replicas is the desired number of Contour replicas. If if
                       unset, defaults to 2. \n if both `DeploymentSettings.Replicas`
                       and this one is set, use `DeploymentSettings.Replicas`."
@@ -3083,7 +3083,7 @@ spec:
                       Envoy pods.
                     type: object
                   replicas:
-                    description: "Deprecated: Use `DeploymentSettings.Replicas`` instead.
+                    description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
                       \n Replicas is the desired number of Envoy replicas. If WorkloadType
                       is not \"Deployment\", this field is ignored. Otherwise, if
                       unset, defaults to 2. \n if both `DeploymentSettings.Replicas`

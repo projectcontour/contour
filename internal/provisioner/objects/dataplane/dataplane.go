@@ -328,7 +328,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector:       EnvoyPodSelector(contour),
-			UpdateStrategy: contour.Spec.EnvoyUpdateStrategy,
+			UpdateStrategy: contour.Spec.EnvoyDaemonSetUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
@@ -401,7 +401,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),
-			Strategy: contour.Spec.EnvoyStrategy,
+			Strategy: contour.Spec.EnvoyDeploymentStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
