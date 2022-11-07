@@ -528,6 +528,8 @@ const (
 	IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
 	// DNS lookups will only attempt v6 queries.
 	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+	// DNS lookups will attempt all queries.
+	AllClusterDNSFamily ClusterDNSFamilyType = "all"
 )
 
 // ClusterParameters holds various configurable cluster values.
