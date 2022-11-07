@@ -6992,7 +6992,6 @@ rules:
   - gateways
   - httproutes
   - referencegrants
-  - referencepolicies
   - tlsroutes
   verbs:
   - get
