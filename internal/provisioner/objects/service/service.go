@@ -27,7 +27,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -109,36 +108,48 @@ var (
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateContourServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
+	// Enclose contour.
+	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.Service) error {
+		return updateContourServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, DesiredContourService(contour), currentService, updater)
+	return objects.EnsureObject(ctx, cli, DesiredContourService(contour), updater, &corev1.Service{})
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error {
-		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current.(*corev1.Service), desired.(*corev1.Service))
+	// Enclose contour.
+	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.Service) error {
+		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, DesiredEnvoyService(contour), currentService, updater)
-}
-
-func ensureServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, name, currentService)
+	return objects.EnsureObject(ctx, cli, DesiredEnvoyService(contour), updater, &corev1.Service{})
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
 // provided contour is deleted if Contour owner labels exist.
 func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeleted(ctx, cli, contour, contour.ContourServiceName())
+	obj := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourServiceName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return ensureServiceDeleted(ctx, cli, contour, contour.EnvoyServiceName())
+	obj := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyServiceName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
@@ -292,20 +303,6 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	}
 
 	return svc
-}
-
-// currentContourService returns the current Contour/Envoy Service for the provided contour.
-func currentService(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-	current := &corev1.Service{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
 }
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.

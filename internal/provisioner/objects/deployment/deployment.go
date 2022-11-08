@@ -27,7 +27,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,10 +53,7 @@ const (
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredDeployment(contour, image)
 
-	updater := func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-		current := currentObj.(*appsv1.Deployment)
-		desired := desiredObj.(*appsv1.Deployment)
-
+	updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
 		differ := equality.DeploymentSelectorsDiffer(current, desired)
 		if differ {
 			return EnsureDeploymentDeleted(ctx, cli, contour)
@@ -66,13 +62,20 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Con
 		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, contour, desired, CurrentDeployment, updater)
+	return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
 func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), CurrentDeployment)
+	obj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourDeploymentName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using
@@ -263,19 +266,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 
 	return deploy
-}
-
-// CurrentDeployment returns the Deployment resource for the provided contour.
-func CurrentDeployment(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-	deploy := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, deploy); err != nil {
-		return nil, err
-	}
-	return deploy, nil
 }
 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,

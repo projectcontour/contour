@@ -47,54 +47,60 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 	}
 }
 
-// ObjectGetter gets an object given a namespace and name.
-type ObjectGetter func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error)
+// EnsureObject ensures that object "desired" is created or updated.
+// If it does not already exist, it will be created as specified in
+// "desired". If it does already exist, the "updateObject" function
+// will be called with the current and desired states, to update the
+// object appropriately.
+func EnsureObject[T client.Object](
+	ctx context.Context,
+	cli client.Client,
+	desired T,
+	updateObject func(ctx context.Context, cli client.Client, current, desired T) error,
+	emptyObj T,
+) error {
+	// Rename just for clarity.
+	current := emptyObj
 
-// ObjectUpdater update the current resource to desired if need.
-type ObjectUpdater func(ctx context.Context, cli client.Client, contour *model.Contour, current, desired client.Object) error
+	err := cli.Get(ctx, client.ObjectKeyFromObject(desired), current)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
+	}
 
-// EnsureObjectDeleted ensures that an object with the given namespace and name is deleted
-// if Contour owner labels exist.
-func EnsureObjectDeleted(ctx context.Context, cli client.Client, contour *model.Contour, name string, getter ObjectGetter) error {
-	obj, err := getter(ctx, cli, contour.Namespace, name)
-	if err != nil {
+	if errors.IsNotFound(err) {
+		if err = cli.Create(ctx, desired); err != nil {
+			return fmt.Errorf("failed to create resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
+		}
+		return nil
+	}
+
+	if err = updateObject(ctx, cli, current, desired); err != nil {
+		return fmt.Errorf("failed to update resource %s/%s: %w", desired.GetNamespace(), desired.GetName(), err)
+	}
+	return nil
+}
+
+// EnsureObjectDeleted ensures that object "obj" is deleted.
+// No error will be returned if it is successfully deleted, if
+// it does not contain the appropriate Gateway owner label, or
+// if it already does not exist.
+func EnsureObjectDeleted[T client.Object](ctx context.Context, cli client.Client, obj T, contour *model.Contour) error {
+	if err := cli.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
+
 	if !labels.Exist(obj, model.OwnerLabels(contour)) {
 		return nil
 	}
-	if err = cli.Delete(ctx, obj); err == nil || errors.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
 
-// EnsureObject ensures that an object with the given namespace and name is created or updated
-func EnsureObject(
-	ctx context.Context,
-	cli client.Client,
-	contour *model.Contour,
-	desired client.Object,
-	getter ObjectGetter,
-	updater ObjectUpdater) error {
-
-	current, err := getter(ctx, cli, contour.Namespace, desired.GetName())
-	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
-	}
-
-	if errors.IsNotFound(err) {
-		if err = cli.Create(ctx, desired); err != nil {
-			return fmt.Errorf("failed to create resource %s/%s: %w", contour.Namespace, desired.GetName(), err)
+	if err := cli.Delete(ctx, obj); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
 		}
-		return nil
 	}
 
-	if err = updater(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update service %s/%s: %w", contour.Namespace, desired.GetName(), err)
-	}
 	return nil
 }

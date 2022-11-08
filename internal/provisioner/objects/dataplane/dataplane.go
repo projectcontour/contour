@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,21 +63,12 @@ const (
 // EnsureDataPlane ensures an Envoy data plane (daemonset or deployment) exists for the given contour.
 func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
 
-	var (
-		getter  objects.ObjectGetter
-		updater objects.ObjectUpdater
-		desired client.Object
-	)
-
 	switch contour.Spec.EnvoyWorkloadType {
 	// If a Deployment was specified, provision a Deployment.
 	case model.WorkloadTypeDeployment:
-		desired = desiredDeployment(contour, contourImage, envoyImage)
+		desired := desiredDeployment(contour, contourImage, envoyImage)
 
-		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-			current := currentObj.(*appsv1.Deployment)
-			desired := desiredObj.(*appsv1.Deployment)
-
+		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
 			differ := equality.DeploymentSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -87,16 +77,13 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		getter = currentDeployment
+		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
 
 	// The default workload type is a DaemonSet.
 	default:
-		desired = DesiredDaemonSet(contour, contourImage, envoyImage)
+		desired := DesiredDaemonSet(contour, contourImage, envoyImage)
 
-		updater = func(ctx context.Context, cli client.Client, contour *model.Contour, currentObj, desiredObj client.Object) error {
-			current := currentObj.(*appsv1.DaemonSet)
-			desired := desiredObj.(*appsv1.DaemonSet)
-
+		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.DaemonSet) error {
 			differ := equality.DaemonSetSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -105,11 +92,8 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		getter = CurrentDaemonSet
+		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.DaemonSet{})
 	}
-
-	return objects.EnsureObject(ctx, cli, contour, desired, getter, updater)
-
 }
 
 // EnsureDataPlaneDeleted ensures the daemonset or deployment for the provided contour is deleted
@@ -119,11 +103,26 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	// we don't know which one was actually created, since we're not yet
 	// using finalizers so the Gateway spec is unavailable to us at deletion
 	// time.
-	if err := objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), CurrentDaemonSet); err != nil {
+
+	dsObj := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyDataPlaneName(),
+		},
+	}
+
+	if err := objects.EnsureObjectDeleted(ctx, cli, dsObj, contour); err != nil {
 		return err
 	}
 
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.EnvoyDataPlaneName(), currentDeployment)
+	deployObj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.EnvoyDataPlaneName(),
+		},
+	}
+
+	return objects.EnsureObjectDeleted(ctx, cli, deployObj, contour)
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
@@ -387,7 +386,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 	return ds
 }
 
-func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) client.Object {
+func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *appsv1.Deployment {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
 	deployment := &appsv1.Deployment{
@@ -460,32 +459,6 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 	}
 
 	return deployment
-}
-
-// CurrentDaemonSet returns the current DaemonSet resource for the provided contour.
-func CurrentDaemonSet(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-	ds := &appsv1.DaemonSet{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, ds); err != nil {
-		return nil, err
-	}
-	return ds, nil
-}
-
-// currentDeployment returns the current Deployment resource for the provided contour.
-func currentDeployment(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-	ds := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, ds); err != nil {
-		return nil, err
-	}
-	return ds, nil
 }
 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
