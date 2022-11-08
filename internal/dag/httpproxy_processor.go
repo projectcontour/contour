@@ -463,13 +463,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				// default to to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
-				case "auto", "v4", "v6":
+				case "auto", "v4", "v6", "all":
 					dnsLookupFamily = jwtProvider.RemoteJWKS.DNSLookupFamily
 				case "":
 					dnsLookupFamily = string(p.DNSLookupFamily)
 				default:
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSDNSLookupFamilyInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, all, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
 					return
 				}
 
