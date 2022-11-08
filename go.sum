@@ -1230,7 +1230,6 @@ golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a/go.mod h1:2RIsYlXP63K8oxa1u0
 golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EHIKF9dgMWnmCNThgcyBT1FY9mM=
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
 golang.org/x/exp v0.0.0-20220407100705-7b9b53b0aca4 h1:K3x+yU+fbot38x5bQbU2QqUAVyYLEktdNH2GxZLnM3U=
-golang.org/x/exp v0.0.0-20220407100705-7b9b53b0aca4/go.mod h1:lgLbSvA5ygNOMpwM/9anMpWVlVJ7Z+cHWq/eFuinpGE=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
@@ -1972,10 +1971,8 @@ sigs.k8s.io/controller-tools v0.6.0/go.mod h1:baRMVPrctU77F+rfAuH2uPqW93k6yQnZA2
 sigs.k8s.io/controller-tools v0.7.0 h1:iZIz1vEcavyEfxjcTLs1WH/MPf4vhPCtTKhoHqV8/G0=
 sigs.k8s.io/controller-tools v0.7.0/go.mod h1:bpBAo0VcSDDLuWt47evLhMLPxRPxMDInTEH/YbdeMK0=
 sigs.k8s.io/gateway-api v0.3.0/go.mod h1:Wb8bx7QhGVZxOSEU3i9vw/JqTB5Nlai9MLMYVZeDmRQ=
-sigs.k8s.io/gateway-api v0.5.1-0.20221105015014-0b19b47246a5 h1:6pTW6EG5WwL2x9aRpdEvFxXxstDlnSi8w0hoMEzr4iM=
-sigs.k8s.io/gateway-api v0.5.1-0.20221105015014-0b19b47246a5/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
-sigs.k8s.io/gateway-api v0.5.1 h1:EqzgOKhChzyve9rmeXXbceBYB6xiM50vDfq0kK5qpdw=
-sigs.k8s.io/gateway-api v0.5.1/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
+sigs.k8s.io/gateway-api v0.5.1-0.20221108141026-fcc1d24b1ccf h1:/peKMwLfEYhJMwSeewv+OoKNkyIm7Z76N+z+Wit7Mgw=
+sigs.k8s.io/gateway-api v0.5.1-0.20221108141026-fcc1d24b1ccf/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 h1:iXTIw73aPyC+oRdyqqvVJuloN1p0AC/kzH07hu3NE+k=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
 sigs.k8s.io/kustomize/api v0.8.5/go.mod h1:M377apnKT5ZHJS++6H4rQoCHmWtt6qTpp3mbe7p6OLY=

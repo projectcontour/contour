@@ -40,7 +40,7 @@ require (
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/controller-tools v0.7.0
-	sigs.k8s.io/gateway-api v0.5.1-0.20221105015014-0b19b47246a5
+	sigs.k8s.io/gateway-api v0.5.1-0.20221108141026-fcc1d24b1ccf
 	sigs.k8s.io/kustomize/kyaml v0.10.17
 )
 
@@ -117,7 +117,6 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tsaarni/x500dn v0.0.0-20210331182804-14283c7f5a16 // indirect
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
-	golang.org/x/exp v0.0.0-20220407100705-7b9b53b0aca4 // indirect
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
