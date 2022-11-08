@@ -302,7 +302,7 @@ func TestDesiredDeployment(t *testing.T) {
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage)
-	checkDeploymentHasStrategy(t, deploy.(*appsv1.Deployment), cntr.Spec.EnvoyDeploymentStrategy)
+	checkDeploymentHasStrategy(t, deploy, cntr.Spec.EnvoyDeploymentStrategy)
 
 }
 
