@@ -1162,7 +1162,7 @@ spec:
                           pods are not scheduled onto inappropriate nodes. One or
                           more taints are applied to a node; this marks that the node
                           should not accept any pods that do not tolerate the taints.
-                          \n The default is an empty list. \n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+                          \n The default is an empty list.\n See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
                           for additional details."
                         items:
                           description: The pod this Toleration is attached to tolerates
