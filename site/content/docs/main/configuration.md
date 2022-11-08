@@ -163,7 +163,7 @@ The cluster configuration block can be used to configure various parameters for 
 
 | Field Name        | Type   | Default | Description                                                                                                                                                             |
 | ----------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dns-lookup-family | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4, `v6` |
+| dns-lookup-family | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
 
 ### Network Configuration
 
@@ -367,7 +367,7 @@ data:
     # Envoy cluster settings.
     # cluster:
     #   configure the cluster dns lookup family
-    #   valid options are: auto (default), v4, v6
+    #   valid options are: auto (default), v4, v6, all
     #   dns-lookup-family: auto
     #
     # network:
@@ -469,7 +469,7 @@ connects to Contour:
 | <nobr>--envoy-key-file</nobr>          | ""                | Client key filename for Envoy secure xDS gRPC communication.                                                                                                                                                 |
 | <nobr>--namespace</nobr>               | projectcontour    | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file. |
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
-| <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.                                                                                                   |
+| <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
 | <nobr>--overload-max-heap              | ""                | Defines the maximum heap size in bytes until Envoy overload manager stops accepting new connections. |
 

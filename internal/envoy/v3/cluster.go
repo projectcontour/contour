@@ -290,6 +290,8 @@ func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily
 		return envoy_cluster_v3.Cluster_V4_ONLY
 	case "v6":
 		return envoy_cluster_v3.Cluster_V6_ONLY
+	case "all":
+		return envoy_cluster_v3.Cluster_ALL
 	}
 	return envoy_cluster_v3.Cluster_AUTO
 }
