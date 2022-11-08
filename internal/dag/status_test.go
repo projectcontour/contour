@@ -3108,7 +3108,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(
 					contour_api_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSDNSLookupFamilyInvalid",
-					"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value \"v7\", must be auto, v4 or v6",
+					"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value \"v7\", must be auto, all, v4 or v6",
 				),
 		},
 	})
