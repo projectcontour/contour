@@ -534,7 +534,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
@@ -590,7 +590,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},

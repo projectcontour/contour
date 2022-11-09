@@ -29,9 +29,9 @@ func TestGatewayAddCondition(t *testing.T) {
 	var testGeneration int64 = 7
 
 	simpleValidCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionScheduled),
+		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
 		Status:             metav1.ConditionTrue,
-		Reason:             string(gatewayapi_v1beta1.GatewayReasonScheduled),
+		Reason:             string(gatewayapi_v1beta1.GatewayReasonAccepted),
 		Message:            MessageValidGateway,
 		ObservedGeneration: testGeneration,
 	}
@@ -45,9 +45,9 @@ func TestGatewayAddCondition(t *testing.T) {
 	}
 
 	got := gatewayUpdate.AddCondition(
-		gatewayapi_v1beta1.GatewayConditionScheduled,
+		gatewayapi_v1beta1.GatewayConditionAccepted,
 		metav1.ConditionTrue,
-		gatewayapi_v1beta1.GatewayReasonScheduled,
+		gatewayapi_v1beta1.GatewayReasonAccepted,
 		MessageValidGateway,
 	)
 
@@ -174,10 +174,10 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	assert.Equal(t, "message 1", res.Message)
 
 	// second condition (different type) for listener-1
-	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionDetached, metav1.ConditionTrue, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 2")
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 2")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionDetached), res.Type)
-	assert.Equal(t, metav1.ConditionTrue, res.Status)
+	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionAccepted), res.Type)
+	assert.Equal(t, metav1.ConditionFalse, res.Status)
 	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol), res.Reason)
 	assert.Equal(t, "message 2", res.Message)
 
@@ -191,10 +191,10 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	assert.Equal(t, "message 3", res.Message)
 
 	// third condition (pre-existing type) for listener-1
-	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionDetached, metav1.ConditionTrue, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 4")
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 4")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionDetached), res.Type)
-	assert.Equal(t, metav1.ConditionTrue, res.Status)
+	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionAccepted), res.Type)
+	assert.Equal(t, metav1.ConditionFalse, res.Status)
 	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol), res.Reason)
 	assert.Equal(t, "message 2, message 4", res.Message)
 }
@@ -219,11 +219,11 @@ func TestGetGatewayConditions(t *testing.T) {
 		"multiple gateway conditions": {
 			conditions: []metav1.Condition{
 				{Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
-				{Type: string(gatewayapi_v1beta1.GatewayConditionScheduled)},
+				{Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
 			},
 			want: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionReady:     {Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
-				gatewayapi_v1beta1.GatewayConditionScheduled: {Type: string(gatewayapi_v1beta1.GatewayConditionScheduled)},
+				gatewayapi_v1beta1.GatewayConditionReady:    {Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
+				gatewayapi_v1beta1.GatewayConditionAccepted: {Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
 			},
 		},
 	}

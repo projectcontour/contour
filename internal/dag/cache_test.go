@@ -803,7 +803,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert gateway-api ReferenceGrant": {
-			obj: &gatewayapi_v1alpha2.ReferenceGrant{
+			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant-1",
 					Namespace: "default",
@@ -1163,13 +1163,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove gateway-api ReferenceGrant": {
-			cache: cache(&gatewayapi_v1alpha2.ReferenceGrant{
+			cache: cache(&gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant",
 					Namespace: "default",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.ReferenceGrant{
+			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant",
 					Namespace: "default",

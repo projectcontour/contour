@@ -67,7 +67,7 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1beta1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
-	referencegrants           map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant
+	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	Client client.Reader
@@ -86,7 +86,7 @@ func (kc *KubernetesCache) init() {
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute)
-	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant)
+	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
@@ -190,7 +190,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		case *gatewayapi_v1alpha2.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 			return true
-		case *gatewayapi_v1alpha2.ReferenceGrant:
+		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *contour_api_v1alpha1.ExtensionService:
@@ -312,7 +312,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.tlsroutes[m]
 		delete(kc.tlsroutes, m)
 		return ok
-	case *gatewayapi_v1alpha2.ReferenceGrant:
+	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
 		delete(kc.referencegrants, m)
