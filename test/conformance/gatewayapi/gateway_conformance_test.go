@@ -47,10 +47,11 @@ func TestGatewayConformance(t *testing.T) {
 		// Keep the list of supported features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SupportedFeatures: map[suite.SupportedFeature]bool{
-			suite.SupportReferenceGrant:              true,
-			suite.SupportTLSRoute:                    true,
-			suite.SupportHTTPRouteQueryParamMatching: true,
-			suite.SupportHTTPRouteMethodMatching:     true,
+			suite.SupportReferenceGrant:                 true,
+			suite.SupportTLSRoute:                       true,
+			suite.SupportHTTPRouteQueryParamMatching:    true,
+			suite.SupportHTTPRouteMethodMatching:        true,
+			suite.SupportHTTPResponseHeaderModification: true,
 		},
 	})
 	cSuite.Setup(t)

@@ -100,7 +100,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			rt.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
 		}
 		if dagRoute.ResponseHeadersPolicy != nil {
-			rt.ResponseHeadersToAdd = headerValueList(dagRoute.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToAdd = append(headerValueList(dagRoute.ResponseHeadersPolicy.Set, false), headerValueList(dagRoute.ResponseHeadersPolicy.Add, true)...)
 			rt.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
 		}
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
@@ -457,7 +457,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 		}
 		if cluster.ResponseHeadersPolicy != nil {
-			c.ResponseHeadersToAdd = headerValueList(cluster.ResponseHeadersPolicy.Set, false)
+			c.ResponseHeadersToAdd = append(headerValueList(cluster.ResponseHeadersPolicy.Set, false), headerValueList(cluster.ResponseHeadersPolicy.Add, true)...)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
 		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {

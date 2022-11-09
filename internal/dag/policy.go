@@ -204,7 +204,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType gatewayapi_v1beta1.HTTPRouteFilterType) (*HeadersPolicy, error) {
 	var (
 		set         = make(map[string]string, len(hf.Set))
 		add         = make(map[string]string, len(hf.Add))
@@ -219,7 +219,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter) (*HeadersP
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" {
+		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
 			hostRewrite = setHeader.Value
 			continue
 		}
@@ -235,7 +235,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter) (*HeadersP
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" {
+		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
 			hostRewrite = addHeader.Value
 			continue
 		}

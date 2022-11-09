@@ -2951,7 +2951,65 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"HTTP forward with request header modifier": {
+		"Route rule with response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+								ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+									Set: []gatewayapi_v1beta1.HTTPHeader{
+										{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+										{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+									},
+									Add: []gatewayapi_v1beta1.HTTPHeader{
+										{Name: "custom-header-add", Value: "foo-bar"},
+									},
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clustersWeight(service(kuardService)),
+							ResponseHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+									"Host":              "bar.com", // Host header isn't significant in a response so it can be set.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTP backend with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -3001,7 +3059,63 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, "bar.com", service(kuardService)),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, "bar.com", nil, nil, nil, service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"HTTP backend with response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+								{
+									BackendRef: gatewayapi_v1beta1.BackendRef{
+										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+										Weight:                 pointer.Int32(1),
+									},
+									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+											Set: []gatewayapi_v1beta1.HTTPHeader{
+												{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+												{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+											},
+											Add: []gatewayapi_v1beta1.HTTPHeader{
+												{Name: "custom-header-add", Value: "foo-bar"},
+											},
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, service(kuardService)),
 						},
 					)),
 				},
@@ -3062,7 +3176,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"HTTP forward with invalid request header modifier": {
+		"HTTP backend with invalid request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -3113,7 +3227,64 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{}, nil, "bar.com", service(kuardService)),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{}, nil, "bar.com", nil, nil, nil, service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"HTTP backend with invalid response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+							{
+								Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+								BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+									{
+										BackendRef: gatewayapi_v1beta1.BackendRef{
+											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+											Weight:                 pointer.Int32(1),
+										},
+										Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+											Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+											ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+												Set: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+												},
+												Add: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: "!invalid-header-add", Value: "foo-bar"},
+												},
+											},
+										}},
+									},
+								},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{}, nil, service(kuardService)),
 						},
 					)),
 				},
@@ -13217,18 +13388,31 @@ func routeHeaders(prefix string, requestSet map[string]string, requestRemove []s
 	return r
 }
 
-func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, requestRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
+func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, requestRemove []string, hostRewrite string, responseSet map[string]string, responseAdd map[string]string, responseRemove []string, services ...*Service) (c []*Cluster) {
+	var requestHeadersPolicy *HeadersPolicy
+	if requestSet != nil || requestAdd != nil || requestRemove != nil || hostRewrite != "" {
+		requestHeadersPolicy = &HeadersPolicy{
+			Set:         requestSet,
+			Add:         requestAdd,
+			Remove:      requestRemove,
+			HostRewrite: hostRewrite,
+		}
+	}
+	var responseHeadersPolicy *HeadersPolicy
+	if responseSet != nil || responseAdd != nil || responseRemove != nil {
+		responseHeadersPolicy = &HeadersPolicy{
+			Set:    responseSet,
+			Add:    responseAdd,
+			Remove: responseRemove,
+		}
+	}
 	for _, s := range services {
 		c = append(c, &Cluster{
-			Upstream: s,
-			Protocol: s.Protocol,
-			RequestHeadersPolicy: &HeadersPolicy{
-				Set:         requestSet,
-				Add:         requestAdd,
-				Remove:      requestRemove,
-				HostRewrite: hostRewrite,
-			},
-			Weight: s.Weighted.Weight,
+			Upstream:              s,
+			Protocol:              s.Protocol,
+			RequestHeadersPolicy:  requestHeadersPolicy,
+			ResponseHeadersPolicy: responseHeadersPolicy,
+			Weight:                s.Weighted.Weight,
 		})
 	}
 	return c

@@ -29,8 +29,8 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testRequestHeaderModifierBackendRef(namespace string, gateway types.NamespacedName) {
-	Specify("request headers can be modified on backendref filters", func() {
+func testResponseHeaderModifierBackendRef(namespace string, gateway types.NamespacedName) {
+	Specify("response headers can be modified on backendref filters", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
@@ -42,7 +42,7 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 				Name:      "http-filter-1",
 			},
 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"requestheadermodifierbackendref.gateway.projectcontour.io"},
+				Hostnames: []gatewayapi_v1beta1.Hostname{"responseheadermodifierbackendref.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
@@ -58,8 +58,8 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 								},
 								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
-										Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 											Add: []gatewayapi_v1beta1.HTTPHeader{
 												{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},
@@ -71,59 +71,67 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 									},
 								},
 							},
+							{
+								BackendRef: gatewayapi_v1beta1.BackendRef{
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-nofilter", 80),
+								},
+							},
 						},
-					},
-					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/nofilter"),
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
 			},
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
-		// Check the route with the RequestHeaderModifier filter.
+		// Check the route is available.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: string(route.Spec.Hostnames[0]),
-			Path: "/filter",
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"Other-Header":   "Remove",
-					"Replace-Header": "Tobe-Replaced",
-				}),
-			},
+			Host:      string(route.Spec.Hostnames[0]),
+			Path:      "/filter",
 			Condition: e2e.HasStatusCode(200),
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-		body := f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "echo-header-filter", body.Service)
 
-		assert.Equal(t, "Foo", body.RequestHeaders.Get("My-Header"))
-		assert.Equal(t, "Bar", body.RequestHeaders.Get("Replace-Header"))
+		seenBackends := map[string]struct{}{}
+		// Retry a bunch of times to make sure we get to both backends.
+		for i := 0; i < 20; i++ {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host: string(route.Spec.Hostnames[0]),
+				Path: "/filter",
+				RequestOpts: []func(*http.Request){
+					e2e.OptSetHeaders(map[string]string{
+						"X-Echo-Set-Header": "Other-Header:Remove,Replace-Header:Tobe-Replaced",
+					}),
+				},
+				Condition: e2e.HasStatusCode(200),
+			})
+			require.NotNil(t, res, "request never succeeded")
+			require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+			body := f.GetEchoResponseBody(res.Body)
 
-		_, found := body.RequestHeaders["Other-Header"]
-		assert.False(t, found, "Other-Header was found on the response")
+			seenBackends[body.Service] = struct{}{}
+			switch body.Service {
+			case "echo-header-filter":
+				assert.Len(t, res.Headers["My-Header"], 1)
+				assert.Equal(t, res.Headers.Get("My-Header"), "Foo")
 
-		// Check the route without any filters.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: string(route.Spec.Hostnames[0]),
-			Path: "/nofilter",
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"Other-Header": "Exist",
-				}),
-			},
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-		body = f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "echo-header-nofilter", body.Service)
+				assert.Len(t, res.Headers["Replace-Header"], 1)
+				assert.Equal(t, res.Headers.Get("Replace-Header"), "Bar")
 
-		assert.Equal(t, "Exist", body.RequestHeaders.Get("Other-Header"))
+				assert.Len(t, res.Headers["Other-Header"], 0)
+				assert.Equal(t, res.Headers.Get("Other-Header"), "")
+			case "echo-header-nofilter":
+				assert.Len(t, res.Headers["My-Header"], 0)
+				assert.Equal(t, res.Headers.Get("My-Header"), "")
 
-		_, found = body.RequestHeaders["My-Header"]
-		assert.False(t, found, "My-Header was found on the response")
+				assert.Len(t, res.Headers["Replace-Header"], 1)
+				assert.Equal(t, res.Headers.Get("Replace-Header"), "Tobe-Replaced")
+
+				assert.Len(t, res.Headers["Other-Header"], 1)
+				assert.Equal(t, res.Headers.Get("Other-Header"), "Remove")
+			}
+		}
+		assert.Contains(t, seenBackends, "echo-header-filter")
+		assert.Contains(t, seenBackends, "echo-header-nofilter")
 	})
 }
