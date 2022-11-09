@@ -146,6 +146,29 @@ func TestEnsureContourConfig(t *testing.T) {
 					Namespace: "contour-namespace-1",
 					Name:      "contour-1",
 				},
+				Spec: model.ContourSpec{
+					RuntimeSettings: &contour_api_v1alpha1.ContourConfigurationSpec{
+						Gateway: &contour_api_v1alpha1.GatewayConfig{
+							GatewayRef: &contour_api_v1alpha1.NamespacedName{
+								Namespace: "contour-namespace-1",
+								Name:      "contour-1",
+							},
+						},
+						Envoy: &contour_api_v1alpha1.EnvoyConfig{
+							Service: &contour_api_v1alpha1.NamespacedName{
+								Namespace: "contour-namespace-1",
+								Name:      "envoy-contour-1",
+							},
+							ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+								Namespace: "client-cert-namespace",
+								Name:      "client-cert",
+							},
+						},
+						HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+							RootNamespaces: []string{"ns-1", "ns-2", "ns-3"},
+						},
+					},
+				},
 			},
 			existing: &contour_api_v1alpha1.ContourConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -192,7 +215,7 @@ func TestEnsureContourConfig(t *testing.T) {
 					},
 				},
 				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
-					RootNamespaces: []string{"ns-1", "ns-2"},
+					RootNamespaces: []string{"ns-1", "ns-2", "ns-3"},
 				},
 			},
 		},

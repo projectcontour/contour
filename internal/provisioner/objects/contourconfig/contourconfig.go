@@ -45,10 +45,9 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 	setGatewayConfig(desired, contour)
 
 	updater := func(ctx context.Context, cli client.Client, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
-		maybeUpdated := current.DeepCopy()
-		setGatewayConfig(maybeUpdated, contour)
-
+		maybeUpdated := desired.DeepCopy()
 		if !equality.Semantic.DeepEqual(current, maybeUpdated) {
+			maybeUpdated.ObjectMeta.ResourceVersion = current.ObjectMeta.ResourceVersion
 			return cli.Update(ctx, maybeUpdated)
 		}
 		return nil
