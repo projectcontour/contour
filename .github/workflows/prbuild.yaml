@@ -10,7 +10,7 @@ env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   GO_VERSION: 1.19.2
-  GATEWAY_API_VERSION: 0b19b47246a587fa7fb33b3432ab8907ea1ba8b0
+  GATEWAY_API_VERSION: fcc1d24b1ccfae69513bf83892c1d9de597abcaf
 jobs:
   lint:
     runs-on: ubuntu-latest
