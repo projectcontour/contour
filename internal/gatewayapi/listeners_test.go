@@ -98,8 +98,8 @@ func TestValidateListeners(t *testing.T) {
 	assert.Equal(t, 80, res.InsecurePort)
 	assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 		"listener-4": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-			Status:  metav1.ConditionTrue,
+			Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 			Message: "Only one HTTP port is supported",
 		},
@@ -161,8 +161,8 @@ func TestValidateListeners(t *testing.T) {
 			Message: "Hostname must be unique among HTTP listeners",
 		},
 		"listener-5": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-			Status:  metav1.ConditionTrue,
+			Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 			Message: "Only one HTTP port is supported",
 		},
@@ -244,8 +244,8 @@ func TestValidateListeners(t *testing.T) {
 	assert.Equal(t, 443, res.SecurePort)
 	assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 		"listener-4": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-			Status:  metav1.ConditionTrue,
+			Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 			Message: "Only one HTTPS/TLS port is supported",
 		},
@@ -307,8 +307,8 @@ func TestValidateListeners(t *testing.T) {
 			Message: "Hostname must be unique among HTTPS/TLS listeners",
 		},
 		"listener-5": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-			Status:  metav1.ConditionTrue,
+			Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 			Message: "Only one HTTPS/TLS port is supported",
 		},

@@ -317,7 +317,7 @@ var _ = Describe("Gateway provisioner", func() {
 			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, gatewayClassNotAccepted)
 			require.True(f.T(), ok)
 
-			// Create a Gateway using that GatewayClass, it should not be scheduled
+			// Create a Gateway using that GatewayClass, it should not be accepted
 			// since the GatewayClass is not accepted.
 			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -348,7 +348,7 @@ var _ = Describe("Gateway provisioner", func() {
 					return false
 				}
 
-				return gatewayScheduled(gw)
+				return gatewayAccepted(gw)
 			}, 10*time.Second, time.Second)
 
 			// Now create the ContourDeployment to match the parametersRef.
@@ -373,14 +373,14 @@ var _ = Describe("Gateway provisioner", func() {
 				return gatewayClassAccepted(gc)
 			}, time.Minute, time.Second)
 
-			// And now the Gateway should be scheduled.
+			// And now the Gateway should be accepted.
 			require.Eventually(f.T(), func() bool {
 				gw := &gatewayapi_v1beta1.Gateway{}
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gateway), gw); err != nil {
 					return false
 				}
 
-				return gatewayScheduled(gw)
+				return gatewayAccepted(gw)
 			}, time.Minute, time.Second)
 
 			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
@@ -486,16 +486,16 @@ func gatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool
 	)
 }
 
-// gatewayScheduled returns true if the gateway has a .status.conditions
-// entry of Scheduled: true".
-func gatewayScheduled(gateway *gatewayapi_v1beta1.Gateway) bool {
+// gatewayAccepted returns true if the gateway has a .status.conditions
+// entry of "Accepted: true".
+func gatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionScheduled),
+		string(gatewayapi_v1beta1.GatewayConditionAccepted),
 		metav1.ConditionTrue,
 	)
 }

@@ -202,9 +202,9 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 	}, nil
 }
 
-// headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPRequestHeaderFilter.
+// headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter) (*HeadersPolicy, error) {
 	var (
 		set         = make(map[string]string, len(hf.Set))
 		add         = make(map[string]string, len(hf.Add))

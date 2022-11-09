@@ -169,12 +169,12 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 
 		// Get all the RouteParentStatuses that are for other Gateways.
 		for _, rps := range o.Status.Parents {
-			if !gatewayapi.IsRefToGateway(gatewayapi.UpgradeParentRef(rps.ParentRef), r.GatewayRef) {
-				newRouteParentStatuses = append(newRouteParentStatuses, gatewayapi.UpgradeRouteParentStatus(rps))
+			if !gatewayapi.IsRefToGateway(rps.ParentRef, r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, rps)
 			}
 		}
 
-		route.Status.Parents = gatewayapi.DowngradeRouteParentStatuses(newRouteParentStatuses)
+		route.Status.Parents = newRouteParentStatuses
 
 		return route
 	default:

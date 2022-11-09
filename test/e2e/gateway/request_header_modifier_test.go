@@ -59,7 +59,7 @@ func testRequestHeaderModifierForwardTo(namespace string, gateway types.Namespac
 								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
 										Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 											Add: []gatewayapi_v1beta1.HTTPHeader{
 												{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},

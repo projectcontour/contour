@@ -204,9 +204,9 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					},
 				},
 			}
-			_, notScheduled := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1beta1.Gateway) bool {
+			_, notAccepted := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				for _, cond := range gw.Status.Conditions {
-					if cond.Type == "Scheduled" &&
+					if cond.Type == string(gatewayapi_v1beta1.GatewayConditionAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
 						cond.Reason == "OlderGatewayExists" {
 						return true
@@ -214,7 +214,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				}
 				return false
 			})
-			require.True(f.T(), notScheduled)
+			require.True(f.T(), notAccepted)
 
 			// Double-check that the oldest gateway is still accepted.
 			require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(oldest), oldest))
