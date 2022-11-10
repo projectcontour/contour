@@ -96,15 +96,7 @@ metadata:
 data:
   contour.yaml: |
     gateway:
-      controllerName: projectcontour.io/ingress-controller
-    rateLimitService:
-      extensionService: projectcontour/ratelimit
-      domain: contour
-      failOpen: false
-    tls:
-      fallback-certificate:
-        name: fallback-cert
-        namespace: projectcontour
+      controllerName: projectcontour.io/projectcontour/contour
 EOF
 
 # Install fallback cert

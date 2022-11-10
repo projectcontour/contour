@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -1168,6 +1169,19 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		}
 		// TODO: Else, add condition here to RateLimitPolicy that this is invalid.
 		// Need to clarify if we should set condition on HTTPRoute for visibility too?
+
+		p.WithField("ratelimitpolicy", finalLocalRLP).Info("about to add effective policy")
+		// Add EffectivePolicyConfiguration to Status.
+		policyContent, _ := json.Marshal(finalLocalRLP)
+		routeAccessor.AddEffectivePolicyConfig(gatewayapi_v1beta1.RouteEffectivePolicyConfiguration{
+			PolicyType: gatewayapi_v1beta1.PolicyGroupKind{
+				Group: gatewayapi_v1beta1.Group(contour_api_v1alpha1.RateLimitPolicyGVR.Group),
+				Kind:  gatewayapi_v1beta1.Kind("RateLimitPolicy"),
+			},
+			SectionName: gatewayapi_v1beta1.SectionName("unsupportedfornow"),
+			PolicyValue: string(policyContent),
+		})
+
 	}
 
 	var programmed bool

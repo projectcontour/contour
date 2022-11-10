@@ -3081,8 +3081,8 @@ spec:
                           if all conditions are satisfied. \n For example, the match
                           below will match a HTTP request only if its path starts
                           with `/foo` AND it contains the `version: v1` header: \n
-                          ``` match:   path:     value: \"/foo\"   headers:   - name:
-                          \"version\"     value \"v1\" ```"
+                          ``` match: \n \tpath: \t  value: \"/foo\" \theaders: \t-
+                          name: \"version\" \t  value \"v1\" \n ```"
                         properties:
                           headers:
                             description: Headers specifies HTTP request header matchers.
@@ -3467,8 +3467,8 @@ spec:
         required:
         - spec
         type: object
-    served: true
-    storage: true
+    served: false
+    storage: false
     subresources:
       status: {}
   - additionalPrinterColumns:
@@ -3534,8 +3534,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard    label
+                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard     label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -4683,8 +4683,8 @@ spec:
                           if all conditions are satisfied. \n For example, the match
                           below will match a HTTP request only if its path starts
                           with `/foo` AND it contains the `version: v1` header: \n
-                          ``` match:   path:     value: \"/foo\"   headers:   - name:
-                          \"version\"     value \"v1\" ```"
+                          ``` match: \n \tpath: \t  value: \"/foo\" \theaders: \t-
+                          name: \"version\" \t  value \"v1\" \n ```"
                         properties:
                           headers:
                             description: Headers specifies HTTP request header matchers.
@@ -4969,6 +4969,48 @@ spec:
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
                       type: string
+                    effectivePolicyConfigurations:
+                      description: EffectivePolicyConfigurations is a list of policies
+                        in effect on this Route.
+                      items:
+                        properties:
+                          policyType:
+                            description: PolicyGroupKind indicates the group and kind
+                              of a Policy resource.
+                            properties:
+                              group:
+                                description: Group is the group of the Policy.
+                                maxLength: 253
+                                pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                type: string
+                              kind:
+                                description: Kind is the kind of the Route.
+                                maxLength: 63
+                                minLength: 1
+                                pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                type: string
+                            required:
+                            - kind
+                            type: object
+                          policyValue:
+                            type: string
+                          sectionName:
+                            description: "SectionName is the name of a section in
+                              a Kubernetes resource. \n This validation is based off
+                              of the corresponding Kubernetes validation: https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L208
+                              \n Valid values include: \n * \"example.com\" * \"foo.example.com\"
+                              \n Invalid values include: \n * \"example.com/bar\"
+                              - \"/\" is an invalid character"
+                            maxLength: 253
+                            minLength: 1
+                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                            type: string
+                        required:
+                        - policyType
+                        - policyValue
+                        - sectionName
+                        type: object
+                      type: array
                     parentRef:
                       description: ParentRef corresponds with a ParentRef in the spec
                         that this RouteParentStatus struct describes the status of.
@@ -5070,7 +5112,7 @@ spec:
         - spec
         type: object
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
 status:

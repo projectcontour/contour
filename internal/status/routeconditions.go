@@ -75,6 +75,40 @@ func (r *RouteStatusUpdate) StatusUpdateFor(parentRef gatewayapi_v1beta1.ParentR
 	}
 }
 
+func (r *RouteParentStatusUpdate) AddEffectivePolicyConfig(effectivePolicy gatewayapi_v1beta1.RouteEffectivePolicyConfiguration) {
+	var rps *gatewayapi_v1beta1.RouteParentStatus
+
+	for _, v := range r.RouteParentStatuses {
+		if v.ParentRef == r.parentRef {
+			rps = v
+			break
+		}
+	}
+
+	if rps == nil {
+		rps = &gatewayapi_v1beta1.RouteParentStatus{
+			ParentRef:      r.parentRef,
+			ControllerName: r.GatewayController,
+		}
+
+		r.RouteParentStatuses = append(r.RouteParentStatuses, rps)
+	}
+
+	var foundExisting bool
+	for i, ep := range rps.EffectivePolicyConfigurations {
+		if ep.PolicyType == effectivePolicy.PolicyType &&
+			ep.SectionName == effectivePolicy.SectionName {
+			rps.EffectivePolicyConfigurations[i] = effectivePolicy
+			foundExisting = true
+			break
+		}
+	}
+
+	if !foundExisting {
+		rps.EffectivePolicyConfigurations = append(rps.EffectivePolicyConfigurations, effectivePolicy)
+	}
+}
+
 // AddCondition adds a condition with the given properties
 // to the RouteParentStatus.
 func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
