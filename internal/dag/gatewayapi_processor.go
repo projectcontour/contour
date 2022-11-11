@@ -14,9 +14,9 @@
 package dag
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1115,6 +1115,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		// Note: Using this at the moment as a hack so we can use the existing conversion helpers.
 		finalLocalRLP := new(contour_api_v1.LocalRateLimitPolicy)
 
+		type policyValue struct {
+			policyName string
+			value      string
+		}
+		fields := map[string]policyValue{}
+
 		// Cycle through defaults first, and apply them on top of each other in
 		// forwards list order.
 		for _, rlp := range allRLPs {
@@ -1124,15 +1130,31 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 			if rlp.Spec.Default.Local.Requests != 0 {
 				finalLocalRLP.Requests = rlp.Spec.Default.Local.Requests
+				fields["local.requests"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Default.Local.Requests), 10),
+				}
 			}
 			if rlp.Spec.Default.Local.Unit != "" {
 				finalLocalRLP.Unit = rlp.Spec.Default.Local.Unit
+				fields["local.unit"] = policyValue{
+					policyName: rlp.Name,
+					value:      rlp.Spec.Default.Local.Unit,
+				}
 			}
 			if rlp.Spec.Default.Local.Burst != 0 {
 				finalLocalRLP.Burst = rlp.Spec.Default.Local.Burst
+				fields["local.burst"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Default.Local.Burst), 10),
+				}
 			}
 			if rlp.Spec.Default.Local.ResponseStatusCode != 0 {
 				finalLocalRLP.ResponseStatusCode = rlp.Spec.Default.Local.ResponseStatusCode
+				fields["local.responseStatusCode"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Default.Local.ResponseStatusCode), 10),
+				}
 			}
 			// TODO: skipped headers for now.
 		}
@@ -1148,15 +1170,31 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 			if rlp.Spec.Override.Local.Requests != 0 {
 				finalLocalRLP.Requests = rlp.Spec.Override.Local.Requests
+				fields["local.requests"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Override.Local.Requests), 10),
+				}
 			}
 			if rlp.Spec.Override.Local.Unit != "" {
 				finalLocalRLP.Unit = rlp.Spec.Override.Local.Unit
+				fields["local.unit"] = policyValue{
+					policyName: rlp.Name,
+					value:      rlp.Spec.Override.Local.Unit,
+				}
 			}
 			if rlp.Spec.Override.Local.Burst != 0 {
 				finalLocalRLP.Burst = rlp.Spec.Override.Local.Burst
+				fields["local.burst"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Override.Local.Burst), 10),
+				}
 			}
 			if rlp.Spec.Override.Local.ResponseStatusCode != 0 {
 				finalLocalRLP.ResponseStatusCode = rlp.Spec.Override.Local.ResponseStatusCode
+				fields["local.responseStatusCode"] = policyValue{
+					policyName: rlp.Name,
+					value:      strconv.FormatUint(uint64(rlp.Spec.Override.Local.ResponseStatusCode), 10),
+				}
 			}
 			// TODO: skipped headers for now.
 		}
@@ -1172,11 +1210,20 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 		p.WithField("ratelimitpolicy", finalLocalRLP).Info("about to add effective policy")
 		// Add EffectivePolicyConfiguration to Status.
-		policyContent, _ := json.Marshal(finalLocalRLP)
+		policySettings := []gatewayapi_v1beta1.PolicySetting{}
+		for field, value := range fields {
+			if value.value != "" {
+				policySettings = append(policySettings, gatewayapi_v1beta1.PolicySetting{
+					Field:      field,
+					Value:      value.value,
+					PolicyName: value.policyName,
+				})
+			}
+		}
 		routeAccessor.AddEffectivePolicyConfig(gatewayapi_v1beta1.RouteEffectivePolicyConfiguration{
-			PolicyType:  "projectcontour.io/RateLimitPolicy",
-			SectionName: gatewayapi_v1beta1.SectionName("unsupportedfornow"),
-			PolicyValue: string(policyContent),
+			PolicyType:     "projectcontour.io/RateLimitPolicy",
+			SectionName:    gatewayapi_v1beta1.SectionName("unsupportedfornow"),
+			PolicySettings: policySettings,
 		})
 
 	}
