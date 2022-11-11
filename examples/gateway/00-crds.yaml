@@ -4975,23 +4975,7 @@ spec:
                       items:
                         properties:
                           policyType:
-                            description: PolicyGroupKind indicates the group and kind
-                              of a Policy resource.
-                            properties:
-                              group:
-                                description: Group is the group of the Policy.
-                                maxLength: 253
-                                pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                                type: string
-                              kind:
-                                description: Kind is the kind of the Route.
-                                maxLength: 63
-                                minLength: 1
-                                pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                                type: string
-                            required:
-                            - kind
-                            type: object
+                            type: string
                           policyValue:
                             type: string
                           sectionName:
@@ -5011,6 +4995,9 @@ spec:
                         - sectionName
                         type: object
                       type: array
+                      x-kubernetes-list-map-keys:
+                      - policyType
+                      x-kubernetes-list-type: map
                     parentRef:
                       description: ParentRef corresponds with a ParentRef in the spec
                         that this RouteParentStatus struct describes the status of.

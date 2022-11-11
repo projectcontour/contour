@@ -1174,10 +1174,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		// Add EffectivePolicyConfiguration to Status.
 		policyContent, _ := json.Marshal(finalLocalRLP)
 		routeAccessor.AddEffectivePolicyConfig(gatewayapi_v1beta1.RouteEffectivePolicyConfiguration{
-			PolicyType: gatewayapi_v1beta1.PolicyGroupKind{
-				Group: gatewayapi_v1beta1.Group(contour_api_v1alpha1.RateLimitPolicyGVR.Group),
-				Kind:  gatewayapi_v1beta1.Kind("RateLimitPolicy"),
-			},
+			PolicyType:  "projectcontour.io/RateLimitPolicy",
 			SectionName: gatewayapi_v1beta1.SectionName("unsupportedfornow"),
 			PolicyValue: string(policyContent),
 		})

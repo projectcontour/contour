@@ -45,4 +45,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.10.17
 )
 
-replace sigs.k8s.io/gateway-api => github.com/sunjayBhatia/gateway-api v0.0.0-20221107210021-3a96f4e00fc9
+replace sigs.k8s.io/gateway-api => github.com/sunjayBhatia/gateway-api v0.0.0-20221111001054-0cf3fa56af68
