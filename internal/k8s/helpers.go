@@ -48,7 +48,7 @@ func isStatusEqual(objA, objB interface{}) bool {
 	case *contour_api_v1alpha1.ExtensionService:
 		if b, ok := objB.(*contour_api_v1alpha1.ExtensionService); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
