@@ -2,50 +2,152 @@
 title: "Community"
 layout: section
 ---
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+
 <div class="hero subpage-hero">
     <div class="wrapper">
         <h1>Community</h1>
     </div>
+
 </div>
 <div class="wrapper subpage">
-    <h2>Do you want to help build Contour?</h2>
-    <div class="grid three">
-        <div class="col">
-            <div class="icon">
-                <img src="/img/github-image.svg" alt="GitHub Logo"/>
-            </div>
-            <div class="content">
-                <p>If you’re a newcomer, check out the <a href="https://github.com/projectcontour/contour/issues?q=is%3Aopen+is%3Aissue+label%3A%22Good+first+issue%22">Good first issue</a> and <a href="https://github.com/projectcontour/contour/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+">Help wanted</a> labels in the Contour repository.</p>
-                <p>Join the Contour Office Hours, a place where you can ask questions like “how do I do this in Contour” and “why does Contour do this thing this way?” </p>
-                <p>Contour Community Meetings and Office Hours are currently paused</p>
-            </div>
+    <h2 class="display-6" style="text-align: center">Do you want to help build Contour?</h2>
+
+    <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active"
+                aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1"
+                aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2"
+                aria-label="Slide 3"></button>
         </div>
-        <div class="col">
-            <div class="icon">
-                <img src="/img/slack.svg" alt="Slack Logo"/>
-            </div>
-            <div class="content">
-                <p>Join our Kubernetes Slack channel and chat with over 1000 other community members: <a href="https://kubernetes.slack.com/?redir=%2Fmessages%2Fcontour">#contour</a></p>
-                <div class="icon twitter">
-                    <img src="/img/twitter.svg" alt="Twitter Logo"/>
+        <div class="carousel-inner">
+            <div class="carousel-item active" data-bs-interval="2000">
+                <img src="img/git logo.png" class="d-block w-100" alt="github">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5 style="color: ffff;">Join us on Github</h5>
+               
                 </div>
-                <p>Get updates on Twitter at <a href="https://twitter.com/projectcontour">@projectcontour</a></p>
             </div>
+            <div class="carousel-item" data-bs-interval="2000">
+                <img src="img/slack.png" class="d-block w-100" alt="slack">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5 style="color:#000000;">Join us on Slack</h5>
+                 
+                </div>
+            </div>
+            <div class="carousel-item" data-bs-interval="2000">
+                <img src="img/1459043.jpg" class="d-block w-100" alt="twitter">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Join us on Twitter</h5>
+                  
+                </div>
+            </div>
+            
         </div>
-        <div class="col">
-            <div class="icon">
-                <img src="/img/calendar.svg" alt="Calendar Image"/>
-            </div>
-            <div class="content">
-                <p>Join the <a href="https://groups.google.com/g/project-contour">Project Contour Users</a> mailing list for Contour news, release notifications, invitations to the community meetings, to discuss issues, or to provide suggestions and feedback.</p>
-                <p>Join the Contour Community Meetings on Zoom:</p>
-                <ul>
-                    <li>Contour Community Meetings and Office Hours are currently paused</li>
-                    <li>Join the <a href="https://groups.google.com/g/project-contour">mailing list</a> to get an automated invitation to the meeting</li>
-                    <li>Meeting notes can be found <a href="https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw">here</a></li>
-                    <li>Meetings are recorded and can be found <a href="https://www.youtube.com/playlist?list=PLk2K7YhXu5KtYU1UGEYNC8ApH5gsWihDJ">here</a></li>
-                </ul>
-            </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions"
+            data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions"
+            data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+
+    <div class="card mb-3">
+        <div class="icon">
+            <img src="/img/github-image.svg" alt="GitHub Logo" />
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Visit Github</h5>
+            <p class="card-text">If you’re a newcomer, check out the <a
+                    href="https://github.com/projectcontour/contour/issues?q=is%3Aopen+is%3Aissue+label%3A%22Good+first+issue%22">Good
+                    first issue</a> and <a
+                    href="https://github.com/projectcontour/contour/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+">Help
+                    wanted</a> labels in the Contour repository.</p>
+            <p>Join the <a href="https://github.com/projectcontour/community/wiki/Office-Hours">Contour Office
+                    Hours</a>, a place where you can ask questions like “how do I do this in Contour” and “why does
+                Contour do this thing this way?”</p>
+            <p class="card-text"><small class="text-muted">Currently Office hours are held on the same time slot as
+                    Community Meetings at the end of the
+                    session. Invite will be the same and received upon mailing list subscription!</small></p>
         </div>
     </div>
+
+    <div class="card mb-3">
+        <div class="icon">
+            <img src="/img/slack.svg" alt="Slack Logo" />
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Visit Kubernetes Slack channel</h5>
+            <p class="card-text">Join our Kubernetes Slack channel and chat with over 1000 other community members: <a
+                    href="https://kubernetes.slack.com/?redir=%2Fmessages%2Fcontour">#contour</a></p>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="icon">
+            <img src="img/tlogo.png" alt="Twitter Logo" />
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Visit Twitter</h5>
+            <p class="card-text">Get updates on Twitter at <a
+                    href="https://twitter.com/projectcontour">@projectcontour</a>.</p>
+        </div>
+    </div>
+
+    <div>
+        <section class="jumbotron text-center " style="background-color:#24c7d3;color:#fff; padding: 50px;">
+            <div class="container">
+                <h1>Get involved</h1>
+                <p class="lead" style="color:#fff;">Join the mailing list to get invites to meetings.</p>
+                <p style="margin-top: 30px;"><a href="https://groups.google.com/g/project-contour"
+                        target="_blank"><button type="button" class="btn btn-primary btn-lg">Join the mailing
+                            list</button></a></p>
+                <p></p>
+            </div>
+        </section>
+    </div>
+
+    <div class="card mb-3">
+
+        <div class="card-body">
+            <h5 class="card-title"></h5>
+            <p class="card-text">Join the <a href="https://lists.cncf.io/g/cncf-contour-users/">Project Contour
+                    Users</a> mailing list
+                for Contour news, release notifications, invitations to the community meetings, to discuss issues,
+                or to provide suggestions and feedback.</p>
+            <p>Join the Contour Community Meetings on Zoom:</p>
+            <ul>
+                <li>For Australia time zones:</li>
+                <ul>
+                    <li>Every first and third Tuesday at 6:30 PM Eastern Time / 3:30 PM Pacific Time / Wednesday at
+                        9:30 AM Australian Eastern Time</li>
+                </ul>
+                <li>For Americas time zones:</li>
+                <ul>
+                    <li>Every second and fourth Tuesday at 1 PM Eastern Time / 10 AM Pacific Time</li>
+                </ul>
+                <li>Join the <a href="https://lists.cncf.io/g/cncf-contour-users/">mailing list</a> to get an
+                    automated invitation to the meeting, Meeting notes can be found <a
+                        href="https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw">here</a> Meetings are recorded and can be found
+                    <a href="https://www.youtube.com/playlist?list=PLk2K7YhXu5KtYU1UGEYNC8ApH5gsWihDJ">here</a>
+                </li>
+            </ul>
+
+            <p class="card-text"><small class="text-muted">Contour Community Meetings and Office Hours are currently
+                    paused</small></p>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+        crossorigin="anonymous"></script>
 </div>
