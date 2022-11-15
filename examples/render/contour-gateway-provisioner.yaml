@@ -7266,8 +7266,8 @@ spec:
                               group:
                                 default: ""
                                 description: Group is the group of the referent. For
-                                  example, "networking.k8s.io". When unspecified (empty
-                                  string), core API group is inferred.
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
                                 maxLength: 253
                                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
@@ -7960,8 +7960,8 @@ spec:
                               group:
                                 default: ""
                                 description: Group is the group of the referent. For
-                                  example, "networking.k8s.io". When unspecified (empty
-                                  string), core API group is inferred.
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
                                 maxLength: 253
                                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
@@ -8478,7 +8478,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -8620,8 +8623,9 @@ spec:
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
-                                        For example, "networking.k8s.io". When unspecified
-                                        (empty string), core API group is inferred.
+                                        For example, "gateway.networking.k8s.io".
+                                        When unspecified or empty string, core API
+                                        group is inferred.
                                       maxLength: 253
                                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                       type: string
@@ -8653,9 +8657,9 @@ spec:
                                         appends to any existing values associated
                                         with the header name. \n Input:   GET /foo
                                         HTTP/1.1   my-header: foo \n Config:   add:
-                                        \  - name: \"my-header\"     value: \"bar\"
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
                                         \n Output:   GET /foo HTTP/1.1   my-header:
-                                        foo   my-header: bar"
+                                        foo,bar,baz"
                                       items:
                                         description: HTTPHeader represents an HTTP
                                           Header name and value as defined by RFC
@@ -8782,9 +8786,9 @@ spec:
                                         group:
                                           default: ""
                                           description: Group is the group of the referent.
-                                            For example, "networking.k8s.io". When
-                                            unspecified (empty string), core API group
-                                            is inferred.
+                                            For example, "gateway.networking.k8s.io".
+                                            When unspecified or empty string, core
+                                            API group is inferred.
                                           maxLength: 253
                                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                           type: string
@@ -8835,6 +8839,115 @@ spec:
                                   required:
                                   - backendRef
                                   type: object
+                                responseHeaderModifier:
+                                  description: "ResponseHeaderModifier defines a schema
+                                    for a filter that modifies response headers. \n
+                                    Support: Extended \n <gateway:experimental>"
+                                  properties:
+                                    add:
+                                      description: "Add adds the given header(s) (name,
+                                        value) to the request before the action. It
+                                        appends to any existing values associated
+                                        with the header name. \n Input:   GET /foo
+                                        HTTP/1.1   my-header: foo \n Config:   add:
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
+                                        \n Output:   GET /foo HTTP/1.1   my-header:
+                                        foo,bar,baz"
+                                      items:
+                                        description: HTTPHeader represents an HTTP
+                                          Header name and value as defined by RFC
+                                          7230.
+                                        properties:
+                                          name:
+                                            description: "Name is the name of the
+                                              HTTP Header to be matched. Name matching
+                                              MUST be case insensitive. (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                              \n If multiple entries specify equivalent
+                                              header names, the first entry with an
+                                              equivalent name MUST be considered for
+                                              a match. Subsequent entries with an
+                                              equivalent header name MUST be ignored.
+                                              Due to the case-insensitivity of header
+                                              names, \"foo\" and \"Foo\" are considered
+                                              equivalent."
+                                            maxLength: 256
+                                            minLength: 1
+                                            pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                            type: string
+                                          value:
+                                            description: Value is the value of HTTP
+                                              Header to be matched.
+                                            maxLength: 4096
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                        type: object
+                                      maxItems: 16
+                                      type: array
+                                      x-kubernetes-list-map-keys:
+                                      - name
+                                      x-kubernetes-list-type: map
+                                    remove:
+                                      description: "Remove the given header(s) from
+                                        the HTTP request before the action. The value
+                                        of Remove is a list of HTTP header names.
+                                        Note that the header names are case-insensitive
+                                        (see https://datatracker.ietf.org/doc/html/rfc2616#section-4.2).
+                                        \n Input:   GET /foo HTTP/1.1   my-header1:
+                                        foo   my-header2: bar   my-header3: baz \n
+                                        Config:   remove: [\"my-header1\", \"my-header3\"]
+                                        \n Output:   GET /foo HTTP/1.1   my-header2:
+                                        bar"
+                                      items:
+                                        type: string
+                                      maxItems: 16
+                                      type: array
+                                    set:
+                                      description: "Set overwrites the request with
+                                        the given header (name, value) before the
+                                        action. \n Input:   GET /foo HTTP/1.1   my-header:
+                                        foo \n Config:   set:   - name: \"my-header\"
+                                        \    value: \"bar\" \n Output:   GET /foo
+                                        HTTP/1.1   my-header: bar"
+                                      items:
+                                        description: HTTPHeader represents an HTTP
+                                          Header name and value as defined by RFC
+                                          7230.
+                                        properties:
+                                          name:
+                                            description: "Name is the name of the
+                                              HTTP Header to be matched. Name matching
+                                              MUST be case insensitive. (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                              \n If multiple entries specify equivalent
+                                              header names, the first entry with an
+                                              equivalent name MUST be considered for
+                                              a match. Subsequent entries with an
+                                              equivalent header name MUST be ignored.
+                                              Due to the case-insensitivity of header
+                                              names, \"foo\" and \"Foo\" are considered
+                                              equivalent."
+                                            maxLength: 256
+                                            minLength: 1
+                                            pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                            type: string
+                                          value:
+                                            description: Value is the value of HTTP
+                                              Header to be matched.
+                                            maxLength: 4096
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                        type: object
+                                      maxItems: 16
+                                      type: array
+                                      x-kubernetes-list-map-keys:
+                                      - name
+                                      x-kubernetes-list-type: map
+                                  type: object
                                 type:
                                   description: "Type identifies the type of filter
                                     to apply. As with other API fields, types are
@@ -8863,6 +8976,7 @@ spec:
                                     requests that would have been processed by that
                                     filter MUST receive a HTTP error response. \n "
                                   enum:
+                                  - ResponseHeaderModifier
                                   - RequestHeaderModifier
                                   - RequestMirror
                                   - ExtensionRef
@@ -8875,8 +8989,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -8972,8 +9086,8 @@ spec:
                             properties:
                               group:
                                 description: Group is the group of the referent. For
-                                  example, "networking.k8s.io". When unspecified (empty
-                                  string), core API group is inferred.
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
                                 maxLength: 253
                                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
@@ -9005,8 +9119,8 @@ spec:
                                   to any existing values associated with the header
                                   name. \n Input:   GET /foo HTTP/1.1   my-header:
                                   foo \n Config:   add:   - name: \"my-header\"     value:
-                                  \"bar\" \n Output:   GET /foo HTTP/1.1   my-header:
-                                  foo   my-header: bar"
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
                                 items:
                                   description: HTTPHeader represents an HTTP Header
                                     name and value as defined by RFC 7230.
@@ -9124,8 +9238,9 @@ spec:
                                   group:
                                     default: ""
                                     description: Group is the group of the referent.
-                                      For example, "networking.k8s.io". When unspecified
-                                      (empty string), core API group is inferred.
+                                      For example, "gateway.networking.k8s.io". When
+                                      unspecified or empty string, core API group
+                                      is inferred.
                                     maxLength: 253
                                     pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                     type: string
@@ -9173,6 +9288,107 @@ spec:
                             required:
                             - backendRef
                             type: object
+                          responseHeaderModifier:
+                            description: "ResponseHeaderModifier defines a schema
+                              for a filter that modifies response headers. \n Support:
+                              Extended \n <gateway:experimental>"
+                            properties:
+                              add:
+                                description: "Add adds the given header(s) (name,
+                                  value) to the request before the action. It appends
+                                  to any existing values associated with the header
+                                  name. \n Input:   GET /foo HTTP/1.1   my-header:
+                                  foo \n Config:   add:   - name: \"my-header\"     value:
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
+                                items:
+                                  description: HTTPHeader represents an HTTP Header
+                                    name and value as defined by RFC 7230.
+                                  properties:
+                                    name:
+                                      description: "Name is the name of the HTTP Header
+                                        to be matched. Name matching MUST be case
+                                        insensitive. (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                        \n If multiple entries specify equivalent
+                                        header names, the first entry with an equivalent
+                                        name MUST be considered for a match. Subsequent
+                                        entries with an equivalent header name MUST
+                                        be ignored. Due to the case-insensitivity
+                                        of header names, \"foo\" and \"Foo\" are considered
+                                        equivalent."
+                                      maxLength: 256
+                                      minLength: 1
+                                      pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                      type: string
+                                    value:
+                                      description: Value is the value of HTTP Header
+                                        to be matched.
+                                      maxLength: 4096
+                                      minLength: 1
+                                      type: string
+                                  required:
+                                  - name
+                                  - value
+                                  type: object
+                                maxItems: 16
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
+                              remove:
+                                description: "Remove the given header(s) from the
+                                  HTTP request before the action. The value of Remove
+                                  is a list of HTTP header names. Note that the header
+                                  names are case-insensitive (see https://datatracker.ietf.org/doc/html/rfc2616#section-4.2).
+                                  \n Input:   GET /foo HTTP/1.1   my-header1: foo
+                                  \  my-header2: bar   my-header3: baz \n Config:
+                                  \  remove: [\"my-header1\", \"my-header3\"] \n Output:
+                                  \  GET /foo HTTP/1.1   my-header2: bar"
+                                items:
+                                  type: string
+                                maxItems: 16
+                                type: array
+                              set:
+                                description: "Set overwrites the request with the
+                                  given header (name, value) before the action. \n
+                                  Input:   GET /foo HTTP/1.1   my-header: foo \n Config:
+                                  \  set:   - name: \"my-header\"     value: \"bar\"
+                                  \n Output:   GET /foo HTTP/1.1   my-header: bar"
+                                items:
+                                  description: HTTPHeader represents an HTTP Header
+                                    name and value as defined by RFC 7230.
+                                  properties:
+                                    name:
+                                      description: "Name is the name of the HTTP Header
+                                        to be matched. Name matching MUST be case
+                                        insensitive. (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                        \n If multiple entries specify equivalent
+                                        header names, the first entry with an equivalent
+                                        name MUST be considered for a match. Subsequent
+                                        entries with an equivalent header name MUST
+                                        be ignored. Due to the case-insensitivity
+                                        of header names, \"foo\" and \"Foo\" are considered
+                                        equivalent."
+                                      maxLength: 256
+                                      minLength: 1
+                                      pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                      type: string
+                                    value:
+                                      description: Value is the value of HTTP Header
+                                        to be matched.
+                                      maxLength: 4096
+                                      minLength: 1
+                                      type: string
+                                  required:
+                                  - name
+                                  - value
+                                  type: object
+                                maxItems: 16
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
+                            type: object
                           type:
                             description: "Type identifies the type of filter to apply.
                               As with other API fields, types are classified into
@@ -9199,6 +9415,7 @@ spec:
                               been processed by that filter MUST receive a HTTP error
                               response. \n "
                             enum:
+                            - ResponseHeaderModifier
                             - RequestHeaderModifier
                             - RequestMirror
                             - ExtensionRef
@@ -9302,7 +9519,6 @@ spec:
                               and methods will match.
                             properties:
                               method:
-                                default: ""
                                 description: "Value of the method to match against.
                                   If left empty or omitted, will match all services.
                                   \n At least one of Service and Method MUST be a
@@ -9311,7 +9527,6 @@ spec:
                                 pattern: ^[^\/]*$
                                 type: string
                               service:
-                                default: ""
                                 description: "Value of the service to match against.
                                   If left empty or omitted, will match all services.
                                   \n At least one of Service and Method MUST be a
@@ -9473,8 +9688,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
@@ -9711,7 +9929,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -9853,8 +10074,9 @@ spec:
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
-                                        For example, "networking.k8s.io". When unspecified
-                                        (empty string), core API group is inferred.
+                                        For example, "gateway.networking.k8s.io".
+                                        When unspecified or empty string, core API
+                                        group is inferred.
                                       maxLength: 253
                                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                       type: string
@@ -9886,9 +10108,9 @@ spec:
                                         appends to any existing values associated
                                         with the header name. \n Input:   GET /foo
                                         HTTP/1.1   my-header: foo \n Config:   add:
-                                        \  - name: \"my-header\"     value: \"bar\"
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
                                         \n Output:   GET /foo HTTP/1.1   my-header:
-                                        foo   my-header: bar"
+                                        foo,bar,baz"
                                       items:
                                         description: HTTPHeader represents an HTTP
                                           Header name and value as defined by RFC
@@ -10015,9 +10237,9 @@ spec:
                                         group:
                                           default: ""
                                           description: Group is the group of the referent.
-                                            For example, "networking.k8s.io". When
-                                            unspecified (empty string), core API group
-                                            is inferred.
+                                            For example, "gateway.networking.k8s.io".
+                                            When unspecified or empty string, core
+                                            API group is inferred.
                                           maxLength: 253
                                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                           type: string
@@ -10183,9 +10405,9 @@ spec:
                                         appends to any existing values associated
                                         with the header name. \n Input:   GET /foo
                                         HTTP/1.1   my-header: foo \n Config:   add:
-                                        \  - name: \"my-header\"     value: \"bar\"
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
                                         \n Output:   GET /foo HTTP/1.1   my-header:
-                                        foo   my-header: bar"
+                                        foo,bar,baz"
                                       items:
                                         description: HTTPHeader represents an HTTP
                                           Header name and value as defined by RFC
@@ -10390,8 +10612,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -10493,8 +10715,8 @@ spec:
                             properties:
                               group:
                                 description: Group is the group of the referent. For
-                                  example, "networking.k8s.io". When unspecified (empty
-                                  string), core API group is inferred.
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
                                 maxLength: 253
                                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
@@ -10526,8 +10748,8 @@ spec:
                                   to any existing values associated with the header
                                   name. \n Input:   GET /foo HTTP/1.1   my-header:
                                   foo \n Config:   add:   - name: \"my-header\"     value:
-                                  \"bar\" \n Output:   GET /foo HTTP/1.1   my-header:
-                                  foo   my-header: bar"
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
                                 items:
                                   description: HTTPHeader represents an HTTP Header
                                     name and value as defined by RFC 7230.
@@ -10645,8 +10867,9 @@ spec:
                                   group:
                                     default: ""
                                     description: Group is the group of the referent.
-                                      For example, "networking.k8s.io". When unspecified
-                                      (empty string), core API group is inferred.
+                                      For example, "gateway.networking.k8s.io". When
+                                      unspecified or empty string, core API group
+                                      is inferred.
                                     maxLength: 253
                                     pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                     type: string
@@ -10802,8 +11025,8 @@ spec:
                                   to any existing values associated with the header
                                   name. \n Input:   GET /foo HTTP/1.1   my-header:
                                   foo \n Config:   add:   - name: \"my-header\"     value:
-                                  \"bar\" \n Output:   GET /foo HTTP/1.1   my-header:
-                                  foo   my-header: bar"
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
                                 items:
                                   description: HTTPHeader represents an HTTP Header
                                     name and value as defined by RFC 7230.
@@ -11335,8 +11558,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
@@ -11545,7 +11771,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -11687,8 +11916,9 @@ spec:
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
-                                        For example, "networking.k8s.io". When unspecified
-                                        (empty string), core API group is inferred.
+                                        For example, "gateway.networking.k8s.io".
+                                        When unspecified or empty string, core API
+                                        group is inferred.
                                       maxLength: 253
                                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                       type: string
@@ -11720,9 +11950,9 @@ spec:
                                         appends to any existing values associated
                                         with the header name. \n Input:   GET /foo
                                         HTTP/1.1   my-header: foo \n Config:   add:
-                                        \  - name: \"my-header\"     value: \"bar\"
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
                                         \n Output:   GET /foo HTTP/1.1   my-header:
-                                        foo   my-header: bar"
+                                        foo,bar,baz"
                                       items:
                                         description: HTTPHeader represents an HTTP
                                           Header name and value as defined by RFC
@@ -11849,9 +12079,9 @@ spec:
                                         group:
                                           default: ""
                                           description: Group is the group of the referent.
-                                            For example, "networking.k8s.io". When
-                                            unspecified (empty string), core API group
-                                            is inferred.
+                                            For example, "gateway.networking.k8s.io".
+                                            When unspecified or empty string, core
+                                            API group is inferred.
                                           maxLength: 253
                                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                           type: string
@@ -12017,9 +12247,9 @@ spec:
                                         appends to any existing values associated
                                         with the header name. \n Input:   GET /foo
                                         HTTP/1.1   my-header: foo \n Config:   add:
-                                        \  - name: \"my-header\"     value: \"bar\"
+                                        \  - name: \"my-header\"     value: \"bar,baz\"
                                         \n Output:   GET /foo HTTP/1.1   my-header:
-                                        foo   my-header: bar"
+                                        foo,bar,baz"
                                       items:
                                         description: HTTPHeader represents an HTTP
                                           Header name and value as defined by RFC
@@ -12224,8 +12454,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -12327,8 +12557,8 @@ spec:
                             properties:
                               group:
                                 description: Group is the group of the referent. For
-                                  example, "networking.k8s.io". When unspecified (empty
-                                  string), core API group is inferred.
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
                                 maxLength: 253
                                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
@@ -12360,8 +12590,8 @@ spec:
                                   to any existing values associated with the header
                                   name. \n Input:   GET /foo HTTP/1.1   my-header:
                                   foo \n Config:   add:   - name: \"my-header\"     value:
-                                  \"bar\" \n Output:   GET /foo HTTP/1.1   my-header:
-                                  foo   my-header: bar"
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
                                 items:
                                   description: HTTPHeader represents an HTTP Header
                                     name and value as defined by RFC 7230.
@@ -12479,8 +12709,9 @@ spec:
                                   group:
                                     default: ""
                                     description: Group is the group of the referent.
-                                      For example, "networking.k8s.io". When unspecified
-                                      (empty string), core API group is inferred.
+                                      For example, "gateway.networking.k8s.io". When
+                                      unspecified or empty string, core API group
+                                      is inferred.
                                     maxLength: 253
                                     pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                     type: string
@@ -12636,8 +12867,8 @@ spec:
                                   to any existing values associated with the header
                                   name. \n Input:   GET /foo HTTP/1.1   my-header:
                                   foo \n Config:   add:   - name: \"my-header\"     value:
-                                  \"bar\" \n Output:   GET /foo HTTP/1.1   my-header:
-                                  foo   my-header: bar"
+                                  \"bar,baz\" \n Output:   GET /foo HTTP/1.1   my-header:
+                                  foo,bar,baz"
                                 items:
                                   description: HTTPHeader represents an HTTP Header
                                     name and value as defined by RFC 7230.
@@ -13169,8 +13400,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
@@ -13623,7 +13857,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -13730,8 +13967,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -13939,8 +14176,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
@@ -14164,7 +14404,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -14274,8 +14517,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -14483,8 +14726,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
@@ -14662,7 +14908,10 @@ spec:
                   properties:
                     group:
                       default: gateway.networking.k8s.io
-                      description: "Group is the group of the referent. \n Support:
+                      description: "Group is the group of the referent. When unspecified,
+                        \"gateway.networking.k8s.io\" is inferred. To set the core
+                        API group (such as for a \"Service\" kind referent), Group
+                        must be explicitly set to \"\" (empty string). \n Support:
                         Core"
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -14769,8 +15018,8 @@ spec:
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
-                              "networking.k8s.io". When unspecified (empty string),
-                              core API group is inferred.
+                              "gateway.networking.k8s.io". When unspecified or empty
+                              string, core API group is inferred.
                             maxLength: 253
                             pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
@@ -14978,8 +15227,11 @@ spec:
                       properties:
                         group:
                           default: gateway.networking.k8s.io
-                          description: "Group is the group of the referent. \n Support:
-                            Core"
+                          description: "Group is the group of the referent. When unspecified,
+                            \"gateway.networking.k8s.io\" is inferred. To set the
+                            core API group (such as for a \"Service\" kind referent),
+                            Group must be explicitly set to \"\" (empty string). \n
+                            Support: Core"
                           maxLength: 253
                           pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string

@@ -163,7 +163,7 @@ var _ = Describe("Gateway API", func() {
 		}
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
-		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
+		f.CreateGatewayAndWaitFor(contourGateway, gatewayProgrammed)
 	})
 
 	AfterEach(func() {
@@ -422,15 +422,15 @@ func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	return false
 }
 
-// gatewayValid returns true if the gateway has a .status.conditions
-// entry of Ready: true".
-func gatewayValid(gateway *gatewayapi_v1beta1.Gateway) bool {
+// gatewayProgrammed returns true if the gateway has a .status.conditions
+// entry of "Programmed: true".
+func gatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionReady) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionProgrammed) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}
