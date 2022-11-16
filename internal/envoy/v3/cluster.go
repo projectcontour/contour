@@ -58,7 +58,13 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		cluster.EdsClusterConfig = edsconfig("contour", service)
 	default:
 		// external name set, use hard coded DNS name
-		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
+		// external name set to LOGICAL_DNS when user selects the ALL loookup family
+		clusterDiscoveryType := ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
+		if cluster.DnsLookupFamily == envoy_cluster_v3.Cluster_ALL {
+			cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS)
+		}
+
+		cluster.ClusterDiscoveryType = clusterDiscoveryType
 		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
 	}
 
@@ -187,8 +193,13 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	cluster.Name = envoy.DNSNameClusterName(c)
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
+
+	clusterType := envoy_cluster_v3.Cluster_STRICT_DNS
+	if cluster.DnsLookupFamily == envoy_cluster_v3.Cluster_ALL {
+		clusterType = envoy_cluster_v3.Cluster_LOGICAL_DNS
+	}
 	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
-		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
+		Type: clusterType,
 	}
 
 	var transportSocket *envoy_core_v3.TransportSocket
