@@ -193,13 +193,8 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	cluster.Name = envoy.DNSNameClusterName(c)
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
-
-	clusterType := envoy_cluster_v3.Cluster_STRICT_DNS
-	if cluster.DnsLookupFamily == envoy_cluster_v3.Cluster_ALL {
-		clusterType = envoy_cluster_v3.Cluster_LOGICAL_DNS
-	}
 	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
-		Type: clusterType,
+		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
 	}
 	cluster.ClusterDiscoveryType = ClusterDiscoveryType(clusterType)
 
