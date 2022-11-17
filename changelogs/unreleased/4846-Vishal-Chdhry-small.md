@@ -1,0 +1,1 @@
+Fixed bug where ExtensionServices were being updated continuously by Contour
