@@ -198,9 +198,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 	if cluster.DnsLookupFamily == envoy_cluster_v3.Cluster_ALL {
 		clusterType = envoy_cluster_v3.Cluster_LOGICAL_DNS
 	}
-	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
-		Type: clusterType,
-	}
+	cluster.ClusterDiscoveryType = ClusterDiscoveryType(clusterType)
 
 	var transportSocket *envoy_core_v3.TransportSocket
 	if c.Scheme == "https" {
