@@ -92,7 +92,7 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		if len(hostname) > 0 {
 			if err := IsValidHostname(hostname); err != nil {
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+					Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 					Message: err.Error(),

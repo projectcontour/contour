@@ -339,19 +339,19 @@ func TestValidateListeners(t *testing.T) {
 	res = ValidateListeners(listeners)
 	assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 		"listener-1": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+			Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 			Message: "invalid hostname \"192.168.1.1\": must be a DNS name, not an IP address",
 		},
 		"listener-2": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+			Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 			Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 		},
 		"listener-3": {
-			Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+			Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 			Message: "invalid hostname \".invalid.$.\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",

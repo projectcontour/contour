@@ -1973,6 +1973,10 @@ sigs.k8s.io/controller-tools v0.7.0/go.mod h1:bpBAo0VcSDDLuWt47evLhMLPxRPxMDInTE
 sigs.k8s.io/gateway-api v0.3.0/go.mod h1:Wb8bx7QhGVZxOSEU3i9vw/JqTB5Nlai9MLMYVZeDmRQ=
 sigs.k8s.io/gateway-api v0.5.1-0.20221108141026-fcc1d24b1ccf h1:/peKMwLfEYhJMwSeewv+OoKNkyIm7Z76N+z+Wit7Mgw=
 sigs.k8s.io/gateway-api v0.5.1-0.20221108141026-fcc1d24b1ccf/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
+sigs.k8s.io/gateway-api v0.5.1-0.20221114023358-f1d9b4cb3a3e h1:LOZS1yatz5W7urtwOi/l9qZKuPRQ96WjyN1ZM9sKAaE=
+sigs.k8s.io/gateway-api v0.5.1-0.20221114023358-f1d9b4cb3a3e/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
+sigs.k8s.io/gateway-api v0.5.1-0.20221114183641-d1ef4c5c8f8c h1:rxIhmV93kZcZccWh5KcwB6uesTWO9AP4wT7PVq49jRA=
+sigs.k8s.io/gateway-api v0.5.1-0.20221114183641-d1ef4c5c8f8c/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 h1:iXTIw73aPyC+oRdyqqvVJuloN1p0AC/kzH07hu3NE+k=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
 sigs.k8s.io/kustomize/api v0.8.5/go.mod h1:M377apnKT5ZHJS++6H4rQoCHmWtt6qTpp3mbe7p6OLY=

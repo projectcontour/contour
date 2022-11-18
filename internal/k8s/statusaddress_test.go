@@ -392,7 +392,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -409,7 +409,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -436,7 +436,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -453,7 +453,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -480,7 +480,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -497,7 +497,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -518,7 +518,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -535,7 +535,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -556,7 +556,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -573,7 +573,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},

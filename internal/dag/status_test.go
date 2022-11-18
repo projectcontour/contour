@@ -3775,10 +3775,10 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionTrue,
-					Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
 					Message: status.MessageValidGateway,
 				},
 			},
@@ -3794,9 +3794,9 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+							Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Message: "Valid listener",
 						},
 					},
@@ -4958,8 +4958,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -4973,7 +4973,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5102,8 +5102,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -5117,7 +5117,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5190,8 +5190,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -5205,7 +5205,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5278,8 +5278,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -5293,7 +5293,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5366,8 +5366,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -5381,7 +5381,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5455,8 +5455,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -5470,7 +5470,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -5705,10 +5705,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 				Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 					gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-					gatewayapi_v1beta1.GatewayConditionReady: {
-						Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					gatewayapi_v1beta1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 						Status:  contour_api_v1.ConditionTrue,
-						Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
 						Message: status.MessageValidGateway,
 					},
 				},
@@ -5724,9 +5724,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						Conditions: []metav1.Condition{
 							{
-								Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Status:  metav1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Message: "Valid listener",
 							},
 						},
@@ -5742,9 +5742,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						Conditions: []metav1.Condition{
 							{
-								Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Status:  metav1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Message: "Valid listener",
 							},
 						},
@@ -5826,10 +5826,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 				Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 					gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-					gatewayapi_v1beta1.GatewayConditionReady: {
-						Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+					gatewayapi_v1beta1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 						Status:  contour_api_v1.ConditionTrue,
-						Reason:  string(gatewayapi_v1beta1.GatewayReasonReady),
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
 						Message: status.MessageValidGateway,
 					},
 				},
@@ -5845,9 +5845,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						Conditions: []metav1.Condition{
 							{
-								Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Status:  metav1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Message: "Valid listener",
 							},
 						},
@@ -5863,9 +5863,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						Conditions: []metav1.Condition{
 							{
-								Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Status:  metav1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 								Message: "Valid listener",
 							},
 						},
@@ -6409,8 +6409,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonAddressNotAssigned),
 					Message: "None of the addresses in Spec.Addresses have been assigned to the Gateway",
@@ -6427,9 +6427,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.ListenerConditionReady),
+							Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Message: "Valid listener",
 						},
 					},
@@ -6465,8 +6465,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6478,7 +6478,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					SupportedKinds: nil,
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6522,8 +6522,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6535,7 +6535,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					SupportedKinds: nil,
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6579,8 +6579,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6592,7 +6592,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					SupportedKinds: nil,
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6642,8 +6642,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6657,7 +6657,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6703,8 +6703,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6718,7 +6718,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6759,8 +6759,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6772,7 +6772,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					SupportedKinds: nil,
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Invalid listener, see other listener conditions for details",
@@ -6813,8 +6813,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6828,7 +6828,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.TLS is required when protocol is \"HTTPS\".",
@@ -6863,8 +6863,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6878,7 +6878,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.TLS is required when protocol is \"TLS\".",
@@ -6919,8 +6919,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6934,7 +6934,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is \"Passthrough\".",
@@ -6975,8 +6975,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -6990,7 +6990,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.TLS.Mode must be \"Passthrough\" when protocol is \"TLS\".",
@@ -7028,8 +7028,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -7043,7 +7043,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.TLS.Mode must be \"Terminate\" when protocol is \"HTTPS\".",
@@ -7080,8 +7080,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -7095,7 +7095,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".",
@@ -7138,8 +7138,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -7153,7 +7153,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Error parsing Listener.AllowedRoutes.Namespaces.Selector: values: Invalid value: []string{\"error\"}: values set must be empty for exists and does not exist.",
@@ -7190,8 +7190,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-				gatewayapi_v1beta1.GatewayConditionReady: {
-					Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
 					Message: "Listeners are not valid",
@@ -7205,7 +7205,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
 							Reason:  "Invalid",
 							Message: "Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.",

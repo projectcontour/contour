@@ -166,9 +166,9 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	var gsu GatewayStatusUpdate
 
 	// first condition for listener-1
-	res := gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionReady, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 1")
+	res := gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 1")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 1)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionReady), res.Type)
+	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionProgrammed), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
 	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonInvalid), res.Reason)
 	assert.Equal(t, "message 1", res.Message)
@@ -182,10 +182,10 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	assert.Equal(t, "message 2", res.Message)
 
 	// first condition for listener-2
-	res = gsu.AddListenerCondition("listener-2", gatewayapi_v1beta1.ListenerConditionReady, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 3")
+	res = gsu.AddListenerCondition("listener-2", gatewayapi_v1beta1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 3")
 	assert.Len(t, gsu.ListenerStatus["listener-2"].Conditions, 1)
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionReady), res.Type)
+	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionProgrammed), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
 	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonInvalid), res.Reason)
 	assert.Equal(t, "message 3", res.Message)
@@ -210,20 +210,20 @@ func TestGetGatewayConditions(t *testing.T) {
 		},
 		"one gateway condition": {
 			conditions: []metav1.Condition{
-				{Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
+				{Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
 			},
 			want: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionReady: {Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
 			},
 		},
 		"multiple gateway conditions": {
 			conditions: []metav1.Condition{
-				{Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
+				{Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
 				{Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
 			},
 			want: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionReady:    {Type: string(gatewayapi_v1beta1.GatewayConditionReady)},
-				gatewayapi_v1beta1.GatewayConditionAccepted: {Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
+				gatewayapi_v1beta1.GatewayConditionAccepted:   {Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
 			},
 		},
 	}
