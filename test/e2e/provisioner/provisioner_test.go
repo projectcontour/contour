@@ -161,7 +161,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 
 			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
-				return gatewayReady(gw) && gatewayHasAddress(gw)
+				return gatewayProgrammed(gw) && gatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
 
@@ -235,7 +235,7 @@ var _ = Describe("Gateway provisioner", func() {
 				}
 
 				res, ok := f.CreateGatewayAndWaitFor(gw, func(gw *gatewayapi_v1beta1.Gateway) bool {
-					return gatewayReady(gw) && gatewayHasAddress(gw)
+					return gatewayProgrammed(gw) && gatewayHasAddress(gw)
 				})
 				require.True(f.T(), ok)
 
@@ -411,7 +411,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 
 			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
-				return gatewayReady(gw) && gatewayHasAddress(gw)
+				return gatewayProgrammed(gw) && gatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
 
@@ -500,16 +500,16 @@ func gatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 	)
 }
 
-// gatewayReady returns true if the gateway has a .status.conditions
-// entry of Ready: true".
-func gatewayReady(gateway *gatewayapi_v1beta1.Gateway) bool {
+// gatewayProgrammed returns true if the gateway has a .status.conditions
+// entry of "Programmed: true".
+func gatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionReady),
+		string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 		metav1.ConditionTrue,
 	)
 }

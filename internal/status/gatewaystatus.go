@@ -215,20 +215,3 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 
 	return updated
 }
-
-// IsListenerReady returns true if the named listener has a
-// "Ready" condition with a status of "True", or false otherwise.
-func (gatewayUpdate *GatewayStatusUpdate) IsListenerReady(listenerName string) bool {
-	listenerStatus, ok := gatewayUpdate.ListenerStatus[listenerName]
-	if !ok {
-		return false
-	}
-
-	for _, cond := range listenerStatus.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.ListenerConditionReady) {
-			return cond.Status == metav1.ConditionTrue
-		}
-	}
-
-	return false
-}

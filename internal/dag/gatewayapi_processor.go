@@ -93,11 +93,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	)
 	defer commit()
 
-	var gatewayNotReadyCondition *metav1.Condition
+	var gatewayNotProgrammedCondition *metav1.Condition
 
 	if !isAddressAssigned(p.source.gateway.Spec.Addresses, p.source.gateway.Status.Addresses) {
-		gatewayNotReadyCondition = &metav1.Condition{
-			Type:    string(gatewayapi_v1beta1.GatewayConditionReady),
+		// TODO(sk) resolve condition type-reason mismatch
+		gatewayNotProgrammedCondition = &metav1.Condition{
+			Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 			Status:  metav1.ConditionFalse,
 			Reason:  string(gatewayapi_v1beta1.GatewayReasonAddressNotAssigned),
 			Message: "None of the addresses in Spec.Addresses have been assigned to the Gateway",
@@ -148,7 +149,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
 
 				// If the Gateway is invalid, set status on the route and we're done.
-				if gatewayNotReadyCondition != nil {
+				if gatewayNotProgrammedCondition != nil {
 					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 					continue
 				}
@@ -215,7 +216,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
 
 				// If the Gateway is invalid, set status on the route and we're done.
-				if gatewayNotReadyCondition != nil {
+				if gatewayNotProgrammedCondition != nil {
 					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 					return
 				}
@@ -266,7 +267,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		gwAccessor.SetListenerAttachedRoutes(listenerName, attachedRoutes)
 	}
 
-	p.computeGatewayConditions(gwAccessor, gatewayNotReadyCondition)
+	p.computeGatewayConditions(gwAccessor, gatewayNotProgrammedCondition)
 }
 
 func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
@@ -385,38 +386,38 @@ func (p *GatewayAPIProcessor) computeListener(
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
 ) (bool, *listenerInfo) {
-	// set the listener's "Ready" condition based on whether we've
+	// set the listener's "Programmed" condition based on whether we've
 	// added any other conditions for the listener. The assumption
 	// here is that if another condition is set, the listener is
-	// invalid/not ready.
+	// invalid/not programmed.
 	defer func() {
 		listenerStatus := gwAccessor.ListenerStatus[string(listener.Name)]
 
 		if listenerStatus == nil || len(listenerStatus.Conditions) == 0 {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionTrue,
-				gatewayapi_v1beta1.ListenerReasonReady,
+				gatewayapi_v1beta1.ListenerReasonProgrammed,
 				"Valid listener",
 			)
 		} else {
-			readyConditionExists := false
+			programmedConditionExists := false
 			for _, cond := range listenerStatus.Conditions {
-				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionReady) {
-					readyConditionExists = true
+				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionProgrammed) {
+					programmedConditionExists = true
 					break
 				}
 			}
 
-			// Only set the Ready condition if it doesn't already
+			// Only set the Programmed condition if it doesn't already
 			// exist in the status update, since if it does exist,
 			// it will contain more specific information about what
 			// was invalid.
-			if !readyConditionExists {
+			if !programmedConditionExists {
 				gwAccessor.AddListenerCondition(
 					string(listener.Name),
-					gatewayapi_v1beta1.ListenerConditionReady,
+					gatewayapi_v1beta1.ListenerConditionProgrammed,
 					metav1.ConditionFalse,
 					gatewayapi_v1beta1.ListenerReasonInvalid,
 					"Invalid listener, see other listener conditions for details",
@@ -443,7 +444,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if listener.AllowedRoutes.Namespaces.Selector == nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				"Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".",
@@ -454,7 +455,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				"Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.",
@@ -467,7 +468,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if err != nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err),
@@ -488,7 +489,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if listener.TLS == nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
@@ -499,7 +500,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if listener.TLS.Mode != nil && *listener.TLS.Mode != gatewayapi_v1beta1.TLSModeTerminate {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModeTerminate, listener.Protocol),
@@ -526,7 +527,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if listener.TLS == nil {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
@@ -537,7 +538,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if listener.TLS.Mode == nil || *listener.TLS.Mode != gatewayapi_v1beta1.TLSModePassthrough {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModePassthrough, listener.Protocol),
@@ -548,7 +549,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		if len(listener.TLS.CertificateRefs) != 0 {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionReady,
+				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
 				fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1alpha2.TLSModePassthrough),
@@ -630,7 +631,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 	if len(certificateRefs) != 1 {
 		gwAccessor.AddListenerCondition(
 			listenerName,
-			gatewayapi_v1beta1.ListenerConditionReady,
+			gatewayapi_v1beta1.ListenerConditionProgrammed,
 			metav1.ConditionFalse,
 			gatewayapi_v1beta1.ListenerReasonInvalid,
 			"Listener.TLS.CertificateRefs must contain exactly one entry",
@@ -871,7 +872,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.Ro
 	return true
 }
 
-func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, gatewayNotReadyCondition *metav1.Condition) {
+func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, gatewayNotProgrammedCondition *metav1.Condition) {
 	// If Contour's running, the Gateway is considered accepted.
 	gwAccessor.AddCondition(
 		gatewayapi_v1beta1.GatewayConditionAccepted,
@@ -881,39 +882,40 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	)
 
 	switch {
-	case gatewayNotReadyCondition != nil:
+	case gatewayNotProgrammedCondition != nil:
 		gwAccessor.AddCondition(
-			gatewayapi_v1beta1.GatewayConditionType(gatewayNotReadyCondition.Type),
-			gatewayNotReadyCondition.Status,
-			gatewayapi_v1beta1.GatewayConditionReason(gatewayNotReadyCondition.Reason),
-			gatewayNotReadyCondition.Message,
+			gatewayapi_v1beta1.GatewayConditionType(gatewayNotProgrammedCondition.Type),
+			gatewayNotProgrammedCondition.Status,
+			gatewayapi_v1beta1.GatewayConditionReason(gatewayNotProgrammedCondition.Reason),
+			gatewayNotProgrammedCondition.Message,
 		)
 	default:
-		// Check for any listeners with a Ready: false condition.
-		allListenersReady := true
+		// Check for any listeners with a Programmed: false condition.
+		allListenersProgrammed := true
 		for _, ls := range gwAccessor.ListenerStatus {
 			if ls == nil {
 				continue
 			}
 
 			for _, cond := range ls.Conditions {
-				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionReady) && cond.Status == metav1.ConditionFalse {
-					allListenersReady = false
+				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionProgrammed) && cond.Status == metav1.ConditionFalse {
+					allListenersProgrammed = false
 					break
 				}
 			}
 
-			if !allListenersReady {
+			if !allListenersProgrammed {
 				break
 			}
 		}
 
-		if !allListenersReady {
-			// If we have invalid listeners, set Ready=false.
-			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionFalse, gatewayapi_v1beta1.GatewayReasonListenersNotValid, "Listeners are not valid")
+		if !allListenersProgrammed {
+			// If we have invalid listeners, set Programmed=false.
+			// TODO(sk) resolve condition type-reason mismatch
+			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1beta1.GatewayReasonListenersNotValid, "Listeners are not valid")
 		} else {
-			// Otherwise, Ready=true.
-			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionReady, metav1.ConditionTrue, gatewayapi_v1beta1.GatewayReasonReady, status.MessageValidGateway)
+			// Otherwise, Programmed=true.
+			gwAccessor.AddCondition(gatewayapi_v1beta1.GatewayConditionProgrammed, metav1.ConditionTrue, gatewayapi_v1beta1.GatewayReasonProgrammed, status.MessageValidGateway)
 		}
 	}
 }
