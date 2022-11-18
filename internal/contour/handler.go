@@ -23,7 +23,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
@@ -191,7 +190,6 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
-			cmpopts.IgnoreFields(contour_api_v1alpha1.ExtensionService{}, "Status"),
 			cmpopts.IgnoreFields(gatewayapi_v1beta1.GatewayClass{}, "Status"),
 			cmpopts.IgnoreFields(gatewayapi_v1beta1.Gateway{}, "Status"),
 			cmpopts.IgnoreFields(gatewayapi_v1beta1.HTTPRoute{}, "Status"),
