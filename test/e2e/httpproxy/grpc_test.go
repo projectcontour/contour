@@ -41,8 +41,7 @@ import (
 )
 
 func testGRPCServicePlaintext(namespace string) {
-	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4707
-	Specify("requests to a gRPC service configured with plaintext work as expected", FlakeAttempts(3), func() {
+	Specify("requests to a gRPC service configured with plaintext work as expected", func() {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
