@@ -27,9 +27,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,32 +53,30 @@ const (
 // EnsureDeployment ensures a deployment using image exists for the given contour.
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredDeployment(contour, image)
-	current, err := CurrentDeployment(ctx, cli, contour)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			if err := createDeployment(ctx, cli, desired); err != nil {
-				return fmt.Errorf("failed to create deployment %s/%s: %w", desired.Namespace, desired.Name, err)
-			}
-			return nil
+
+	updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
+		differ := equality.DeploymentSelectorsDiffer(current, desired)
+		if differ {
+			return EnsureDeploymentDeleted(ctx, cli, contour)
 		}
+
+		return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 	}
-	differ := equality.DeploymentSelectorsDiffer(current, desired)
-	if differ {
-		return EnsureDeploymentDeleted(ctx, cli, contour)
-	}
-	if err := updateDeploymentIfNeeded(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update deployment %s/%s: %w", desired.Namespace, desired.Name, err)
-	}
-	return nil
+
+	return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
 }
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
 func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	deployGetter := func(ctx context.Context, cli client.Client, namespace, name string) (client.Object, error) {
-		return CurrentDeployment(ctx, cli, contour)
+	obj := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: contour.Namespace,
+			Name:      contour.ContourDeploymentName(),
+		},
 	}
-	return objects.EnsureObjectDeleted(ctx, cli, contour, contour.ContourDeploymentName(), deployGetter)
+
+	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
 }
 
 // DesiredDeployment returns the desired deployment for the provided contour using
@@ -101,7 +97,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesLogLevel),
 	}
 
-	if contour.Spec.LogLevel == v1alpha1.DebugLog {
+	if contour.Spec.ContourLogLevel == v1alpha1.DebugLog {
 		args = append(args, "--debug")
 	}
 
@@ -196,12 +192,13 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 				ReadOnly:  true,
 			},
 		},
+		Resources: contour.Spec.ContourResources,
 	}
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourDeploymentName(),
-			Labels:    contour.ComponentLabels(),
+			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: pointer.Int32(600),
@@ -224,7 +221,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						"prometheus.io/scrape": "true",
 						"prometheus.io/port":   fmt.Sprintf("%d", metricsPort),
 					},
-					Labels: ContourDeploymentPodSelector(contour).MatchLabels,
+					Labels: contourPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					// TODO [danehans]: Readdress anti-affinity when https://github.com/projectcontour/contour/issues/2997
@@ -278,27 +275,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	return deploy
 }
 
-// CurrentDeployment returns the Deployment resource for the provided contour.
-func CurrentDeployment(ctx context.Context, cli client.Client, contour *model.Contour) (*appsv1.Deployment, error) {
-	deploy := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: contour.Namespace,
-		Name:      contour.ContourDeploymentName(),
-	}
-	if err := cli.Get(ctx, key, deploy); err != nil {
-		return nil, err
-	}
-	return deploy, nil
-}
-
-// createDeployment creates a Deployment resource for the provided deploy.
-func createDeployment(ctx context.Context, cli client.Client, deploy *appsv1.Deployment) error {
-	if err := cli.Create(ctx, deploy); err != nil {
-		return fmt.Errorf("failed to create deployment %s/%s: %w", deploy.Namespace, deploy.Name, err)
-	}
-	return nil
-}
-
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
@@ -321,4 +297,14 @@ func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector 
 			"app": contour.ContourDeploymentName(),
 		},
 	}
+}
+
+// contourPodLabels returns the labels for contour's pods, there are pod selector &
+// app labels
+func contourPodLabels(contour *model.Contour) map[string]string {
+	labels := ContourDeploymentPodSelector(contour).MatchLabels
+	for k, v := range contour.AppLabels() {
+		labels[k] = v
+	}
+	return labels
 }

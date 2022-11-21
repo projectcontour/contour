@@ -15,6 +15,7 @@ package v1alpha1
 
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

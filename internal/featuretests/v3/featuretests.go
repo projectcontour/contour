@@ -20,6 +20,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,8 +32,6 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
@@ -43,7 +42,6 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -54,6 +52,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -149,16 +149,28 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	srv := xds.NewServer(registry)
 	contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 
-	var g workgroup.Group
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
 
-	g.Add(func(stop <-chan struct{}) error {
-		go func() {
-			<-stop
-			srv.GracefulStop()
-		}()
-		return srv.Serve(l) // srv now owns l and will close l before returning
-	})
-	g.AddContext(eh.Start)
+	wg.Add(1)
+	go func() {
+		// Returns once GracefulStop() is called by the below goroutine.
+		// nolint:errcheck
+		srv.Serve(l)
+
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		// Returns once the context is cancelled by the cleanup func.
+		// nolint:errcheck
+		eh.Start(ctx)
+
+		// Close the gRPC server and its listener.
+		srv.GracefulStop()
+		wg.Done()
+	}()
 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
@@ -169,13 +181,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		Sequence:           eh.Sequence(),
 		statusUpdateCacher: statusUpdateCacher,
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	done := make(chan error)
-	go func() {
-		done <- g.Run(ctx)
-	}()
 
 	return rh, &Contour{
 			T:                 t,
@@ -188,7 +193,8 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			// stop server
 			cancel()
 
-			<-done
+			// wait for everything to gracefully stop.
+			wg.Wait()
 		}
 }
 
@@ -265,14 +271,14 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 
 // routeResources returns the given routes as a slice of any.Any
 // resources, appropriately sorted.
-func routeResources(t *testing.T, routes ...*envoy_route_v3.RouteConfiguration) []*any.Any {
+func routeResources(t *testing.T, routes ...*envoy_route_v3.RouteConfiguration) []*anypb.Any {
 	sort.Stable(sorter.For(routes))
 	return resources(t, protobuf.AsMessages(routes)...)
 }
 
-func resources(t *testing.T, protos ...proto.Message) []*any.Any {
+func resources(t *testing.T, protos ...proto.Message) []*anypb.Any {
 	t.Helper()
-	anys := make([]*any.Any, 0, len(protos))
+	anys := make([]*anypb.Any, 0, len(protos))
 	for _, pb := range protos {
 		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}
@@ -463,4 +469,12 @@ func (r *Response) Equals(want *envoy_discovery_v3.DiscoveryResponse) *Contour {
 	protobuf.RequireEqual(r.T, want.Resources, r.DiscoveryResponse.Resources)
 
 	return r.Contour
+}
+
+// Equals(...) only checks resources, so explicitly
+// check version & nonce here and subsequently.
+func (r *Response) assertEqualVersion(t *testing.T, expected string) {
+	t.Helper()
+	assert.Equal(t, expected, r.VersionInfo, "got unexpected VersionInfo")
+	assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
 }

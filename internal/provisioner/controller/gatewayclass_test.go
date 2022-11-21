@@ -17,12 +17,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
+
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -240,7 +242,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				Reason: string(gatewayv1beta1.GatewayClassReasonAccepted),
 			},
 		},
-		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values gets Accepted: false condition": {
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for NetworkPublishing gets Accepted: false condition": {
 			gatewayClass: &gatewayv1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "gatewayclass-1",
@@ -265,6 +267,113 @@ func TestGatewayClassReconcile(t *testing.T) {
 						WorkloadType: "invalid-workload-type",
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
 							Type: "invalid-networkpublishing-type",
+						},
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExtraVolumeMounts gets Accepted: false condition": {
+			gatewayClass: &gatewayv1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+					ParametersRef: &gatewayv1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						ExtraVolumeMounts: []corev1.VolumeMount{
+							{
+								Name: "volume-a",
+							},
+						},
+						ExtraVolumes: []corev1.Volume{
+							{
+								Name: "volume-b",
+							},
+						},
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for LogLevel gets Accepted: false condition": {
+			gatewayClass: &gatewayv1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+					ParametersRef: &gatewayv1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						LogLevel: "invalidLevel",
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExternalTrafficPolicy gets Accepted: false condition": {
+			gatewayClass: &gatewayv1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+					ParametersRef: &gatewayv1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
+							ExternalTrafficPolicy: "invalid-external-traffic-policy",
 						},
 					},
 				},

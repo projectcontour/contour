@@ -20,9 +20,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/pkg/config"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // SDSResourcesSubdirectory stores the subdirectory name where SDS path resources are stored to.
@@ -90,6 +90,10 @@ type BootstrapConfig struct {
 	// DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
 	// Either v4, v6 or auto.
 	DNSLookupFamily string
+
+	// MaximumHeapSizeBytes specifies the number of bytes that overload manager allows heap to grow to.
+	// When reaching the set threshold, new connections are denied.
+	MaximumHeapSizeBytes uint64
 }
 
 // GetXdsAddress returns the address configured or defaults to "127.0.0.1"
@@ -154,6 +158,11 @@ func WriteConfig(filename string, config proto.Message) (err error) {
 		}()
 	}
 
-	m := &jsonpb.Marshaler{OrigName: true}
-	return m.Marshal(out, config)
+	res, err := protojson.MarshalOptions{UseProtoNames: true}.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	_, err = out.Write(res)
+	return err
 }

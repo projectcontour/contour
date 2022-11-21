@@ -30,6 +30,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
 )
@@ -175,6 +176,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	// Create a secret for the CA certificate that can be delegated
 	rh.OnAdd(&corev1.Secret{
 		ObjectMeta: fixture.ObjectMeta("otherNs/cacert"),
+		Type:       v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
@@ -431,6 +433,7 @@ func TestExtensionService(t *testing.T) {
 
 			rh.OnAdd(&corev1.Secret{
 				ObjectMeta: fixture.ObjectMeta("ns/cacert"),
+				Type:       v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 				},

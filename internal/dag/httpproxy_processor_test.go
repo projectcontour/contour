@@ -15,8 +15,12 @@ package dag
 
 import (
 	"testing"
+	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDetermineSNI(t *testing.T) {
@@ -128,6 +132,217 @@ func TestEnforceRoute(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestToCORSPolicy(t *testing.T) {
+	tests := map[string]struct {
+		cp      *contour_api_v1.CORSPolicy
+		want    *CORSPolicy
+		wantErr bool
+	}{
+		"no CORS policy": {
+			cp:   nil,
+			want: nil,
+		},
+		"all fields present and valid": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowCredentials: true,
+				AllowHeaders:     []contour_api_v1.CORSHeaderValue{"X-Some-Header-A", "X-Some-Header-B"},
+				AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET", "PUT"},
+				AllowOrigin:      []string{"*"},
+				ExposeHeaders:    []contour_api_v1.CORSHeaderValue{"X-Expose-A", "X-Expose-B"},
+				MaxAge:           "5h",
+			},
+			want: &CORSPolicy{
+				AllowCredentials: true,
+				AllowHeaders:     []string{"X-Some-Header-A", "X-Some-Header-B"},
+				AllowMethods:     []string{"GET", "PUT"},
+				AllowOrigin:      []CORSAllowOriginMatch{{Type: CORSAllowOriginMatchExact, Value: "*"}},
+				ExposeHeaders:    []string{"X-Expose-A", "X-Expose-B"},
+				MaxAge:           timeout.DurationSetting(5 * time.Hour),
+			},
+		},
+		"allow origin wildcard": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{"*"},
+			},
+			want: &CORSPolicy{
+				AllowHeaders:  []string{},
+				AllowMethods:  []string{"GET"},
+				AllowOrigin:   []CORSAllowOriginMatch{{Type: CORSAllowOriginMatchExact, Value: "*"}},
+				ExposeHeaders: []string{},
+			},
+		},
+		"allow origin specific valid": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{"http://foo-1.bar.com", "https://foo-2.com:443"},
+			},
+			want: &CORSPolicy{
+				AllowHeaders: []string{},
+				AllowMethods: []string{"GET"},
+				AllowOrigin: []CORSAllowOriginMatch{
+					{Type: CORSAllowOriginMatchExact, Value: "http://foo-1.bar.com"},
+					{Type: CORSAllowOriginMatchExact, Value: "https://foo-2.com:443"},
+				},
+				ExposeHeaders: []string{},
+			},
+		},
+		"allow origin invalid specific but valid regex": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin: []string{
+					"no-scheme.bar.com",
+					"http://bar.com/foo",
+					"http://baz.com?query1=2",
+					"http://example.org#fragment",
+				},
+			},
+			want: &CORSPolicy{
+				AllowHeaders: []string{},
+				AllowMethods: []string{"GET"},
+				AllowOrigin: []CORSAllowOriginMatch{
+					{Type: CORSAllowOriginMatchRegex, Value: "no-scheme.bar.com"},
+					{Type: CORSAllowOriginMatchRegex, Value: "http://bar.com/foo"},
+					{Type: CORSAllowOriginMatchRegex, Value: "http://baz.com?query1=2"},
+					{Type: CORSAllowOriginMatchRegex, Value: "http://example.org#fragment"},
+				},
+				ExposeHeaders: []string{},
+			},
+		},
+		"allow origin regex valid": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{`.*\.foo\.com`, `https://example\.bar-[0-9]+\.org`},
+			},
+			want: &CORSPolicy{
+				AllowHeaders: []string{},
+				AllowMethods: []string{"GET"},
+				AllowOrigin: []CORSAllowOriginMatch{
+					{Type: CORSAllowOriginMatchRegex, Value: `.*\.foo\.com`},
+					{Type: CORSAllowOriginMatchRegex, Value: `https://example\.bar-[0-9]+\.org`},
+				},
+				ExposeHeaders: []string{},
+			},
+		},
+		"allow origin regex invalid": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{"**"},
+			},
+			wantErr: true,
+		},
+		"nil allow origin": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  nil,
+			},
+			wantErr: true,
+		},
+		"nil allow methods": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: nil,
+				AllowOrigin:  []string{"*"},
+			},
+			wantErr: true,
+		},
+		"empty allow origin": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{},
+			},
+			wantErr: true,
+		},
+		"empty allow methods": {
+			cp: &contour_api_v1.CORSPolicy{
+				AllowMethods: []contour_api_v1.CORSHeaderValue{},
+				AllowOrigin:  []string{"*"},
+			},
+			wantErr: true,
+		},
+		"invalid max age": {
+			cp: &contour_api_v1.CORSPolicy{
+				MaxAge:       "xxm",
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{"*"},
+			},
+			wantErr: true,
+		},
+		"negative max age": {
+			cp: &contour_api_v1.CORSPolicy{
+				MaxAge:       "-5s",
+				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowOrigin:  []string{"*"},
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := toCORSPolicy(tc.cp)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
+		})
+	}
+
+}
+
+func TestSlowStart(t *testing.T) {
+	tests := map[string]struct {
+		input   *contour_api_v1.SlowStartPolicy
+		want    *SlowStartConfig
+		wantErr bool
+	}{
+		"window only": {
+			input: &contour_api_v1.SlowStartPolicy{
+				Window: "10s",
+			},
+			want: &SlowStartConfig{
+				Window:           10 * time.Second,
+				Aggression:       1.0,
+				MinWeightPercent: 0, // Default value 10% is set only via CRD defaulting, so we get 0 here.
+			},
+		},
+		"with all fields": {
+			input: &contour_api_v1.SlowStartPolicy{
+				Window:               "10s",
+				Aggression:           "1.1",
+				MinimumWeightPercent: 5,
+			},
+			want: &SlowStartConfig{
+				Window:           10 * time.Second,
+				Aggression:       1.1,
+				MinWeightPercent: 5,
+			},
+		},
+		"invalid window, missing unit": {
+			input: &contour_api_v1.SlowStartPolicy{
+				Window: "10",
+			},
+			wantErr: true,
+		},
+		"invalid aggression, not float": {
+			input: &contour_api_v1.SlowStartPolicy{
+				Window:     "10s",
+				Aggression: "not-a-float",
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := slowStartConfig(tc.input)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

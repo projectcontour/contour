@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	proto_convert "github.com/golang/protobuf/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -42,8 +41,7 @@ import (
 )
 
 func testGRPCServicePlaintext(namespace string) {
-	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4707
-	Specify("requests to a gRPC service configured with plaintext work as expected", FlakeAttempts(3), func() {
+	Specify("requests to a gRPC service configured with plaintext work as expected", func() {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
@@ -99,7 +97,9 @@ func testGRPCServicePlaintext(namespace string) {
 			retryOpts := []grpc_retry.CallOption{
 				// Retry if Envoy returns unavailable, the upstream
 				// may not be healthy yet.
-				grpc_retry.WithCodes(codes.Unavailable),
+				// Also retry if we get the unimplemented status, see:
+				// https://github.com/projectcontour/contour/issues/4707
+				grpc_retry.WithCodes(codes.Unavailable, codes.Unimplemented),
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
 				grpc_retry.WithMax(20),
 			}
@@ -224,7 +224,7 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 		require.Greater(t, len(body), currentPos+dataLen)
 
 		content := new(yages.Content)
-		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], proto_convert.MessageV2(content)))
+		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], content))
 		response.content = content
 		currentPos += dataLen
 	}

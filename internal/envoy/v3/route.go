@@ -23,15 +23,18 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/ptypes/any"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
@@ -44,11 +47,14 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	evh := VirtualHost(vh.Name, envoyRoutes...)
 
 	if vh.CORSPolicy != nil {
-		evh.Cors = corsPolicy(vh.CORSPolicy)
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.cors"] = protobuf.MustMarshalAny(corsPolicy(vh.CORSPolicy))
 	}
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
 		if evh.TypedPerFilterConfig == nil {
-			evh.TypedPerFilterConfig = map[string]*any.Any{}
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
 		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 	}
@@ -99,7 +105,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 		}
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
 			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*any.Any{}
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
 			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
@@ -109,15 +115,27 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			// Apply per-route authorization policy modifications.
 			if dagRoute.AuthDisabled {
 				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*any.Any{}
+					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
 			} else if len(dagRoute.AuthContext) > 0 {
 				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*any.Any{}
+					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 			}
+		}
+
+		// If JWT verification is enabled, add per-route filter
+		// config referencing a requirement in the main filter
+		// config.
+		if len(dagRoute.JWTProvider) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
+			})
 		}
 
 		return rt
@@ -125,7 +143,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
-func routeAuthzDisabled() *any.Any {
+func routeAuthzDisabled() *anypb.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
@@ -137,7 +155,7 @@ func routeAuthzDisabled() *any.Any {
 
 // routeAuthzContext returns a per-route config to pass the given
 // context entries in the check request.
-func routeAuthzContext(settings map[string]string) *any.Any {
+func routeAuthzContext(settings map[string]string) *anypb.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
@@ -151,7 +169,18 @@ func routeAuthzContext(settings map[string]string) *any.Any {
 
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
-	switch c := route.PathMatchCondition.(type) {
+	routeMatch := PathRouteMatch(route.PathMatchCondition)
+
+	routeMatch.Headers = headerMatcher(route.HeaderMatchConditions)
+	routeMatch.QueryParameters = queryParamMatcher(route.QueryParamMatchConditions)
+
+	return routeMatch
+}
+
+// PathRouteMatch creates a *envoy_route_v3.RouteMatch with *only* a PathSpecifier
+// populated.
+func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.RouteMatch {
+	switch c := pathMatchCondition.(type) {
 	case *dag.RegexMatchCondition:
 		return &envoy_route_v3.RouteMatch{
 			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
@@ -159,8 +188,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
 				SafeRegex: SafeRegexMatch("^" + c.Regex),
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
 		switch c.PrefixMatchType {
@@ -169,8 +196,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
 					PathSeparatedPrefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		case dag.PrefixMatchString:
 			fallthrough
@@ -179,8 +204,6 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: c.Prefix,
 				},
-				Headers:         headerMatcher(route.HeaderMatchConditions),
-				QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 			}
 		}
 	case *dag.ExactMatchCondition:
@@ -188,14 +211,9 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
 				Path: c.Path,
 			},
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
 		}
 	default:
-		return &envoy_route_v3.RouteMatch{
-			Headers:         headerMatcher(route.HeaderMatchConditions),
-			QueryParameters: queryParamMatcher(route.QueryParamMatchConditions),
-		}
+		return &envoy_route_v3.RouteMatch{}
 	}
 }
 
@@ -339,7 +357,7 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
 				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 					Name: rhp.CookieHashOptions.CookieName,
-					Ttl:  protobuf.Duration(rhp.CookieHashOptions.TTL),
+					Ttl:  durationpb.New(rhp.CookieHashOptions.TTL),
 					Path: rhp.CookieHashOptions.Path,
 				},
 			}
@@ -379,7 +397,7 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 		RetriableStatusCodes: r.RetryPolicy.RetriableStatusCodes,
 	}
 	if r.RetryPolicy.NumRetries > 0 {
-		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
+		rp.NumRetries = wrapperspb.UInt32(r.RetryPolicy.NumRetries)
 	}
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
@@ -401,15 +419,18 @@ func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
 func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
 	var hvs []*envoy_core_v3.HeaderValueOption
 
+	appendAction := envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD
+	if app {
+		appendAction = envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD
+	}
+
 	for key, value := range hvm {
 		hvs = append(hvs, &envoy_core_v3.HeaderValueOption{
 			Header: &envoy_core_v3.HeaderValue{
 				Key:   key,
 				Value: value,
 			},
-			Append: &wrappers.BoolValue{
-				Value: app,
-			},
+			AppendAction: appendAction,
 		})
 	}
 
@@ -429,7 +450,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 
 		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   envoy.Clustername(cluster),
-			Weight: protobuf.UInt32(cluster.Weight),
+			Weight: wrapperspb.UInt32(cluster.Weight),
 		}
 		if cluster.RequestHeadersPolicy != nil {
 			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
@@ -441,7 +462,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		}
 		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {
 			if c.TypedPerFilterConfig == nil {
-				c.TypedPerFilterConfig = map[string]*any.Any{}
+				c.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
 			c.TypedPerFilterConfig["envoy.filters.http.lua"] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
@@ -452,9 +473,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = uint32(len(route.Clusters))
 	}
-	wc.TotalWeight = protobuf.UInt32(total)
 
 	sort.Stable(sorter.For(wc.Clusters))
 	return &wc
@@ -470,9 +489,13 @@ func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_
 }
 
 // CORSVirtualHost creates a new route.VirtualHost with a CORS policy.
-func CORSVirtualHost(hostname string, corspolicy *envoy_route_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
+func CORSVirtualHost(hostname string, corspolicy *envoy_cors_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
 	vh := VirtualHost(hostname, routes...)
-	vh.Cors = corspolicy
+	if corspolicy != nil {
+		vh.TypedPerFilterConfig = map[string]*anypb.Any{
+			"envoy.filters.http.cors": protobuf.MustMarshalAny(corspolicy),
+		}
+	}
 	return vh
 }
 
@@ -487,36 +510,43 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 	}
 }
 
-// corsPolicy returns a *envoy_route_v3.CorsPolicy
-func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
+// corsPolicy returns a *envoy_cors_v3.CorsPolicy
+func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
-	rcp := &envoy_route_v3.CorsPolicy{
-		AllowCredentials: protobuf.Bool(cp.AllowCredentials),
+	ecp := &envoy_cors_v3.CorsPolicy{
+		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
 		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
 		AllowMethods:     strings.Join(cp.AllowMethods, ","),
 		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
 	}
 
 	if cp.MaxAge.IsDisabled() {
-		rcp.MaxAge = "0"
+		ecp.MaxAge = "0"
 	} else if !cp.MaxAge.UseDefault() {
-		rcp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
+		ecp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
 	}
 
-	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
+	ecp.AllowOriginStringMatch = []*matcher.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
-		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher.StringMatcher{
+		m := &matcher.StringMatcher{}
+		switch ao.Type {
+		case dag.CORSAllowOriginMatchExact:
 			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
 			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
-			MatchPattern: &matcher.StringMatcher_Exact{
-				Exact: ao,
-			},
-			IgnoreCase: true,
-		})
+			m.MatchPattern = &matcher.StringMatcher_Exact{
+				Exact: ao.Value,
+			}
+			m.IgnoreCase = true
+		case dag.CORSAllowOriginMatchRegex:
+			m.MatchPattern = &matcher.StringMatcher_SafeRegex{
+				SafeRegex: SafeRegexMatch(ao.Value),
+			}
+		}
+		ecp.AllowOriginStringMatch = append(ecp.AllowOriginStringMatch, m)
 	}
-	return rcp
+	return ecp
 }
 
 func headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {
@@ -529,7 +559,7 @@ func appendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
 			Key:   key,
 			Value: value,
 		},
-		Append: protobuf.Bool(true),
+		AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 	}
 }
 
@@ -606,7 +636,7 @@ func containsMatch(s string) *envoy_route_v3.HeaderMatcher_StringMatch {
 	}
 }
 
-func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
+func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
 	// Merge route and cluster policies
 	mergedPolicies := map[string]dag.CookieRewritePolicy{}
 	for _, p := range append(routePolicies, clusterPolicies...) {

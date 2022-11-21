@@ -290,6 +290,8 @@ func doShutdownManager(config *shutdownmanagerContext) {
 	http.HandleFunc("/healthz", config.healthzHandler)
 	http.HandleFunc("/shutdown", config.shutdownReadyHandler)
 
+	// Fails gosec G114: Use of net/http serve function that has no support for setting timeouts
+	// nolint:gosec
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.httpServePort), nil); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}

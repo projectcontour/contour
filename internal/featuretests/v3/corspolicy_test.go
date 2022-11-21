@@ -17,12 +17,13 @@ import (
 	"testing"
 
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -41,7 +42,8 @@ func TestCorsPolicy(t *testing.T) {
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
-					AllowOrigin: []string{"*"},
+					AllowOrigin:  []string{"*"},
+					AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
 				},
 			}, Routes: []contour_api_v1.Route{{
 				Services: []contour_api_v1.Service{{
@@ -56,14 +58,65 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
-						AllowCredentials: &wrappers.BoolValue{Value: false},
+					&envoy_cors_v3.CorsPolicy{
+						AllowCredentials: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
+						AllowMethods: "GET",
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routecluster("default/svc1/80/da39a3ee5e"),
+					}),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// More advanced allow origin usage.
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "hello.world",
+				CORSPolicy: &contour_api_v1.CORSPolicy{
+					AllowOrigin:  []string{"http://example.com", `https://example-[abcd]+\.org`},
+					AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				},
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}},
+		}),
+	)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.CORSVirtualHost("hello.world",
+					&envoy_cors_v3.CorsPolicy{
+						AllowCredentials: &wrapperspb.BoolValue{Value: false},
+						AllowOriginStringMatch: []*matcher.StringMatcher{
+							{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "http://example.com",
+								},
+								IgnoreCase: true,
+							},
+							{
+								MatchPattern: &matcher.StringMatcher_SafeRegex{
+									SafeRegex: &matcher.RegexMatcher{
+										Regex: `https://example-[abcd]+\.org`,
+									},
+								},
+							},
+						},
+						AllowMethods: "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -81,6 +134,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 				},
 			}, Routes: []contour_api_v1.Route{{
@@ -96,14 +150,15 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
+						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -137,14 +192,14 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						AllowMethods:     "GET,POST,OPTIONS",
 					},
 					&envoy_route_v3.Route{
@@ -163,6 +218,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 					AllowHeaders:     []contour_api_v1.CORSHeaderValue{"custom-header-1", "custom-header-2"},
 				},
@@ -179,15 +235,16 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						AllowHeaders:     "custom-header-1,custom-header-2",
+						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -205,6 +262,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 					ExposeHeaders:    []contour_api_v1.CORSHeaderValue{"custom-header-1", "custom-header-2"},
 				},
@@ -221,7 +279,7 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -229,8 +287,9 @@ func TestCorsPolicy(t *testing.T) {
 							IgnoreCase: true,
 						},
 						},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						ExposeHeaders:    "custom-header-1,custom-header-2",
+						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -248,6 +307,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 					MaxAge:           "10m",
 				},
@@ -264,15 +324,16 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						MaxAge:           "600",
+						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -290,6 +351,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 					MaxAge:           "0s",
 				},
@@ -306,15 +368,16 @@ func TestCorsPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
-					&envoy_route_v3.CorsPolicy{
+					&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrappers.BoolValue{Value: true},
+						AllowCredentials: &wrapperspb.BoolValue{Value: true},
 						MaxAge:           "0",
+						AllowMethods:     "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -333,6 +396,7 @@ func TestCorsPolicy(t *testing.T) {
 				Fqdn: "hello.world",
 				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET"},
 					AllowCredentials: true,
 					MaxAge:           "-10m",
 				},

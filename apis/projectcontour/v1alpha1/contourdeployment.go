@@ -14,8 +14,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,21 +22,22 @@ import (
 type LogLevel string
 
 const (
-	// InfoLog sets the log level for Contour to `info`.
-	InfoLog LogLevel = "info"
 
-	// DebugLog sets the log level for Contour to `debug`.
+	// TraceLog sets the log level for Envoy to `trace`.
+	TraceLog LogLevel = "trace"
+	// DebugLog sets the log level for Contour/Envoy to `debug`.
 	DebugLog LogLevel = "debug"
+	// InfoLog sets the log level for Contour/Envoy to `info`.
+	InfoLog LogLevel = "info"
+	// WarnLog sets the log level for Envoy to `warn`.
+	WarnLog LogLevel = "warn"
+	// ErrorLog sets the log level for Envoy to `error`.
+	ErrorLog LogLevel = "error"
+	// CriticalLog sets the log level for Envoy to `critical`.
+	CriticalLog LogLevel = "critical"
+	// OffLog disable logging for Envoy.
+	OffLog LogLevel = "off"
 )
-
-func (l LogLevel) Validate() error {
-	switch l {
-	case InfoLog, DebugLog:
-		return nil
-	default:
-		return fmt.Errorf("invalid log level %q", l)
-	}
-}
 
 // ContourDeploymentSpec specifies options for how a Contour
 // instance should be provisioned.
@@ -66,6 +65,10 @@ type ContourDeploymentSpec struct {
 	//
 	// +optional
 	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resources.
+	// +optional
+	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 }
 
 // ContourSettings contains settings for the Contour part of the installation,
@@ -95,6 +98,12 @@ type ContourSettings struct {
 	//
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
+
+	// Compute Resources required by contour container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,
@@ -123,6 +132,30 @@ type EnvoySettings struct {
 	//
 	// +optional
 	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+
+	// ExtraVolumes holds the extra volumes to add.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts holds the extra volume mounts to add (normally used with extraVolumes).
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Envoy pods.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// Compute Resources required by envoy container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// LogLevel sets the log level for Envoy.
+	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
+	//
+	// +optional
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -223,6 +256,15 @@ type NetworkPublishing struct {
 	//
 	// +optional
 	Type NetworkPublishingType `json:"type,omitempty"`
+
+	// ExternalTrafficPolicy describes how nodes distribute service traffic they
+	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
+	// and LoadBalancer IPs).
+	//
+	// If unset, defaults to "Local".
+	//
+	// +optional
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
 
 	// ServiceAnnotations is the annotations to add to
 	// the provisioned Envoy service.

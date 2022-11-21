@@ -16,14 +16,16 @@ package v3
 import (
 	"testing"
 
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -151,6 +153,18 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 			},
 		},
+		{
+			ClusterName: "default/healthcheck-port",
+			Services: []dag.WeightedService{
+				{
+					Weight:           1,
+					ServiceName:      "healthcheck-port",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{Name: "a"},
+					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
+				},
+			},
+		},
 	}
 
 	tests := map[string]struct {
@@ -166,6 +180,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{
@@ -198,6 +213,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{
@@ -223,6 +239,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				// Results should be sorted by cluster name.
 				&envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
@@ -248,6 +265,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
@@ -287,6 +305,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
@@ -300,6 +319,27 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 						envoy_v3.SocketAddress("10.10.2.2", 309),
 					),
 				},
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+			},
+			wantUpdate: true,
+		},
+		"health port": {
+			ep: endpoints("default", "healthcheck-port", v1.EndpointSubset{
+				Addresses: addresses("10.10.1.1"),
+				Ports: ports(
+					port("a", 309),
+					port("health", 8998),
+				),
+			}),
+			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "default/healthcheck-port",
+					Endpoints: weightedHealthcheckEndpoints(1, 8998,
+						envoy_v3.SocketAddress("10.10.1.1", 309),
+					),
+				},
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
@@ -686,6 +726,76 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			},
 		},
+		"multiple addresses and healthcheck port": {
+			cluster: dag.ServiceCluster{
+				ClusterName: "default/httpbin-org",
+				Services: []dag.WeightedService{{
+					Weight:           1,
+					ServiceName:      "httpbin-org",
+					ServiceNamespace: "default",
+					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
+					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+				}},
+			},
+			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+				Addresses: addresses(
+					"50.17.192.147",
+					"23.23.247.89",
+					"50.17.206.192",
+					"50.19.99.160",
+				),
+				Ports: ports(
+					port("a", 80),
+					port("health", 8998),
+				),
+			}),
+			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "default/httpbin-org",
+					Endpoints: weightedHealthcheckEndpoints(1, 8998,
+						envoy_v3.SocketAddress("23.23.247.89", 80),
+						envoy_v3.SocketAddress("50.17.192.147", 80),
+						envoy_v3.SocketAddress("50.17.206.192", 80),
+						envoy_v3.SocketAddress("50.19.99.160", 80),
+					),
+				},
+			},
+		},
+		"health port is the same as service port": {
+			cluster: dag.ServiceCluster{
+				ClusterName: "default/httpbin-org",
+				Services: []dag.WeightedService{{
+					Weight:           1,
+					ServiceName:      "httpbin-org",
+					ServiceNamespace: "default",
+					HealthPort:       v1.ServicePort{Name: "a", Port: 80},
+					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+				}},
+			},
+			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+				Addresses: addresses(
+					"50.17.192.147",
+					"23.23.247.89",
+					"50.17.206.192",
+					"50.19.99.160",
+				),
+				Ports: ports(
+					port("a", 80),
+					port("health", 8998),
+				),
+			}),
+			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "default/httpbin-org",
+					Endpoints: envoy_v3.WeightedEndpoints(1,
+						envoy_v3.SocketAddress("23.23.247.89", 80),
+						envoy_v3.SocketAddress("50.17.192.147", 80),
+						envoy_v3.SocketAddress("50.17.206.192", 80),
+						envoy_v3.SocketAddress("50.19.99.160", 80),
+					),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -972,4 +1082,38 @@ func clusterloadassignments(clas ...*envoy_endpoint_v3.ClusterLoadAssignment) ma
 		m[cla.ClusterName] = cla
 	}
 	return m
+}
+
+func weightedHealthcheckEndpoints(weight uint32, healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := healthcheckEndpoints(healthcheckPort, addrs...)
+	lbendpoints[0].LoadBalancingWeight = wrapperspb.UInt32(weight)
+	return lbendpoints
+}
+
+func healthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := make([]*envoy_endpoint_v3.LbEndpoint, 0, len(addrs))
+	for _, addr := range addrs {
+		lbendpoints = append(lbendpoints, healthCheckLBEndpoint(addr, healthcheckPort))
+	}
+	return []*envoy_endpoint_v3.LocalityLbEndpoints{{
+		LbEndpoints: lbendpoints,
+	}}
+}
+
+// healthCheckLBEndpoint creates a new LbEndpoint include healthCheckConfig
+func healthCheckLBEndpoint(addr *envoy_core_v3.Address, healthCheckPort int32) *envoy_endpoint_v3.LbEndpoint {
+	var hc *envoy_endpoint_v3.Endpoint_HealthCheckConfig
+	if healthCheckPort != 0 {
+		hc = &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+			PortValue: uint32(healthCheckPort),
+		}
+	}
+	return &envoy_endpoint_v3.LbEndpoint{
+		HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+			Endpoint: &envoy_endpoint_v3.Endpoint{
+				Address:           addr,
+				HealthCheckConfig: hc,
+			},
+		},
+	}
 }

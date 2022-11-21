@@ -19,7 +19,6 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -103,9 +102,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 								Key:   "X-Header",
 								Value: "goodbye.planet",
 							},
-							Append: &wrappers.BoolValue{
-								Value: false,
-							},
+							AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						}},
 					},
 				),

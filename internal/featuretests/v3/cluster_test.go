@@ -22,7 +22,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -419,10 +419,10 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxConnections:     protobuf.UInt32(9000),
-						MaxPendingRequests: protobuf.UInt32(4096),
-						MaxRequests:        protobuf.UInt32(404),
-						MaxRetries:         protobuf.UInt32(7),
+						MaxConnections:     wrapperspb.UInt32(9000),
+						MaxPendingRequests: wrapperspb.UInt32(4096),
+						MaxRequests:        wrapperspb.UInt32(404),
+						MaxRetries:         wrapperspb.UInt32(7),
 					}},
 				},
 			}),
@@ -452,7 +452,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: protobuf.UInt32(9999),
+						MaxPendingRequests: wrapperspb.UInt32(9999),
 					}},
 				},
 			}),
@@ -623,9 +623,13 @@ func TestUnreferencedService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
-	)
+	// Equals(...) only checks resources, so explicitly
+	// check version & nonce here and subsequently.
+
+	// This service which is added should cause a DAG rebuild
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+	rh.OnAdd(s1)
 
 	rh.OnAdd(&contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -656,22 +660,42 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res := c.Request(clusterType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
 		TypeUrl: clusterType,
 	})
-
+	res.assertEqualVersion(t, "1")
 	// This service which is added should not cause a DAG rebuild
-	rh.OnAdd(fixture.NewService("kuard-notreferenced").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
-	)
+	s2 := fixture.NewService("kuard-notreferenced").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s2)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res = c.Request(clusterType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
 		TypeUrl: clusterType,
 	})
+	res.assertEqualVersion(t, "1")
+	// verifying that deleting a Service that is not referenced by an HTTPProxy,
+	// does not trigger a rebuild
+	rh.OnDelete(s2)
+	res = c.Request(clusterType)
+	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+		),
+		TypeUrl: clusterType,
+	})
+	res.assertEqualVersion(t, "1")
+
+	// verifying that deleting a Service that is referenced by an HTTPProxy,
+	// triggers a rebuild
+	rh.OnDelete(s1)
+	res = c.Request(clusterType)
+	res.assertEqualVersion(t, "2")
 }

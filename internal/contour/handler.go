@@ -23,10 +23,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type EventHandlerConfig struct {
@@ -188,6 +191,11 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
+			cmpopts.IgnoreFields(contour_api_v1alpha1.ExtensionService{}, "Status"),
+			cmpopts.IgnoreFields(gatewayapi_v1beta1.GatewayClass{}, "Status"),
+			cmpopts.IgnoreFields(gatewayapi_v1beta1.Gateway{}, "Status"),
+			cmpopts.IgnoreFields(gatewayapi_v1beta1.HTTPRoute{}, "Status"),
+			cmpopts.IgnoreFields(gatewayapi_v1alpha2.TLSRoute{}, "Status"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ManagedFields"),
 		) {

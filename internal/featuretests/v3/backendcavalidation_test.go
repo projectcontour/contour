@@ -35,6 +35,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Name:      "foo",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},

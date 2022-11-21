@@ -17,10 +17,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
+
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1014,7 +1015,8 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					Envoy: &contourv1alpha1.EnvoySettings{
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
-							Type: contourv1alpha1.ClusterIPServicePublishingType,
+							Type:                  contourv1alpha1.NodePortServicePublishingType,
+							ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
 							ServiceAnnotations: map[string]string{
 								"key-1": "val-1",
 								"key-2": "val-2",
@@ -1049,8 +1051,8 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
-
-				assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+				assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
+				assert.Equal(t, corev1.ServiceTypeNodePort, svc.Spec.Type)
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])
 				assert.Equal(t, "val-2", svc.Annotations["key-2"])
@@ -1107,6 +1109,50 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				err := r.client.Get(context.Background(), keyFor(ds), ds)
 				assert.True(t, errors.IsNotFound(err))
+			},
+		},
+		"If ContourDeployment.Spec.Envoy.PodAnnotations is specified, the Envoy pods' have annotations for prometheus & user-defined": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						PodAnnotations: map[string]string{
+							"key": "val",
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1beta1.GatewaySpec{
+					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the service has been created
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
+				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key")
 			},
 		},
 	}

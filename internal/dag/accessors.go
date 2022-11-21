@@ -27,10 +27,18 @@ import (
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
-func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
+func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, healthPort intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
 	if err != nil {
 		return nil, err
+	}
+
+	healthSvcPort := svcPort
+	if (healthPort.IntVal != 0 || healthPort.StrVal != "") && healthPort != port {
+		_, healthSvcPort, err = cache.LookupService(meta, healthPort)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = validateExternalName(svc, enableExternalNameSvc)
@@ -50,6 +58,7 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, 
 			ServiceName:      svc.Name,
 			ServiceNamespace: svc.Namespace,
 			ServicePort:      svcPort,
+			HealthPort:       healthSvcPort,
 			Weight:           1,
 		},
 		Protocol:           upstreamProtocol(svc, svcPort),
@@ -177,6 +186,21 @@ func (d *DAG) GetClusters() []*Cluster {
 
 			if vhost.TCPProxy != nil {
 				res = append(res, vhost.TCPProxy.Clusters...)
+			}
+		}
+	}
+
+	return res
+}
+
+func (d *DAG) GetDNSNameClusters() []*DNSNameCluster {
+	var res []*DNSNameCluster
+
+	for _, listener := range d.Listeners {
+		for _, svhost := range listener.SecureVirtualHosts {
+			for _, provider := range svhost.JWTProviders {
+				provider := provider
+				res = append(res, &provider.RemoteJWKS.Cluster)
 			}
 		}
 	}

@@ -19,13 +19,13 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"google.golang.org/protobuf/proto"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.
@@ -89,6 +89,13 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 	for name, ec := range root.GetExtensionClusters() {
 		if _, ok := clusters[name]; !ok {
 			clusters[name] = envoy_v3.ExtensionCluster(ec)
+		}
+	}
+
+	for _, cluster := range root.GetDNSNameClusters() {
+		name := envoy.DNSNameClusterName(cluster)
+		if _, ok := clusters[name]; !ok {
+			clusters[name] = envoy_v3.DNSNameCluster(cluster)
 		}
 	}
 

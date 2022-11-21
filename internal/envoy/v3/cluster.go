@@ -20,21 +20,21 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
-		ConnectTimeout: protobuf.Duration(2 * time.Second),
+		ConnectTimeout: durationpb.New(2 * time.Second),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
 	}
@@ -59,7 +59,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	default:
 		// external name set, use hard coded DNS name
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
-		cluster.LoadAssignment = StaticClusterLoadAssignment(service)
+		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -103,10 +103,29 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	}
 
 	if c.TimeoutPolicy.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(c.TimeoutPolicy.ConnectTimeout)
+		cluster.ConnectTimeout = durationpb.New(c.TimeoutPolicy.ConnectTimeout)
 	}
 
 	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout)
+
+	if c.SlowStartConfig != nil {
+		switch cluster.LbPolicy {
+		case envoy_cluster_v3.Cluster_LEAST_REQUEST:
+			cluster.LbConfig = &envoy_cluster_v3.Cluster_LeastRequestLbConfig_{
+				LeastRequestLbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig{
+					SlowStartConfig: slowStartConfig(c.SlowStartConfig),
+				},
+			}
+		case envoy_cluster_v3.Cluster_ROUND_ROBIN:
+			cluster.LbConfig = &envoy_cluster_v3.Cluster_RoundRobinLbConfig_{
+				RoundRobinLbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig{
+					SlowStartConfig: slowStartConfig(c.SlowStartConfig),
+				},
+			}
+		default:
+			// Slow start is only supported for round robin and weighted least request.
+		}
+	}
 
 	return cluster
 }
@@ -155,23 +174,32 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	}
 
 	if ext.ClusterTimeoutPolicy.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(ext.ClusterTimeoutPolicy.ConnectTimeout)
+		cluster.ConnectTimeout = durationpb.New(ext.ClusterTimeoutPolicy.ConnectTimeout)
 	}
 	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout)
 
 	return cluster
 }
 
-// StaticClusterLoadAssignment creates a *envoy_endpoint_v3.ClusterLoadAssignment pointing to the external DNS address of the service
-func StaticClusterLoadAssignment(service *dag.Service) *envoy_endpoint_v3.ClusterLoadAssignment {
-	addr := SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port))
-	return &envoy_endpoint_v3.ClusterLoadAssignment{
-		Endpoints: Endpoints(addr),
-		ClusterName: xds.ClusterLoadAssignmentName(
-			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
-			service.Weighted.ServicePort.Name,
-		),
+// DNSNameCluster builds a envoy_cluster_v3.Cluster for the given *dag.DNSNameCluster.
+func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
+	cluster := clusterDefaults()
+
+	cluster.Name = envoy.DNSNameClusterName(c)
+	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
+	cluster.ClusterDiscoveryType = &envoy_cluster_v3.Cluster_Type{
+		Type: envoy_cluster_v3.Cluster_STRICT_DNS,
 	}
+
+	var transportSocket *envoy_core_v3.TransportSocket
+	if c.Scheme == "https" {
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
+	}
+
+	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))
+	cluster.TransportSocket = transportSocket
+
+	return cluster
 }
 
 func edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
@@ -266,7 +294,7 @@ func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily
 	return envoy_cluster_v3.Cluster_AUTO
 }
 
-func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*any.Any {
+func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*anypb.Any {
 	// Keep Envoy defaults by not setting protocol options at all if not necessary.
 	if explicitHTTPVersion == HTTPVersionAuto && idleConnectionTimeout.UseDefault() {
 		return nil
@@ -297,10 +325,24 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 	}
 
 	if !idleConnectionTimeout.UseDefault() {
-		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: protobuf.Duration(idleConnectionTimeout.Duration())}
+		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: durationpb.New(idleConnectionTimeout.Duration())}
 	}
 
-	return map[string]*any.Any{
+	return map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(&options),
+	}
+}
+
+// slowStartConfig returns the slow start configuration.
+func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_cluster_v3.Cluster_SlowStartConfig {
+	return &envoy_cluster_v3.Cluster_SlowStartConfig{
+		SlowStartWindow: durationpb.New(slowStartConfig.Window),
+		Aggression: &envoy_core_v3.RuntimeDouble{
+			DefaultValue: slowStartConfig.Aggression,
+			RuntimeKey:   "contour.slowstart.aggression",
+		},
+		MinWeightPercent: &envoy_type.Percent{
+			Value: float64(slowStartConfig.MinWeightPercent),
+		},
 	}
 }

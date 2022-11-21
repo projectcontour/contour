@@ -20,12 +20,11 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -34,21 +33,13 @@ import (
 // the contour namespace/name for the owning contour labels.
 func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, roleRef, svcAct string, contour *model.Contour) error {
 	desired := desiredClusterRoleBinding(name, roleRef, svcAct, contour)
-	current, err := CurrentClusterRoleBinding(ctx, cli, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			if err := createClusterRoleBinding(ctx, cli, desired); err != nil {
-				return fmt.Errorf("failed to create cluster role binding %s: %w", desired.Name, err)
-			}
-			return nil
-		}
-		return fmt.Errorf("failed to get cluster role binding %s: %w", desired.Name, err)
+
+	// Enclose contour.
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.ClusterRoleBinding) error {
+		return updateClusterRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	if err := updateClusterRoleBindingIfNeeded(ctx, cli, contour, current, desired); err != nil {
-		return fmt.Errorf("failed to update cluster role binding %s: %w", desired.Name, err)
-	}
-	return nil
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.ClusterRoleBinding{})
 }
 
 // desiredClusterRoleBinding constructs an instance of the desired ClusterRoleBinding
@@ -61,7 +52,7 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: model.OwnerLabels(contour),
+			Labels: model.CommonLabels(contour),
 		},
 	}
 	crb.Subjects = []rbacv1.Subject{
@@ -78,26 +69,6 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 		Name:     roleRef,
 	}
 	return crb
-}
-
-// CurrentClusterRoleBinding returns the current ClusterRoleBinding for the
-// provided name.
-func CurrentClusterRoleBinding(ctx context.Context, cli client.Client, name string) (*rbacv1.ClusterRoleBinding, error) {
-	current := &rbacv1.ClusterRoleBinding{}
-	key := types.NamespacedName{Name: name}
-	err := cli.Get(ctx, key, current)
-	if err != nil {
-		return nil, err
-	}
-	return current, nil
-}
-
-// createClusterRoleBinding creates a ClusterRoleBinding resource for the provided crb.
-func createClusterRoleBinding(ctx context.Context, cli client.Client, crb *rbacv1.ClusterRoleBinding) error {
-	if err := cli.Create(ctx, crb); err != nil {
-		return fmt.Errorf("failed to create cluster role binding %s: %w", crb.Name, err)
-	}
-	return nil
 }
 
 // updateClusterRoleBindingIfNeeded updates a ClusterRoleBinding resource if current

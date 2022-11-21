@@ -23,7 +23,6 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/golang/protobuf/proto"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -33,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -406,6 +406,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			var alpnProtos []string
 			var filters []*envoy_listener_v3.Filter
 
+			var forwardClientCertificate *dag.ClientCertificateDetails
+			if vh.DownstreamValidation != nil {
+				forwardClientCertificate = vh.DownstreamValidation.ForwardClientCertificate
+			}
+
 			if vh.TCPProxy == nil {
 				var authFilter *http.HttpFilter
 
@@ -418,6 +423,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 						vh.AuthorizationServerWithRequestBody,
 					)
 				}
+
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
@@ -430,6 +436,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
 					AddFilter(authFilter).
+					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
@@ -443,6 +450,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+					ForwardClientCertificate(forwardClientCertificate).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -508,6 +516,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+					ForwardClientCertificate(forwardClientCertificate).
 					Get()
 
 				// Default filter chain

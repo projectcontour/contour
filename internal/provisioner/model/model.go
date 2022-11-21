@@ -38,9 +38,11 @@ func Default(namespace, name string) *Contour {
 			ContourReplicas:   2,
 			EnvoyWorkloadType: WorkloadTypeDaemonSet,
 			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
+			EnvoyLogLevel:     contourv1alpha1.InfoLog,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
-					Type: LoadBalancerServicePublishingType,
+					Type:                  LoadBalancerServicePublishingType,
+					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 					ContainerPorts: []ContainerPort{
 						{
 							Name:       "http",
@@ -53,6 +55,8 @@ func Default(namespace, name string) *Contour {
 					},
 				},
 			},
+			ResourceLabels:      map[string]string{},
+			EnvoyPodAnnotations: map[string]string{},
 		},
 	}
 }
@@ -141,9 +145,9 @@ type ContourSpec struct {
 	//   https://projectcontour.io/docs/main/config/annotations/#ingress-class
 	IngressClassName *string
 
-	// LogLevel sets the log level for Contour
+	// ContourLogLevel sets the log level for Contour
 	// Allowed values are "info", "debug".
-	LogLevel contourv1alpha1.LogLevel
+	ContourLogLevel contourv1alpha1.LogLevel
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
@@ -166,6 +170,28 @@ type ContourSpec struct {
 	// KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
 	// defaults to 0.
 	KubernetesLogLevel uint8
+
+	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
+	ResourceLabels map[string]string
+
+	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
+	EnvoyExtraVolumes []corev1.Volume
+
+	// EnvoyExtraVolumeMounts holds the extra volume mounts to add to envoy's pod(normally used with envoyExtraVolumes).
+	EnvoyExtraVolumeMounts []corev1.VolumeMount
+
+	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	EnvoyPodAnnotations map[string]string
+
+	// Compute Resources required by envoy container.
+	EnvoyResources corev1.ResourceRequirements
+
+	// Compute Resources required by contour container.
+	ContourResources corev1.ResourceRequirements
+
+	// EnvoyLogLevel sets the log level for Envoy
+	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
+	EnvoyLogLevel contourv1alpha1.LogLevel
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
@@ -341,6 +367,13 @@ type EnvoyNetworkPublishing struct {
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
+
+	// ExternalTrafficPolicy describes how nodes distribute service traffic they
+	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
+	// and LoadBalancer IPs).
+	//
+	// If unset, defaults to "Local".
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType
 }
 
 type NetworkPublishingType = contourv1alpha1.NetworkPublishingType

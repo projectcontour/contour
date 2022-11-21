@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -434,7 +434,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -1852,7 +1852,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -2314,7 +2314,9 @@ spec:
                                           description: Port specifies the destination
                                             port number to use for this resource.
                                             Port is required when the referent is
-                                            a Kubernetes Service. For other resources,
+                                            a Kubernetes Service. In this case, the
+                                            port number is the service port number,
+                                            not the target port. For other resources,
                                             destination port might be derived from
                                             the referent resource or this field.
                                           format: int32
@@ -2382,7 +2384,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -2409,7 +2411,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -2424,7 +2426,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -2460,7 +2462,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -2520,7 +2522,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -2573,9 +2575,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -2827,9 +2830,11 @@ spec:
                                   port:
                                     description: Port specifies the destination port
                                       number to use for this resource. Port is required
-                                      when the referent is a Kubernetes Service. For
-                                      other resources, destination port might be derived
-                                      from the referent resource or this field.
+                                      when the referent is a Kubernetes Service. In
+                                      this case, the port number is the service port
+                                      number, not the target port. For other resources,
+                                      destination port might be derived from the referent
+                                      resource or this field.
                                     format: int32
                                     maximum: 65535
                                     minimum: 1
@@ -2890,7 +2895,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -2917,7 +2922,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -2930,7 +2935,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -2964,7 +2969,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -3019,7 +3024,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -3912,7 +3917,9 @@ spec:
                                           description: Port specifies the destination
                                             port number to use for this resource.
                                             Port is required when the referent is
-                                            a Kubernetes Service. For other resources,
+                                            a Kubernetes Service. In this case, the
+                                            port number is the service port number,
+                                            not the target port. For other resources,
                                             destination port might be derived from
                                             the referent resource or this field.
                                           format: int32
@@ -3980,7 +3987,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -4007,7 +4014,7 @@ spec:
                                         values may be added to this enum, implementations
                                         must ensure that unknown values will not cause
                                         a crash. \n Unknown values here must result
-                                        in the implementation setting the Attached
+                                        in the implementation setting the Accepted
                                         Condition for the Route to `status: False`,
                                         with a Reason of `UnsupportedValue`."
                                       enum:
@@ -4022,7 +4029,7 @@ spec:
                                         implementations must ensure that unknown values
                                         will not cause a crash. \n Unknown values
                                         here must result in the implementation setting
-                                        the Attached Condition for the Route to `status:
+                                        the Accepted Condition for the Route to `status:
                                         False`, with a Reason of `UnsupportedValue`."
                                       enum:
                                       - 301
@@ -4058,7 +4065,7 @@ spec:
                                     Note that values may be added to this enum, implementations
                                     must ensure that unknown values will not cause
                                     a crash. \n Unknown values here must result in
-                                    the implementation setting the Attached Condition
+                                    the implementation setting the Accepted Condition
                                     for the Route to `status: False`, with a Reason
                                     of `UnsupportedValue`. \n "
                                   enum:
@@ -4118,7 +4125,7 @@ spec:
                                             implementations must ensure that unknown
                                             values will not cause a crash. \n Unknown
                                             values here must result in the implementation
-                                            setting the Attached Condition for the
+                                            setting the Accepted Condition for the
                                             Route to `status: False`, with a Reason
                                             of `UnsupportedValue`. \n <gateway:experimental>"
                                           enum:
@@ -4171,9 +4178,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -4424,9 +4432,11 @@ spec:
                                   port:
                                     description: Port specifies the destination port
                                       number to use for this resource. Port is required
-                                      when the referent is a Kubernetes Service. For
-                                      other resources, destination port might be derived
-                                      from the referent resource or this field.
+                                      when the referent is a Kubernetes Service. In
+                                      this case, the port number is the service port
+                                      number, not the target port. For other resources,
+                                      destination port might be derived from the referent
+                                      resource or this field.
                                     format: int32
                                     maximum: 65535
                                     minimum: 1
@@ -4487,7 +4497,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -4514,7 +4524,7 @@ spec:
                                   to this enum, implementations must ensure that unknown
                                   values will not cause a crash. \n Unknown values
                                   here must result in the implementation setting the
-                                  Attached Condition for the Route to `status: False`,
+                                  Accepted Condition for the Route to `status: False`,
                                   with a Reason of `UnsupportedValue`."
                                 enum:
                                 - http
@@ -4527,7 +4537,7 @@ spec:
                                   values may be added to this enum, implementations
                                   must ensure that unknown values will not cause a
                                   crash. \n Unknown values here must result in the
-                                  implementation setting the Attached Condition for
+                                  implementation setting the Accepted Condition for
                                   the Route to `status: False`, with a Reason of `UnsupportedValue`."
                                 enum:
                                 - 301
@@ -4561,7 +4571,7 @@ spec:
                               that values may be added to this enum, implementations
                               must ensure that unknown values will not cause a crash.
                               \n Unknown values here must result in the implementation
-                              setting the Attached Condition for the Route to `status:
+                              setting the Accepted Condition for the Route to `status:
                               False`, with a Reason of `UnsupportedValue`. \n "
                             enum:
                             - RequestHeaderModifier
@@ -4616,7 +4626,7 @@ spec:
                                       to this enum, implementations must ensure that
                                       unknown values will not cause a crash. \n Unknown
                                       values here must result in the implementation
-                                      setting the Attached Condition for the Route
+                                      setting the Accepted Condition for the Route
                                       to `status: False`, with a Reason of `UnsupportedValue`.
                                       \n <gateway:experimental>"
                                     enum:
@@ -5075,7 +5085,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -5225,7 +5235,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencepolicies.gateway.networking.k8s.io
@@ -5380,7 +5390,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -5589,9 +5599,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -5873,7 +5884,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -6131,9 +6142,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -6415,7 +6427,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.5.0
+    gateway.networking.k8s.io/bundle-version: v0.5.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -6624,9 +6636,10 @@ spec:
                           port:
                             description: Port specifies the destination port number
                               to use for this resource. Port is required when the
-                              referent is a Kubernetes Service. For other resources,
-                              destination port might be derived from the referent
-                              resource or this field.
+                              referent is a Kubernetes Service. In this case, the
+                              port number is the service port number, not the target
+                              port. For other resources, destination port might be
+                              derived from the referent resource or this field.
                             format: int32
                             maximum: 65535
                             minimum: 1

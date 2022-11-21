@@ -25,18 +25,21 @@ import (
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,7 +50,7 @@ import (
 func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &envoy_cluster_v3.Cluster{
-		ConnectTimeout: protobuf.Duration(2 * time.Second),
+		ConnectTimeout: durationpb.New(2 * time.Second),
 		LbPolicy:       envoy_cluster_v3.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy_v3.ClusterCommonLBConfig(),
 	}
@@ -62,10 +65,10 @@ func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Clu
 func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *envoy_cluster_v3.Cluster {
 	c := cluster(name, servicename, statName)
 	c.HealthChecks = []*envoy_core_v3.HealthCheck{{
-		Timeout:            protobuf.Duration(2 * time.Second),
-		Interval:           protobuf.Duration(10 * time.Second),
-		UnhealthyThreshold: protobuf.UInt32(3),
-		HealthyThreshold:   protobuf.UInt32(2),
+		Timeout:            durationpb.New(2 * time.Second),
+		Interval:           durationpb.New(10 * time.Second),
+		UnhealthyThreshold: wrapperspb.UInt32(3),
+		HealthyThreshold:   wrapperspb.UInt32(2),
 		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 				Host: "contour-envoy-healthcheck",
@@ -196,7 +199,7 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 }
 
 func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
-	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
@@ -229,11 +232,11 @@ func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, h
 		}
 	}
 
-	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
 			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
-					IdleTimeout: protobuf.Duration(timeout),
+					IdleTimeout: durationpb.New(timeout),
 				},
 				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
 					ExplicitHttpConfig: config,
@@ -244,12 +247,12 @@ func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, h
 }
 
 func withResponseTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
-	route.Route.Timeout = protobuf.Duration(timeout)
+	route.Route.Timeout = durationpb.New(timeout)
 	return route
 }
 
 func withIdleTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
-	route.Route.IdleTimeout = protobuf.Duration(timeout)
+	route.Route.IdleTimeout = durationpb.New(timeout)
 	return route
 }
 
@@ -270,10 +273,10 @@ func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetri
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
-		route.Route.RetryPolicy.NumRetries = protobuf.UInt32(numRetries)
+		route.Route.RetryPolicy.NumRetries = wrapperspb.UInt32(numRetries)
 	}
 	if perTryTimeout > 0 {
-		route.Route.RetryPolicy.PerTryTimeout = protobuf.Duration(perTryTimeout)
+		route.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
 	}
 	return route
 }
@@ -292,7 +295,7 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 		PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
 			Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 				Name: "X-Contour-Session-Affinity",
-				Ttl:  protobuf.Duration(0),
+				Ttl:  durationpb.New(0),
 				Path: "/",
 			},
 		},
@@ -348,8 +351,8 @@ func withRedirect() *envoy_route_v3.Route_Redirect {
 	}
 }
 
-func withFilterConfig(name string, message proto.Message) map[string]*any.Any {
-	return map[string]*any.Any{
+func withFilterConfig(name string, message proto.Message) map[string]*anypb.Any {
+	return map[string]*anypb.Any{
 		name: protobuf.MustMarshalAny(message),
 	}
 }
@@ -371,15 +374,12 @@ func routeWeightedCluster(clusters ...weightedCluster) *envoy_route_v3.Route_Rou
 
 func weightedClusters(clusters []weightedCluster) *envoy_route_v3.WeightedCluster {
 	var wc envoy_route_v3.WeightedCluster
-	var total uint32
 	for _, c := range clusters {
-		total += c.weight
 		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   c.name,
-			Weight: protobuf.UInt32(c.weight),
+			Weight: wrapperspb.UInt32(c.weight),
 		})
 	}
-	wc.TotalWeight = protobuf.UInt32(total)
 	return &wc
 }
 
@@ -432,6 +432,19 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 		Get()
 }
 
+// httpsFilterWithXfccFor does the same as httpsFilterFor but enable
+// client certs details forwarding
+func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		ForwardClientCertificate(d).
+		Get()
+}
+
 // authzFilterFor does the same as httpsFilterFor but inserts a
 // `ext_authz` filter with the specified configuration into the
 // filter chain.
@@ -454,6 +467,25 @@ func authzFilterFor(
 		Get()
 }
 
+func jwtAuthnFilterFor(
+	vhost string,
+	jwt *envoy_jwt_v3.JwtAuthentication,
+) *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		AddFilter(&http.HttpFilter{
+			Name: "envoy.filters.http.jwt_authn",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(jwt),
+			},
+		}).
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		Get()
+}
+
 func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 	return &envoy_listener_v3.Filter{
 		Name: wellknown.TCPProxy,
@@ -464,7 +496,7 @@ func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 					Cluster: cluster,
 				},
 				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
-				IdleTimeout: protobuf.Duration(9001 * time.Second),
+				IdleTimeout: durationpb.New(9001 * time.Second),
 			}),
 		},
 	}
@@ -493,7 +525,7 @@ func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_liste
 					WeightedClusters: weightedClusters,
 				},
 				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
-				IdleTimeout: protobuf.Duration(9001 * time.Second),
+				IdleTimeout: durationpb.New(9001 * time.Second),
 			}),
 		},
 	}

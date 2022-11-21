@@ -59,7 +59,7 @@ type KubernetesCache struct {
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
-	secrets                   map[types.NamespacedName]*v1.Secret
+	secrets                   map[types.NamespacedName]*Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services                  map[types.NamespacedName]*v1.Service
 	namespaces                map[string]*v1.Namespace
@@ -82,7 +82,7 @@ type KubernetesCache struct {
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
-	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
+	kc.secrets = make(map[types.NamespacedName]*Secret)
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
@@ -103,19 +103,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	maybeInsert := func(obj interface{}) bool {
 		switch obj := obj.(type) {
 		case *v1.Secret:
-			valid, err := isValidSecret(obj)
-			if !valid {
-				if err != nil {
-					kc.WithField("name", obj.GetName()).
-						WithField("namespace", obj.GetNamespace()).
-						WithField("kind", "Secret").
-						WithField("version", k8s.VersionOf(obj)).
-						Error(err)
-				}
-				return false
-			}
-
-			kc.secrets[k8s.NamespacedNameOf(obj)] = obj
+			// Secret validation status is intentionally cleared, it needs
+			// to be re-validated after an insert.
+			kc.secrets[k8s.NamespacedNameOf(obj)] = &Secret{Object: obj}
 			return kc.secretTriggersRebuild(obj)
 		case *v1.Service:
 			kc.services[k8s.NamespacedNameOf(obj)] = obj
@@ -268,14 +258,12 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.secrets[m]
 		delete(kc.secrets, m)
-		return ok
+		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.services[m]
 		delete(kc.services, m)
-		return ok
+		return kc.serviceTriggersRebuild(obj)
 	case *v1.Namespace:
 		_, ok := kc.namespaces[obj.Name]
 		delete(kc.namespaces, obj.Name)
@@ -526,23 +514,64 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 		string(ref.Name) == secret.Name
 }
 
-// LookupSecret returns a Secret if present or nil if the underlying kubernetes
-// secret fails validation or is missing.
-func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
+func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
 	}
 
-	if err := validate(sec); err != nil {
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidTLSSecret == nil {
+		sec.ValidTLSSecret = &SecretValidationStatus{
+			Error: validTLSSecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidTLSSecret.Error; err != nil {
 		return nil, err
 	}
+	return sec, nil
+}
 
-	s := &Secret{
-		Object: sec,
+func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
 	}
 
-	return s, nil
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidCASecret == nil {
+		sec.ValidCASecret = &SecretValidationStatus{
+			Error: validCASecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidCASecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
+}
+
+func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidCRLSecret == nil {
+		sec.ValidCRLSecret = &SecretValidationStatus{
+			Error: validCRLSecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidCRLSecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
 }
 
 func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName) (*PeerValidationContext, error) {
@@ -551,7 +580,7 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		return nil, nil
 	}
 
-	cacert, err := kc.LookupSecret(caCertificate, validCA)
+	cacert, err := kc.LookupCASecret(caCertificate)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
@@ -601,22 +630,6 @@ func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targ
 		}
 	}
 	return false
-}
-
-func validCA(s *v1.Secret) error {
-	if len(s.Data[CACertificateKey]) == 0 {
-		return fmt.Errorf("empty %q key", CACertificateKey)
-	}
-
-	return nil
-}
-
-func validCRL(s *v1.Secret) error {
-	if len(s.Data[CRLKey]) == 0 {
-		return fmt.Errorf("empty %q key", CRLKey)
-	}
-
-	return nil
 }
 
 // LookupService returns the Kubernetes service and port matching the provided parameters,

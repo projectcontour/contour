@@ -21,10 +21,10 @@ import (
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_req_without_query_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/req_without_query/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	_struct "github.com/golang/protobuf/ptypes/struct"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestFileAccessLog(t *testing.T) {
@@ -122,8 +122,8 @@ func TestJSONFileAccessLog(t *testing.T) {
 						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
 							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
 								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
-									JsonFormat: &_struct.Struct{
-										Fields: map[string]*_struct.Value{
+									JsonFormat: &structpb.Struct{
+										Fields: map[string]*structpb.Value{
 											"@timestamp": sv("%START_TIME%"),
 										},
 									},
@@ -152,8 +152,8 @@ func TestJSONFileAccessLog(t *testing.T) {
 						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
 							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
 								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
-									JsonFormat: &_struct.Struct{
-										Fields: map[string]*_struct.Value{
+									JsonFormat: &structpb.Struct{
+										Fields: map[string]*structpb.Value{
 											"@timestamp": sv("%START_TIME%"),
 											"method":     sv("%REQ(:METHOD)%"),
 											"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
@@ -226,8 +226,8 @@ func TestAccessLogLevel(t *testing.T) {
 				AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
 					LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
 						Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
-							JsonFormat: &_struct.Struct{
-								Fields: map[string]*_struct.Value{},
+							JsonFormat: &structpb.Struct{
+								Fields: map[string]*structpb.Value{},
 							},
 						},
 					},

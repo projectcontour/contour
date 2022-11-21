@@ -10,13 +10,13 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.19.0
+  GO_VERSION: 1.19.2
 jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -48,8 +48,8 @@ jobs:
   e2e-envoy-deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -78,11 +78,45 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  e2e-gateway-reconcile-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
+          CONTOUR_E2E_PACKAGE_FOCUS: ./test/e2e/gateway
+          CONTOUR_E2E_GATEWAY_RECONCILE_MODE: controller
+        run: |
+          make setup-kind-cluster run-e2e cleanup-kind
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e-ipv6:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -114,38 +148,3 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  gateway-conformance:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          # * Module download cache
-          # * Build cache (Linux)
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: add deps to path
-        run: |
-          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-      - name: Gateway API conformance tests (latest)
-        env:
-          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
-          GATEWAY_API_VERSION: "main"
-        run: |
-          # Skip the `load-contour-image-kind` target, pull the `main` image instead.
-          make setup-kind-cluster run-gateway-conformance cleanup-kind
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-

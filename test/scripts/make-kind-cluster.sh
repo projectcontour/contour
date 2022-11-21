@@ -26,7 +26,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.25.2@sha256:9be91e9e9cdf116809841fc77ebdb8845443c4c72fe5218f3ae9eb57fdb4bace"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -71,21 +71,10 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
   ${KUBECTL} version
 fi
 
-# Push test images into the cluster. Do this up-front
-# so that the first test does not incur the cost of 
-# pulling them. Helps avoid flakes.
-images=$(grep "Image = " $(find "$REPO/test/e2e" -name "fixtures.go") | awk '{print $3}' | tr -d '"')
-for image in ${images}; do
-  docker pull "${image}"
-  kind::cluster::load "${image}"
-done
-
 # Install metallb.
-${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
-if ! kubectl get secret -n metallb-system memberlist; then
-    ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
-fi
-${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.5/config/manifests/metallb-native.yaml
+${KUBECTL} wait --timeout="${WAITTIME}" -n metallb-system deployment/controller --for=condition=Available
+
 # Apply config with addresses based on docker network IPAM
 if [[ "${IPV6_CLUSTER}" == "true" ]]; then
     subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":"))')
@@ -98,20 +87,43 @@ else
     address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
     address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
 fi
-${KUBECTL} apply -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
+
+# Wrap application of metallb config in retry loop to minimize
+# flakes due to webhook not being ready.
+success=false
+for n in {1..60}; do
+if ${KUBECTL} apply -f - <<EOF
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
 metadata:
   namespace: metallb-system
-  name: config
-data:
-  config: |
-    address-pools:
-    - name: default
-      protocol: layer2
-      addresses:
-      - ${address_range}
+  name: pool
+spec:
+  addresses:
+  - ${address_range}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: pool-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - pool
 EOF
+then
+  success=true
+  break
+fi
+echo "Applying metallb configuration failed, retrying (${n} of 60)"
+sleep 1
+done
+
+if [ $success != "true" ]; then
+  echo "Applying metallb configuration failed"
+  exit 1
+fi
+
 
 
 # Install cert-manager.
@@ -121,6 +133,7 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deploymen
 
 # Install Gateway API CRDs and webhook.
 ${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
+${KUBECTL} apply -f "${REPO}/examples/gateway/00-namespace.yaml"
 ${KUBECTL} apply -f "${REPO}/examples/gateway/01-admission_webhook.yaml"
 ${KUBECTL} apply -f "${REPO}/examples/gateway/02-certificate_config.yaml"
 ${KUBECTL} wait --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server --for=condition=Available
