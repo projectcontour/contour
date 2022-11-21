@@ -47,8 +47,22 @@ The Contour [Dockerfile][8] uses a multistage build that performs compilation in
 In order to minimize the `projectcontour/contour` image footprint, the final output image only consists of a single layer, containing a lone file: the statically compiled `contour` binary.
 The standard Contour build uses the upstream `golang` image as a build base, however we will have to swap that out to build Contour with BoringCrypto.
 
-Starting with Go 1.19, you can simply add [`GOEXPERIMENT=boringcrypto`][18] to enable integrating BoringCrypto for standard Go. For the Go version under 1.19, we can use the Google-provided Go implementation that has patches on top of standard Go to enable integrating BoringCrypto.
-This is available to us in the [`goboring/golang`][9] container image we can use as a build base. Note that the latest version of  [`goboring/golang`][9] image on the Docker hub is `1.16.7b7`, find more versions [here][19] and pull the images on Google Artifact Registry following [this document][20].
+### Go 1.19 and higher
+
+Starting with Go 1.19, you can simply add [`BUILD_GOEXPERIMENT=boringcrypto`][18] and some related arguments to enable integrating BoringCrypto for standard Go.
+
+```bash
+make container \
+  BUILD_GOEXPERIMENT=boringcrypto \
+  BUILD_CGO_ENABLED=1 \
+  BUILD_EXTRA_GO_LDFLAGS="-linkmode=external -extldflags=-static"
+```
+
+### Go 1.18 and lower
+
+For the Go version under 1.19, we can use the Google-provided Go implementation that has patches on top of standard Go to enable integrating BoringCrypto.
+This is available to us in the [`goboring/golang`][9] container image we can use as a build base. 
+Note that the latest version of  [`goboring/golang`][9] image on the Docker hub is `1.16.7b7`, find more versions [here][19] and pull the images on Google Artifact Registry following [this document][20].
 
 In addition, to ensure we can statically compile the `contour` binary when it is linked with the BoringCrypto C library, we must pass some additional arguments to the `make container` target.
 
@@ -68,8 +82,11 @@ The command above can be broken down as follows:
 
 The container image build process should fail before export of the `contour` binary to the final image if the compiled binary is not statically linked.
 
+### Validation
+
 To be fully sure the produced `contour` binary has been compiled with BoringCrypto you must remove the `-s` flag from the base Contour `Makefile` to stop stripping symbols and run through the build process above.
-Then you will be able to inspect the `contour` binary with `go tool nm` to check for symbols containing the string `_Cfunc__goboringcrypto_`. Also, you can use the program [rsc.io/goversion][21]. It will report the crypto implementation used by a given binary when invoked with the `-crypto` flag.
+Then you will be able to inspect the `contour` binary with `go tool nm` to check for symbols containing the string `_Cfunc__goboringcrypto_`. 
+Also, you can use the program [rsc.io/goversion][21]. It will report the crypto implementation used by a given binary when invoked with the `-crypto` flag.
 
 Once you have a `projectcontour/contour` image built, you can re-tag it if needed, push the image to a registry, and reference it in a Contour deployment to use it!
 
