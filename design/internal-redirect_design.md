@@ -18,7 +18,7 @@ Internal redirect is supported by Envoy since v1.10, but there is no way to conf
 
 ## High-Level Design
 
-Envoy Route supports [internal_redirect_policy] (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http/http_connection_management#internal-redirects) and it can be configured [using the API](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-internal-redirect-policy). The changes proposed in this document will allow the configuration of internal redirect policies in Contour.
+Envoy Route supports [internal_redirect_policy](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http/http_connection_management#internal-redirects) and it can be configured [using the API](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-internal-redirect-policy). The changes proposed in this document will allow the configuration of internal redirect policies in Contour.
 
 At a high level the proposed changes will imply:
 - Adding new fields at virtual host level to configure the internal redirect policy in the YAML.
