@@ -296,13 +296,9 @@ spec:
                           for addresses in the IPv6 family. If AUTO is configured,
                           the DNS resolver will first perform a lookup for addresses
                           in the IPv6 family and fallback to a lookup for addresses
-                          in the IPv4 family. If ALL is specified, the DNS resolver will 
-                          perform a lookup for both IPv4 and IPv6 families, and return all 
-                          resolved addresses. When this is used, Happy Eyeballs will be 
-                          enabled for upstream connections. Refer to Happy Eyeballs Support 
-                          for more information. Note: This only applies to externalName
+                          in the IPv4 family. Note: This only applies to externalName
                           clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
-                          for more information. \n Values: `auto` (default), `all`, `v4`,
+                          for more information. \n Values: `auto` (default), `v4`,
                           `v6`. \n Other values will produce an error."
                         type: string
                     type: object
@@ -3179,16 +3175,20 @@ spec:
                           values that can be set in the config file.
                         properties:
                           dnsLookupFamily:
-                            description: "DNSLookupFamily defines how external names
-                              are looked up When configured as V4, the DNS resolver
-                              will only perform a lookup for addresses in the IPv4
-                              family. If V6 is configured, the DNS resolver will only
-                              perform a lookup for addresses in the IPv6 family. If
-                              AUTO is configured, the DNS resolver will first perform
-                              a lookup for addresses in the IPv6 family and fallback
-                              to a lookup for addresses in the IPv4 family. Note:
-                              This only applies to externalName clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
-                              for more information. \n Values: `auto` (default), `v4`,
+                            description: "DNSLookupFamily defines how external names are
+                              looked up When configured as V4, the DNS resolver will only
+                              perform a lookup for addresses in the IPv4 family. If V6
+                              is configured, the DNS resolver will only perform a lookup
+                              for addresses in the IPv6 family. If AUTO is configured,
+                              the DNS resolver will first perform a lookup for addresses
+                              in the IPv6 family and fallback to a lookup for addresses
+                              in the IPv4 family. If ALL is specified, the DNS resolver will 
+                              perform a lookup for both IPv4 and IPv6 families, and return all 
+                              resolved addresses. When this is used, Happy Eyeballs will be 
+                              enabled for upstream connections. Refer to Happy Eyeballs Support 
+                              for more information. Note: This only applies to externalName
+                              clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+                              for more information. \n Values: `auto` (default), `all`, `v4`,
                               `v6`. \n Other values will produce an error."
                             type: string
                         type: object
@@ -5903,12 +5903,10 @@ spec:
                                 family. If \"v6\" is configured, the DNS resolver
                                 will only perform a lookup for addresses in the IPv6
                                 family. If \"auto\" is configured, the DNS resolver
-                                will first perform a lookup If \"all\" is configured,
-                                the DNS resolver will only perform a lookup for addresses
-                                in both the IPv4 and IPv6 family. for addresses in
-                                the IPv6 family and fallback to a lookup for addresses
-                                in the IPv4 family. If not specified, the Contour-wide
-                                setting defined in the config file or ContourConfiguration
+                                will first perform a lookup for addresses in the IPv6
+                                family and fallback to a lookup for addresses in the
+                                IPv4 family. If not specified, the Contour-wide setting
+                                defined in the config file or ContourConfiguration
                                 applies (defaults to \"auto\"). \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
                                 for more information."
                               enum:
