@@ -424,7 +424,34 @@
         }
     }
 }
+.getting-involved {
+    width:auto;
+    padding: 10px;
+    background-color:$turquoise;
+    .firstsec {
+        color:$white; 
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+    }
 
+    .subsection {
+        position: relative;
+        text-align: center;
+        color:$white;
+        font-size: 20px;
+    }
+    .section {
+
+        text-align: center;
+        float: center;
+    }
+    .button {
+        float: center;
+        border: 1px solid $blue;
+        margin-bottom: 30px;
+    }
+}
 .subpage {
     background-color: #fff;
     margin-top: -90px;
@@ -818,3 +845,4 @@
         max-width: 100%;
     }
 }
+
