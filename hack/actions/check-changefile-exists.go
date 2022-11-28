@@ -28,7 +28,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
