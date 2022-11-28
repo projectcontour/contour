@@ -116,6 +116,15 @@ func checkDeploymentHasResourceRequirements(t *testing.T, deploy *appsv1.Deploym
 	t.Errorf("daemonset has unexpected resource requirements %v", expected)
 }
 
+func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected appsv1.DeploymentStrategy) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Strategy, expected) {
+		return
+	}
+	t.Errorf("deployment has unexpected strategy %q", expected)
+}
+
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -186,6 +195,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
 	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
+	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
 }
 
 func TestNodePlacementDeployment(t *testing.T) {

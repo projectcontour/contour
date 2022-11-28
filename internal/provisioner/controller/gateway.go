@@ -239,9 +239,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Contour != nil {
+			if gatewayClassParams.Spec.Contour.Replicas > 0 { // nolint:staticcheck
+				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas // nolint:staticcheck
+			}
+
 			// Deployment replicas
-			if gatewayClassParams.Spec.Contour.Replicas > 0 {
-				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas
+			if gatewayClassParams.Spec.Contour.Deployment != nil && gatewayClassParams.Spec.Contour.Deployment.Replicas > 0 {
+				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Deployment.Replicas
 			}
 
 			// Node placement
@@ -261,6 +265,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			contourModel.Spec.ContourLogLevel = gatewayClassParams.Spec.Contour.LogLevel
 
 			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
+
+			if gatewayClassParams.Spec.Contour.Deployment != nil &&
+				gatewayClassParams.Spec.Contour.Deployment.Strategy != nil {
+				contourModel.Spec.ContourDeploymentStrategy = *gatewayClassParams.Spec.Contour.Deployment.Strategy
+			}
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
@@ -272,9 +281,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Deployment replicas
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
-				gatewayClassParams.Spec.Envoy.Replicas > 0 {
-				contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
+				if gatewayClassParams.Spec.Envoy.Replicas > 0 { // nolint:staticcheck
+					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas // nolint:staticcheck
+				}
+
+				if gatewayClassParams.Spec.Envoy.Deployment != nil && gatewayClassParams.Spec.Envoy.Deployment.Replicas > 0 {
+					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Deployment.Replicas
+				}
 			}
 
 			// Network publishing
@@ -317,6 +331,18 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			if gatewayClassParams.Spec.Envoy.LogLevel != "" {
 				contourModel.Spec.EnvoyLogLevel = gatewayClassParams.Spec.Envoy.LogLevel
+			}
+
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+				gatewayClassParams.Spec.Envoy.Deployment != nil &&
+				gatewayClassParams.Spec.Envoy.Deployment.Strategy != nil {
+				contourModel.Spec.EnvoyDeploymentStrategy = *gatewayClassParams.Spec.Envoy.Deployment.Strategy
+			}
+
+			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
+				gatewayClassParams.Spec.Envoy.DaemonSet != nil &&
+				gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy != nil {
+				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy
 			}
 
 		}
