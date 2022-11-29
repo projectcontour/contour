@@ -27,8 +27,8 @@ import (
 	"strconv"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/davecgh/go-spew/spew"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
