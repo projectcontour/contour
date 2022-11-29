@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: aquasecurity/trivy-action@master
+      - uses: aquasecurity/trivy-action@v0.8.0
         with:
           scan-type: 'fs'
           format: 'sarif'
