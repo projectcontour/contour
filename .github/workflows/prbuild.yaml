@@ -3,6 +3,8 @@ name: Build and Test Pull Request
 # Trigger the workflow on push or pull request
 on:
   push:
+    branches-ignore:
+      - "dependabot/**"
   pull_request:
     types: [opened, synchronize]
 
