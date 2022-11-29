@@ -53,7 +53,8 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary, including editing or deleting the "Deprecation and Removal Notices" section.
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
-1. Add the new release to the compatibility YAML (`/versions.yaml`).
+1. Add the new release to the compatibility YAML (`/versions.yaml`). Be sure to mark this new version as supported and mark oldest currently supported version as no longer supported.
+1. Update `.github/workflows/trivy-scan.yaml` to add new release branch and remove oldest listed (should always be 3 latest branches listed).
 1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
