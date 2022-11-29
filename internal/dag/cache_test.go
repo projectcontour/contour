@@ -942,7 +942,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 // correctly.
 type fakeReader struct{}
 
-func (r *fakeReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+func (r *fakeReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	return errors.New("not implemented")
 }
 
