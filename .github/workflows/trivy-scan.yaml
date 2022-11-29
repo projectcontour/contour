@@ -25,7 +25,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           ignore-unfixed: true
-          severity: 'HIGH'
+          severity: 'HIGH,CRITICAL'
       - uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
