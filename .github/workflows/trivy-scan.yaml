@@ -1,13 +1,6 @@
 name: Trivy Scan
 
 on:
-  push:
-    # Run on main and supported release branches
-    branches:
-      - main
-      - release-1.23
-      - release-1.22
-      - release-1.21
   # Run weekly
   schedule:
     - cron: '0 12 * * 1'
@@ -16,9 +9,18 @@ on:
 
 jobs:
   trivy-scan:
+    strategy:
+      matrix:
+        branch:
+        - main
+        - release-1.23
+        - release-1.22
+        - release-1.21
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
       - uses: aquasecurity/trivy-action@0.8.0
         with:
           security-checks: vuln
