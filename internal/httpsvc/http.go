@@ -75,12 +75,13 @@ func (svc *Service) Start(ctx context.Context) (err error) {
 	}
 
 	s := http.Server{
-		Addr:           net.JoinHostPort(svc.Addr, strconv.Itoa(svc.Port)),
-		Handler:        &svc.ServeMux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   5 * time.Minute, // allow for long trace requests
-		MaxHeaderBytes: 1 << 11,         // 8kb should be enough for anyone
-		TLSConfig:      tlsConfig,
+		Addr:              net.JoinHostPort(svc.Addr, strconv.Itoa(svc.Port)),
+		Handler:           &svc.ServeMux,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second, // To mitigate Slowloris attacks: https://www.cloudflare.com/learning/ddos/ddos-attack-tools/slowloris/
+		WriteTimeout:      5 * time.Minute,  // allow for long trace requests
+		MaxHeaderBytes:    1 << 11,          // 8kb should be enough for anyone
+		TLSConfig:         tlsConfig,
 	}
 
 	go func() {

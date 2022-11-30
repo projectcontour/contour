@@ -338,9 +338,6 @@ func (d *Deployment) WaitForContourDeploymentUpdated() error {
 		if err := d.client.List(context.TODO(), pods, labelSelectAppContour); err != nil {
 			return false, err
 		}
-		if pods == nil {
-			return false, errors.New("failed to fetch Contour Deployment pods")
-		}
 
 		updatedPods := 0
 		for _, pod := range pods.Items {
