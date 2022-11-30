@@ -7,6 +7,7 @@ require (
 	github.com/bombsimon/logrusr/v2 v2.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.8.0+incompatible
+	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/envoyproxy/go-control-plane v0.10.3-0.20220715065308-8bcd7ee0191a
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/protobuf v1.5.2
@@ -24,6 +25,7 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tsaarni/certyaml v0.9.0
 	github.com/vektra/mockery/v2 v2.10.0
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gonum.org/v1/plot v0.10.0
 	google.golang.org/genproto v0.0.0-20220329172620-7be39ac1afc7
