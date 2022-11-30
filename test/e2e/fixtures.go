@@ -18,7 +18,7 @@ package e2e
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/onsi/ginkgo/v2"
@@ -234,7 +234,7 @@ func (e *Echo) DumpEchoLogs(ns, name string) ([][]byte, error) {
 			continue
 		}
 		defer logStream.Close()
-		logBytes, err := ioutil.ReadAll(logStream)
+		logBytes, err := io.ReadAll(logStream)
 		if err != nil {
 			continue
 		}

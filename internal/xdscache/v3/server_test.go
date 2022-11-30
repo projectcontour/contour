@@ -15,7 +15,7 @@ package v3
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -199,7 +199,7 @@ func TestGRPC(t *testing.T) {
 	}
 
 	log := logrus.New()
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
