@@ -15,7 +15,7 @@ package dag
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -111,7 +111,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := ingressRetryPolicy(tc.i, &logrus.Logger{Out: ioutil.Discard})
+			got := ingressRetryPolicy(tc.i, &logrus.Logger{Out: io.Discard})
 			assert.Equal(t, tc.want, got)
 		})
 	}

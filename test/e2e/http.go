@@ -18,7 +18,7 @@ package e2e
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -242,7 +242,7 @@ func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
 	}
 	defer r.Body.Close()
 
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	require.NoError(h.t, err)
 
 	return &HTTPResponse{
@@ -265,7 +265,7 @@ func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), conditio
 		}
 		defer r.Body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(r.Body)
+		bodyBytes, err := io.ReadAll(r.Body)
 		require.NoError(h.t, err)
 
 		res = &HTTPResponse{

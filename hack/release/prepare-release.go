@@ -6,7 +6,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -53,7 +52,7 @@ func capture(cmd []string) string {
 }
 
 func updateMappingForTOC(filePath string, vers string, toc string) error {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -65,7 +64,7 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
 // InsertAfter is like yaml.ElementAppender except it inserts after the named node.
@@ -94,7 +93,7 @@ func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 }
 
 func updateConfigForSite(filePath string, vers string) error {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -124,18 +123,18 @@ func updateConfigForSite(filePath string, vers string) error {
 		log.Fatalf("%s", err)
 	}
 
-	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
 func updateIndexFile(filePath, oldVers, newVers string) error {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
 	upd := strings.ReplaceAll(string(data), "version: "+oldVers, "version: "+newVers)
 
-	return ioutil.WriteFile(filePath, []byte(upd), 0644)
+	return os.WriteFile(filePath, []byte(upd), 0600)
 }
 
 func main() {
@@ -234,7 +233,7 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+		contents, err := os.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
 		if err != nil {
 			return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
 		}

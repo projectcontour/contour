@@ -17,7 +17,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -94,7 +93,7 @@ func TestHTTPSService(t *testing.T) {
 	}
 
 	// Create temporary directory to store certificates and key for the server.
-	configDir, err := ioutil.TempDir("", "contour-testdata-")
+	configDir, err := os.MkdirTemp("", "contour-testdata-")
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 

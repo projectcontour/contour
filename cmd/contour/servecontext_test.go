@@ -16,7 +16,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -184,7 +183,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	}
 
 	// Create temporary directory to store certificates and key for the server.
-	configDir, err := ioutil.TempDir("", "contour-testdata-")
+	configDir, err := os.MkdirTemp("", "contour-testdata-")
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
@@ -242,7 +241,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 func TestTlsVersionDeprecation(t *testing.T) {
 	// To get tls.Config for the gRPC XDS server, we need to arrange valid TLS certificates and keys.
 	// Create temporary directory to store them for the server.
-	configDir, err := ioutil.TempDir("", "contour-testdata-")
+	configDir, err := os.MkdirTemp("", "contour-testdata-")
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 

@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"os"
 	"os/exec"
@@ -470,7 +469,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 
-	bFile, err := ioutil.TempFile("", "bootstrap-*.json")
+	bFile, err := os.CreateTemp("", "bootstrap-*.json")
 	if err != nil {
 		return err
 	}
@@ -493,7 +492,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	}
 	session.Wait()
 
-	bootstrapContents, err := ioutil.ReadAll(bFile)
+	bootstrapContents, err := io.ReadAll(bFile)
 	if err != nil {
 		return err
 	}
@@ -643,7 +642,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		configReferenceName = contourConfiguration.Name
 	} else {
 
-		configFile, err := ioutil.TempFile("", "contour-config-*.yaml")
+		configFile, err := os.CreateTemp("", "contour-config-*.yaml")
 		if err != nil {
 			return nil, "", err
 		}
