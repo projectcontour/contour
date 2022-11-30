@@ -20,9 +20,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -117,7 +117,7 @@ func (svc *Service) tlsConfig() (*tls.Config, error) {
 		var certPool *x509.CertPool
 		if svc.CABundle != "" {
 			clientAuth = tls.RequireAndVerifyClientCert
-			ca, err := ioutil.ReadFile(svc.CABundle)
+			ca, err := os.ReadFile(svc.CABundle)
 			if err != nil {
 				return nil, err
 			}
