@@ -33,7 +33,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 
 	config := &gatewayProvisionerConfig{
 		contourImage:          "ghcr.io/projectcontour/contour:v1.21.1",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.22.2",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.22.6",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
