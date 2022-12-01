@@ -12,4 +12,13 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  labels:
+  - area/tooling
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
   
