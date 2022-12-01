@@ -239,17 +239,19 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Contour != nil {
-			if gatewayClassParams.Spec.Contour.Replicas > 0 { // nolint:staticcheck
-				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Replicas // nolint:staticcheck
+			contourParams := gatewayClassParams.Spec.Contour
+
+			if contourParams.Replicas > 0 { // nolint:staticcheck
+				contourModel.Spec.ContourReplicas = contourParams.Replicas // nolint:staticcheck
 			}
 
 			// Deployment replicas
-			if gatewayClassParams.Spec.Contour.Deployment != nil && gatewayClassParams.Spec.Contour.Deployment.Replicas > 0 {
-				contourModel.Spec.ContourReplicas = gatewayClassParams.Spec.Contour.Deployment.Replicas
+			if contourParams.Deployment != nil && contourParams.Deployment.Replicas > 0 {
+				contourModel.Spec.ContourReplicas = contourParams.Deployment.Replicas
 			}
 
 			// Node placement
-			if nodePlacement := gatewayClassParams.Spec.Contour.NodePlacement; nodePlacement != nil {
+			if nodePlacement := contourParams.NodePlacement; nodePlacement != nil {
 				if contourModel.Spec.NodePlacement == nil {
 					contourModel.Spec.NodePlacement = &model.NodePlacement{}
 				}
@@ -260,39 +262,41 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			contourModel.Spec.ContourResources = gatewayClassParams.Spec.Contour.Resources
+			contourModel.Spec.ContourResources = contourParams.Resources
 
-			contourModel.Spec.ContourLogLevel = gatewayClassParams.Spec.Contour.LogLevel
+			contourModel.Spec.ContourLogLevel = contourParams.LogLevel
 
-			contourModel.Spec.KubernetesLogLevel = gatewayClassParams.Spec.Contour.KubernetesLogLevel
+			contourModel.Spec.KubernetesLogLevel = contourParams.KubernetesLogLevel
 
-			if gatewayClassParams.Spec.Contour.Deployment != nil &&
-				gatewayClassParams.Spec.Contour.Deployment.Strategy != nil {
-				contourModel.Spec.ContourDeploymentStrategy = *gatewayClassParams.Spec.Contour.Deployment.Strategy
+			if contourParams.Deployment != nil &&
+				contourParams.Deployment.Strategy != nil {
+				contourModel.Spec.ContourDeploymentStrategy = *contourParams.Deployment.Strategy
 			}
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
+			envoyParams := gatewayClassParams.Spec.Envoy
+
 			// Workload type
 			// Note, the values have already been validated by the gatewayclass controller
 			// so just check for the existence of a value here.
-			if gatewayClassParams.Spec.Envoy.WorkloadType != "" {
-				contourModel.Spec.EnvoyWorkloadType = gatewayClassParams.Spec.Envoy.WorkloadType
+			if envoyParams.WorkloadType != "" {
+				contourModel.Spec.EnvoyWorkloadType = envoyParams.WorkloadType
 			}
 
 			// Deployment replicas
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
-				if gatewayClassParams.Spec.Envoy.Replicas > 0 { // nolint:staticcheck
-					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Replicas // nolint:staticcheck
+			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
+				if envoyParams.Replicas > 0 { // nolint:staticcheck
+					contourModel.Spec.EnvoyReplicas = envoyParams.Replicas // nolint:staticcheck
 				}
 
-				if gatewayClassParams.Spec.Envoy.Deployment != nil && gatewayClassParams.Spec.Envoy.Deployment.Replicas > 0 {
-					contourModel.Spec.EnvoyReplicas = gatewayClassParams.Spec.Envoy.Deployment.Replicas
+				if envoyParams.Deployment != nil && envoyParams.Deployment.Replicas > 0 {
+					contourModel.Spec.EnvoyReplicas = envoyParams.Deployment.Replicas
 				}
 			}
 
 			// Network publishing
-			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
+			if networkPublishing := envoyParams.NetworkPublishing; networkPublishing != nil {
 				// Note, the values have already been validated by the gatewayclass controller
 				// so just check for the existence of a value here.
 				if networkPublishing.Type != "" {
@@ -307,7 +311,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Node placement
-			if nodePlacement := gatewayClassParams.Spec.Envoy.NodePlacement; nodePlacement != nil {
+			if nodePlacement := envoyParams.NodePlacement; nodePlacement != nil {
 				if contourModel.Spec.NodePlacement == nil {
 					contourModel.Spec.NodePlacement = &model.NodePlacement{}
 				}
@@ -319,30 +323,30 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// volume mount
-			contourModel.Spec.EnvoyExtraVolumeMounts = append(contourModel.Spec.EnvoyExtraVolumeMounts, gatewayClassParams.Spec.Envoy.ExtraVolumeMounts...)
-			contourModel.Spec.EnvoyExtraVolumes = append(contourModel.Spec.EnvoyExtraVolumes, gatewayClassParams.Spec.Envoy.ExtraVolumes...)
+			contourModel.Spec.EnvoyExtraVolumeMounts = append(contourModel.Spec.EnvoyExtraVolumeMounts, envoyParams.ExtraVolumeMounts...)
+			contourModel.Spec.EnvoyExtraVolumes = append(contourModel.Spec.EnvoyExtraVolumes, envoyParams.ExtraVolumes...)
 
 			// Pod Annotations
-			for k, v := range gatewayClassParams.Spec.Envoy.PodAnnotations {
+			for k, v := range envoyParams.PodAnnotations {
 				contourModel.Spec.EnvoyPodAnnotations[k] = v
 			}
 
-			contourModel.Spec.EnvoyResources = gatewayClassParams.Spec.Envoy.Resources
+			contourModel.Spec.EnvoyResources = envoyParams.Resources
 
-			if gatewayClassParams.Spec.Envoy.LogLevel != "" {
-				contourModel.Spec.EnvoyLogLevel = gatewayClassParams.Spec.Envoy.LogLevel
+			if envoyParams.LogLevel != "" {
+				contourModel.Spec.EnvoyLogLevel = envoyParams.LogLevel
 			}
 
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
-				gatewayClassParams.Spec.Envoy.Deployment != nil &&
-				gatewayClassParams.Spec.Envoy.Deployment.Strategy != nil {
-				contourModel.Spec.EnvoyDeploymentStrategy = *gatewayClassParams.Spec.Envoy.Deployment.Strategy
+			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+				envoyParams.Deployment != nil &&
+				envoyParams.Deployment.Strategy != nil {
+				contourModel.Spec.EnvoyDeploymentStrategy = *envoyParams.Deployment.Strategy
 			}
 
-			if gatewayClassParams.Spec.Envoy.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
-				gatewayClassParams.Spec.Envoy.DaemonSet != nil &&
-				gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy != nil {
-				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *gatewayClassParams.Spec.Envoy.DaemonSet.UpdateStrategy
+			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
+				envoyParams.DaemonSet != nil &&
+				envoyParams.DaemonSet.UpdateStrategy != nil {
+				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *envoyParams.DaemonSet.UpdateStrategy
 			}
 
 		}
