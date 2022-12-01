@@ -25,7 +25,7 @@ jobs:
         with:
           version: v1.50.1
           args: --build-tags=e2e,conformance,gcp,oidc,tools,none
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -44,7 +44,7 @@ jobs:
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -75,7 +75,7 @@ jobs:
         run: |
           make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -103,7 +103,7 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@v1
+    - uses: act10ns/slack@v2
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -167,7 +167,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make e2e
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -228,7 +228,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -280,7 +280,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: coverage.out
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -315,7 +315,7 @@ jobs:
         run: |
           make install
           make check-coverage
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -354,7 +354,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make gateway-conformance
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
