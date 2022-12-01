@@ -175,6 +175,24 @@ func checkDaemonSetHasResourceRequirements(t *testing.T, ds *appsv1.DaemonSet, e
 	}
 	t.Errorf("daemonset has unexpected resource requirements %v", expected)
 }
+func checkDaemonSetHasUpdateStrategy(t *testing.T, ds *appsv1.DaemonSet, expected appsv1.DaemonSetUpdateStrategy) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.UpdateStrategy, expected) {
+		return
+	}
+	t.Errorf("daemonset has unexpected update strategy %q", expected)
+}
+
+func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected appsv1.DeploymentStrategy) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Strategy, expected) {
+		return
+	}
+	t.Errorf("deployment has unexpected strategy %q", expected)
+}
+
 func checkDaemonSetHasTolerations(t *testing.T, ds *appsv1.DaemonSet, expected []corev1.Toleration) {
 	t.Helper()
 
@@ -274,6 +292,17 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
+	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
+}
+
+func TestDesiredDeployment(t *testing.T) {
+	name := "deploy-test"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+
+	testContourImage := "ghcr.io/projectcontour/contour:test"
+	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage)
+	checkDeploymentHasStrategy(t, deploy, cntr.Spec.EnvoyDeploymentStrategy)
 
 }
 

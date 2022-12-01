@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -74,10 +75,15 @@ type ContourDeploymentSpec struct {
 // ContourSettings contains settings for the Contour part of the installation,
 // i.e. the xDS server/control plane and associated resources.
 type ContourSettings struct {
-	// Replicas is the desired number of Contour replicas. If unset,
+	// Deprecated: Use `DeploymentSettings.Replicas` instead.
+	//
+	// Replicas is the desired number of Contour replicas. If if unset,
 	// defaults to 2.
 	//
+	// if both `DeploymentSettings.Replicas` and this one is set, use `DeploymentSettings.Replicas`.
+	//
 	// +kubebuilder:validation:Minimum=0
+	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// NodePlacement describes node scheduling configuration of Contour pods.
@@ -104,6 +110,29 @@ type ContourSettings struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Deployment describes the settings for running contour as a `Deployment`.
+	// +optional
+	Deployment *DeploymentSettings `json:"deployment,omitempty"`
+}
+
+// DeploymentSettings contains settings for Deployment resources.
+type DeploymentSettings struct {
+	// Replicas is the desired number of replicas.
+	//
+	// +kubebuilder:validation:Minimum=0
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Strategy describes the deployment strategy to use to replace existing pods with new pods.
+	// +optional
+	Strategy *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
+}
+
+// DaemonSetSettings contains settings for DaemonSet resources.
+type DaemonSetSettings struct {
+	// Strategy describes the deployment strategy to use to replace existing DaemonSet pods with new pods.
+	// +optional
+	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 // EnvoySettings contains settings for the Envoy part of the installation,
@@ -116,11 +145,16 @@ type EnvoySettings struct {
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
+	// Deprecated: Use `DeploymentSettings.Replicas` instead.
+	//
 	// Replicas is the desired number of Envoy replicas. If WorkloadType
 	// is not "Deployment", this field is ignored. Otherwise, if unset,
 	// defaults to 2.
 	//
+	// if both `DeploymentSettings.Replicas` and this one is set, use `DeploymentSettings.Replicas`.
+	//
 	// +kubebuilder:validation:Minimum=0
+	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// NetworkPublishing defines how to expose Envoy to a network.
@@ -156,6 +190,16 @@ type EnvoySettings struct {
 	//
 	// +optional
 	LogLevel LogLevel `json:"logLevel,omitempty"`
+
+	// DaemonSet describes the settings for running envoy as a `DaemonSet`.
+	// if `WorkloadType` is `Deployment`,it's must be nil
+	// +optional
+	DaemonSet *DaemonSetSettings `json:"daemonSet,omitempty"`
+
+	// Deployment describes the settings for running envoy as a `Deployment`.
+	// if `WorkloadType` is `DaemonSet`,it's must be nil
+	// +optional
+	Deployment *DeploymentSettings `json:"deployment,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
