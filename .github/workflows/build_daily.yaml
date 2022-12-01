@@ -39,7 +39,7 @@ jobs:
           CONTOUR_E2E_XDS_SERVER_TYPE: envoy
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -72,7 +72,7 @@ jobs:
           CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE: deployment
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -106,7 +106,7 @@ jobs:
           CONTOUR_E2E_GATEWAY_RECONCILE_MODE: controller
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -142,7 +142,7 @@ jobs:
           make setup-kind-cluster
           export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep global | head -n1 | awk '{print $2}')
           make run-e2e cleanup-kind
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
