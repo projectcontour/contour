@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -74,7 +73,7 @@ func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
 
 	mgr := newShutdownManagerContext()
 	mgr.FieldLogger = fixture.NewTestLogger(t)
-	tmpdir, err := ioutil.TempDir("", "shutdownmanager_test-*")
+	tmpdir, err := os.MkdirTemp("", "shutdownmanager_test-*")
 	defer os.RemoveAll(tmpdir)
 	if err != nil {
 		t.Error(err)

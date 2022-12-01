@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
@@ -31,7 +30,7 @@ import (
 
 func TestXDSHandlerStream(t *testing.T) {
 	log := logrus.New()
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	tests := map[string]struct {
 		xh     contourServer
 		stream grpcStream

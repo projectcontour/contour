@@ -1,7 +1,7 @@
 name: Build and Test Pull Request
 
 # Trigger the workflow on push or pull request
-on: 
+on:
   push:
   pull_request:
     types: [opened, synchronize]
@@ -13,9 +13,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18.8'
       - uses: actions/checkout@v2
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           version: v1.45.0
           args: --build-tags=e2e
@@ -32,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Codespell
-        uses: codespell-project/actions-codespell@master
+        uses: codespell-project/actions-codespell@v1.0
         with:
           skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
           ignore_words_file: './.codespell.ignorewords'
@@ -60,7 +63,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.18.8'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -74,7 +77,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}    
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   build-image:
     needs:
       - lint
@@ -148,7 +151,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.18.8'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -209,7 +212,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.18.8'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -260,7 +263,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.18.8'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -299,7 +302,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.18.8'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -308,45 +311,6 @@ jobs:
         run: |
           make install
           make check-coverage
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  gateway-conformance:
-    runs-on: ubuntu-latest
-    needs: [build-image]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download image
-        uses: actions/download-artifact@v2
-        with:
-          name: image
-          path: image
-      - uses: actions/cache@v2
-        with:
-          # * Module download cache
-          # * Build cache (Linux)
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.18.1'
-      - name: add deps to path
-        run: |
-          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-      - name: Gateway API conformance tests
-        env:
-          LOAD_PREBUILT_IMAGE: "true"
-        run: |
-          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
-          make gateway-conformance
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
