@@ -30,7 +30,7 @@ jobs:
         PUSH_IMAGE: "true"
       run: |
         make multiarch-build
-    - uses: act10ns/slack@v1
+    - uses: act10ns/slack@v2
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}

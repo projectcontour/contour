@@ -5,8 +5,8 @@ set -o nounset
 set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
-readonly KUBECTL_VERS="v1.25.2"
-readonly KIND_VERS="v0.16.0"
+readonly KUBECTL_VERS="v1.25.4"
+readonly KIND_VERS="v0.17.0"
 readonly SONOBUOY_VERS="0.19.0"
 readonly KUBEBUILDER_VERS="3.1.0"
 
@@ -51,7 +51,7 @@ echo "Installing Kubernetes toolchain..."
 
 # Install ginkgo CLI
 if [[ ${GITHUB_ACTIONS} == "true" && ${OS} == "linux" ]]; then
-  go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
+  go install github.com/onsi/ginkgo/v2/ginkgo@v2.5.1
   mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
 fi
 
