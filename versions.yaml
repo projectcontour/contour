@@ -62,7 +62,7 @@ versions:
         - "1.21"
       gateway-api:
         - v1alpha2
-      contour-operator: v1.21.2
+      contour-operator: "N/A"
   - version: v1.21.1
     supported: "false"
     dependencies:
