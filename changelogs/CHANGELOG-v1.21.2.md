@@ -6,7 +6,6 @@ A big thank you to everyone who contributed to the release.
 - [Other Changes](#other-changes)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
-- [Community Thanks!](#community-thanks)
 
 # Minor Changes
 
