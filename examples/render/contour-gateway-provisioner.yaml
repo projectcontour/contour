@@ -6667,7 +6667,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -7101,7 +7101,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -8521,7 +8521,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -8627,8 +8627,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard     label
+                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard    label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -9991,7 +9991,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -10078,8 +10078,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard     label
+                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard    label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -10559,13 +10559,13 @@ spec:
                                       description: "Scheme is the scheme to be used
                                         in the value of the `Location` header in the
                                         response. When empty, the scheme of the request
-                                        is used. \n Support: Extended \n Note that
-                                        values may be added to this enum, implementations
-                                        must ensure that unknown values will not cause
-                                        a crash. \n Unknown values here must result
-                                        in the implementation setting the Accepted
-                                        Condition for the Route to `status: False`,
-                                        with a Reason of `UnsupportedValue`."
+                                        is used. \n Note that values may be added
+                                        to this enum, implementations must ensure
+                                        that unknown values will not cause a crash.
+                                        \n Unknown values here must result in the
+                                        implementation setting the Accepted Condition
+                                        for the Route to `status: False`, with a Reason
+                                        of `UnsupportedValue`. \n Support: Extended"
                                       enum:
                                       - http
                                       - https
@@ -10573,13 +10573,14 @@ spec:
                                     statusCode:
                                       default: 302
                                       description: "StatusCode is the HTTP status
-                                        code to be used in response. \n Support: Core
-                                        \n Note that values may be added to this enum,
-                                        implementations must ensure that unknown values
-                                        will not cause a crash. \n Unknown values
-                                        here must result in the implementation setting
-                                        the Accepted Condition for the Route to `status:
-                                        False`, with a Reason of `UnsupportedValue`."
+                                        code to be used in response. \n Note that
+                                        values may be added to this enum, implementations
+                                        must ensure that unknown values will not cause
+                                        a crash. \n Unknown values here must result
+                                        in the implementation setting the Accepted
+                                        Condition for the Route to `status: False`,
+                                        with a Reason of `UnsupportedValue`. \n Support:
+                                        Core"
                                       enum:
                                       - 301
                                       - 302
@@ -11181,12 +11182,12 @@ spec:
                                 description: "Scheme is the scheme to be used in the
                                   value of the `Location` header in the response.
                                   When empty, the scheme of the request is used. \n
-                                  Support: Extended \n Note that values may be added
-                                  to this enum, implementations must ensure that unknown
-                                  values will not cause a crash. \n Unknown values
-                                  here must result in the implementation setting the
-                                  Accepted Condition for the Route to `status: False`,
-                                  with a Reason of `UnsupportedValue`."
+                                  Note that values may be added to this enum, implementations
+                                  must ensure that unknown values will not cause a
+                                  crash. \n Unknown values here must result in the
+                                  implementation setting the Accepted Condition for
+                                  the Route to `status: False`, with a Reason of `UnsupportedValue`.
+                                  \n Support: Extended"
                                 enum:
                                 - http
                                 - https
@@ -11194,12 +11195,13 @@ spec:
                               statusCode:
                                 default: 302
                                 description: "StatusCode is the HTTP status code to
-                                  be used in response. \n Support: Core \n Note that
-                                  values may be added to this enum, implementations
-                                  must ensure that unknown values will not cause a
-                                  crash. \n Unknown values here must result in the
-                                  implementation setting the Accepted Condition for
-                                  the Route to `status: False`, with a Reason of `UnsupportedValue`."
+                                  be used in response. \n Note that values may be
+                                  added to this enum, implementations must ensure
+                                  that unknown values will not cause a crash. \n Unknown
+                                  values here must result in the implementation setting
+                                  the Accepted Condition for the Route to `status:
+                                  False`, with a Reason of `UnsupportedValue`. \n
+                                  Support: Core"
                                 enum:
                                 - 301
                                 - 302
@@ -11566,12 +11568,12 @@ spec:
                                     be ignored. \n If a query param is repeated in
                                     an HTTP request, the behavior is purposely left
                                     undefined, since different data planes have different
-                                    capabilities. However, it's *recommended* that
+                                    capabilities. However, it is *recommended* that
                                     implementations should match against the first
                                     value of the param if the data plane supports
                                     it, as this behavior is expected in other load
                                     balancing contexts outside of the Gateway API.
-                                    Users should not route traffic based on repeated
+                                    \n Users SHOULD NOT route traffic based on repeated
                                     query params to guard themselves against potential
                                     differences in the implementations."
                                   maxLength: 256
@@ -11920,8 +11922,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard     label
+                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard    label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -12401,13 +12403,13 @@ spec:
                                       description: "Scheme is the scheme to be used
                                         in the value of the `Location` header in the
                                         response. When empty, the scheme of the request
-                                        is used. \n Support: Extended \n Note that
-                                        values may be added to this enum, implementations
-                                        must ensure that unknown values will not cause
-                                        a crash. \n Unknown values here must result
-                                        in the implementation setting the Accepted
-                                        Condition for the Route to `status: False`,
-                                        with a Reason of `UnsupportedValue`."
+                                        is used. \n Note that values may be added
+                                        to this enum, implementations must ensure
+                                        that unknown values will not cause a crash.
+                                        \n Unknown values here must result in the
+                                        implementation setting the Accepted Condition
+                                        for the Route to `status: False`, with a Reason
+                                        of `UnsupportedValue`. \n Support: Extended"
                                       enum:
                                       - http
                                       - https
@@ -12415,13 +12417,14 @@ spec:
                                     statusCode:
                                       default: 302
                                       description: "StatusCode is the HTTP status
-                                        code to be used in response. \n Support: Core
-                                        \n Note that values may be added to this enum,
-                                        implementations must ensure that unknown values
-                                        will not cause a crash. \n Unknown values
-                                        here must result in the implementation setting
-                                        the Accepted Condition for the Route to `status:
-                                        False`, with a Reason of `UnsupportedValue`."
+                                        code to be used in response. \n Note that
+                                        values may be added to this enum, implementations
+                                        must ensure that unknown values will not cause
+                                        a crash. \n Unknown values here must result
+                                        in the implementation setting the Accepted
+                                        Condition for the Route to `status: False`,
+                                        with a Reason of `UnsupportedValue`. \n Support:
+                                        Core"
                                       enum:
                                       - 301
                                       - 302
@@ -13023,12 +13026,12 @@ spec:
                                 description: "Scheme is the scheme to be used in the
                                   value of the `Location` header in the response.
                                   When empty, the scheme of the request is used. \n
-                                  Support: Extended \n Note that values may be added
-                                  to this enum, implementations must ensure that unknown
-                                  values will not cause a crash. \n Unknown values
-                                  here must result in the implementation setting the
-                                  Accepted Condition for the Route to `status: False`,
-                                  with a Reason of `UnsupportedValue`."
+                                  Note that values may be added to this enum, implementations
+                                  must ensure that unknown values will not cause a
+                                  crash. \n Unknown values here must result in the
+                                  implementation setting the Accepted Condition for
+                                  the Route to `status: False`, with a Reason of `UnsupportedValue`.
+                                  \n Support: Extended"
                                 enum:
                                 - http
                                 - https
@@ -13036,12 +13039,13 @@ spec:
                               statusCode:
                                 default: 302
                                 description: "StatusCode is the HTTP status code to
-                                  be used in response. \n Support: Core \n Note that
-                                  values may be added to this enum, implementations
-                                  must ensure that unknown values will not cause a
-                                  crash. \n Unknown values here must result in the
-                                  implementation setting the Accepted Condition for
-                                  the Route to `status: False`, with a Reason of `UnsupportedValue`."
+                                  be used in response. \n Note that values may be
+                                  added to this enum, implementations must ensure
+                                  that unknown values will not cause a crash. \n Unknown
+                                  values here must result in the implementation setting
+                                  the Accepted Condition for the Route to `status:
+                                  False`, with a Reason of `UnsupportedValue`. \n
+                                  Support: Core"
                                 enum:
                                 - 301
                                 - 302
@@ -13408,12 +13412,12 @@ spec:
                                     be ignored. \n If a query param is repeated in
                                     an HTTP request, the behavior is purposely left
                                     undefined, since different data planes have different
-                                    capabilities. However, it's *recommended* that
+                                    capabilities. However, it is *recommended* that
                                     implementations should match against the first
                                     value of the param if the data plane supports
                                     it, as this behavior is expected in other load
                                     balancing contexts outside of the Gateway API.
-                                    Users should not route traffic based on repeated
+                                    \n Users SHOULD NOT route traffic based on repeated
                                     query params to guard themselves against potential
                                     differences in the implementations."
                                   maxLength: 256
@@ -13705,7 +13709,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -13758,8 +13762,8 @@ spec:
               from:
                 description: "From describes the trusted namespaces and kinds that
                   can reference the resources described in \"To\". Each entry in this
-                  list must be considered to be an additional place that references
-                  can be valid from, or to put this another way, entries must be combined
+                  list MUST be considered to be an additional place that references
+                  can be valid from, or to put this another way, entries MUST be combined
                   using OR. \n Support: Core"
                 items:
                   description: ReferenceGrantFrom describes trusted namespaces and
@@ -13799,9 +13803,9 @@ spec:
                 type: array
               to:
                 description: "To describes the resources that may be referenced by
-                  the resources described in \"From\". Each entry in this list must
+                  the resources described in \"From\". Each entry in this list MUST
                   be considered to be an additional place that references can be valid
-                  to, or to put this another way, entries must be combined using OR.
+                  to, or to put this another way, entries MUST be combined using OR.
                   \n Support: Core"
                 items:
                   description: ReferenceGrantTo describes what Kinds are allowed as
@@ -13881,8 +13885,8 @@ spec:
               from:
                 description: "From describes the trusted namespaces and kinds that
                   can reference the resources described in \"To\". Each entry in this
-                  list must be considered to be an additional place that references
-                  can be valid from, or to put this another way, entries must be combined
+                  list MUST be considered to be an additional place that references
+                  can be valid from, or to put this another way, entries MUST be combined
                   using OR. \n Support: Core"
                 items:
                   description: ReferenceGrantFrom describes trusted namespaces and
@@ -13922,9 +13926,9 @@ spec:
                 type: array
               to:
                 description: "To describes the resources that may be referenced by
-                  the resources described in \"From\". Each entry in this list must
+                  the resources described in \"From\". Each entry in this list MUST
                   be considered to be an additional place that references can be valid
-                  to, or to put this another way, entries must be combined using OR.
+                  to, or to put this another way, entries MUST be combined using OR.
                   \n Support: Core"
                 items:
                   description: ReferenceGrantTo describes what Kinds are allowed as
@@ -13980,7 +13984,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -14481,7 +14485,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -14553,8 +14557,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard     label
+                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard    label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -15031,7 +15035,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-dev
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
