@@ -9,7 +9,7 @@ This document describes which versions of Contour are supported by the Contour t
 
 Contour is changing both to quarterly releases and three supported releases.
 
-The first Contour version covered by the quarterly release cadence will be Contour v1.20, scheduled for late October 2021.
+The first Contour version covered by the quarterly release cadence is Contour v1.20, released in Jan 2022.
 
 At the time it is released, it will be the only supported version, and versions 1.21 and 1.22 will continue supporting back to Contour 1.20.
 
@@ -18,13 +18,13 @@ When Contour 1.23 releases, Contour 1.20 will fall out of support.
 The following table illustrates how this will work. The given dates are estimates, not guarantees.
 They are our best guess as to when each version will be released.
 
-| Version |v1.19 |v1.20|v1.21|v1.22|v1.23|
-|---------|--------|-------|-------|-------|-------|
-|Q3 2021 | ✅ |
-|Q4 2021 | ❌ | ✅ |
-|Q1 2022 | ❌ | ✅ |✅ |
-|Q2 2022 | ❌ | ✅ |✅ |✅ |
-|Q3 2022 | ❌ | ❌ |✅ |✅ | ✅ |
+| Version | v1.19 | v1.20 | v1.21 | v1.22 | v1.23 |
+|---------|-------|-------|-------|-------|-------|
+| Q4 2021 | ✅     |
+| Q1 2022 | ❌     | ✅     |
+| Q2 2022 | ❌     | ✅     | ✅     |
+| Q3 2022 | ❌     | ✅     | ✅     | ✅     |
+| Q4 2022 | ❌     | ❌     | ✅     | ✅     | ✅     |
 
 ## What does a release being "supported" mean?
 
