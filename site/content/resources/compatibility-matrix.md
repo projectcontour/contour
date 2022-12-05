@@ -12,6 +12,7 @@ These combinations of versions are specifically tested in CI and supported by th
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
 | main            | [1.24.0][21]         | 1.25, 1.24, 1.23    | [main][50]       | v1alpha2, v1beta1   |
 | 1.23.0          | [1.24.0][21]         | 1.25, 1.24, 1.23    | [1.23.0][74]     | v1alpha2, v1beta1   |
+| 1.22.2          | [1.23.3][23]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
 | 1.22.1          | [1.23.1][20]         | 1.24, 1.23, 1.22    | [1.22.1][73]     | v1alpha2, v1beta1   |
 | 1.22.0          | [1.23.0][19]         | 1.24, 1.23, 1.22    | [1.22.0][72]     | v1alpha2, v1beta1   |
 | 1.21.2          | [1.22.6][22]         | 1.23, 1.22, 1.21    | N/A              | v1alpha2            |
@@ -125,6 +126,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [20]: https://www.envoyproxy.io/docs/envoy/v1.23.1/version_history/v1.23/v1.23.1
 [21]: https://www.envoyproxy.io/docs/envoy/v1.24.0/version_history/v1.24/v1.24.0
 [22]: https://www.envoyproxy.io/docs/envoy/v1.22.6/version_history/current
+[23]: https://www.envoyproxy.io/docs/envoy/v1.23.3/version_history/v1.23/v1.23.3
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
