@@ -49,6 +49,8 @@ BUILD_CGO_ENABLED ?= 0
 # Go module mirror to use.
 BUILD_GOPROXY ?= https://proxy.golang.org
 
+BUILD_GOEXPERIMENT ?= none
+
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
 # Used for Contour container image tag.
@@ -124,6 +126,7 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
+		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		$(shell pwd)
@@ -137,6 +140,7 @@ container: ## Build the Contour container image
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
+		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
