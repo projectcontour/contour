@@ -19,6 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -262,28 +263,28 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromAll matches all": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 		},
 		"From.NamespacesFromSame matches": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 		},
 		"From.NamespacesFromSame doesn't match": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 			},
 			namespace: "custom",
 			valid:     false,
 		},
 		"From.NamespacesFromSelector matches labels, same ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "production",
@@ -295,7 +296,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -307,7 +308,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector doesn't matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -319,7 +320,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector matches expression 'In', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -333,7 +334,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector matches expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -346,7 +347,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -359,7 +360,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector matches expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -372,7 +373,7 @@ func TestNamespaceMatches(t *testing.T) {
 		},
 		"From.NamespacesFromSelector doesn't match expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+				From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -459,7 +460,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -470,7 +471,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -489,7 +490,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -500,7 +501,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -519,7 +520,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -530,7 +531,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -549,7 +550,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -560,7 +561,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -580,7 +581,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -591,7 +592,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -610,7 +611,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -621,7 +622,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -640,7 +641,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -651,7 +652,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -670,7 +671,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-1",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -681,7 +682,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 						Name: "http-2",
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},

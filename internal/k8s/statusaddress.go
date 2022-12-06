@@ -20,8 +20,8 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -189,14 +189,14 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				if ip := loadBalancerStatus.Ingress[0].IP; len(ip) > 0 {
 					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ip,
 						},
 					}
 				} else if hostname := loadBalancerStatus.Ingress[0].Hostname; len(hostname) > 0 {
 					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostname,
 						},
 					}

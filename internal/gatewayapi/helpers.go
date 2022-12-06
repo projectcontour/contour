@@ -21,67 +21,29 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func FromNamespacesPtr(val gatewayapi_v1beta1.FromNamespaces) *gatewayapi_v1beta1.FromNamespaces {
-	return &val
-}
-
-func PathMatchTypePtr(val gatewayapi_v1beta1.PathMatchType) *gatewayapi_v1beta1.PathMatchType {
-	return &val
-}
-
-func HeaderMatchTypePtr(val gatewayapi_v1beta1.HeaderMatchType) *gatewayapi_v1beta1.HeaderMatchType {
-	return &val
-}
-
-func QueryParamMatchTypePtr(val gatewayapi_v1beta1.QueryParamMatchType) *gatewayapi_v1beta1.QueryParamMatchType {
-	return &val
-}
-
-func TLSModeTypePtr(mode gatewayapi_v1beta1.TLSModeType) *gatewayapi_v1beta1.TLSModeType {
-	return &mode
-}
-
-func HTTPMethodPtr(method gatewayapi_v1beta1.HTTPMethod) *gatewayapi_v1beta1.HTTPMethod {
-	return &method
-}
-
-func AddressTypePtr(addressType gatewayapi_v1beta1.AddressType) *gatewayapi_v1beta1.AddressType {
-	return &addressType
-}
-
-func ListenerHostname(host string) *gatewayapi_v1beta1.Hostname {
-	h := gatewayapi_v1beta1.Hostname(host)
-	return &h
-}
-
-func PreciseHostname(host string) *gatewayapi_v1beta1.PreciseHostname {
-	h := gatewayapi_v1beta1.PreciseHostname(host)
-	return &h
-}
-
 func CertificateRef(name, namespace string) gatewayapi_v1beta1.SecretObjectReference {
-	ref := gatewayapi_v1beta1.SecretObjectReference{
-		Group: GroupPtr(""),
-		Kind:  KindPtr("Secret"),
+	secretRef := gatewayapi_v1beta1.SecretObjectReference{
+		Group: ref.To(gatewayapi_v1beta1.Group("")),
+		Kind:  ref.To(gatewayapi_v1beta1.Kind("Secret")),
 		Name:  gatewayapi_v1beta1.ObjectName(name),
 	}
 
 	if namespace != "" {
-		ref.Namespace = NamespacePtr(namespace)
+		secretRef.Namespace = ref.To(gatewayapi_v1beta1.Namespace(namespace))
 	}
 
-	return ref
+	return secretRef
 }
 
 func GatewayParentRef(namespace, name string) gatewayapi_v1beta1.ParentReference {
 	parentRef := gatewayapi_v1beta1.ParentReference{
-		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
-		Kind:  KindPtr("Gateway"),
+		Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+		Kind:  ref.To(gatewayapi_v1beta1.Kind("Gateway")),
 		Name:  gatewayapi_v1beta1.ObjectName(name),
 	}
 
 	if namespace != "" {
-		parentRef.Namespace = NamespacePtr(namespace)
+		parentRef.Namespace = ref.To(gatewayapi_v1beta1.Namespace(namespace))
 	}
 
 	return parentRef
@@ -97,44 +59,20 @@ func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1bet
 	return parentRef
 }
 
-func GroupPtr(group string) *gatewayapi_v1beta1.Group {
-	gwGroup := gatewayapi_v1beta1.Group(group)
-	return &gwGroup
-}
-
-func KindPtr(kind string) *gatewayapi_v1beta1.Kind {
-	gwKind := gatewayapi_v1beta1.Kind(kind)
-	return &gwKind
-}
-
-func NamespacePtr(namespace string) *gatewayapi_v1beta1.Namespace {
-	gwNamespace := gatewayapi_v1beta1.Namespace(namespace)
-	return &gwNamespace
-}
-
-func ObjectNamePtr(name string) *gatewayapi_v1alpha2.ObjectName {
-	objectName := gatewayapi_v1alpha2.ObjectName(name)
-	return &objectName
-}
-
 func ServiceBackendObjectRef(name string, port int) gatewayapi_v1beta1.BackendObjectReference {
 	return gatewayapi_v1beta1.BackendObjectReference{
-		Group: GroupPtr(""),
-		Kind:  KindPtr("Service"),
+		Group: ref.To(gatewayapi_v1beta1.Group("")),
+		Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
 		Name:  gatewayapi_v1beta1.ObjectName(name),
 		Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
 	}
-}
-
-func GatewayAddressTypePtr(addr gatewayapi_v1beta1.AddressType) *gatewayapi_v1beta1.AddressType {
-	return &addr
 }
 
 func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []gatewayapi_v1beta1.HTTPRouteMatch {
 	return []gatewayapi_v1beta1.HTTPRouteMatch{
 		{
 			Path: &gatewayapi_v1beta1.HTTPPathMatch{
-				Type:  PathMatchTypePtr(pathType),
+				Type:  ref.To(gatewayapi_v1beta1.PathMatchType(pathType)),
 				Value: pointer.StringPtr(value),
 			},
 		},
@@ -144,7 +82,7 @@ func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []g
 func HTTPHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value string) []gatewayapi_v1beta1.HTTPHeaderMatch {
 	return []gatewayapi_v1beta1.HTTPHeaderMatch{
 		{
-			Type:  HeaderMatchTypePtr(gatewayapi_v1beta1.HeaderMatchExact),
+			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
 			Name:  gatewayapi_v1beta1.HTTPHeaderName(name),
 			Value: value,
 		},
@@ -156,7 +94,7 @@ func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1beta
 
 	for name, val := range namesAndValues {
 		matches = append(matches, gatewayapi_v1beta1.HTTPQueryParamMatch{
-			Type:  QueryParamMatchTypePtr(gatewayapi_v1beta1.QueryParamMatchExact),
+			Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
 			Name:  name,
 			Value: val,
 		})
@@ -198,8 +136,8 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	return []gatewayapi_v1alpha2.BackendRef{
 		{
 			BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-				Group: GroupPtr(""),
-				Kind:  KindPtr("Service"),
+				Group: ref.To(gatewayapi_v1beta1.Group("")),
+				Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
 				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
 				Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
 			},

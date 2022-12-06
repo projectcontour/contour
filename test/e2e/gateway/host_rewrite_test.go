@@ -19,6 +19,7 @@ package gateway
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,7 +52,7 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/"),
 								},
 							},

@@ -46,7 +46,7 @@ func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
-							Namespace:   gatewayapi.NamespacePtr(gateway.Namespace),
+							Namespace:   ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
 							Name:        gatewayapi_v1beta1.ObjectName(gateway.Name),
 							SectionName: ref.To(gatewayapi_v1beta1.SectionName("secure")),
 						},

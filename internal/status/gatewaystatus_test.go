@@ -16,9 +16,8 @@ package status
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
-
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,15 +70,15 @@ func TestGatewaySetListenerSupportedKinds(t *testing.T) {
 
 	assert.ElementsMatch(t,
 		[]gatewayapi_v1beta1.RouteGroupKind{
-			{Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName), Kind: "HTTPRoute"},
+			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "HTTPRoute"},
 		},
 		gsu.ListenerStatus["http"].SupportedKinds,
 	)
 
 	assert.ElementsMatch(t,
 		[]gatewayapi_v1beta1.RouteGroupKind{
-			{Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName), Kind: "HTTPRoute"},
-			{Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName), Kind: "TLSRoute"},
+			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "HTTPRoute"},
+			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "TLSRoute"},
 		},
 		gsu.ListenerStatus["https"].SupportedKinds,
 	)
@@ -109,11 +108,11 @@ func TestGatewayMutate(t *testing.T) {
 			AttachedRoutes: 7,
 			SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 				{
-					Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 					Kind:  gatewayapi_v1beta1.Kind("FooRoute"),
 				},
 				{
-					Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 					Kind:  gatewayapi_v1beta1.Kind("BarRoute"),
 				},
 			},
@@ -124,7 +123,7 @@ func TestGatewayMutate(t *testing.T) {
 			AttachedRoutes: 77,
 			SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 				{
-					Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 					Kind:  gatewayapi_v1beta1.Kind("TLSRoute"),
 				},
 			},
@@ -140,7 +139,7 @@ func TestGatewayMutate(t *testing.T) {
 					AttachedRoutes: 3,
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 						{
-							Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  gatewayapi_v1beta1.Kind("HTTPRoute"),
 						},
 					},

@@ -56,7 +56,7 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname: gatewayapi.PreciseHostname("projectcontour.io"),
+									Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("projectcontour.io")),
 								},
 							},
 						},
@@ -68,7 +68,7 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
+									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
 									StatusCode: pointer.Int(301),
 									Scheme:     pointer.String("https"),
 									Port:       ref.To(gatewayapi_v1beta1.PortNumber(8080)),
