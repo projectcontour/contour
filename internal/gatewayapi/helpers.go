@@ -72,7 +72,7 @@ func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []g
 	return []gatewayapi_v1beta1.HTTPRouteMatch{
 		{
 			Path: &gatewayapi_v1beta1.HTTPPathMatch{
-				Type:  ref.To(gatewayapi_v1beta1.PathMatchType(pathType)),
+				Type:  ref.To(pathType),
 				Value: pointer.StringPtr(value),
 			},
 		},
