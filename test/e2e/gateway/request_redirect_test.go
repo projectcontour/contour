@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,7 +71,7 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
 									StatusCode: pointer.Int(301),
 									Scheme:     pointer.String("https"),
-									Port:       gatewayapi.PortNumPtr(8080),
+									Port:       ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						},

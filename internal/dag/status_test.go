@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -4033,7 +4034,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 										Kind:      gatewayapi.KindPtr("Service"),
 										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
-										Port:      gatewayapi.PortNumPtr(8080),
+										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 									Weight: pointer.Int32(1),
 								},
@@ -4598,7 +4599,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
 										Kind: gatewayapi.KindPtr("Service"),
-										Port: gatewayapi.PortNumPtr(8080),
+										Port: ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 								},
 							},
@@ -4828,7 +4829,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 										Kind:      gatewayapi.KindPtr("Service"),
 										Namespace: gatewayapi.NamespacePtr("some-other-namespace"),
 										Name:      "service",
-										Port:      gatewayapi.PortNumPtr(8080),
+										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 								},
 							},
@@ -5966,7 +5967,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								BackendRef: gatewayapi_v1beta1.BackendObjectReference{
 									Group: gatewayapi.GroupPtr(""),
 									Kind:  gatewayapi.KindPtr("Service"),
-									Port:  gatewayapi.PortNumPtr(8080),
+									Port:  ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						}},
@@ -6166,7 +6167,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 									Kind:      gatewayapi.KindPtr("Service"),
 									Namespace: gatewayapi.NamespacePtr("some-other-namespace"),
 									Name:      gatewayapi_v1beta1.ObjectName("kuard2"),
-									Port:      gatewayapi.PortNumPtr(8080),
+									Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						}},
@@ -7373,7 +7374,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 							{
 								BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
 									Kind: gatewayapi.KindPtr("Service"),
-									Port: gatewayapi.PortNumPtr(8080),
+									Port: ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						},

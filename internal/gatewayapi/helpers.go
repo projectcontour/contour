@@ -14,21 +14,12 @@
 package gatewayapi
 
 import (
+	"github.com/projectcontour/contour/internal/ref"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
-
-func SectionNamePtr(sectionName string) *gatewayapi_v1beta1.SectionName {
-	gwSectionName := gatewayapi_v1beta1.SectionName(sectionName)
-	return &gwSectionName
-}
-
-func PortNumPtr(port int) *gatewayapi_v1beta1.PortNumber {
-	pn := gatewayapi_v1beta1.PortNumber(port)
-	return &pn
-}
 
 func FromNamespacesPtr(val gatewayapi_v1beta1.FromNamespaces) *gatewayapi_v1beta1.FromNamespaces {
 	return &val
@@ -100,7 +91,7 @@ func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1bet
 	parentRef := GatewayParentRef(namespace, name)
 
 	if listener != "" {
-		parentRef.SectionName = SectionNamePtr(listener)
+		parentRef.SectionName = ref.To(gatewayapi_v1beta1.SectionName(listener))
 	}
 
 	return parentRef
@@ -131,7 +122,7 @@ func ServiceBackendObjectRef(name string, port int) gatewayapi_v1beta1.BackendOb
 		Group: GroupPtr(""),
 		Kind:  KindPtr("Service"),
 		Name:  gatewayapi_v1beta1.ObjectName(name),
-		Port:  PortNumPtr(port),
+		Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
 	}
 }
 
@@ -210,7 +201,7 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 				Group: GroupPtr(""),
 				Kind:  KindPtr("Service"),
 				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
-				Port:  PortNumPtr(port),
+				Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
 			},
 			Weight: weight,
 		},
