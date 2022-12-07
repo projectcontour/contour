@@ -155,6 +155,11 @@ spec:
                     description: Listener hold various configurable Envoy listener
                       values.
                     properties:
+                      DisableServerHeaderTransformation:
+                        description: "DisableServerHeaderTransformation signifies
+                          we will not modify the Server header. false: OVERWRITE true:\tPASS_THROUGH
+                          \n Contour's default is false."
+                        type: boolean
                       connectionBalancer:
                         description: "ConnectionBalancer. If the value is exact, the
                           listener will use the exact connection balancer See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
@@ -3054,6 +3059,11 @@ spec:
                         description: Listener hold various configurable Envoy listener
                           values.
                         properties:
+                          DisableServerHeaderTransformation:
+                            description: "DisableServerHeaderTransformation signifies
+                              we will not modify the Server header. false: OVERWRITE
+                              true:\tPASS_THROUGH \n Contour's default is false."
+                            type: boolean
                           connectionBalancer:
                             description: "ConnectionBalancer. If the value is exact,
                               the listener will use the exact connection balancer

@@ -161,6 +161,7 @@ type httpConnectionManagerBuilder struct {
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	mergeSlashes                  bool
+	serverHeaderTransformation    http.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
 }
@@ -238,6 +239,15 @@ func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpCon
 // MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
 func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
 	b.mergeSlashes = enabled
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(enabled bool) *httpConnectionManagerBuilder {
+	t_serverHeaderTransformation := http.HttpConnectionManager_OVERWRITE
+	if enabled == true {
+		t_serverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
+	}
+	b.serverHeaderTransformation = t_serverHeaderTransformation
 	return b
 }
 
@@ -452,8 +462,9 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		},
 
 		// issue #1487 pass through X-Request-Id if provided.
-		PreserveExternalRequestId: true,
-		MergeSlashes:              b.mergeSlashes,
+		PreserveExternalRequestId:  true,
+		MergeSlashes:               b.mergeSlashes,
+		ServerHeaderTransformation: b.serverHeaderTransformation,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),

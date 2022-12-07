@@ -521,6 +521,11 @@ func (in *EnvoyListenerConfig) DeepCopyInto(out *EnvoyListenerConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.DisableServerHeaderTransformation != nil {
+		in, out := &in.DisableServerHeaderTransformation, &out.DisableServerHeaderTransformation
+		*out = new(bool)
+		**out = **in
+	}
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
 		*out = new(EnvoyTLS)

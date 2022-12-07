@@ -125,6 +125,9 @@ type ListenerConfig struct {
 	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
 	MergeSlashes bool
 
+	// ServerHeaderTransformation signifies we will not modify the Server header.
+	ServerHeaderTransformation bool
+
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
@@ -388,6 +391,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
@@ -448,6 +452,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
@@ -514,6 +519,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).

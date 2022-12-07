@@ -485,6 +485,9 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
+	// DisableServerHeaderTransformation signifies we will not modify the Server header.
+	DisableServerHeaderTransformation bool `yaml:"DisableServerHeaderTransformation,omitempty"`
+
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
 	// TODO(youngnick): put a link to the issue and CVE here.
@@ -686,14 +689,15 @@ func Defaults() Parameters {
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
 		},
-		IngressStatusAddress:      "",
-		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
-		AccessLogFields:           DefaultFields,
-		AccessLogLevel:            LogLevelInfo,
-		TLS:                       TLSParameters{},
-		DisablePermitInsecure:     false,
-		DisableAllowChunkedLength: false,
-		DisableMergeSlashes:       false,
+		IngressStatusAddress:              "",
+		AccessLogFormat:                   DEFAULT_ACCESS_LOG_TYPE,
+		AccessLogFields:                   DefaultFields,
+		AccessLogLevel:                    LogLevelInfo,
+		TLS:                               TLSParameters{},
+		DisablePermitInsecure:             false,
+		DisableAllowChunkedLength:         false,
+		DisableMergeSlashes:               false,
+		DisableServerHeaderTransformation: false,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

@@ -74,10 +74,11 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:             pointer.Bool(false),
-				DisableAllowChunkedLength: pointer.Bool(false),
-				DisableMergeSlashes:       pointer.Bool(false),
-				ConnectionBalancer:        "",
+				UseProxyProto:                     pointer.Bool(false),
+				DisableAllowChunkedLength:         pointer.Bool(false),
+				DisableMergeSlashes:               pointer.Bool(false),
+				DisableServerHeaderTransformation: pointer.Bool(false),
+				ConnectionBalancer:                "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",
 					CipherSuites:           contour_api_v1alpha1.DefaultTLSCiphers,
