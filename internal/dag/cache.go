@@ -387,6 +387,16 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 		}
 	}
 
+	for _, route := range kc.tlsroutes {
+		for _, rule := range route.Spec.Rules {
+			for _, backend := range rule.BackendRefs {
+				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 

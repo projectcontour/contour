@@ -1504,6 +1504,20 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	tlsRoute := func(namespace, name string) *gatewayapi_v1alpha2.TLSRoute {
+		return &gatewayapi_v1alpha2.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					BackendRefs: gatewayapi.TLSRouteBackendRef(name, 80, nil),
+				}},
+			},
+		}
+	}
+
 	tests := map[string]struct {
 		cache *KubernetesCache
 		svc   *v1.Service
@@ -1590,6 +1604,30 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			cache: cache(
 				service("default", "service-1"),
 				httpRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tlsroute exists in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("default", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: true,
+		},
+		"tlsroute does not exist in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tlsroute does use same name as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("default", "service"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,
