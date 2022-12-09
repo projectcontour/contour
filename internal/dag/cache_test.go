@@ -708,6 +708,75 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
+		"insert service referenced by tlsRoute": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service referenced by tlsRoute w/ mismatch namespace": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "tlsroute"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert service referenced by tlsRoute w/ mismatch name": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("tlsroute", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
 		"insert service referenced by httpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1002,6 +1071,65 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
+		"remove service with reference to TLSRoute": {
+			cache: cache(
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service",
+						Namespace: "default",
+					},
+				},
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			),
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service without valid reference to TLSRoute": {
+			cache: cache(
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service",
+						Namespace: "default",
+					},
+				},
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service1", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			),
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+
 		"remove namespace": {
 			cache: cache(&v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
