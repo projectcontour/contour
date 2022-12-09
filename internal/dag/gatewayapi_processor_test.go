@@ -572,7 +572,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 		},
 
 		"section name specified, matches first listener": {
-			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-1"),
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-1", 0),
 			routeNamespace: "projectcontour",
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
@@ -602,7 +602,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			want: []int{0},
 		},
 		"section name specified, matches second listener": {
-			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-2"),
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-2", 0),
 			routeNamespace: "projectcontour",
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
@@ -632,7 +632,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			want: []int{1},
 		},
 		"section name specified, does not match listener": {
-			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name"),
+			routeParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "different-listener-name", 0),
 			routeNamespace: "projectcontour",
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{

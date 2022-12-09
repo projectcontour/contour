@@ -285,14 +285,21 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	var selectedListeners []*listenerInfo
 	for _, validListener := range validListeners {
 		// We've already verified the parent ref is for this Gateway,
-		// now check if it has a listener name specified.
-		if routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name {
+		// now check if it has a listener name and port specified.
+		// Both need to match the listener if specified.
+		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name) &&
+			(routeParentRef.Port == nil || *routeParentRef.Port == validListener.listener.Port) {
 			selectedListeners = append(selectedListeners, validListener)
 		}
 	}
 
 	if len(selectedListeners) == 0 {
-		routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonListenersNotReady, "No listeners are ready for this parent ref")
+		routeParentStatusAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionAccepted,
+			metav1.ConditionFalse,
+			gatewayapi_v1beta1.RouteReasonNoMatchingParent,
+			"No listeners match this parent ref",
+		)
 		return nil
 	}
 
