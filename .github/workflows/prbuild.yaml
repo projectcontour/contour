@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - uses: actions/checkout@v2
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
@@ -63,7 +63,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -151,7 +151,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -212,7 +212,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -263,7 +263,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -302,7 +302,7 @@ jobs:
             ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.18.8'
+          go-version: '1.18.9'
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
