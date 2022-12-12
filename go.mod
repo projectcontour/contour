@@ -11,7 +11,7 @@ require (
 	github.com/envoyproxy/go-control-plane v0.10.3-0.20221018195204-799a7af9e5b9
 	github.com/go-logr/logr v1.2.3
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-github/v48 v48.1.0
+	github.com/google/go-github/v48 v48.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/imdario/mergo v0.3.13
