@@ -716,6 +716,11 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "tlsroute",
 						Namespace: "default"},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
 						}},
@@ -739,6 +744,11 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "tlsroute",
 						Namespace: "tlsroute"},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
 						}},
@@ -762,6 +772,11 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "tlsroute",
 						Namespace: "default"},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("tlsroute", 80, nil),
 						}},
@@ -1085,6 +1100,11 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Name:      "tlsroute",
 						Namespace: "default"},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
 						}},
@@ -1114,6 +1134,11 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Name:      "tlsroute",
 						Namespace: "default"},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("service1", 80, nil),
 						}},
@@ -1639,6 +1664,11 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					},
+				},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 					BackendRefs: gatewayapi.TLSRouteBackendRef(name, 80, nil),
 				}},
