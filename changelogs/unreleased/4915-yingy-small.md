@@ -1,1 +1,1 @@
-enable TLSRoute service reference in serviceTriggersRebuild
+Ensure changes to Services referenced by TLSRoute trigger xDS configuration updates.
