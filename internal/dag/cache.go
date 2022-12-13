@@ -190,17 +190,15 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			if kc.routeTriggersRebuild(obj) {
 				kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 				return true
-			} else {
-				return false
 			}
+			return false
 		case *gatewayapi_v1alpha2.TLSRoute:
 			// No need to add route to cache if it is irrelevant
 			if kc.routeTriggersRebuild(obj) {
 				kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 				return true
-			} else {
-				return false
 			}
+			return false
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
