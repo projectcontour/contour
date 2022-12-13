@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -3788,7 +3789,7 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 					AttachedRoutes: int32(attachedRoutes),
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 						{
-							Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  kind,
 						},
 					},
@@ -3867,7 +3868,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 								},
 							},
 						}},
@@ -4030,10 +4031,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind:      gatewayapi.KindPtr("Service"),
-										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
-										Port:      gatewayapi.PortNumPtr(8080),
+										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 									Weight: pointer.Int32(1),
 								},
@@ -4156,7 +4157,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("doesnt-start-with-slash"),
 							},
 						}},
@@ -4210,7 +4211,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchExact),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchExact),
 								Value: pointer.StringPtr("doesnt-start-with-slash"),
 							},
 						}},
@@ -4264,7 +4265,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/foo///bar"),
 							},
 						}},
@@ -4318,7 +4319,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchExact),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchExact),
 								Value: pointer.StringPtr("//foo/bar"),
 							},
 						}},
@@ -4372,7 +4373,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr("UNKNOWN"), // <---- unknown type to break the test
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchType("UNKNOWN")), // <---- unknown type to break the test
 								Value: pointer.StringPtr("/"),
 							},
 						}},
@@ -4475,12 +4476,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
 								{
-									Type:  gatewayapi.HeaderMatchTypePtr(gatewayapi_v1beta1.HeaderMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression), // <---- RegularExpression type not yet supported
 									Name:  gatewayapi_v1beta1.HTTPHeaderName("foo"),
 									Value: "bar",
 								},
@@ -4533,12 +4534,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 								{
-									Type:  gatewayapi.QueryParamMatchTypePtr(gatewayapi_v1beta1.QueryParamMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression), // <---- RegularExpression type not yet supported
 									Name:  "param-1",
 									Value: "value-1",
 								},
@@ -4597,8 +4598,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind: gatewayapi.KindPtr("Service"),
-										Port: gatewayapi.PortNumPtr(8080),
+										Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
+										Port: ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 								},
 							},
@@ -4652,7 +4653,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 						}},
@@ -4660,7 +4661,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}, {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/blog"),
 							},
 						}},
@@ -4718,7 +4719,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind: gatewayapi.KindPtr("Service"),
+										Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
 										Name: "kuard",
 									},
 								},
@@ -4825,10 +4826,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								BackendRef: gatewayapi_v1beta1.BackendRef{
 									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind:      gatewayapi.KindPtr("Service"),
-										Namespace: gatewayapi.NamespacePtr("some-other-namespace"),
+										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1beta1.Namespace("some-other-namespace")),
 										Name:      "service",
-										Port:      gatewayapi.PortNumPtr(8080),
+										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
 								},
 							},
@@ -4876,14 +4877,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -4905,9 +4906,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectcontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
@@ -4931,14 +4932,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -4969,7 +4970,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5003,14 +5007,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5032,13 +5036,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectcontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
-						Name: gatewayapi.ObjectNamePtr("secret"),
+						Name: ref.To(gatewayapi_v1beta1.ObjectName("secret")),
 					}},
 				},
 			},
@@ -5059,14 +5063,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5088,9 +5092,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectcontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
@@ -5113,7 +5117,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5147,14 +5154,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5176,9 +5183,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
+						Namespace: gatewayapi_v1beta1.Namespace("wrong-namespace"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
@@ -5201,7 +5208,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5235,14 +5245,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5264,9 +5274,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "WrongKind",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
@@ -5289,7 +5299,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5323,14 +5336,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5352,9 +5365,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectcontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "WrongKind",
@@ -5377,7 +5390,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5411,14 +5427,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -5440,13 +5456,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 					From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-						Group:     gatewayapi_v1alpha2.GroupName,
+						Group:     gatewayapi_v1beta1.GroupName,
 						Kind:      "Gateway",
-						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						Namespace: gatewayapi_v1beta1.Namespace("projectcontour"),
 					}},
 					To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 						Kind: "Secret",
-						Name: gatewayapi.ObjectNamePtr("wrong-name"),
+						Name: ref.To(gatewayapi_v1beta1.ObjectName("wrong-name")),
 					}},
 				},
 			},
@@ -5466,7 +5482,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5665,10 +5684,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 							},
 						},
-						Hostname: gatewayapi.ListenerHostname("*.projectcontour.io"),
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 					},
 					{
 						Name:     "listener-2",
@@ -5676,10 +5695,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 							},
 						},
-						Hostname: gatewayapi.ListenerHostname("specific.hostname.io"),
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
 					},
 				},
 			},
@@ -5718,7 +5737,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						AttachedRoutes: int32(1),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
-								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
 						},
@@ -5736,7 +5755,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						AttachedRoutes: int32(0),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
-								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
 						},
@@ -5786,10 +5805,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 							},
 						},
-						Hostname: gatewayapi.ListenerHostname("*.projectcontour.io"),
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 					},
 					{
 						Name:     "listener-2",
@@ -5797,10 +5816,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 							},
 						},
-						Hostname: gatewayapi.ListenerHostname("specific.hostname.io"),
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
 					},
 				},
 			},
@@ -5839,7 +5858,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						AttachedRoutes: int32(0),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
-								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
 						},
@@ -5857,7 +5876,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						AttachedRoutes: int32(0),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
-								Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
 						},
@@ -5964,9 +5983,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
 							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi_v1beta1.BackendObjectReference{
-									Group: gatewayapi.GroupPtr(""),
-									Kind:  gatewayapi.KindPtr("Service"),
-									Port:  gatewayapi.PortNumPtr(8080),
+									Group: ref.To(gatewayapi_v1beta1.Group("")),
+									Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+									Port:  ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						}},
@@ -6025,8 +6044,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
 							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi_v1beta1.BackendObjectReference{
-									Group: gatewayapi.GroupPtr(""),
-									Kind:  gatewayapi.KindPtr("Service"),
+									Group: ref.To(gatewayapi_v1beta1.Group("")),
+									Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
 									Name:  gatewayapi_v1beta1.ObjectName("kuard2"),
 								},
 							},
@@ -6082,7 +6101,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 						}},
@@ -6097,7 +6116,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard2", 8080, 1),
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/blog"),
 							},
 						}},
@@ -6162,11 +6181,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
 							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi_v1beta1.BackendObjectReference{
-									Group:     gatewayapi.GroupPtr(""),
-									Kind:      gatewayapi.KindPtr("Service"),
-									Namespace: gatewayapi.NamespacePtr("some-other-namespace"),
+									Group:     ref.To(gatewayapi_v1beta1.Group("")),
+									Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
+									Namespace: ref.To(gatewayapi_v1beta1.Namespace("some-other-namespace")),
 									Name:      gatewayapi_v1beta1.ObjectName("kuard2"),
-									Port:      gatewayapi.PortNumPtr(8080),
+									Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						}},
@@ -6399,7 +6418,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6421,7 +6440,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name: "http",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 						{
-							Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
 					},
@@ -6452,10 +6471,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Kinds: []gatewayapi_v1beta1.RouteGroupKind{
-							{Group: gatewayapi.GroupPtr("invalid-group"), Kind: "HTTPRoute"},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group("invalid-group")),
+								Kind:  "HTTPRoute",
+							},
 						},
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6512,7 +6534,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{Kind: "FooRoute"},
 						},
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6569,7 +6591,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{Kind: "TLSRoute"},
 						},
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6623,14 +6645,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							{
-								Group: gatewayapi.GroupPtr("invalid-group"),
-								Kind:  gatewayapi.KindPtr("NotASecret"),
+								Group: ref.To(gatewayapi_v1beta1.Group("invalid-group")),
+								Kind:  ref.To(gatewayapi_v1beta1.Kind("NotASecret")),
 								Name:  "foo",
 							},
 						},
@@ -6653,7 +6675,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -6688,7 +6713,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
@@ -6714,7 +6739,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -6749,7 +6777,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: "invalid",
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6803,7 +6831,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6824,7 +6852,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -6853,7 +6884,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.TLSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 				}},
@@ -6874,7 +6905,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"tls": {
 					Name: "tls",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "TLSRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -6903,11 +6937,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.TLSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", "projectcontour"),
 						},
@@ -6930,7 +6964,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"tls": {
 					Name: "tls",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "TLSRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -6959,11 +6996,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.TLSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", "projectcontour"),
 						},
@@ -6986,7 +7023,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"tls": {
 					Name: "tls",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "TLSRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "TLSRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7015,11 +7055,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+						Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 					},
 				}},
 			},
@@ -7039,7 +7079,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"https": {
 					Name: "https",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7069,7 +7112,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								From:     ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 								Selector: nil,
 							},
 						},
@@ -7091,7 +7134,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"http": {
 					Name: "http",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7121,7 +7167,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 								Selector: &metav1.LabelSelector{
 									MatchExpressions: []metav1.LabelSelectorRequirement{{
 										Key:      "something",
@@ -7149,7 +7195,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"http": {
 					Name: "http",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7179,7 +7228,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From:     gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSelector),
+								From:     ref.To(gatewayapi_v1beta1.NamespacesFromSelector),
 								Selector: &metav1.LabelSelector{},
 							},
 						},
@@ -7201,7 +7250,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				"http": {
 					Name: "http",
 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName), Kind: "HTTPRoute"},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "HTTPRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7323,11 +7375,11 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -7372,8 +7424,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 							{
 								BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-									Kind: gatewayapi.KindPtr("Service"),
-									Port: gatewayapi.PortNumPtr(8080),
+									Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
+									Port: ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						},
@@ -7477,7 +7529,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 							{
 								BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-									Kind: gatewayapi.KindPtr("Service"),
+									Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
 									Name: "kuard",
 								},
 							},

@@ -17,11 +17,10 @@ import (
 	"context"
 	"testing"
 
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/provisioner"
-
 	"github.com/go-logr/logr"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,7 +64,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayv1beta1.ParametersReference{
 			Group:     gatewayv1beta1.Group(contourv1alpha1.GroupVersion.Group),
 			Kind:      "ContourDeployment",
-			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -76,7 +75,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayv1beta1.ParametersReference{
 			Group:     gatewayv1beta1.Group(contourv1alpha1.GroupVersion.Group),
 			Kind:      "InvalidKind",
-			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -236,7 +235,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.207",
 						},
 					},
@@ -258,11 +257,11 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.207",
 						},
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.999",
 						},
 					},
@@ -284,7 +283,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "projectcontour.io",
 						},
 					},
@@ -306,11 +305,11 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "projectcontour.io",
 						},
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "anotherhost.io",
 						},
 					},
@@ -332,7 +331,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr("acme.io/CustomAddressType"),
+							Type:  ref.To(gatewayv1beta1.AddressType("acme.io/CustomAddressType")),
 							Value: "custom-address-types-are-not-supported",
 						},
 					},
@@ -562,7 +561,7 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-2",
 							Protocol: gatewayv1beta1.HTTPProtocolType,
 							Port:     82,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 						{
@@ -585,14 +584,14 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-6",
 							Protocol: gatewayv1beta1.TLSProtocolType,
 							Port:     8443,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-7's port will be ignored because it's different than the previous HTTPS/TLS listeners'
 						{
 							Name:     "listener-7",
 							Protocol: gatewayv1beta1.HTTPSProtocolType,
 							Port:     8444,
-							Hostname: gatewayapi.ListenerHostname("foo.baz"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.baz")),
 						},
 					},
 				},
@@ -642,7 +641,7 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-2",
 							Protocol: gatewayv1beta1.HTTPProtocolType,
 							Port:     82,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 						{

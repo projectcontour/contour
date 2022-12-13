@@ -24,8 +24,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
@@ -172,7 +172,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -197,7 +197,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -261,7 +261,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -303,7 +303,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -332,7 +332,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},

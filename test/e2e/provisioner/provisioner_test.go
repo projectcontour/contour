@@ -29,6 +29,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,7 +77,7 @@ var _ = BeforeSuite(func() {
 		gc.Spec.ParametersRef = &gatewayapi_v1beta1.ParametersReference{
 			Group:     "projectcontour.io",
 			Kind:      "ContourDeployment",
-			Namespace: gatewayapi.NamespacePtr(params.Namespace),
+			Namespace: ref.To(gatewayapi_v1beta1.Namespace(params.Namespace)),
 			Name:      params.Name,
 		}
 	}
@@ -107,7 +108,7 @@ var _ = BeforeSuite(func() {
 			ParametersRef: &gatewayapi_v1beta1.ParametersReference{
 				Group:     "projectcontour.io",
 				Kind:      "ContourDeployment",
-				Namespace: gatewayapi.NamespacePtr(paramsEnvoyDeployment.Namespace),
+				Namespace: ref.To(gatewayapi_v1beta1.Namespace(paramsEnvoyDeployment.Namespace)),
 				Name:      paramsEnvoyDeployment.Name,
 			},
 		},
@@ -152,7 +153,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -226,7 +227,7 @@ var _ = Describe("Gateway provisioner", func() {
 								Port:     gatewayapi_v1beta1.PortNumber(80),
 								AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 									Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-										From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+										From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 									},
 								},
 							},
@@ -309,7 +310,7 @@ var _ = Describe("Gateway provisioner", func() {
 					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
-						Namespace: gatewayapi.NamespacePtr(namespace),
+						Namespace: ref.To(gatewayapi_v1beta1.Namespace(namespace)),
 						Name:      "contour-params",
 					},
 				},
@@ -333,7 +334,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -402,7 +403,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},

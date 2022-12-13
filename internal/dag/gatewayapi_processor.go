@@ -552,7 +552,7 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerConditionProgrammed,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1alpha2.TLSModePassthrough),
+				fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1beta1.TLSModePassthrough),
 			)
 			return false, nil
 		}
@@ -585,13 +585,13 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 	var routeKinds []gatewayapi_v1beta1.Kind
 
 	for _, routeKind := range listener.AllowedRoutes.Kinds {
-		if routeKind.Group != nil && *routeKind.Group != gatewayapi_v1alpha2.GroupName {
+		if routeKind.Group != nil && *routeKind.Group != gatewayapi_v1beta1.GroupName {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
-				fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gatewayapi_v1alpha2.GroupName),
+				fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gatewayapi_v1beta1.GroupName),
 			)
 			continue
 		}
@@ -659,7 +659,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 	if certificateRef.Namespace != nil && string(*certificateRef.Namespace) != p.source.gateway.Namespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
-				group:     gatewayapi_v1alpha2.GroupName,
+				group:     gatewayapi_v1beta1.GroupName,
 				kind:      KindGateway,
 				namespace: p.source.gateway.Namespace,
 			},

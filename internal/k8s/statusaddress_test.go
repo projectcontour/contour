@@ -18,9 +18,9 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s/mocks"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
@@ -415,7 +415,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},
@@ -459,7 +459,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
 						},
 					},
@@ -579,7 +579,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},

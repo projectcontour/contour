@@ -16,7 +16,7 @@ package status
 import (
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +72,7 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName
 
 	for _, kind := range kinds {
 		groupKind := gatewayapi_v1beta1.RouteGroupKind{
-			Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+			Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 			Kind:  kind,
 		}
 
