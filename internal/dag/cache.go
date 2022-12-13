@@ -186,11 +186,21 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				return true
 			}
 		case *gatewayapi_v1beta1.HTTPRoute:
-			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-			return kc.routeTriggersRebuild(obj)
+			// No need to add route to cache if it is irrelevant
+			if kc.routeTriggersRebuild(obj) {
+				kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
+				return true
+			} else {
+				return false
+			}
 		case *gatewayapi_v1alpha2.TLSRoute:
-			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-			return kc.routeTriggersRebuild(obj)
+			// No need to add route to cache if it is irrelevant
+			if kc.routeTriggersRebuild(obj) {
+				kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
+				return true
+			} else {
+				return false
+			}
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
@@ -503,7 +513,7 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 		string(ref.Name) == secret.Name
 }
 
-// routesTriggersRebuild returns true if this route is referenced to gateway in this cache.
+// routesTriggersRebuild returns true if this route references gateway in this cache.
 func (kc *KubernetesCache) routeTriggersRebuild(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *gatewayapi_v1beta1.HTTPRoute:
@@ -525,7 +535,7 @@ func (kc *KubernetesCache) routeTriggersRebuild(obj interface{}) bool {
 		}
 		return false
 	default:
-		// unintersted objects should bypass this check
+		// uninterested objects should bypass this check
 		return true
 	}
 

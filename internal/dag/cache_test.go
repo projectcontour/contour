@@ -1180,13 +1180,19 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
-		"remove gateway-api HTTPRoute": {
-			cache: cache(&gatewayapi_v1beta1.HTTPRoute{
+		"remove gateway-api HTTPRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "httproute",
+					Name:      "Gateway",
 					Namespace: "default",
+				}},
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httproute",
+						Namespace: "default",
+					},
 				},
-			}),
+			),
 			obj: &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
@@ -1195,13 +1201,53 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
-		"remove gateway-api TLSRoute": {
-			cache: cache(&gatewayapi_v1alpha2.TLSRoute{
+		"remove gateway-api HTTPRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tlsroute",
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httproute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
 					Namespace: "default",
 				},
-			}),
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api TLSRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "Gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default",
+					},
+				}),
 			obj: &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tlsroute",
@@ -1209,6 +1255,41 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			},
 			want: false,
+		},
+		"remove gateway-api TLSRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
+			want: true,
 		},
 		"remove gateway-api ReferenceGrant": {
 			cache: cache(&gatewayapi_v1beta1.ReferenceGrant{
@@ -1538,16 +1619,30 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	httpRoute := func(namespace, name string) *gatewayapi_v1beta1.HTTPRoute {
+	httpRoute := func(namespace, name, parentRefNamespace, parentRefName string) *gatewayapi_v1beta1.HTTPRoute {
 		return &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
+					},
+				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 					BackendRefs: gatewayapi.HTTPBackendRef(name, 80, 1),
 				}},
+			},
+		}
+	}
+
+	gateway := func(namespace, name string) *gatewayapi_v1beta1.Gateway {
+		return &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
 			},
 		}
 	}
@@ -1628,16 +1723,18 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		},
 		"httproute exists in same namespace as service": {
 			cache: cache(
+				gateway("default", "gateway"),
 				service("default", "service-1"),
-				httpRoute("default", "service-1"),
+				httpRoute("default", "service-1", "default", "gateway"),
 			),
 			svc:  service("default", "service-1"),
 			want: true,
 		},
 		"httproute does not exist in same namespace as service": {
 			cache: cache(
+				gateway("default", "gateway"),
 				service("default", "service-1"),
-				httpRoute("user", "service-1"),
+				httpRoute("user", "service-1", "default", "gateway"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,
