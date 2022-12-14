@@ -1151,10 +1151,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1260,10 +1260,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
