@@ -2913,18 +2913,35 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
-								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
-										{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-										{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
-									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
-										{Name: "custom-header-add", Value: "foo-bar"},
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
 									},
 								},
-							}},
+								{
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
 						}},
 					},
 				},
@@ -2944,6 +2961,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Add: map[string]string{
 									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
 								},
+								Remove:      []string{"X-Remove"}, // Verify the header key is canonicalized.
 								HostRewrite: "bar.com",
 							},
 						},
@@ -2971,18 +2989,35 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
-								Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
-								ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
-										{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-										{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
-									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
-										{Name: "custom-header-add", Value: "foo-bar"},
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
 									},
 								},
-							}},
+								{
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
 						}},
 					},
 				},
@@ -3003,6 +3038,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Add: map[string]string{
 									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
 								},
+								Remove: []string{"X-Remove"}, // Verify the header key is canonicalized.
 							},
 						},
 					)),
@@ -3034,18 +3070,35 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 										Weight:                 pointer.Int32(1),
 									},
-									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
-										Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-											Set: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
-											},
-											Add: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: "custom-header-add", Value: "foo-bar"},
+									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+										{
+											Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+											RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+												Set: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+												},
+												Add: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: "custom-header-add", Value: "foo-bar"},
+												},
+												Remove: []string{"x-remove"},
 											},
 										},
-									}},
+										{
+											// Second instance of filter should be ignored.
+											Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
+											RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+												Set: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+												},
+												Add: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: "custom-header-add", Value: "ignored"},
+												},
+												Remove: []string{"x-remove-ignored"},
+											},
+										},
+									},
 								},
 							},
 						}},
@@ -3059,7 +3112,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, "bar.com", nil, nil, nil, service(kuardService)),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, []string{"X-Remove"}, "bar.com", nil, nil, nil, service(kuardService)),
 						},
 					)),
 				},
@@ -3090,18 +3143,35 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 										Weight:                 pointer.Int32(1),
 									},
-									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
-										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
-										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-											Set: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
-											},
-											Add: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: "custom-header-add", Value: "foo-bar"},
+									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+										{
+											Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+											ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+												Set: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
+												},
+												Add: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: "custom-header-add", Value: "foo-bar"},
+												},
+												Remove: []string{"x-remove"},
 											},
 										},
-									}},
+										{
+											// Second instance of filter should be ignored.
+											Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+											ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+												Set: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+												},
+												Add: []gatewayapi_v1beta1.HTTPHeader{
+													{Name: "custom-header-add", Value: "ignored"},
+												},
+												Remove: []string{"x-remove-ignored"},
+											},
+										},
+									},
 								},
 							},
 						}},
@@ -3115,7 +3185,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, service(kuardService)),
+							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{"Custom-Header-Add": "foo-bar"}, []string{"X-Remove"}, service(kuardService)),
 						},
 					)),
 				},

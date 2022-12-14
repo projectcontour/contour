@@ -1060,10 +1060,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 		// Process rule-level filters.
 		var (
-			requestHeaderPolicy, responseHeaderPolicy             *HeadersPolicy
-			requestHeaderModifierSeen, responseHeaderModifierSeen bool
-			redirect                                              *gatewayapi_v1beta1.HTTPRequestRedirectFilter
-			mirrorPolicy                                          *MirrorPolicy
+			requestHeaderPolicy, responseHeaderPolicy *HeadersPolicy
+			redirect                                  *gatewayapi_v1beta1.HTTPRequestRedirectFilter
+			mirrorPolicy                              *MirrorPolicy
 		)
 
 		for _, filter := range rule.Filters {
@@ -1072,11 +1071,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				// Per Gateway API docs, "specifying a core filter multiple times has
 				// unspecified or custom conformance.", here we choose to just process
 				// the first one.
-				if requestHeaderModifierSeen {
+				if requestHeaderPolicy != nil {
 					continue
 				}
-
-				requestHeaderModifierSeen = true
 
 				var err error
 				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
@@ -1087,11 +1084,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				// Per Gateway API docs, "specifying a core filter multiple times has
 				// unspecified or custom conformance.", here we choose to just process
 				// the first one.
-				if responseHeaderModifierSeen {
+				if responseHeaderPolicy != nil {
 					continue
 				}
-
-				responseHeaderModifierSeen = true
 
 				var err error
 				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
@@ -1369,12 +1364,26 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 		for _, filter := range backendRef.Filters {
 			switch filter.Type {
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterRequestHeaderPolicy != nil {
+					continue
+				}
+
 				var err error
 				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterResponseHeaderPolicy != nil {
+					continue
+				}
+
 				var err error
 				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
 				if err != nil {
