@@ -59,7 +59,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -805,13 +804,8 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
-		// Inform on ReferencePolicies.
-		if err := informOnResource(&gatewayapi_v1alpha2.ReferencePolicy{}, eventHandler, mgr.GetCache()); err != nil {
-			s.log.WithError(err).WithField("resource", "referencepolicies").Fatal("failed to create informer")
-		}
-
 		// Inform on ReferenceGrants.
-		if err := informOnResource(&gatewayapi_v1alpha2.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
 		}
 

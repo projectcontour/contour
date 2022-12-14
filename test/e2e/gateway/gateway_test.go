@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -163,7 +164,7 @@ var _ = Describe("Gateway API", func() {
 		}
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
-		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
+		f.CreateGatewayAndWaitFor(contourGateway, gatewayProgrammed)
 	})
 
 	AfterEach(func() {
@@ -187,7 +188,7 @@ var _ = Describe("Gateway API", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -231,7 +232,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -249,7 +250,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -286,11 +287,11 @@ var _ = Describe("Gateway API", func() {
 						Protocol: gatewayapi_v1beta1.TLSProtocolType,
 						Port:     gatewayapi_v1beta1.PortNumber(443),
 						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+							Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 						},
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 							},
 						},
 					},
@@ -314,7 +315,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
-							Hostname: gatewayapi.ListenerHostname("https-1.gateway.projectcontour.io"),
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-1.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-1", ""),
@@ -325,7 +326,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -333,7 +334,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-2",
 							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
-							Hostname: gatewayapi.ListenerHostname("https-2.gateway.projectcontour.io"),
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-2.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-2", ""),
@@ -344,7 +345,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -352,7 +353,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-3",
 							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
-							Hostname: gatewayapi.ListenerHostname("https-3.gateway.projectcontour.io"),
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-3.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-3", ""),
@@ -363,7 +364,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
 								},
 							},
 						},
@@ -422,15 +423,15 @@ func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	return false
 }
 
-// gatewayValid returns true if the gateway has a .status.conditions
-// entry of Ready: true".
-func gatewayValid(gateway *gatewayapi_v1beta1.Gateway) bool {
+// gatewayProgrammed returns true if the gateway has a .status.conditions
+// entry of "Programmed: true".
+func gatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionReady) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionProgrammed) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}

@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/ref"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -97,7 +97,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -118,7 +118,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "invalidgroup.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -145,7 +145,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "InvalidKind",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -172,7 +172,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "invalid-name",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -199,7 +199,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("invalid-namespace"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("invalid-namespace")),
 					},
 				},
 			},
@@ -226,7 +226,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -253,7 +253,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -288,7 +288,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -329,7 +329,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -361,7 +361,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+						Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 					},
 				},
 			},

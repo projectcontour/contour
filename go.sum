@@ -511,7 +511,6 @@ golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a/go.mod h1:2RIsYlXP63K8oxa1u0
 golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EHIKF9dgMWnmCNThgcyBT1FY9mM=
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
 golang.org/x/exp v0.0.0-20220827204233-334a2380cb91 h1:tnebWN09GYg9OLPss1KXj8txwZc6X6uMr6VFdcGNbHw=
-golang.org/x/exp v0.0.0-20220827204233-334a2380cb91/go.mod h1:cyybsKvd6eL0RnXn6p/Grxp8F5bW7iYuBgsNCOHpMYE=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
 golang.org/x/image v0.0.0-20190910094157-69e4b8554b2a/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
@@ -1036,8 +1035,8 @@ sigs.k8s.io/controller-runtime v0.13.1 h1:tUsRCSJVM1QQOOeViGeX3GMT3dQF1eePPw6sEE
 sigs.k8s.io/controller-runtime v0.13.1/go.mod h1:Zbz+el8Yg31jubvAEyglRZGdLAjplZl+PgtYNI6WNTI=
 sigs.k8s.io/controller-tools v0.10.0 h1:0L5DTDTFB67jm9DkfrONgTGmfc/zYow0ZaHyppizU2U=
 sigs.k8s.io/controller-tools v0.10.0/go.mod h1:uvr0EW6IsprfB0jpQq6evtKy+hHyHCXNfdWI5ONPx94=
-sigs.k8s.io/gateway-api v0.5.1 h1:EqzgOKhChzyve9rmeXXbceBYB6xiM50vDfq0kK5qpdw=
-sigs.k8s.io/gateway-api v0.5.1/go.mod h1:x0AP6gugkFV8fC/oTlnOMU0pnmuzIR8LfIPRVUjxSqA=
+sigs.k8s.io/gateway-api v0.6.0-rc1 h1:ierhK6SIK8pSibB+gkr+aG8cWLez/M7iD9dQIqLALxU=
+sigs.k8s.io/gateway-api v0.6.0-rc1/go.mod h1:+3QMzP775JFKArHqiwk/kzItMRXW9CKPXcO8QcuXvvk=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 h1:iXTIw73aPyC+oRdyqqvVJuloN1p0AC/kzH07hu3NE+k=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
 sigs.k8s.io/kustomize/kyaml v0.13.10 h1:htPMvrk7ZDfTDyrgXIm/2mfmcYJHEmRb6s+yCLgtNms=
