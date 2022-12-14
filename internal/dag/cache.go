@@ -186,19 +186,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				return true
 			}
 		case *gatewayapi_v1beta1.HTTPRoute:
-			// No need to add route to cache if it is irrelevant
-			if kc.routeTriggersRebuild(obj) {
-				kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-				return true
-			}
-			return false
+			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1alpha2.TLSRoute:
-			// No need to add route to cache if it is irrelevant
-			if kc.routeTriggersRebuild(obj) {
-				kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-				return true
-			}
-			return false
+			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
@@ -314,11 +306,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	case *gatewayapi_v1beta1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.httproutes, m)
-		return kc.routeTriggersRebuild(obj)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.tlsroutes, m)
-		return kc.routeTriggersRebuild(obj)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
@@ -512,31 +504,15 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 }
 
 // routesTriggersRebuild returns true if this route references gateway in this cache.
-func (kc *KubernetesCache) routeTriggersRebuild(obj interface{}) bool {
-	switch obj := obj.(type) {
-	case *gatewayapi_v1beta1.HTTPRoute:
-		if kc.gateway != nil {
-			for _, parentRef := range obj.Spec.ParentRefs {
-				if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
-					return true
-				}
+func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.ParentReference) bool {
+	if kc.gateway != nil {
+		for _, parentRef := range parentRefs {
+			if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
+				return true
 			}
 		}
-		return false
-	case *gatewayapi_v1alpha2.TLSRoute:
-		if kc.gateway != nil {
-			for _, parentRef := range obj.Spec.ParentRefs {
-				if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
-					return true
-				}
-			}
-		}
-		return false
-	default:
-		// uninterested objects should bypass this check
-		return true
 	}
-
+	return false
 }
 
 func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {

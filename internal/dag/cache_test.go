@@ -1619,30 +1619,16 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	httpRoute := func(namespace, name, parentRefNamespace, parentRefName string) *gatewayapi_v1beta1.HTTPRoute {
+	httpRoute := func(namespace, name string) *gatewayapi_v1beta1.HTTPRoute {
 		return &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1beta1.ParentReference{
-						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
-					},
-				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 					BackendRefs: gatewayapi.HTTPBackendRef(name, 80, 1),
 				}},
-			},
-		}
-	}
-
-	gateway := func(namespace, name string) *gatewayapi_v1beta1.Gateway {
-		return &gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
 			},
 		}
 	}
@@ -1723,18 +1709,16 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		},
 		"httproute exists in same namespace as service": {
 			cache: cache(
-				gateway("default", "gateway"),
 				service("default", "service-1"),
-				httpRoute("default", "service-1", "default", "gateway"),
+				httpRoute("default", "service-1"),
 			),
 			svc:  service("default", "service-1"),
 			want: true,
 		},
 		"httproute does not exist in same namespace as service": {
 			cache: cache(
-				gateway("default", "gateway"),
 				service("default", "service-1"),
-				httpRoute("user", "service-1", "default", "gateway"),
+				httpRoute("user", "service-1"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,
@@ -2180,10 +2164,10 @@ func TestRouteTriggersRebuild(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tc.httproute != nil {
-				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.httproute))
+				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.httproute.Spec.ParentRefs))
 			}
 			if tc.tlsroute != nil {
-				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.tlsroute))
+				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.tlsroute.Spec.ParentRefs))
 			}
 		})
 	}
