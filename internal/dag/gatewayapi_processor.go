@@ -1060,10 +1060,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 		// Process rule-level filters.
 		var (
-			headerPolicy       *HeadersPolicy
-			headerModifierSeen bool
-			redirect           *gatewayapi_v1beta1.HTTPRequestRedirectFilter
-			mirrorPolicy       *MirrorPolicy
+			requestHeaderPolicy, responseHeaderPolicy *HeadersPolicy
+			redirect                                  *gatewayapi_v1beta1.HTTPRequestRedirectFilter
+			mirrorPolicy                              *MirrorPolicy
 		)
 
 		for _, filter := range rule.Filters {
@@ -1072,16 +1071,27 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				// Per Gateway API docs, "specifying a core filter multiple times has
 				// unspecified or custom conformance.", here we choose to just process
 				// the first one.
-				if headerModifierSeen {
+				if requestHeaderPolicy != nil {
 					continue
 				}
 
-				headerModifierSeen = true
-
 				var err error
-				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			case gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if responseHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect:
 				// Get the redirect filter if there is one. Note that per Gateway API
@@ -1114,7 +1124,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 
 			default:
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType,
-					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, RequestRedirect and RequestMirror are supported.", filter.Type))
+					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect and RequestMirror are supported.", filter.Type))
 			}
 		}
 
@@ -1133,9 +1143,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		var routes []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect, priority)
+			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1332,8 +1342,8 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 	return dagMatchConditions, nil
 }
 
-// clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
+// clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1350,17 +1360,37 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			continue
 		}
 
-		var headerPolicy *HeadersPolicy
+		var clusterRequestHeaderPolicy, clusterResponseHeaderPolicy *HeadersPolicy
 		for _, filter := range backendRef.Filters {
 			switch filter.Type {
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterRequestHeaderPolicy != nil {
+					continue
+				}
+
 				var err error
-				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
+			case gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterResponseHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier type is supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.")
 			}
 		}
 
@@ -1377,11 +1407,12 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
 		clusters = append(clusters, &Cluster{
-			Upstream:             service,
-			Weight:               routeWeight,
-			Protocol:             service.Protocol,
-			RequestHeadersPolicy: headerPolicy,
-			TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			Upstream:              service,
+			Weight:                routeWeight,
+			Protocol:              service.Protocol,
+			RequestHeadersPolicy:  clusterRequestHeaderPolicy,
+			ResponseHeadersPolicy: clusterResponseHeaderPolicy,
+			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 		})
 	}
 
@@ -1397,7 +1428,8 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			PathMatchCondition:        mc.path,
 			HeaderMatchConditions:     mc.headers,
 			QueryParamMatchConditions: mc.queryParams,
-			RequestHeadersPolicy:      headerPolicy,
+			RequestHeadersPolicy:      requestHeaderPolicy,
+			ResponseHeadersPolicy:     responseHeaderPolicy,
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 		})
@@ -1419,8 +1451,8 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	return routes
 }
 
-// redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, redirect *gatewayapi_v1beta1.HTTPRequestRedirectFilter, priority uint8) []*Route {
+// redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
+func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *gatewayapi_v1beta1.HTTPRequestRedirectFilter, priority uint8) []*Route {
 	var hostname string
 	if redirect.Hostname != nil {
 		hostname = string(*redirect.Hostname)
@@ -1458,7 +1490,8 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 			},
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
-			RequestHeadersPolicy:  headerPolicy,
+			RequestHeadersPolicy:  requestHeaderPolicy,
+			ResponseHeadersPolicy: responseHeaderPolicy,
 		})
 	}
 

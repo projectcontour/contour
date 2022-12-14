@@ -39,7 +39,7 @@ import (
 
 const (
 	// EchoServerImage is the image to use as a backend fixture.
-	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20210922-cec7cf2"
+	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20221109-7ee2f3e"
 
 	// GRPCServerImage is the image to use for tests that require a gRPC server.
 	GRPCServerImage = "ghcr.io/projectcontour/yages:v0.1.0"
