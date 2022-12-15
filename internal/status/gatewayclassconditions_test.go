@@ -19,8 +19,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	realclock "k8s.io/utils/clock"
-	fakeclock "k8s.io/utils/clock/testing"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -133,14 +131,7 @@ func TestConditionChanged(t *testing.T) {
 }
 
 func TestMergeConditions(t *testing.T) {
-	// Inject a fake clock and don't forget to reset it
-	fakeClock := fakeclock.NewFakeClock(time.Time{})
-	clock = fakeClock
-	defer func() {
-		clock = realclock.RealClock{}
-	}()
-
-	start := fakeClock.Now()
+	start := time.Now()
 	middle := start.Add(1 * time.Minute)
 	later := start.Add(2 * time.Minute)
 
@@ -187,10 +178,6 @@ func TestMergeConditions(t *testing.T) {
 			},
 		},
 	}
-
-	// Simulate the passage of time between original condition creation
-	// and update processing
-	fakeClock.SetTime(later)
 
 	for _, tc := range testCases {
 		got := mergeConditions(tc.current, tc.updates...)

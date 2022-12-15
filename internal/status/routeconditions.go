@@ -15,11 +15,11 @@ package status
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilclock "k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -44,9 +44,6 @@ const (
 	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
 	ReasonListenersNotReady             gatewayapi_v1beta1.RouteConditionReason = "ListenersNotReady"
 )
-
-// clock is used to set lastTransitionTime on status conditions.
-var clock utilclock.Clock = utilclock.RealClock{}
 
 // RouteStatusUpdate represents an atomic update to a
 // Route's status.
@@ -113,7 +110,7 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.
 		Status:             status,
 		Type:               string(conditionType),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: r.Generation,
 	}
 

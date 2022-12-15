@@ -15,6 +15,7 @@ package status
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/projectcontour/contour/internal/ref"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,7 @@ func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 	gatewayUpdate.Conditions[cond] = newCond
@@ -126,7 +127,7 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 
