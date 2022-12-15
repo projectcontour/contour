@@ -30,7 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -2334,11 +2333,11 @@ func TestDAGStatus(t *testing.T) {
 				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
 					{
 						Name:   "a-cookie",
-						Secure: pointer.Bool(true),
+						Secure: ref.To(true),
 					},
 					{
 						Name:     "a-cookie",
-						SameSite: pointer.String("Lax"),
+						SameSite: ref.To("Lax"),
 					},
 				},
 			}},
@@ -2370,11 +2369,11 @@ func TestDAGStatus(t *testing.T) {
 						CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
 							{
 								Name:   "a-cookie",
-								Secure: pointer.Bool(true),
+								Secure: ref.To(true),
 							},
 							{
 								Name:     "a-cookie",
-								SameSite: pointer.String("Lax"),
+								SameSite: ref.To("Lax"),
 							},
 						},
 					},
@@ -4036,7 +4035,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						},
@@ -4158,7 +4157,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("doesnt-start-with-slash"),
+								Value: ref.To("doesnt-start-with-slash"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -4212,7 +4211,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchExact),
-								Value: pointer.StringPtr("doesnt-start-with-slash"),
+								Value: ref.To("doesnt-start-with-slash"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -4266,7 +4265,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/foo///bar"),
+								Value: ref.To("/foo///bar"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -4320,7 +4319,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchExact),
-								Value: pointer.StringPtr("//foo/bar"),
+								Value: ref.To("//foo/bar"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -4374,7 +4373,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchType("UNKNOWN")), // <---- unknown type to break the test
-								Value: pointer.StringPtr("/"),
+								Value: ref.To("/"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -4477,7 +4476,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/"),
+								Value: ref.To("/"),
 							},
 							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
 								{
@@ -4535,7 +4534,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/"),
+								Value: ref.To("/"),
 							},
 							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 								{
@@ -4654,7 +4653,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/"),
+								Value: ref.To("/"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("invalid-one", 8080, 1),
@@ -4662,7 +4661,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/blog"),
+								Value: ref.To("/blog"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("invalid-two", 8080, 1),
@@ -6102,7 +6101,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/"),
+								Value: ref.To("/"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -6117,7 +6116,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 							Path: &gatewayapi_v1beta1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-								Value: pointer.StringPtr("/blog"),
+								Value: ref.To("/blog"),
 							},
 						}},
 						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
@@ -7898,7 +7897,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-						BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, pointer.Int32(0)),
+						BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, ref.To(int32(0))),
 					}},
 				},
 			}},

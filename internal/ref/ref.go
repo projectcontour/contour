@@ -16,3 +16,10 @@ package ref
 func To[T any](v T) *T {
 	return &v
 }
+
+func Val[T any](v *T, def T) T {
+	if v != nil {
+		return *v
+	}
+	return def
+}

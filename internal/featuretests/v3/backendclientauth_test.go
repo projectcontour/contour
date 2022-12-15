@@ -24,12 +24,12 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 )
 
 func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
@@ -109,7 +109,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 				Services: []projcontour.Service{{
 					Name:     svc.Name,
 					Port:     443,
-					Protocol: pointer.StringPtr("tls"),
+					Protocol: ref.To("tls"),
 					UpstreamValidation: &projcontour.UpstreamValidation{
 						CACertificate: sec2.Name,
 						SubjectName:   "subjname",

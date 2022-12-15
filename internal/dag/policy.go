@@ -22,11 +22,11 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -332,12 +332,12 @@ func cookieRewritePolicies(policies []contour_api_v1.CookieRewritePolicy) ([]Coo
 		var path *string
 		if p.PathRewrite != nil {
 			policiesSet++
-			path = pointer.String(p.PathRewrite.Value)
+			path = ref.To(p.PathRewrite.Value)
 		}
 		var domain *string
 		if p.DomainRewrite != nil {
 			policiesSet++
-			domain = pointer.String(p.DomainRewrite.Value)
+			domain = ref.To(p.DomainRewrite.Value)
 		}
 		// We use a uint here since a pointer to bool cannot be
 		// distingiuished when unset or false in golang text templates.

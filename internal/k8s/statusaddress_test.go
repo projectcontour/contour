@@ -28,7 +28,6 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -660,7 +659,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 	}
 	var ingressClassName *string
 	if ingressClassSpec != "" {
-		ingressClassName = pointer.StringPtr(ingressClassSpec)
+		ingressClassName = ref.To(ingressClassSpec)
 	}
 	return &networking_v1.Ingress{
 		TypeMeta: metav1.TypeMeta{

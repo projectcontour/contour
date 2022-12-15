@@ -31,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -1451,7 +1450,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1490,7 +1489,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1543,7 +1542,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1597,7 +1596,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1652,7 +1651,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1707,7 +1706,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1762,7 +1761,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							}},
 						}},
@@ -1851,17 +1850,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 							}, {
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/blog"),
+									Value: ref.To("/blog"),
 								},
 							}, {
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/tech"),
+									Value: ref.To("/tech"),
 								},
 							}},
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -2502,7 +2501,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 								Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "foo", "bar"),
 							}},
@@ -2550,12 +2549,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									{
 										Path: &gatewayapi_v1beta1.HTTPPathMatch{
 											Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-											Value: pointer.StringPtr("/blog"),
+											Value: ref.To("/blog"),
 										},
 									}, {
 										Path: &gatewayapi_v1beta1.HTTPPathMatch{
 											Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-											Value: pointer.StringPtr("/tech"),
+											Value: ref.To("/tech"),
 										},
 										Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "foo", "bar"),
 									},
@@ -2696,7 +2695,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 								Method: ref.To(gatewayapi_v1beta1.HTTPMethodGet),
 							}},
@@ -2742,7 +2741,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 									{
@@ -2793,7 +2792,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 									{
@@ -2845,7 +2844,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 									{
@@ -3068,7 +3067,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									BackendRef: gatewayapi_v1beta1.BackendRef{
 										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-										Weight:                 pointer.Int32(1),
+										Weight:                 ref.To(int32(1)),
 									},
 									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 										{
@@ -3141,7 +3140,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									BackendRef: gatewayapi_v1beta1.BackendRef{
 										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-										Weight:                 pointer.Int32(1),
+										Weight:                 ref.To(int32(1)),
 									},
 									Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 										{
@@ -3270,7 +3269,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									{
 										BackendRef: gatewayapi_v1beta1.BackendRef{
 											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-											Weight:                 pointer.Int32(1),
+											Weight:                 ref.To(int32(1)),
 										},
 										Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
 											Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
@@ -3327,7 +3326,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									{
 										BackendRef: gatewayapi_v1beta1.BackendRef{
 											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-											Weight:                 pointer.Int32(1),
+											Weight:                 ref.To(int32(1)),
 										},
 										Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
 											Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
@@ -3382,10 +3381,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Scheme:     pointer.String("https"),
+									Scheme:     ref.To("https"),
 									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
 									Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
-									StatusCode: pointer.Int(301),
+									StatusCode: ref.To(301),
 								},
 							}},
 						}},
@@ -3435,10 +3434,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Scheme:     pointer.String("https"),
+									Scheme:     ref.To("https"),
 									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
 									Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
-									StatusCode: pointer.Int(301),
+									StatusCode: ref.To(301),
 								},
 							}},
 						}},
@@ -3813,7 +3812,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -3877,7 +3876,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -3942,7 +3941,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -3991,7 +3990,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -4040,7 +4039,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -4089,7 +4088,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 									},
-									Weight: pointer.Int32(1),
+									Weight: ref.To(int32(1)),
 								},
 							},
 						}},
@@ -4328,9 +4327,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
-								gatewayapi.TLSRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
-								gatewayapi.TLSRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(2)),
-								gatewayapi.TLSRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, ref.To(int32(1))),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ref.To(int32(2))),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ref.To(int32(3))),
 							),
 						}},
 					},
@@ -4377,9 +4376,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
-								gatewayapi.TLSRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
-								gatewayapi.TLSRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(0)),
-								gatewayapi.TLSRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, ref.To(int32(1))),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ref.To(int32(0))),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ref.To(int32(3))),
 							),
 						}},
 					},
@@ -5327,37 +5326,37 @@ func TestDAGInsert(t *testing.T) {
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								PathType: (*networking_v1.PathType)(ref.To("Exact")),
 								Path:     "/exact",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								PathType: (*networking_v1.PathType)(ref.To("Exact")),
 								Path:     "/exact_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
 								Path:     "/prefix",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
 								Path:     "/prefix_trailing_slash/",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
 								Path:     "/prefix_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
 								Path:     "/implementation_specific",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
 								Path:     "/implementation_specific_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
@@ -7975,13 +7974,13 @@ func TestDAGInsert(t *testing.T) {
 						DomainRewrite: &contour_api_v1.CookieDomainRewrite{
 							Value: "example.com",
 						},
-						Secure:   pointer.Bool(true),
-						SameSite: pointer.String("Strict"),
+						Secure:   ref.To(true),
+						SameSite: ref.To("Strict"),
 					},
 					{
 						Name:     "some-other-cookie",
-						SameSite: pointer.String("Lax"),
-						Secure:   pointer.Bool(false),
+						SameSite: ref.To("Lax"),
+						Secure:   ref.To(false),
 					},
 				},
 				Services: []contour_api_v1.Service{{
@@ -8017,12 +8016,12 @@ func TestDAGInsert(t *testing.T) {
 							DomainRewrite: &contour_api_v1.CookieDomainRewrite{
 								Value: "example.com",
 							},
-							Secure:   pointer.Bool(true),
-							SameSite: pointer.String("Strict"),
+							Secure:   ref.To(true),
+							SameSite: ref.To("Strict"),
 						},
 						{
 							Name:     "some-other-cookie",
-							SameSite: pointer.String("Lax"),
+							SameSite: ref.To("Lax"),
 						},
 					},
 				}},
@@ -8046,11 +8045,11 @@ func TestDAGInsert(t *testing.T) {
 				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
 					{
 						Name:   "some-cookie",
-						Secure: pointer.Bool(true),
+						Secure: ref.To(true),
 					},
 					{
 						Name:     "some-cookie",
-						SameSite: pointer.String("Lax"),
+						SameSite: ref.To("Lax"),
 					},
 				},
 				Services: []contour_api_v1.Service{{
@@ -8080,11 +8079,11 @@ func TestDAGInsert(t *testing.T) {
 					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
 						{
 							Name:   "some-cookie",
-							Secure: pointer.Bool(true),
+							Secure: ref.To(true),
 						},
 						{
 							Name:     "some-cookie",
-							SameSite: pointer.String("Lax"),
+							SameSite: ref.To("Lax"),
 						},
 					},
 				}},
@@ -8223,7 +8222,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []contour_api_v1.Service{{
 					Name:     s14.GetName(),
 					Port:     80,
-					Protocol: pointer.StringPtr("tls"),
+					Protocol: ref.To("tls"),
 				}},
 			},
 		},
@@ -10988,10 +10987,10 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/",
 							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     pointer.StringPtr("https"),
-								Hostname:   pointer.StringPtr("envoyproxy.io"),
-								Port:       pointer.Int32Ptr(443),
-								StatusCode: pointer.Int(301),
+								Scheme:     ref.To("https"),
+								Hostname:   ref.To("envoyproxy.io"),
+								Port:       ref.To(int32(443)),
+								StatusCode: ref.To(301),
 							},
 						}},
 					},
@@ -11031,10 +11030,10 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/",
 							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     pointer.StringPtr("https"),
-								Hostname:   pointer.StringPtr("envoyproxy.io"),
-								Port:       pointer.Int32Ptr(443),
-								StatusCode: pointer.Int(301),
+								Scheme:     ref.To("https"),
+								Hostname:   ref.To("envoyproxy.io"),
+								Port:       ref.To(int32(443)),
+								StatusCode: ref.To(301),
 							},
 						}},
 					},
@@ -11083,10 +11082,10 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/blog",
 							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     pointer.StringPtr("https"),
-								Hostname:   pointer.StringPtr("envoyproxy.io"),
-								Port:       pointer.Int32Ptr(443),
-								StatusCode: pointer.Int(301),
+								Scheme:     ref.To("https"),
+								Hostname:   ref.To("envoyproxy.io"),
+								Port:       ref.To(int32(443)),
+								StatusCode: ref.To(301),
 							},
 						}},
 					},
@@ -11235,10 +11234,10 @@ func TestDAGInsert(t *testing.T) {
 								Prefix: "/redirect",
 							}},
 							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     pointer.StringPtr("https"),
-								Hostname:   pointer.StringPtr("envoyproxy.io"),
-								Port:       pointer.Int32Ptr(443),
-								StatusCode: pointer.Int(301),
+								Scheme:     ref.To("https"),
+								Hostname:   ref.To("envoyproxy.io"),
+								Port:       ref.To(int32(443)),
+								StatusCode: ref.To(301),
 							},
 						},
 						},
@@ -11637,14 +11636,14 @@ func TestDAGInsert(t *testing.T) {
 							CookieRewritePolicies: []CookieRewritePolicy{
 								{
 									Name:     "some-cookie",
-									Path:     pointer.String("/foo"),
-									Domain:   pointer.String("example.com"),
+									Path:     ref.To("/foo"),
+									Domain:   ref.To("example.com"),
 									Secure:   2,
-									SameSite: pointer.String("Strict"),
+									SameSite: ref.To("Strict"),
 								},
 								{
 									Name:     "some-other-cookie",
-									SameSite: pointer.String("Lax"),
+									SameSite: ref.To("Lax"),
 									Secure:   1,
 								},
 							},
@@ -11671,14 +11670,14 @@ func TestDAGInsert(t *testing.T) {
 									CookieRewritePolicies: []CookieRewritePolicy{
 										{
 											Name:     "some-cookie",
-											Path:     pointer.String("/foo"),
-											Domain:   pointer.String("example.com"),
+											Path:     ref.To("/foo"),
+											Domain:   ref.To("example.com"),
 											Secure:   2,
-											SameSite: pointer.String("Strict"),
+											SameSite: ref.To("Strict"),
 										},
 										{
 											Name:     "some-other-cookie",
-											SameSite: pointer.String("Lax"),
+											SameSite: ref.To("Lax"),
 										},
 									},
 								},

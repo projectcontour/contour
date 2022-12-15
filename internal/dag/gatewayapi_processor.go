@@ -21,6 +21,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 
 	"github.com/sirupsen/logrus"
@@ -29,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -1246,7 +1246,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &PrefixMatchCondition{Prefix: "/"}, true
 	}
 
-	path := pointer.StringDeref(match.Value, "/")
+	path := ref.Val(match.Value, "/")
 
 	// If path match type is not defined, default to 'PathPrefix'.
 	if match.Type == nil || *match.Type == gatewayapi_v1beta1.PathMatchPathPrefix {

@@ -32,6 +32,7 @@ import (
 
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"gopkg.in/yaml.v3"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -47,7 +48,6 @@ import (
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -521,7 +521,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	// The envoy deployment uses host ports, so can have at most
 	// one replica per node, and our cluster only has one worker
 	// node, so scale the deployment to 1.
-	d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
+	d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
 
 	return d.EnsureEnvoyDeployment()
 }
@@ -622,7 +622,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		contourConfiguration.Spec.XDSServer.Port = port
 		contourConfiguration.Spec.XDSServer.Address = listenAllAddress()
 		contourConfiguration.Spec.XDSServer.TLS = &contour_api_v1alpha1.TLS{
-			Insecure: pointer.Bool(true),
+			Insecure: ref.To(true),
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
@@ -821,7 +821,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		// The envoy deployment uses host ports, so can have at most
 		// one replica per node, and our cluster only has one worker
 		// node, so scale the deployment to 1.
-		d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
+		d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
 
 		return d.EnsureEnvoyDeployment()
 	}

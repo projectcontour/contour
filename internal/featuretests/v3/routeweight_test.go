@@ -28,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -540,7 +539,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
 			}},
 		},
 	}
@@ -597,8 +596,8 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRefs(
-					gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
-					gatewayapi.TLSRouteBackendRef("svc2", 443, pointer.Int32(7)),
+					gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
+					gatewayapi.TLSRouteBackendRef("svc2", 443, ref.To(int32(7))),
 				),
 			}},
 		},
