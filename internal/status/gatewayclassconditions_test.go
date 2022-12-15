@@ -132,7 +132,6 @@ func TestConditionChanged(t *testing.T) {
 
 func TestMergeConditions(t *testing.T) {
 	start := time.Now()
-	middle := start.Add(1 * time.Minute)
 	later := start.Add(2 * time.Minute)
 
 	testCases := []struct {
@@ -147,7 +146,7 @@ func TestMergeConditions(t *testing.T) {
 				newCondition("available", "false", "Reason", "Message", start),
 			},
 			updates: []metav1.Condition{
-				newCondition("available", "true", "Reason", "Message", middle),
+				newCondition("available", "true", "Reason", "Message", later),
 			},
 			expected: []metav1.Condition{
 				newCondition("available", "true", "Reason", "Message", later),
@@ -159,7 +158,7 @@ func TestMergeConditions(t *testing.T) {
 				newCondition("available", "false", "Reason", "Message", start),
 			},
 			updates: []metav1.Condition{
-				newCondition("available", "false", "New Reason", "Message", middle),
+				newCondition("available", "false", "New Reason", "Message", later),
 			},
 			expected: []metav1.Condition{
 				newCondition("available", "false", "New Reason", "Message", start),
@@ -171,19 +170,27 @@ func TestMergeConditions(t *testing.T) {
 				newCondition("available", "false", "Reason", "Message", start),
 			},
 			updates: []metav1.Condition{
-				newCondition("available", "false", "Reason", "New Message", middle),
+				newCondition("available", "false", "Reason", "New Message", later),
 			},
 			expected: []metav1.Condition{
 				newCondition("available", "false", "Reason", "New Message", start),
+			},
+		},
+		{
+			name:    "new status",
+			current: []metav1.Condition{},
+			updates: []metav1.Condition{
+				newCondition("available", "false", "Reason", "New Message", later),
+			},
+			expected: []metav1.Condition{
+				newCondition("available", "false", "Reason", "New Message", later),
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		got := mergeConditions(tc.current, tc.updates...)
-		if conditionChanged(tc.expected[0], got[0]) {
-			assert.Equal(t, tc.expected, got, tc.name)
-		}
+		assert.Equal(t, tc.expected, got, tc.name)
 	}
 }
 
