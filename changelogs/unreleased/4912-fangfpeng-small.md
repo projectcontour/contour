@@ -1,1 +1,1 @@
-For HTTProute/TLSRoute, only if it references the relevant Gateway, it will trigger DAG rebuild.
+Don't trigger DAG rebuilds/xDS configuration updates for irrelevant HTTPRoutes and TLSRoutes.
