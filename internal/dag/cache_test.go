@@ -23,6 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -371,7 +371,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
+					IngressClassName: ref.To("nginx"),
 				},
 			},
 			want: false,
@@ -383,7 +383,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
+					IngressClassName: ref.To("contour"),
 				},
 			},
 			want: true,
@@ -472,7 +472,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
+					IngressClassName: ref.To("contour"),
 				},
 			},
 			want: false,
@@ -487,7 +487,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
+					IngressClassName: ref.To("nginx"),
 				},
 			},
 			want: true,

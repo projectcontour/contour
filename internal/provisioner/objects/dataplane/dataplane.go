@@ -22,12 +22,12 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -324,7 +324,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
-			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
+			RevisionHistoryLimit: ref.To(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector:       EnvoyPodSelector(contour),
 			UpdateStrategy: contour.Spec.EnvoyDaemonSetUpdateStrategy,
@@ -343,7 +343,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 							Name: envoyCertsVolName,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									DefaultMode: pointer.Int32Ptr(int32(420)),
+									DefaultMode: ref.To(int32(420)),
 									SecretName:  contour.EnvoyCertsSecretName(),
 								},
 							},
@@ -362,8 +362,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 						},
 					},
 					ServiceAccountName:            contour.EnvoyRBACNames().ServiceAccount,
-					AutomountServiceAccountToken:  pointer.BoolPtr(false),
-					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
+					AutomountServiceAccountToken:  ref.To(false),
+					TerminationGracePeriodSeconds: ref.To(int64(300)),
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
 					DNSPolicy:                     corev1.DNSClusterFirst,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
@@ -396,8 +396,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas:             pointer.Int32(contour.Spec.EnvoyReplicas),
-			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
+			Replicas:             ref.To(contour.Spec.EnvoyReplicas),
+			RevisionHistoryLimit: ref.To(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),
 			Strategy: contour.Spec.EnvoyDeploymentStrategy,
@@ -418,7 +418,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 							Name: envoyCertsVolName,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									DefaultMode: pointer.Int32Ptr(int32(420)),
+									DefaultMode: ref.To(int32(420)),
 									SecretName:  contour.EnvoyCertsSecretName(),
 								},
 							},
@@ -437,8 +437,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 						},
 					},
 					ServiceAccountName:            contour.EnvoyRBACNames().ServiceAccount,
-					AutomountServiceAccountToken:  pointer.BoolPtr(false),
-					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
+					AutomountServiceAccountToken:  ref.To(false),
+					TerminationGracePeriodSeconds: ref.To(int64(300)),
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
 					DNSPolicy:                     corev1.DNSClusterFirst,
 					RestartPolicy:                 corev1.RestartPolicyAlways,

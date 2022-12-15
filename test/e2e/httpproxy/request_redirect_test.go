@@ -20,13 +20,13 @@ import (
 	"net/http"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func testRequestRedirectRuleNoService(namespace string) {
@@ -114,7 +114,7 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Hostname: pointer.StringPtr("projectcontour.io"),
+					Hostname: ref.To("projectcontour.io"),
 				},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
@@ -125,10 +125,10 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Scheme:     pointer.StringPtr("https"),
-					Hostname:   pointer.StringPtr("envoyproxy.io"),
-					Port:       pointer.Int32Ptr(8080),
-					StatusCode: pointer.Int(301),
+					Scheme:     ref.To("https"),
+					Hostname:   ref.To("envoyproxy.io"),
+					Port:       ref.To(int32(8080)),
+					StatusCode: ref.To(301),
 				},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
@@ -139,7 +139,7 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Path: pointer.StringPtr("/path"),
+					Path: ref.To("/path"),
 				},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
@@ -150,7 +150,7 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Prefix: pointer.StringPtr("/v2"),
+					Prefix: ref.To("/v2"),
 				},
 			}, {
 				Conditions: []contour_api_v1.MatchCondition{{
@@ -161,7 +161,7 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Prefix: pointer.StringPtr("/v2"),
+					Prefix: ref.To("/v2"),
 				},
 			}},
 		},
@@ -197,8 +197,8 @@ func getRedirectHTTPProxyInvalid(namespace string) *contour_api_v1.HTTPProxy {
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Path:   pointer.StringPtr("/path"),
-					Prefix: pointer.StringPtr("/path"),
+					Path:   ref.To("/path"),
+					Prefix: ref.To("/path"),
 				},
 			}},
 		},

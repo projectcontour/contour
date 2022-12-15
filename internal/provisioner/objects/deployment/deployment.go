@@ -23,12 +23,12 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -200,9 +200,9 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			Labels:    contour.AppLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			ProgressDeadlineSeconds: pointer.Int32(600),
-			Replicas:                pointer.Int32(contour.Spec.ContourReplicas),
-			RevisionHistoryLimit:    pointer.Int32(10),
+			ProgressDeadlineSeconds: ref.To(int32(600)),
+			Replicas:                ref.To(contour.Spec.ContourReplicas),
+			RevisionHistoryLimit:    ref.To(int32(10)),
 			// Ensure the deployment adopts only its own pods.
 			Selector: ContourDeploymentPodSelector(contour),
 			Strategy: contour.Spec.ContourDeploymentStrategy,
@@ -240,7 +240,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 							Name: contourCertsVolName,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									DefaultMode: pointer.Int32Ptr(int32(420)),
+									DefaultMode: ref.To(int32(420)),
 									SecretName:  contour.ContourCertsSecretName(),
 								},
 							},
@@ -251,7 +251,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
-					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(30)),
+					TerminationGracePeriodSeconds: ref.To(int64(30)),
 				},
 			},
 		},

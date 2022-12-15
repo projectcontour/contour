@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -351,10 +350,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: pointer.Bool(true),
+						EnableExternalNameService: ref.To(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: pointer.Bool(true),
+								DisableMergeSlashes: ref.To(true),
 							},
 						},
 					},
@@ -388,7 +387,7 @@ func TestGatewayReconcile(t *testing.T) {
 				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
 
 				want := contourv1alpha1.ContourConfigurationSpec{
-					EnableExternalNameService: pointer.Bool(true),
+					EnableExternalNameService: ref.To(true),
 					Gateway: &contourv1alpha1.GatewayConfig{
 						GatewayRef: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Name,
@@ -397,7 +396,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 					Envoy: &contourv1alpha1.EnvoyConfig{
 						Listener: &contourv1alpha1.EnvoyListenerConfig{
-							DisableMergeSlashes: pointer.Bool(true),
+							DisableMergeSlashes: ref.To(true),
 						},
 						Service: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Namespace,
@@ -488,10 +487,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: pointer.Bool(true),
+						EnableExternalNameService: ref.To(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: pointer.Bool(true),
+								DisableMergeSlashes: ref.To(true),
 							},
 						},
 					},

@@ -19,8 +19,8 @@ import (
 
 	"github.com/imdario/mergo"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/utils/pointer"
 )
 
 // UIntPtr returns a pointer to a uint value.
@@ -57,7 +57,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				CAFile:   "/certs/ca.crt",
 				CertFile: "/certs/tls.crt",
 				KeyFile:  "/certs/tls.key",
-				Insecure: pointer.Bool(false),
+				Insecure: ref.To(false),
 			},
 		},
 		Ingress: &contour_api_v1alpha1.IngressConfig{
@@ -74,9 +74,9 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:             pointer.Bool(false),
-				DisableAllowChunkedLength: pointer.Bool(false),
-				DisableMergeSlashes:       pointer.Bool(false),
+				UseProxyProto:             ref.To(false),
+				DisableAllowChunkedLength: ref.To(false),
+				DisableMergeSlashes:       ref.To(false),
 				ConnectionBalancer:        "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",
@@ -131,21 +131,21 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: UInt32Ptr(0),
-				EnvoyAdminPort:    pointer.Int(9001),
+				EnvoyAdminPort:    ref.To(9001),
 			},
 		},
 		Gateway: nil,
 		HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
-			DisablePermitInsecure: pointer.Bool(false),
+			DisablePermitInsecure: ref.To(false),
 			RootNamespaces:        nil,
 			FallbackCertificate:   nil,
 		},
-		EnableExternalNameService: pointer.Bool(false),
+		EnableExternalNameService: ref.To(false),
 		RateLimitService:          nil,
 		Policy: &contour_api_v1alpha1.PolicyConfig{
 			RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
 			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
-			ApplyToIngress:        pointer.Bool(false),
+			ApplyToIngress:        ref.To(false),
 		},
 		Metrics: &contour_api_v1alpha1.MetricsConfig{
 			Address: "0.0.0.0",

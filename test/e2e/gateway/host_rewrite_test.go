@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -53,7 +52,7 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 							{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Value: ref.To("/"),
 								},
 							},
 						},

@@ -16,7 +16,6 @@ package gatewayapi
 import (
 	"github.com/projectcontour/contour/internal/ref"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -73,7 +72,7 @@ func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []g
 		{
 			Path: &gatewayapi_v1beta1.HTTPPathMatch{
 				Type:  ref.To(pathType),
-				Value: pointer.StringPtr(value),
+				Value: ref.To(value),
 			},
 		},
 	}

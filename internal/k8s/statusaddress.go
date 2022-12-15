@@ -27,7 +27,6 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -86,7 +85,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 	switch o := obj.(type) {
 	case *networking_v1.Ingress:
 		if !ingressclass.MatchesIngress(o, s.IngressClassNames) {
-			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
+			logNoMatch(s.Logger.WithField("ingress-class-name", ref.Val(o.Spec.IngressClassName, "")), o)
 			return
 		}
 

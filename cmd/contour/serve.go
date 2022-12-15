@@ -38,6 +38,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
@@ -54,7 +55,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/pointer"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -613,8 +613,8 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		SNI:                     sni,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
-		FailOpen:                pointer.BoolDeref(contourConfiguration.RateLimitService.FailOpen, false),
-		EnableXRateLimitHeaders: pointer.BoolDeref(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
+		FailOpen:                ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
+		EnableXRateLimitHeaders: ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
 	}, nil
 }
 

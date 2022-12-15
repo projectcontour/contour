@@ -28,11 +28,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 var f = e2e.NewFramework(false)
@@ -127,7 +127,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("set to true", func() {
 			BeforeEach(func() {
 				contourConfig.DisableMergeSlashes = true
-				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = pointer.Bool(true)
+				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = ref.To(true)
 			})
 
 			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
@@ -298,7 +298,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
+				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -308,7 +308,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
+				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -318,7 +318,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
+				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -343,8 +343,8 @@ var _ = Describe("HTTPProxy", func() {
 								Namespace: namespace,
 							},
 							Domain:                  "contour",
-							FailOpen:                pointer.Bool(false),
-							EnableXRateLimitHeaders: pointer.Bool(false),
+							FailOpen:                ref.To(false),
+							EnableXRateLimitHeaders: ref.To(false),
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(

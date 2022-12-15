@@ -29,10 +29,10 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/pointer"
 )
 
 func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -81,7 +81,7 @@ func extCleartext(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
-			Protocol: pointer.StringPtr("h2c"),
+			Protocol: ref.To("h2c"),
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 				{Name: "svc2", Port: 8082},
@@ -325,7 +325,7 @@ func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contou
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 			},
-			Protocol: pointer.StringPtr("h2c"),
+			Protocol: ref.To("h2c"),
 			UpstreamValidation: &contour_api_v1.UpstreamValidation{
 				CACertificate: "cacert",
 				SubjectName:   "ext.projectcontour.io",
