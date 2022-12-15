@@ -163,7 +163,10 @@ N/A
 
 ## Security Considerations
 
-N/A
+When targeting an untrusted backend which can return any value in the `Location` header, the gateway operator may want to be able to limit the scope of the internal redirect to a list of predefined routes by populating the `allowedRouteNames` field.
+But in the case of multitenant Contour deployment, 2 teams may declare routes using the same name, defeating the purpose of the allowed routes list.
+
+To prevent unexpected redirect behavior in that case, Contour should ensure route name uniqueness.
 
 ## Compatibility
 This change should be additive, so there should be no compatibility issues.
