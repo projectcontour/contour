@@ -30,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1381,17 +1380,21 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 }
 
 func includeMatchConditionsIdentical(includes []contour_api_v1.Include) bool {
-	j := 0
-	for i := 1; i < len(includes); i++ {
-		// Now compare each include's set of conditions
-		for _, cA := range includes[i].Conditions {
-			for _, cB := range includes[j].Conditions {
-				if (cA.Prefix == cB.Prefix) && equality.Semantic.DeepEqual(cA.Header, cB.Header) {
-					return true
-				}
-			}
+	seenIncludeConditions := map[string]struct{}{}
+	for _, include := range includes {
+		var stringRep string
+		stringRep += mergePathMatchConditions(include.Conditions).String()
+		headerMatchConds := mergeHeaderMatchConditions(include.Conditions)
+		headerMatchStrs := make(sort.StringSlice, len(headerMatchConds))
+		for i, cond := range headerMatchConds {
+			headerMatchStrs[i] = cond.String()
 		}
-		j++
+		sort.Stable(headerMatchStrs)
+		stringRep += " " + strings.Join(headerMatchStrs, " ")
+		if _, seen := seenIncludeConditions[stringRep]; seen {
+			return true
+		}
+		seenIncludeConditions[stringRep] = struct{}{}
 	}
 	return false
 }

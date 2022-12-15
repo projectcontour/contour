@@ -6226,6 +6226,28 @@ func TestDAGInsert(t *testing.T) {
 				}},
 				Name:      "kuard",
 				Namespace: "default",
+			}, {
+				// This second include has a similar set of conditions with
+				// slight differences which should still ensure there is a
+				// route programmed.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:    "x-request-id",
+						Present: true,
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:       "x-timeout",
+						NotPresent: true,
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:  "digest-auth",
+						Exact: "scott",
+					},
+				}},
+				Name:      "kuard",
+				Namespace: "default",
 			}},
 		},
 	}
@@ -9647,6 +9669,16 @@ func TestDAGInsert(t *testing.T) {
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
+								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
+								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
+								{Name: "digest-password", Value: "tiger", MatchType: "exact", Invert: true},
+							},
+							Clusters: clusters(service(s1)),
+						}, &Route{
+							PathMatchCondition: prefixString("/kuard"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "x-request-id", MatchType: "present"},
+								{Name: "x-timeout", MatchType: "present", Invert: true},
 								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
 								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
 								{Name: "digest-password", Value: "tiger", MatchType: "exact", Invert: true},

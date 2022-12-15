@@ -1538,6 +1538,12 @@ func TestDAGStatus(t *testing.T) {
 				Name:      "blogteamb",
 				Namespace: "teamb",
 				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/somethingelse",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
@@ -1555,8 +1561,8 @@ func TestDAGStatus(t *testing.T) {
 
 	proxyValidBlogTeamA := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "blogteama",
-			Name:      "teama",
+			Namespace: "teama",
+			Name:      "blogteama",
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{{
@@ -1573,8 +1579,8 @@ func TestDAGStatus(t *testing.T) {
 
 	proxyValidBlogTeamB := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "blogteamb",
-			Name:      "teamb",
+			Namespace: "teamb",
+			Name:      "blogteamb",
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{{
@@ -1625,6 +1631,15 @@ func TestDAGStatus(t *testing.T) {
 				Namespace: "teamb",
 				Conditions: []contour_api_v1.MatchCondition{{
 					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-other-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1652,6 +1667,77 @@ func TestDAGStatus(t *testing.T) {
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().Orphaned(),
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().Orphaned(),
+		},
+	})
+
+	proxyInvalidDuplicateMultiHeaderConditions := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-another-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/blog",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-another-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate header+path conditions on an include", testcase{
+		objs: []interface{}{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+			{Name: proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Orphaned(),
+			{Name: proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Orphaned(),
 		},
 	})
 
