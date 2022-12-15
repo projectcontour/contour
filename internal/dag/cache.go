@@ -505,13 +505,16 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 
 // routesTriggersRebuild returns true if this route references gateway in this cache.
 func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.ParentReference) bool {
-	if kc.gateway != nil {
-		for _, parentRef := range parentRefs {
-			if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
-				return true
-			}
+	if kc.gateway == nil {
+		return false
+	}
+
+	for _, parentRef := range parentRefs {
+		if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
+			return true
 		}
 	}
+
 	return false
 }
 
