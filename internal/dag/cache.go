@@ -22,6 +22,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
@@ -186,10 +187,10 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			}
 		case *gatewayapi_v1beta1.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1alpha2.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
@@ -304,14 +305,12 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		}
 	case *gatewayapi_v1beta1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.httproutes[m]
 		delete(kc.httproutes, m)
-		return ok
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.tlsroutes[m]
 		delete(kc.tlsroutes, m)
-		return ok
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
@@ -512,6 +511,21 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 		ref.Kind != nil && *ref.Kind == "Secret" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1beta1.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
 		string(ref.Name) == secret.Name
+}
+
+// routesTriggersRebuild returns true if this route references gateway in this cache.
+func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.ParentReference) bool {
+	if kc.gateway == nil {
+		return false
+	}
+
+	for _, parentRef := range parentRefs {
+		if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {
