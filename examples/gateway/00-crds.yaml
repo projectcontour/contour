@@ -2,8 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -148,13 +148,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
@@ -349,13 +350,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
@@ -436,8 +438,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -461,8 +463,8 @@ spec:
     - jsonPath: .status.addresses[*].value
       name: Address
       type: string
-    - jsonPath: .status.conditions[?(@.type=="Ready")].status
-      name: Ready
+    - jsonPath: .status.conditions[?(@.type=="Programmed")].status
+      name: Programmed
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -926,6 +928,11 @@ spec:
                   reason: Pending
                   status: Unknown
                   type: Accepted
+                - lastTransitionTime: "1970-01-01T00:00:00Z"
+                  message: Waiting for controller
+                  reason: Pending
+                  status: Unknown
+                  type: Programmed
                 description: "Conditions describe the current conditions of the Gateway.
                   \n Implementations should prefer to express Gateway conditions using
                   the `GatewayConditionType` and `GatewayConditionReason` constants
@@ -936,13 +943,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
@@ -1022,14 +1030,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -1158,8 +1167,8 @@ spec:
     - jsonPath: .status.addresses[*].value
       name: Address
       type: string
-    - jsonPath: .status.conditions[?(@.type=="Ready")].status
-      name: Ready
+    - jsonPath: .status.conditions[?(@.type=="Programmed")].status
+      name: Programmed
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -1620,6 +1629,11 @@ spec:
                   reason: Pending
                   status: Unknown
                   type: Accepted
+                - lastTransitionTime: "1970-01-01T00:00:00Z"
+                  message: Waiting for controller
+                  reason: Pending
+                  status: Unknown
+                  type: Programmed
                 description: "Conditions describe the current conditions of the Gateway.
                   \n Implementations should prefer to express Gateway conditions using
                   the `GatewayConditionType` and `GatewayConditionReason` constants
@@ -1630,13 +1644,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition
@@ -1716,14 +1731,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -1856,8 +1872,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -1889,23 +1905,20 @@ spec:
           under extended support within the Gateway API. Within the following specification,
           the word \"MUST\" indicates that an implementation supporting GRPCRoute
           must conform to the indicated requirement, but an implementation not supporting
-          need not follow the requirement unless explicitly indicated. \n Virtually
-          all existing gRPC connections happen directly over HTTP/2 without first
-          upgrading from HTTP/1. Nearly no server implementations support the upgrade
-          and next to no clients start with HTTP/1. As such, certain restrictions
-          are placed on implementations that claim support for GRPCRoute. \n Implementations
-          supporting `GRPCRoute` with the `HTTPS` `ProtocolType` MUST accept HTTP/2
-          connections without an initial upgrade from HTTP/1.1, i.e. via ALPN. If
-          the implementation does not support this, then it MUST set the \"Accepted\"
+          this route type need not follow the requirement unless explicitly indicated.
+          \n Implementations supporting `GRPCRoute` with the `HTTPS` `ProtocolType`
+          MUST accept HTTP/2 connections without an initial upgrade from HTTP/1.1,
+          i.e. via ALPN. If the implementation does not support this, then it MUST
+          set the \"Accepted\" condition to \"False\" for the affected listener with
+          a reason of \"UnsupportedProtocol\".  Implementations MAY also accept HTTP/2
+          connections with an upgrade from HTTP/1. \n Implementations supporting `GRPCRoute`
+          with the `HTTP` `ProtocolType` MUST support HTTP/2 over cleartext TCP (h2c,
+          https://www.rfc-editor.org/rfc/rfc7540#section-3.1) without an initial upgrade
+          from HTTP/1.1, i.e. with prior knowledge (https://www.rfc-editor.org/rfc/rfc7540#section-3.4).
+          If the implementation does not support this, then it MUST set the \"Accepted\"
           condition to \"False\" for the affected listener with a reason of \"UnsupportedProtocol\".
-          Note that a compliant implementation MAY also accept HTTP/2 connections
-          with an upgrade from HTTP/1. \n Implementations supporting `GRPCRoute` with
-          the `HTTP` `ProtocolType` MUST support cleartext HTTP/2 without an initial
-          upgrade from HTTP/1.1. If the implementation does not support this, then
-          it MUST set the \"Accepted\" condition to \"False\" for the affected listener
-          with a reason of \"UnsupportedProtocol\". Note that a compliant implementation
-          MAY also accept HTTP/2 connections with an upgrade from HTTP/1. \n Support:
-          Extended"
+          Implementations MAY also accept HTTP/2 connections with an upgrade from
+          HTTP/1, i.e. without prior knowledge. \n Support: Extended"
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -1923,7 +1936,7 @@ spec:
             description: Spec defines the desired state of GRPCRoute.
             properties:
               hostnames:
-                description: "Hostnames defines a set of hostname to match against
+                description: "Hostnames defines a set of hostnames to match against
                   the GRPC Host header to select a GRPCRoute to process the request.
                   This matches the RFC 1123 definition of a hostname with 2 notable
                   exceptions: \n 1. IPs are not allowed. 2. A hostname may be prefixed
@@ -1949,22 +1962,23 @@ spec:
                   and `test.example.net`, `test.example.net` MUST NOT be considered
                   for a match. \n If both the Listener and GRPCRoute have specified
                   hostnames, and none match with the criteria above, then the GRPCRoute
-                  is not accepted. The implementation MUST raise an 'Accepted' Condition
-                  with a status of `False` in the corresponding RouteParentStatus.
-                  \n If a Route (A) of type HTTPRoute or GRPCRoute is attached to
-                  a Listener and that listener already has another Route (B) of the
-                  other type attached and the intersection of the hostnames of A and
-                  B is non-empty, then the implementation MUST accept exactly one
-                  of these two routes, determined by the following criteria, in order:
-                  \n * The oldest Route based on creation timestamp. * The Route appearing
-                  first in alphabetical order by   \"{namespace}/{name}\". \n The
-                  rejected Route MUST raise an 'Accepted' condition with a status
-                  of 'False' in the corresponding RouteParentStatus. \n Support: Core"
+                  MUST NOT be accepted by the implementation. The implementation MUST
+                  raise an 'Accepted' Condition with a status of `False` in the corresponding
+                  RouteParentStatus. \n If a Route (A) of type HTTPRoute or GRPCRoute
+                  is attached to a Listener and that listener already has another
+                  Route (B) of the other type attached and the intersection of the
+                  hostnames of A and B is non-empty, then the implementation MUST
+                  accept exactly one of these two routes, determined by the following
+                  criteria, in order: \n * The oldest Route based on creation timestamp.
+                  * The Route appearing first in alphabetical order by   \"{namespace}/{name}\".
+                  \n The rejected Route MUST raise an 'Accepted' condition with a
+                  status of 'False' in the corresponding RouteParentStatus. \n Support:
+                  Core"
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard    label
+                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard     label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -2096,8 +2110,8 @@ spec:
                       type: Exact
                 description: Rules are a list of GRPC matchers, filters and actions.
                 items:
-                  description: GRPCRouteRule defines semantics for matching an gRPC
-                    request based on conditions (matches), processing it (filters),
+                  description: GRPCRouteRule defines the semantics for matching an
+                    gRPC request based on conditions (matches), processing it (filters),
                     and forwarding the request to an API object (backendRefs).
                   properties:
                     backendRefs:
@@ -2589,11 +2603,11 @@ spec:
                         change in the future based on feedback during the alpha stage.
                         \n Conformance-levels at this level are defined based on the
                         type of filter: \n - ALL core filters MUST be supported by
-                        all implementations. - Implementers are encouraged to support
-                        extended filters. - Implementation-specific custom filters
-                        have no API guarantees across   implementations. \n Specifying
-                        a core filter multiple times has unspecified or implementation-specific
-                        conformance. Support: Core"
+                        all implementations that support   GRPCRoute. - Implementers
+                        are encouraged to support extended filters. - Implementation-specific
+                        custom filters have no API guarantees across   implementations.
+                        \n Specifying a core filter multiple times has unspecified
+                        or implementation-specific conformance. Support: Core"
                       items:
                         description: GRPCRouteFilter defines processing steps that
                           must be completed during the request or response lifecycle.
@@ -2990,8 +3004,8 @@ spec:
                           if all conditions are satisfied. \n For example, the match
                           below will match a gRPC request only if its service is `foo`
                           AND it contains the `version: v1` header: \n ``` matches:
-                          - method:    type: Exact    service: \"foo\"   headers:
-                          \  - name: \"version\"     value \"v1\" ```"
+                          \  - method:     type: Exact     service: \"foo\"     headers:
+                          \  - name: \"version\"     value \"v1\" \n ```"
                         properties:
                           headers:
                             description: Headers specifies gRPC request header matchers.
@@ -3041,7 +3055,7 @@ spec:
                           method:
                             default:
                               type: Exact
-                            description: Path specifies a gRPC request service/method
+                            description: Method specifies a gRPC request service/method
                               matcher. If this field is not specified, all services
                               and methods will match.
                             properties:
@@ -3049,17 +3063,19 @@ spec:
                                 description: "Value of the method to match against.
                                   If left empty or omitted, will match all services.
                                   \n At least one of Service and Method MUST be a
-                                  non-empty string."
+                                  non-empty string. \n A GRPC Method must be a valid
+                                  Protobuf Method (https://protobuf.com/docs/language-spec#methods)."
                                 maxLength: 1024
-                                pattern: ^[^\/]*$
+                                pattern: ^[A-Za-z_][A-Za-z_0-9]*$
                                 type: string
                               service:
                                 description: "Value of the service to match against.
-                                  If left empty or omitted, will match all services.
+                                  If left empty or omitted, will match any service.
                                   \n At least one of Service and Method MUST be a
-                                  non-empty string."
+                                  non-empty string. \n A GRPC Service must be a valid
+                                  Protobuf Type Name (https://protobuf.com/docs/language-spec#type-references)."
                                 maxLength: 1024
-                                pattern: ^[^\/]*$
+                                pattern: ^(?i)\.?[a-z_][a-z_0-9]*(\.[a-z_][a-z_0-9]*)*$
                                 type: string
                               type:
                                 default: Exact
@@ -3121,14 +3137,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -3326,8 +3343,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -3414,8 +3431,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard    label
+                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard     label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -4784,8 +4801,8 @@ spec:
                           if all conditions are satisfied. \n For example, the match
                           below will match a HTTP request only if its path starts
                           with `/foo` AND it contains the `version: v1` header: \n
-                          ``` match:   path:     value: \"/foo\"   headers:   - name:
-                          \"version\"     value \"v1\" ```"
+                          ``` match: \n \tpath: \t  value: \"/foo\" \theaders: \t-
+                          name: \"version\" \t  value \"v1\" \n ```"
                         properties:
                           headers:
                             description: Headers specifies HTTP request header matchers.
@@ -4993,14 +5010,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -5258,8 +5276,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard    label
+                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard     label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -6628,8 +6646,8 @@ spec:
                           if all conditions are satisfied. \n For example, the match
                           below will match a HTTP request only if its path starts
                           with `/foo` AND it contains the `version: v1` header: \n
-                          ``` match:   path:     value: \"/foo\"   headers:   - name:
-                          \"version\"     value \"v1\" ```"
+                          ``` match: \n \tpath: \t  value: \"/foo\" \theaders: \t-
+                          name: \"version\" \t  value \"v1\" \n ```"
                         properties:
                           headers:
                             description: Headers specifies HTTP request header matchers.
@@ -6837,14 +6855,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -7044,8 +7063,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -7076,9 +7095,11 @@ spec:
           add to the set of trusted sources of inbound references for the namespace
           they are defined within. \n All cross-namespace references in Gateway API
           (with the exception of cross-namespace Gateway-route attachment) require
-          a ReferenceGrant. \n ReferenceGrant is a form of runtime verification. Implementations
-          that support ReferenceGrant MUST respond to removal of a grant by revoking
-          the access that grant allowed. \n Support: Core"
+          a ReferenceGrant. \n ReferenceGrant is a form of runtime verification allowing
+          users to assert which cross-namespace object references are permitted. Implementations
+          that support ReferenceGrant MUST NOT permit cross-namespace references which
+          have no grant, and MUST respond to the removal of a grant by revoking the
+          access that the grant allowed. \n Support: Core"
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -7199,9 +7220,11 @@ spec:
           add to the set of trusted sources of inbound references for the namespace
           they are defined within. \n All cross-namespace references in Gateway API
           (with the exception of cross-namespace Gateway-route attachment) require
-          a ReferenceGrant. \n ReferenceGrant is a form of runtime verification. Implementations
-          that support ReferenceGrant MUST respond to removal of a grant by revoking
-          the access that grant allowed. \n Support: Core"
+          a ReferenceGrant. \n ReferenceGrant is a form of runtime verification allowing
+          users to assert which cross-namespace object references are permitted. Implementations
+          that support ReferenceGrant MUST NOT permit cross-namespace references which
+          have no grant, and MUST respond to the removal of a grant by revoking the
+          access that the grant allowed. \n Support: Core"
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -7319,8 +7342,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -7613,14 +7636,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -7820,8 +7844,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -7893,8 +7917,8 @@ spec:
                 items:
                   description: "Hostname is the fully qualified domain name of a network
                     host. This matches the RFC 1123 definition of a hostname with
-                    2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                    may be prefixed with a wildcard label (`*.`). The wildcard    label
+                    2 notable exceptions: \n  1. IPs are not allowed.  2. A hostname
+                    may be prefixed with a wildcard label (`*.`). The wildcard     label
                     must appear by itself as the first label. \n Hostname can be \"precise\"
                     which is a domain name without the terminating dot of a network
                     host (e.g. \"foo.example.com\") or \"wildcard\", which is a domain
@@ -8163,14 +8187,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition
@@ -8370,8 +8395,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1086
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc1
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
+    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -8664,14 +8689,15 @@ spec:
                         description: "Condition contains details for one aspect of
                           the current state of this API Resource. --- This struct
                           is intended for direct use as an array at the field path
-                          .status.conditions.  For example, type FooStatus struct{
-                          \    // Represents the observations of a foo's current state.
-                          \    // Known .status.conditions.type are: \"Available\",
-                          \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                          \    // +patchStrategy=merge     // +listType=map     //
-                          +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                          patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                          \n     // other fields }"
+                          .status.conditions.  For example, \n \ttype FooStatus struct{
+                          \t    // Represents the observations of a foo's current
+                          state. \t    // Known .status.conditions.type are: \"Available\",
+                          \"Progressing\", and \"Degraded\" \t    // +patchMergeKey=type
+                          \t    // +patchStrategy=merge \t    // +listType=map \t
+                          \   // +listMapKey=type \t    Conditions []metav1.Condition
+                          `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                          protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other
+                          fields \t}"
                         properties:
                           lastTransitionTime:
                             description: lastTransitionTime is the last time the condition

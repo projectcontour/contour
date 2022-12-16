@@ -675,7 +675,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 			IngressClassName: ingressClassName,
 		},
 		Status: networking_v1.IngressStatus{
-			LoadBalancer: lbstatus,
+			LoadBalancer: coreToNetworkingLBStatus(lbstatus),
 		},
 	}
 }
