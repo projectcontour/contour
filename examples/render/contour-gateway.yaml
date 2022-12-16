@@ -135,6 +135,7 @@ data:
     #   - "user_agent"
     #   - "x_forwarded_for"
     #   - "grpc_status"
+    #   - "grpc_status_number"
     #
     # default-http-versions:
     # - "HTTP/2"

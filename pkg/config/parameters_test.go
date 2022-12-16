@@ -72,6 +72,7 @@ json-fields:
     - user_agent
     - x_forwarded_for
     - grpc_status
+    - grpc_status_number
 accesslog-level: info
 timeouts:
     connection-idle-timeout: 60s

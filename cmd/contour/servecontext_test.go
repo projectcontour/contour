@@ -459,6 +459,7 @@ func TestConvertServeContext(t *testing.T) {
 						"user_agent",
 						"x_forwarded_for",
 						"grpc_status",
+						"grpc_status_number",
 					}),
 				},
 				DefaultHTTPVersions: nil,
