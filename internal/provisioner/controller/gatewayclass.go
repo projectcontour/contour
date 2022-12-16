@@ -246,11 +246,22 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 	reason gatewayapi_v1beta1.GatewayClassConditionReason,
 	message string,
 ) error {
+	currentAcceptedCondition := metav1.Condition{
+		Type:               string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+		Status:             status,
+		ObservedGeneration: gatewayClass.Generation,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            message,
+	}
 	var newConds []metav1.Condition
 	for _, cond := range gatewayClass.Status.Conditions {
 		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == status {
-				return nil
+				// If status hasn't changed, don't change the condition, just
+				// update the generation.
+				currentAcceptedCondition = cond
+				currentAcceptedCondition.ObservedGeneration = gatewayClass.Generation
 			}
 
 			continue
@@ -262,14 +273,7 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 	r.log.WithValues("gatewayclass-name", gatewayClass.Name).Info(fmt.Sprintf("setting gateway class's Accepted condition to %s", status))
 
 	// nolint:gocritic
-	gatewayClass.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
-		Status:             status,
-		ObservedGeneration: gatewayClass.Generation,
-		LastTransitionTime: metav1.Now(),
-		Reason:             string(reason),
-		Message:            message,
-	})
+	gatewayClass.Status.Conditions = append(newConds, currentAcceptedCondition)
 
 	if err := r.client.Status().Update(ctx, gatewayClass); err != nil {
 		return fmt.Errorf("failed to set gatewayclass %s accepted condition: %w", gatewayClass.Name, err)

@@ -384,6 +384,31 @@ func TestGatewayClassReconcile(t *testing.T) {
 				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
 			},
 		},
+		"gatewayclass with status from previous generation is updated": {
+			gatewayClass: &gatewayv1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "gatewayclass-1",
+					Generation: 2,
+				},
+				Spec: gatewayv1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+				},
+				Status: gatewayv1beta1.GatewayClassStatus{
+					Conditions: []metav1.Condition{{
+						Type:               string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+						Status:             metav1.ConditionTrue,
+						Reason:             string(gatewayv1beta1.GatewayClassReasonAccepted),
+						ObservedGeneration: 1,
+					}},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:               string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Status:             metav1.ConditionTrue,
+				Reason:             string(gatewayv1beta1.GatewayClassReasonAccepted),
+				ObservedGeneration: 2,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -424,6 +449,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				assert.Equal(t, tc.wantCondition.Type, res.Status.Conditions[0].Type)
 				assert.Equal(t, tc.wantCondition.Status, res.Status.Conditions[0].Status)
 				assert.Equal(t, tc.wantCondition.Reason, res.Status.Conditions[0].Reason)
+				assert.Equal(t, tc.wantCondition.ObservedGeneration, res.Status.Conditions[0].ObservedGeneration)
 			}
 
 			if tc.assertions != nil {
