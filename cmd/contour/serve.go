@@ -953,6 +953,6 @@ func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cac
 		return err
 	}
 
-	inf.AddEventHandler(handler)
-	return nil
+	_, err = inf.AddEventHandler(handler)
+	return err
 }

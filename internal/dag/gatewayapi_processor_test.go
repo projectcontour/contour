@@ -34,7 +34,7 @@ func TestComputeHosts(t *testing.T) {
 	tests := map[string]struct {
 		listenerHost string
 		hostnames    []gatewayapi_v1beta1.Hostname
-		want         sets.String
+		want         sets.Set[string]
 		wantError    []error
 	}{
 		"single host": {
@@ -42,7 +42,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"test.projectcontour.io",
 			},
-			want:      sets.NewString("test.projectcontour.io"),
+			want:      sets.New("test.projectcontour.io"),
 			wantError: nil,
 		},
 		"single DNS label hostname": {
@@ -50,7 +50,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"projectcontour",
 			},
-			want:      sets.NewString("projectcontour"),
+			want:      sets.New("projectcontour"),
 			wantError: nil,
 		},
 		"multiple hosts": {
@@ -61,7 +61,7 @@ func TestComputeHosts(t *testing.T) {
 				"test2.projectcontour.io",
 				"test3.projectcontour.io",
 			},
-			want: sets.NewString(
+			want: sets.New(
 				"test.projectcontour.io",
 				"test1.projectcontour.io",
 				"test2.projectcontour.io",
@@ -72,7 +72,7 @@ func TestComputeHosts(t *testing.T) {
 		"no host": {
 			listenerHost: "",
 			hostnames:    []gatewayapi_v1beta1.Hostname{},
-			want:         sets.NewString("*"),
+			want:         sets.New("*"),
 			wantError:    []error(nil),
 		},
 		"IP in host": {
@@ -90,7 +90,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"*.projectcontour.io",
 			},
-			want:      sets.NewString("*.projectcontour.io"),
+			want:      sets.New("*.projectcontour.io"),
 			wantError: nil,
 		},
 		"invalid wildcard hostname": {
@@ -134,7 +134,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"http.projectcontour.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & multi hostnames host exactly match one host": {
@@ -144,7 +144,7 @@ func TestComputeHosts(t *testing.T) {
 				"http2.projectcontour.io",
 				"http3.projectcontour.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & hostnames host match wildcard host": {
@@ -152,7 +152,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"http.projectcontour.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & hostnames host do not match wildcard host": {
@@ -168,7 +168,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"*.projectcontour.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & wildcard hostname and matching hostname match": {
@@ -177,7 +177,7 @@ func TestComputeHosts(t *testing.T) {
 				"*.projectcontour.io",
 				"http.projectcontour.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & wildcard hostname and non-matching hostname don't match": {
@@ -186,7 +186,7 @@ func TestComputeHosts(t *testing.T) {
 				"*.projectcontour.io",
 				"not.matching.io",
 			},
-			want:      sets.NewString("http.projectcontour.io"),
+			want:      sets.New("http.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host wildcard & wildcard hostnames host match": {
@@ -194,13 +194,13 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"*.projectcontour.io",
 			},
-			want:      sets.NewString("*.projectcontour.io"),
+			want:      sets.New("*.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener host & hostname not defined match": {
 			listenerHost: "http.projectcontour.io",
 			hostnames:    []gatewayapi_v1beta1.Hostname{},
-			want:         sets.NewString("http.projectcontour.io"),
+			want:         sets.New("http.projectcontour.io"),
 			wantError:    nil,
 		},
 		"listener host with many labels matches hostnames wildcard host": {
@@ -208,7 +208,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"*.projectcontour.io",
 			},
-			want:      sets.NewString("very.many.labels.projectcontour.io"),
+			want:      sets.New("very.many.labels.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener wildcard host matches hostnames with many labels host": {
@@ -216,7 +216,7 @@ func TestComputeHosts(t *testing.T) {
 			hostnames: []gatewayapi_v1beta1.Hostname{
 				"very.many.labels.projectcontour.io",
 			},
-			want:      sets.NewString("very.many.labels.projectcontour.io"),
+			want:      sets.New("very.many.labels.projectcontour.io"),
 			wantError: nil,
 		},
 		"listener wildcard host doesn't match bare hostname": {

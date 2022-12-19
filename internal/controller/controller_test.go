@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	controller_runtime_config_v1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -54,6 +55,7 @@ func TestRegisterControllers(t *testing.T) {
 			mockManager.On("GetLogger").Return(logr_testing.NewTestLogger(t)).Maybe()
 			mockManager.On("SetFields", mock.Anything).Return(nil).Maybe()
 			mockManager.On("Elected").Return(nil).Maybe()
+			mockManager.On("GetControllerOptions").Return(controller_runtime_config_v1alpha1.ControllerConfigurationSpec{}).Maybe()
 
 			mockManager.On("Add", mock.MatchedBy(func(r manager.LeaderElectionRunnable) bool {
 				return r.NeedLeaderElection() == false
