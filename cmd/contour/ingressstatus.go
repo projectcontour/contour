@@ -99,7 +99,10 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			isw.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 
-		inf.AddEventHandler(u)
+		_, err = inf.AddEventHandler(u)
+		if err != nil {
+			isw.log.WithError(err).WithField("resource", r).Fatal("failed to add event handler to informer")
+		}
 	}
 
 	for {
