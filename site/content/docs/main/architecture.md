@@ -47,8 +47,12 @@ The following API objects are watched:
 ### Contour Deployment
 
 Contour is deployed in the cluster using a Kubernetes Deployment.
-It has built-in leader election so the total number of replicas does not matter.
+It has built-in leader election which is responsible for updating httproxy/ingress/gateway api resources via Kube API server.
 All instances are able to serve xDS configuration to any Envoy instance, but only the leader can write status back to the API server.
+
+The data being served from contour instances are eventually consistent in an HA based deployment.
+However HA mode is operationally scalable when you have high request rate from envoy to contour as requests are loadbalanced among contour instances.
+This also helps availability zone /data center degradation events as your service continue to function.
 
 ### Envoy Deployment
 
