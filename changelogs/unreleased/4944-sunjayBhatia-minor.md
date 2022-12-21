@@ -6,5 +6,5 @@ This version of the API includes a few changes relevant to Contour users:
 - v1alpha2 versions of GatewayClass, Gateway, and HTTPRoute are deprecated
 - There have been significant changes to status conditions on various resources for consistency:
   - Accepted and Programmed conditions have been added to Gateway and Gateway Listener
-  - The Ready conditon has been moved to "extended" conformance, at this moment Contour does not program this condition
+  - The Ready condition has been moved to "extended" conformance, at this moment Contour does not program this condition
   - The Scheduled condition has been deprecated on Gateway
