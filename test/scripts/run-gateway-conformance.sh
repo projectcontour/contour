@@ -60,5 +60,5 @@ else
   git checkout "${GATEWAY_API_VERSION}"
   # Keep the list of supported features in sync with
   # test/conformance/gatewayapi/gateway_conformance_test.go.
-  go test ./conformance -gateway-class=contour -supported-features=ReferenceGrant,TLSRoute,HTTPRouteQueryParamMatching,HTTPRouteMethodMatching,HTTPResponseHeaderModification,RouteDestinationPortMatching
+  go test ./conformance -gateway-class=contour -supported-features=ReferenceGrant,TLSRoute,HTTPRouteQueryParamMatching,HTTPRouteMethodMatching,HTTPResponseHeaderModification,RouteDestinationPortMatching,GatewayClassObservedGenerationBump
 fi
