@@ -5893,6 +5893,349 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	})
 
+	run(t, "HTTP listener, route's parent ref sectionname does not match", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 0)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 0),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+							Message: "No listeners match this parent ref",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1beta1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(0),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Status:  metav1.ConditionTrue,
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Message: "Valid listener",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	run(t, "HTTP listener, route's parent ref port does not match", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "", 443)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "", 443),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+							Message: "No listeners match this parent ref",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1beta1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(0),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Status:  metav1.ConditionTrue,
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Message: "Valid listener",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	run(t, "HTTP listener, route's parent ref section name and port both must match", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 80)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-2",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 443)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-3",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+		},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 80),
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+								Status:  contour_api_v1.ConditionFalse,
+								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+								Message: "No listeners match this parent ref",
+							},
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-2"},
+				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 443),
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+								Status:  contour_api_v1.ConditionFalse,
+								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+								Message: "No listeners match this parent ref",
+							},
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-3"},
+				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80),
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+								Status:  contour_api_v1.ConditionTrue,
+								Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+								Message: "Accepted HTTPRoute",
+							},
+						},
+					},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1beta1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  string(gatewayapi_v1beta1.GatewayReasonProgrammed),
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+						},
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Status:  metav1.ConditionTrue,
+								Reason:  string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+								Message: "Valid listener",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
 	run(t, "More than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
 		objs: []interface{}{
 			kuardService,

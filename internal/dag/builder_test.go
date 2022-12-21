@@ -2423,7 +2423,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1beta1.ParentReference{
-								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener"),
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
 							},
 						},
 						Hostnames: []gatewayapi_v1beta1.Hostname{
@@ -2444,7 +2444,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1beta1.ParentReference{
-								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener"),
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
 							},
 						},
 						Hostnames: []gatewayapi_v1beta1.Hostname{

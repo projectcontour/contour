@@ -52,6 +52,7 @@ func TestGatewayConformance(t *testing.T) {
 			suite.SupportHTTPRouteQueryParamMatching:    true,
 			suite.SupportHTTPRouteMethodMatching:        true,
 			suite.SupportHTTPResponseHeaderModification: true,
+			suite.SupportRouteDestinationPortMatching:   true,
 		},
 	})
 	cSuite.Setup(t)
