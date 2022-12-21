@@ -76,7 +76,10 @@ type HTTPProxyProcessor struct {
 	// will only perform a lookup for addresses in the IPv6 family.
 	// If AUTO is configured, the DNS resolver will first perform a lookup
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
-	// in the IPv4 family.
+	// in the IPv4 family. If ALL is specified, the DNS resolver will perform a lookup for
+	// both IPv4 and IPv6 families, and return all resolved addresses.
+	// When this is used, Happy Eyeballs will be enabled for upstream connections.
+	// Refer to Happy Eyeballs Support for more information.
 	// Note: This only applies to externalName clusters.
 	DNSLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
 
@@ -463,13 +466,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				// default to to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
-				case "auto", "v4", "v6":
+				case "auto", "v4", "v6", "all":
 					dnsLookupFamily = jwtProvider.RemoteJWKS.DNSLookupFamily
 				case "":
 					dnsLookupFamily = string(p.DNSLookupFamily)
 				default:
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSDNSLookupFamilyInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, all, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
 					return
 				}
 

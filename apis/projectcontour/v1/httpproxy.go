@@ -313,6 +313,8 @@ type RemoteJWKS struct {
 	// When configured as "v4", the DNS resolver will only perform a lookup
 	// for addresses in the IPv4 family. If "v6" is configured, the DNS resolver
 	// will only perform a lookup for addresses in the IPv6 family.
+	// If "all" is configured, the DNS resolver
+	// will perform a lookup for addresses in both the IPv4 and IPv6 family.
 	// If "auto" is configured, the DNS resolver will first perform a lookup
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
 	// in the IPv4 family. If not specified, the Contour-wide setting defined

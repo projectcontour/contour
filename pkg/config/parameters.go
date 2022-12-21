@@ -81,7 +81,7 @@ type ClusterDNSFamilyType string
 
 func (c ClusterDNSFamilyType) Validate() error {
 	switch c {
-	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily:
+	case AutoClusterDNSFamily, IPv4ClusterDNSFamily, IPv6ClusterDNSFamily, AllClusterDNSFamily:
 		return nil
 	default:
 		return fmt.Errorf("invalid cluster DNS lookup family %q", c)
@@ -91,6 +91,7 @@ func (c ClusterDNSFamilyType) Validate() error {
 const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
 const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
 const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+const AllClusterDNSFamily ClusterDNSFamilyType = "all"
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
@@ -387,7 +388,10 @@ type ClusterParameters struct {
 	// will only perform a lookup for addresses in the IPv6 family.
 	// If AUTO is configured, the DNS resolver will first perform a lookup
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
-	// in the IPv4 family.
+	// in the IPv4 family. If ALL is specified, the DNS resolver will perform a lookup for
+	// both IPv4 and IPv6 families, and return all resolved addresses.
+	// When this is used, Happy Eyeballs will be enabled for upstream connections.
+	// Refer to Happy Eyeballs Support for more information.
 	// Note: This only applies to externalName clusters.
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
