@@ -6752,7 +6752,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -7188,7 +7188,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -8622,7 +8622,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -8756,7 +8756,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -8793,6 +8798,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -10007,7 +10018,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -10093,7 +10110,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -10210,7 +10227,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -10247,6 +10269,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -11880,7 +11908,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -12055,7 +12089,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -12092,6 +12131,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -13725,7 +13770,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -13813,7 +13864,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -14092,7 +14143,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -14148,7 +14199,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -14185,6 +14241,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -14506,7 +14568,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -14594,7 +14662,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -14696,7 +14764,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -14733,6 +14806,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -15057,7 +15136,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -15145,7 +15230,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.6.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -15201,7 +15286,12 @@ spec:
                   that may be collapsed by an implementation. For example, some implementations
                   may choose to merge compatible Gateway Listeners together. If that
                   is the case, the list of routes attached to those resources should
-                  also be merged."
+                  also be merged. \n Note that for ParentRefs that cross namespace
+                  boundaries, there are specific rules. Cross-namespace references
+                  are only valid if they are explicitly allowed by something in the
+                  namespace they are referring to. For example, Gateway has the AllowedRoutes
+                  field, and ReferenceGrant provides a generic way to enable any other
+                  kind of cross-namespace reference."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -15238,6 +15328,12 @@ spec:
                     namespace:
                       description: "Namespace is the namespace of the referent. When
                         unspecified, this refers to the local namespace of the Route.
+                        \n Note that there are specific rules for ParentRefs which
+                        cross namespace boundaries. Cross-namespace references are
+                        only valid if they are explicitly allowed by something in
+                        the namespace they are referring to. For example: Gateway
+                        has the AllowedRoutes field, and ReferenceGrant provides a
+                        generic way to enable any other kind of cross-namespace reference.
                         \n Support: Core"
                       maxLength: 63
                       minLength: 1
@@ -15559,7 +15655,13 @@ spec:
                         namespace:
                           description: "Namespace is the namespace of the referent.
                             When unspecified, this refers to the local namespace of
-                            the Route. \n Support: Core"
+                            the Route. \n Note that there are specific rules for ParentRefs
+                            which cross namespace boundaries. Cross-namespace references
+                            are only valid if they are explicitly allowed by something
+                            in the namespace they are referring to. For example: Gateway
+                            has the AllowedRoutes field, and ReferenceGrant provides
+                            a generic way to enable any other kind of cross-namespace
+                            reference. \n Support: Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -15707,7 +15809,7 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.0-rc2
+          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.0
           imagePullPolicy: Always
           args:
             - -logtostderr
