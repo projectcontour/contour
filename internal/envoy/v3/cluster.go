@@ -61,7 +61,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		// external name set to LOGICAL_DNS when user selects the ALL loookup family
 		clusterDiscoveryType := ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS)
 		if cluster.DnsLookupFamily == envoy_cluster_v3.Cluster_ALL {
-			cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS)
+			clusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS)
 		}
 
 		cluster.ClusterDiscoveryType = clusterDiscoveryType
