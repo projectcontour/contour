@@ -336,13 +336,13 @@ type EnvoyListenerConfig struct {
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
-	// DisableServerHeaderTransformation signifies we will not modify the Server header.
+	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
 	// false: OVERWRITE
 	// true:	PASS_THROUGH
 	//
 	// Contour's default is false.
 	// +optional
-	DisableServerHeaderTransformation *bool `json:"DisableServerHeaderTransformation,omitempty"`
+	DisableServerHeaderTransformation *bool `json:"disableServerHeaderTransformation,omitempty"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig

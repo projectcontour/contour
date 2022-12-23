@@ -485,8 +485,8 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
-	// DisableServerHeaderTransformation signifies we will not modify the Server header.
-	DisableServerHeaderTransformation bool `yaml:"DisableServerHeaderTransformation,omitempty"`
+	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
+	DisableServerHeaderTransformation bool `yaml:"disableServerHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
