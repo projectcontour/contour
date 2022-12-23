@@ -74,31 +74,23 @@ type HTTPInternalRedirectPolicy struct {
     // +optional
     RedirectResponseCodes []uint32 `json:"redirectResponseCodes,omitempty"`
 
-    // Predicates are queried when an upstream response is deemed to trigger an internal redirect by all other criteria.
-    // +optional
-    Predicates HTTPInternalRedirectPredicate `json:"predicates,omitempty"`
-
     // AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme than the value of x-forwarded-proto.
+    // SafeOnly allows same scheme redirect and safe cross scheme redirect, which means if the downstream scheme is HTTPS, both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme is HTTP, only HTTP redirect targets are allowed.
+    // +kubebuilder:validation:Enum=Always;Never;SafeOnly
+    // +kubebuilder:default=Never
     // +optional
-    AllowCrossSchemeRedirect bool `json:"allowCrossSchemeRedirect,omitempty"`
-}
+    AllowCrossSchemeRedirect string `json:"allowCrossSchemeRedirect,omitempty"`
 
-// HTTPInternalRedirectPredicate defines the predicate used to accept or reject an internal redirection.
-type HTTPInternalRedirectPredicate struct {
-    // An internal redirect predicate that checks the scheme between the downstream url and the redirect target url.
+    // If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has been followed by a previous redirect from the current route.
     // +optional
-    SafeCrossScheme bool `json:"safeCrossScheme,omitempty"`
+    DenyRepeatedRouteRedirect bool `json:"denyRepeatedRouteRedirect,omitempty"`
 
-    // An internal redirect predicate that rejects redirect targets that are pointing to a route that has been followed by a previous redirect from the current route.
-    // +optional
-    PreviousRoutes bool `json:"previousRoutes,omitempty"`
-
-    // AllowedRouteNames is the list of routes that’s allowed as redirect target
-    // by this predicate, identified by the route’s name.
-    //
+    // AllowedRouteNames is the list of routes that’s allowed as redirect target, identified by the route’s name.
+    // An empty list means all routes are allowed.
     // +optional
     AllowedRouteNames []string `json:"allowedRouteNames,omitempty"`
 }
+
 ```
 
 Update `Route` accordingly. 
@@ -121,12 +113,6 @@ type Route struct {
 The common DAG struct will be updated accordingly:
 
 ```Go
-// AllowListedRoutesPredicate accepts only explicitly allowed target routes.
-type InternalRedirectPredicate struct {
-    SafeCrossScheme bool
-    PreviousRoutes bool
-    AllowedRouteNames []string
-}
 
 // InternalRedirectPolicy defines if envoy should handle redirect response internally instead of sending it downstream.
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-internalredirectpolicy
@@ -138,11 +124,13 @@ type InternalRedirectPolicy struct {
     // Only 301, 302, 303, 307 and 308 are valid values
     RedirectResponseCodes []uint32
 
-    // Predicates list of predicates that are queried when an upstream response is deemed to trigger an internal redirect by all other criteria
-    Predicates InternalRedirectPredicate
-
     // AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme than the value of x-forwarded-proto.
-    AllowCrossSchemeRedirect bool
+    AllowCrossSchemeRedirect string
+
+    DenyRepeatedRouteRedirect bool
+
+    // AllowListedRoutesPredicate accepts only explicitly allowed target routes.
+    AllowedRouteNames []string
 }
 
 type Route struct {
