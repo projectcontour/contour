@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
+	"k8s.io/utils/pointer"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -366,6 +368,30 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		dnsLookupFamily = contour_api_v1alpha1.AllClusterDNSFamily
 	}
 
+	var tracingConfig *contour_api_v1alpha1.TracingConfig
+	if ctx.Config.Tracing.ExtensionService != "" {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.Tracing.ExtensionService)
+		var customTags []*contour_api_v1alpha1.CustomTag
+		for _, customTag := range ctx.Config.Tracing.CustomTags {
+			customTags = append(customTags, &contour_api_v1alpha1.CustomTag{
+				TagName:           customTag.TagName,
+				Literal:           customTag.Literal,
+				RequestHeaderName: customTag.RequestHeaderName,
+			})
+		}
+		tracingConfig = &contour_api_v1alpha1.TracingConfig{
+			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
+			ServiceName:      pointer.String(ctx.Config.Tracing.ServiceName),
+			OverallSampling:  pointer.String(strconv.FormatFloat(ctx.Config.Tracing.OverallSampling, 'f', 1, 64)),
+			MaxPathTagLength: pointer.Uint32(ctx.Config.Tracing.MaxPathTagLength),
+			CustomTags:       customTags,
+			ExtensionService: contour_api_v1alpha1.NamespacedName{
+				Name:      namespacedName.Name,
+				Namespace: namespacedName.Namespace,
+			},
+		}
+	}
+
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 	if ctx.Config.RateLimitService.ExtensionService != "" {
 
@@ -538,6 +564,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		RateLimitService:            rateLimitService,
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
+		Tracing:                   tracingConfig,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

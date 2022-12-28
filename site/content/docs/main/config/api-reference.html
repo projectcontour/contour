@@ -4790,6 +4790,20 @@ MetricsConfig
 <p>Contour&rsquo;s default is { address: &ldquo;0.0.0.0&rdquo;, port: 8000 }.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tracing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TracingConfig">
+TracingConfig
+</a>
+</em>
+</td>
+<td>
+<p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5484,6 +5498,20 @@ MetricsConfig
 <p>Contour&rsquo;s default is { address: &ldquo;0.0.0.0&rdquo;, port: 8000 }.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tracing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TracingConfig">
+TracingConfig
+</a>
+</em>
+</td>
+<td>
+<p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus
@@ -5753,6 +5781,61 @@ DeploymentSettings
 <td>
 <em>(Optional)</em>
 <p>Deployment describes the settings for running contour as a <code>Deployment</code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
+</h3>
+<p>
+<p>CustomTag defines custom tags with unique tag name
+to create tags for the active span.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>tagName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>TagName is the unique name of the custom tag.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>literal</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Literal is a static custom tag value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeaderName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RequestHeaderName indicates which request header
+the label value is obtained from.</p>
 </td>
 </tr>
 </tbody>
@@ -7311,7 +7394,8 @@ string
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>, 
+<a href="#projectcontour.io/v1alpha1.TracingConfig">TracingConfig</a>)
 </p>
 <p>
 <p>NamespacedName defines the namespace/name of the Kubernetes resource referred from the config file.
@@ -7977,6 +8061,111 @@ string
 If not set, a default value of 2 seconds will be used.</p>
 <p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout</a>
 for more information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.TracingConfig">TracingConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>TracingConfig defines properties for exporting trace data to OpenTelemetry.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>includePodDetail</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IncludePodDetail defines a flag.
+If it is true, contour will add the pod name and namespace to the span of the trace.
+the default is true.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ServiceName defines the name for the service.
+contour&rsquo;s default is contour</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overallSampling</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverallSampling defines the sampling rate of trace data.
+contour&rsquo;s default is 100</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxPathTagLength</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverallSampling defines maximum length of the request path
+to extract and include in the HttpUrl tag.
+contour&rsquo;s default is 256.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>customTags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag">
+[]*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CustomTags defines a list of custom tags with unique tag name.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extensionService</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NamespacedName">
+NamespacedName
+</a>
+</em>
+</td>
+<td>
+<p>ExtensionService identifies the extension service defining the otle-collector.</p>
 </td>
 </tr>
 </tbody>

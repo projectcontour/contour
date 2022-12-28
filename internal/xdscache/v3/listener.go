@@ -128,6 +128,10 @@ type ListenerConfig struct {
 	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
+
+	// TracingConfig optionally configures the tracing collector Service to be
+	// used.
+	TracingConfig *dag.TracingConfig
 }
 
 type RateLimitConfig struct {
@@ -331,8 +335,10 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				MergeSlashes(cfg.MergeSlashes).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
+				Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
+				Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -398,6 +404,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()
@@ -461,6 +468,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()

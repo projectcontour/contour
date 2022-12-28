@@ -865,6 +865,61 @@ spec:
                 required:
                 - extensionService
                 type: object
+              tracing:
+                description: Tracing defines properties for exporting trace data to
+                  OpenTelemetry.
+                properties:
+                  customTags:
+                    description: CustomTags defines a list of custom tags with unique
+                      tag name.
+                    items:
+                      description: CustomTag defines custom tags with unique tag name
+                        to create tags for the active span.
+                      properties:
+                        literal:
+                          description: Literal is a static custom tag value.
+                          type: string
+                        requestHeaderName:
+                          description: RequestHeaderName indicates which request header
+                            the label value is obtained from.
+                          type: string
+                        tagName:
+                          description: TagName is the unique name of the custom tag.
+                          type: string
+                      type: object
+                    type: array
+                  extensionService:
+                    description: ExtensionService identifies the extension service
+                      defining the otle-collector.
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  includePodDetail:
+                    description: IncludePodDetail defines a flag. If it is true, contour
+                      will add the pod name and namespace to the span of the trace.
+                      the default is true.
+                    type: boolean
+                  maxPathTagLength:
+                    description: OverallSampling defines maximum length of the request
+                      path to extract and include in the HttpUrl tag. contour's default
+                      is 256.
+                    format: int32
+                    type: integer
+                  overallSampling:
+                    description: OverallSampling defines the sampling rate of trace
+                      data. contour's default is 100
+                    type: string
+                  serviceName:
+                    description: ServiceName defines the name for the service. contour's
+                      default is contour
+                    type: string
+                type: object
               xdsServer:
                 description: XDSServer contains parameters for the xDS server.
                 properties:
@@ -3973,6 +4028,62 @@ spec:
                         type: boolean
                     required:
                     - extensionService
+                    type: object
+                  tracing:
+                    description: Tracing defines properties for exporting trace data
+                      to OpenTelemetry.
+                    properties:
+                      customTags:
+                        description: CustomTags defines a list of custom tags with
+                          unique tag name.
+                        items:
+                          description: CustomTag defines custom tags with unique tag
+                            name to create tags for the active span.
+                          properties:
+                            literal:
+                              description: Literal is a static custom tag value.
+                              type: string
+                            requestHeaderName:
+                              description: RequestHeaderName indicates which request
+                                header the label value is obtained from.
+                              type: string
+                            tagName:
+                              description: TagName is the unique name of the custom
+                                tag.
+                              type: string
+                          type: object
+                        type: array
+                      extensionService:
+                        description: ExtensionService identifies the extension service
+                          defining the otle-collector.
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
+                      includePodDetail:
+                        description: IncludePodDetail defines a flag. If it is true,
+                          contour will add the pod name and namespace to the span
+                          of the trace. the default is true.
+                        type: boolean
+                      maxPathTagLength:
+                        description: OverallSampling defines maximum length of the
+                          request path to extract and include in the HttpUrl tag.
+                          contour's default is 256.
+                        format: int32
+                        type: integer
+                      overallSampling:
+                        description: OverallSampling defines the sampling rate of
+                          trace data. contour's default is 100
+                        type: string
+                      serviceName:
+                        description: ServiceName defines the name for the service.
+                          contour's default is contour
+                        type: string
                     type: object
                   xdsServer:
                     description: XDSServer contains parameters for the xDS server.
