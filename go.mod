@@ -24,7 +24,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tsaarni/certyaml v0.9.1
-	github.com/vektra/mockery/v2 v2.15.0
+	github.com/vektra/mockery/v2 v2.16.0
 	golang.org/x/oauth2 v0.3.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f
@@ -51,6 +51,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/chigopher/pathlib v0.12.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20220314180256-7f1daf1720fc // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.7 // indirect
