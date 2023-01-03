@@ -786,10 +786,10 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.H
 	// or else match all hostnames.
 	if len(routeHostnames) == 0 {
 		if len(listenerHostname) > 0 {
-			return sets.New[string](listenerHostname), nil
+			return sets.New(listenerHostname), nil
 		}
 
-		return sets.New[string]("*"), nil
+		return sets.New("*"), nil
 	}
 
 	hostnames := sets.New[string]()
