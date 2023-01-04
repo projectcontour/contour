@@ -376,7 +376,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		panic("Can't add more than one router to a filter chain")
 	}
 
-	if routerIndex != lastIndex {
+	if routerIndex != -1 && routerIndex != lastIndex {
 		// Move the router to the end of the filters array.
 		routerFilter := b.filters[routerIndex]
 		b.filters = append(b.filters[:routerIndex], b.filters[routerIndex+1])
