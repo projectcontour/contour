@@ -23,6 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -371,7 +371,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
+					IngressClassName: ref.To("nginx"),
 				},
 			},
 			want: false,
@@ -383,7 +383,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
+					IngressClassName: ref.To("contour"),
 				},
 			},
 			want: true,
@@ -472,7 +472,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
+					IngressClassName: ref.To("contour"),
 				},
 			},
 			want: false,
@@ -487,7 +487,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
+					IngressClassName: ref.To("nginx"),
 				},
 			},
 			want: true,
@@ -708,6 +708,90 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
+		"insert service referenced by tlsRoute": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service referenced by tlsRoute w/ mismatch namespace": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "tlsroute"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert service referenced by tlsRoute w/ mismatch name": {
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("tlsroute", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
 		"insert service referenced by httpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -784,26 +868,74 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert gateway-api HTTPRoute": {
+		"insert gateway-api HTTPRoute, no reference to Gateway": {
 			obj: &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
 			},
+			want: false,
+		},
+		"insert gateway-api HTTPRoute, has reference to Gateway": {
+			pre: []interface{}{
+				&gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
+							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
+						},
+					},
+				},
+			},
 			want: true,
 		},
-		"insert gateway-api TLSRoute": {
+		"insert gateway-api TLSRoute, no reference to Gateway": {
 			obj: &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: "default",
 				},
 			},
+			want: false,
+		},
+		"insert gateway-api TLSRoute, has reference to Gateway": {
+			pre: []interface{}{
+				&gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
+						},
+					},
+				},
+			},
 			want: true,
 		},
 		"insert gateway-api ReferenceGrant": {
-			obj: &gatewayapi_v1alpha2.ReferenceGrant{
+			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant-1",
 					Namespace: "default",
@@ -1002,6 +1134,75 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
+		"remove service with reference to TLSRoute": {
+			cache: cache(
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service",
+						Namespace: "default",
+					},
+				},
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			),
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service without valid reference to TLSRoute": {
+			cache: cache(
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service",
+						Namespace: "default",
+					},
+				},
+				&gatewayapi_v1alpha2.TLSRoute{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default"},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "contour"),
+							},
+						},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("service1", 80, nil),
+						}},
+					},
+					Status: gatewayapi_v1alpha2.TLSRouteStatus{},
+				},
+			),
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+
 		"remove namespace": {
 			cache: cache(&v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1132,44 +1333,125 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
-		"remove gateway-api HTTPRoute": {
-			cache: cache(&gatewayapi_v1beta1.HTTPRoute{
+		"remove gateway-api HTTPRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "httproute",
+					Name:      "Gateway",
 					Namespace: "default",
+				}},
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httproute",
+						Namespace: "default",
+					},
 				},
-			}),
+			),
 			obj: &gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
 			},
-			want: true,
+			want: false,
 		},
-		"remove gateway-api TLSRoute": {
-			cache: cache(&gatewayapi_v1alpha2.TLSRoute{
+		"remove gateway-api HTTPRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tlsroute",
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httproute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
 					Namespace: "default",
 				},
-			}),
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api TLSRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "Gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default",
+					},
+				}),
 			obj: &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: "default",
 				},
 			},
+			want: false,
+		},
+		"remove gateway-api TLSRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlsroute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
 			want: true,
 		},
 		"remove gateway-api ReferenceGrant": {
-			cache: cache(&gatewayapi_v1alpha2.ReferenceGrant{
+			cache: cache(&gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant",
 					Namespace: "default",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.ReferenceGrant{
+			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "referencegrant",
 					Namespace: "default",
@@ -1504,6 +1786,25 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	tlsRoute := func(namespace, name string) *gatewayapi_v1alpha2.TLSRoute {
+		return &gatewayapi_v1alpha2.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					},
+				},
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					BackendRefs: gatewayapi.TLSRouteBackendRef(name, 80, nil),
+				}},
+			},
+		}
+	}
+
 	tests := map[string]struct {
 		cache *KubernetesCache
 		svc   *v1.Service
@@ -1590,6 +1891,30 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			cache: cache(
 				service("default", "service-1"),
 				httpRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tlsroute exists in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("default", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: true,
+		},
+		"tlsroute does not exist in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tlsroute does use same name as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tlsRoute("default", "service"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,
@@ -1875,6 +2200,171 @@ func TestSecretTriggersRebuild(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.want, tc.cache.secretTriggersRebuild(tc.secret))
+		})
+	}
+}
+
+func TestRouteTriggersRebuild(t *testing.T) {
+
+	cache := func(objs ...interface{}) *KubernetesCache {
+		cache := KubernetesCache{
+			FieldLogger: fixture.NewTestLogger(t),
+		}
+		for _, o := range objs {
+			cache.Insert(o)
+		}
+		return &cache
+	}
+
+	httpRoute := func(namespace, name, parentRefNamespace, parentRefName string) *gatewayapi_v1beta1.HTTPRoute {
+		return &gatewayapi_v1beta1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
+					},
+				},
+				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+					BackendRefs: gatewayapi.HTTPBackendRef(name, 80, 1),
+				}},
+			},
+		}
+	}
+
+	tlsRoute := func(namespace, name, parentRefNamespace, parentRefName string) *gatewayapi_v1alpha2.TLSRoute {
+		return &gatewayapi_v1alpha2.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
+					},
+				},
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					BackendRefs: gatewayapi.TLSRouteBackendRef(name, 80, nil),
+				}},
+			},
+		}
+	}
+
+	gateway := func(namespace, name string) *gatewayapi_v1beta1.Gateway {
+		return &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+	}
+
+	tests := map[string]struct {
+		cache     *KubernetesCache
+		httproute *gatewayapi_v1beta1.HTTPRoute
+		tlsroute  *gatewayapi_v1alpha2.TLSRoute
+		want      bool
+	}{
+		"httproute empty cache does not trigger rebuild": {
+			cache:     cache(),
+			httproute: httpRoute("default", "httproute", "default", "gateway"),
+			want:      false,
+		},
+		"httproute with empty parentRef does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			httproute: &gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						BackendRefs: gatewayapi.HTTPBackendRef("httproute", 80, 1),
+					}},
+				},
+			},
+			want: false,
+		},
+		"httproute with unmatching gateway namespace in parentref does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			httproute: httpRoute("default", "httproute", "gateway-unmatching-namespace", "gateway"),
+			want:      false,
+		},
+		"httproute with unmatching gateway name in parentref does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			httproute: httpRoute("default", "httproute", "default", "gateway-unmatching-name"),
+			want:      false,
+		},
+		"httproute with matching gateway parentref triggers rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			httproute: httpRoute("default", "httproute", "default", "gateway"),
+			want:      true,
+		},
+		"tlsroute empty cache does not trigger rebuild": {
+			cache:    cache(),
+			tlsroute: tlsRoute("default", "tlsroute", "default", "gateway"),
+			want:     false,
+		},
+		"tlsroute with empty parentRef does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			tlsroute: &gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("tlsroute", 80, nil),
+					}},
+				},
+			},
+			want: false,
+		},
+		"tlsroute with unmatching gateway namespace parentref does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			tlsroute: tlsRoute("default", "tlsroute", "gateway-unmatching-namespace", "gateway"),
+			want:     false,
+		},
+		"tlsroute with unmatching gateway name parentref does not trigger rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			tlsroute: tlsRoute("default", "tlsroute", "default", "gateway-unmatching-name"),
+			want:     false,
+		},
+		"tlsroute with matching gateway parentref triggers rebuild": {
+			cache: cache(
+				gateway("default", "gateway"),
+			),
+			tlsroute: tlsRoute("default", "tlsroute", "default", "gateway"),
+			want:     true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.httproute != nil {
+				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.httproute.Spec.ParentRefs))
+			}
+			if tc.tlsroute != nil {
+				assert.Equal(t, tc.want, tc.cache.routeTriggersRebuild(tc.tlsroute.Spec.ParentRefs))
+			}
 		})
 	}
 }

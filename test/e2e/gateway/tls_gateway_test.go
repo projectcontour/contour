@@ -19,6 +19,7 @@ package gateway
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,9 +44,9 @@ func testTLSGateway(namespace string, gateway types.NamespacedName) {
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
-							Namespace:   gatewayapi.NamespacePtr(gateway.Namespace),
+							Namespace:   ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
 							Name:        gatewayapi_v1beta1.ObjectName(gateway.Name),
-							SectionName: gatewayapi.SectionNamePtr("insecure"),
+							SectionName: ref.To(gatewayapi_v1beta1.SectionName("insecure")),
 						},
 					},
 				},
@@ -70,9 +71,9 @@ func testTLSGateway(namespace string, gateway types.NamespacedName) {
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						{
-							Namespace:   gatewayapi.NamespacePtr(gateway.Namespace),
+							Namespace:   ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
 							Name:        gatewayapi_v1beta1.ObjectName(gateway.Name),
-							SectionName: gatewayapi.SectionNamePtr("secure"),
+							SectionName: ref.To(gatewayapi_v1beta1.SectionName("secure")),
 						},
 					},
 				},

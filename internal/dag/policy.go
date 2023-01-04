@@ -22,11 +22,11 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -202,9 +202,9 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 	}, nil
 }
 
-// headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPRequestHeaderFilter.
+// headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType gatewayapi_v1beta1.HTTPRouteFilterType) (*HeadersPolicy, error) {
 	var (
 		set         = make(map[string]string, len(hf.Set))
 		add         = make(map[string]string, len(hf.Add))
@@ -219,7 +219,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPRequestHeaderFilter) (*H
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" {
+		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
 			hostRewrite = setHeader.Value
 			continue
 		}
@@ -235,7 +235,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPRequestHeaderFilter) (*H
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" {
+		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
 			hostRewrite = addHeader.Value
 			continue
 		}
@@ -332,12 +332,12 @@ func cookieRewritePolicies(policies []contour_api_v1.CookieRewritePolicy) ([]Coo
 		var path *string
 		if p.PathRewrite != nil {
 			policiesSet++
-			path = pointer.String(p.PathRewrite.Value)
+			path = ref.To(p.PathRewrite.Value)
 		}
 		var domain *string
 		if p.DomainRewrite != nil {
 			policiesSet++
-			domain = pointer.String(p.DomainRewrite.Value)
+			domain = ref.To(p.DomainRewrite.Value)
 		}
 		// We use a uint here since a pointer to bool cannot be
 		// distingiuished when unset or false in golang text templates.

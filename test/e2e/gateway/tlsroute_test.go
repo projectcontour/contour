@@ -44,7 +44,7 @@ func testTLSRoutePassthrough(namespace string, gateway types.NamespacedName) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-						gatewayapi.GatewayParentRefV1Alpha2(gateway.Namespace, gateway.Name),
+						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"passthrough.tlsroute.gatewayapi.projectcontour.io"},

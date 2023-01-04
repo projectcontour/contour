@@ -17,11 +17,10 @@ import (
 	"context"
 	"testing"
 
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/provisioner"
-
 	"github.com/go-logr/logr"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -65,7 +63,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayv1beta1.ParametersReference{
 			Group:     gatewayv1beta1.Group(contourv1alpha1.GroupVersion.Group),
 			Kind:      "ContourDeployment",
-			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -76,7 +74,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayv1beta1.ParametersReference{
 			Group:     gatewayv1beta1.Group(contourv1alpha1.GroupVersion.Group),
 			Kind:      "InvalidKind",
-			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Namespace: ref.To(gatewayv1beta1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -103,10 +101,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Contour deployment has been created
@@ -149,7 +147,7 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify that the Gateway has not had a "Scheduled: true" condition set
+				// Verify that the Gateway has not had a "Accepted: true" condition set
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Empty(t, gw.Status.Conditions, 0)
 
@@ -194,7 +192,7 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify that the Gateway has not had a "Scheduled: true" condition set
+				// Verify that the Gateway has not had a "Accepted: true" condition set
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Empty(t, gw.Status.Conditions, 0)
 
@@ -236,7 +234,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.207",
 						},
 					},
@@ -258,11 +256,11 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.207",
 						},
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.IPAddressType),
+							Type:  ref.To(gatewayv1beta1.IPAddressType),
 							Value: "172.18.255.999",
 						},
 					},
@@ -284,7 +282,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "projectcontour.io",
 						},
 					},
@@ -306,11 +304,11 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "projectcontour.io",
 						},
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayv1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayv1beta1.HostnameAddressType),
 							Value: "anotherhost.io",
 						},
 					},
@@ -332,7 +330,7 @@ func TestGatewayReconcile(t *testing.T) {
 					GatewayClassName: "gatewayclass-1",
 					Addresses: []gatewayv1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr("acme.io/CustomAddressType"),
+							Type:  ref.To(gatewayv1beta1.AddressType("acme.io/CustomAddressType")),
 							Value: "custom-address-types-are-not-supported",
 						},
 					},
@@ -352,10 +350,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: pointer.Bool(true),
+						EnableExternalNameService: ref.To(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: pointer.Bool(true),
+								DisableMergeSlashes: ref.To(true),
 							},
 						},
 					},
@@ -373,10 +371,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -389,7 +387,7 @@ func TestGatewayReconcile(t *testing.T) {
 				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
 
 				want := contourv1alpha1.ContourConfigurationSpec{
-					EnableExternalNameService: pointer.Bool(true),
+					EnableExternalNameService: ref.To(true),
 					Gateway: &contourv1alpha1.GatewayConfig{
 						GatewayRef: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Name,
@@ -398,7 +396,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 					Envoy: &contourv1alpha1.EnvoyConfig{
 						Listener: &contourv1alpha1.EnvoyListenerConfig{
-							DisableMergeSlashes: pointer.Bool(true),
+							DisableMergeSlashes: ref.To(true),
 						},
 						Service: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Namespace,
@@ -447,10 +445,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -489,10 +487,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contourv1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: pointer.Bool(true),
+						EnableExternalNameService: ref.To(true),
 						Envoy: &contourv1alpha1.EnvoyConfig{
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: pointer.Bool(true),
+								DisableMergeSlashes: ref.To(true),
 							},
 						},
 					},
@@ -510,10 +508,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -562,7 +560,7 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-2",
 							Protocol: gatewayv1beta1.HTTPProtocolType,
 							Port:     82,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 						{
@@ -585,14 +583,14 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-6",
 							Protocol: gatewayv1beta1.TLSProtocolType,
 							Port:     8443,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-7's port will be ignored because it's different than the previous HTTPS/TLS listeners'
 						{
 							Name:     "listener-7",
 							Protocol: gatewayv1beta1.HTTPSProtocolType,
 							Port:     8444,
-							Hostname: gatewayapi.ListenerHostname("foo.baz"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.baz")),
 						},
 					},
 				},
@@ -642,7 +640,7 @@ func TestGatewayReconcile(t *testing.T) {
 							Name:     "listener-2",
 							Protocol: gatewayv1beta1.HTTPProtocolType,
 							Port:     82,
-							Hostname: gatewayapi.ListenerHostname("foo.bar"),
+							Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 						},
 						// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 						{
@@ -700,10 +698,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Deployment has been created
@@ -750,10 +748,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Deployment has been created
@@ -794,10 +792,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -847,10 +845,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -895,10 +893,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
@@ -948,10 +946,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
@@ -994,10 +992,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -1045,10 +1043,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -1092,10 +1090,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1152,10 +1150,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1212,10 +1210,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -1261,10 +1259,10 @@ func TestGatewayReconcile(t *testing.T) {
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				// Verify the Gateway has a "Scheduled: true" condition
+				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created

@@ -38,6 +38,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
@@ -54,12 +55,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/pointer"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -614,8 +613,8 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		SNI:                     sni,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
-		FailOpen:                pointer.BoolDeref(contourConfiguration.RateLimitService.FailOpen, false),
-		EnableXRateLimitHeaders: pointer.BoolDeref(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
+		FailOpen:                ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
+		EnableXRateLimitHeaders: ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
 	}, nil
 }
 
@@ -805,13 +804,8 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
-		// Inform on ReferencePolicies.
-		if err := informOnResource(&gatewayapi_v1alpha2.ReferencePolicy{}, eventHandler, mgr.GetCache()); err != nil {
-			s.log.WithError(err).WithField("resource", "referencepolicies").Fatal("failed to create informer")
-		}
-
 		// Inform on ReferenceGrants.
-		if err := informOnResource(&gatewayapi_v1alpha2.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
 		}
 
@@ -959,6 +953,6 @@ func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cac
 		return err
 	}
 
-	inf.AddEventHandler(handler)
-	return nil
+	_, err = inf.AddEventHandler(handler)
+	return err
 }

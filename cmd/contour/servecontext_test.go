@@ -26,12 +26,12 @@ import (
 
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/tsaarni/certyaml"
-	"k8s.io/utils/pointer"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -93,7 +93,7 @@ func TestServeContextTLSParams(t *testing.T) {
 				CAFile:   "cacert.pem",
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
-				Insecure: pointer.Bool(false),
+				Insecure: ref.To(false),
 			},
 			expectError: false,
 		},
@@ -101,7 +101,7 @@ func TestServeContextTLSParams(t *testing.T) {
 			tls: &contour_api_v1alpha1.TLS{
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
-				Insecure: pointer.Bool(false),
+				Insecure: ref.To(false),
 			},
 			expectError: true,
 		},
@@ -191,7 +191,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
-		Insecure: pointer.Bool(false),
+		Insecure: ref.To(false),
 	}
 
 	// Initial set of credentials must be written into temp directory before
@@ -257,7 +257,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
-		Insecure: pointer.Bool(false),
+		Insecure: ref.To(false),
 	}
 
 	err = caCert.WritePEM(contourTLS.CAFile, filepath.Join(configDir, "CAkey.pem"))
@@ -385,7 +385,7 @@ func TestConvertServeContext(t *testing.T) {
 					CAFile:   "/certs/ca.crt",
 					CertFile: "/certs/cert.crt",
 					KeyFile:  "/certs/cert.key",
-					Insecure: pointer.Bool(false),
+					Insecure: ref.To(false),
 				},
 			},
 			Ingress: &contour_api_v1alpha1.IngressConfig{
@@ -406,9 +406,9 @@ func TestConvertServeContext(t *testing.T) {
 					Namespace: "projectcontour",
 				},
 				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:             pointer.Bool(false),
-					DisableAllowChunkedLength: pointer.Bool(false),
-					DisableMergeSlashes:       pointer.Bool(false),
+					UseProxyProto:             ref.To(false),
+					DisableAllowChunkedLength: ref.To(false),
+					DisableMergeSlashes:       ref.To(false),
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 					},
@@ -459,32 +459,33 @@ func TestConvertServeContext(t *testing.T) {
 						"user_agent",
 						"x_forwarded_for",
 						"grpc_status",
+						"grpc_status_number",
 					}),
 				},
 				DefaultHTTPVersions: nil,
 				Timeouts: &contour_api_v1alpha1.TimeoutParameters{
-					ConnectionIdleTimeout: pointer.StringPtr("60s"),
-					ConnectTimeout:        pointer.StringPtr("2s"),
+					ConnectionIdleTimeout: ref.To("60s"),
+					ConnectTimeout:        ref.To("2s"),
 				},
 				Cluster: &contour_api_v1alpha1.ClusterParameters{
 					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 				},
 				Network: &contour_api_v1alpha1.NetworkParameters{
-					EnvoyAdminPort:    pointer.Int(9001),
+					EnvoyAdminPort:    ref.To(9001),
 					XffNumTrustedHops: contourconfig.UInt32Ptr(0),
 				},
 			},
 			Gateway: nil,
 			HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
-				DisablePermitInsecure: pointer.Bool(false),
+				DisablePermitInsecure: ref.To(false),
 				FallbackCertificate:   nil,
 			},
-			EnableExternalNameService: pointer.Bool(false),
+			EnableExternalNameService: ref.To(false),
 			RateLimitService:          nil,
 			Policy: &contour_api_v1alpha1.PolicyConfig{
 				RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
 				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
-				ApplyToIngress:        pointer.Bool(false),
+				ApplyToIngress:        ref.To(false),
 			},
 			Metrics: &contour_api_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
@@ -530,7 +531,7 @@ func TestConvertServeContext(t *testing.T) {
 						Set:    map[string]string{"custom-response-header-set": "foo-bar", "Host": "response-bar.com"},
 						Remove: []string{"custom-response-header-remove"},
 					},
-					ApplyToIngress: pointer.Bool(true),
+					ApplyToIngress: ref.To(true),
 				}
 				return cfg
 			},
@@ -610,7 +611,7 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.HTTPProxy = &contour_api_v1alpha1.HTTPProxyConfig{
-					DisablePermitInsecure: pointer.Bool(true),
+					DisablePermitInsecure: ref.To(true),
 					FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
 						Name:      "fallbackname",
 						Namespace: "fallbacknamespace",
@@ -636,8 +637,8 @@ func TestConvertServeContext(t *testing.T) {
 						Namespace: "ratens",
 					},
 					Domain:                  "contour",
-					FailOpen:                pointer.Bool(true),
-					EnableXRateLimitHeaders: pointer.Bool(true),
+					FailOpen:                ref.To(true),
+					EnableXRateLimitHeaders: ref.To(true),
 				}
 				return cfg
 			},
@@ -681,7 +682,7 @@ func TestConvertServeContext(t *testing.T) {
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.DisableMergeSlashes = pointer.Bool(true)
+				cfg.Envoy.Listener.DisableMergeSlashes = ref.To(true)
 				return cfg
 			},
 		},

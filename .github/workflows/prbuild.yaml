@@ -11,7 +11,7 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.19.3
+  GO_VERSION: 1.19.4
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
         with:
           version: v1.50.1
           args: --build-tags=e2e,conformance,gcp,oidc,tools,none
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -44,7 +44,7 @@ jobs:
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -75,7 +75,7 @@ jobs:
         run: |
           make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -103,7 +103,7 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@v1
+    - uses: act10ns/slack@v2
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -125,11 +125,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
+            node_image: "docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
+            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.23.13@sha256:ef453bb7c79f0e3caba88d2067d4196f427794086a7d0df8df4f019d5e336b61"
+            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
@@ -167,7 +167,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make e2e
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -187,11 +187,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
+            node_image: "docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
+            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.23.13@sha256:ef453bb7c79f0e3caba88d2067d4196f427794086a7d0df8df4f019d5e336b61"
+            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -228,7 +228,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -280,7 +280,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: coverage.out
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -315,7 +315,7 @@ jobs:
         run: |
           make install
           make check-coverage
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -354,7 +354,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make gateway-conformance
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/conformance/tests"
 	"sigs.k8s.io/gateway-api/conformance/utils/flags"
 	"sigs.k8s.io/gateway-api/conformance/utils/suite"
@@ -36,15 +37,23 @@ func TestGatewayConformance(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
+	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
 
 	cSuite := suite.New(suite.Options{
 		Client:               client,
 		GatewayClassName:     *flags.GatewayClassName,
 		Debug:                *flags.ShowDebug,
 		CleanupBaseResources: *flags.CleanupBaseResources,
-		SupportedFeatures: []suite.SupportedFeature{
-			suite.SupportReferenceGrant,
-			suite.SupportHTTPRouteQueryParamMatching,
+		// Keep the list of supported features in sync with
+		// test/scripts/run-gateway-conformance.sh.
+		SupportedFeatures: map[suite.SupportedFeature]bool{
+			suite.SupportReferenceGrant:                     true,
+			suite.SupportTLSRoute:                           true,
+			suite.SupportHTTPRouteQueryParamMatching:        true,
+			suite.SupportHTTPRouteMethodMatching:            true,
+			suite.SupportHTTPResponseHeaderModification:     true,
+			suite.SupportRouteDestinationPortMatching:       true,
+			suite.SupportGatewayClassObservedGenerationBump: true,
 		},
 	})
 	cSuite.Setup(t)

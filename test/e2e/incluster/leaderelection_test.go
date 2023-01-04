@@ -23,11 +23,11 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/require"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +50,7 @@ func testLeaderElection(namespace string) {
 				return "", err
 			}
 
-			leaseHolder := pointer.StringDeref(leaderElectionLease.Spec.HolderIdentity, "")
+			leaseHolder := ref.Val(leaderElectionLease.Spec.HolderIdentity, "")
 			if !strings.HasPrefix(leaseHolder, "contour-") {
 				return "", fmt.Errorf("invalid leader name: %q", leaseHolder)
 			}

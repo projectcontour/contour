@@ -15,8 +15,9 @@ package status
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,7 +54,7 @@ func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 	gatewayUpdate.Conditions[cond] = newCond
@@ -72,7 +73,7 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName
 
 	for _, kind := range kinds {
 		groupKind := gatewayapi_v1beta1.RouteGroupKind{
-			Group: gatewayapi.GroupPtr(gatewayapi_v1beta1.GroupName),
+			Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 			Kind:  kind,
 		}
 
@@ -126,7 +127,7 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 
@@ -214,21 +215,4 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 	// xref: https://github.com/projectcontour/contour/issues/3828
 
 	return updated
-}
-
-// IsListenerReady returns true if the named listener has a
-// "Ready" condition with a status of "True", or false otherwise.
-func (gatewayUpdate *GatewayStatusUpdate) IsListenerReady(listenerName string) bool {
-	listenerStatus, ok := gatewayUpdate.ListenerStatus[listenerName]
-	if !ok {
-		return false
-	}
-
-	for _, cond := range listenerStatus.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.ListenerConditionReady) {
-			return cond.Status == metav1.ConditionTrue
-		}
-	}
-
-	return false
 }

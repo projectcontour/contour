@@ -18,9 +18,9 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s/mocks"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
@@ -28,7 +28,6 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -392,7 +391,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -409,13 +408,13 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},
@@ -436,7 +435,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -453,13 +452,13 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
 						},
 					},
@@ -480,7 +479,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -497,7 +496,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -518,7 +517,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -535,7 +534,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -556,7 +555,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -573,13 +572,13 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionReady),
+							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
 					Addresses: []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 					},
@@ -660,7 +659,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 	}
 	var ingressClassName *string
 	if ingressClassSpec != "" {
-		ingressClassName = pointer.StringPtr(ingressClassSpec)
+		ingressClassName = ref.To(ingressClassSpec)
 	}
 	return &networking_v1.Ingress{
 		TypeMeta: metav1.TypeMeta{
@@ -676,7 +675,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 			IngressClassName: ingressClassName,
 		},
 		Status: networking_v1.IngressStatus{
-			LoadBalancer: lbstatus,
+			LoadBalancer: coreToNetworkingLBStatus(lbstatus),
 		},
 	}
 }

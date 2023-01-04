@@ -16,12 +16,12 @@ package model
 import (
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
+	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -649,7 +649,7 @@ func MakeNodePorts(ports map[string]int) []NodePort {
 	for k, v := range ports {
 		p := NodePort{
 			Name:       k,
-			PortNumber: pointer.Int32Ptr(int32(v)),
+			PortNumber: ref.To(int32(v)),
 		}
 		nodePorts = append(nodePorts, p)
 	}

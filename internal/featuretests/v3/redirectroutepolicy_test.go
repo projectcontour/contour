@@ -16,13 +16,12 @@ package v3
 import (
 	"testing"
 
-	"k8s.io/utils/pointer"
-
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -40,11 +39,11 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_api_v1.Route{{
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Scheme:     pointer.StringPtr("https"),
-					Hostname:   pointer.StringPtr("envoyproxy.io"),
-					Port:       pointer.Int32Ptr(443),
-					StatusCode: pointer.IntPtr(301),
-					Path:       pointer.StringPtr("/blog"),
+					Scheme:     ref.To("https"),
+					Hostname:   ref.To("envoyproxy.io"),
+					Port:       ref.To(int32(443)),
+					StatusCode: ref.To(301),
+					Path:       ref.To("/blog"),
 				},
 			}},
 		})
@@ -84,11 +83,11 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_api_v1.Route{{
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Scheme:     pointer.StringPtr("https"),
-					Hostname:   pointer.StringPtr("envoyproxy.io"),
-					Port:       pointer.Int32Ptr(443),
-					StatusCode: pointer.IntPtr(301),
-					Prefix:     pointer.StringPtr("/blogprefix"),
+					Scheme:     ref.To("https"),
+					Hostname:   ref.To("envoyproxy.io"),
+					Port:       ref.To(int32(443)),
+					StatusCode: ref.To(301),
+					Prefix:     ref.To("/blogprefix"),
 				},
 			}},
 		})
@@ -132,12 +131,12 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-					Scheme:     pointer.StringPtr("https"),
-					Hostname:   pointer.StringPtr("envoyproxy.io"),
-					Port:       pointer.Int32Ptr(443),
-					StatusCode: pointer.IntPtr(301),
-					Prefix:     pointer.StringPtr("/blogprefix"),
-					Path:       pointer.StringPtr("/blogprefix"),
+					Scheme:     ref.To("https"),
+					Hostname:   ref.To("envoyproxy.io"),
+					Port:       ref.To(int32(443)),
+					StatusCode: ref.To(301),
+					Prefix:     ref.To("/blogprefix"),
+					Path:       ref.To("/blogprefix"),
 				},
 			}},
 		})

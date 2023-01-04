@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -70,11 +71,11 @@ func TestTLSRoute(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -91,7 +92,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
@@ -143,7 +144,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
@@ -193,7 +194,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
@@ -211,7 +212,7 @@ func TestTLSRoute(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{

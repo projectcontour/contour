@@ -21,12 +21,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -55,7 +55,7 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname: gatewayapi.PreciseHostname("projectcontour.io"),
+									Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("projectcontour.io")),
 								},
 							},
 						},
@@ -67,10 +67,10 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
-									StatusCode: pointer.Int(301),
-									Scheme:     pointer.String("https"),
-									Port:       gatewayapi.PortNumPtr(8080),
+									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
+									StatusCode: ref.To(301),
+									Scheme:     ref.To("https"),
+									Port:       ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						},

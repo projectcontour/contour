@@ -16,8 +16,8 @@ package ingressclass
 import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ref"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/utils/pointer"
 )
 
 // DefaultClassName is the default IngressClass name that Contour will match
@@ -33,7 +33,7 @@ func MatchesIngress(obj *networking_v1.Ingress, ingressClassNames []string) bool
 		return matches(annotationClass, ingressClassNames)
 	}
 
-	return matches(pointer.StringPtrDerefOr(obj.Spec.IngressClassName, ""), ingressClassNames)
+	return matches(ref.Val(obj.Spec.IngressClassName, ""), ingressClassNames)
 }
 
 // MatchesHTTPProxy returns true if the passed in HTTPProxy annotations

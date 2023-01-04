@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.24.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.24.1
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -41,13 +41,15 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.19.3
+BUILD_BASE_IMAGE ?= golang:1.19.4
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
 
 # Go module mirror to use.
 BUILD_GOPROXY ?= https://proxy.golang.org
+
+BUILD_GOEXPERIMENT ?= none
 
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
@@ -124,6 +126,7 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
+		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		$(shell pwd)
@@ -137,6 +140,7 @@ container: ## Build the Contour container image
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
+		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)

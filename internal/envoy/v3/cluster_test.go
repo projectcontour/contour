@@ -233,6 +233,19 @@ func TestCluster(t *testing.T) {
 				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
 			},
 		},
+		"externalName service - dns-lookup-family all": {
+			cluster: &dag.Cluster{
+				Upstream:        service(s2),
+				DNSLookupFamily: "all",
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS),
+				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_ALL,
+			},
+		},
 		"externalName service - dns-lookup-family not defined": {
 			cluster: &dag.Cluster{
 				Upstream: service(s2),
@@ -653,6 +666,35 @@ func TestDNSNameCluster(t *testing.T) {
 				Name:                 "dnsname/http/foo.projectcontour.io",
 				DnsLookupFamily:      envoy_cluster_v3.Cluster_V4_ONLY,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "dnsname/http/foo.projectcontour.io",
+					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+						{
+							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+								{
+									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_endpoint_v3.Endpoint{
+											Address: SocketAddress("foo.projectcontour.io", 80),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"plain HTTP cluster with DNS lookup family of all": {
+			cluster: &dag.DNSNameCluster{
+				Address:         "foo.projectcontour.io",
+				Scheme:          "http",
+				Port:            80,
+				DNSLookupFamily: "all",
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "dnsname/http/foo.projectcontour.io",
+				DnsLookupFamily:      envoy_cluster_v3.Cluster_ALL,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS),
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/http/foo.projectcontour.io",
 					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{

@@ -135,6 +135,7 @@ data:
     #   - "user_agent"
     #   - "x_forwarded_for"
     #   - "grpc_status"
+    #   - "grpc_status_number"
     #
     # default-http-versions:
     # - "HTTP/2"
@@ -218,7 +219,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: contourconfigurations.projectcontour.io
 spec:
@@ -302,10 +303,14 @@ spec:
                           for addresses in the IPv6 family. If AUTO is configured,
                           the DNS resolver will first perform a lookup for addresses
                           in the IPv6 family and fallback to a lookup for addresses
-                          in the IPv4 family. Note: This only applies to externalName
-                          clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+                          in the IPv4 family. If ALL is specified, the DNS resolver
+                          will perform a lookup for both IPv4 and IPv6 families, and
+                          return all resolved addresses. When this is used, Happy
+                          Eyeballs will be enabled for upstream connections. Refer
+                          to Happy Eyeballs Support for more information. Note: This
+                          only applies to externalName clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
                           for more information. \n Values: `auto` (default), `v4`,
-                          `v6`. \n Other values will produce an error."
+                          `v6`, `all`. \n Other values will produce an error."
                         type: string
                     type: object
                   defaultHTTPVersions:
@@ -1021,7 +1026,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: contourdeployments.projectcontour.io
 spec:
@@ -1210,6 +1215,26 @@ spec:
                     description: 'Compute Resources required by contour container.
                       Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable."
+                        items:
+                          x-kubernetes-map-type: atomic
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: set
                       limits:
                         additionalProperties:
                           anyOf:
@@ -1897,10 +1922,13 @@ spec:
                                         If the provisioner or an external controller
                                         can support the specified data source, it
                                         will create a new volume based on the contents
-                                        of the specified data source. If the AnyVolumeDataSource
-                                        feature gate is enabled, this field will always
-                                        have the same contents as the DataSourceRef
-                                        field.'
+                                        of the specified data source. When the AnyVolumeDataSource
+                                        feature gate is enabled, dataSource contents
+                                        will be copied to dataSourceRef, and dataSourceRef
+                                        contents will be copied to dataSource when
+                                        dataSourceRef.namespace is not specified.
+                                        If the namespace is specified, then dataSourceRef
+                                        will not be copied to dataSource.'
                                       properties:
                                         apiGroup:
                                           description: APIGroup is the group for the
@@ -1926,29 +1954,37 @@ spec:
                                       description: 'dataSourceRef specifies the object
                                         from which to populate the volume with data,
                                         if a non-empty volume is desired. This may
-                                        be any local object from a non-empty API group
-                                        (non core object) or a PersistentVolumeClaim
-                                        object. When this field is specified, volume
-                                        binding will only succeed if the type of the
-                                        specified object matches some installed volume
-                                        populator or dynamic provisioner. This field
-                                        will replace the functionality of the DataSource
-                                        field and as such if both fields are non-empty,
+                                        be any object from a non-empty API group (non
+                                        core object) or a PersistentVolumeClaim object.
+                                        When this field is specified, volume binding
+                                        will only succeed if the type of the specified
+                                        object matches some installed volume populator
+                                        or dynamic provisioner. This field will replace
+                                        the functionality of the dataSource field
+                                        and as such if both fields are non-empty,
                                         they must have the same value. For backwards
-                                        compatibility, both fields (DataSource and
-                                        DataSourceRef) will be set to the same value
-                                        automatically if one of them is empty and
-                                        the other is non-empty. There are two important
-                                        differences between DataSource and DataSourceRef:
-                                        * While DataSource only allows two specific
-                                        types of objects, DataSourceRef allows any
-                                        non-core object, as well as PersistentVolumeClaim
-                                        objects. * While DataSource ignores disallowed
-                                        values (dropping them), DataSourceRef preserves
-                                        all values, and generates an error if a disallowed
-                                        value is specified. (Beta) Using this field
-                                        requires the AnyVolumeDataSource feature gate
-                                        to be enabled.'
+                                        compatibility, when namespace isn''t specified
+                                        in dataSourceRef, both fields (dataSource
+                                        and dataSourceRef) will be set to the same
+                                        value automatically if one of them is empty
+                                        and the other is non-empty. When namespace
+                                        is specified in dataSourceRef, dataSource
+                                        isn''t set to the same value and must be empty.
+                                        There are three important differences between
+                                        dataSource and dataSourceRef: * While dataSource
+                                        only allows two specific types of objects,
+                                        dataSourceRef allows any non-core object,
+                                        as well as PersistentVolumeClaim objects.
+                                        * While dataSource ignores disallowed values
+                                        (dropping them), dataSourceRef preserves all
+                                        values, and generates an error if a disallowed
+                                        value is specified. * While dataSource only
+                                        allows local objects, dataSourceRef allows
+                                        objects in any namespaces. (Beta) Using this
+                                        field requires the AnyVolumeDataSource feature
+                                        gate to be enabled. (Alpha) Using the namespace
+                                        field of dataSourceRef requires the CrossNamespaceVolumeDataSource
+                                        feature gate to be enabled.'
                                       properties:
                                         apiGroup:
                                           description: APIGroup is the group for the
@@ -1965,11 +2001,21 @@ spec:
                                           description: Name is the name of resource
                                             being referenced
                                           type: string
+                                        namespace:
+                                          description: Namespace is the namespace
+                                            of resource being referenced Note that
+                                            when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                            object is required in the referent namespace
+                                            to allow that namespace's owner to accept
+                                            the reference. See the ReferenceGrant
+                                            documentation for details. (Alpha) This
+                                            field requires the CrossNamespaceVolumeDataSource
+                                            feature gate to be enabled.
+                                          type: string
                                       required:
                                       - kind
                                       - name
                                       type: object
-                                      x-kubernetes-map-type: atomic
                                     resources:
                                       description: 'resources represents the minimum
                                         resources the volume should have. If RecoverVolumeExpansionFailure
@@ -1979,6 +2025,30 @@ spec:
                                         capacity recorded in the status field of the
                                         claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                       properties:
+                                        claims:
+                                          description: "Claims lists the names of
+                                            resources, defined in spec.resourceClaims,
+                                            that are used by this container. \n This
+                                            is an alpha field and requires enabling
+                                            the DynamicResourceAllocation feature
+                                            gate. \n This field is immutable."
+                                          items:
+                                            x-kubernetes-map-type: atomic
+                                            description: ResourceClaim references
+                                              one entry in PodSpec.ResourceClaims.
+                                            properties:
+                                              name:
+                                                description: Name must match the name
+                                                  of one entry in pod.spec.resourceClaims
+                                                  of the Pod where this field is used.
+                                                  It makes that resource available
+                                                  inside a container.
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                          x-kubernetes-list-type: set
                                         limits:
                                           additionalProperties:
                                             anyOf:
@@ -3174,6 +3244,26 @@ spec:
                     description: 'Compute Resources required by envoy container. Cannot
                       be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable."
+                        items:
+                          x-kubernetes-map-type: atomic
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: set
                       limits:
                         additionalProperties:
                           anyOf:
@@ -3261,10 +3351,15 @@ spec:
                               perform a lookup for addresses in the IPv6 family. If
                               AUTO is configured, the DNS resolver will first perform
                               a lookup for addresses in the IPv6 family and fallback
-                              to a lookup for addresses in the IPv4 family. Note:
-                              This only applies to externalName clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+                              to a lookup for addresses in the IPv4 family. If ALL
+                              is specified, the DNS resolver will perform a lookup
+                              for both IPv4 and IPv6 families, and return all resolved
+                              addresses. When this is used, Happy Eyeballs will be
+                              enabled for upstream connections. Refer to Happy Eyeballs
+                              Support for more information. Note: This only applies
+                              to externalName clusters. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
                               for more information. \n Values: `auto` (default), `v4`,
-                              `v6`. \n Other values will produce an error."
+                              `v6`, `all`. \n Other values will produce an error."
                             type: string
                         type: object
                       defaultHTTPVersions:
@@ -3857,7 +3952,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -4279,7 +4374,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -5963,11 +6058,13 @@ spec:
                                 will only perform a lookup for addresses in the IPv4
                                 family. If \"v6\" is configured, the DNS resolver
                                 will only perform a lookup for addresses in the IPv6
-                                family. If \"auto\" is configured, the DNS resolver
-                                will first perform a lookup for addresses in the IPv6
-                                family and fallback to a lookup for addresses in the
-                                IPv4 family. If not specified, the Contour-wide setting
-                                defined in the config file or ContourConfiguration
+                                family. If \"all\" is configured, the DNS resolver
+                                will perform a lookup for addresses in both the IPv4
+                                and IPv6 family. If \"auto\" is configured, the DNS
+                                resolver will first perform a lookup for addresses
+                                in the IPv6 family and fallback to a lookup for addresses
+                                in the IPv4 family. If not specified, the Contour-wide
+                                setting defined in the config file or ContourConfiguration
                                 applies (defaults to \"auto\"). \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
                                 for more information."
                               enum:
@@ -6636,7 +6733,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:
@@ -7053,7 +7150,6 @@ rules:
   - gateways
   - httproutes
   - referencegrants
-  - referencepolicies
   - tlsroutes
   verbs:
   - get
@@ -7338,7 +7434,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.24.0
+        image: docker.io/envoyproxy/envoy:v1.24.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

@@ -19,12 +19,12 @@ package gateway
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -51,15 +51,15 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1beta1.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1beta1.PathMatchPathPrefix),
-									Value: pointer.StringPtr("/"),
+									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+									Value: ref.To("/"),
 								},
 							},
 						},
 						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 									Add: []gatewayapi_v1beta1.HTTPHeader{
 										{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "rewritten.com"},
 									},
