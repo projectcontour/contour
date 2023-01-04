@@ -304,8 +304,8 @@ func registerShutdownManager(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*k
 	ctx.FieldLogger = log.WithField("context", "shutdown-manager")
 
 	shutdownmgr := cmd.Command("shutdown-manager", "Start envoy shutdown-manager.")
-	shutdownmgr.Flag("serve-port", "Port to serve the http server on.").IntVar(&ctx.httpServePort)
 	shutdownmgr.Flag("ready-file", "File to poll while waiting shutdown to be completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
+	shutdownmgr.Flag("serve-port", "Port to serve the http server on.").IntVar(&ctx.httpServePort)
 
 	return shutdownmgr, ctx
 }
@@ -316,10 +316,10 @@ func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.
 	ctx.FieldLogger = log.WithField("context", "shutdown")
 
 	shutdown := cmd.Command("shutdown", "Initiate an shutdown sequence which configures Envoy to begin draining connections.")
-	shutdown.Flag("admin-port", "DEPRECATED: Envoy admin interface port.").IntVar(&ctx.adminPort)
 	shutdown.Flag("admin-address", "Envoy admin interface address.").Default("/admin/admin.sock").StringVar(&ctx.adminAddress)
-	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
+	shutdown.Flag("admin-port", "DEPRECATED: Envoy admin interface port.").IntVar(&ctx.adminPort)
 	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("0s").DurationVar(&ctx.checkDelay)
+	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
 	shutdown.Flag("drain-delay", "Time to wait before draining Envoy connections.").Default("0s").DurationVar(&ctx.drainDelay)
 	shutdown.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
 	shutdown.Flag("ready-file", "File to write when shutdown is completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
