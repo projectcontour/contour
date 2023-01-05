@@ -39,25 +39,21 @@ func main() {
 
 	certgenApp, certgenConfig := registerCertGen(app)
 
-	cli := app.Command("cli", "A CLI client for the Contour Kubernetes ingress controller.")
-	var client Client
-	cli.Flag("cafile", "CA bundle file for connecting to a TLS-secured Contour.").Envar("CLI_CAFILE").StringVar(&client.CAFile)
-	cli.Flag("cert-file", "Client certificate file for connecting to a TLS-secured Contour.").Envar("CLI_CERT_FILE").StringVar(&client.ClientCert)
-	cli.Flag("contour", "Contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
-	cli.Flag("delta", "Use incremental xDS.").BoolVar(&client.Delta)
-	cli.Flag("key-file", "Client key file for connecting to a TLS-secured Contour.").Envar("CLI_KEY_FILE").StringVar(&client.ClientKey)
-	cli.Flag("nack", "NACK all responses (for testing).").BoolVar(&client.Nack)
-	cli.Flag("node-id", "Node ID for the CLI client to use.").Envar("CLI_NODE_ID").Default("ContourCLI").StringVar(&client.NodeID)
+	cli, client := registerCli(app)
 
 	var resources []string
 	cds := cli.Command("cds", "Watch services.")
 	cds.Arg("resources", "CDS resource filter").StringsVar(&resources)
+
 	eds := cli.Command("eds", "Watch endpoints.")
 	eds.Arg("resources", "EDS resource filter").StringsVar(&resources)
+
 	lds := cli.Command("lds", "Watch listeners.")
 	lds.Arg("resources", "LDS resource filter").StringsVar(&resources)
+
 	rds := cli.Command("rds", "Watch routes.")
 	rds.Arg("resources", "RDS resource filter").StringsVar(&resources)
+
 	sds := cli.Command("sds", "Watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 

@@ -24,6 +24,8 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.Boo
 	var config envoy.BootstrapConfig
 
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
+	bootstrap.Arg("path", "Configuration file ('-' for standard output).").Required().StringVar(&config.Path)
+
 	bootstrap.Flag("admin-address", "Path to Envoy admin unix domain socket.").Default("/admin/admin.sock").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "DEPRECATED: Envoy admin interface port.").IntVar(&config.AdminPort)
 	bootstrap.Flag("dns-lookup-family", "Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto, or all.").StringVar(&config.DNSLookupFamily)
@@ -32,10 +34,10 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.Boo
 	bootstrap.Flag("envoy-key-file", "Client key filename for Envoy secure xDS gRPC communication.").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
 	bootstrap.Flag("namespace", "The namespace the Envoy container will run in.").Envar("CONTOUR_NAMESPACE").Default("projectcontour").StringVar(&config.Namespace)
 	bootstrap.Flag("overload-max-heap", "Defines the maximum heap size in bytes until overload manager stops accepting new connections.").Uint64Var(&config.MaximumHeapSizeBytes)
-	bootstrap.Arg("path", "Configuration file ('-' for standard output).").Required().StringVar(&config.Path)
 	bootstrap.Flag("resources-dir", "Directory where configuration files will be written to.").StringVar(&config.ResourcesDir)
 	bootstrap.Flag("xds-address", "xDS gRPC API address.").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port.").IntVar(&config.XDSGRPCPort)
 	bootstrap.Flag("xds-resource-version", "The versions of the xDS resources to request from Contour.").Default("v3").StringVar((*string)(&config.XDSResourceVersion))
+
 	return bootstrap, &config
 }

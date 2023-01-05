@@ -25,6 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/pkg/certs"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
