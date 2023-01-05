@@ -651,6 +651,26 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"prefix regex removal": {
+			route: &dag.Route{
+				Clusters:          []*dag.Cluster{c1},
+				PathRewritePolicy: &dag.PathRewritePolicy{PrefixRegexRemove: "^/prefix/*"},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RegexRewrite: &matcher.RegexMatchAndSubstitute{
+						Pattern: &matcher.RegexMatcher{
+							EngineType: &matcher.RegexMatcher_GoogleRe2{},
+							Regex:      "^/prefix/*",
+						},
+						Substitution: "/",
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

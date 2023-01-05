@@ -1487,6 +1487,23 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
+		// Handle the case where the prefix is supposed to be rewritten to "/", i.e. removed.
+		// This doesn't work out of the box in Envoy with path_separated_prefix
+		// and prefix_rewrite, so we have to use a regex. Specifically, for a prefix
+		// match of "/foo", a prefix rewrite of "/", and a request to "/foo/bar", Envoy
+		// will rewrite the request path to "//bar" which is invalid. The regex handles matching
+		// and removing any trailing slashes.
+		//
+		// This logic is implemented here rather than in internal/envoy because there
+		// is already special handling at the DAG level for similar issues for HTTPProxy.
+		if pathRewritePolicy != nil && pathRewritePolicy.PrefixRewrite == "/" {
+			prefixMatch, ok := mc.path.(*PrefixMatchCondition)
+			if ok {
+				pathRewritePolicy.PrefixRewrite = ""
+				pathRewritePolicy.PrefixRegexRemove = "^" + prefixMatch.Prefix + "/*"
+			}
+		}
+
 		routes = append(routes, &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,

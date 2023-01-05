@@ -294,15 +294,24 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	}
 
 	if r.PathRewritePolicy != nil {
-		if len(r.PathRewritePolicy.PrefixRewrite) > 0 {
+		switch {
+		case len(r.PathRewritePolicy.PrefixRewrite) > 0:
 			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
-		} else if len(r.PathRewritePolicy.FullPathRewrite) > 0 {
+		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
 			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
 				Pattern: &matcher.RegexMatcher{
 					EngineType: &matcher.RegexMatcher_GoogleRe2{},
 					Regex:      "^/.*$", // match the entire path
 				},
 				Substitution: r.PathRewritePolicy.FullPathRewrite,
+			}
+		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
+			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+				Pattern: &matcher.RegexMatcher{
+					EngineType: &matcher.RegexMatcher_GoogleRe2{},
+					Regex:      r.PathRewritePolicy.PrefixRegexRemove,
+				},
+				Substitution: "/",
 			}
 		}
 	}
