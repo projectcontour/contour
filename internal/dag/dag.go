@@ -258,7 +258,7 @@ type Route struct {
 	RetryPolicy *RetryPolicy
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
-	PrefixRewrite string
+	PathRewritePolicy *PathRewritePolicy
 
 	// Mirror Policy defines the mirroring policy for this Route.
 	MirrorPolicy *MirrorPolicy
@@ -342,6 +342,13 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
 	PerTryTimeout timeout.Setting
+}
+
+// PathRewritePolicy defines a policy for rewriting the path of
+// the request during forwarding. At most one field should be populated.
+type PathRewritePolicy struct {
+	PrefixRewrite   string
+	FullPathRewrite string
 }
 
 // MirrorPolicy defines the mirroring policy for a route.
