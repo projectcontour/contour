@@ -74,7 +74,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 			if res.StatusCode == expectedStatus {
 				poller.successfulRequests++
 			} else {
-				fmt.Fprintln(errorWriter, "unexpected status code:", res.StatusCode)
+				fmt.Fprintln(errorWriter, "unexpected status code:", res.StatusCode, "response flags:", res.Header["X-Envoy-Response-Flags"])
 			}
 			return false, nil
 		})
