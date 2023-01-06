@@ -1083,6 +1083,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			redirect                                  *gatewayapi_v1beta1.HTTPRequestRedirectFilter
 			mirrorPolicy                              *MirrorPolicy
 			pathRewritePolicy                         *PathRewritePolicy
+			urlRewriteHostname                        string
 		)
 
 		for _, filter := range rule.Filters {
@@ -1149,7 +1150,15 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 					continue
 				}
 
-				if filter.URLRewrite == nil || filter.URLRewrite.Path == nil {
+				if filter.URLRewrite == nil {
+					continue
+				}
+
+				if filter.URLRewrite.Hostname != nil {
+					urlRewriteHostname = string(*filter.URLRewrite.Hostname)
+				}
+
+				if filter.URLRewrite.Path == nil {
 					continue
 				}
 
@@ -1190,6 +1199,19 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect, RequestMirror and URLRewrite are supported.", filter.Type),
 				)
 			}
+		}
+
+		// If a URLRewrite filter specified a hostname rewrite,
+		// add it to the request headers policy. The API spec does
+		// not indicate how to resolve conflicts in rewriting the
+		// Host header between a URLRewrite filter and a RequestHeaderModifier
+		// filter so here we are choosing to prioritize the URLRewrite
+		// filter.
+		if len(urlRewriteHostname) > 0 {
+			if requestHeaderPolicy == nil {
+				requestHeaderPolicy = &HeadersPolicy{}
+			}
+			requestHeaderPolicy.HostRewrite = urlRewriteHostname
 		}
 
 		// Priority is used to ensure if there are multiple matching route rules
