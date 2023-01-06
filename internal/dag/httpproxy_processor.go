@@ -806,16 +806,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// First, try to apply an exact prefix match.
 			for _, prefix := range route.GetPrefixReplacements() {
 				if len(prefix.Prefix) > 0 && routingPrefix == prefix.Prefix {
-					r.PrefixRewrite = prefix.Replacement
+					r.PathRewritePolicy = &PathRewritePolicy{
+						PrefixRewrite: prefix.Replacement,
+					}
 					break
 				}
 			}
 
 			// If there wasn't a match, we can apply the default replacement.
-			if len(r.PrefixRewrite) == 0 {
+			if r.PathRewritePolicy == nil {
 				for _, prefix := range route.GetPrefixReplacements() {
 					if len(prefix.Prefix) == 0 {
-						r.PrefixRewrite = prefix.Replacement
+						r.PathRewritePolicy = &PathRewritePolicy{
+							PrefixRewrite: prefix.Replacement,
+						}
 						break
 					}
 				}
@@ -1217,7 +1221,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 		switch len(routes) {
 		case 1:
 			// Don't modify if we are not doing a replacement.
-			if len(routes[0].PrefixRewrite) == 0 {
+			if routes[0].PathRewritePolicy == nil {
 				continue
 			}
 
@@ -1232,18 +1236,21 @@ func expandPrefixMatches(routes []*Route) []*Route {
 			newRoute := *routes[0]
 
 			// Now, make the original route handle '/foo' and the new route handle '/foo'.
-			routes[0].PrefixRewrite = strings.TrimRight(routes[0].PrefixRewrite, "/")
+			routes[0].PathRewritePolicy.PrefixRewrite = strings.TrimRight(routes[0].PathRewritePolicy.PrefixRewrite, "/")
 			routes[0].PathMatchCondition = &PrefixMatchCondition{Prefix: prefix}
 
-			newRoute.PrefixRewrite = routes[0].PrefixRewrite + "/"
+			// Replace the entire PathRewritePolicy since we didn't deep-copy the route.
+			newRoute.PathRewritePolicy = &PathRewritePolicy{
+				PrefixRewrite: routes[0].PathRewritePolicy.PrefixRewrite + "/",
+			}
 			newRoute.PathMatchCondition = &PrefixMatchCondition{Prefix: prefix + "/"}
 
 			// Since we trimmed trailing '/', it's possible that
 			// we made the replacement empty. There's no such
 			// thing as an empty rewrite; it's the same as
 			// rewriting to '/'.
-			if len(routes[0].PrefixRewrite) == 0 {
-				routes[0].PrefixRewrite = "/"
+			if len(routes[0].PathRewritePolicy.PrefixRewrite) == 0 {
+				routes[0].PathRewritePolicy.PrefixRewrite = "/"
 			}
 
 			expandedRoutes = append(expandedRoutes, &newRoute)
