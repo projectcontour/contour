@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -1522,7 +1523,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			prefixMatch, ok := mc.path.(*PrefixMatchCondition)
 			if ok {
 				pathRewritePolicy.PrefixRewrite = ""
-				pathRewritePolicy.PrefixRegexRemove = "^" + prefixMatch.Prefix + "/*"
+				pathRewritePolicy.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
 			}
 		}
 

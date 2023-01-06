@@ -299,18 +299,12 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
 		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
 			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
-				Pattern: &matcher.RegexMatcher{
-					EngineType: &matcher.RegexMatcher_GoogleRe2{},
-					Regex:      "^/.*$", // match the entire path
-				},
+				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
 				Substitution: r.PathRewritePolicy.FullPathRewrite,
 			}
 		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
 			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
-				Pattern: &matcher.RegexMatcher{
-					EngineType: &matcher.RegexMatcher_GoogleRe2{},
-					Regex:      r.PathRewritePolicy.PrefixRegexRemove,
-				},
+				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
 				Substitution: "/",
 			}
 		}
