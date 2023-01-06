@@ -97,7 +97,7 @@ var _ = Describe("upgrading Contour", func() {
 			By("ensuring it is routable")
 			checkRoutability(appHost)
 
-			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK)
+			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
 			require.NoError(f.T(), err)
 
 			By("deploying updated contour resources")

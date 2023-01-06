@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -32,7 +34,7 @@ type AppPoller struct {
 	successfulRequests uint
 }
 
-func StartAppPoller(address string, hostName string, expectedStatus int) (*AppPoller, error) {
+func StartAppPoller(address string, hostName string, expectedStatus int, errorWriter io.Writer) (*AppPoller, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	poller := &AppPoller{
@@ -66,10 +68,13 @@ func StartAppPoller(address string, hostName string, expectedStatus int) (*AppPo
 			poller.totalRequests++
 			res, err := client.Do(req)
 			if err != nil {
+				fmt.Fprintln(errorWriter, "error making request:", err)
 				return false, nil
 			}
 			if res.StatusCode == expectedStatus {
 				poller.successfulRequests++
+			} else {
+				fmt.Fprintln(errorWriter, "unexpected status code:", res.StatusCode)
 			}
 			return false, nil
 		})
