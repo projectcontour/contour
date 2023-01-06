@@ -1523,6 +1523,8 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			prefixMatch, ok := mc.path.(*PrefixMatchCondition)
 			if ok {
 				pathRewritePolicy.PrefixRewrite = ""
+				// The regex below will capture/remove all consecutive trailing slashes
+				// immediately after the prefix, to handle requests like /prefix///foo.
 				pathRewritePolicy.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
 			}
 		}
