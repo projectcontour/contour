@@ -643,8 +643,7 @@ func TestRouteRoute(t *testing.T) {
 					},
 					RegexRewrite: &matcher.RegexMatchAndSubstitute{
 						Pattern: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{},
-							Regex:      "^/.*$",
+							Regex: "^/.*$",
 						},
 						Substitution: "/rewrite",
 					},
@@ -663,8 +662,7 @@ func TestRouteRoute(t *testing.T) {
 					},
 					RegexRewrite: &matcher.RegexMatchAndSubstitute{
 						Pattern: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{},
-							Regex:      "^/prefix/*",
+							Regex: "^/prefix/*",
 						},
 						Substitution: "/",
 					},
