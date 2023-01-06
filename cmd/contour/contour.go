@@ -29,6 +29,8 @@ func main() {
 	log := logrus.StandardLogger()
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
 
+	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
+
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
 

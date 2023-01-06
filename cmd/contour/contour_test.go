@@ -18,49 +18,43 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-func testOptionFalgsAreSortedHelper(t *testing.T, cmd *kingpin.CmdClause) {
+func assertOptionFlagsAreSorted(t *testing.T, cmd *kingpin.CmdClause) {
 	var flags []string
 
 	for _, v := range cmd.Model().FlagGroupModel.Flags {
 		flags = append(flags, v.Name)
 	}
-	if !sort.StringsAreSorted(flags) {
-		t.Errorf("the flags for subcommand: '%s' aren't sorted", cmd.Model().Name)
-
-		sort.Strings(flags)
-		for _, v := range flags {
-			println(v)
-		}
-	}
+	assert.Truef(t, sort.StringsAreSorted(flags), "the flags for subcommand %q aren't sorted: %v", cmd.Model().Name, flags)
 }
 
 func TestOptionFlagsAreSorted(t *testing.T) {
-	app := kingpin.New("contour_option_flags_are_sorted", "Test contour options are sorted or not")
+	app := kingpin.New("contour_option_flags_are_sorted", "Assert contour options are sorted")
 
 	bootstrap, _ := registerBootstrap(app)
-	testOptionFalgsAreSortedHelper(t, bootstrap)
+	assertOptionFlagsAreSorted(t, bootstrap)
 
 	certgen, _ := registerCertGen(app)
-	testOptionFalgsAreSortedHelper(t, certgen)
+	assertOptionFlagsAreSorted(t, certgen)
 
 	cli, _ := registerCli(app)
-	testOptionFalgsAreSortedHelper(t, cli)
+	assertOptionFlagsAreSorted(t, cli)
 
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
 	log := logrus.StandardLogger()
 
 	sdmShutdown, _ := registerShutdown(envoyCmd, log)
-	testOptionFalgsAreSortedHelper(t, sdmShutdown)
+	assertOptionFlagsAreSorted(t, sdmShutdown)
 
 	sdm, _ := registerShutdownManager(envoyCmd, log)
-	testOptionFalgsAreSortedHelper(t, sdm)
+	assertOptionFlagsAreSorted(t, sdm)
 
 	gatewayProvisioner, _ := registerGatewayProvisioner(app)
-	testOptionFalgsAreSortedHelper(t, gatewayProvisioner)
+	assertOptionFlagsAreSorted(t, gatewayProvisioner)
 
 	serve, _ := registerServe(app)
-	testOptionFalgsAreSortedHelper(t, serve)
+	assertOptionFlagsAreSorted(t, serve)
 }
