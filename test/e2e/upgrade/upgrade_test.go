@@ -27,7 +27,6 @@ import (
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -122,10 +121,6 @@ var _ = Describe("upgrading Contour", func() {
 		})
 	})
 })
-
-func ingressPathTypePtr(t networking_v1.PathType) *networking_v1.PathType {
-	return &t
-}
 
 func checkRoutability(host string) {
 	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
