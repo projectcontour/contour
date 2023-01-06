@@ -30,6 +30,7 @@ func main() {
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
 
 	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
+	// to ensure the option flags in lexicographic order.
 
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
