@@ -148,20 +148,6 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				"envoy",
 				"shutdown-manager",
 			},
-			LivenessProbe: &corev1.Probe{
-				FailureThreshold: int32(3),
-				ProbeHandler: corev1.ProbeHandler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Scheme: corev1.URISchemeHTTP,
-						Path:   "/healthz",
-						Port:   intstr.IntOrString{IntVal: int32(8090)},
-					},
-				},
-				InitialDelaySeconds: int32(3),
-				PeriodSeconds:       int32(10),
-				SuccessThreshold:    int32(1),
-				TimeoutSeconds:      int32(1),
-			},
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.LifecycleHandler{
 					Exec: &corev1.ExecAction{
