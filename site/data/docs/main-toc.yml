@@ -97,6 +97,8 @@ toc:
         url: /troubleshooting/profiling-contour
       - page: Contour Operator
         url: /troubleshooting/operator
+      - page: Envoy Container Stuck Unready
+        url: /troubleshooting/envoy-container-draining
   - title: Resources
     subfolderitems:
       - page: Support Policy
