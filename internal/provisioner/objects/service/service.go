@@ -182,21 +182,13 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	// Match service ports up to container ports based on name (the names
-	// are statically set by provisioner code to "http" and "https" so for
-	// now we're logically guaranteed to find matches).
-	for _, servicePort := range contour.Spec.NetworkPublishing.Envoy.ServicePorts {
-		for _, containerPort := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
-			if servicePort.Name == containerPort.Name {
-				ports = append(ports, corev1.ServicePort{
-					Name:       servicePort.Name,
-					Protocol:   corev1.ProtocolTCP,
-					Port:       servicePort.PortNumber,
-					TargetPort: intstr.IntOrString{IntVal: containerPort.PortNumber},
-				})
-				break
-			}
-		}
+	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
+		ports = append(ports, corev1.ServicePort{
+			Name:       port.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       port.ServicePort,
+			TargetPort: intstr.IntOrString{IntVal: port.ContainerPort},
+		})
 	}
 
 	svc := &corev1.Service{
@@ -277,13 +269,13 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeNodePort
 
-		for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
-			if p.PortNumber == nil {
+		for _, p := range contour.Spec.NetworkPublishing.Envoy.Ports {
+			if p.NodePort == 0 {
 				continue
 			}
 			for i, q := range svc.Spec.Ports {
 				if q.Name == p.Name {
-					svc.Spec.Ports[i].NodePort = *p.PortNumber
+					svc.Spec.Ports[i].NodePort = p.NodePort
 				}
 			}
 		}

@@ -28,7 +28,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
-	"github.com/projectcontour/contour/internal/ref"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -213,18 +212,20 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	validateListenersResult := gatewayapi.ValidateListeners(gateway.Spec.Listeners)
 
 	if validateListenersResult.InsecurePort > 0 {
-		port := model.ServicePort{
-			Name:       "http",
-			PortNumber: int32(validateListenersResult.InsecurePort),
+		port := model.Port{
+			Name:          "http",
+			ServicePort:   int32(validateListenersResult.InsecurePort),
+			ContainerPort: 8080,
 		}
-		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+		contourModel.Spec.NetworkPublishing.Envoy.Ports = append(contourModel.Spec.NetworkPublishing.Envoy.Ports, port)
 	}
 	if validateListenersResult.SecurePort > 0 {
-		port := model.ServicePort{
-			Name:       "https",
-			PortNumber: int32(validateListenersResult.SecurePort),
+		port := model.Port{
+			Name:          "https",
+			ServicePort:   int32(validateListenersResult.SecurePort),
+			ContainerPort: 8443,
 		}
-		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+		contourModel.Spec.NetworkPublishing.Envoy.Ports = append(contourModel.Spec.NetworkPublishing.Envoy.Ports, port)
 	}
 
 	gatewayClassParams, err := r.getGatewayClassParams(ctx, gatewayClass)
@@ -309,23 +310,16 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					// when the NetworkPublishingType is 'NodePortServicePublishingType',
 					// the gateway.Spec.Listeners' port will be used to set 'NodePort' NOT 'ServicePort'
 					// in this scenario, the service port values will be reassigned with 80/443.
-					svcPorts := contourModel.Spec.NetworkPublishing.Envoy.ServicePorts
-					for i := 0; i < len(svcPorts); i++ {
-						name := svcPorts[i].Name
-						contourModel.Spec.NetworkPublishing.Envoy.NodePorts = append(
-							contourModel.Spec.NetworkPublishing.Envoy.NodePorts,
-							model.NodePort{
-								Name:       name,
-								PortNumber: ref.To(svcPorts[i].PortNumber),
-							})
-
-						if name == "http" {
-							svcPorts[i].PortNumber = 80
+					for i := range contourModel.Spec.NetworkPublishing.Envoy.Ports {
+						port := &contourModel.Spec.NetworkPublishing.Envoy.Ports[i]
+						switch port.Name {
+						case "http":
+							port.NodePort = port.ServicePort
+							port.ServicePort = 80
+						case "https":
+							port.NodePort = port.ServicePort
+							port.ServicePort = 443
 						}
-						if name == "https" {
-							svcPorts[i].PortNumber = 443
-						}
-
 					}
 				}
 

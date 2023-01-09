@@ -145,12 +145,12 @@ func TestDesiredDeployment(t *testing.T) {
 	// Change the default ports to test Envoy service port args.
 	insecurePort := objects.EnvoyInsecureContainerPort
 	securePort := objects.EnvoySecureContainerPort
-	for i, p := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
-		if p.Name == "http" && p.PortNumber == insecurePort {
-			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8081)
+	for i, p := range cntr.Spec.NetworkPublishing.Envoy.Ports {
+		if p.Name == "http" && p.ContainerPort == insecurePort {
+			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ServicePort = int32(8081)
 		}
-		if p.Name == "https" && p.PortNumber == securePort {
-			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8444)
+		if p.Name == "https" && p.ContainerPort == securePort {
+			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ServicePort = int32(8444)
 		}
 	}
 

@@ -282,8 +282,8 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
 	checkDaemonSetHasLabels(t, ds, cntr.AppLabels())
-	for _, port := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
-		checkContainerHasPort(t, ds, port.PortNumber)
+	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
+		checkContainerHasPort(t, ds, port.ContainerPort)
 	}
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
