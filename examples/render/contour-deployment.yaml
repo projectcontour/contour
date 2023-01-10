@@ -7362,12 +7362,6 @@ spec:
                   - /bin/contour
                   - envoy
                   - shutdown
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8090
-            initialDelaySeconds: 3
-            periodSeconds: 10
           name: shutdown-manager
           volumeMounts:
             - name: envoy-admin
