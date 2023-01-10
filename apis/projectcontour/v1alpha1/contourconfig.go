@@ -619,6 +619,12 @@ type RateLimitServiceConfig struct {
 	// ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
 	// +optional
 	EnableXRateLimitHeaders *bool `json:"enableXRateLimitHeaders,omitempty"`
+
+	// EnableResourceExhaustedCode enables translating error code 429 to
+	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
+	//
+	// +optional
+	EnableResourceExhaustedCode *bool `json:"enableResourceExhaustedCode,omitempty"`
 }
 
 // PolicyConfig holds default policy used if not explicitly set by the user
