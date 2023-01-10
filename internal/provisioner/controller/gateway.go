@@ -17,7 +17,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -28,6 +28,9 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
+	"github.com/projectcontour/contour/internal/ref"
+
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -221,7 +224,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			Name:       "https",
 			PortNumber: int32(validateListenersResult.SecurePort),
 		}
-
 		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
@@ -301,6 +303,30 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				// so just check for the existence of a value here.
 				if networkPublishing.Type != "" {
 					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+				}
+
+				if networkPublishing.Type == v1alpha1.NodePortServicePublishingType {
+					// when the NetworkPublishingType is 'NodePortServicePublishingType',
+					// the gateway.Spec.Listeners' port will be used to set 'NodePort' NOT 'ServicePort'
+					// in this scenario, the service port values will be reassigned with 80/443.
+					svcPorts := contourModel.Spec.NetworkPublishing.Envoy.ServicePorts
+					for i := 0; i < len(svcPorts); i++ {
+						name := svcPorts[i].Name
+						contourModel.Spec.NetworkPublishing.Envoy.NodePorts = append(
+							contourModel.Spec.NetworkPublishing.Envoy.NodePorts,
+							model.NodePort{
+								Name:       name,
+								PortNumber: ref.To(int32(svcPorts[i].PortNumber)),
+							})
+
+						if name == "http" {
+							svcPorts[i].PortNumber = 80
+						}
+						if name == "https" {
+							svcPorts[i].PortNumber = 443
+						}
+
+					}
 				}
 
 				if networkPublishing.ExternalTrafficPolicy != "" {
