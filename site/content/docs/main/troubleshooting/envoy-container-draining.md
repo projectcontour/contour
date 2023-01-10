@@ -22,7 +22,8 @@ livenessProbe:
   failureThreshold: 6
 ```
 
-This will help the envoy container recover if it does become stuck in this state.
+This will cause the kubelet to restart the envoy container if it does get stuck in this state, resulting in a return to normal operations load balancing traffic.
+Note that in this case, it's possible that a graceful drain of connections may or may not occur, depending on the exact sequence of operations that preceded the envoy container failing the liveness probe.
 
 [1]: https://github.com/projectcontour/contour/issues/4851
 [2]: /docs/{{< param latest_version >}}/deploy-options/#setting-resource-requests-and-limits
