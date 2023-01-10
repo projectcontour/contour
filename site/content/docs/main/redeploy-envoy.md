@@ -13,10 +13,7 @@ When implementing this roll out, the following steps should be taken:
 
 Contour implements an `envoy` sub-command named `shutdown-manager` whose job is to manage a single Envoy instances lifecycle for Kubernetes.
 The `shutdown-manager` runs as a new container alongside the Envoy container in the same pod.
-It exposes two HTTP endpoints which are used for `livenessProbe` as well as to handle the Kubernetes `preStop` event hook.
-
-- **livenessProbe**: This is used to validate the shutdown manager is still running properly. If requests to `/healthz` fail, the container will be restarted.
-- **preStop**: This is used to keep the Envoy container running while waiting for connections to drain. The `/shutdown` endpoint blocks until the connections are drained.
+It uses a  Kubernetes `preStop` event hook to keep the Envoy container running while waiting for connections to drain. The `/shutdown` endpoint blocks until the connections are drained.
 
 ```yaml
  - name: shutdown-manager
@@ -34,12 +31,6 @@ It exposes two HTTP endpoints which are used for `livenessProbe` as well as to h
            - /bin/contour
            - envoy
            - shutdown
-   livenessProbe:
-     httpGet:
-       path: /healthz
-       port: 8090
-     initialDelaySeconds: 3
-     periodSeconds: 10
 ```
 
 The Envoy container also has some configuration to implement the shutdown manager.

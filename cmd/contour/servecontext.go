@@ -358,6 +358,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		dnsLookupFamily = contour_api_v1alpha1.IPv6ClusterDNSFamily
 	case config.IPv4ClusterDNSFamily:
 		dnsLookupFamily = contour_api_v1alpha1.IPv4ClusterDNSFamily
+	case config.AllClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.AllClusterDNSFamily
 	}
 
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig

@@ -9,7 +9,7 @@ id: getting-started
 This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
-- using the Contour gateway provisioner (alpha)
+- using the Contour gateway provisioner (beta)
 
 It then shows how to deploy a sample workload and route traffic to it via Contour.
 
@@ -72,7 +72,7 @@ You should see the following:
 - 1 instance of service/my-release-contour-envoy
 
 
-### Option 3: Contour Gateway Provisioner (alpha)
+### Option 3: Contour Gateway Provisioner (beta)
 
 The Gateway provisioner watches for the creation of [Gateway API][31] `Gateway` resources, and dynamically provisions Contour+Envoy instances based on the `Gateway's` spec.
 Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
@@ -197,7 +197,7 @@ Congratulations, you have installed Contour, deployed a backend application, cre
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
-- Explore the [Gateway API guide][14] (alpha)
+- Explore the [Gateway API guide][14] (beta)
 - Explore other [deployment options][1]
 
 Check out the following demo videos:

@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -184,7 +185,19 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
 						"No intersecting hostnames were found between the listener and the route.",
 					)
-				} else {
+				}
+
+				// Check for an existing "Accepted" condition, add one if one does
+				// not already exist.
+				hasAccepted := false
+				for _, cond := range routeParentStatusAccessor.ConditionsForParentRef(routeParentRef) {
+					if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
+						hasAccepted = true
+						break
+					}
+				}
+
+				if !hasAccepted {
 					routeParentStatusAccessor.AddCondition(
 						gatewayapi_v1beta1.RouteConditionAccepted,
 						metav1.ConditionTrue,
@@ -285,14 +298,21 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	var selectedListeners []*listenerInfo
 	for _, validListener := range validListeners {
 		// We've already verified the parent ref is for this Gateway,
-		// now check if it has a listener name specified.
-		if routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name {
+		// now check if it has a listener name and port specified.
+		// Both need to match the listener if specified.
+		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name) &&
+			(routeParentRef.Port == nil || *routeParentRef.Port == validListener.listener.Port) {
 			selectedListeners = append(selectedListeners, validListener)
 		}
 	}
 
 	if len(selectedListeners) == 0 {
-		routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonListenersNotReady, "No listeners are ready for this parent ref")
+		routeParentStatusAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionAccepted,
+			metav1.ConditionFalse,
+			gatewayapi_v1beta1.RouteReasonNoMatchingParent,
+			"No listeners match this parent ref",
+		)
 		return nil
 	}
 
@@ -770,7 +790,7 @@ func isSecretRef(certificateRef gatewayapi_v1beta1.SecretObjectReference) bool {
 //     invalid and some condition should be added to the route. This shouldn't be
 //     possible because of kubebuilder+admission webhook validation but we're being
 //     defensive here.
-func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.Hostname, listenerHostname string) (sets.String, []error) {
+func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.Hostname, listenerHostname string) (sets.Set[string], []error) {
 	// The listener hostname is assumed to be valid because it's been run
 	// through the `gatewayapi.ValidateListeners` logic, so we don't need
 	// to validate it here.
@@ -779,13 +799,13 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.H
 	// or else match all hostnames.
 	if len(routeHostnames) == 0 {
 		if len(listenerHostname) > 0 {
-			return sets.NewString(listenerHostname), nil
+			return sets.New(listenerHostname), nil
 		}
 
-		return sets.NewString("*"), nil
+		return sets.New("*"), nil
 	}
 
-	hostnames := sets.NewString()
+	hostnames := sets.New[string]()
 	var errs []error
 
 	for i := range routeHostnames {
@@ -920,7 +940,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.String) {
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
@@ -1003,7 +1023,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	return programmed, hosts
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.String) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
 	for _, err := range errs {
 		// The Gateway API spec does not indicate what to do if syntactically
@@ -1063,6 +1083,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			requestHeaderPolicy, responseHeaderPolicy *HeadersPolicy
 			redirect                                  *gatewayapi_v1beta1.HTTPRequestRedirectFilter
 			mirrorPolicy                              *MirrorPolicy
+			pathRewritePolicy                         *PathRewritePolicy
+			urlRewriteHostname                        string
 		)
 
 		for _, filter := range rule.Filters {
@@ -1121,11 +1143,76 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 						},
 					}
 				}
+			case gatewayapi_v1beta1.HTTPRouteFilterURLRewrite:
+				// Get the URL rewrite filter if there is one. Note that per Gateway API
+				// docs, "specifying a core filter multiple times has unspecified or
+				// custom conformance.", here we choose to just select the first one.
+				if pathRewritePolicy != nil {
+					continue
+				}
 
+				if filter.URLRewrite == nil {
+					continue
+				}
+
+				if filter.URLRewrite.Hostname != nil {
+					urlRewriteHostname = string(*filter.URLRewrite.Hostname)
+				}
+
+				if filter.URLRewrite.Path == nil {
+					continue
+				}
+
+				var prefixRewrite, fullPathRewrite string
+
+				switch filter.URLRewrite.Path.Type {
+				case gatewayapi_v1beta1.PrefixMatchHTTPPathModifier:
+					if filter.URLRewrite.Path.ReplacePrefixMatch == nil || len(*filter.URLRewrite.Path.ReplacePrefixMatch) == 0 {
+						prefixRewrite = "/"
+					} else {
+						prefixRewrite = *filter.URLRewrite.Path.ReplacePrefixMatch
+					}
+				case gatewayapi_v1beta1.FullPathHTTPPathModifier:
+					if filter.URLRewrite.Path.ReplaceFullPath == nil || len(*filter.URLRewrite.Path.ReplaceFullPath) == 0 {
+						fullPathRewrite = "/"
+					} else {
+						fullPathRewrite = *filter.URLRewrite.Path.ReplaceFullPath
+					}
+				default:
+					routeAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionFalse,
+						gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.URLRewrite.Path.Type),
+					)
+					continue
+				}
+
+				pathRewritePolicy = &PathRewritePolicy{
+					PrefixRewrite:   prefixRewrite,
+					FullPathRewrite: fullPathRewrite,
+				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType,
-					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect and RequestMirror are supported.", filter.Type))
+				routeAccessor.AddCondition(
+					gatewayapi_v1beta1.RouteConditionAccepted,
+					metav1.ConditionFalse,
+					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect, RequestMirror and URLRewrite are supported.", filter.Type),
+				)
 			}
+		}
+
+		// If a URLRewrite filter specified a hostname rewrite,
+		// add it to the request headers policy. The API spec does
+		// not indicate how to resolve conflicts in rewriting the
+		// Host header between a URLRewrite filter and a RequestHeaderModifier
+		// filter so here we are choosing to prioritize the URLRewrite
+		// filter.
+		if len(urlRewriteHostname) > 0 {
+			if requestHeaderPolicy == nil {
+				requestHeaderPolicy = &HeadersPolicy{}
+			}
+			requestHeaderPolicy.HostRewrite = urlRewriteHostname
 		}
 
 		// Priority is used to ensure if there are multiple matching route rules
@@ -1145,7 +1232,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		if redirect != nil {
 			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority)
+			routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority, pathRewritePolicy)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1287,7 +1374,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 
 func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
 	var headerMatchConditions []HeaderMatchCondition
-	seenNames := sets.String{}
+	seenNames := sets.New[string]()
 
 	for _, match := range matches {
 		// "Exact" is the default if not defined in the object, and
@@ -1316,7 +1403,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 
 func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
 	var dagMatchConditions []QueryParamMatchCondition
-	seenNames := sets.String{}
+	seenNames := sets.New[string]()
 
 	for _, match := range matches {
 		// "Exact" is the default if not defined in the object, and
@@ -1343,7 +1430,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil
@@ -1423,6 +1510,25 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
+		// Handle the case where the prefix is supposed to be rewritten to "/", i.e. removed.
+		// This doesn't work out of the box in Envoy with path_separated_prefix
+		// and prefix_rewrite, so we have to use a regex. Specifically, for a prefix
+		// match of "/foo", a prefix rewrite of "/", and a request to "/foo/bar", Envoy
+		// will rewrite the request path to "//bar" which is invalid. The regex handles matching
+		// and removing any trailing slashes.
+		//
+		// This logic is implemented here rather than in internal/envoy because there
+		// is already special handling at the DAG level for similar issues for HTTPProxy.
+		if pathRewritePolicy != nil && pathRewritePolicy.PrefixRewrite == "/" {
+			prefixMatch, ok := mc.path.(*PrefixMatchCondition)
+			if ok {
+				pathRewritePolicy.PrefixRewrite = ""
+				// The regex below will capture/remove all consecutive trailing slashes
+				// immediately after the prefix, to handle requests like /prefix///foo.
+				pathRewritePolicy.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
+			}
+		}
+
 		routes = append(routes, &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
@@ -1432,6 +1538,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			ResponseHeadersPolicy:     responseHeaderPolicy,
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
+			PathRewritePolicy:         pathRewritePolicy,
 		})
 	}
 

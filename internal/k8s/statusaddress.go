@@ -102,7 +102,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				}
 
 				dco := ing.DeepCopy()
-				dco.Status.LoadBalancer = loadBalancerStatus
+				dco.Status.LoadBalancer = coreToNetworkingLBStatus(loadBalancerStatus)
 				return dco
 			}),
 		))
@@ -282,4 +282,26 @@ func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj interface{}) {
 
 func (s *ServiceStatusLoadBalancerWatcher) notify(lbstatus v1.LoadBalancerStatus) {
 	s.LBStatus <- lbstatus
+}
+
+func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLoadBalancerStatus {
+	ingress := make([]networking_v1.IngressLoadBalancerIngress, len(lbs.Ingress))
+	for i, ing := range lbs.Ingress {
+		ports := make([]networking_v1.IngressPortStatus, len(ing.Ports))
+		for j, ps := range ing.Ports {
+			ports[j] = networking_v1.IngressPortStatus{
+				Port:     ps.Port,
+				Protocol: ps.Protocol,
+				Error:    ps.Error,
+			}
+		}
+		ingress[i] = networking_v1.IngressLoadBalancerIngress{
+			IP:       ing.IP,
+			Hostname: ing.Hostname,
+			Ports:    ports,
+		}
+	}
+	return networking_v1.IngressLoadBalancerStatus{
+		Ingress: ingress,
+	}
 }

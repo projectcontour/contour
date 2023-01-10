@@ -48,11 +48,15 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1beta1.ParentReference
 	return parentRef
 }
 
-func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1beta1.ParentReference {
+func GatewayListenerParentRef(namespace, name, listener string, port int) gatewayapi_v1beta1.ParentReference {
 	parentRef := GatewayParentRef(namespace, name)
 
 	if listener != "" {
 		parentRef.SectionName = ref.To(gatewayapi_v1beta1.SectionName(listener))
+	}
+
+	if port != 0 {
+		parentRef.Port = ref.To(gatewayapi_v1beta1.PortNumber(port))
 	}
 
 	return parentRef

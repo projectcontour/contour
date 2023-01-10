@@ -368,19 +368,20 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		}
 	}
 
-	// We can't add more than one router entry, and there should be no way to do it.
-	// If this happens, it has to be programmer error, so we panic to tell them
-	// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
-	// the second one earlier, because we're panicking anyway.
-	if routerIndex != -1 && f.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
-		panic("Can't add more than one router to a filter chain")
-	}
-
-	if routerIndex != lastIndex {
-		// Move the router to the end of the filters array.
-		routerFilter := b.filters[routerIndex]
-		b.filters = append(b.filters[:routerIndex], b.filters[routerIndex+1])
-		b.filters = append(b.filters, routerFilter)
+	if routerIndex != -1 {
+		// We can't add more than one router entry, and there should be no way to do it.
+		// If this happens, it has to be programmer error, so we panic to tell them
+		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
+		// the second one earlier, because we're panicking anyway.
+		if f.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+			panic("Can't add more than one router to a filter chain")
+		}
+		if routerIndex != lastIndex {
+			// Move the router to the end of the filters array.
+			routerFilter := b.filters[routerIndex]
+			b.filters = append(b.filters[:routerIndex], b.filters[routerIndex+1])
+			b.filters = append(b.filters, routerFilter)
+		}
 	}
 
 	return b

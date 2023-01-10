@@ -9,6 +9,8 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://flyte.org/" border="0" target="_blank"><img alt="flyte.com" src="site/img/adopters/flyte.png" height="50"></a>&nbsp; &nbsp; &nbsp;
 
+<a href="https://gojek.io/" border="0" target="_blank"><img alt="gojek.io" src="site/img/adopters/gojek.svg" height="50"></a>
+
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
@@ -28,6 +30,14 @@ All four [VMware Tanzu](https://tanzu.vmware.com/content/blog/simplify-your-appr
 
 **[Flyte](https://flyte.org/)**  
 Flyte's [sandbox environment](https://docs.flyte.org/en/latest/deployment/sandbox.html#deployment-sandbox) is powered by Contour and this is the default Ingress Controller. Sandbox environment has made it possible for data scientists all over to try out Flyte quickly and without contour that would not have been easy.
+
+**[Gojek](https://gojek.io/)**
+
+Gojek launched in 2010 as a call center for booking motorcycle taxi rides in Indonesia. Today, the startup is a decacorn serving millions of users across Southeast Asia with its mobile wallet, GoPay, and 20+ products on its super app. Want to order dinner? Book a massage? Buy movie tickets? You can do all of that with the Gojek app.
+
+The company’s mission is to solve everyday challenges with technology innovation. To achieve that across multiple markets, the team at Gojek focused on building an infrastructure for speed, reliability, and scale.
+
+Gojek Data Platform team processes more than hundred terabyte data per day. We are fully using kubernetes in our production environment and chose Contour as the ingress for all kubernetes clusters that we have.
 
 ## Adding a logo to projectcontour.io
 

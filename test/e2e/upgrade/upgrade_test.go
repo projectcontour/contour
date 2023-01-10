@@ -24,9 +24,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -63,26 +63,26 @@ var _ = Describe("upgrading Contour", func() {
 		Specify("applications remain routable after the upgrade", func() {
 			By("deploying an app")
 			f.Fixtures.Echo.DeployN(namespace, "echo", 2)
-			i := &networking_v1.Ingress{
+			p := &contourv1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "echo",
 				},
-				Spec: networking_v1.IngressSpec{
-					Rules: []networking_v1.IngressRule{
+				Spec: contourv1.HTTPProxySpec{
+					VirtualHost: &contourv1.VirtualHost{
+						Fqdn: appHost,
+					},
+					Routes: []contourv1.Route{
 						{
-							Host: appHost,
-							IngressRuleValue: networking_v1.IngressRuleValue{
-								HTTP: &networking_v1.HTTPIngressRuleValue{
-									Paths: []networking_v1.HTTPIngressPath{
-										{
-											Path:     "/",
-											PathType: ingressPathTypePtr(networking_v1.PathTypePrefix),
-											Backend: networking_v1.IngressBackend{
-												Service: &networking_v1.IngressServiceBackend{
-													Name: "echo",
-													Port: networking_v1.ServiceBackendPort{Number: 80},
-												},
+							Services: []contourv1.Service{
+								{
+									Name: "echo",
+									Port: 80,
+									ResponseHeadersPolicy: &contourv1.HeadersPolicy{
+										Set: []contourv1.HeaderValue{
+											{
+												Name:  "X-Envoy-Response-Flags",
+												Value: "%RESPONSE_FLAGS%",
 											},
 										},
 									},
@@ -92,12 +92,12 @@ var _ = Describe("upgrading Contour", func() {
 					},
 				},
 			}
-			require.NoError(f.T(), f.Client.Create(context.TODO(), i))
+			require.NoError(f.T(), f.Client.Create(context.TODO(), p))
 
 			By("ensuring it is routable")
 			checkRoutability(appHost)
 
-			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK)
+			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
 			require.NoError(f.T(), err)
 
 			By("deploying updated contour resources")
@@ -121,10 +121,6 @@ var _ = Describe("upgrading Contour", func() {
 		})
 	})
 })
-
-func ingressPathTypePtr(t networking_v1.PathType) *networking_v1.PathType {
-	return &t
-}
 
 func checkRoutability(host string) {
 	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

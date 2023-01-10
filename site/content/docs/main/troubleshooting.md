@@ -23,6 +23,9 @@ Learn how to profile Contour by using [net/http/pprof][11] handlers.
 ### [Contour Operator][8]
 Follow the linked guide to learn how to troubleshoot issues with [Contour Operator][12].
 
+### [Envoy container stuck in unready/draining state][13]
+Read the linked document if you have Envoy containers stuck in an unready/draining state.
+
 [0]: {{< param github_url >}}/issues
 [1]: {{< param slack_url >}}
 [2]: /docs/{{< param latest_version >}}/troubleshooting/envoy-admin-interface/
@@ -36,3 +39,4 @@ Follow the linked guide to learn how to troubleshoot issues with [Contour Operat
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol
 [11]: https://golang.org/pkg/net/http/pprof/
 [12]: https://github.com/projectcontour/contour-operator
+[13]: /docs/{{< param latest_version >}}/troubleshooting/envoy-container-draining/

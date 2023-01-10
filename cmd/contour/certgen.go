@@ -34,20 +34,19 @@ import (
 func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConfig) {
 	var certgenConfig certgenConfig
 	certgenApp := app.Command("certgen", "Generate new TLS certs for bootstrapping gRPC over TLS.")
+	certgenApp.Arg("outputdir", "Directory to write output files into (default \"certs\").").Default("certs").StringVar(&certgenConfig.OutputDir)
 
-	certgenApp.Flag("kube", "Apply the generated certs directly to the current Kubernetes cluster.").BoolVar(&certgenConfig.OutputKube)
-	certgenApp.Flag("yaml", "Render the generated certs as Kubernetes Secrets in YAML form to the current directory.").BoolVar(&certgenConfig.OutputYAML)
-	certgenApp.Flag("pem", "Render the generated certs as individual PEM files to the current directory.").BoolVar(&certgenConfig.OutputPEM)
-	certgenApp.Flag("incluster", "Use in cluster configuration.").BoolVar(&certgenConfig.InCluster)
-	certgenApp.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&certgenConfig.KubeConfig)
-	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects.").Default(certs.DefaultNamespace).Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
 	// NOTE: --certificate-lifetime can be used to accept Duration string once certificate rotation is supported.
 	certgenApp.Flag("certificate-lifetime", "Generated certificate lifetime (in days).").Default(strconv.Itoa(certs.DefaultCertificateLifetime)).UintVar(&certgenConfig.Lifetime)
+	certgenApp.Flag("incluster", "Use in cluster configuration.").BoolVar(&certgenConfig.InCluster)
+	certgenApp.Flag("kube", "Apply the generated certs directly to the current Kubernetes cluster.").BoolVar(&certgenConfig.OutputKube)
+	certgenApp.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&certgenConfig.KubeConfig)
+	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects.").Default(certs.DefaultNamespace).Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
 	certgenApp.Flag("overwrite", "Overwrite existing files or Secrets.").BoolVar(&certgenConfig.Overwrite)
+	certgenApp.Flag("pem", "Render the generated certs as individual PEM files to the current directory.").BoolVar(&certgenConfig.OutputPEM)
 	certgenApp.Flag("secrets-format", "Specify how to format the generated Kubernetes Secrets.").Default("legacy").StringVar(&certgenConfig.Format)
 	certgenApp.Flag("secrets-name-suffix", "Specify a suffix to be appended to the generated Kubernetes secrets' names.").StringVar(&certgenConfig.NameSuffix)
-
-	certgenApp.Arg("outputdir", "Directory to write output files into (default \"certs\").").Default("certs").StringVar(&certgenConfig.OutputDir)
+	certgenApp.Flag("yaml", "Render the generated certs as Kubernetes Secrets in YAML form to the current directory.").BoolVar(&certgenConfig.OutputYAML)
 
 	return certgenApp, &certgenConfig
 }

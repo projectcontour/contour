@@ -289,9 +289,25 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
-		PrefixRewrite:         r.PrefixRewrite,
 		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),
+	}
+
+	if r.PathRewritePolicy != nil {
+		switch {
+		case len(r.PathRewritePolicy.PrefixRewrite) > 0:
+			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
+		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
+			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
+				Substitution: r.PathRewritePolicy.FullPathRewrite,
+			}
+		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
+			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
+				Substitution: "/",
+			}
+		}
 	}
 
 	if r.RateLimitPolicy != nil && r.RateLimitPolicy.Global != nil {

@@ -43,6 +43,7 @@ var DefaultAccessLogJSONFields = AccessLogJSONFields([]string{
 	"user_agent",
 	"x_forwarded_for",
 	"grpc_status",
+	"grpc_status_number",
 })
 
 // DefaultAccessLogType is the default access log format.

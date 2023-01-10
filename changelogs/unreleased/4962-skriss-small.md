@@ -1,0 +1,1 @@
+Gateway API: adds support for the [HTTPURLRewrite filter](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.HTTPURLRewriteFilter), which allows for rewriting the path or Host header as requests are being forwarded to the backend.
