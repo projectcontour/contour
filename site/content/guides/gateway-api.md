@@ -121,7 +121,7 @@ metadata:
 data:
   contour.yaml: |
     gateway:
-      controllerName:projectcontour.io/gateway-controller
+      controllerName: projectcontour.io/gateway-controller
 EOF
 
 kubectl -n projectcontour rollout restart deployment/contour
