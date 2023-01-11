@@ -46,7 +46,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	)
 
 	BeforeEach(func() {
-		controllerName = fmt.Sprintf("projectcontour.io/projectcontour/contour-%d", getRandomNumber())
+		controllerName = fmt.Sprintf("projectcontour.io/gateway-controller-%d", getRandomNumber())
 
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
