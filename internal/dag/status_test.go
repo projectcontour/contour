@@ -1726,7 +1726,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	run(t, "duplicate header+path conditions on an include", testcase{
+	run(t, "duplicate header conditions on an include mismatched order", testcase{
 		objs: []interface{}{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
