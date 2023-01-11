@@ -107,7 +107,7 @@ spec:
     cluster:
       dnsLookupFamily: auto
   gateway:
-      controllerName: projectcontour.io/gateway-controller
+      controllerName: projectcontour.io/projectcontour/contour
   httpproxy:
     disablePermitInsecure: false
     rootNamespaces: 
