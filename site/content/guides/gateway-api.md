@@ -67,7 +67,7 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
 spec:
-  controllerName:projectcontour.io/gateway-controller
+  controllerName: projectcontour.io/gateway-controller
 EOF
 ```
 
