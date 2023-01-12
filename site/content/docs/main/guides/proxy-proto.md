@@ -1,6 +1,5 @@
 ---
 title: How to Configure PROXY v1/v2 Support
-layout: page
 ---
 
 If you deploy Contour as a Deployment or Daemonset, you will likely use a `type: LoadBalancer` Service to request an [external load balancer][1] from your hosting provider.

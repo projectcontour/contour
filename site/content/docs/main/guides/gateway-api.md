@@ -1,6 +1,5 @@
 ---
 title: Using Gateway API with Contour
-layout: page
 ---
 
 ## Introduction

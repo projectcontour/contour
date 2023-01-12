@@ -1,6 +1,5 @@
 ---
 title: Contour / Envoy Resource Limits
-layout: page
 ---
 
 ## Performance Testing Contour / Envoy

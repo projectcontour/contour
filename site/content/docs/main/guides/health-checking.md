@@ -1,6 +1,5 @@
 ---
 title: Health Checking
-layout: page
 ---
 
 Contour exposes two health endpoints `/health` and `/healthz`. By default these paths are serviced by `0.0.0.0:8000` and are configurable using the `--health-address` and `--health-port` flags.

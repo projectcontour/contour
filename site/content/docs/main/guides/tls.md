@@ -1,6 +1,5 @@
 ---
 title: TLS support
-layout: page
 ---
 
 # TLS support

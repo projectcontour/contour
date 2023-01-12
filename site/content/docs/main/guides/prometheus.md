@@ -1,6 +1,5 @@
 ---
 title: Collecting Metrics with Prometheus
-layout: page
 ---
 
 <div id="toc" class="navigation"></div>

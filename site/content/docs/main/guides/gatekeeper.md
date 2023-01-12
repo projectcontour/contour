@@ -1,6 +1,5 @@
 ---
 title: Using Gatekeeper as a validating admission controller with Contour
-layout: page
 ---
 
 This tutorial demonstrates how to use [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) as a validating admission controller for Contour.

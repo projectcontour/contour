@@ -1,6 +1,5 @@
 ---
 title: Deploying Contour on AWS with NLB
-layout: page
 ---
 
 This is an advanced deployment guide to configure Contour on AWS with the [Network Load Balancer (NLB)][1].

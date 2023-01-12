@@ -1,6 +1,5 @@
 ---
 title: Creating a Contour-compatible kind cluster
-layout: page
 ---
 
 This guide walks through creating a kind (Kubernetes in Docker) cluster on your local machine that can be used for developing and testing Contour.

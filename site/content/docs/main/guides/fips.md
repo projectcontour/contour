@@ -1,6 +1,5 @@
 ---
 title: FIPS 140-2 in Contour
-layout: page
 ---
 
 The [Federal Information Processing Standard (FIPS) 140-2][0] publication describes United States government approved security requirements for cryptographic modules.

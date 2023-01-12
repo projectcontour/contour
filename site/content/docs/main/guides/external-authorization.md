@@ -1,6 +1,5 @@
 ---
 title: External Authorization Support
-layout: page
 ---
 
 Starting in version 1.9, Contour supports routing client requests to an

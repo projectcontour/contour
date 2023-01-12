@@ -1,6 +1,5 @@
 ---
 title: Migrating from IngressRoute to HTTPProxy
-layout: page
 ---
 
 This document describes the differences between IngressRoute and HTTPProxy.

@@ -1,6 +1,5 @@
 ---
 title: Deploying HTTPS services with Contour and cert-manager
-layout: page
 ---
 
 This tutorial shows you how to securely deploy an HTTPS web application on a Kubernetes cluster, using:

@@ -1,6 +1,5 @@
 ---
 title: AWS Network Load Balancer TLS Termination with Contour
-layout: page
 ---
 
 ## Motivation

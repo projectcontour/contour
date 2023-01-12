@@ -1,6 +1,5 @@
 ---
 title: Migrating from xDS v2 --> v3
-layout: page
 ---
 
 This guide shows you how to migrate in-place instances of Envoy running xDS v2 to v3. 

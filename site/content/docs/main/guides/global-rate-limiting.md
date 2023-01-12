@@ -1,6 +1,5 @@
 ---
 title: Global Rate Limiting
-layout: page
 ---
 
 Starting in version 1.13, Contour supports [Envoy global rate limiting][1].

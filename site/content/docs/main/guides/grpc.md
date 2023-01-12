@@ -1,6 +1,5 @@
 ---
 title: Configuring ingress to gRPC services with Contour
-layout: page
 ---
 
 ## Example gRPC Service
