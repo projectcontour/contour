@@ -1,1 +1,1 @@
-Add support to NodePortServicePublishingType fix #4499.
+Add support to `NodePortServicePublishingType`. fix [#4499](https://github.com/projectcontour/contour/issues/4499).
