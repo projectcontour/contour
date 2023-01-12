@@ -316,7 +316,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 							contourModel.Spec.NetworkPublishing.Envoy.NodePorts,
 							model.NodePort{
 								Name:       name,
-								PortNumber: ref.To(int32(svcPorts[i].PortNumber)),
+								PortNumber: ref.To(svcPorts[i].PortNumber),
 							})
 
 						if name == "http" {
