@@ -521,6 +521,11 @@ spec:
                   domain:
                     description: Domain is passed to the Rate Limit Service.
                     type: string
+                  enableResourceExhaustedCode:
+                    description: EnableResourceExhaustedCode enables translating error
+                      code 429 to grpc code RESOURCE_EXHAUSTED. When disabled it's
+                      translated to UNAVAILABLE
+                    type: boolean
                   enableXRateLimitHeaders:
                     description: "EnableXRateLimitHeaders defines whether to include
                       the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
@@ -3521,6 +3526,11 @@ spec:
                       domain:
                         description: Domain is passed to the Rate Limit Service.
                         type: string
+                      enableResourceExhaustedCode:
+                        description: EnableResourceExhaustedCode enables translating
+                          error code 429 to grpc code RESOURCE_EXHAUSTED. When disabled
+                          it's translated to UNAVAILABLE
+                        type: boolean
                       enableXRateLimitHeaders:
                         description: "EnableXRateLimitHeaders defines whether to include
                           the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,

@@ -623,10 +623,11 @@ func TestConvertServeContext(t *testing.T) {
 		"ratelimit": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.RateLimitService = config.RateLimitService{
-					ExtensionService:        "ratens/ratelimitext",
-					Domain:                  "contour",
-					FailOpen:                true,
-					EnableXRateLimitHeaders: true,
+					ExtensionService:            "ratens/ratelimitext",
+					Domain:                      "contour",
+					FailOpen:                    true,
+					EnableXRateLimitHeaders:     true,
+					EnableResourceExhaustedCode: true,
 				}
 				return ctx
 			},
@@ -636,9 +637,10 @@ func TestConvertServeContext(t *testing.T) {
 						Name:      "ratelimitext",
 						Namespace: "ratens",
 					},
-					Domain:                  "contour",
-					FailOpen:                ref.To(true),
-					EnableXRateLimitHeaders: ref.To(true),
+					Domain:                      "contour",
+					FailOpen:                    ref.To(true),
+					EnableXRateLimitHeaders:     ref.To(true),
+					EnableResourceExhaustedCode: ref.To(true),
 				}
 				return cfg
 			},

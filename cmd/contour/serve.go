@@ -610,12 +610,13 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	}
 
 	return &xdscache_v3.RateLimitConfig{
-		ExtensionService:        key,
-		SNI:                     sni,
-		Domain:                  contourConfiguration.RateLimitService.Domain,
-		Timeout:                 responseTimeout,
-		FailOpen:                ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
-		EnableXRateLimitHeaders: ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
+		ExtensionService:            key,
+		SNI:                         sni,
+		Domain:                      contourConfiguration.RateLimitService.Domain,
+		Timeout:                     responseTimeout,
+		FailOpen:                    ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
+		EnableXRateLimitHeaders:     ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
+		EnableResourceExhaustedCode: ref.Val(contourConfiguration.RateLimitService.EnableResourceExhaustedCode, false),
 	}, nil
 }
 

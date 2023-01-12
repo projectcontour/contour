@@ -178,6 +178,9 @@ data:
     #   Limit Service is consulted for a request.
     #   ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
     #   enableXRateLimitHeaders: false
+    #   Defines whether to translate status code 429 to grpc code RESOURCE_EXHAUSTED
+    #   instead of the default UNAVAILABLE
+    #   enableResourceExhaustedCode: false
     #
     # Global Policy settings.
     # policy:
@@ -731,6 +734,11 @@ spec:
                   domain:
                     description: Domain is passed to the Rate Limit Service.
                     type: string
+                  enableResourceExhaustedCode:
+                    description: EnableResourceExhaustedCode enables translating error
+                      code 429 to grpc code RESOURCE_EXHAUSTED. When disabled it's
+                      translated to UNAVAILABLE
+                    type: boolean
                   enableXRateLimitHeaders:
                     description: "EnableXRateLimitHeaders defines whether to include
                       the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
@@ -3731,6 +3739,11 @@ spec:
                       domain:
                         description: Domain is passed to the Rate Limit Service.
                         type: string
+                      enableResourceExhaustedCode:
+                        description: EnableResourceExhaustedCode enables translating
+                          error code 429 to grpc code RESOURCE_EXHAUSTED. When disabled
+                          it's translated to UNAVAILABLE
+                        type: boolean
                       enableXRateLimitHeaders:
                         description: "EnableXRateLimitHeaders defines whether to include
                           the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
