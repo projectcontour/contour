@@ -26,7 +26,7 @@ Contour exposes a Prometheus-compatible `/metrics` endpoint that defaults to lis
 
 **The metrics endpoint exposes the following metrics:**
 
-{{% include "guides/metrics/table.md" %}}
+{{% metrics-table %}}
 
 ## Sample Deployment
 
