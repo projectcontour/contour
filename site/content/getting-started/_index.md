@@ -231,7 +231,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [11]: https://github.com/projectcontour/community/wiki/Office-Hours
 [12]: {{< param slack_url >}}
 [13]: https://projectcontour.io/resources/deprecation-policy/
-[14]: https://projectcontour.io/guides/gateway-api
+[14]: /docs/{{< param latest_version >}}/guides/gateway-api
 [15]: https://github.com/bitnami/charts/tree/master/bitnami/contour
 [16]: https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice
 [17]: /docs/{{< param latest_version >}}/troubleshooting
@@ -244,7 +244,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [25]: https://lists.cncf.io/g/cncf-contour-users/
 [26]: https://www.envoyproxy.io/
 [27]: https://kind.sigs.k8s.io/
-[28]: /guides/kind
+[28]: /docs/{{< param latest_version >}}/guides/kind
 [29]: https://helm.sh/docs/intro/install/
-[30]: /guides/kind/#kind-configuration-file
+[30]: /docs/{{< param latest_version >}}/guides/kind/#kind-configuration-file
 [31]: https://gateway-api.sigs.k8s.io/

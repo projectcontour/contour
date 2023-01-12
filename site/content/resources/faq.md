@@ -55,5 +55,5 @@ $ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
 
 [1]: /docs/{{< param latest_version >}}/config/fundamentals
-[2]: /guides/cert-manager
+[2]: /docs/{{< param latest_version >}}/guides/cert-manager
 [3]: /docs/{{< param latest_version >}}/configuration

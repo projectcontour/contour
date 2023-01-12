@@ -2,8 +2,6 @@
 title: Guides
 description: Contour Resources
 id: guides
-cascade:
-  layout: docs
 ---
 ## Getting things done with Contour
 

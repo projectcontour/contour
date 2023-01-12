@@ -67,14 +67,28 @@ toc:
     subfolderitems:
       - page: AWS with NLB
         url: /guides/deploy-aws-nlb/
+      - page: AWS with NLB TLS Termination
+        url: /guides/deploy-aws-tls-nlb/
       - page: Cert-Manager
         url: /guides/cert-manager/
       - page: External Authorization
         url: /guides/external-authorization/
+      - page: FIPS
+        url: /guides/fips
+      - page: Gatekeeper
+        url: /guides/gatekeeper
+      - page: Gateway API
+        url: /guides/gateway-api
+      - page: Global Rate Limiting
+        url: /guides/global-rate-limiting
+      - page: gRPC Services
+        url: /guides/grpc
+      - page: Health Checking
+        url: /guides/health-checking
       - page: JSON logging
         url: /guides/structured-logs/
-      - page: Migrating to HTTPProxy
-        url: /guides/ingressroute-to-httpproxy/
+      - page: Kind
+        url: /guides/kind
       - page: Prometheus Metrics
         url: /guides/prometheus/
       - page: PROXY Protocol Support

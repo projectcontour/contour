@@ -475,7 +475,7 @@ connects to Contour:
 
 
 [1]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
-[2]: /guides/structured-logs
+[2]: guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
