@@ -616,14 +616,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	visited = append(visited, proxy)
 	var routes []*Route
 
-	// Check for duplicate conditions on the includes
-	if includeMatchConditionsIdentical(proxy.Spec.Includes) {
-		validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
-			"duplicate conditions defined on an include")
-		return nil
-	}
-
-	// Loop over and process all includes
+	// Loop over and process all includes, including checking for duplicate conditions.
+	seenConds := map[string][][]HeaderMatchCondition{}
 	for _, include := range proxy.Spec.Includes {
 		namespace := include.Namespace
 		if namespace == "" {
@@ -640,6 +634,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid",
 				err.Error())
 			continue
+		}
+
+		// Check to see if we have any duplicate include conditions.
+		if includeMatchConditionsIdentical(include, seenConds) {
+			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
+				"duplicate conditions defined on an include")
+			return nil
 		}
 
 		includedProxy, ok := p.source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
@@ -1389,23 +1390,53 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(includes []contour_api_v1.Include) bool {
-	seenIncludeConditions := map[string]struct{}{}
-	for _, include := range includes {
-		var stringRep string
-		stringRep += mergePathMatchConditions(include.Conditions).String()
-		headerMatchConds := mergeHeaderMatchConditions(include.Conditions)
-		headerMatchStrs := make(sort.StringSlice, len(headerMatchConds))
-		for i, cond := range headerMatchConds {
-			headerMatchStrs[i] = cond.String()
+func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
+	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
+
+	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
+	sort.SliceStable(includeHeaderConds, func(i, j int) bool {
+		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
+			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
 		}
-		sort.Stable(headerMatchStrs)
-		stringRep += " " + strings.Join(headerMatchStrs, " ")
-		if _, seen := seenIncludeConditions[stringRep]; seen {
+		if includeHeaderConds[i].Invert != includeHeaderConds[j].Invert {
+			return includeHeaderConds[i].Invert
+		}
+		if includeHeaderConds[i].Name != includeHeaderConds[j].Name {
+			return includeHeaderConds[i].Name < includeHeaderConds[j].Name
+		}
+		if includeHeaderConds[i].Value != includeHeaderConds[j].Value {
+			return includeHeaderConds[i].Value < includeHeaderConds[j].Value
+		}
+		return false
+	})
+
+	seenHeaderConds, pathSeen := seenConds[pathPrefix]
+	if !pathSeen {
+		seenConds[pathPrefix] = [][]HeaderMatchCondition{
+			includeHeaderConds,
+		}
+		return false
+	}
+
+	for _, headerConds := range seenHeaderConds {
+		if len(headerConds) != len(includeHeaderConds) {
+			seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+			continue
+		}
+
+		headerCondsIdentical := true
+		for i := range headerConds {
+			if headerConds[i] != includeHeaderConds[i] {
+				seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+				headerCondsIdentical = false
+				break
+			}
+		}
+		if headerCondsIdentical {
 			return true
 		}
-		seenIncludeConditions[stringRep] = struct{}{}
 	}
+
 	return false
 }
 

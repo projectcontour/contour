@@ -1602,9 +1602,9 @@ func TestDAGStatus(t *testing.T) {
 				Namespace: proxyInvalidConflictingIncludeConditions.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Orphaned(),
+				Valid(), // This proxy is valid because there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Orphaned(),
+				Valid(), // This proxy is valid because there is a valid include preceding an invalid one.
 		},
 	})
 
@@ -1664,9 +1664,11 @@ func TestDAGStatus(t *testing.T) {
 				Namespace: proxyInvalidConflictHeaderConditions.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().Orphaned(),
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().Orphaned(),
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include before an invalid one.
 		},
 	})
 
@@ -1734,7 +1736,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Orphaned(),
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
@@ -1791,7 +1793,7 @@ func TestDAGStatus(t *testing.T) {
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Orphaned(),
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
