@@ -1,0 +1,1 @@
+Add support to NodePortServicePublishingType fix #4499.
