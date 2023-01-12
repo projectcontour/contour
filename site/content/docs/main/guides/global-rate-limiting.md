@@ -423,12 +423,12 @@ For more information, see the [Contour rate limiting documentation][7] and the [
 The YAML used in this guide is available [in the Contour repository][9].
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/other_features/global_rate_limiting
-[2]: /docs/{{< param latest_version >}}/deploy-options/#kind
+[2]: ../deploy-options/#kind
 [3]: https://projectcontour.io/getting-started/#option-1-quickstart
 [4]: https://github.com/envoyproxy/ratelimit
 [5]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/ratelimit/v3/rls.proto
 [6]: https://github.com/envoyproxy/ratelimit#configuration
-[7]: /docs/{{< param latest_version >}}/config/rate-limiting/
-[8]: /docs/{{< param latest_version >}}/config/api/
+[7]: ../config/rate-limiting/
+[8]: ../config/api/
 [9]: {{< param github_url>}}/tree/main/examples/ratelimit
 [10]: https://github.com/lyft/goruntime
