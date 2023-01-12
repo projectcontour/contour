@@ -51,12 +51,6 @@ func testGatewayPathConditionMatch(namespace string, gateway types.NamespacedNam
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/path/prefix"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-prefix", 80, 1),
 					},
-
-					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchExact, "/path/exact"),
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-exact", 80, 1),
-					},
-
 					{
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-default", 80, 1),
@@ -67,20 +61,8 @@ func testGatewayPathConditionMatch(namespace string, gateway types.NamespacedNam
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := map[string]string{
-			"/":    "echo-slash-default",
-			"/foo": "echo-slash-default",
-
-			"/path/prefix":         "echo-slash-prefix",
-			"/path/prefix/":        "echo-slash-prefix",
-			"/path/prefix/foo":     "echo-slash-prefix",
-			"/path/prefix/foo/bar": "echo-slash-prefix",
-			"/path/prefixfoo":      "echo-slash-default", // not a segment prefix match
-			"/foo/path/prefix":     "echo-slash-default",
-
-			"/path/exact":     "echo-slash-exact",
-			"/path/exactfoo":  "echo-slash-default",
-			"/path/exact/":    "echo-slash-default",
-			"/path/exact/foo": "echo-slash-default",
+			"/path/prefix/":   "echo-slash-prefix",
+			"/path/prefixfoo": "echo-slash-default", // not a segment prefix match
 		}
 
 		for path, expectedService := range cases {

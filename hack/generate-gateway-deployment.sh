@@ -38,7 +38,7 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
         # skip
         ;;
     */01-contour-config.yaml)
-        sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g' < "$y"
+        sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/gateway-controller|  controllerName: projectcontour.io/gateway-controller|g' < "$y"
         ;;
     *)
         cat $y

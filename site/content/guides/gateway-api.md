@@ -67,7 +67,7 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: contour
 spec:
-  controllerName: projectcontour.io/projectcontour/contour
+  controllerName: projectcontour.io/gateway-controller
 EOF
 ```
 
@@ -121,7 +121,7 @@ metadata:
 data:
   contour.yaml: |
     gateway:
-      controllerName: projectcontour.io/projectcontour/contour
+      controllerName: projectcontour.io/gateway-controller
 EOF
 
 kubectl -n projectcontour rollout restart deployment/contour
