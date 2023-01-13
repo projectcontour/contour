@@ -554,6 +554,10 @@ type RateLimitService struct {
 	//
 	// ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
 	EnableXRateLimitHeaders bool `yaml:"enableXRateLimitHeaders,omitempty"`
+
+	// EnableResourceExhaustedCode enables translating error code 429 to
+	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
+	EnableResourceExhaustedCode bool `yaml:"enableResourceExhaustedCode,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both

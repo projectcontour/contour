@@ -7401,6 +7401,20 @@ to clients when the Rate Limit Service is consulted for a request.</p>
 <p>ref. <a href="https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html">https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html</a></p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableResourceExhaustedCode</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnableResourceExhaustedCode enables translating error code 429 to
+grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.TLS">TLS

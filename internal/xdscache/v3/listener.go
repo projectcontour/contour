@@ -140,12 +140,13 @@ type ListenerConfig struct {
 }
 
 type RateLimitConfig struct {
-	ExtensionService        types.NamespacedName
-	SNI                     string
-	Domain                  string
-	Timeout                 timeout.Setting
-	FailOpen                bool
-	EnableXRateLimitHeaders bool
+	ExtensionService            types.NamespacedName
+	SNI                         string
+	Domain                      string
+	Timeout                     timeout.Setting
+	FailOpen                    bool
+	EnableXRateLimitHeaders     bool
+	EnableResourceExhaustedCode bool
 }
 
 // DefaultListeners returns the configured Listeners or a single
@@ -558,12 +559,13 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 	}
 
 	return &envoy_v3.GlobalRateLimitConfig{
-		ExtensionService:        config.ExtensionService,
-		SNI:                     config.SNI,
-		FailOpen:                config.FailOpen,
-		Timeout:                 config.Timeout,
-		Domain:                  config.Domain,
-		EnableXRateLimitHeaders: config.EnableXRateLimitHeaders,
+		ExtensionService:            config.ExtensionService,
+		SNI:                         config.SNI,
+		FailOpen:                    config.FailOpen,
+		Timeout:                     config.Timeout,
+		Domain:                      config.Domain,
+		EnableXRateLimitHeaders:     config.EnableXRateLimitHeaders,
+		EnableResourceExhaustedCode: config.EnableResourceExhaustedCode,
 	}
 }
 
