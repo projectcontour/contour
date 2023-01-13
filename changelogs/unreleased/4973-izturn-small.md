@@ -1,1 +1,1 @@
-Add support to `NodePortServicePublishingType`. fix [#4499](https://github.com/projectcontour/contour/issues/4499).
+Gateway API: when provisioning an Envoy `NodePortService`, use the Listeners' port numbers to populate the Service's node port values.
