@@ -1,0 +1,1 @@
+Updates to Go 1.19.5. See the [Go release notes](https://go.dev/doc/devel/release#go1.19.minor) for more information.
