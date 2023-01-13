@@ -46,8 +46,14 @@ BUILD_BASE_IMAGE ?= golang:1.19.4
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
 
+# Specify private modules.
+BUILD_GOPRIVATE ?= ""
+
 # Go module mirror to use.
 BUILD_GOPROXY ?= https://proxy.golang.org
+
+# Checksum db to use.
+BUILD_GOSUMDB ?= sum.golang.org
 
 BUILD_GOEXPERIMENT ?= none
 
@@ -119,7 +125,9 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 	@mkdir -p $(shell pwd)/image
 	docker buildx build $(IMAGE_RESULT_FLAG) \
 		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_GOPRIVATE=$(BUILD_GOPRIVATE)" \
 		--build-arg "BUILD_GOPROXY=$(BUILD_GOPROXY)" \
+		--build-arg "BUILD_GOSUMDB=$(BUILD_GOSUMDB)" \
 		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
@@ -133,7 +141,9 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 
 container: ## Build the Contour container image
 	docker build \
+		--build-arg "BUILD_GOPRIVATE=$(BUILD_GOPRIVATE)" \
 		--build-arg "BUILD_GOPROXY=$(BUILD_GOPROXY)" \
+		--build-arg "BUILD_GOSUMDB=$(BUILD_GOSUMDB)" \
 		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
