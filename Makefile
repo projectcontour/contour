@@ -265,7 +265,7 @@ generate-api-docs:
 .PHONY: generate-metrics-docs
 generate-metrics-docs:
 	@echo "Generating metrics documentation..."
-	@cd site/content/guides/metrics && rm -f *.md && go run ../../../../hack/generate-metrics-doc.go
+	@cd site/content/docs/main/guides/metrics && rm -f *.md && go run ../../../../../../hack/generate-metrics-doc.go
 
 .PHONY: generate-go
 generate-go:
