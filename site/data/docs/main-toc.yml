@@ -65,35 +65,35 @@ toc:
         url: /redeploy-envoy
   - title: Guides
     subfolderitems:
-      - page: AWS with NLB
+      - page: Deploying Contour on AWS with NLB
         url: /guides/deploy-aws-nlb/
-      - page: AWS with NLB TLS Termination
+      - page: AWS Network Load Balancer TLS Termination with Contour
         url: /guides/deploy-aws-tls-nlb/
-      - page: Cert-Manager
+      - page: Deploying HTTPS services with Contour and cert-manager
         url: /guides/cert-manager/
-      - page: External Authorization
+      - page: External Authorization Support
         url: /guides/external-authorization/
-      - page: FIPS
+      - page: FIPS 140-2 in Contour
         url: /guides/fips
-      - page: Gatekeeper
+      - page: Using Gatekeeper with Contour
         url: /guides/gatekeeper
-      - page: Gateway API
+      - page: Using Gateway API with Contour
         url: /guides/gateway-api
       - page: Global Rate Limiting
         url: /guides/global-rate-limiting
-      - page: gRPC Services
+      - page: Configuring ingress to gRPC services with Contour
         url: /guides/grpc
       - page: Health Checking
         url: /guides/health-checking
-      - page: JSON logging
+      - page: How to enable structured JSON logging
         url: /guides/structured-logs/
-      - page: Kind
+      - page: Creating a Contour-compatible kind cluster
         url: /guides/kind
-      - page: Prometheus Metrics
+      - page: Collecting Metrics with Prometheus
         url: /guides/prometheus/
-      - page: PROXY Protocol Support
+      - page: How to Configure PROXY Protocol v1/v2 Support
         url: /guides/proxy-proto/
-      - page: Resource Limits
+      - page: Contour/Envoy Resource Limits
         url: /guides/resource-limits/
   - title: Troubleshooting
     subfolderitems:
