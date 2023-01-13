@@ -1,0 +1,1 @@
+Duplicate include conditions are correctly identified and HTTPProxies are marked with the condition `IncludeError` and reason `DuplicateMatchConditions`. Previously the HTTPProxy processor was only comparing adjacent includes and comparing conditions element by element rather than as a whole, ANDed together.
