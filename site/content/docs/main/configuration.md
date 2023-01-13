@@ -196,7 +196,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 
 | Field Name     | Type           | Default | Description                                                                    |
 | -------------- | -------------- | ------- | ------------------------------------------------------------------------------ |
-| controllerName | string         |         | Gateway Class controller name (i.e. projectcontour.io/projectcontour/contour). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
+| controllerName | string         |         | Gateway Class controller name (i.e. projectcontour.io/gateway-controller). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
 | gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayRef` must be set. |
 
 ### Gateway Ref
@@ -236,12 +236,13 @@ Note: the values of entries in the `set` and `remove` fields can be overridden i
 
 The rate limit service configuration block is used to configure an optional global rate limit service:
 
-| Field Name              | Type   | Default | Description                                                                                                                                                                                                                                                                                                            |
-| ----------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| extensionService        | string | <none>  | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.                                                                                                                                                                                                          |
-| domain                  | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.                                                                                                                                                              |
-| failOpen                | bool   | false   | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.                                                                                                                             |
-| enableXRateLimitHeaders | bool   | false   | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
+| Field Name                  | Type   | Default | Description                                                                                                                                                                                                                                                                                                            |
+|-----------------------------| ------ | ------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| extensionService            | string | <none>  | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.                                                                                                                                                                                                          |
+| domain                      | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.                                                                                                                                                              |
+| failOpen                    | bool   | false   | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.                                                                                                                             |
+| enableXRateLimitHeaders     | bool   | false   | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
+| enableResourceExhaustedCode | bool   | false   | This field defines whether to translate status code 429 to gRPC RESOURCE_EXHAUSTED instead of UNAVAILABLE.                                                                                                                                                                                                             |
 
 ### Metrics Configuration
 
@@ -285,7 +286,7 @@ data:
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:
-    #   controllerName: projectcontour.io/projectcontour/contour
+    #   controllerName: projectcontour.io/gateway-controller
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
@@ -390,12 +391,15 @@ data:
     #   service fails to respond with a valid rate limit decision within
     #   the timeout defined on the extension service.
     #   failOpen: false
-    # Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
-    # X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
-    # Internet-Draft linked below), on responses to clients when the Rate
-    # Limit Service is consulted for a request.
-    # ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
+    #   Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
+    #   X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
+    #   Internet-Draft linked below), on responses to clients when the Rate
+    #   Limit Service is consulted for a request.
+    #   ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
     #   enableXRateLimitHeaders: false
+    #   Defines whether to translate status code 429 to grpc code RESOURCE_EXHAUSTED
+    #   instead of the default UNAVAILABLE
+    #   enableResourceExhaustedCode: false
     #
     # Global Policy settings.
     # policy:
@@ -475,7 +479,7 @@ connects to Contour:
 
 
 [1]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
-[2]: /guides/structured-logs
+[2]: guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields

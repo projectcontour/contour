@@ -120,4 +120,4 @@ context field of authorization policy for the route.
 [4]: api/#projectcontour.io/v1.UpstreamValidation
 [5]: api/#projectcontour.io/v1.AuthorizationServer
 [6]: api/#projectcontour.io/v1.AuthorizationPolicy
-[7]: /guides/external-authorization.md
+[7]: guides/external-authorization.md

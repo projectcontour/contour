@@ -553,13 +553,13 @@ func TestConvertServeContext(t *testing.T) {
 		"gatewayapi - controller": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.GatewayConfig = &config.GatewayParameters{
-					ControllerName: "projectcontour.io/projectcontour/contour",
+					ControllerName: "projectcontour.io/gateway-controller",
 				}
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Gateway = &contour_api_v1alpha1.GatewayConfig{
-					ControllerName: "projectcontour.io/projectcontour/contour",
+					ControllerName: "projectcontour.io/gateway-controller",
 				}
 				return cfg
 			},
@@ -623,10 +623,11 @@ func TestConvertServeContext(t *testing.T) {
 		"ratelimit": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.RateLimitService = config.RateLimitService{
-					ExtensionService:        "ratens/ratelimitext",
-					Domain:                  "contour",
-					FailOpen:                true,
-					EnableXRateLimitHeaders: true,
+					ExtensionService:            "ratens/ratelimitext",
+					Domain:                      "contour",
+					FailOpen:                    true,
+					EnableXRateLimitHeaders:     true,
+					EnableResourceExhaustedCode: true,
 				}
 				return ctx
 			},
@@ -636,9 +637,10 @@ func TestConvertServeContext(t *testing.T) {
 						Name:      "ratelimitext",
 						Namespace: "ratens",
 					},
-					Domain:                  "contour",
-					FailOpen:                ref.To(true),
-					EnableXRateLimitHeaders: ref.To(true),
+					Domain:                      "contour",
+					FailOpen:                    ref.To(true),
+					EnableXRateLimitHeaders:     ref.To(true),
+					EnableResourceExhaustedCode: ref.To(true),
 				}
 				return cfg
 			},

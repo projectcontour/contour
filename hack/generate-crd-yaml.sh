@@ -32,6 +32,6 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 # https://github.com/kubernetes/kubernetes/pull/114585
 ls "${TEMPDIR}"/*.yaml | xargs cat | sed '/^$/d' \
   | awk '/group: projectcontour.io/{print "  preserveUnknownFields: false"}1' \
-  | sed -E 's/(\s*)description: ResourceClaim/\1x-kubernetes-map-type: atomic\n&/' \
+  | sed -E 's/(.*)description: ResourceClaim/\1x-kubernetes-map-type: atomic\n&/' \
   > "${REPO}/examples/contour/01-crds.yaml"
 

@@ -85,7 +85,7 @@ spec:
   externalTrafficPolicy: Local
   ports:
   - port: 443
-    targetPort: 80
+    targetPort: 8080
     name: http
     protocol: TCP
   selector:

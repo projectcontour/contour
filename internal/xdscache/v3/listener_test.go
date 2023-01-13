@@ -3024,11 +3024,12 @@ func TestListenerVisit(t *testing.T) {
 		"insecure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
-					Domain:                  "contour",
-					Timeout:                 timeout.DurationSetting(7 * time.Second),
-					FailOpen:                false,
-					EnableXRateLimitHeaders: true,
+					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					Domain:                      "contour",
+					Timeout:                     timeout.DurationSetting(7 * time.Second),
+					FailOpen:                    false,
+					EnableXRateLimitHeaders:     true,
+					EnableResourceExhaustedCode: true,
 				},
 			},
 			objs: []interface{}{
@@ -3092,7 +3093,8 @@ func TestListenerVisit(t *testing.T) {
 									},
 									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 								},
-								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								RateLimitedAsResourceExhausted: true,
 							}),
 						},
 					}).Get()),
@@ -3102,12 +3104,13 @@ func TestListenerVisit(t *testing.T) {
 		"secure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
-					SNI:                     "ratelimit-example.com",
-					Domain:                  "contour",
-					Timeout:                 timeout.DurationSetting(7 * time.Second),
-					FailOpen:                false,
-					EnableXRateLimitHeaders: true,
+					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					SNI:                         "ratelimit-example.com",
+					Domain:                      "contour",
+					Timeout:                     timeout.DurationSetting(7 * time.Second),
+					FailOpen:                    false,
+					EnableXRateLimitHeaders:     true,
+					EnableResourceExhaustedCode: true,
 				},
 			},
 			objs: []interface{}{
@@ -3179,7 +3182,8 @@ func TestListenerVisit(t *testing.T) {
 									},
 									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 								},
-								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								RateLimitedAsResourceExhausted: true,
 							}),
 						},
 					}).
@@ -3218,7 +3222,8 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									RateLimitedAsResourceExhausted: true,
 								}),
 							},
 						}).
@@ -3237,11 +3242,12 @@ func TestListenerVisit(t *testing.T) {
 			},
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
-					Domain:                  "contour",
-					Timeout:                 timeout.DurationSetting(7 * time.Second),
-					FailOpen:                false,
-					EnableXRateLimitHeaders: true,
+					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					Domain:                      "contour",
+					Timeout:                     timeout.DurationSetting(7 * time.Second),
+					FailOpen:                    false,
+					EnableXRateLimitHeaders:     true,
+					EnableResourceExhaustedCode: true,
 				},
 			},
 			objs: []interface{}{
@@ -3326,7 +3332,8 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									RateLimitedAsResourceExhausted: true,
 								}),
 							},
 						}).
@@ -3365,7 +3372,8 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									RateLimitedAsResourceExhausted: true,
 								}),
 							},
 						}).
@@ -3399,7 +3407,8 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders:        ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									RateLimitedAsResourceExhausted: true,
 								}),
 							},
 						}).
