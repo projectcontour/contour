@@ -400,6 +400,13 @@ spec:
                           slashes from request URL paths. \n Contour's default is
                           false."
                         type: boolean
+                      disableServerHeaderTransformation:
+                        description: "DisableServerHeaderTransformation signifies
+                          Envoy will not modify the Server header. It has 3 possible
+                          values: OVERWRITE, PASS_THROUGH, APPEND_IF_ABSENT \n Contour's
+                          default is OVERWRITE."
+                        format: int32
+                        type: integer
                       tls:
                         description: TLS holds various configurable Envoy TLS listener
                           values.
@@ -3396,6 +3403,13 @@ spec:
                               duplicate slashes from request URL paths. \n Contour's
                               default is false."
                             type: boolean
+                          disableServerHeaderTransformation:
+                            description: "DisableServerHeaderTransformation signifies
+                              Envoy will not modify the Server header. It has 3 possible
+                              values: OVERWRITE, PASS_THROUGH, APPEND_IF_ABSENT \n
+                              Contour's default is OVERWRITE."
+                            format: int32
+                            type: integer
                           tls:
                             description: TLS holds various configurable Envoy TLS
                               listener values.

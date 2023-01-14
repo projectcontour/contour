@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -490,7 +491,7 @@ type Parameters struct {
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
 	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
-	DisableServerHeaderTransformation bool `yaml:"disableServerHeaderTransformation,omitempty"`
+	DisableServerHeaderTransformation http.HttpConnectionManager_ServerHeaderTransformation `yaml:"disableServerHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
@@ -705,7 +706,7 @@ func Defaults() Parameters {
 		DisablePermitInsecure:             false,
 		DisableAllowChunkedLength:         false,
 		DisableMergeSlashes:               false,
-		DisableServerHeaderTransformation: false,
+		DisableServerHeaderTransformation: http.HttpConnectionManager_OVERWRITE,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

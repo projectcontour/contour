@@ -5928,6 +5928,21 @@ which strips duplicate slashes from request URL paths.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>disableServerHeaderTransformation</code>
+<br>
+<em>
+github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3.HttpConnectionManager_ServerHeaderTransformation
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
+It has 3 possible values: OVERWRITE, PASS_THROUGH, APPEND_IF_ABSENT</p>
+<p>Contour&rsquo;s default is OVERWRITE.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>connectionBalancer</code>
 <br>
 <em>

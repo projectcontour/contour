@@ -242,12 +242,8 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 	return b
 }
 
-func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(enabled bool) *httpConnectionManagerBuilder {
-	tserverHeaderTransformation := http.HttpConnectionManager_OVERWRITE
-	if enabled {
-		tserverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
-	}
-	b.serverHeaderTransformation = tserverHeaderTransformation
+func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value http.HttpConnectionManager_ServerHeaderTransformation) *httpConnectionManagerBuilder {
+	b.serverHeaderTransformation = value
 	return b
 }
 

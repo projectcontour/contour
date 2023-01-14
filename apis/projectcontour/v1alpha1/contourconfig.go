@@ -16,6 +16,7 @@ package v1alpha1
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -337,12 +338,11 @@ type EnvoyListenerConfig struct {
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
 	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
-	// false: OVERWRITE
-	// true:	PASS_THROUGH
+	// It has 3 possible values: OVERWRITE, PASS_THROUGH, APPEND_IF_ABSENT
 	//
-	// Contour's default is false.
+	// Contour's default is OVERWRITE.
 	// +optional
-	DisableServerHeaderTransformation *bool `json:"disableServerHeaderTransformation,omitempty"`
+	DisableServerHeaderTransformation *http.HttpConnectionManager_ServerHeaderTransformation `json:"disableServerHeaderTransformation,omitempty"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
