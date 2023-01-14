@@ -65,22 +65,36 @@ toc:
         url: /redeploy-envoy
   - title: Guides
     subfolderitems:
-      - page: AWS with NLB
-        link: /guides/deploy-aws-nlb/
-      - page: Cert-Manager
-        link: /guides/cert-manager/
-      - page: External Authorization
-        link: /guides/external-authorization/
-      - page: JSON logging
-        link: /guides/structured-logs/
-      - page: Migrating to HTTPProxy
-        link: /guides/ingressroute-to-httpproxy/
-      - page: Prometheus Metrics
-        link: /guides/prometheus/
-      - page: PROXY Protocol Support
-        link: /guides/proxy-proto/
-      - page: Resource Limits
-        link: /guides/resource-limits/
+      - page: Deploying Contour on AWS with NLB
+        url: /guides/deploy-aws-nlb/
+      - page: AWS Network Load Balancer TLS Termination with Contour
+        url: /guides/deploy-aws-tls-nlb/
+      - page: Deploying HTTPS services with Contour and cert-manager
+        url: /guides/cert-manager/
+      - page: External Authorization Support
+        url: /guides/external-authorization/
+      - page: FIPS 140-2 in Contour
+        url: /guides/fips
+      - page: Using Gatekeeper with Contour
+        url: /guides/gatekeeper
+      - page: Using Gateway API with Contour
+        url: /guides/gateway-api
+      - page: Global Rate Limiting
+        url: /guides/global-rate-limiting
+      - page: Configuring ingress to gRPC services with Contour
+        url: /guides/grpc
+      - page: Health Checking
+        url: /guides/health-checking
+      - page: How to enable structured JSON logging
+        url: /guides/structured-logs/
+      - page: Creating a Contour-compatible kind cluster
+        url: /guides/kind
+      - page: Collecting Metrics with Prometheus
+        url: /guides/prometheus/
+      - page: How to Configure PROXY Protocol v1/v2 Support
+        url: /guides/proxy-proto/
+      - page: Contour/Envoy Resource Limits
+        url: /guides/resource-limits/
   - title: Troubleshooting
     subfolderitems:
       - page: Envoy Administration Access
@@ -97,6 +111,8 @@ toc:
         url: /troubleshooting/profiling-contour
       - page: Contour Operator
         url: /troubleshooting/operator
+      - page: Envoy Container Stuck in Unready State
+        url: /troubleshooting/envoy-container-draining
   - title: Resources
     subfolderitems:
       - page: Support Policy

@@ -43,5 +43,5 @@ If you encounter issues review the [troubleshooting][5] page, [file an issue][6]
 [6]: https://github.com/projectcontour/contour/issues
 [7]: https://kubernetes.slack.com/messages/contour
 [8]: /resources/philosophy
-[9]: /guides/gateway-api
+[9]: guides/gateway-api
 [10]: /docs/{{< param version >}}/config/ingress

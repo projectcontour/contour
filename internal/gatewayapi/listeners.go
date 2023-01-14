@@ -92,7 +92,7 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		if len(hostname) > 0 {
 			if err := IsValidHostname(hostname); err != nil {
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionReady),
+					Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 					Message: err.Error(),
@@ -105,8 +105,8 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 			switch {
 			case int(listener.Port) != result.InsecurePort:
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-					Status:  metav1.ConditionTrue,
+					Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 					Message: "Only one HTTP port is supported",
 				}
@@ -122,8 +122,8 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 			switch {
 			case int(listener.Port) != result.SecurePort:
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-					Status:  metav1.ConditionTrue,
+					Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
 					Message: "Only one HTTPS/TLS port is supported",
 				}
@@ -137,8 +137,8 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 			}
 		default:
 			result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-				Type:    string(gatewayapi_v1beta1.ListenerConditionDetached),
-				Status:  metav1.ConditionTrue,
+				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
 				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS or TLS", listener.Protocol),
 			}

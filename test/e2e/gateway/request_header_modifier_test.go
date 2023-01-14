@@ -29,8 +29,8 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func testRequestHeaderModifierForwardTo(namespace string, gateway types.NamespacedName) {
-	Specify("request headers can be modified on forward to", func() {
+func testRequestHeaderModifierBackendRef(namespace string, gateway types.NamespacedName) {
+	Specify("request headers can be modified on backendref filters", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
@@ -42,7 +42,7 @@ func testRequestHeaderModifierForwardTo(namespace string, gateway types.Namespac
 				Name:      "http-filter-1",
 			},
 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
+				Hostnames: []gatewayapi_v1beta1.Hostname{"requestheadermodifierbackendref.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1beta1.ParentReference{
 						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
@@ -59,7 +59,7 @@ func testRequestHeaderModifierForwardTo(namespace string, gateway types.Namespac
 								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
 										Type: gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPRequestHeaderFilter{
+										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 											Add: []gatewayapi_v1beta1.HTTPHeader{
 												{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},

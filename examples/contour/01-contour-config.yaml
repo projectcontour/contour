@@ -13,7 +13,7 @@ data:
     #
     # Specify the Gateway API configuration.
     # gateway:
-    #   controllerName: projectcontour.io/projectcontour/contour
+    #   controllerName: projectcontour.io/gateway-controller
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
@@ -96,6 +96,7 @@ data:
     #   - "user_agent"
     #   - "x_forwarded_for"
     #   - "grpc_status"
+    #   - "grpc_status_number"
     #
     # default-http-versions:
     # - "HTTP/2"
@@ -144,6 +145,9 @@ data:
     #   Limit Service is consulted for a request.
     #   ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
     #   enableXRateLimitHeaders: false
+    #   Defines whether to translate status code 429 to grpc code RESOURCE_EXHAUSTED
+    #   instead of the default UNAVAILABLE
+    #   enableResourceExhaustedCode: false
     #
     # Global Policy settings.
     # policy:

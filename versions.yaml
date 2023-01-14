@@ -7,7 +7,19 @@ versions:
   - version: main
     supported: "false"
     dependencies:
-      envoy: "1.24.0"
+      envoy: "1.24.1"
+      kubernetes:
+        - "1.26"
+        - "1.25"
+        - "1.24"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: main
+  - version: v1.23.2
+    supported: "true"
+    dependencies:
+      envoy: "1.24.1"
       kubernetes:
         - "1.25"
         - "1.24"
@@ -15,9 +27,21 @@ versions:
       gateway-api:
         - v1alpha2
         - v1beta1
-      contour-operator: main
+      contour-operator: "N/A"
+  - version: v1.23.1
+    supported: "false"
+    dependencies:
+      envoy: "1.24.1"
+      kubernetes:
+        - "1.25"
+        - "1.24"
+        - "1.23"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
   - version: v1.23.0
-    supported: "true"
+    supported: "false"
     dependencies:
       envoy: "1.24.0"
       kubernetes:
@@ -28,8 +52,32 @@ versions:
         - v1alpha2
         - v1beta1
       contour-operator: v1.23.0
-  - version: v1.22.1
+  - version: v1.22.3
     supported: "true"
+    dependencies:
+      envoy: "1.23.3"
+      kubernetes:
+        - "1.24"
+        - "1.23"
+        - "1.22"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.22.2
+    supported: "false"
+    dependencies:
+      envoy: "1.23.3"
+      kubernetes:
+        - "1.24"
+        - "1.23"
+        - "1.22"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.22.1
+    supported: "false"
     dependencies:
       envoy: "1.23.1"
       kubernetes:
@@ -52,8 +100,19 @@ versions:
         - v1alpha2
         - v1beta1
       contour-operator: v1.22.0
-  - version: v1.21.2
+  - version: v1.21.3
     supported: "true"
+    dependencies:
+      envoy: "1.22.6"
+      kubernetes:
+        - "1.23"
+        - "1.22"
+        - "1.21"
+      gateway-api:
+        - v1alpha2
+      contour-operator: "N/A"
+  - version: v1.21.2
+    supported: "false"
     dependencies:
       envoy: "1.22.6"
       kubernetes:

@@ -22,8 +22,10 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -31,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -67,8 +68,7 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1beta1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
-	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
-	referencegrants           map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant
+	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	Client client.Reader
@@ -87,8 +87,7 @@ func (kc *KubernetesCache) init() {
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute)
-	kc.referencepolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy)
-	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferenceGrant)
+	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
@@ -120,7 +119,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-					WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+					WithField("ingress-class-name", ref.Val(obj.Spec.IngressClassName, "")).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
 				return false
@@ -188,14 +187,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			}
 		case *gatewayapi_v1beta1.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1alpha2.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-			return true
-		case *gatewayapi_v1alpha2.ReferencePolicy:
-			kc.referencepolicies[k8s.NamespacedNameOf(obj)] = obj
-			return true
-		case *gatewayapi_v1alpha2.ReferenceGrant:
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *contour_api_v1alpha1.ExtensionService:
@@ -309,20 +305,13 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		}
 	case *gatewayapi_v1beta1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.httproutes[m]
 		delete(kc.httproutes, m)
-		return ok
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.tlsroutes[m]
 		delete(kc.tlsroutes, m)
-		return ok
-	case *gatewayapi_v1alpha2.ReferencePolicy:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.referencepolicies[m]
-		delete(kc.referencepolicies, m)
-		return ok
-	case *gatewayapi_v1alpha2.ReferenceGrant:
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
 		delete(kc.referencegrants, m)
@@ -388,6 +377,16 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	}
 
 	for _, route := range kc.httproutes {
+		for _, rule := range route.Spec.Rules {
+			for _, backend := range rule.BackendRefs {
+				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, route := range kc.tlsroutes {
 		for _, rule := range route.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
 				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {
@@ -512,6 +511,21 @@ func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secr
 		ref.Kind != nil && *ref.Kind == "Secret" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1beta1.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
 		string(ref.Name) == secret.Name
+}
+
+// routesTriggersRebuild returns true if this route references gateway in this cache.
+func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.ParentReference) bool {
+	if kc.gateway == nil {
+		return false
+	}
+
+	for _, parentRef := range parentRefs {
+		if gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(kc.gateway)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {

@@ -24,11 +24,11 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -595,7 +595,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: pointer.StringPtr("testingressclass"),
+				IngressClassName: ref.To("testingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -623,7 +623,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: pointer.StringPtr("wrongingressclass"),
+				IngressClassName: ref.To("wrongingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -853,7 +853,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: pointer.StringPtr("contour"),
+				IngressClassName: ref.To("contour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -881,7 +881,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: pointer.StringPtr("notcontour"),
+				IngressClassName: ref.To("notcontour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}

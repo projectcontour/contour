@@ -77,6 +77,7 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 		{"pod=%ENVIRONMENT(ENVOY_POD_NAME)%"},
 		{"dog=pug", "cat=black"},
 		{"grpc_status"},
+		{"grpc_status_number"},
 	}
 
 	for _, c := range successCases {
@@ -118,6 +119,7 @@ func TestAccessLogFormatString(t *testing.T) {
 		"queries %REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)% removed\n",
 		"just a string\n",
 		"%GRPC_STATUS%\n",
+		"%GRPC_STATUS_NUMBER%\n",
 		"%METADATA(ROUTE:com.test.my_filter:test_key):20%\n",
 		"%UPSTREAM_PROTOCOL%\n",
 		"%UPSTREAM_PEER_SUBJECT%\n",

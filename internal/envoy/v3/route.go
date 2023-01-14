@@ -100,7 +100,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			rt.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
 		}
 		if dagRoute.ResponseHeadersPolicy != nil {
-			rt.ResponseHeadersToAdd = headerValueList(dagRoute.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToAdd = append(headerValueList(dagRoute.ResponseHeadersPolicy.Set, false), headerValueList(dagRoute.ResponseHeadersPolicy.Add, true)...)
 			rt.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
 		}
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
@@ -289,9 +289,25 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
-		PrefixRewrite:         r.PrefixRewrite,
 		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),
+	}
+
+	if r.PathRewritePolicy != nil {
+		switch {
+		case len(r.PathRewritePolicy.PrefixRewrite) > 0:
+			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
+		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
+			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
+				Substitution: r.PathRewritePolicy.FullPathRewrite,
+			}
+		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
+			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
+				Substitution: "/",
+			}
+		}
 	}
 
 	if r.RateLimitPolicy != nil && r.RateLimitPolicy.Global != nil {
@@ -457,7 +473,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 		}
 		if cluster.ResponseHeadersPolicy != nil {
-			c.ResponseHeadersToAdd = headerValueList(cluster.ResponseHeadersPolicy.Set, false)
+			c.ResponseHeadersToAdd = append(headerValueList(cluster.ResponseHeadersPolicy.Set, false), headerValueList(cluster.ResponseHeadersPolicy.Add, true)...)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
 		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {

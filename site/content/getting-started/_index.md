@@ -9,7 +9,7 @@ id: getting-started
 This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
-- using the Contour gateway provisioner (alpha)
+- using the Contour gateway provisioner (beta)
 
 It then shows how to deploy a sample workload and route traffic to it via Contour.
 
@@ -72,7 +72,7 @@ You should see the following:
 - 1 instance of service/my-release-contour-envoy
 
 
-### Option 3: Contour Gateway Provisioner (alpha)
+### Option 3: Contour Gateway Provisioner (beta)
 
 The Gateway provisioner watches for the creation of [Gateway API][31] `Gateway` resources, and dynamically provisions Contour+Envoy instances based on the `Gateway's` spec.
 Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
@@ -197,7 +197,7 @@ Congratulations, you have installed Contour, deployed a backend application, cre
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
-- Explore the [Gateway API guide][14] (alpha)
+- Explore the [Gateway API guide][14] (beta)
 - Explore other [deployment options][1]
 
 Check out the following demo videos:
@@ -231,7 +231,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [11]: https://github.com/projectcontour/community/wiki/Office-Hours
 [12]: {{< param slack_url >}}
 [13]: https://projectcontour.io/resources/deprecation-policy/
-[14]: https://projectcontour.io/guides/gateway-api
+[14]: /docs/{{< param latest_version >}}/guides/gateway-api
 [15]: https://github.com/bitnami/charts/tree/master/bitnami/contour
 [16]: https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice
 [17]: /docs/{{< param latest_version >}}/troubleshooting
@@ -244,7 +244,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [25]: https://lists.cncf.io/g/cncf-contour-users/
 [26]: https://www.envoyproxy.io/
 [27]: https://kind.sigs.k8s.io/
-[28]: /guides/kind
+[28]: /docs/{{< param latest_version >}}/guides/kind
 [29]: https://helm.sh/docs/intro/install/
-[30]: /guides/kind/#kind-configuration-file
+[30]: /docs/{{< param latest_version >}}/guides/kind/#kind-configuration-file
 [31]: https://gateway-api.sigs.k8s.io/

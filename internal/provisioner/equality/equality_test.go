@@ -105,13 +105,6 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 			description: "if probe values are set to default values",
 			mutate: func(ds *appsv1.DaemonSet) {
 				for i, c := range ds.Spec.Template.Spec.Containers {
-					if c.Name == dataplane.ShutdownContainerName {
-						ds.Spec.Template.Spec.Containers[i].LivenessProbe.ProbeHandler.HTTPGet.Scheme = "HTTP"
-						ds.Spec.Template.Spec.Containers[i].LivenessProbe.TimeoutSeconds = int32(1)
-						ds.Spec.Template.Spec.Containers[i].LivenessProbe.PeriodSeconds = int32(10)
-						ds.Spec.Template.Spec.Containers[i].LivenessProbe.SuccessThreshold = int32(1)
-						ds.Spec.Template.Spec.Containers[i].LivenessProbe.FailureThreshold = int32(3)
-					}
 					if c.Name == dataplane.EnvoyContainerName {
 						ds.Spec.Template.Spec.Containers[i].ReadinessProbe.TimeoutSeconds = int32(1)
 						// ReadinessProbe InitialDelaySeconds and PeriodSeconds are not set as defaults,

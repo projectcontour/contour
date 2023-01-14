@@ -24,10 +24,10 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -386,7 +386,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -510,11 +510,11 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1beta1.TLSModePassthrough),
+					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1beta1.NamespacesFromAll),
+						From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -534,12 +534,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
 			}},
 		},
 	}
@@ -590,14 +590,14 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
-					gatewayapi.GatewayParentRefV1Alpha2("projectcontour", "contour"),
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRefs(
-					gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
-					gatewayapi.TLSRouteBackendRef("svc2", 443, pointer.Int32(7)),
+					gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
+					gatewayapi.TLSRouteBackendRef("svc2", 443, ref.To(int32(7))),
 				),
 			}},
 		},

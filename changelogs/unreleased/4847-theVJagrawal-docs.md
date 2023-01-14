@@ -1,0 +1,1 @@
+Add get involved section in front page of the project contour.

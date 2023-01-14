@@ -21,12 +21,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -50,27 +50,15 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/basic-redirect"),
-						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
-							{
-								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
-								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname: gatewayapi.PreciseHostname("projectcontour.io"),
-								},
-							},
-						},
-						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
-					},
-					{
 						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/complex-redirect"),
 						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
 								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
-									StatusCode: pointer.Int(301),
-									Scheme:     pointer.String("https"),
-									Port:       gatewayapi.PortNumPtr(8080),
+									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
+									StatusCode: ref.To(301),
+									Scheme:     ref.To("https"),
+									Port:       ref.To(gatewayapi_v1beta1.PortNumber(8080)),
 								},
 							},
 						},
@@ -81,24 +69,10 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
-		// /basic-redirect only specifies a host name to
-		// redirect to.
-		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: string(route.Spec.Hostnames[0]),
-			Path: "/basic-redirect",
-			ClientOpts: []func(*http.Client){
-				e2e.OptDontFollowRedirects,
-			},
-			Condition: e2e.HasStatusCode(302),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 302 response code, got %d", res.StatusCode)
-		assert.Equal(t, "http://projectcontour.io/basic-redirect", res.Headers.Get("Location"))
-
 		// /complex-redirect specifies a host name,
 		// scheme, port and response code for the
 		// redirect.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host: string(route.Spec.Hostnames[0]),
 			Path: "/complex-redirect",
 			ClientOpts: []func(*http.Client){

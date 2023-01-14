@@ -20,14 +20,13 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -86,7 +85,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 	switch o := obj.(type) {
 	case *networking_v1.Ingress:
 		if !ingressclass.MatchesIngress(o, s.IngressClassNames) {
-			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
+			logNoMatch(s.Logger.WithField("ingress-class-name", ref.Val(o.Spec.IngressClassName, "")), o)
 			return
 		}
 
@@ -103,7 +102,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				}
 
 				dco := ing.DeepCopy()
-				dco.Status.LoadBalancer = loadBalancerStatus
+				dco.Status.LoadBalancer = coreToNetworkingLBStatus(loadBalancerStatus)
 				return dco
 			}),
 		))
@@ -189,14 +188,14 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				if ip := loadBalancerStatus.Ingress[0].IP; len(ip) > 0 {
 					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ip,
 						},
 					}
 				} else if hostname := loadBalancerStatus.Ingress[0].Hostname; len(hostname) > 0 {
 					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
 						{
-							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostname,
 						},
 					}
@@ -283,4 +282,26 @@ func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj interface{}) {
 
 func (s *ServiceStatusLoadBalancerWatcher) notify(lbstatus v1.LoadBalancerStatus) {
 	s.LBStatus <- lbstatus
+}
+
+func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLoadBalancerStatus {
+	ingress := make([]networking_v1.IngressLoadBalancerIngress, len(lbs.Ingress))
+	for i, ing := range lbs.Ingress {
+		ports := make([]networking_v1.IngressPortStatus, len(ing.Ports))
+		for j, ps := range ing.Ports {
+			ports[j] = networking_v1.IngressPortStatus{
+				Port:     ps.Port,
+				Protocol: ps.Protocol,
+				Error:    ps.Error,
+			}
+		}
+		ingress[i] = networking_v1.IngressLoadBalancerIngress{
+			IP:       ing.IP,
+			Hostname: ing.Hostname,
+			Ports:    ports,
+		}
+	}
+	return networking_v1.IngressLoadBalancerStatus{
+		Ingress: ingress,
+	}
 }

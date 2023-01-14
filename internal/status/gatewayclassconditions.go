@@ -61,7 +61,10 @@ func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition)
 					conditions[j].Reason = update.Reason
 					conditions[j].Message = update.Message
 					conditions[j].ObservedGeneration = update.ObservedGeneration
-					conditions[j].LastTransitionTime = update.LastTransitionTime
+					// Only update the transition time if Status changes.
+					if cond.Status != update.Status {
+						conditions[j].LastTransitionTime = update.LastTransitionTime
+					}
 					break
 				}
 			}

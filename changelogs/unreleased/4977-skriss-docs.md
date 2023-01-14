@@ -1,0 +1,1 @@
+Guides are now versioned along with the rest of Contour's documentation. You can find them listed in the menu on the left-hand side of https://projectcontour.io/docs.

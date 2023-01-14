@@ -1,0 +1,1 @@
+Gateway API: change the default controller name from `projectcontour.io/projectcontour/contour` to `projectcontour.io/gateway-controller` for static provisioning.

@@ -3,12 +3,19 @@ name: 'Welcome New Contributors'
 on:
   issues:
     types: [opened]
-  pull_request:
+  pull_request_target:
     types: [opened]
+
+# Workloads with pull_request_target and the GitHub Token secret should never include executing untrusted code
+# See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+# And https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
 
 jobs:
   welcome-new-contributor:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - name: 'Greet the contributor'
         uses: garg3133/welcome-new-contributors@a38583ed8282e23d63d7bf919ca2d9fb95300ca6  # v1.2 

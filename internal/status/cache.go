@@ -175,7 +175,7 @@ func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation in
 		Conditions:         make(map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition),
 		ExistingConditions: getGatewayConditions(gs),
 		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
+		TransitionTime:     metav1.NewTime(time.Now()),
 	}
 
 	return gu, func() {
@@ -231,7 +231,7 @@ func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation 
 		GatewayRef:        c.gatewayRef,
 		GatewayController: c.gatewayController,
 		Generation:        generation,
-		TransitionTime:    metav1.NewTime(clock.Now()),
+		TransitionTime:    metav1.NewTime(time.Now()),
 		Resource:          resource,
 	}
 

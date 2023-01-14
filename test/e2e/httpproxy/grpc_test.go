@@ -27,6 +27,7 @@ import (
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/projectcontour/yages/yages"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func testGRPCServicePlaintext(namespace string) {
@@ -67,7 +67,7 @@ func testGRPCServicePlaintext(namespace string) {
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: pointer.String("h2c"),
+								Protocol: ref.To("h2c"),
 							},
 						},
 						Conditions: []contourv1.MatchCondition{
@@ -149,7 +149,7 @@ func testGRPCWeb(namespace string) {
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: pointer.String("h2c"),
+								Protocol: ref.To("h2c"),
 							},
 						},
 					},

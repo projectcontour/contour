@@ -76,7 +76,10 @@ type HTTPProxyProcessor struct {
 	// will only perform a lookup for addresses in the IPv6 family.
 	// If AUTO is configured, the DNS resolver will first perform a lookup
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
-	// in the IPv4 family.
+	// in the IPv4 family. If ALL is specified, the DNS resolver will perform a lookup for
+	// both IPv4 and IPv6 families, and return all resolved addresses.
+	// When this is used, Happy Eyeballs will be enabled for upstream connections.
+	// Refer to Happy Eyeballs Support for more information.
 	// Note: This only applies to externalName clusters.
 	DNSLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
 
@@ -463,13 +466,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				// default to to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
-				case "auto", "v4", "v6":
+				case "auto", "v4", "v6", "all":
 					dnsLookupFamily = jwtProvider.RemoteJWKS.DNSLookupFamily
 				case "":
 					dnsLookupFamily = string(p.DNSLookupFamily)
 				default:
 					validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSDNSLookupFamilyInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
+						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, all, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
 					return
 				}
 
@@ -803,16 +806,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// First, try to apply an exact prefix match.
 			for _, prefix := range route.GetPrefixReplacements() {
 				if len(prefix.Prefix) > 0 && routingPrefix == prefix.Prefix {
-					r.PrefixRewrite = prefix.Replacement
+					r.PathRewritePolicy = &PathRewritePolicy{
+						PrefixRewrite: prefix.Replacement,
+					}
 					break
 				}
 			}
 
 			// If there wasn't a match, we can apply the default replacement.
-			if len(r.PrefixRewrite) == 0 {
+			if r.PathRewritePolicy == nil {
 				for _, prefix := range route.GetPrefixReplacements() {
 					if len(prefix.Prefix) == 0 {
-						r.PrefixRewrite = prefix.Replacement
+						r.PathRewritePolicy = &PathRewritePolicy{
+							PrefixRewrite: prefix.Replacement,
+						}
 						break
 					}
 				}
@@ -1214,7 +1221,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 		switch len(routes) {
 		case 1:
 			// Don't modify if we are not doing a replacement.
-			if len(routes[0].PrefixRewrite) == 0 {
+			if routes[0].PathRewritePolicy == nil {
 				continue
 			}
 
@@ -1229,18 +1236,21 @@ func expandPrefixMatches(routes []*Route) []*Route {
 			newRoute := *routes[0]
 
 			// Now, make the original route handle '/foo' and the new route handle '/foo'.
-			routes[0].PrefixRewrite = strings.TrimRight(routes[0].PrefixRewrite, "/")
+			routes[0].PathRewritePolicy.PrefixRewrite = strings.TrimRight(routes[0].PathRewritePolicy.PrefixRewrite, "/")
 			routes[0].PathMatchCondition = &PrefixMatchCondition{Prefix: prefix}
 
-			newRoute.PrefixRewrite = routes[0].PrefixRewrite + "/"
+			// Replace the entire PathRewritePolicy since we didn't deep-copy the route.
+			newRoute.PathRewritePolicy = &PathRewritePolicy{
+				PrefixRewrite: routes[0].PathRewritePolicy.PrefixRewrite + "/",
+			}
 			newRoute.PathMatchCondition = &PrefixMatchCondition{Prefix: prefix + "/"}
 
 			// Since we trimmed trailing '/', it's possible that
 			// we made the replacement empty. There's no such
 			// thing as an empty rewrite; it's the same as
 			// rewriting to '/'.
-			if len(routes[0].PrefixRewrite) == 0 {
-				routes[0].PrefixRewrite = "/"
+			if len(routes[0].PathRewritePolicy.PrefixRewrite) == 0 {
+				routes[0].PathRewritePolicy.PrefixRewrite = "/"
 			}
 
 			expandedRoutes = append(expandedRoutes, &newRoute)

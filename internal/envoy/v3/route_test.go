@@ -617,6 +617,58 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"prefix rewrite": {
+			route: &dag.Route{
+				Clusters:          []*dag.Cluster{c1},
+				PathRewritePolicy: &dag.PathRewritePolicy{PrefixRewrite: "/rewrite"},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					PrefixRewrite: "/rewrite",
+				},
+			},
+		},
+		"full path rewrite": {
+			route: &dag.Route{
+				Clusters:          []*dag.Cluster{c1},
+				PathRewritePolicy: &dag.PathRewritePolicy{FullPathRewrite: "/rewrite"},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RegexRewrite: &matcher.RegexMatchAndSubstitute{
+						Pattern: &matcher.RegexMatcher{
+							Regex: "^/.*$",
+						},
+						Substitution: "/rewrite",
+					},
+				},
+			},
+		},
+		"prefix regex removal": {
+			route: &dag.Route{
+				Clusters:          []*dag.Cluster{c1},
+				PathRewritePolicy: &dag.PathRewritePolicy{PrefixRegexRemove: "^/prefix/*"},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RegexRewrite: &matcher.RegexMatchAndSubstitute{
+						Pattern: &matcher.RegexMatcher{
+							Regex: "^/prefix/*",
+						},
+						Substitution: "/",
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

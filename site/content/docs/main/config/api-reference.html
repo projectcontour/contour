@@ -2679,6 +2679,8 @@ string
 When configured as &ldquo;v4&rdquo;, the DNS resolver will only perform a lookup
 for addresses in the IPv4 family. If &ldquo;v6&rdquo; is configured, the DNS resolver
 will only perform a lookup for addresses in the IPv6 family.
+If &ldquo;all&rdquo; is configured, the DNS resolver
+will perform a lookup for addresses in both the IPv4 and IPv6 family.
 If &ldquo;auto&rdquo; is configured, the DNS resolver will first perform a lookup
 for addresses in the IPv6 family and fallback to a lookup for addresses
 in the IPv4 family. If not specified, the Contour-wide setting defined
@@ -4934,7 +4936,10 @@ names in an Envoy cluster config.</p>
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;auto&#34;</p></td>
+<tbody><tr><td><p>&#34;all&#34;</p></td>
+<td><p>DNS lookups will attempt both v4 and v6 queries.</p>
+</td>
+</tr><tr><td><p>&#34;auto&#34;</p></td>
 <td><p>DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
 </td>
 </tr><tr><td><p>&#34;v4&#34;</p></td>
@@ -4980,11 +4985,14 @@ for addresses in the IPv4 family. If V6 is configured, the DNS resolver
 will only perform a lookup for addresses in the IPv6 family.
 If AUTO is configured, the DNS resolver will first perform a lookup
 for addresses in the IPv6 family and fallback to a lookup for addresses
-in the IPv4 family.
+in the IPv4 family. If ALL is specified, the DNS resolver will perform a lookup for
+both IPv4 and IPv6 families, and return all resolved addresses.
+When this is used, Happy Eyeballs will be enabled for upstream connections.
+Refer to Happy Eyeballs Support for more information.
 Note: This only applies to externalName clusters.</p>
 <p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily</a>
 for more information.</p>
-<p>Values: <code>auto</code> (default), <code>v4</code>, <code>v6</code>.</p>
+<p>Values: <code>auto</code> (default), <code>v4</code>, <code>v6</code>, <code>all</code>.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>
@@ -7391,6 +7399,20 @@ headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset
 (as defined by the IETF Internet-Draft linked below), on responses
 to clients when the Rate Limit Service is consulted for a request.</p>
 <p>ref. <a href="https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html">https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableResourceExhaustedCode</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnableResourceExhaustedCode enables translating error code 429 to
+grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE</p>
 </td>
 </tr>
 </tbody>

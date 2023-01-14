@@ -26,5 +26,12 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 # it needs to be explicitly specified in order to be updated/removed. After enough time
 # has passed and we're not concerned about folks upgrading from v1beta1 CRDs, we can
 # remove the awk call that adds this field to the spec, and rely on the v1 default.
-ls "${TEMPDIR}"/*.yaml | xargs cat | sed '/^$/d' | awk '/group: projectcontour.io/{print "  preserveUnknownFields: false"}1' > "${REPO}/examples/contour/01-crds.yaml"
+#
+# Also set x-kubernetes-map-type: atomic on ResourceClaim list elements to make
+# API server happy. We will revert once this issue is fixed and released:
+# https://github.com/kubernetes/kubernetes/pull/114585
+ls "${TEMPDIR}"/*.yaml | xargs cat | sed '/^$/d' \
+  | awk '/group: projectcontour.io/{print "  preserveUnknownFields: false"}1' \
+  | sed -E 's/(.*)description: ResourceClaim/\1x-kubernetes-map-type: atomic\n&/' \
+  > "${REPO}/examples/contour/01-crds.yaml"
 

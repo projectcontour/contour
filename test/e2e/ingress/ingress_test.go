@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -31,7 +32,6 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 var f = e2e.NewFramework(false)
@@ -238,7 +238,7 @@ var _ = Describe("Ingress", func() {
 		Context("when ApplyToIngress is false", func() {
 			BeforeEach(func() {
 				contourConfig.Policy.ApplyToIngress = false
-				contourConfiguration.Spec.Policy.ApplyToIngress = pointer.Bool(false)
+				contourConfiguration.Spec.Policy.ApplyToIngress = ref.To(false)
 			})
 
 			f.NamespacedTest("global-headers-policy-apply-to-ingress-false", testGlobalHeadersPolicy(false))
@@ -247,7 +247,7 @@ var _ = Describe("Ingress", func() {
 		Context("when ApplyToIngress is true", func() {
 			BeforeEach(func() {
 				contourConfig.Policy.ApplyToIngress = true
-				contourConfiguration.Spec.Policy.ApplyToIngress = pointer.Bool(true)
+				contourConfiguration.Spec.Policy.ApplyToIngress = ref.To(true)
 			})
 
 			f.NamespacedTest("global-headers-policy-apply-to-ingress-true", testGlobalHeadersPolicy(true))

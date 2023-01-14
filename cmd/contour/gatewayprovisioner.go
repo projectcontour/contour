@@ -34,7 +34,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 
 	provisionerConfig := &gatewayProvisionerConfig{
 		contourImage:          "ghcr.io/projectcontour/contour:main",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.24.0",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.24.1",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
@@ -45,24 +45,24 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		Default(provisionerConfig.contourImage).
 		StringVar(&provisionerConfig.contourImage)
 
+	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
+		BoolVar(&provisionerConfig.leaderElection)
+
 	cmd.Flag("envoy-image", "The container image used for the managed Envoy.").
 		Default(provisionerConfig.envoyImage).
 		StringVar(&provisionerConfig.envoyImage)
 
-	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to 0 to disable serving metrics.").
-		Default(provisionerConfig.metricsBindAddress).
-		StringVar(&provisionerConfig.metricsBindAddress)
+	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
+		Default(provisionerConfig.gatewayControllerName).
+		StringVar(&provisionerConfig.gatewayControllerName)
 
 	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
 		Default(config.GetenvOr("CONTOUR_PROVISIONER_NAMESPACE", "projectcontour")).
 		StringVar(&provisionerConfig.leaderElectionNamespace)
 
-	cmd.Flag("enable-leader-election", "Enable leader election for the gateway provisioner.").
-		BoolVar(&provisionerConfig.leaderElection)
-
-	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
-		Default(provisionerConfig.gatewayControllerName).
-		StringVar(&provisionerConfig.gatewayControllerName)
+	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to 0 to disable serving metrics.").
+		Default(provisionerConfig.metricsBindAddress).
+		StringVar(&provisionerConfig.metricsBindAddress)
 
 	return cmd, provisionerConfig
 }

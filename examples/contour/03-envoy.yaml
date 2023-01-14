@@ -38,12 +38,6 @@ spec:
                 - /bin/contour
                 - envoy
                 - shutdown
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8090
-          initialDelaySeconds: 3
-          periodSeconds: 10
         name: shutdown-manager
         volumeMounts:
           - name: envoy-admin
@@ -56,7 +50,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.24.0
+        image: docker.io/envoyproxy/envoy:v1.24.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
