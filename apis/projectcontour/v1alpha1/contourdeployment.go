@@ -235,7 +235,7 @@ type NetworkPublishing struct {
 	// See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
 	//
 	// NOTE:
-	// When provisioning an Envoy `NodePortService`, use the Listeners' port numbers to populate
+	// When provisioning an Envoy `NodePortService`, use Gateway Listeners' port numbers to populate
 	// the Service's node port values, there's no way to auto-allocate them.
 	//
 	// See: https://github.com/projectcontour/contour/issues/4499
