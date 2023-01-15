@@ -1119,8 +1119,46 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				// Get the redirect filter if there is one. Note that per Gateway API
 				// docs, "specifying a core filter multiple times has unspecified or
 				// custom conformance.", here we choose to just select the first one.
+				if pathRewritePolicy != nil {
+					continue
+				}
+
 				if redirect == nil && filter.RequestRedirect != nil {
 					redirect = filter.RequestRedirect
+				}
+
+				if redirect.Path == nil {
+					continue
+				}
+
+				var prefixRewrite, fullPathRewrite string
+
+				switch redirect.Path.Type {
+				case gatewayapi_v1beta1.PrefixMatchHTTPPathModifier:
+					if filter.RequestRedirect.Path.ReplacePrefixMatch == nil || len(*filter.RequestRedirect.Path.ReplacePrefixMatch) == 0 {
+						prefixRewrite = "/"
+					} else {
+						prefixRewrite = *filter.RequestRedirect.Path.ReplacePrefixMatch
+					}
+				case gatewayapi_v1beta1.FullPathHTTPPathModifier:
+					if filter.RequestRedirect.Path.ReplaceFullPath == nil || len(*filter.RequestRedirect.Path.ReplaceFullPath) == 0 {
+						fullPathRewrite = "/"
+					} else {
+						fullPathRewrite = *filter.RequestRedirect.Path.ReplaceFullPath
+					}
+				default:
+					routeAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionFalse,
+						gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.RequestRedirect.Path.Type),
+					)
+					continue
+				}
+
+				pathRewritePolicy = &PathRewritePolicy{
+					PrefixRewrite:   prefixRewrite,
+					FullPathRewrite: fullPathRewrite,
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
 				// Get the mirror filter if there is one. If there are more than one
