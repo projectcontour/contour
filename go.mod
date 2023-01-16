@@ -27,8 +27,8 @@ require (
 	github.com/vektra/mockery/v2 v2.16.0
 	golang.org/x/oauth2 v0.4.0
 	gonum.org/v1/plot v0.12.0
-	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f
-	google.golang.org/grpc v1.51.0
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6
+	google.golang.org/grpc v1.52.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v3 v3.0.1
