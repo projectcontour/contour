@@ -10945,7 +10945,26 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				proxy108, proxy108a, proxy108b, s1, s12, s13,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							// route on root proxy is served
+							prefixroute("/", service(s1)),
+							// route for first valid include is served
+							&Route{
+								PathMatchCondition: prefixString("/blog"),
+								HeaderMatchConditions: []HeaderMatchCondition{
+									{Name: "x-header", Value: "abc", MatchType: "contains"},
+								},
+								Clusters: clusters(service(s12)),
+							},
+						),
+					),
+				},
+			),
 		},
 		"insert proxy with tcp forward without TLS termination w/ passthrough": {
 			objs: []interface{}{

@@ -1598,13 +1598,13 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate path conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidConflictingIncludeConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyInvalidConflictingIncludeConditions.Name,
 				Namespace: proxyInvalidConflictingIncludeConditions.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
-			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(), // This proxy is valid because there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(), // This proxy is valid because there is a valid include preceding an invalid one.
 		},
 	})
 
@@ -1660,15 +1660,15 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidConflictHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidConflictHeaderConditions.Name,
-				Namespace: proxyInvalidConflictHeaderConditions.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include before an invalid one.
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyInvalidConflictHeaderConditions.Name,
+				Namespace: proxyInvalidConflictHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
 
@@ -1731,15 +1731,15 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header conditions on an include mismatched order", testcase{
 		objs: []interface{}{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
-				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
+			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
 
@@ -1788,15 +1788,15 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header+path conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidDuplicateHeaderAndPathConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidDuplicateHeaderAndPathConditions.Name,
-				Namespace: proxyInvalidDuplicateHeaderAndPathConditions.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
+			{Name: proxyInvalidDuplicateHeaderAndPathConditions.Name,
+				Namespace: proxyInvalidDuplicateHeaderAndPathConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
 

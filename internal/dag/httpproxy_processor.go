@@ -640,7 +640,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		if includeMatchConditionsIdentical(include, seenConds) {
 			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
 				"duplicate conditions defined on an include")
-			return nil
+			continue
 		}
 
 		includedProxy, ok := p.source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
