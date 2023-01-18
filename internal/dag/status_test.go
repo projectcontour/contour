@@ -1519,7 +1519,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidConflictingIncludeConditions := &contour_api_v1.HTTPProxy{
+	proxyInvalidConflictingIncludeConditionsSimple := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
@@ -1533,12 +1533,6 @@ func TestDAGStatus(t *testing.T) {
 				Namespace: "teama",
 				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
-				}},
-			}, {
-				Name:      "blogteamb",
-				Namespace: "teamb",
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/somethingelse",
 				}},
 			}, {
 				Name:      "blogteamb",
@@ -1596,6 +1590,59 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate path conditions on an include", testcase{
+		objs: []interface{}{proxyInvalidConflictingIncludeConditionsSimple, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Orphaned(), // Orphaned because the include pointing to this condition is a duplicate so the route is not programmed.
+			{Name: proxyInvalidConflictingIncludeConditionsSimple.Name,
+				Namespace: proxyInvalidConflictingIncludeConditionsSimple.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+		},
+	})
+
+	proxyInvalidConflictingIncludeConditions := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/blog",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/somethingelse",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/blog",
+				}},
+			}},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate path conditions on an include not consecutive", testcase{
 		objs: []interface{}{proxyInvalidConflictingIncludeConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
