@@ -147,10 +147,10 @@ func TestDesiredDeployment(t *testing.T) {
 	securePort := objects.EnvoySecureContainerPort
 	for i, p := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		if p.Name == "http" && p.ContainerPort == insecurePort {
-			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ServicePort = int32(8081)
+			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ContainerPort = int32(8081)
 		}
 		if p.Name == "https" && p.ContainerPort == securePort {
-			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ServicePort = int32(8444)
+			cntr.Spec.NetworkPublishing.Envoy.Ports[i].ContainerPort = int32(8444)
 		}
 	}
 
