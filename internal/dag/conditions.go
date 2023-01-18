@@ -26,7 +26,7 @@ import (
 // prefix Condition.
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
+func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) *PrefixMatchCondition {
 	prefix := ""
 	for _, cond := range conds {
 		prefix += cond.Prefix
