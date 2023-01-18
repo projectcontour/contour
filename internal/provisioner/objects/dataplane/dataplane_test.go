@@ -19,6 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/stretchr/testify/assert"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -250,6 +251,11 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.EnvoyExtraVolumes = append(cntr.Spec.EnvoyExtraVolumes, volTest)
 	cntr.Spec.EnvoyExtraVolumeMounts = append(cntr.Spec.EnvoyExtraVolumeMounts, volTestMount)
 
+	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
+		{Name: "http", ServicePort: 80, ContainerPort: 8080},
+		{Name: "https", ServicePort: 443, ContainerPort: 8443},
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	testLogLevelArg := "--log-level debug"
@@ -273,6 +279,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
+	assert.Len(t, container.Ports, 2)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)

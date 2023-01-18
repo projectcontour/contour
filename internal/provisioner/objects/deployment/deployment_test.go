@@ -164,6 +164,11 @@ func TestDesiredDeployment(t *testing.T) {
 		"key": "value",
 	}
 
+	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
+		{Name: "http", ServicePort: 80, ContainerPort: 8080},
+		{Name: "https", ServicePort: 443, ContainerPort: 8443},
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 
@@ -173,7 +178,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
 	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
 
-	for _, port := range container.Ports {
+	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		if port.Name == "http" && port.ContainerPort != insecurePort {
 			arg := fmt.Sprintf("--envoy-service-http-port=%d", port.ContainerPort)
 			checkContainerHasArg(t, container, arg)
