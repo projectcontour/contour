@@ -16,7 +16,6 @@ package v1alpha1
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -337,12 +336,17 @@ type EnvoyListenerConfig struct {
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
-	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
-	// It has 3 possible values: OVERWRITE, PASS_THROUGH, APPEND_IF_ABSENT
+	// Defines the action to be applied to the Server header on the response path
+	// When configured as OVERWRITE, Overwrites any Server header with the contents of server_name.
+	// When configured as APPEND_IF_ABSENT, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
+	// When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.
 	//
+	// Values: `OVERWRITE` (default), `APPEND_IF_ABSENT`, `PASS_THROUGH`
+	//
+	// Other values will produce an error.
 	// Contour's default is OVERWRITE.
 	// +optional
-	DisableServerHeaderTransformation *http.HttpConnectionManager_ServerHeaderTransformation `json:"disableServerHeaderTransformation,omitempty"`
+	ServerHeaderTransformation ServerHeaderTransformationType `json:"ServerHeaderTransformation,omitempty"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
@@ -538,6 +542,21 @@ const (
 	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 	// DNS lookups will attempt both v4 and v6 queries.
 	AllClusterDNSFamily ClusterDNSFamilyType = "all"
+)
+
+// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
+type ServerHeaderTransformationType int32
+
+const (
+	// Overwrite any Server header with the contents of server_name.
+	// This is the default value
+	OVERWRITE ServerHeaderTransformationType = 0
+	// If no Server header is present, append Server server_name
+	// If a Server header is present, pass it through.
+	APPEND_IF_ABSENT ServerHeaderTransformationType = 1
+	// Pass through the value of the server header, and do not append a header
+	// if none is present.
+	PASS_THROUGH ServerHeaderTransformationType = 2
 )
 
 // ClusterParameters holds various configurable cluster values.

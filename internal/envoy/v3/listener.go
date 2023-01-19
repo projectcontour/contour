@@ -41,6 +41,7 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -242,8 +243,17 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 	return b
 }
 
-func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value http.HttpConnectionManager_ServerHeaderTransformation) *httpConnectionManagerBuilder {
-	b.serverHeaderTransformation = value
+func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_api_v1alpha1.ServerHeaderTransformationType) *httpConnectionManagerBuilder {
+	switch value {
+	case contour_api_v1alpha1.OVERWRITE:
+		b.serverHeaderTransformation = http.HttpConnectionManager_OVERWRITE
+	case contour_api_v1alpha1.APPEND_IF_ABSENT:
+		b.serverHeaderTransformation = http.HttpConnectionManager_APPEND_IF_ABSENT
+	case contour_api_v1alpha1.PASS_THROUGH:
+		b.serverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
+	default:
+		return nil
+	}
 	return b
 }
 

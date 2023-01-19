@@ -126,7 +126,7 @@ type ListenerConfig struct {
 	MergeSlashes bool
 
 	// ServerHeaderTransformation signifies we will not modify the Server header.
-	ServerHeaderTransformation http.HttpConnectionManager_ServerHeaderTransformation
+	ServerHeaderTransformation contour_api_v1alpha1.ServerHeaderTransformationType
 
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.

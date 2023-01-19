@@ -22,7 +22,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/projectcontour/contour/apis/projectcontour/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -520,11 +519,6 @@ func (in *EnvoyListenerConfig) DeepCopyInto(out *EnvoyListenerConfig) {
 	if in.DisableMergeSlashes != nil {
 		in, out := &in.DisableMergeSlashes, &out.DisableMergeSlashes
 		*out = new(bool)
-		**out = **in
-	}
-	if in.DisableServerHeaderTransformation != nil {
-		in, out := &in.DisableServerHeaderTransformation, &out.DisableServerHeaderTransformation
-		*out = new(v3.HttpConnectionManager_ServerHeaderTransformation)
 		**out = **in
 	}
 	if in.TLS != nil {

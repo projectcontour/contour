@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -93,6 +92,22 @@ const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
 const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
 const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 const AllClusterDNSFamily ClusterDNSFamilyType = "all"
+
+// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
+type ServerHeaderTransformationType int32
+
+func (s ServerHeaderTransformationType) Validate() error {
+	switch s {
+	case OVERWRITE, APPEND_IF_ABSENT, PASS_THROUGH:
+		return nil
+	default:
+		return fmt.Errorf("invalid server header transformation %q", s)
+	}
+}
+
+const OVERWRITE ServerHeaderTransformationType = 0
+const APPEND_IF_ABSENT ServerHeaderTransformationType = 1
+const PASS_THROUGH ServerHeaderTransformationType = 2
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
@@ -490,8 +505,13 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
-	// DisableServerHeaderTransformation signifies Envoy will not modify the Server header.
-	DisableServerHeaderTransformation http.HttpConnectionManager_ServerHeaderTransformation `yaml:"disableServerHeaderTransformation,omitempty"`
+	// Defines the action to be applied to the Server header on the response path
+	// When configured as OVERWRITE, Overwrites any Server header with the contents of server_name.
+	// When configured as APPEND_IF_ABSENT, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
+	// When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.
+	//
+	// Contour's default is OVERWRITE.
+	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"ServerHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
@@ -698,15 +718,15 @@ func Defaults() Parameters {
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
 		},
-		IngressStatusAddress:              "",
-		AccessLogFormat:                   DEFAULT_ACCESS_LOG_TYPE,
-		AccessLogFields:                   DefaultFields,
-		AccessLogLevel:                    LogLevelInfo,
-		TLS:                               TLSParameters{},
-		DisablePermitInsecure:             false,
-		DisableAllowChunkedLength:         false,
-		DisableMergeSlashes:               false,
-		DisableServerHeaderTransformation: http.HttpConnectionManager_OVERWRITE,
+		IngressStatusAddress:       "",
+		AccessLogFormat:            DEFAULT_ACCESS_LOG_TYPE,
+		AccessLogFields:            DefaultFields,
+		AccessLogLevel:             LogLevelInfo,
+		TLS:                        TLSParameters{},
+		DisablePermitInsecure:      false,
+		DisableAllowChunkedLength:  false,
+		DisableMergeSlashes:        false,
+		ServerHeaderTransformation: OVERWRITE,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

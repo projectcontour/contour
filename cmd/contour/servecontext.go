@@ -378,6 +378,16 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 	}
 
+	var serverHeaderTransformation contour_api_v1alpha1.ServerHeaderTransformationType
+	switch ctx.Config.ServerHeaderTransformation {
+	case config.OVERWRITE:
+		serverHeaderTransformation = contour_api_v1alpha1.OVERWRITE
+	case config.APPEND_IF_ABSENT:
+		serverHeaderTransformation = contour_api_v1alpha1.APPEND_IF_ABSENT
+	case config.PASS_THROUGH:
+		serverHeaderTransformation = contour_api_v1alpha1.PASS_THROUGH
+	}
+
 	policy := &contour_api_v1alpha1.PolicyConfig{
 		RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
 			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
@@ -439,11 +449,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:                     &ctx.useProxyProto,
-				DisableAllowChunkedLength:         &ctx.Config.DisableAllowChunkedLength,
-				DisableMergeSlashes:               &ctx.Config.DisableMergeSlashes,
-				DisableServerHeaderTransformation: &ctx.Config.DisableServerHeaderTransformation,
-				ConnectionBalancer:                ctx.Config.Listener.ConnectionBalancer,
+				UseProxyProto:              &ctx.useProxyProto,
+				DisableAllowChunkedLength:  &ctx.Config.DisableAllowChunkedLength,
+				DisableMergeSlashes:        &ctx.Config.DisableMergeSlashes,
+				ServerHeaderTransformation: serverHeaderTransformation,
+				ConnectionBalancer:         ctx.Config.Listener.ConnectionBalancer,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,
