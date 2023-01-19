@@ -16,7 +16,6 @@ package model
 import (
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
-	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,16 +46,6 @@ func Default(namespace, name string) *Contour {
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
 					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
-					ContainerPorts: []ContainerPort{
-						{
-							Name:       "http",
-							PortNumber: 8080,
-						},
-						{
-							Name:       "https",
-							PortNumber: 8443,
-						},
-					},
 				},
 			},
 			EnvoyDaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -368,38 +357,9 @@ type EnvoyNetworkPublishing struct {
 	// If unspecified, defaults to an external Classic AWS ELB.
 	LoadBalancer LoadBalancerStrategy
 
-	// ServicePorts is a list of ports to expose on the Envoy service.
-	// TODO(sk) ServicePorts, NodePorts and ContainerPorts should collapse
-	// into a single struct.
-	ServicePorts []ServicePort
-
-	// NodePorts is a list of network ports to expose on each node's IP at a static
-	// port number using a NodePort Service. Present only if type is NodePortService.
-	// A ClusterIP Service, which the NodePort Service routes to, is automatically
-	// created. You'll be able to contact the NodePort Service, from outside the
-	// cluster, by requesting <NodeIP>:<NodePort>.
-	//
-	// If type is NodePortService and nodePorts is unspecified, two nodeports will be
-	// created, one named "http" and the other named "https", with port numbers auto
-	// assigned by Kubernetes API server. For additional information on the NodePort
-	// Service, see:
-	//
-	//  https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
-	//
-	// Names and port numbers must be unique in the list. Two ports must be specified,
-	// one named "http" for Envoy's insecure service and one named "https" for Envoy's
-	// secure service.
-	NodePorts []NodePort
-
-	// ContainerPorts is a list of container ports to expose from the Envoy container(s).
-	// Exposing a port here gives the system additional information about the network
-	// connections the Envoy container uses, but is primarily informational. Not specifying
-	// a port here DOES NOT prevent that port from being exposed by Envoy. Any port which is
-	// listening on the default "0.0.0.0" address inside the Envoy container will be accessible
-	// from the network. Names and port numbers must be unique in the list container ports. Two
-	// ports must be specified, one named "http" for Envoy's insecure service and one named
-	// "https" for Envoy's secure service.
-	ContainerPorts []ContainerPort
+	// Ports is a list of ports to expose on the Envoy service and
+	// workload.
+	Ports []Port
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
@@ -584,17 +544,14 @@ type GCPLoadBalancerParameters struct {
 	Subnet *string
 }
 
-type ServicePort struct {
-	Name       string
-	PortNumber int32
-}
-
-// NodePort is the schema to specify a network port for a NodePort Service.
-type NodePort struct {
-	// Name is an IANA_SVC_NAME within the NodePort Service.
+type Port struct {
+	// Name is the name to use for the port on the Envoy service and workload.
 	Name string
-
-	// PortNumber is the network port number to expose for the NodePort Service.
+	// ServicePort is the port to expose on the Envoy service.
+	ServicePort int32
+	// ContainerPort is the port to expose on the Envoy container(s).
+	ContainerPort int32
+	// NodePort is the network port number to expose for the NodePort Service.
 	// If unspecified, a port number will be assigned from the the cluster's
 	// nodeport service range, i.e. --service-node-port-range flag
 	// (default: 30000-32767).
@@ -605,19 +562,7 @@ type NodePort struct {
 	// 2. Be within the cluster's nodeport service range, i.e. --service-node-port-range
 	//    flag (default: 30000-32767).
 	// 3. Be a valid network port number, i.e. greater than 0 and less than 65536.
-	PortNumber *int32
-}
-
-// ContainerPort is the schema to specify a network port for a container.
-// A container port gives the system additional information about network
-// connections a container uses, but is primarily informational.
-type ContainerPort struct {
-	// Name is an IANA_SVC_NAME within the pod.
-	Name string
-
-	// PortNumber is the network port number to expose on the envoy pod.
-	// The number must be greater than 0 and less than 65536.
-	PortNumber int32
+	NodePort int32
 }
 
 const (
@@ -640,18 +585,4 @@ func OwnerLabels(contour *Contour) map[string]string {
 	return map[string]string{
 		OwningGatewayNameLabel: contour.Name,
 	}
-}
-
-// MakeNodePorts returns a nodeport slice using the ports key as the nodeport name
-// and the ports value as the nodeport number.
-func MakeNodePorts(ports map[string]int) []NodePort {
-	nodePorts := []NodePort{}
-	for k, v := range ports {
-		p := NodePort{
-			Name:       k,
-			PortNumber: ref.To(int32(v)),
-		}
-		nodePorts = append(nodePorts, p)
-	}
-	return nodePorts
 }

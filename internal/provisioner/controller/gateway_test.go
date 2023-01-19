@@ -1089,10 +1089,10 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.Equal(t, "val-2", svc.Annotations["key-2"])
 
 				assert.Len(t, svc.Spec.Ports, 2)
-				assert.Equal(t, svc.Spec.Ports[0].NodePort, int32(30000))
-				assert.Equal(t, svc.Spec.Ports[0].Port, int32(80))
-				assert.Equal(t, svc.Spec.Ports[1].NodePort, int32(30001))
-				assert.Equal(t, svc.Spec.Ports[1].Port, int32(443))
+				assert.Equal(t, int32(30000), svc.Spec.Ports[0].NodePort)
+				assert.Equal(t, int32(80), svc.Spec.Ports[0].Port)
+				assert.Equal(t, int32(30001), svc.Spec.Ports[1].NodePort)
+				assert.Equal(t, int32(443), svc.Spec.Ports[1].Port)
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {
