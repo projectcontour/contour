@@ -1229,7 +1229,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -1242,7 +1241,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -2041,7 +2042,6 @@ spec:
                                             the DynamicResourceAllocation feature
                                             gate. \n This field is immutable."
                                           items:
-                                            x-kubernetes-map-type: atomic
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
                                             properties:
@@ -2056,7 +2056,9 @@ spec:
                                             - name
                                             type: object
                                           type: array
-                                          x-kubernetes-list-type: set
+                                          x-kubernetes-list-map-keys:
+                                          - name
+                                          x-kubernetes-list-type: map
                                         limits:
                                           additionalProperties:
                                             anyOf:
@@ -3201,7 +3203,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -3214,7 +3215,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
