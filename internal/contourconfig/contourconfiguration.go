@@ -77,7 +77,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				UseProxyProto:              ref.To(false),
 				DisableAllowChunkedLength:  ref.To(false),
 				DisableMergeSlashes:        ref.To(false),
-				ServerHeaderTransformation: contour_api_v1alpha1.OVERWRITE,
+				ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
 				ConnectionBalancer:         "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",

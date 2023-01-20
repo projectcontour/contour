@@ -545,18 +545,18 @@ const (
 )
 
 // ServerHeaderTransformation defines the action to be applied to the Server header on the response path
-type ServerHeaderTransformationType int32
+type ServerHeaderTransformationType string
 
 const (
 	// Overwrite any Server header with the contents of server_name.
 	// This is the default value
-	OVERWRITE ServerHeaderTransformationType = 0
+	OverwriteServerHeader ServerHeaderTransformationType = "OVERWRITE"
 	// If no Server header is present, append Server server_name
 	// If a Server header is present, pass it through.
-	APPEND_IF_ABSENT ServerHeaderTransformationType = 1
+	AppendIfAbsentServerHeader ServerHeaderTransformationType = "APPEND_IF_ABSENT"
 	// Pass through the value of the server header, and do not append a header
 	// if none is present.
-	PASS_THROUGH ServerHeaderTransformationType = 2
+	PassThroughServerHeader ServerHeaderTransformationType = "PASS_THROUGH"
 )
 
 // ClusterParameters holds various configurable cluster values.

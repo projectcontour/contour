@@ -380,12 +380,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 
 	var serverHeaderTransformation contour_api_v1alpha1.ServerHeaderTransformationType
 	switch ctx.Config.ServerHeaderTransformation {
-	case config.OVERWRITE:
-		serverHeaderTransformation = contour_api_v1alpha1.OVERWRITE
-	case config.APPEND_IF_ABSENT:
-		serverHeaderTransformation = contour_api_v1alpha1.APPEND_IF_ABSENT
-	case config.PASS_THROUGH:
-		serverHeaderTransformation = contour_api_v1alpha1.PASS_THROUGH
+	case config.OverwriteServerHeader:
+		serverHeaderTransformation = contour_api_v1alpha1.OverwriteServerHeader
+	case config.AppendIfAbsentServerHeader:
+		serverHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+	case config.PassThroughServerHeader:
+		serverHeaderTransformation = contour_api_v1alpha1.PassThroughServerHeader
 	}
 
 	policy := &contour_api_v1alpha1.PolicyConfig{

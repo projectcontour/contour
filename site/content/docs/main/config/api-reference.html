@@ -7439,7 +7439,7 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ServerHeaderTransformationType">ServerHeaderTransformationType
-(<code>int32</code> alias)</p></h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
@@ -7454,15 +7454,15 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>1</p></td>
+<tbody><tr><td><p>&#34;APPEND_IF_ABSENT&#34;</p></td>
 <td><p>If no Server header is present, append Server server_name
 If a Server header is present, pass it through.</p>
 </td>
-</tr><tr><td><p>0</p></td>
+</tr><tr><td><p>&#34;OVERWRITE&#34;</p></td>
 <td><p>Overwrite any Server header with the contents of server_name.
 This is the default value</p>
 </td>
-</tr><tr><td><p>2</p></td>
+</tr><tr><td><p>&#34;PASS_THROUGH&#34;</p></td>
 <td><p>Pass through the value of the server header, and do not append a header
 if none is present.</p>
 </td>

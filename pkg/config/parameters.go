@@ -94,20 +94,20 @@ const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 const AllClusterDNSFamily ClusterDNSFamilyType = "all"
 
 // ServerHeaderTransformation defines the action to be applied to the Server header on the response path
-type ServerHeaderTransformationType int32
+type ServerHeaderTransformationType string
 
 func (s ServerHeaderTransformationType) Validate() error {
 	switch s {
-	case OVERWRITE, APPEND_IF_ABSENT, PASS_THROUGH:
+	case OverwriteServerHeader, AppendIfAbsentServerHeader, PassThroughServerHeader:
 		return nil
 	default:
 		return fmt.Errorf("invalid server header transformation %q", s)
 	}
 }
 
-const OVERWRITE ServerHeaderTransformationType = 0
-const APPEND_IF_ABSENT ServerHeaderTransformationType = 1
-const PASS_THROUGH ServerHeaderTransformationType = 2
+const OverwriteServerHeader ServerHeaderTransformationType = "OVERWRITE"
+const AppendIfAbsentServerHeader ServerHeaderTransformationType = "APPEND_IF_ABSENT"
+const PassThroughServerHeader ServerHeaderTransformationType = "PASS_THROUGH"
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
@@ -511,7 +511,7 @@ type Parameters struct {
 	// When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.
 	//
 	// Contour's default is OVERWRITE.
-	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"ServerHeaderTransformation,omitempty"`
+	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"serverHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
@@ -726,7 +726,7 @@ func Defaults() Parameters {
 		DisablePermitInsecure:      false,
 		DisableAllowChunkedLength:  false,
 		DisableMergeSlashes:        false,
-		ServerHeaderTransformation: OVERWRITE,
+		ServerHeaderTransformation: OverwriteServerHeader,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

@@ -170,8 +170,7 @@ spec:
                           append a header if none is present. \n Values: `OVERWRITE`
                           (default), `APPEND_IF_ABSENT`, `PASS_THROUGH` \n Other values
                           will produce an error. Contour's default is OVERWRITE."
-                        format: int32
-                        type: integer
+                        type: string
                       connectionBalancer:
                         description: "ConnectionBalancer. If the value is exact, the
                           listener will use the exact connection balancer See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
@@ -3178,8 +3177,7 @@ spec:
                               none is present. \n Values: `OVERWRITE` (default), `APPEND_IF_ABSENT`,
                               `PASS_THROUGH` \n Other values will produce an error.
                               Contour's default is OVERWRITE."
-                            format: int32
-                            type: integer
+                            type: string
                           connectionBalancer:
                             description: "ConnectionBalancer. If the value is exact,
                               the listener will use the exact connection balancer

@@ -245,11 +245,11 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 
 func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_api_v1alpha1.ServerHeaderTransformationType) *httpConnectionManagerBuilder {
 	switch value {
-	case contour_api_v1alpha1.OVERWRITE:
+	case contour_api_v1alpha1.OverwriteServerHeader:
 		b.serverHeaderTransformation = http.HttpConnectionManager_OVERWRITE
-	case contour_api_v1alpha1.APPEND_IF_ABSENT:
+	case contour_api_v1alpha1.AppendIfAbsentServerHeader:
 		b.serverHeaderTransformation = http.HttpConnectionManager_APPEND_IF_ABSENT
-	case contour_api_v1alpha1.PASS_THROUGH:
+	case contour_api_v1alpha1.PassThroughServerHeader:
 		b.serverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
 	default:
 		return nil
