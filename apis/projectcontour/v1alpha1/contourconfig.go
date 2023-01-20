@@ -346,7 +346,7 @@ type EnvoyListenerConfig struct {
 	// Other values will produce an error.
 	// Contour's default is OVERWRITE.
 	// +optional
-	ServerHeaderTransformation ServerHeaderTransformationType `json:"ServerHeaderTransformation,omitempty"`
+	ServerHeaderTransformation ServerHeaderTransformationType `json:"serverHeaderTransformation,omitempty"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
