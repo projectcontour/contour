@@ -128,6 +128,14 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
 	assert.NoError(t, AllClusterDNSFamily.Validate())
 }
+func TestValidateServerHeaderTranformationType(t *testing.T) {
+	assert.Error(t, ServerHeaderTransformationType("").Validate())
+	assert.Error(t, ServerHeaderTransformationType("foo").Validate())
+
+	assert.NoError(t, OverwriteServerHeader.Validate())
+	assert.NoError(t, AppendIfAbsentServerHeader.Validate())
+	assert.NoError(t, PassThroughServerHeader.Validate())
+}
 
 func TestValidateHeadersPolicy(t *testing.T) {
 	assert.Error(t, HeadersPolicy{
@@ -367,6 +375,7 @@ incluster: false
 disablePermitInsecure: false
 disableAllowChunkedLength: false
 disableMergeSlashes: false
+serverHeaderTransformation: OVERWRITE
 `,
 	)
 

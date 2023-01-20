@@ -1295,3 +1295,57 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 }
+
+func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.ServerHeaderTransformation = contour_api_v1alpha1.OverwriteServerHeader
+	})
+
+	defer done()
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+
+	// p1 is a httpproxy
+	p1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(p1)
+
+	// verify that the server-header-transformatiuon has been set to OVERWRITE.
+	httpListener := defaultHTTPListener()
+
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		RequestTimeout(timeout.DurationSetting(0)).
+		ServerHeaderTransformation(contour_api_v1alpha1.OverwriteServerHeader).
+		DefaultFilters().
+		Get())
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			httpListener,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
