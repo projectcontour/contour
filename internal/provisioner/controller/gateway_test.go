@@ -1038,6 +1038,31 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: gatewayv1beta1.GatewaySpec{
 					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+					Listeners: []gatewayv1beta1.Listener{
+						{
+							Protocol: gatewayv1beta1.HTTPProtocolType,
+							AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
+								Namespaces: &gatewayv1beta1.RouteNamespaces{
+									From: ref.To(gatewayv1beta1.NamespacesFromAll),
+								},
+							},
+							Name: gatewayv1beta1.SectionName("http"),
+							Port: gatewayv1beta1.PortNumber(30000),
+						},
+						{
+							Name:     gatewayv1beta1.SectionName("https"),
+							Port:     gatewayv1beta1.PortNumber(30001),
+							Protocol: gatewayv1beta1.HTTPSProtocolType,
+							AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
+								Namespaces: &gatewayv1beta1.RouteNamespaces{
+									From: ref.To(gatewayv1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayv1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayv1beta1.TLSModeTerminate),
+							},
+						},
+					},
 				},
 			},
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
@@ -1062,6 +1087,12 @@ func TestGatewayReconcile(t *testing.T) {
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])
 				assert.Equal(t, "val-2", svc.Annotations["key-2"])
+
+				assert.Len(t, svc.Spec.Ports, 2)
+				assert.Equal(t, int32(30000), svc.Spec.Ports[0].NodePort)
+				assert.Equal(t, int32(80), svc.Spec.Ports[0].Port)
+				assert.Equal(t, int32(30001), svc.Spec.Ports[1].NodePort)
+				assert.Equal(t, int32(443), svc.Spec.Ports[1].Port)
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {

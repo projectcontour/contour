@@ -1235,7 +1235,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -1248,7 +1247,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -2047,7 +2048,6 @@ spec:
                                             the DynamicResourceAllocation feature
                                             gate. \n This field is immutable."
                                           items:
-                                            x-kubernetes-map-type: atomic
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
                                             properties:
@@ -2062,7 +2062,9 @@ spec:
                                             - name
                                             type: object
                                           type: array
-                                          x-kubernetes-list-type: set
+                                          x-kubernetes-list-map-keys:
+                                          - name
+                                          x-kubernetes-list-type: map
                                         limits:
                                           additionalProperties:
                                             anyOf:
@@ -3108,6 +3110,10 @@ spec:
                           Envoy network endpoints use container networking. A Kubernetes
                           NodePort Service is created to publish the network endpoints.
                           \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                          \n NOTE: When provisioning an Envoy `NodePortService`, use
+                          Gateway Listeners' port numbers to populate the Service's
+                          node port values, there's no way to auto-allocate them.
+                          \n See: https://github.com/projectcontour/contour/issues/4499
                           \n * ClusterIPService \n Publishes Envoy network endpoints
                           using a Kubernetes ClusterIP Service. \n In this configuration,
                           Envoy network endpoints use container networking. A Kubernetes
@@ -3203,7 +3209,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -3216,7 +3221,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -7412,7 +7419,7 @@ spec:
             - --log-level info
           command:
             - envoy
-          image: docker.io/envoyproxy/envoy:v1.24.1
+          image: docker.io/envoyproxy/envoy:v1.25.0
           imagePullPolicy: IfNotPresent
           name: envoy
           env:

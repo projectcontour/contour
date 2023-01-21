@@ -7149,6 +7149,10 @@ endpoints.</p>
 <p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
 NodePort Service is created to publish the network endpoints.</p>
 <p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#nodeport">https://kubernetes.io/docs/concepts/services-networking/service/#nodeport</a></p>
+<p>NOTE:
+When provisioning an Envoy <code>NodePortService</code>, use Gateway Listeners&rsquo; port numbers to populate
+the Service&rsquo;s node port values, there&rsquo;s no way to auto-allocate them.</p>
+<p>See: <a href="https://github.com/projectcontour/contour/issues/4499">https://github.com/projectcontour/contour/issues/4499</a></p>
 <ul>
 <li>ClusterIPService</li>
 </ul>
