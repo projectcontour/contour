@@ -11,9 +11,10 @@ Internal redirect is supported by Envoy since v1.10, but there is no way to conf
 
 ## Goals
 - Configuring per route internal redirect policy.
-- Supporting envoy builtin 'internal redirect policy' predicates.
+- Supporting envoy `previous route` and `safe cross scheme` predicates.
 
 ## Non Goals
+- Supporting `allow listed routes` predicate.
 - Supporting user defined 'internal redirect policy' predicate.
 
 ## High-Level Design
@@ -45,17 +46,8 @@ spec:
        internalRedirectPolicy:
          maxInternalRedirects: 5
          redirectResponseCodes: [ 301, 302, 303 ]
-         predicates:
-           safeCrossScheme: true
-           previousRoutes: true
-           allowedRouteNames: [ "other" ]
-         allowCrossSchemeRedirect: true
-     - name: other
-       conditions:
-         - prefix: /other
-       services:
-         - name: other
-           port: 8090
+         allowCrossSchemeRedirect: SafeOnly
+         denyRepeatedRouteRedirect: true
 ```
 
 ## Detailed Design
@@ -84,25 +76,15 @@ type HTTPInternalRedirectPolicy struct {
     // If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has been followed by a previous redirect from the current route.
     // +optional
     DenyRepeatedRouteRedirect bool `json:"denyRepeatedRouteRedirect,omitempty"`
-
-    // AllowedRouteNames is the list of routes that’s allowed as redirect target, identified by the route’s name.
-    // An empty list means all routes are allowed.
-    // +optional
-    AllowedRouteNames []string `json:"allowedRouteNames,omitempty"`
 }
 
 ```
 
 Update `Route` accordingly. 
-The `AllowedRouteNames` predicates declares a list of allowed route's name, so a `Name` field is required on `Route` to be able to use it.
 
 ```Go
 type Route struct {
     [... other members ...]
-
-    // Name of the route.
-    // +optional
-    Name string `json:"name,omitempty"`
 
     // InternalRedirectPolicy defines when to handle redirect responses internally.
     // +optional
@@ -128,9 +110,6 @@ type InternalRedirectPolicy struct {
     AllowCrossSchemeRedirect string
 
     DenyRepeatedRouteRedirect bool
-
-    // AllowListedRoutesPredicate accepts only explicitly allowed target routes.
-    AllowedRouteNames []string
 }
 
 type Route struct {
@@ -147,14 +126,24 @@ In order to enable internal redirect in Envoy we will update `contour/internal/e
 
 ## Alternatives Considered
 
-N/A
+Supporting `Allow Listed Routes` predicate too. 
+
+```
+    // AllowedRouteNames is the list of routes that are allowed as redirect target, identified by the route’s name.
+    // An empty list means all routes are allowed.
+    // +optional
+    AllowedRouteNames []string `json:"allowedRouteNames,omitempty"`
+```
+
+This predicate takes a list of route names, but the concept of route name is not exposed in Contour.
+While it is possible to also add a `Name` field to the Route struct, it has to be carefully design to prevent issues in multitenant deployments, and so should have its own design proposal.
+In the case of multitenant Contour deployment, 2 teams may declare routes using the same name, defeating the purpose of the allowed routes list.
+
+Note that the proposed design does not prevent adding `AllowedRouteNames` support in the future if needed.
 
 ## Security Considerations
 
-When targeting an untrusted backend which can return any value in the `Location` header, the gateway operator may want to be able to limit the scope of the internal redirect to a list of predefined routes by populating the `allowedRouteNames` field.
-But in the case of multitenant Contour deployment, 2 teams may declare routes using the same name, defeating the purpose of the allowed routes list.
-
-To prevent unexpected redirect behavior in that case, Contour should ensure route name uniqueness.
+N/A
 
 ## Compatibility
 This change should be additive, so there should be no compatibility issues.
