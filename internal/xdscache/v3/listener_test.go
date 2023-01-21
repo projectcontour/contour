@@ -2632,9 +2632,9 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with server_header_transformation set to overwrite in listener config": {
+		"httpproxy with server_header_transformation set to pass through in listener config": {
 			ListenerConfig: ListenerConfig{
-				ServerHeaderTransformation: v1alpha1.OverwriteServerHeader,
+				ServerHeaderTransformation: v1alpha1.PassThroughServerHeader,
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2681,7 +2681,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
-						ServerHeaderTransformation(v1alpha1.OverwriteServerHeader).
+						ServerHeaderTransformation(v1alpha1.PassThroughServerHeader).
 						Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),

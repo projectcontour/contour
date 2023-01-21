@@ -125,7 +125,7 @@ type ListenerConfig struct {
 	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
 	MergeSlashes bool
 
-	// ServerHeaderTransformation signifies we will not modify the Server header.
+	// ServerHeaderTransformation defines the action to be applied to the Server header on the response path.
 	ServerHeaderTransformation contour_api_v1alpha1.ServerHeaderTransformationType
 
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the

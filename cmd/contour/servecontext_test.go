@@ -409,7 +409,7 @@ func TestConvertServeContext(t *testing.T) {
 					UseProxyProto:              ref.To(false),
 					DisableAllowChunkedLength:  ref.To(false),
 					DisableMergeSlashes:        ref.To(false),
-					ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
+					ServerHeaderTransformation: contour_api_v1alpha1.AppendIfAbsentServerHeader,
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 					},
@@ -691,11 +691,11 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"server header transformation": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.ServerHeaderTransformation = config.OverwriteServerHeader
+				ctx.Config.ServerHeaderTransformation = config.AppendIfAbsentServerHeader
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.ServerHeaderTransformation = contour_api_v1alpha1.OverwriteServerHeader
+				cfg.Envoy.Listener.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
 				return cfg
 			},
 		},

@@ -1,1 +1,0 @@
-adds server_header_transformation on HTTPConnectionManager

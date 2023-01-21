@@ -1119,6 +1119,56 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
+		"server header transform set to pass through": {
+			routename:                 "default/kuard",
+			accesslogger:              FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+			serverHeaderTranformation: v1alpha1.PassThroughServerHeader,
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+														Authority:   "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: defaultHTTPFilters,
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
+						PreserveExternalRequestId:  true,
+						ServerHeaderTransformation: http.HttpConnectionManager_PASS_THROUGH,
+					}),
+				},
+			},
+		},
 		"enable xfcc": {
 			routename:    "default/kuard",
 			accesslogger: FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
@@ -1179,57 +1229,6 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
-					}),
-				},
-			},
-		},
-		"server header transform set to overwrite": {
-			routename:                 "default/kuard",
-			accesslogger:              FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-			serverHeaderTranformation: v1alpha1.OverwriteServerHeader,
-			want: &envoy_listener_v3.Filter{
-				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
-						StatPrefix: "default/kuard",
-						RouteSpecifier: &http.HttpConnectionManager_Rds{
-							Rds: &http.Rds{
-								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
-											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
-								},
-							},
-						},
-						HttpFilters: defaultHTTPFilters,
-						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
-							// Enable support for HTTP/1.0 requests that carry
-							// a Host: header. See #537.
-							AcceptHttp_10: true,
-						},
-						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
-						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress:          wrapperspb.Bool(true),
-						NormalizePath:             wrapperspb.Bool(true),
-						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
-							StripAnyHostPort: true,
-						},
-						PreserveExternalRequestId:  true,
-						MergeSlashes:               true,
-						ServerHeaderTransformation: http.HttpConnectionManager_OVERWRITE,
 					}),
 				},
 			},

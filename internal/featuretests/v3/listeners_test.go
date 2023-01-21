@@ -1298,7 +1298,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 
 func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
-		conf.ServerHeaderTransformation = contour_api_v1alpha1.OverwriteServerHeader
+		conf.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
 	})
 
 	defer done()
@@ -1337,7 +1337,7 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
-		ServerHeaderTransformation(contour_api_v1alpha1.OverwriteServerHeader).
+		ServerHeaderTransformation(contour_api_v1alpha1.AppendIfAbsentServerHeader).
 		DefaultFilters().
 		Get())
 

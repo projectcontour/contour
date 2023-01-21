@@ -251,8 +251,6 @@ func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_
 		b.serverHeaderTransformation = http.HttpConnectionManager_APPEND_IF_ABSENT
 	case contour_api_v1alpha1.PassThroughServerHeader:
 		b.serverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
-	default:
-		return nil
 	}
 	return b
 }
