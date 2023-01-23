@@ -183,15 +183,15 @@ spec:
                         type: boolean
                       serverHeaderTransformation:
                         description: "Defines the action to be applied to the Server
-                          header on the response path When configured as overwrite,
-                          overwrites any Server header with the contents of server_name.
-                          When configured as append_if_absent, ⁣If no Server header
-                          is present, append Server server_name If a Server header
-                          is present, pass it through. When configured as pass_through,
-                          pPass through the value of the server header, and do not
-                          append a header if none is present. \n Values: `overwrite`
-                          (default), `append_if_absent`, `pass_through` \n Other values
-                          will produce an error. Contour's default is overwrite."
+                          header on the response path. When configured as overwrite,
+                          overwrites any Server header with \"envoy\". When configured
+                          as append_if_absent, if a Server header is present, pass
+                          it through, otherwise set it to \"envoy\". When configured
+                          as pass_through, pass through the value of the Server header,
+                          and do not append a header if none is present. \n Values:
+                          `overwrite` (default), `append_if_absent`, `pass_through`
+                          \n Other values will produce an error. Contour's default
+                          is overwrite."
                         type: string
                       tls:
                         description: TLS holds various configurable Envoy TLS listener
@@ -3198,13 +3198,12 @@ spec:
                             type: boolean
                           serverHeaderTransformation:
                             description: "Defines the action to be applied to the
-                              Server header on the response path When configured as
-                              overwrite, overwrites any Server header with the contents
-                              of server_name. When configured as append_if_absent,
-                              ⁣If no Server header is present, append Server server_name
-                              If a Server header is present, pass it through. When
-                              configured as pass_through, pPass through the value
-                              of the server header, and do not append a header if
+                              Server header on the response path. When configured
+                              as overwrite, overwrites any Server header with \"envoy\".
+                              When configured as append_if_absent, if a Server header
+                              is present, pass it through, otherwise set it to \"envoy\".
+                              When configured as pass_through, pass through the value
+                              of the Server header, and do not append a header if
                               none is present. \n Values: `overwrite` (default), `append_if_absent`,
                               `pass_through` \n Other values will produce an error.
                               Contour's default is overwrite."

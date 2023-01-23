@@ -505,10 +505,10 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
-	// Defines the action to be applied to the Server header on the response path
-	// When configured as overwrite, overwrites any Server header with the contents of server_name.
-	// When configured as append_if_absent, if no Server header is present, append Server server_name If a Server header is present, pass it through.
-	// When configured as pass_through, ⁣pass through the value of the server header, and do not append a header if none is present.
+	// Defines the action to be applied to the Server header on the response path.
+	// When configured as overwrite, overwrites any Server header with "envoy".
+	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
+	// When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.
 	//
 	// Contour's default is overwrite.
 	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"serverHeaderTransformation,omitempty"`

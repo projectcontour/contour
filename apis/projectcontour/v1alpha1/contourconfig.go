@@ -336,10 +336,10 @@ type EnvoyListenerConfig struct {
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
-	// Defines the action to be applied to the Server header on the response path
-	// When configured as overwrite, overwrites any Server header with the contents of server_name.
-	// When configured as append_if_absent, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
-	// When configured as pass_through, pPass through the value of the server header, and do not append a header if none is present.
+	// Defines the action to be applied to the Server header on the response path.
+	// When configured as overwrite, overwrites any Server header with "envoy".
+	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
+	// When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.
 	//
 	// Values: `overwrite` (default), `append_if_absent`, `pass_through`
 	//
@@ -548,13 +548,13 @@ const (
 type ServerHeaderTransformationType string
 
 const (
-	// Overwrite any Server header with the contents of server_name.
-	// This is the default value
+	// Overwrite any Server header with "envoy".
+	// This is the default value.
 	OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
-	// If no Server header is present, append Server server_name
+	// If no Server header is present, set it to "envoy".
 	// If a Server header is present, pass it through.
 	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
-	// Pass through the value of the server header, and do not append a header
+	// Pass through the value of the Server header, and do not append a header
 	// if none is present.
 	PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 )
