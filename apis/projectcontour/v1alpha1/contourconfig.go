@@ -337,14 +337,14 @@ type EnvoyListenerConfig struct {
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
 	// Defines the action to be applied to the Server header on the response path
-	// When configured as OVERWRITE, Overwrites any Server header with the contents of server_name.
-	// When configured as APPEND_IF_ABSENT, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
-	// When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.
+	// When configured as overwrite, overwrites any Server header with the contents of server_name.
+	// When configured as append_if_absent, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
+	// When configured as pass_through, pPass through the value of the server header, and do not append a header if none is present.
 	//
-	// Values: `OVERWRITE` (default), `APPEND_IF_ABSENT`, `PASS_THROUGH`
+	// Values: `overwrite` (default), `append_if_absent`, `pass_through`
 	//
 	// Other values will produce an error.
-	// Contour's default is OVERWRITE.
+	// Contour's default is overwrite.
 	// +optional
 	ServerHeaderTransformation ServerHeaderTransformationType `json:"serverHeaderTransformation,omitempty"`
 
@@ -550,13 +550,13 @@ type ServerHeaderTransformationType string
 const (
 	// Overwrite any Server header with the contents of server_name.
 	// This is the default value
-	OverwriteServerHeader ServerHeaderTransformationType = "OVERWRITE"
+	OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
 	// If no Server header is present, append Server server_name
 	// If a Server header is present, pass it through.
-	AppendIfAbsentServerHeader ServerHeaderTransformationType = "APPEND_IF_ABSENT"
+	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
 	// Pass through the value of the server header, and do not append a header
 	// if none is present.
-	PassThroughServerHeader ServerHeaderTransformationType = "PASS_THROUGH"
+	PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 )
 
 // ClusterParameters holds various configurable cluster values.

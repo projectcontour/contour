@@ -105,9 +105,9 @@ func (s ServerHeaderTransformationType) Validate() error {
 	}
 }
 
-const OverwriteServerHeader ServerHeaderTransformationType = "OVERWRITE"
-const AppendIfAbsentServerHeader ServerHeaderTransformationType = "APPEND_IF_ABSENT"
-const PassThroughServerHeader ServerHeaderTransformationType = "PASS_THROUGH"
+const OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
+const AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
+const PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
@@ -506,11 +506,11 @@ type Parameters struct {
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
 	// Defines the action to be applied to the Server header on the response path
-	// When configured as OVERWRITE, Overwrites any Server header with the contents of server_name.
-	// When configured as APPEND_IF_ABSENT, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
-	// When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.
+	// When configured as overwrite, overwrites any Server header with the contents of server_name.
+	// When configured as append_if_absent, if no Server header is present, append Server server_name If a Server header is present, pass it through.
+	// When configured as pass_through, ⁣pass through the value of the server header, and do not append a header if none is present.
 	//
-	// Contour's default is OVERWRITE.
+	// Contour's default is overwrite.
 	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"serverHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices

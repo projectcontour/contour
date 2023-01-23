@@ -1329,7 +1329,7 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	// verify that the server-header-transformatiuon has been set to OVERWRITE.
+	// verify that the server-header-transformation has been set to append_if_absent.
 	httpListener := defaultHTTPListener()
 
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().

@@ -5939,12 +5939,12 @@ ServerHeaderTransformationType
 <td>
 <em>(Optional)</em>
 <p>Defines the action to be applied to the Server header on the response path
-When configured as OVERWRITE, Overwrites any Server header with the contents of server_name.
-When configured as APPEND_IF_ABSENT, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
-When configured as PASS_THROUGH, ⁣Pass through the value of the server header, and do not append a header if none is present.</p>
-<p>Values: <code>OVERWRITE</code> (default), <code>APPEND_IF_ABSENT</code>, <code>PASS_THROUGH</code></p>
+When configured as overwrite, overwrites any Server header with the contents of server_name.
+When configured as append_if_absent, ⁣If no Server header is present, append Server server_name If a Server header is present, pass it through.
+When configured as pass_through, pPass through the value of the server header, and do not append a header if none is present.</p>
+<p>Values: <code>overwrite</code> (default), <code>append_if_absent</code>, <code>pass_through</code></p>
 <p>Other values will produce an error.
-Contour&rsquo;s default is OVERWRITE.</p>
+Contour&rsquo;s default is overwrite.</p>
 </td>
 </tr>
 <tr>
@@ -7458,15 +7458,15 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;APPEND_IF_ABSENT&#34;</p></td>
+<tbody><tr><td><p>&#34;append_if_absent&#34;</p></td>
 <td><p>If no Server header is present, append Server server_name
 If a Server header is present, pass it through.</p>
 </td>
-</tr><tr><td><p>&#34;OVERWRITE&#34;</p></td>
+</tr><tr><td><p>&#34;overwrite&#34;</p></td>
 <td><p>Overwrite any Server header with the contents of server_name.
 This is the default value</p>
 </td>
-</tr><tr><td><p>&#34;PASS_THROUGH&#34;</p></td>
+</tr><tr><td><p>&#34;pass_through&#34;</p></td>
 <td><p>Pass through the value of the server header, and do not append a header
 if none is present.</p>
 </td>
