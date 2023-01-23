@@ -74,6 +74,7 @@ json-fields:
     - grpc_status
     - grpc_status_number
 accesslog-level: info
+serverHeaderTransformation: OVERWRITE
 timeouts:
     connection-idle-timeout: 60s
     connect-timeout: 2s
