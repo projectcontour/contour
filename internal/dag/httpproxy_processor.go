@@ -759,6 +759,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy)
+
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		r := &Route{
@@ -1607,6 +1609,33 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func internalRedirectPolicy(internal *contour_api_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
+	if internal == nil {
+		return nil
+	}
+
+	redirectResponseCodes := make([]uint32, len(internal.RedirectResponseCodes))
+	for i, responseCode := range internal.RedirectResponseCodes {
+		redirectResponseCodes[i] = uint32(responseCode)
+	}
+
+	policy := &InternalRedirectPolicy{
+		MaxInternalRedirects:      internal.MaxInternalRedirects,
+		RedirectResponseCodes:     redirectResponseCodes,
+		DenyRepeatedRouteRedirect: internal.DenyRepeatedRouteRedirect,
+	}
+	switch internal.AllowCrossSchemeRedirect {
+	case "Always":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeAlways
+	case "SafeOnly":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeSafeOnly
+	default:
+		// Value already checked by the generated validator, assume this is Never.
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeNever
+	}
+	return policy
 }
 
 func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {
