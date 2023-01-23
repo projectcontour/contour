@@ -776,6 +776,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RequestHashPolicies:       requestHashPolicies,
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
+			InternalRedirectPolicy:    internalRedirectPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
