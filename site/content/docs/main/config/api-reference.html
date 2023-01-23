@@ -5928,6 +5928,27 @@ which strips duplicate slashes from request URL paths.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>serverHeaderTransformation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ServerHeaderTransformationType">
+ServerHeaderTransformationType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the action to be applied to the Server header on the response path.
+When configured as overwrite, overwrites any Server header with &ldquo;envoy&rdquo;.
+When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to &ldquo;envoy&rdquo;.
+When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.</p>
+<p>Values: <code>overwrite</code> (default), <code>append_if_absent</code>, <code>pass_through</code></p>
+<p>Other values will produce an error.
+Contour&rsquo;s default is overwrite.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>connectionBalancer</code>
 <br>
 <em>
@@ -7420,6 +7441,36 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ServerHeaderTransformationType">ServerHeaderTransformationType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>ServerHeaderTransformation defines the action to be applied to the Server header on the response path</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;append_if_absent&#34;</p></td>
+<td><p>If no Server header is present, set it to &ldquo;envoy&rdquo;.
+If a Server header is present, pass it through.</p>
+</td>
+</tr><tr><td><p>&#34;overwrite&#34;</p></td>
+<td><p>Overwrite any Server header with &ldquo;envoy&rdquo;.
+This is the default value.</p>
+</td>
+</tr><tr><td><p>&#34;pass_through&#34;</p></td>
+<td><p>Pass through the value of the Server header, and do not append a header
+if none is present.</p>
+</td>
+</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.TLS">TLS
 </h3>

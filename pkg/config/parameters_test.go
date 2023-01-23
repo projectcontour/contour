@@ -74,6 +74,7 @@ json-fields:
     - grpc_status
     - grpc_status_number
 accesslog-level: info
+serverHeaderTransformation: overwrite
 timeouts:
     connection-idle-timeout: 60s
     connect-timeout: 2s
@@ -127,6 +128,14 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.NoError(t, IPv4ClusterDNSFamily.Validate())
 	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
 	assert.NoError(t, AllClusterDNSFamily.Validate())
+}
+func TestValidateServerHeaderTranformationType(t *testing.T) {
+	assert.Error(t, ServerHeaderTransformationType("").Validate())
+	assert.Error(t, ServerHeaderTransformationType("foo").Validate())
+
+	assert.NoError(t, OverwriteServerHeader.Validate())
+	assert.NoError(t, AppendIfAbsentServerHeader.Validate())
+	assert.NoError(t, PassThroughServerHeader.Validate())
 }
 
 func TestValidateHeadersPolicy(t *testing.T) {
@@ -367,6 +376,7 @@ incluster: false
 disablePermitInsecure: false
 disableAllowChunkedLength: false
 disableMergeSlashes: false
+serverHeaderTransformation: overwrite
 `,
 	)
 
