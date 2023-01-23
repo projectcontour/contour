@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 var f = e2e.NewFramework(false)
@@ -107,6 +108,17 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
+
+	f.NamespacedTest("httpproxy-internal-redirect-validation", testInternalRedirectValidation)
+	f.NamespacedTest("httpproxy-internal-redirect-policy", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
+			})
+			testInternalRedirectPolicy(namespace)
+		})
+	})
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
