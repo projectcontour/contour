@@ -61,11 +61,15 @@ type Include struct {
 }
 
 // MatchCondition are a general holder for matching rules for HTTPProxies.
-// One of Prefix, Header or QueryParameter must be provided.
+// One of Prefix, Exact, Header or QueryParameter must be provided.
 type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
 	Prefix string `json:"prefix,omitempty"`
+
+	// Exact defines a exact match for a request.
+	// +optional
+	Exact string `json:"exact,omitempty"`
 
 	// Header specifies the header condition to match.
 	// +optional

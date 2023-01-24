@@ -1292,7 +1292,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
-				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix or exact is not allowed in a condition block"),
 		},
 	})
 
@@ -1345,7 +1345,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoPrefixesWithInclude.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix or exact is not allowed in a condition block"),
 			{Name: proxyValidChildTeamA.Name, Namespace: proxyValidChildTeamA.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidChildTeamA.Generation).
 				Orphaned(),

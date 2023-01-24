@@ -1300,6 +1300,11 @@ func expandPrefixMatches(routes []*Route) []*Route {
 			expandedRoutes = append(expandedRoutes, r)
 		}
 
+		// Skip for exact path match conditions
+		if r.HasPathExact() {
+			continue
+		}
+
 		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
 
 		if routingPrefix != "/" {
@@ -1494,7 +1499,15 @@ type matchConditionAggregate struct {
 }
 
 func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
-	pathPrefix := mergePathMatchConditions(includeConds).Prefix
+	mergedPath := ""
+
+	switch mergedPathRef := mergePathMatchConditions(includeConds).(type) {
+	case *PrefixMatchCondition:
+		mergedPath = mergedPathRef.Prefix
+	case *ExactMatchCondition:
+		mergedPath = mergedPathRef.Path
+	}
+
 	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
 	includeQueryParamConds := mergeQueryParamMatchConditions(includeConds)
 
@@ -1505,7 +1518,7 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 	// behavior to set up their include tree.
 	// It is unlikely that there is much usage of duplicate non-default include
 	// conditions, so we think this special case is safe.
-	if pathPrefix == "/" && len(includeHeaderConds) == 0 && len(includeQueryParamConds) == 0 {
+	if mergedPath == "/" && len(includeHeaderConds) == 0 && len(includeQueryParamConds) == 0 {
 		return false
 	}
 
@@ -1546,9 +1559,9 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 	// Check if we have seen this path before.
 	// If so, get all the collections of header and query params we
 	// have seen with it.
-	condAggregates, pathSeen := seenConds[pathPrefix]
+	condAggregates, pathSeen := seenConds[mergedPath]
 	if !pathSeen {
-		seenConds[pathPrefix] = []matchConditionAggregate{{
+		seenConds[mergedPath] = []matchConditionAggregate{{
 			headerConds:     includeHeaderConds,
 			queryParamConds: includeQueryParamConds,
 		}}
