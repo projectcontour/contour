@@ -1,0 +1,54 @@
+resources:
+- ../render/
+
+patchesJson6902:
+- target:
+    group: rbac.authorization.k8s.io
+    version: v1
+    kind: ClusterRoleBinding
+    name: contour
+  # This patch changes the ClusterRoleBinding to a RoleBinding,
+  # and renames the object to contour-resources to avoid conflict with existing RoleBinding.
+  patch: |-
+    - op: replace
+      path: /kind
+      value: RoleBinding
+    - op: replace
+      path: /metadata/name
+      value: contour-resources
+    - op: replace
+      path: /roleRef/kind
+      value: Role
+    - op: replace
+      path: /roleRef/name
+      value: contour-resources
+    - op: add
+      path: /metadata/namespace
+      value: projectcontour
+# This patch changes the ClusterRole to a Role,
+# and renames the object to contour-resources to avoid conflict with existing Role.
+- target:
+    group: rbac.authorization.k8s.io
+    version: v1
+    kind: ClusterRole
+    name: contour
+  patch: |-
+    - op: replace
+      path: /kind
+      value: Role
+    - op: replace
+      path: /metadata/name
+      value: contour-resources
+    - op: add
+      path: /metadata/namespace
+      value: projectcontour
+# Append argument to Contour serve command
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: contour
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --watch-namespaces=projectcontour

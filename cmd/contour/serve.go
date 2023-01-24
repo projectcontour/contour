@@ -156,6 +156,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.LeaderElection.RetryPeriod)
 
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
+	serve.Flag("watch-namespaces", "Restrict contour to search resources in these namespaces only.").PlaceHolder("<ns,ns>").StringVar(&ctx.watchNamespaces)
 
 	serve.Flag("stats-address", "Envoy /stats interface address.").PlaceHolder("<ipaddr>").StringVar(&ctx.statsAddr)
 	serve.Flag("stats-port", "Envoy /stats interface port.").PlaceHolder("<port>").IntVar(&ctx.statsPort)
@@ -196,11 +197,26 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		return nil, fmt.Errorf("unable to create scheme: %w", err)
 	}
 
+	var cacheFunc ctrl_cache.NewCacheFunc
+	var namespaces string
+	if watchedNamespaces := ctx.watchedNamespaces(); watchedNamespaces != nil {
+		if len(watchedNamespaces) == 1 {
+			namespaces = watchedNamespaces[0]
+		}
+		if len(watchedNamespaces) > 1 {
+			cacheFunc = ctrl_cache.MultiNamespacedCacheBuilder(watchedNamespaces)
+		}
+		log.WithField("context", "watched-namespaces").Infof("watching namespaces %q", watchedNamespaces)
+
+	}
+
 	// Instantiate a controller-runtime manager.
 	options := manager.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
+		Namespace:              namespaces,
+		NewCache:               cacheFunc,
 	}
 	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")

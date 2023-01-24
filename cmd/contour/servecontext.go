@@ -62,6 +62,9 @@ type serveContext struct {
 	// httpproxy root namespaces
 	rootNamespaces string
 
+	// Watch only these namespaces to allow running with limited RBAC permissions.
+	watchNamespaces string
+
 	// ingress class
 	ingressClassName string
 
@@ -241,6 +244,17 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 	}
 	var ns []string
 	for _, s := range strings.Split(ctx.rootNamespaces, ",") {
+		ns = append(ns, strings.TrimSpace(s))
+	}
+	return ns
+}
+
+func (ctx *serveContext) watchedNamespaces() []string {
+	if strings.TrimSpace(ctx.watchNamespaces) == "" {
+		return nil
+	}
+	var ns []string
+	for _, s := range strings.Split(ctx.watchNamespaces, ",") {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
