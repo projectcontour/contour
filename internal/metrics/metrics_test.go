@@ -38,6 +38,7 @@ func TestSetDAGLastRebuilt(t *testing.T) {
 				metric: DAGRebuildGauge,
 				want: []*io_prometheus_client.Metric{
 					{
+						Label: []*io_prometheus_client.LabelPair{},
 						Gauge: &io_prometheus_client.Gauge{
 							Value: func() *float64 { i := float64(1.258490098e+09); return &i }(),
 						},
