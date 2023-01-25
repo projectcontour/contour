@@ -33,7 +33,7 @@ type Metrics struct {
 	proxyValidGauge     *prometheus.GaugeVec
 	proxyOrphanedGauge  *prometheus.GaugeVec
 
-	dagRebuildGauge             *prometheus.GaugeVec
+	dagRebuildGauge             prometheus.Gauge
 	dagRebuildTotal             prometheus.Counter
 	CacheHandlerOnUpdateSummary prometheus.Summary
 	EventHandlerOperations      *prometheus.CounterVec
@@ -122,12 +122,11 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"namespace"},
 		),
-		dagRebuildGauge: prometheus.NewGaugeVec(
+		dagRebuildGauge: prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Name: DAGRebuildGauge,
 				Help: "Timestamp of the last DAG rebuild.",
 			},
-			[]string{},
 		),
 		dagRebuildTotal: prometheus.NewCounter(
 			prometheus.CounterOpts{
@@ -195,7 +194,7 @@ func (m *Metrics) Zero() {
 
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.
 func (m *Metrics) SetDAGLastRebuilt(ts time.Time) {
-	m.dagRebuildGauge.WithLabelValues().Set(float64(ts.Unix()))
+	m.dagRebuildGauge.Set(float64(ts.Unix()))
 }
 
 // SetDAGRebuiltTotal records the total number of times DAG was rebuilt
