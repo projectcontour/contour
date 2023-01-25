@@ -1,6 +1,6 @@
 # Internal Redirect
 
-Status: Draft
+Status: Accepted
 
 ## Abstract
 This document describes the API changes needed to support internal redirect policy support in contour HTTPProxy.
