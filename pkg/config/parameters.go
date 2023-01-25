@@ -456,8 +456,10 @@ type Parameters struct {
 	Debug bool
 
 	// Kubernetes client parameters.
-	InCluster  bool   `yaml:"incluster,omitempty"`
-	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+	InCluster       bool    `yaml:"incluster,omitempty"`
+	Kubeconfig      string  `yaml:"kubeconfig,omitempty"`
+	KubeClientQPS   float32 `yaml:"kubernetesClientQPS,omitempty"`
+	KubeClientBurst int     `yaml:"kubernetesClientBurst,omitempty"`
 
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
