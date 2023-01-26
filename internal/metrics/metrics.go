@@ -35,6 +35,7 @@ type Metrics struct {
 
 	dagRebuildGauge             prometheus.Gauge
 	dagRebuildTotal             prometheus.Counter
+	DAGRebuildSeconds           prometheus.Summary
 	CacheHandlerOnUpdateSummary prometheus.Summary
 	EventHandlerOperations      *prometheus.CounterVec
 
@@ -67,6 +68,7 @@ const (
 
 	DAGRebuildGauge             = "contour_dagrebuild_timestamp"
 	DAGRebuildTotal             = "contour_dagrebuild_total"
+	DAGRebuildSeconds           = "contour_dagrebuild_seconds"
 	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
 	eventHandlerOperations      = "contour_eventhandler_operation_total"
 )
@@ -134,6 +136,22 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 				Help: "Total number of times DAG has been rebuilt since startup",
 			},
 		),
+		DAGRebuildSeconds: prometheus.NewSummary(
+			prometheus.SummaryOpts{
+				Name: DAGRebuildSeconds,
+				Help: "Duration in seconds of DAG rebuilds",
+				Objectives: map[float64]float64{
+					0.00: 0.01,
+					0.25: 0.01,
+					0.50: 0.01,
+					0.75: 0.01,
+					0.90: 0.01,
+					0.95: 0.005,
+					0.99: 0.001,
+					1.00: 0.001,
+				},
+			},
+		),
 		CacheHandlerOnUpdateSummary: prometheus.NewSummary(prometheus.SummaryOpts{
 			Name:       cacheHandlerOnUpdateSummary,
 			Help:       "Histogram for the runtime of xDS cache regeneration.",
@@ -163,6 +181,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.proxyOrphanedGauge,
 		m.dagRebuildGauge,
 		m.dagRebuildTotal,
+		m.DAGRebuildSeconds,
 		m.CacheHandlerOnUpdateSummary,
 		m.EventHandlerOperations,
 	)
@@ -189,7 +208,8 @@ func (m *Metrics) Zero() {
 	m.SetHTTPProxyMetric(zeroes)
 	m.EventHandlerOperations.WithLabelValues("add", "Secret").Inc()
 
-	prometheus.NewTimer(m.CacheHandlerOnUpdateSummary).ObserveDuration()
+	m.CacheHandlerOnUpdateSummary.Observe(0)
+	m.DAGRebuildSeconds.Observe(0)
 }
 
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.

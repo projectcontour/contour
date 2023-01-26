@@ -15,7 +15,9 @@ package dag
 
 import (
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/status"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -44,6 +46,9 @@ type Builder struct {
 	// Processors is the ordered list of Processors to
 	// use to build the DAG.
 	Processors []Processor
+
+	// Metrics contains Prometheus metrics.
+	Metrics *metrics.Metrics
 }
 
 // Build builds and returns a new DAG by running the
@@ -63,6 +68,11 @@ func (b *Builder) Build() *DAG {
 		VirtualHosts:       map[string]*VirtualHost{},
 		SecureVirtualHosts: map[string]*SecureVirtualHost{},
 		StatusCache:        status.NewCache(gatewayNSName, gatewayController),
+	}
+
+	if b.Metrics != nil {
+		t := prometheus.NewTimer(b.Metrics.DAGRebuildSeconds)
+		defer t.ObserveDuration()
 	}
 
 	for _, p := range b.Processors {
