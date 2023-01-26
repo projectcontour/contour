@@ -1,0 +1,1 @@
+Adds a new summary metric, `contour_dagrebuild_seconds`, to measure the duration of DAG rebuilds by quantile.
