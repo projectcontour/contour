@@ -48,10 +48,20 @@ func KindOf(obj interface{}) string {
 			return "HTTPRoute"
 		case *gatewayapi_v1alpha2.GRPCRoute:
 			return "GRPCRoute"
+		case *gatewayapi_v1alpha2.TLSRoute:
+			return "TLSRoute"
+		case *gatewayapi_v1beta1.Gateway:
+			return "Gateway"
+		case *gatewayapi_v1beta1.GatewayClass:
+			return "GatewayClass"
+		case *gatewayapi_v1beta1.ReferenceGrant:
+			return "ReferenceGrant"
 		case *contour_api_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"
 		case *v1alpha1.ExtensionService:
 			return "ExtensionService"
+		case *v1.Namespace:
+			return "Namespace"
 		case *unstructured.Unstructured:
 			return obj.GetKind()
 		default:
