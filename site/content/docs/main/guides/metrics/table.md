@@ -2,6 +2,7 @@
 | ---- | ---- | ------ | ----------- |
 | contour_build_info | [GAUGE](https://prometheus.io/docs/concepts/metric_types/#gauge) | branch, revision, version | Build information for Contour. Labels include the branch and git SHA that Contour was built from, and the Contour version. |
 | contour_cachehandler_onupdate_duration_seconds | [SUMMARY](https://prometheus.io/docs/concepts/metric_types/#summary) |  | Histogram for the runtime of xDS cache regeneration. |
+| contour_dagrebuild_seconds | [SUMMARY](https://prometheus.io/docs/concepts/metric_types/#summary) |  | Duration in seconds of DAG rebuilds |
 | contour_dagrebuild_timestamp | [GAUGE](https://prometheus.io/docs/concepts/metric_types/#gauge) |  | Timestamp of the last DAG rebuild. |
 | contour_dagrebuild_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) |  | Total number of times DAG has been rebuilt since startup |
 | contour_eventhandler_operation_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind, op | Total number of Kubernetes object changes Contour has received by operation and object kind. |

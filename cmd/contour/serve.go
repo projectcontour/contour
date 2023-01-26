@@ -446,6 +446,7 @@ func (s *Server) doServe() error {
 		fallbackCert:              fallbackCert,
 		connectTimeout:            timeouts.ConnectTimeout,
 		client:                    s.mgr.GetClient(),
+		metrics:                   contourMetrics,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -847,6 +848,7 @@ type dagBuilderConfig struct {
 	fallbackCert              *types.NamespacedName
 	connectTimeout            time.Duration
 	client                    client.Client
+	metrics                   *metrics.Metrics
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -956,6 +958,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			Client:                   dbc.client,
 		},
 		Processors: dagProcessors,
+		Metrics:    dbc.metrics,
 	}
 
 	// govet complains about copying the sync.Once that's in the dag.KubernetesCache
