@@ -22,6 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestKindOf(t *testing.T) {
@@ -37,6 +38,7 @@ func TestKindOf(t *testing.T) {
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
 		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
 		{"ExtensionService", &v1alpha1.ExtensionService{}},
+		{"GRPCRoute", &v1alpha2.GRPCRoute{}},
 		{"Foo", &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "test.projectcontour.io/v1",
