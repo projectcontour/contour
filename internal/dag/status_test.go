@@ -7265,7 +7265,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
-							Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\" or \"TLSRoute\"",
+							Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\" or \"TLSRoute\" or \"GRPCRoute\"",
 						},
 					},
 				},
