@@ -1392,8 +1392,12 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 
 func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
 	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
-
 	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
+
+	if pathPrefix == "/" && len(includeHeaderConds) == 0 {
+		return false
+	}
+
 	sort.SliceStable(includeHeaderConds, func(i, j int) bool {
 		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
 			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType

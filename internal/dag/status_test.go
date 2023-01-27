@@ -1602,6 +1602,79 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyIncludeConditionsEmpty := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+			}},
+		},
+	}
+
+	run(t, "empty include conditions", testcase{
+		objs: []interface{}{proxyIncludeConditionsEmpty, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),
+			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),
+			{Name: proxyIncludeConditionsEmpty.Name,
+				Namespace: proxyIncludeConditionsEmpty.Namespace}: fixture.NewValidCondition().
+				Valid(),
+		},
+	})
+
+	proxyIncludeConditionsPrefixRoot := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+			}},
+		},
+	}
+
+	run(t, "multiple prefix / include conditions", testcase{
+		objs: []interface{}{proxyIncludeConditionsPrefixRoot, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),
+			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),
+			{Name: proxyIncludeConditionsPrefixRoot.Name,
+				Namespace: proxyIncludeConditionsPrefixRoot.Namespace}: fixture.NewValidCondition().
+				Valid(),
+		},
+	})
+
 	proxyInvalidConflictingIncludeConditions := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
