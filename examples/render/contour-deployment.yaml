@@ -7101,6 +7101,7 @@ rules:
   resources:
   - gatewayclasses
   - gateways
+  - grpcroutes
   - httproutes
   - referencegrants
   - tlsroutes
@@ -7113,6 +7114,7 @@ rules:
   resources:
   - gatewayclasses/status
   - gateways/status
+  - grpcroutes/status
   - httproutes/status
   - tlsroutes/status
   verbs:
