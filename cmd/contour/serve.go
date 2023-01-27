@@ -806,6 +806,11 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
+		// Create and register the GRPCRoute controller with the manager.
+		if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
+			s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+		}
+
 		// Inform on ReferenceGrants.
 		if err := informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
