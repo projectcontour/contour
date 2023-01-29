@@ -3905,6 +3905,20 @@ func TestDAGStatus(t *testing.T) {
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {
+	// This applies to tests that the listener doesn't have allowed kind configured
+	// hence the wanted allowed kind is determined by the listener protocol only.
+	var supportedKinds []gatewayapi_v1beta1.RouteGroupKind
+	supportedKinds = append(supportedKinds, gatewayapi_v1beta1.RouteGroupKind{
+		Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+		Kind:  kind,
+	})
+	if kind == "HTTPRoute" {
+		supportedKinds = append(supportedKinds, gatewayapi_v1beta1.RouteGroupKind{
+			Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+			Kind:  "GRPCRoute",
+		})
+	}
+
 	return []*status.GatewayStatusUpdate{
 		{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
@@ -3921,12 +3935,7 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 				listenerName: {
 					Name:           gatewayapi_v1beta1.SectionName(listenerName),
 					AttachedRoutes: int32(attachedRoutes),
-					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-						{
-							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-							Kind:  kind,
-						},
-					},
+					SupportedKinds: supportedKinds,
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
@@ -5108,6 +5117,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5255,6 +5268,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5345,6 +5362,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -5437,6 +5458,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -5527,6 +5552,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -5619,6 +5648,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -5874,6 +5907,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
 						},
 						Conditions: []metav1.Condition{
 							{
@@ -5891,6 +5928,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
 							},
 						},
 						Conditions: []metav1.Condition{
@@ -5995,6 +6036,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
 						},
 						Conditions: []metav1.Condition{
 							{
@@ -6012,6 +6057,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
 							},
 						},
 						Conditions: []metav1.Condition{
@@ -6105,6 +6154,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
 							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
 						},
 						Conditions: []metav1.Condition{
 							{
@@ -6196,6 +6249,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
 							},
 						},
 						Conditions: []metav1.Condition{
@@ -6355,6 +6412,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
 							},
 						},
 						Conditions: []metav1.Condition{
@@ -7142,6 +7203,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7378,6 +7443,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7441,6 +7510,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -7554,6 +7627,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -7782,6 +7859,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7836,6 +7917,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{
@@ -7898,6 +7983,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
 						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
+						},
 					},
 					Conditions: []metav1.Condition{
 						{
@@ -7952,6 +8041,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
 							Kind:  "HTTPRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "GRPCRoute",
 						},
 					},
 					Conditions: []metav1.Condition{

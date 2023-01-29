@@ -661,11 +661,9 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 	if len(listener.AllowedRoutes.Kinds) == 0 {
 		switch listener.Protocol {
 		case gatewayapi_v1beta1.HTTPProtocolType:
-			// TODO: add KindGRPCRoute - need to update status_test.go
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute}
+			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.HTTPSProtocolType:
-			// TODO: add KindGRPCRoute - need to update status_test.go
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute}
+			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.TLSProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindTLSRoute}
 		}
