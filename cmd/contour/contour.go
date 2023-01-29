@@ -16,6 +16,9 @@ package main
 import (
 	"os"
 
+	// Automatically set GOMAXPROCS to match the number of CPUs available to the container
+	_ "go.uber.org/automaxprocs"
+
 	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/build"
 	"github.com/projectcontour/contour/internal/envoy"
