@@ -1392,8 +1392,19 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 
 func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
 	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
-
 	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
+
+	// Note: this is stop-gap that we intend to change.
+	// This means that an empty set of conditions or a lone path prefix match on "/"
+	// are not considered duplicates. Previously, validation of
+	// includes was implemented in such a way that users could be relying on this
+	// behavior to set up their include tree.
+	// It is unlikely that there is much usage of duplicate non-default include
+	// conditions, so we think this special case is safe.
+	if pathPrefix == "/" && len(includeHeaderConds) == 0 {
+		return false
+	}
+
 	sort.SliceStable(includeHeaderConds, func(i, j int) bool {
 		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
 			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
