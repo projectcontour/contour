@@ -33,6 +33,7 @@ func assertOptionFlagsAreSorted(t *testing.T, cmd *kingpin.CmdClause) {
 
 func TestOptionFlagsAreSorted(t *testing.T) {
 	app := kingpin.New("contour_option_flags_are_sorted", "Assert contour options are sorted")
+	log := logrus.StandardLogger()
 
 	bootstrap, _ := registerBootstrap(app)
 	assertOptionFlagsAreSorted(t, bootstrap)
@@ -40,11 +41,10 @@ func TestOptionFlagsAreSorted(t *testing.T) {
 	certgen, _ := registerCertGen(app)
 	assertOptionFlagsAreSorted(t, certgen)
 
-	cli, _ := registerCli(app)
+	cli, _ := registerCli(app, log)
 	assertOptionFlagsAreSorted(t, cli)
 
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
-	log := logrus.StandardLogger()
 
 	sdmShutdown, _ := registerShutdown(envoyCmd, log)
 	assertOptionFlagsAreSorted(t, sdmShutdown)

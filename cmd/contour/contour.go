@@ -42,7 +42,7 @@ func main() {
 
 	certgenApp, certgenConfig := registerCertGen(app)
 
-	cli, client := registerCli(app)
+	cli, client := registerCli(app, log)
 
 	var resources []string
 	cds := cli.Command("cds", "Watch services.")
