@@ -110,12 +110,29 @@ func routeCluster(cluster string, opts ...func(*envoy_route_v3.Route_Route)) *en
 	return r
 }
 
-func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.PrefixMatchCondition{
+			Prefix: prefix,
+		},
+	})
+}
+
+func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
 		},
 		HeaderMatchConditions: headers,
+	})
+}
+
+func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.PrefixMatchCondition{
+			Prefix: prefix,
+		},
+		QueryParamMatchConditions: queryParams,
 	})
 }
 

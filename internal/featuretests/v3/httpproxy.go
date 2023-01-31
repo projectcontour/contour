@@ -73,3 +73,61 @@ func headerPresentMatchCondition(name string) contour_api_v1.MatchCondition {
 		},
 	}
 }
+
+func queryParameterExactMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:       name,
+			Exact:      value,
+			IgnoreCase: ignoreCase,
+		},
+	}
+}
+
+func queryParameterPrefixMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:       name,
+			Prefix:     value,
+			IgnoreCase: ignoreCase,
+		},
+	}
+}
+
+func queryParameterSuffixMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:       name,
+			Suffix:     value,
+			IgnoreCase: ignoreCase,
+		},
+	}
+}
+
+func queryParameterRegexMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:  name,
+			Regex: value,
+		},
+	}
+}
+
+func queryParameterContainsMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:       name,
+			Contains:   value,
+			IgnoreCase: ignoreCase,
+		},
+	}
+}
+
+func queryParameterPresentMatchCondition(name string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+			Name:    name,
+			Present: true,
+		},
+	}
+}

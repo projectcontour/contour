@@ -621,11 +621,46 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_rout
 			Name: q.Name,
 		}
 
-		if q.MatchType == dag.QueryParamMatchTypeExact {
+		switch q.MatchType {
+		case dag.QueryParamMatchTypeExact:
 			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
 				StringMatch: &matcher.StringMatcher{
 					MatchPattern: &matcher.StringMatcher_Exact{Exact: q.Value},
+					IgnoreCase:   q.IgnoreCase,
 				},
+			}
+		case dag.QueryParamMatchTypePrefix:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Prefix{Prefix: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypeSuffix:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Suffix{Suffix: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypeRegex:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_SafeRegex{
+						SafeRegex: SafeRegexMatch(q.Value),
+					},
+				},
+			}
+		case dag.QueryParamMatchTypeContains:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Contains{Contains: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypePresent:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_PresentMatch{
+				PresentMatch: true,
 			}
 		}
 

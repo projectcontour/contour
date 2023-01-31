@@ -4208,7 +4208,8 @@ spec:
                         include invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix or Header must be provided.
+                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          must be provided.
                         properties:
                           header:
                             description: Header specifies the header condition to
@@ -4255,6 +4256,50 @@ spec:
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
+                          queryParameter:
+                            description: QueryParameter specifies the query parameter
+                              condition to match.
+                            properties:
+                              contains:
+                                description: Contains specifies a substring that must
+                                  be present in the query parameter value.
+                                type: string
+                              exact:
+                                description: Exact specifies a string that the query
+                                  parameter value must be equal to.
+                                type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
+                              name:
+                                description: Name is the name of the query parameter
+                                  to match against. Name is required. Query parameter
+                                  names are case insensitive.
+                                type: string
+                              prefix:
+                                description: Prefix defines a prefix match for the
+                                  query parameter value.
+                                type: string
+                              present:
+                                description: Present specifies that condition is true
+                                  when the named query parameter is present, regardless
+                                  of its value. Note that setting Present to false
+                                  does not make the condition true if the named query
+                                  parameter is absent.
+                                type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the query parameter value.
+                                type: string
+                              suffix:
+                                description: Suffix defines a suffix match for a query
+                                  parameter value.
+                                type: string
+                            required:
+                            - name
+                            type: object
                         type: object
                       type: array
                     name:
@@ -4307,7 +4352,8 @@ spec:
                         Conditions, will make the route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix or Header must be provided.
+                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          must be provided.
                         properties:
                           header:
                             description: Header specifies the header condition to
@@ -4354,6 +4400,50 @@ spec:
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
+                          queryParameter:
+                            description: QueryParameter specifies the query parameter
+                              condition to match.
+                            properties:
+                              contains:
+                                description: Contains specifies a substring that must
+                                  be present in the query parameter value.
+                                type: string
+                              exact:
+                                description: Exact specifies a string that the query
+                                  parameter value must be equal to.
+                                type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
+                              name:
+                                description: Name is the name of the query parameter
+                                  to match against. Name is required. Query parameter
+                                  names are case insensitive.
+                                type: string
+                              prefix:
+                                description: Prefix defines a prefix match for the
+                                  query parameter value.
+                                type: string
+                              present:
+                                description: Present specifies that condition is true
+                                  when the named query parameter is present, regardless
+                                  of its value. Note that setting Present to false
+                                  does not make the condition true if the named query
+                                  parameter is absent.
+                                type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the query parameter value.
+                                type: string
+                              suffix:
+                                description: Suffix defines a suffix match for a query
+                                  parameter value.
+                                type: string
+                            required:
+                            - name
+                            type: object
                         type: object
                       type: array
                     cookieRewritePolicies:

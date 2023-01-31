@@ -617,7 +617,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	var routes []*Route
 
 	// Loop over and process all includes, including checking for duplicate conditions.
-	seenConds := map[string][][]HeaderMatchCondition{}
+	seenHeaderConds := map[string][][]HeaderMatchCondition{}
+	seenQueryParamConds := map[string][][]QueryParamMatchCondition{}
 	for _, include := range proxy.Spec.Includes {
 		namespace := include.Namespace
 		if namespace == "" {
@@ -636,8 +637,14 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			continue
 		}
 
+		if err := queryParameterMatchConditionsValid(include.Conditions); err != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "QueryParameterMatchConditionsNotValid",
+				err.Error())
+			continue
+		}
+
 		// Check to see if we have any duplicate include conditions.
-		if includeMatchConditionsIdentical(include, seenConds) {
+		if includeMatchConditionsIdentical(include, seenHeaderConds, seenQueryParamConds) {
 			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
 				"duplicate conditions defined on an include")
 			continue
@@ -651,9 +658,10 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// Set 502 response when include was not found but include condition was valid.
 			if len(include.Conditions) > 0 {
 				routes = append(routes, &Route{
-					PathMatchCondition:    mergePathMatchConditions(include.Conditions),
-					HeaderMatchConditions: mergeHeaderMatchConditions(include.Conditions),
-					DirectResponse:        directResponse(http.StatusBadGateway, ""),
+					PathMatchCondition:        mergePathMatchConditions(include.Conditions),
+					HeaderMatchConditions:     mergeHeaderMatchConditions(include.Conditions),
+					QueryParamMatchConditions: mergeQueryParamMatchConditions(include.Conditions),
+					DirectResponse:            directResponse(http.StatusBadGateway, ""),
 				})
 			}
 
@@ -697,6 +705,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		// Look for invalid header conditions on this route
 		if err := headerMatchConditionsValid(routeConditions); err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid",
+				err.Error())
+			return nil
+		}
+
+		// Look for invalid query parameter conditions on this route
+		if err := queryParameterMatchConditionsValid(routeConditions); err != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "QueryParameterMatchConditionsNotValid",
 				err.Error())
 			return nil
 		}
@@ -748,19 +763,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		r := &Route{
-			PathMatchCondition:    mergePathMatchConditions(routeConditions),
-			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
-			Websocket:             route.EnableWebsockets,
-			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:         rtp,
-			RetryPolicy:           retryPolicy(route.RetryPolicy),
-			RequestHeadersPolicy:  reqHP,
-			ResponseHeadersPolicy: respHP,
-			CookieRewritePolicies: cookieRP,
-			RateLimitPolicy:       rlp,
-			RequestHashPolicies:   requestHashPolicies,
-			Redirect:              redirectPolicy,
-			DirectResponse:        directPolicy,
+			PathMatchCondition:        mergePathMatchConditions(routeConditions),
+			HeaderMatchConditions:     mergeHeaderMatchConditions(routeConditions),
+			QueryParamMatchConditions: mergeQueryParamMatchConditions(routeConditions),
+			Websocket:                 route.EnableWebsockets,
+			HTTPSUpgrade:              routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
+			TimeoutPolicy:             rtp,
+			RetryPolicy:               retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy:      reqHP,
+			ResponseHeadersPolicy:     respHP,
+			CookieRewritePolicies:     cookieRP,
+			RateLimitPolicy:           rlp,
+			RequestHashPolicies:       requestHashPolicies,
+			Redirect:                  redirectPolicy,
+			DirectResponse:            directPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -1390,9 +1406,10 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
+func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderConds map[string][][]HeaderMatchCondition, seenQueryParamConds map[string][][]QueryParamMatchCondition) bool {
 	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
 	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
+	includeQueryParamConds := mergeQueryParamMatchConditions(include.Conditions)
 
 	// Note: this is stop-gap that we intend to change.
 	// This means that an empty set of conditions or a lone path prefix match on "/"
@@ -1401,7 +1418,7 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds m
 	// behavior to set up their include tree.
 	// It is unlikely that there is much usage of duplicate non-default include
 	// conditions, so we think this special case is safe.
-	if pathPrefix == "/" && len(includeHeaderConds) == 0 {
+	if pathPrefix == "/" && len(includeHeaderConds) == 0 && len(includeQueryParamConds) == 0 {
 		return false
 	}
 
@@ -1421,29 +1438,72 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds m
 		return false
 	})
 
-	seenHeaderConds, pathSeen := seenConds[pathPrefix]
+	headerConds, pathSeen := seenHeaderConds[pathPrefix]
 	if !pathSeen {
-		seenConds[pathPrefix] = [][]HeaderMatchCondition{
+		seenHeaderConds[pathPrefix] = [][]HeaderMatchCondition{
 			includeHeaderConds,
 		}
 		return false
 	}
 
-	for _, headerConds := range seenHeaderConds {
-		if len(headerConds) != len(includeHeaderConds) {
-			seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+	for _, conds := range headerConds {
+		if len(conds) != len(includeHeaderConds) {
+			seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
 			continue
 		}
 
 		headerCondsIdentical := true
-		for i := range headerConds {
-			if headerConds[i] != includeHeaderConds[i] {
-				seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+		for i := range conds {
+			if conds[i] != includeHeaderConds[i] {
+				seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
 				headerCondsIdentical = false
 				break
 			}
 		}
 		if headerCondsIdentical {
+			return true
+		}
+	}
+
+	sort.SliceStable(includeQueryParamConds, func(i, j int) bool {
+		if includeQueryParamConds[i].MatchType != includeQueryParamConds[j].MatchType {
+			return includeQueryParamConds[i].MatchType < includeQueryParamConds[j].MatchType
+		}
+		if includeQueryParamConds[i].IgnoreCase != includeQueryParamConds[j].IgnoreCase {
+			return includeQueryParamConds[i].IgnoreCase
+		}
+		if includeQueryParamConds[i].Name != includeQueryParamConds[j].Name {
+			return includeQueryParamConds[i].Name < includeQueryParamConds[j].Name
+		}
+		if includeQueryParamConds[i].Value != includeQueryParamConds[j].Value {
+			return includeQueryParamConds[i].Value < includeQueryParamConds[j].Value
+		}
+		return false
+	})
+
+	queryParamConds, pathSeen := seenQueryParamConds[pathPrefix]
+	if !pathSeen {
+		seenQueryParamConds[pathPrefix] = [][]QueryParamMatchCondition{
+			includeQueryParamConds,
+		}
+		return false
+	}
+
+	for _, conds := range queryParamConds {
+		if len(conds) != len(includeQueryParamConds) {
+			seenQueryParamConds[pathPrefix] = append(seenQueryParamConds[pathPrefix], includeQueryParamConds)
+			continue
+		}
+
+		queryParamCondsIdentical := true
+		for i := range conds {
+			if conds[i] != includeQueryParamConds[i] {
+				seenQueryParamConds[pathPrefix] = append(seenQueryParamConds[pathPrefix], includeQueryParamConds)
+				queryParamCondsIdentical = false
+				break
+			}
+		}
+		if queryParamCondsIdentical {
 			return true
 		}
 	}

@@ -156,13 +156,33 @@ func (hc *HeaderMatchCondition) String() string {
 const (
 	// QueryParamMatchTypeExact matches a querystring parameter value exactly.
 	QueryParamMatchTypeExact = "exact"
+
+	// QueryParamMatchTypePrefix matches a querystring parameter value is
+	// prefixed by a given string.
+	QueryParamMatchTypePrefix = "prefix"
+
+	// QueryParamMatchTypeSuffix matches a querystring parameter value is
+	// suffixed by a given string.
+	QueryParamMatchTypeSuffix = "suffix"
+
+	// QueryParamMatchTypeRegex matches a querystring parameter value against
+	// given regular expression.
+	QueryParamMatchTypeRegex = "regex"
+
+	// QueryParamMatchTypeContains matches a querystring parameter value
+	// contains the given string.
+	QueryParamMatchTypeContains = "contains"
+
+	// QueryParamMatchTypePresent matches a querystring parameter if present.
+	QueryParamMatchTypePresent = "present"
 )
 
 // QueryParamMatchCondition matches querystring parameters by MatchType
 type QueryParamMatchCondition struct {
-	Name      string
-	Value     string
-	MatchType string
+	Name       string
+	Value      string
+	MatchType  string
+	IgnoreCase bool
 }
 
 func (qc *QueryParamMatchCondition) String() string {
@@ -170,6 +190,7 @@ func (qc *QueryParamMatchCondition) String() string {
 		"name=" + qc.Name,
 		"value=" + qc.Value,
 		"matchtype=", qc.MatchType,
+		"ignorecase=", strconv.FormatBool(qc.IgnoreCase),
 	}, "&")
 
 	return "queryparam: " + details

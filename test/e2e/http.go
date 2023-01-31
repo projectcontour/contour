@@ -82,6 +82,16 @@ func OptSetHeaders(headers map[string]string) func(*http.Request) {
 	}
 }
 
+func OptSetQueryParams(queryParams map[string]string) func(*http.Request) {
+	return func(r *http.Request) {
+		q := r.URL.Query()
+		for k, v := range queryParams {
+			q.Add(k, v)
+		}
+		r.URL.RawQuery = q.Encode()
+	}
+}
+
 // RequestUntil repeatedly makes HTTP requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
