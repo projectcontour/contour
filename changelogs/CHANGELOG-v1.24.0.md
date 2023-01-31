@@ -86,7 +86,7 @@ We will be submitting a design document to address this as it will be a signific
 The current plan is to fully validate duplicate route match conditions as they are generated from the tree of includes and routes.
 There will likely be changes to status conditions set on HTTPRoutes to improve reporting such invalid configuration.
 
-(#4931, @sunjayBhatia)
+(#4931, #5017, @sunjayBhatia)
 
 ## Contour supports Gateway API release v0.6.0
 
