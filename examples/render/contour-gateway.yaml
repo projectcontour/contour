@@ -5964,6 +5964,10 @@ spec:
                           type: string
                         minItems: 1
                         type: array
+                      allowPrivateNetwork:
+                        description: AllowPrivateNetwork specifies whether to allow
+                          private network requests. See https://developer.chrome.com/blog/private-network-access-preflight.
+                        type: boolean
                       exposeHeaders:
                         description: ExposeHeaders Specifies the content for the *access-control-expose-headers*
                           header.

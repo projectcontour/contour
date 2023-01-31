@@ -1371,14 +1371,14 @@ func toCORSPolicy(policy *contour_api_v1.CORSPolicy) (*CORSPolicy, error) {
 	if maxAge.Duration().Seconds() < 0 {
 		return nil, fmt.Errorf("invalid max age value %q", policy.MaxAge)
 	}
-
 	return &CORSPolicy{
-		AllowCredentials: policy.AllowCredentials,
-		AllowHeaders:     toStringSlice(policy.AllowHeaders),
-		AllowMethods:     toStringSlice(policy.AllowMethods),
-		AllowOrigin:      allowOriginMatches,
-		ExposeHeaders:    toStringSlice(policy.ExposeHeaders),
-		MaxAge:           maxAge,
+		AllowCredentials:    policy.AllowCredentials,
+		AllowHeaders:        toStringSlice(policy.AllowHeaders),
+		AllowMethods:        toStringSlice(policy.AllowMethods),
+		AllowOrigin:         allowOriginMatches,
+		ExposeHeaders:       toStringSlice(policy.ExposeHeaders),
+		MaxAge:              maxAge,
+		AllowPrivateNetwork: policy.AllowPrivateNetwork,
 	}, nil
 }
 

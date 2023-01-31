@@ -406,6 +406,9 @@ type CORSPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|0)$`
 	MaxAge string `json:"maxAge,omitempty"`
+	// AllowPrivateNetwork specifies whether to allow private network requests.
+	// See https://developer.chrome.com/blog/private-network-access-preflight.
+	AllowPrivateNetwork bool `json:"allowPrivateNetwork,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.

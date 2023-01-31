@@ -532,10 +532,11 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 		return nil
 	}
 	ecp := &envoy_cors_v3.CorsPolicy{
-		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
-		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
-		AllowMethods:     strings.Join(cp.AllowMethods, ","),
-		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
+		AllowCredentials:          wrapperspb.Bool(cp.AllowCredentials),
+		AllowHeaders:              strings.Join(cp.AllowHeaders, ","),
+		AllowMethods:              strings.Join(cp.AllowMethods, ","),
+		ExposeHeaders:             strings.Join(cp.ExposeHeaders, ","),
+		AllowPrivateNetworkAccess: wrapperspb.Bool(cp.AllowPrivateNetwork),
 	}
 
 	if cp.MaxAge.IsDisabled() {
