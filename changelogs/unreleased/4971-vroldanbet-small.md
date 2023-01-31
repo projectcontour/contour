@@ -1,1 +1,0 @@
-expose configuration for envoy's RateLimitedAsResourceExhausted
