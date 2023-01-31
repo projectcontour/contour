@@ -1302,7 +1302,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			// Get clusters from rule backendRefs
 			clusters, totalWeight, ok := p.HTTPClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 			if ok {
-				routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, routeAccessor, priority, pathRewritePolicy)
+				routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
 			}
 		}
 
@@ -1447,7 +1447,7 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 
 		clusters, totalWeight, ok := p.GRPCClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 		if ok {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, routeAccessor, priority, nil)
+			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1860,8 +1860,8 @@ func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
-	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, routeAccessor *status.RouteParentStatusUpdate, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
+	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
 
 	var routes []*Route
 
