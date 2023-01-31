@@ -4,7 +4,9 @@ Status: Draft
 
 ## Abstract
 Envoy has rich support for [distributed tracing][1].
-However, Contour does not currently offer a way to configure Envoy for tracing.Exporting trace data to OpenTelemetry has been supported since envoy v1.23. This design document provides the implementation of exporting tracing data to [OpenTelemetry][2] in Contour.
+Exporting trace data to OpenTelemetry has been supported since envoy v1.23.
+However, Contour does not currently offer a way to configure Envoy for tracing.
+This design document provides the implementation of exporting tracing data to [OpenTelemetry][2] in Contour.
 
 ## Background
 Envoy's [documentation on tracing][1] says:
@@ -18,11 +20,11 @@ Envoy supports:
 The tracing ecosystem is complex right now.
 However, a few observations can be made:
 - [OpenTelemetry][2] is a CNCF project which is working to become a standard in the space. It was formed as a merger of the OpenTracing and OpenCensus projects. It supports ingesting trace data in a variety of formats, transforming it, and exporting it to a variety of backends.
-- Added support for exporting tracing data to opentelemetry since envoy v1.23
+- Envoy has had support for exporting tracing data to OpenTelemetry since v1.23.
 
 ## Goals
 - **Support a single global trace configuration** that applies to all requests.
-- **Support Opentelemetry formats**, Because Opentelemetry is an observability standard. Data can be ingested, transformed, and sent to an observability backend.
+- **Support OpenTelemetry formats**, Because OpenTelemetry is an observability standard. Data can be ingested, transformed, and sent to an observability backend.
 - **Support custom tags to send additional span data**, including getting data from environment variables, request headers, etc.
 
 ## Non Goals
@@ -30,7 +32,7 @@ However, a few observations can be made:
 - **Trace formats other than OpenTelemetry.** While Contour *may* choose to add direct support for other trace formats in the future, our hope is that by supporting the OpenTelemetry collector, users are able to export traces to the backend of their choice without having to directly configure it in Contour/Envoy.
 
 ## High-Level Design
-The Contour configuration file will be extended with a new optional `tracing` section. This configuration block, if present, will enable tracing and will define the trace format and other properties needed to generate and export trace data.
+The Contour configuration file and ContourConfiguration CRD will be extended with a new optional `tracing` section. This configuration block, if present, will enable tracing and will define the trace format and other properties needed to generate and export trace data.
 
 The `OpenTelemetry` trace format will be supported.
 
@@ -43,7 +45,8 @@ The user is responsible for deploying and operating the tracing backend of their
 
 ### otel-collector ExtensionService
 
-When using Tracing,first,an ExtensionService must be defined for the otel-collector with the cluster-level details for the otel-collector itself.
+When using tracing, the user must first define an ExtensionService with the cluster-level details for the otel-collector itself.
+
 For example:
 
 ```yaml
@@ -67,6 +70,8 @@ The `tracing` section of the Contour config file will look like:
 
 ```yaml
 tracing:
+  # serviceName defines a configurable service name.the default format is contour-<ingressClassName>
+  serviceName: contour
   # overallSampling defines the sampling rate of trace data.
   overallSampling: 100
   # maxPathTagLength defines maximum length of the request path to extract and include in the HttpUrl tag.
@@ -88,6 +93,17 @@ tracing:
   # formatted as <namespace>/<name>.    
   extensionService: projectcontour/otel-collector
 ```
+
+## Alternatives Considered
+If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
+
+## Security Considerations
+Similar to other extensionservices, Envoy's connection with the tracing provider server can be secured over TLS using existing mechanisms.
+
+## Compatibility
+A discussion of any compatibility issues that need to be considered
+
+## Implementation
 
 ### HCM Configuration
 
@@ -135,31 +151,19 @@ Tracing: &http.HttpConnectionManager_Tracing{
                         GrpcService: &envoy_core_v3.GrpcService{
                             TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
                                 EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-                                    ClusterName: "extension/projectcontour/otle-collector",
-                                    Authority:   "extension/projectcontour/otle-collector",
+                                    ClusterName: "extension/projectcontour/otel-collector",
+                                    Authority:   "extension/projectcontour/otel-collector",
                                 },
                             },
                             Timeout: durationpb.New(time.Millisecond * 50),
                         },
-                        ServiceName: "contour-envoy-otel.otel-collector",
+                        ServiceName: "contour",
                     }),
                 },
             },
         },
 ...
 ```
-
-## Alternatives Considered
-If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
-
-## Security Considerations
-If this proposal has an impact to the security of the product, its users, or data stored or transmitted via the product, they must be addressed here.
-
-## Compatibility
-A discussion of any compatibility issues that need to be considered
-
-## Implementation
-A description of the implementation, timelines, and any resources that have agreed to contribute.
 
 ## Open Issues
 - Envoy supports custom tracing sampling rate and custom label override hcm configuration in route - should contour be supported in the future?
