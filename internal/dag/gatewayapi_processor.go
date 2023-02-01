@@ -331,7 +331,19 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
 						"No intersecting hostnames were found between the listener and the route.",
 					)
-				} else {
+				}
+
+				// Check for an existing "Accepted" condition, add one if one does
+				// not already exist.
+				hasAccepted := false
+				for _, cond := range routeParentStatusAccessor.ConditionsForParentRef(routeParentRef) {
+					if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
+						hasAccepted = true
+						break
+					}
+				}
+
+				if !hasAccepted {
 					routeParentStatusAccessor.AddCondition(
 						gatewayapi_v1beta1.RouteConditionAccepted,
 						metav1.ConditionTrue,
@@ -1483,17 +1495,12 @@ func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch,
 
 	// Support "Exact" match type only. If match type is not specified, use "Exact" as default.
 	if match.Type != nil && *match.Type != gatewayapi_v1alpha2.GRPCMethodMatchExact {
-		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
+		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonMethodMatchType, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
 		return nil, false
 	}
 
-	if match.Service == nil || isBlank(*match.Service) {
-		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Service need be configured.")
-		return nil, false
-	}
-
-	if match.Method == nil || isBlank(*match.Method) {
-		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Method need be configured.")
+	if match.Service == nil || isBlank(*match.Service) || match.Method == nil || isBlank(*match.Method) {
+		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
 		return nil, false
 	}
 
@@ -1511,7 +1518,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 		// "Exact" is the default if not defined in the object, and
 		// the only supported match type.
 		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported.")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
