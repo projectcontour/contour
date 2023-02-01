@@ -1518,7 +1518,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 		// "Exact" is the default if not defined in the object, and
 		// the only supported match type.
 		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported.")
+			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),

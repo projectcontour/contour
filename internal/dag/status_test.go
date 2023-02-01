@@ -8977,7 +8977,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Type:    string(status.ConditionNotImplemented),
 							Status:  contour_api_v1.ConditionTrue,
 							Reason:  string(status.ReasonHeaderMatchType),
-							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported.",
+							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
 						},
 					},
 				},
