@@ -137,9 +137,14 @@ type ListenerConfig struct {
 	// If no configuration is specified, Envoy will not attempt to balance active connections between worker threads
 	// If specified, the listener will use the exact connection balancer.
 	ConnectionBalancer string
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
+
+	// AlwaysSetRequestIDInResponse enables setting `x-request-id` header in response for all
+	// listeners.
+	AlwaysSetRequestIDInResponse bool
 }
 
 type RateLimitConfig struct {
@@ -394,6 +399,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					AlwaysSetRequestIDInResponse(cfg.AlwaysSetRequestIDInResponse).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
 
@@ -455,6 +461,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					AlwaysSetRequestIDInResponse(cfg.AlwaysSetRequestIDInResponse).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()
@@ -522,6 +529,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					AlwaysSetRequestIDInResponse(cfg.AlwaysSetRequestIDInResponse).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()

@@ -458,6 +458,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,
 				},
+				AlwaysSetRequestIDInResponse: &ctx.Config.Listener.AlwaysSetRequestIDInResponse,
 			},
 			Service: &contour_api_v1alpha1.NamespacedName{
 				Name:      ctx.Config.EnvoyServiceName,

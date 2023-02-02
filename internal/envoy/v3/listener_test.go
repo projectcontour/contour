@@ -607,6 +607,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		serverHeaderTranformation     v1alpha1.ServerHeaderTransformationType
 		forwardClientCertificate      *dag.ClientCertificateDetails
 		xffNumTrustedHops             uint32
+		alwaysSetRequestIDInResponse  bool
 		want                          *envoy_listener_v3.Filter
 	}{
 		"default": {
@@ -1344,6 +1345,57 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
+		"enable alwaysSetRequestIDInResponse": {
+			routename:                    "default/kuard",
+			accesslogger:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+			alwaysSetRequestIDInResponse: true,
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+														Authority:   "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: defaultHTTPFilters,
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
+						PreserveExternalRequestId:    true,
+						MergeSlashes:                 false,
+						AlwaysSetRequestIdInResponse: true,
+					}),
+				},
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1361,6 +1413,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				MergeSlashes(tc.mergeSlashes).
 				ServerHeaderTransformation(tc.serverHeaderTranformation).
 				NumTrustedHops(tc.xffNumTrustedHops).
+				AlwaysSetRequestIDInResponse(tc.alwaysSetRequestIDInResponse).
 				ForwardClientCertificate(tc.forwardClientCertificate).
 				DefaultFilters().
 				Get()

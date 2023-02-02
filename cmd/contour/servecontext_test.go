@@ -406,10 +406,11 @@ func TestConvertServeContext(t *testing.T) {
 					Namespace: "projectcontour",
 				},
 				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:              ref.To(false),
-					DisableAllowChunkedLength:  ref.To(false),
-					DisableMergeSlashes:        ref.To(false),
-					ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
+					UseProxyProto:                ref.To(false),
+					DisableAllowChunkedLength:    ref.To(false),
+					DisableMergeSlashes:          ref.To(false),
+					AlwaysSetRequestIDInResponse: ref.To(false),
+					ServerHeaderTransformation:   contour_api_v1alpha1.OverwriteServerHeader,
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 					},

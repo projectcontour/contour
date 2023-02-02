@@ -52,11 +52,12 @@ func TestOverlayOnDefaults(t *testing.T) {
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ref.To(true),
-				DisableAllowChunkedLength:  ref.To(true),
-				DisableMergeSlashes:        ref.To(true),
-				ServerHeaderTransformation: contour_api_v1alpha1.PassThroughServerHeader,
-				ConnectionBalancer:         "yesplease",
+				UseProxyProto:                ref.To(true),
+				DisableAllowChunkedLength:    ref.To(true),
+				DisableMergeSlashes:          ref.To(true),
+				ServerHeaderTransformation:   contour_api_v1alpha1.PassThroughServerHeader,
+				ConnectionBalancer:           "yesplease",
+				AlwaysSetRequestIDInResponse: ref.To(true),
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.7",
 					CipherSuites: []string{

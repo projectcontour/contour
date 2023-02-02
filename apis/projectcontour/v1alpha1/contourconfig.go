@@ -361,6 +361,12 @@ type EnvoyListenerConfig struct {
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
+
+	// AlwaysSetRequestIDInResponse enables setting `x-request-id` header in response.
+	//
+	// Contour's default is false.
+	// +optional
+	AlwaysSetRequestIDInResponse *bool `json:"alwaysSetRequestIDInResponse,omitempty"`
 }
 
 // EnvoyTLS describes tls parameters for Envoy listneners.

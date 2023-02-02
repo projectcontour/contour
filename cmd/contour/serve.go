@@ -365,6 +365,7 @@ func (s *Server) doServe() error {
 		ServerHeaderTransformation:   contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
 		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
+		AlwaysSetRequestIDInResponse: *contourConfiguration.Envoy.Listener.AlwaysSetRequestIDInResponse,
 	}
 
 	if listenerConfig.RateLimitConfig, err = s.setupRateLimitService(contourConfiguration); err != nil {

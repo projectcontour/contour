@@ -165,6 +165,7 @@ type httpConnectionManagerBuilder struct {
 	serverHeaderTransformation    http.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
+	alwaysSetRequestIDInResponse  bool
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -262,6 +263,11 @@ func (b *httpConnectionManagerBuilder) ForwardClientCertificate(details *dag.Cli
 
 func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
 	b.numTrustedHops = num
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) AlwaysSetRequestIDInResponse(v bool) *httpConnectionManagerBuilder {
+	b.alwaysSetRequestIDInResponse = v
 	return b
 }
 
@@ -471,10 +477,11 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		MergeSlashes:               b.mergeSlashes,
 		ServerHeaderTransformation: b.serverHeaderTransformation,
 
-		RequestTimeout:      envoy.Timeout(b.requestTimeout),
-		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
-		DrainTimeout:        envoy.Timeout(b.connectionShutdownGracePeriod),
-		DelayedCloseTimeout: envoy.Timeout(b.delayedCloseTimeout),
+		RequestTimeout:               envoy.Timeout(b.requestTimeout),
+		StreamIdleTimeout:            envoy.Timeout(b.streamIdleTimeout),
+		DrainTimeout:                 envoy.Timeout(b.connectionShutdownGracePeriod),
+		DelayedCloseTimeout:          envoy.Timeout(b.delayedCloseTimeout),
+		AlwaysSetRequestIdInResponse: b.alwaysSetRequestIDInResponse,
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
