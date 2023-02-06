@@ -1,32 +1,12 @@
 We are delighted to present version v1.22.4 of Contour, our layer 7 HTTP reverse proxy for Kubernetes clusters.
 
-A big thank you to everyone who contributed to the release.
-
-
-- [Major Changes](#major-changes)
-- [Minor Changes](#minor-changes)
-- [Other Changes](#other-changes)
-- [Docs Changes](#docs-changes)
-- [Deprecations/Removals](#deprecation-and-removal-notices)
+- [All Changes](#all-changes)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
-- [Community Thanks!](#community-thanks)
 
-# Major Changes
-
-
-# Minor Changes
-
-
-# Other Changes
-
-
-# Docs Changes
-
-
-# Deprecation and Removal Notices
-
-
+# All Changes
+- Update to Envoy v1.23.4. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.23.4/version_history/v1.23/v1.23.4) for more information about the content of the release.
+- Update to Go v1.19.5. See the [Go release notes](https://go.dev/doc/devel/release#go1.19.minor) for more information about the content of the release.
 
 # Installing and Upgrading
 
@@ -38,10 +18,6 @@ To upgrade an existing Contour installation, please consult the [upgrade documen
 # Compatible Kubernetes Versions
 
 Contour v1.22.4 is tested against Kubernetes 1.22 through 1.24.
-
-# Community Thanks!
-We’re immensely grateful for all the community contributions that help make Contour even better! For this release, special thanks go out to the following contributors:
-
 
 
 # Are you a Contour user? We would love to know!
