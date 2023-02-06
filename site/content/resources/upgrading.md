@@ -9,6 +9,74 @@ This document describes the changes needed to upgrade your Contour installation.
 
 <div id="toc" class="navigation"></div>
 
+# Before you start
+
+Contour currently only tests sequential upgrades, i.e. without skipping any minor or patch versions.
+This approach is recommended for users in order to minimize downtime and avoid any potential issues.
+If you choose to skip versions while upgrading, please note that this may lead to additional downtime.
+
+# The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ export CONTOUR_VERSION=<desired version, e.g. v1.24.0>
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{< param base_url >}}/quickstart/$CONTOUR_VERSION/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+# The less easy way
+
+This section contains information for administrators who wish to upgrade the Contour resources one-by-one.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the tag for the target version.
+
+1. Update the Contour CRDs:
+
+    ```bash
+    $ kubectl apply -f examples/contour/01-crds.yaml
+    ```
+
+1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in a format compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+   This will rotate the TLS certificates used for gRPC security.
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-job-certgen.yaml
+    ```
+
+1. Update the Contour RBAC resources:
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-rbac.yaml
+    $ kubectl apply -f examples/contour/02-role-contour.yaml
+    ```
+
+1. Upgrade the Contour deployment:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-contour.yaml
+    ```
+
+1. Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-envoy.yaml
+    ```
+
+# Legacy per-version upgrade instructions
+
+Contour previously published per-version upgrade instructions which are retained below for posterity.
+These will no longer be updated going forward, as the instructions were largely redundant between versions.
+
 ## Upgrading Contour 1.23.2 to 1.24.0
 
 Contour 1.24.0 is the current stable release.
