@@ -331,7 +331,7 @@ func (d *Deployment) WaitForContourDeploymentUpdated() error {
 	}
 	labelSelectAppContour := labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels)
 	updatedPods := func() (bool, error) {
-		updatedPods := d.getUpdatedPods(labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
+		updatedPods := d.getPodsUpdatedWithContourImage(labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
 		return updatedPods == int(*d.ContourDeployment.Spec.Replicas), nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute, updatedPods)
@@ -361,7 +361,7 @@ func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
 		}
 		updatedPods := int(ds.Status.DesiredNumberScheduled)
 		if len(ds.Spec.Template.Spec.Containers) > 1 {
-			updatedPods = d.getUpdatedPods(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
 		}
 		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
 			ds.Status.NumberReady > 0, nil
@@ -372,15 +372,22 @@ func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
 func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
 	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDeployment.Spec.Selector.MatchLabels)
 	updatedPods := func() (bool, error) {
-		updatedPods := d.getUpdatedPods(labelSelectAppEnvoy, d.EnvoyDeployment.Namespace)
+		dp := new(apps_v1.Deployment)
+		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), dp); err != nil {
+			return false, err
+		}
+		updatedPods := int(dp.Status.UpdatedReplicas)
+		if len(dp.Spec.Template.Spec.Containers) > 1 {
+			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+		}
 		return updatedPods == int(*d.EnvoyDeployment.Spec.Replicas) &&
-			int(d.EnvoyDeployment.Status.ReadyReplicas) == updatedPods &&
-			int(d.EnvoyDeployment.Status.UnavailableReplicas) == 0, nil
+			int(dp.Status.ReadyReplicas) == updatedPods &&
+			int(dp.Status.UnavailableReplicas) == 0, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, updatedPods)
 }
 
-func (d *Deployment) getUpdatedPods(labelSelector labels.Selector, namespace string) int {
+func (d *Deployment) getPodsUpdatedWithContourImage(labelSelector labels.Selector, namespace string) int {
 	contourPodImage := d.ContourDeployment.Spec.Template.Spec.Containers[0].Image
 	pods := new(v1.PodList)
 	labelSelect := &client.ListOptions{
