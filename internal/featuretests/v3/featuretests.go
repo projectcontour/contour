@@ -102,6 +102,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	registry := prometheus.NewRegistry()
 
+	// nolint:gosec
 	rand.New(rand.NewSource(time.Now().Unix()))
 
 	builder := &dag.Builder{
