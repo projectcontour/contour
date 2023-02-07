@@ -8806,14 +8806,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
-						{
-							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonMethodMatchType),
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.",
 						},
 					},
@@ -8855,12 +8849,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
-						{
-							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(status.ReasonInvalidMethodMatch),
 							Message: "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.",
@@ -8904,12 +8892,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
-						{
-							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(status.ReasonInvalidMethodMatch),
 							Message: "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.",
@@ -8969,14 +8951,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonHeaderMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
 						},
 					},

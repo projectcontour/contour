@@ -1368,7 +1368,7 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 
 			headerMatches, err := gatewayGRPCHeaderMatchConditions(match.Headers)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1457,7 +1457,7 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 		// conditions, all with the same action.
 		var routes []*Route
 
-		clusters, totalWeight, ok := p.GRPCClusters(route.Namespace, rule.BackendRefs, routeAccessor)
+		clusters, totalWeight, ok := p.GRPCClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol)
 		if ok {
 			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
 		}
@@ -1495,12 +1495,12 @@ func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch,
 
 	// Support "Exact" match type only. If match type is not specified, use "Exact" as default.
 	if match.Type != nil && *match.Type != gatewayapi_v1alpha2.GRPCMethodMatchExact {
-		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonMethodMatchType, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
 		return nil, false
 	}
 
 	if match.Service == nil || isBlank(*match.Service) || match.Method == nil || isBlank(*match.Method) {
-		routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
 		return nil, false
 	}
 
@@ -1790,7 +1790,7 @@ func (p *GatewayAPIProcessor) HTTPClusters(routeNamespace string, backendRefs []
 }
 
 // GRPCClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate) ([]*Cluster, uint32, bool) {
+func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1beta1.ProtocolType) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
@@ -1851,6 +1851,16 @@ func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []
 		// Keep track of all the weights for this set of backend refs. This will be
 		// used later to understand if all the weights are set to zero.
 		totalWeight += routeWeight
+
+		// For GRPCRoute, if the protocol is not set on the Service,
+		// we should assume a protocol that matches what listener the route was attached to
+		if isBlank(service.Protocol) {
+			if protocolType == gatewayapi_v1beta1.HTTPProtocolType {
+				service.Protocol = "h2c"
+			} else if protocolType == gatewayapi_v1beta1.HTTPSProtocolType {
+				service.Protocol = "h2"
+			}
+		}
 
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
