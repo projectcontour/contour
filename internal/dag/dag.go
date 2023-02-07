@@ -529,6 +529,8 @@ type CORSPolicy struct {
 	ExposeHeaders []string
 	// MaxAge specifies the content for the *access-control-max-age* header.
 	MaxAge timeout.Setting
+	// AllowPrivateNetwork specifies whether to allow private network requests.
+	AllowPrivateNetwork bool
 }
 
 type HeaderValue struct {

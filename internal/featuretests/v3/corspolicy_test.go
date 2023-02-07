@@ -59,7 +59,8 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
 					&envoy_cors_v3.CorsPolicy{
-						AllowCredentials: &wrapperspb.BoolValue{Value: false},
+						AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
 								Exact: "*",
@@ -100,7 +101,8 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
 					&envoy_cors_v3.CorsPolicy{
-						AllowCredentials: &wrapperspb.BoolValue{Value: false},
+						AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{
 							{
 								MatchPattern: &matcher.StringMatcher_Exact{
@@ -157,8 +159,9 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						AllowMethods:     "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						AllowMethods:              "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -199,8 +202,9 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						AllowMethods:     "GET,POST,OPTIONS",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						AllowMethods:              "GET,POST,OPTIONS",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -242,9 +246,10 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						AllowHeaders:     "custom-header-1,custom-header-2",
-						AllowMethods:     "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						AllowHeaders:              "custom-header-1,custom-header-2",
+						AllowMethods:              "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -287,9 +292,10 @@ func TestCorsPolicy(t *testing.T) {
 							IgnoreCase: true,
 						},
 						},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						ExposeHeaders:    "custom-header-1,custom-header-2",
-						AllowMethods:     "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						ExposeHeaders:             "custom-header-1,custom-header-2",
+						AllowMethods:              "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -331,9 +337,52 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						MaxAge:           "600",
-						AllowMethods:     "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						MaxAge:                    "600",
+						AllowMethods:              "GET",
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routecluster("default/svc1/80/da39a3ee5e"),
+					}),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Allow PrivateNetworkAccess
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "hello.world",
+				CORSPolicy: &contour_api_v1.CORSPolicy{
+					AllowOrigin:         []string{"*"},
+					AllowMethods:        []contour_api_v1.CORSHeaderValue{"GET"},
+					AllowPrivateNetwork: true,
+				},
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}},
+		}))
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.CORSVirtualHost("hello.world",
+					&envoy_cors_v3.CorsPolicy{
+						AllowOriginStringMatch: []*matcher.StringMatcher{{
+							MatchPattern: &matcher.StringMatcher_Exact{
+								Exact: "*",
+							},
+							IgnoreCase: true,
+						}},
+						AllowMethods:              "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: true},
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -375,9 +424,10 @@ func TestCorsPolicy(t *testing.T) {
 							},
 							IgnoreCase: true,
 						}},
-						AllowCredentials: &wrapperspb.BoolValue{Value: true},
-						MaxAge:           "0",
-						AllowMethods:     "GET",
+						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
+						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
+						MaxAge:                    "0",
+						AllowMethods:              "GET",
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
