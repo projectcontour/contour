@@ -32,7 +32,7 @@ import (
 
 func TestShutdownManager_HealthzHandler(t *testing.T) {
 	// Create a request to pass to our handler
-	req, err := http.NewRequest("GET", "/healthz", nil)
+	req, err := http.NewRequest(http.MethodGet, "/healthz", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*500)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "/shutdown", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/shutdown", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestShutdownManager_ShutdownReadyHandler_ClientCancel(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "/shutdown", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/shutdown", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
