@@ -40,24 +40,21 @@ func TestGatewayConformance(t *testing.T) {
 	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
 
 	cSuite := suite.New(suite.Options{
-		Client:               client,
-		GatewayClassName:     *flags.GatewayClassName,
-		Debug:                *flags.ShowDebug,
-		CleanupBaseResources: *flags.CleanupBaseResources,
-		// Keep the list of supported features in sync with
+		Client:                     client,
+		GatewayClassName:           *flags.GatewayClassName,
+		Debug:                      *flags.ShowDebug,
+		CleanupBaseResources:       *flags.CleanupBaseResources,
+		EnableAllSupportedFeatures: true,
+		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
-		SupportedFeatures: map[suite.SupportedFeature]bool{
-			suite.SupportReferenceGrant:                     true,
-			suite.SupportTLSRoute:                           true,
-			suite.SupportHTTPRouteQueryParamMatching:        true,
-			suite.SupportHTTPRouteMethodMatching:            true,
-			suite.SupportHTTPResponseHeaderModification:     true,
-			suite.SupportRouteDestinationPortMatching:       true,
-			suite.SupportGatewayClassObservedGenerationBump: true,
-
-			// TODO uncomment the below once they are included in a Gateway API release
-			// suite.HTTPRoutePathRewrite: true,
-			// suite.HTTPRouteHostRewrite: true,
+		SkipTests: []string{
+			// These are skipped because the tests check for the
+			// original request port in the returned Location
+			// header which Envoy is stripping.
+			// See: https://github.com/envoyproxy/envoy/issues/17318
+			"HTTPRouteRedirectHostAndStatus",
+			"HTTPRouteRedirectPath",
+			"HTTPRouteRedirectScheme",
 		},
 	})
 	cSuite.Setup(t)

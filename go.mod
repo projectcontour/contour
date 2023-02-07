@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/bombsimon/logrusr/v2 v2.0.1
-	github.com/cert-manager/cert-manager v1.11.0
+	github.com/cert-manager/cert-manager v1.11.0-alpha.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/envoyproxy/go-control-plane v0.10.3-0.20221018195204-799a7af9e5b9
@@ -39,7 +39,7 @@ require (
 	k8s.io/klog/v2 v2.90.0
 	sigs.k8s.io/controller-runtime v0.14.4
 	sigs.k8s.io/controller-tools v0.11.3
-	sigs.k8s.io/gateway-api v0.6.0
+	sigs.k8s.io/gateway-api v0.6.1
 	sigs.k8s.io/kustomize/kyaml v0.14.0
 )
 
