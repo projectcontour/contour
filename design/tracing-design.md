@@ -70,7 +70,9 @@ The `tracing` section of the Contour config file will look like:
 
 ```yaml
 tracing:
-  # serviceName defines a configurable service name.the default format is contour-<ingressClassName>
+  # includePodDetail defines a flag. If it is true, contour will add the pod name and namespace to the span of the trace. the default is true
+  includePodDetail: true
+  # serviceName defines a configurable service name.the default is contour
   serviceName: contour
   # overallSampling defines the sampling rate of trace data.
   overallSampling: 100
@@ -83,9 +85,6 @@ tracing:
     - tagName: literal
       # literal is a static custom tag value.
       literal: 'this is literal'
-    - tagName: environment
-      # environment indicates that the label value is obtained from the environment variable.
-      environment: HOST
     - tagName: requestHeaderName
       # requestHeaderName indicates which request header the label value is obtained from.
       requestHeaderName: ':path'
@@ -128,10 +127,18 @@ Tracing: &http.HttpConnectionManager_Tracing{
                     },
                 },
                 {
-                    Tag: "environment",
+                    Tag: "podName",
                     Type: &envoy_trace_v3.CustomTag_Environment_{
                         Environment: &envoy_trace_v3.CustomTag_Environment{
-                            Name: "HOST",
+                            Name: "HOSTNAME",
+                        },
+                    },
+                },
+				{
+                    Tag: "podNamespaceName",
+                    Type: &envoy_trace_v3.CustomTag_Environment_{
+                        Environment: &envoy_trace_v3.CustomTag_Environment{
+                            Name: "CONTOUR_NAMESPACE",
                         },
                     },
                 },
