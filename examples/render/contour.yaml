@@ -216,7 +216,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourconfigurations.projectcontour.io
 spec:
@@ -1040,7 +1040,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourdeployments.projectcontour.io
 spec:
@@ -3929,7 +3929,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -4351,7 +4351,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -6710,7 +6710,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:
