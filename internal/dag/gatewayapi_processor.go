@@ -1141,11 +1141,46 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 						statusCode = *filter.RequestRedirect.StatusCode
 					}
 
+					var pathRewritePolicy *PathRewritePolicy
+
+					if filter.RequestRedirect.Path != nil {
+						var prefixRewrite, fullPathRewrite string
+
+						switch filter.RequestRedirect.Path.Type {
+						case gatewayapi_v1beta1.PrefixMatchHTTPPathModifier:
+							if filter.RequestRedirect.Path.ReplacePrefixMatch == nil || len(*filter.RequestRedirect.Path.ReplacePrefixMatch) == 0 {
+								prefixRewrite = "/"
+							} else {
+								prefixRewrite = *filter.RequestRedirect.Path.ReplacePrefixMatch
+							}
+						case gatewayapi_v1beta1.FullPathHTTPPathModifier:
+							if filter.RequestRedirect.Path.ReplaceFullPath == nil || len(*filter.RequestRedirect.Path.ReplaceFullPath) == 0 {
+								fullPathRewrite = "/"
+							} else {
+								fullPathRewrite = *filter.RequestRedirect.Path.ReplaceFullPath
+							}
+						default:
+							routeAccessor.AddCondition(
+								gatewayapi_v1beta1.RouteConditionAccepted,
+								metav1.ConditionFalse,
+								gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+								fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.RequestRedirect.Path.Type),
+							)
+							continue
+						}
+
+						pathRewritePolicy = &PathRewritePolicy{
+							PrefixRewrite:   prefixRewrite,
+							FullPathRewrite: fullPathRewrite,
+						}
+					}
+
 					redirect = &Redirect{
-						Hostname:   hostname,
-						PortNumber: portNumber,
-						Scheme:     scheme,
-						StatusCode: statusCode,
+						Hostname:          hostname,
+						PortNumber:        portNumber,
+						Scheme:            scheme,
+						StatusCode:        statusCode,
+						PathRewritePolicy: pathRewritePolicy,
 					}
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
@@ -1536,24 +1571,9 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
-		// Handle the case where the prefix is supposed to be rewritten to "/", i.e. removed.
-		// This doesn't work out of the box in Envoy with path_separated_prefix
-		// and prefix_rewrite, so we have to use a regex. Specifically, for a prefix
-		// match of "/foo", a prefix rewrite of "/", and a request to "/foo/bar", Envoy
-		// will rewrite the request path to "//bar" which is invalid. The regex handles matching
-		// and removing any trailing slashes.
-		//
-		// This logic is implemented here rather than in internal/envoy because there
-		// is already special handling at the DAG level for similar issues for HTTPProxy.
-		if pathRewritePolicy != nil && pathRewritePolicy.PrefixRewrite == "/" {
-			prefixMatch, ok := mc.path.(*PrefixMatchCondition)
-			if ok {
-				pathRewritePolicy.PrefixRewrite = ""
-				// The regex below will capture/remove all consecutive trailing slashes
-				// immediately after the prefix, to handle requests like /prefix///foo.
-				pathRewritePolicy.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
-			}
-		}
+		// Re-configure the PathRewritePolicy if we're trying to remove
+		// the prefix entirely.
+		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
 
 		routes = append(routes, &Route{
 			Clusters:                  clusters,
@@ -1593,6 +1613,10 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
+		// Re-configure the PathRewritePolicy if we're trying to remove
+		// the prefix entirely.
+		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
+
 		routes = append(routes, &Route{
 			Priority:              priority,
 			Redirect:              redirect,
@@ -1604,4 +1628,27 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 	}
 
 	return routes
+}
+
+func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *PathRewritePolicy {
+	// Handle the case where the prefix is supposed to be rewritten to "/", i.e. removed.
+	// This doesn't work out of the box in Envoy with path_separated_prefix
+	// and prefix_rewrite, so we have to use a regex. Specifically, for a prefix
+	// match of "/foo", a prefix rewrite of "/", and a request to "/foo/bar", Envoy
+	// will rewrite the request path to "//bar" which is invalid. The regex handles matching
+	// and removing any trailing slashes.
+	//
+	// This logic is implemented here rather than in internal/envoy because there
+	// is already special handling at the DAG level for similar issues for HTTPProxy.
+	if p != nil && p.PrefixRewrite == "/" {
+		prefixMatch, ok := mc.path.(*PrefixMatchCondition)
+		if ok {
+			p.PrefixRewrite = ""
+			// The regex below will capture/remove all consecutive trailing slashes
+			// immediately after the prefix, to handle requests like /prefix///foo.
+			p.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
+		}
+	}
+
+	return p
 }
