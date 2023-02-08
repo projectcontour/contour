@@ -1121,6 +1121,15 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				// custom conformance.", here we choose to just select the first one.
 				if redirect == nil && filter.RequestRedirect != nil {
 					redirect = filter.RequestRedirect
+
+					// Ref. https://github.com/envoyproxy/envoy/issues/17318, Envoy drops
+					// the request port from the redirect location if a port is not specified
+					// in the redirect config, so if the redirect filter does not specify
+					// a port, use the Listener's port.
+					if filter.RequestRedirect.Port == nil || *filter.RequestRedirect.Port == 0 {
+						redirect.Port = ref.To(listener.listener.Port)
+					}
+
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
 				// Get the mirror filter if there is one. If there are more than one

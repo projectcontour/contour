@@ -48,13 +48,7 @@ func TestGatewayConformance(t *testing.T) {
 		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SkipTests: []string{
-			// These are skipped because the tests check for the
-			// original request port in the returned Location
-			// header which Envoy is stripping.
-			// See: https://github.com/envoyproxy/envoy/issues/17318
-			"HTTPRouteRedirectHostAndStatus",
 			"HTTPRouteRedirectPath",
-			"HTTPRouteRedirectScheme",
 		},
 	})
 	cSuite.Setup(t)
