@@ -1438,33 +1438,6 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 		return false
 	})
 
-	headerConds, pathSeen := seenHeaderConds[pathPrefix]
-	if !pathSeen {
-		seenHeaderConds[pathPrefix] = [][]HeaderMatchCondition{
-			includeHeaderConds,
-		}
-		return false
-	}
-
-	for _, conds := range headerConds {
-		if len(conds) != len(includeHeaderConds) {
-			seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
-			continue
-		}
-
-		headerCondsIdentical := true
-		for i := range conds {
-			if conds[i] != includeHeaderConds[i] {
-				seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
-				headerCondsIdentical = false
-				break
-			}
-		}
-		if headerCondsIdentical {
-			return true
-		}
-	}
-
 	sort.SliceStable(includeQueryParamConds, func(i, j int) bool {
 		if includeQueryParamConds[i].MatchType != includeQueryParamConds[j].MatchType {
 			return includeQueryParamConds[i].MatchType < includeQueryParamConds[j].MatchType
@@ -1481,14 +1454,40 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 		return false
 	})
 
-	queryParamConds, pathSeen := seenQueryParamConds[pathPrefix]
+	headerConds, pathSeen := seenHeaderConds[pathPrefix]
+	queryParamConds := seenQueryParamConds[pathPrefix]
 	if !pathSeen {
+		seenHeaderConds[pathPrefix] = [][]HeaderMatchCondition{
+			includeHeaderConds,
+		}
 		seenQueryParamConds[pathPrefix] = [][]QueryParamMatchCondition{
 			includeQueryParamConds,
 		}
 		return false
 	}
 
+	foundIdenticalHeaderConds := false
+	for _, conds := range headerConds {
+		if len(conds) != len(includeHeaderConds) {
+			seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
+			continue
+		}
+
+		headerCondsIdentical := true
+		for i := range conds {
+			if conds[i] != includeHeaderConds[i] {
+				seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
+				headerCondsIdentical = false
+				break
+			}
+		}
+		if headerCondsIdentical {
+			foundIdenticalHeaderConds = true
+			break
+		}
+	}
+
+	foundIdenticalQueryParamConds := false
 	for _, conds := range queryParamConds {
 		if len(conds) != len(includeQueryParamConds) {
 			seenQueryParamConds[pathPrefix] = append(seenQueryParamConds[pathPrefix], includeQueryParamConds)
@@ -1504,11 +1503,12 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 			}
 		}
 		if queryParamCondsIdentical {
-			return true
+			foundIdenticalQueryParamConds = true
+			break
 		}
 	}
 
-	return false
+	return foundIdenticalHeaderConds && foundIdenticalQueryParamConds
 }
 
 // isBlank indicates if a string contains nothing but blank characters.

@@ -1961,6 +1961,168 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyInvalidConflictQueryConditions := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-1",
+						Prefix: "foo",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param-2",
+						Exact: "bar",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:       "param-3",
+						Exact:      "bar",
+						IgnoreCase: true,
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-1",
+						Prefix: "foooo",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-1",
+						Prefix: "foo",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param-2",
+						Exact: "bar",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param-2",
+						Exact: "bar",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-1",
+						Prefix: "foo",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-1",
+						Prefix: "foooo",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:       "param-3",
+						Exact:      "bar",
+						IgnoreCase: true,
+					},
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate query param conditions on an include", testcase{
+		objs: []interface{}{proxyInvalidConflictQueryConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyInvalidConflictQueryConditions.Name,
+				Namespace: proxyInvalidConflictQueryConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+			{Name: proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+		},
+	})
+
+	proxyInvalidConflictQueryHeaderConditions := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:  "x-header",
+						Exact: "foo",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "bar",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "bar",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:  "x-header",
+						Exact: "foo",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []contour_api_v1.MatchCondition{{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:   "param-other",
+						Prefix: "bar",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header-other",
+						Contains: "foo",
+					},
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate query param conditions on an include", testcase{
+		objs: []interface{}{proxyInvalidConflictQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyInvalidConflictQueryHeaderConditions.Name,
+				Namespace: proxyInvalidConflictQueryHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+			{Name: proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include.
+		},
+	})
+
 	proxyInvalidMissingInclude := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
