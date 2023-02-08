@@ -1156,9 +1156,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 					continue
 				}
 
-				pathRewritePolicy = &PathRewritePolicy{
-					PrefixRewrite:   prefixRewrite,
-					FullPathRewrite: fullPathRewrite,
+				if redirect != nil {
+					redirect.Path.ReplaceFullPath = &fullPathRewrite
+					redirect.Path.ReplacePrefixMatch = &prefixRewrite
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
 				// Get the mirror filter if there is one. If there are more than one
