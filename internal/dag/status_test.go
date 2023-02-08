@@ -1121,6 +1121,61 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyInvalidDuplicateMatchConditionQueryParameters := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "abc",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "1234",
+					},
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate route condition query parameters", testcase{
+		objs: []interface{}{proxyInvalidDuplicateMatchConditionQueryParameters, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyInvalidDuplicateMatchConditionQueryParameters.Name, Namespace: proxyInvalidDuplicateMatchConditionQueryParameters.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyInvalidDuplicateMatchConditionQueryParameters.Generation).
+				WithError(contour_api_v1.ConditionTypeRouteError, "QueryParameterMatchConditionsNotValid", "cannot specify duplicate query parameter 'exact match' conditions in the same route"),
+		},
+	})
+
+	proxyValidDelegatedRoots := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	proxyInvalidDuplicateIncludeCondtionHeaders := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -1147,20 +1202,6 @@ func TestDAGStatus(t *testing.T) {
 					},
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	proxyValidDelegatedRoots := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{{
 				Services: []contour_api_v1.Service{{
 					Name: "home",

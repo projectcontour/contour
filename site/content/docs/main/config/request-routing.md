@@ -27,7 +27,7 @@ spec:
           port: 80
 ```
 
-In the following example, we match on headers and send to different services, with a default route if those do not match.
+In the following example, we match on headers and query parameters and send to different services, with a default route if those do not match.
 
 ```yaml
 # httpproxy-multiple-headers.yaml
@@ -54,8 +54,16 @@ spec:
       services:
         - name: s2
           port: 80
-    - services:
+    - conditions:
+      - queryParameter:
+          name: os
+          exact: other
+          ignoreCase: true
+      services:
         - name: s3
+          port: 80
+    - services:
+        - name: s4
           port: 80
 ```
 
@@ -63,7 +71,7 @@ spec:
 
 Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
-Conditions can be either a `prefix` or a `header` condition.
+Conditions can be either a `prefix`, `header` or a `queryParameter` condition.
 
 #### Prefix conditions
 
@@ -83,6 +91,38 @@ For `header` conditions there is one required field, `name`, and six operator fi
 - `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
 
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
+
+#### Query parameter conditions
+
+Similar to the `header` conditions, `queryParameter` conditions also require the
+`name` field to be specified, which represents the name of the query parameter
+e.g. `search` when the query string looks like `/?search=term` and `term`
+representing the value.
+
+There are six operator fields: `exact`, `prefix`, `suffix`, `regex`, `contains`
+and `present` and a modifier `ignoreCase` which can be used together with all of
+the operator fields except `regex` and `present`.
+
+- `exact` is a string, and checks that the query parameter value exactly matches
+  the whole string.
+
+- `prefix` is a string, and checks that the query parameter value is prefixed by
+  the given value.
+
+- `suffix` is a string, and checks that the query parameter value is suffixed by
+  the given value.
+
+- `regex` is a string representing a regular expression, and checks that the
+  query parameter value matches against the given regular expression.
+
+- `contains` is a string, and checks that the query parameter value contains
+  the given string.
+
+- `present` is a boolean, and checks that the query parameter is present. The
+  value will not be checked.
+
+- `ignoreCase` is a boolean, and if set to `true` it will enable case
+  insensitive matching for any of the string operator matching methods.
 
 ## Request Redirection
 

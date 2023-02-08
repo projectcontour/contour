@@ -1407,6 +1407,234 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 		},
+		"query param exact match with IgnoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "exact",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param prefix match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "prefix",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Prefix{
+									Prefix: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param prefix match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "prefix",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Prefix{
+									Prefix: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param suffix match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "suffix",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Suffix{
+									Suffix: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param suffix match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "suffix",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Suffix{
+									Suffix: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param regex match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "^query-.*",
+						MatchType: "regex",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_SafeRegex{
+									SafeRegex: SafeRegexMatch("^query-.*"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param contains match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "contains",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Contains{
+									Contains: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param contains match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "contains",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Contains{
+									Contains: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param present match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						MatchType: "present",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_PresentMatch{
+							PresentMatch: true,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

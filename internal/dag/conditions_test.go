@@ -549,3 +549,133 @@ func TestValidateHeaderMatchConditions(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateQueryParameterMatchConditions(t *testing.T) {
+	tests := map[string]struct {
+		matchconditions []contour_api_v1.MatchCondition
+		wantErr         bool
+	}{
+		"empty condition list": {
+			matchconditions: nil,
+			wantErr:         false,
+		},
+		"prefix only": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Prefix: "/blog",
+				},
+			},
+			wantErr: false,
+		},
+		"valid matchconditions": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:     "param",
+						Contains: "abc",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"prefix matchconditions + valid query parameter": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Prefix: "/blog",
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "abc",
+					},
+				}, {
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:     "another-param",
+						Contains: "123",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"no query parameter matchcondition specified is invalid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name: "param",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"multiple query parameter matchconditions in the same branch is invalid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:    "param",
+						Exact:   "abc",
+						Present: true,
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"more than one 'exact' condition for the same query parameter is invalid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "abc",
+					},
+				},
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param",
+						Exact: "def",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"more than one 'exact' condition for different query parameter is valid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param1",
+						Exact: "abc",
+					},
+				},
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "param2",
+						Exact: "def",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"invalid 'regex' value specified": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+						Name:  "x-header",
+						Regex: "[",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotErr := queryParameterMatchConditionsValid(tc.matchconditions)
+
+			if !tc.wantErr {
+				assert.NoError(t, gotErr)
+			}
+
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			}
+		})
+	}
+}

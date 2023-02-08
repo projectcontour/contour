@@ -2311,7 +2311,7 @@ set when a request is rate-limited.</p>
 </p>
 <p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
-One of Prefix or Header must be provided.</p>
+One of Prefix, Header or QueryParameter must be provided.</p>
 </p>
 <table>
 <thead>
@@ -2347,6 +2347,21 @@ HeaderMatchCondition
 <td>
 <em>(Optional)</em>
 <p>Header specifies the header condition to match.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>queryParameter</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.QueryParameterMatchCondition">
+QueryParameterMatchCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QueryParameter specifies the query parameter condition to match.</p>
 </td>
 </tr>
 </tbody>
@@ -2419,6 +2434,138 @@ string
 <p>ParameterName is the name of the HTTP request query parameter that will be used to
 calculate the hash key. If the query parameter specified is not present on a
 request, no hash will be produced.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.QueryParameterMatchCondition">QueryParameterMatchCondition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.MatchCondition">MatchCondition</a>)
+</p>
+<p>
+<p>QueryParameterMatchCondition specifies how to conditionally match against HTTP
+query parameters. The Name field is required, only one of Exact, Prefix,
+Suffix, Regex, Contains and Present can be set. IgnoreCase has no effect
+for Regex.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the query parameter to match against. Name is required.
+Query parameter names are case insensitive.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>exact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exact specifies a string that the query parameter value must be equal to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix defines a prefix match for the query parameter value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>suffix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suffix defines a suffix match for a query parameter value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>regex</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Regex specifies a regular expression pattern that must match the query
+parameter value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>contains</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Contains specifies a substring that must be present in
+the query parameter value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ignoreCase</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IgnoreCase specifies that string matching should be case insensitive.
+Note that this has no effect on the Regex parameter.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>present</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Present specifies that condition is true when the named query parameter
+is present, regardless of its value. Note that setting Present
+to false does not make the condition true if the named query parameter
+is absent.</p>
 </td>
 </tr>
 </tbody>
