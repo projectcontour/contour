@@ -259,15 +259,23 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 		r.Redirect.PortRedirect = redirect.PortNumber
 	}
 
-	if len(redirect.Path) > 0 {
-		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
-			PathRedirect: redirect.Path,
-		}
-	}
-
-	if len(redirect.Prefix) > 0 {
-		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
-			PrefixRewrite: redirect.Prefix,
+	if redirect.PathRewritePolicy != nil {
+		switch {
+		case len(redirect.PathRewritePolicy.FullPathRewrite) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
+				PathRedirect: redirect.PathRewritePolicy.FullPathRewrite,
+			}
+		case len(redirect.PathRewritePolicy.PrefixRewrite) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
+				PrefixRewrite: redirect.PathRewritePolicy.PrefixRewrite,
+			}
+		case len(redirect.PathRewritePolicy.PrefixRegexRemove) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_RegexRewrite{
+				RegexRewrite: &matcher.RegexMatchAndSubstitute{
+					Pattern:      SafeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
+					Substitution: "/",
+				},
+			}
 		}
 	}
 

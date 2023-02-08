@@ -1694,7 +1694,9 @@ func TestRouteRedirect(t *testing.T) {
 		},
 		"path specified": {
 			redirect: &dag.Redirect{
-				Path: "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					FullPathRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
@@ -1706,12 +1708,33 @@ func TestRouteRedirect(t *testing.T) {
 		},
 		"prefix specified": {
 			redirect: &dag.Redirect{
-				Prefix: "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					PrefixRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
 					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
 						PrefixRewrite: "/blog",
+					},
+				},
+			},
+		},
+		"prefix regex remove specified": {
+			redirect: &dag.Redirect{
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					PrefixRegexRemove: "^/blog/*",
+				},
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_RegexRewrite{
+						RegexRewrite: &matcher.RegexMatchAndSubstitute{
+							Pattern: &matcher.RegexMatcher{
+								Regex: "^/blog/*",
+							},
+							Substitution: "/",
+						},
 					},
 				},
 			},
@@ -1730,7 +1753,9 @@ func TestRouteRedirect(t *testing.T) {
 				Scheme:     "https",
 				PortNumber: 8443,
 				StatusCode: 302,
-				Path:       "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					FullPathRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
