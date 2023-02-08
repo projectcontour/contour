@@ -158,15 +158,16 @@ func TestDesiredEnvoyService(t *testing.T) {
 	subnet := "contour-subnet-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.NodePortServicePublishingType
-	cntr.Spec.NetworkPublishing.Envoy.NodePorts = model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444})
-	cntr.Spec.NetworkPublishing.Envoy.ServicePorts = []model.ServicePort{
+	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
 		{
-			Name:       "http",
-			PortNumber: EnvoyServiceHTTPPort,
+			Name:        "http",
+			ServicePort: EnvoyServiceHTTPPort,
+			NodePort:    30081,
 		},
 		{
-			Name:       "https",
-			PortNumber: EnvoyServiceHTTPSPort,
+			Name:        "https",
+			ServicePort: EnvoyServiceHTTPSPort,
+			NodePort:    30444,
 		},
 	}
 
@@ -177,8 +178,8 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPSPort)
 	checkServiceHasNodeport(t, svc, 30081)
 	checkServiceHasNodeport(t, svc, 30444)
-	for _, port := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
-		checkServiceHasTargetPort(t, svc, port.PortNumber)
+	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
+		checkServiceHasTargetPort(t, svc, port.ContainerPort)
 	}
 	checkServiceHasPortName(t, svc, "http")
 	checkServiceHasPortName(t, svc, "https")

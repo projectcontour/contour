@@ -16,6 +16,7 @@ package v3
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"regexp"
 	"sort"
 	"strings"
@@ -272,9 +273,9 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 
 	// Envoy's default is a 301 if not otherwise specified.
 	switch redirect.StatusCode {
-	case 301:
+	case http.StatusMovedPermanently:
 		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_MOVED_PERMANENTLY
-	case 302:
+	case http.StatusFound:
 		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_FOUND
 	}
 
@@ -532,10 +533,11 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 		return nil
 	}
 	ecp := &envoy_cors_v3.CorsPolicy{
-		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
-		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
-		AllowMethods:     strings.Join(cp.AllowMethods, ","),
-		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
+		AllowCredentials:          wrapperspb.Bool(cp.AllowCredentials),
+		AllowHeaders:              strings.Join(cp.AllowHeaders, ","),
+		AllowMethods:              strings.Join(cp.AllowMethods, ","),
+		ExposeHeaders:             strings.Join(cp.ExposeHeaders, ","),
+		AllowPrivateNetworkAccess: wrapperspb.Bool(cp.AllowPrivateNetwork),
 	}
 
 	if cp.MaxAge.IsDisabled() {

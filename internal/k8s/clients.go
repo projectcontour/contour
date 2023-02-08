@@ -38,9 +38,41 @@ func NewCoreClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, er
 
 // NewRestConfig returns a *rest.Config for the supplied kubeconfig
 // path, or the cluster environment variables if inCluster is true.
-func NewRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
+func NewRestConfig(kubeconfig string, inCluster bool, opts ...func(*rest.Config)) (*rest.Config, error) {
+	var restConfig *rest.Config
+	var err error
+
 	if kubeconfig != "" && !inCluster {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+		restConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		restConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
-	return rest.InClusterConfig()
+
+	for _, opt := range opts {
+		opt(restConfig)
+	}
+
+	return restConfig, nil
+}
+
+// OptSetQPS returns an option function that sets QPS
+// on a *rest.Config.
+func OptSetQPS(qps float32) func(*rest.Config) {
+	return func(r *rest.Config) {
+		r.QPS = qps
+	}
+}
+
+// OptSetBurst returns an option function that sets Burst
+// on a *rest.Config.
+func OptSetBurst(burst int) func(*rest.Config) {
+	return func(r *rest.Config) {
+		r.Burst = burst
+	}
 }

@@ -19,7 +19,6 @@ import (
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -142,17 +141,6 @@ func TestDesiredDeployment(t *testing.T) {
 		},
 	}
 	cntr.Spec.ContourResources = resQutoa
-	// Change the default ports to test Envoy service port args.
-	insecurePort := objects.EnvoyInsecureContainerPort
-	securePort := objects.EnvoySecureContainerPort
-	for i, p := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
-		if p.Name == "http" && p.PortNumber == insecurePort {
-			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8081)
-		}
-		if p.Name == "https" && p.PortNumber == securePort {
-			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8444)
-		}
-	}
 
 	// Change the Kubernetes log level to test --kubernetes-debug.
 	cntr.Spec.KubernetesLogLevel = 7
@@ -164,6 +152,13 @@ func TestDesiredDeployment(t *testing.T) {
 		"key": "value",
 	}
 
+	// Use non-default container ports to test that --envoy-service-http(s)-port
+	// flags are added.
+	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
+		{Name: "http", ServicePort: 80, ContainerPort: 8081},
+		{Name: "https", ServicePort: 443, ContainerPort: 8444},
+	}
+
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	deploy := DesiredDeployment(cntr, testContourImage)
 
@@ -173,14 +168,16 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
 	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
 
-	for _, port := range container.Ports {
-		if port.Name == "http" && port.ContainerPort != insecurePort {
+	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
+		switch port.Name {
+		case "http":
 			arg := fmt.Sprintf("--envoy-service-http-port=%d", port.ContainerPort)
 			checkContainerHasArg(t, container, arg)
-		}
-		if port.Name == "https" && port.ContainerPort != securePort {
+		case "https":
 			arg := fmt.Sprintf("--envoy-service-https-port=%d", port.ContainerPort)
 			checkContainerHasArg(t, container, arg)
+		default:
+			t.Errorf("Unexpected port %s", port.Name)
 		}
 	}
 

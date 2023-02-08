@@ -7,7 +7,7 @@ versions:
   - version: main
     supported: "false"
     dependencies:
-      envoy: "1.24.1"
+      envoy: "1.25.0"
       kubernetes:
         - "1.26"
         - "1.25"
@@ -16,6 +16,18 @@ versions:
         - v1alpha2
         - v1beta1
       contour-operator: main
+  - version: v1.24.0
+    supported: "true"
+    dependencies:
+      envoy: "1.25.0"
+      kubernetes:
+        - "1.26"
+        - "1.25"
+        - "1.24"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: v1.24.0
   - version: v1.23.2
     supported: "true"
     dependencies:
@@ -101,7 +113,7 @@ versions:
         - v1beta1
       contour-operator: v1.22.0
   - version: v1.21.3
-    supported: "true"
+    supported: "false"
     dependencies:
       envoy: "1.22.6"
       kubernetes:

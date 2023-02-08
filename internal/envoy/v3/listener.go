@@ -41,6 +41,7 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -161,6 +162,7 @@ type httpConnectionManagerBuilder struct {
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	mergeSlashes                  bool
+	serverHeaderTransformation    http.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
 }
@@ -238,6 +240,18 @@ func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpCon
 // MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
 func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
 	b.mergeSlashes = enabled
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_api_v1alpha1.ServerHeaderTransformationType) *httpConnectionManagerBuilder {
+	switch value {
+	case contour_api_v1alpha1.OverwriteServerHeader:
+		b.serverHeaderTransformation = http.HttpConnectionManager_OVERWRITE
+	case contour_api_v1alpha1.AppendIfAbsentServerHeader:
+		b.serverHeaderTransformation = http.HttpConnectionManager_APPEND_IF_ABSENT
+	case contour_api_v1alpha1.PassThroughServerHeader:
+		b.serverHeaderTransformation = http.HttpConnectionManager_PASS_THROUGH
+	}
 	return b
 }
 
@@ -453,8 +467,9 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		},
 
 		// issue #1487 pass through X-Request-Id if provided.
-		PreserveExternalRequestId: true,
-		MergeSlashes:              b.mergeSlashes,
+		PreserveExternalRequestId:  true,
+		MergeSlashes:               b.mergeSlashes,
+		ServerHeaderTransformation: b.serverHeaderTransformation,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),

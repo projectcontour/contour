@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -26,6 +27,44 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/genproto/googleapis/rpc/status"
 )
+
+func TestLogStreamOpenDetails(t *testing.T) {
+	log, logHook := test.NewNullLogger()
+	log.SetLevel(logrus.DebugLevel)
+
+	logStreamOpenDetails(log, 66, "some-type")
+	assert.Len(t, logHook.AllEntries(), 1)
+	entry := logHook.AllEntries()[0]
+	assert.Equal(t, "stream opened", entry.Message)
+	assert.Equal(t, logrus.Fields{
+		"stream_id": int64(66),
+		"type_url":  "some-type",
+	}, entry.Data)
+}
+
+func TestLogStreamClosedDetails(t *testing.T) {
+	log, logHook := test.NewNullLogger()
+	log.SetLevel(logrus.DebugLevel)
+
+	logStreamClosedDetails(log, 65, nil)
+	assert.Len(t, logHook.AllEntries(), 1)
+	entry := logHook.AllEntries()[0]
+	assert.Equal(t, "stream closed", entry.Message)
+	assert.Equal(t, logrus.Fields{
+		"stream_id": int64(65),
+	}, entry.Data)
+	logHook.Reset()
+
+	logStreamClosedDetails(log, 65, &envoy_config_core_v3.Node{Id: "foo"})
+	assert.Len(t, logHook.AllEntries(), 1)
+	entry = logHook.AllEntries()[0]
+	assert.Equal(t, "stream closed", entry.Message)
+	assert.Equal(t, logrus.Fields{
+		"stream_id": int64(65),
+		"node_id":   "foo",
+	}, entry.Data)
+	logHook.Reset()
+}
 
 func TestLogDiscoveryRequestDetails(t *testing.T) {
 	log, logHook := test.NewNullLogger()
@@ -140,7 +179,17 @@ func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	log.SetLevel(logrus.DebugLevel)
 
 	callbacks := NewRequestLoggingCallbacks(log)
-	err := callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
+
+	err := callbacks.OnStreamOpen(context.TODO(), 999, "a-type")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, logHook.AllEntries())
+	logHook.Reset()
+
+	callbacks.OnStreamClosed(999, &envoy_config_core_v3.Node{Id: "envoy-1234"})
+	assert.NotEmpty(t, logHook.AllEntries())
+	logHook.Reset()
+
+	err = callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
 		VersionInfo:   "req-version",
 		ResponseNonce: "resp-nonce",
 		ResourceNames: []string{"some", "resources"},
@@ -148,4 +197,5 @@ func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, logHook.AllEntries())
+	logHook.Reset()
 }

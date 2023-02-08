@@ -4,7 +4,7 @@ A CORS (Cross-origin resource sharing) policy can be set for a HTTPProxy in orde
 If a policy is set, it will be applied to all the routes of the virtual host.
 
 Contour allows configuring the headers involved in responses to cross-domain requests.
-These include the `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Expose-Headers`, `Access-Control-Max-Age`, and `Access-Control-Allow-Credentials` headers in responses.
+These include the `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Expose-Headers`, `Access-Control-Max-Age`, `Access-Control-Allow-Private-Network` and `Access-Control-Allow-Credentials` headers in responses.
 
 In this example, cross-domain requests will be allowed for any domain (note the `*` value), with the methods `GET`, `POST`, or `OPTIONS`.
 Headers `Authorization` and `Cache-Control` will be passed to the upstream server and headers `Content-Length` and `Content-Range` will be made available to the cross-origin request client.
@@ -19,6 +19,7 @@ spec:
     fqdn: www.example.com
     corsPolicy:
         allowCredentials: true
+        allowPrivateNetwork: true
         allowOrigin:
           - "*" # allows any origin
         allowMethods:

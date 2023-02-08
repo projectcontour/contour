@@ -1,1 +1,0 @@
-Sort and ensure the option flags in lexicographic order, fix [#2397](https://github.com/projectcontour/contour/issues/2397)

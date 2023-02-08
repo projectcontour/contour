@@ -1,1 +1,0 @@
-Allow TLS certificate secrets to be of type `Opaque` as long as they have valid `tls.crt` and `tls.key` entries.

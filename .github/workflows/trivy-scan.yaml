@@ -13,15 +13,15 @@ jobs:
       matrix:
         branch:
         - main
+        - release-1.24
         - release-1.23
         - release-1.22
-        - release-1.21
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           ref: ${{ matrix.branch }}
-      - uses: aquasecurity/trivy-action@0.8.0
+      - uses: aquasecurity/trivy-action@0.9.0
         with:
           security-checks: vuln
           scan-type: 'fs'

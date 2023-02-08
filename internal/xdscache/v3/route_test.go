@@ -1808,7 +1808,8 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_cors_v3.CorsPolicy{
-							AllowCredentials: &wrapperspb.BoolValue{Value: false},
+							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",
@@ -1877,7 +1878,8 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_cors_v3.CorsPolicy{
-							AllowCredentials: &wrapperspb.BoolValue{Value: false},
+							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",
@@ -1901,7 +1903,8 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_cors_v3.CorsPolicy{
-							AllowCredentials: &wrapperspb.BoolValue{Value: false},
+							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
+							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
 							AllowOriginStringMatch: []*matcher.StringMatcher{{
 								MatchPattern: &matcher.StringMatcher_Exact{
 									Exact: "*",

@@ -30,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -617,14 +616,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	visited = append(visited, proxy)
 	var routes []*Route
 
-	// Check for duplicate conditions on the includes
-	if includeMatchConditionsIdentical(proxy.Spec.Includes) {
-		validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
-			"duplicate conditions defined on an include")
-		return nil
-	}
-
-	// Loop over and process all includes
+	// Loop over and process all includes, including checking for duplicate conditions.
+	seenConds := map[string][][]HeaderMatchCondition{}
 	for _, include := range proxy.Spec.Includes {
 		namespace := include.Namespace
 		if namespace == "" {
@@ -640,6 +633,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		if err := headerMatchConditionsValid(include.Conditions); err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid",
 				err.Error())
+			continue
+		}
+
+		// Check to see if we have any duplicate include conditions.
+		if includeMatchConditionsIdentical(include, seenConds) {
+			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
+				"duplicate conditions defined on an include")
 			continue
 		}
 
@@ -1371,14 +1371,14 @@ func toCORSPolicy(policy *contour_api_v1.CORSPolicy) (*CORSPolicy, error) {
 	if maxAge.Duration().Seconds() < 0 {
 		return nil, fmt.Errorf("invalid max age value %q", policy.MaxAge)
 	}
-
 	return &CORSPolicy{
-		AllowCredentials: policy.AllowCredentials,
-		AllowHeaders:     toStringSlice(policy.AllowHeaders),
-		AllowMethods:     toStringSlice(policy.AllowMethods),
-		AllowOrigin:      allowOriginMatches,
-		ExposeHeaders:    toStringSlice(policy.ExposeHeaders),
-		MaxAge:           maxAge,
+		AllowCredentials:    policy.AllowCredentials,
+		AllowHeaders:        toStringSlice(policy.AllowHeaders),
+		AllowMethods:        toStringSlice(policy.AllowMethods),
+		AllowOrigin:         allowOriginMatches,
+		ExposeHeaders:       toStringSlice(policy.ExposeHeaders),
+		MaxAge:              maxAge,
+		AllowPrivateNetwork: policy.AllowPrivateNetwork,
 	}, nil
 }
 
@@ -1390,19 +1390,64 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(includes []contour_api_v1.Include) bool {
-	j := 0
-	for i := 1; i < len(includes); i++ {
-		// Now compare each include's set of conditions
-		for _, cA := range includes[i].Conditions {
-			for _, cB := range includes[j].Conditions {
-				if (cA.Prefix == cB.Prefix) && equality.Semantic.DeepEqual(cA.Header, cB.Header) {
-					return true
-				}
+func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
+	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
+	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
+
+	// Note: this is stop-gap that we intend to change.
+	// This means that an empty set of conditions or a lone path prefix match on "/"
+	// are not considered duplicates. Previously, validation of
+	// includes was implemented in such a way that users could be relying on this
+	// behavior to set up their include tree.
+	// It is unlikely that there is much usage of duplicate non-default include
+	// conditions, so we think this special case is safe.
+	if pathPrefix == "/" && len(includeHeaderConds) == 0 {
+		return false
+	}
+
+	sort.SliceStable(includeHeaderConds, func(i, j int) bool {
+		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
+			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
+		}
+		if includeHeaderConds[i].Invert != includeHeaderConds[j].Invert {
+			return includeHeaderConds[i].Invert
+		}
+		if includeHeaderConds[i].Name != includeHeaderConds[j].Name {
+			return includeHeaderConds[i].Name < includeHeaderConds[j].Name
+		}
+		if includeHeaderConds[i].Value != includeHeaderConds[j].Value {
+			return includeHeaderConds[i].Value < includeHeaderConds[j].Value
+		}
+		return false
+	})
+
+	seenHeaderConds, pathSeen := seenConds[pathPrefix]
+	if !pathSeen {
+		seenConds[pathPrefix] = [][]HeaderMatchCondition{
+			includeHeaderConds,
+		}
+		return false
+	}
+
+	for _, headerConds := range seenHeaderConds {
+		if len(headerConds) != len(includeHeaderConds) {
+			seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+			continue
+		}
+
+		headerCondsIdentical := true
+		for i := range headerConds {
+			if headerConds[i] != includeHeaderConds[i] {
+				seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+				headerCondsIdentical = false
+				break
 			}
 		}
-		j++
+		if headerCondsIdentical {
+			return true
+		}
 	}
+
 	return false
 }
 

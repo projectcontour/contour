@@ -216,7 +216,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourconfigurations.projectcontour.io
 spec:
@@ -394,6 +394,18 @@ spec:
                           slashes from request URL paths. \n Contour's default is
                           false."
                         type: boolean
+                      serverHeaderTransformation:
+                        description: "Defines the action to be applied to the Server
+                          header on the response path. When configured as overwrite,
+                          overwrites any Server header with \"envoy\". When configured
+                          as append_if_absent, if a Server header is present, pass
+                          it through, otherwise set it to \"envoy\". When configured
+                          as pass_through, pass through the value of the Server header,
+                          and do not append a header if none is present. \n Values:
+                          `overwrite` (default), `append_if_absent`, `pass_through`
+                          \n Other values will produce an error. Contour's default
+                          is overwrite."
+                        type: string
                       tls:
                         description: TLS holds various configurable Envoy TLS listener
                           values.
@@ -1028,7 +1040,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourdeployments.projectcontour.io
 spec:
@@ -1223,7 +1235,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -1236,7 +1247,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -2035,7 +2048,6 @@ spec:
                                             the DynamicResourceAllocation feature
                                             gate. \n This field is immutable."
                                           items:
-                                            x-kubernetes-map-type: atomic
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
                                             properties:
@@ -2050,7 +2062,9 @@ spec:
                                             - name
                                             type: object
                                           type: array
-                                          x-kubernetes-list-type: set
+                                          x-kubernetes-list-map-keys:
+                                          - name
+                                          x-kubernetes-list-type: map
                                         limits:
                                           additionalProperties:
                                             anyOf:
@@ -3096,6 +3110,10 @@ spec:
                           Envoy network endpoints use container networking. A Kubernetes
                           NodePort Service is created to publish the network endpoints.
                           \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                          \n NOTE: When provisioning an Envoy `NodePortService`, use
+                          Gateway Listeners' port numbers to populate the Service's
+                          node port values, there's no way to auto-allocate them.
+                          \n See: https://github.com/projectcontour/contour/issues/4499
                           \n * ClusterIPService \n Publishes Envoy network endpoints
                           using a Kubernetes ClusterIP Service. \n In this configuration,
                           Envoy network endpoints use container networking. A Kubernetes
@@ -3191,7 +3209,6 @@ spec:
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
                           feature gate. \n This field is immutable."
                         items:
-                          x-kubernetes-map-type: atomic
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
                             name:
@@ -3204,7 +3221,9 @@ spec:
                           - name
                           type: object
                         type: array
-                        x-kubernetes-list-type: set
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -3390,6 +3409,18 @@ spec:
                               duplicate slashes from request URL paths. \n Contour's
                               default is false."
                             type: boolean
+                          serverHeaderTransformation:
+                            description: "Defines the action to be applied to the
+                              Server header on the response path. When configured
+                              as overwrite, overwrites any Server header with \"envoy\".
+                              When configured as append_if_absent, if a Server header
+                              is present, pass it through, otherwise set it to \"envoy\".
+                              When configured as pass_through, pass through the value
+                              of the Server header, and do not append a header if
+                              none is present. \n Values: `overwrite` (default), `append_if_absent`,
+                              `pass_through` \n Other values will produce an error.
+                              Contour's default is overwrite."
+                            type: string
                           tls:
                             description: TLS holds various configurable Envoy TLS
                               listener values.
@@ -3898,7 +3929,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -4320,7 +4351,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -5927,6 +5958,10 @@ spec:
                           type: string
                         minItems: 1
                         type: array
+                      allowPrivateNetwork:
+                        description: AllowPrivateNetwork specifies whether to allow
+                          private network requests. See https://developer.chrome.com/blog/private-network-access-preflight.
+                        type: boolean
                       exposeHeaders:
                         description: ExposeHeaders Specifies the content for the *access-control-expose-headers*
                           header.
@@ -6679,7 +6714,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:
@@ -7374,7 +7409,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.24.1
+        image: docker.io/envoyproxy/envoy:v1.25.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

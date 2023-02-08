@@ -597,6 +597,19 @@ Only positive values are allowed while 0 disables the cache requiring a prefligh
 check for all cross-origin requests.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowPrivateNetwork</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>AllowPrivateNetwork specifies whether to allow private network requests.
+See <a href="https://developer.chrome.com/blog/private-network-access-preflight">https://developer.chrome.com/blog/private-network-access-preflight</a>.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.CertificateDelegation">CertificateDelegation
@@ -5928,6 +5941,27 @@ which strips duplicate slashes from request URL paths.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>serverHeaderTransformation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ServerHeaderTransformationType">
+ServerHeaderTransformationType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the action to be applied to the Server header on the response path.
+When configured as overwrite, overwrites any Server header with &ldquo;envoy&rdquo;.
+When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to &ldquo;envoy&rdquo;.
+When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.</p>
+<p>Values: <code>overwrite</code> (default), <code>append_if_absent</code>, <code>pass_through</code></p>
+<p>Other values will produce an error.
+Contour&rsquo;s default is overwrite.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>connectionBalancer</code>
 <br>
 <em>
@@ -7128,6 +7162,10 @@ endpoints.</p>
 <p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
 NodePort Service is created to publish the network endpoints.</p>
 <p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#nodeport">https://kubernetes.io/docs/concepts/services-networking/service/#nodeport</a></p>
+<p>NOTE:
+When provisioning an Envoy <code>NodePortService</code>, use Gateway Listeners&rsquo; port numbers to populate
+the Service&rsquo;s node port values, there&rsquo;s no way to auto-allocate them.</p>
+<p>See: <a href="https://github.com/projectcontour/contour/issues/4499">https://github.com/projectcontour/contour/issues/4499</a></p>
 <ul>
 <li>ClusterIPService</li>
 </ul>
@@ -7416,6 +7454,36 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ServerHeaderTransformationType">ServerHeaderTransformationType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>ServerHeaderTransformation defines the action to be applied to the Server header on the response path</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;append_if_absent&#34;</p></td>
+<td><p>If no Server header is present, set it to &ldquo;envoy&rdquo;.
+If a Server header is present, pass it through.</p>
+</td>
+</tr><tr><td><p>&#34;overwrite&#34;</p></td>
+<td><p>Overwrite any Server header with &ldquo;envoy&rdquo;.
+This is the default value.</p>
+</td>
+</tr><tr><td><p>&#34;pass_through&#34;</p></td>
+<td><p>Pass through the value of the Server header, and do not append a header
+if none is present.</p>
+</td>
+</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.TLS">TLS
 </h3>

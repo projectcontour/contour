@@ -1927,7 +1927,23 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("example.com",
+					&envoy_route_v3.Route{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routecluster("teama/kuard/8080/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routecluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",

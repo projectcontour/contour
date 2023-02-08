@@ -15,6 +15,7 @@ package v3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -23,7 +24,10 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoimpl"
 )
@@ -139,7 +143,7 @@ func TestXDSHandlerStream(t *testing.T) {
 					return io.EOF
 				},
 			},
-			want: context.Canceled,
+			want: nil,
 		},
 	}
 
@@ -147,6 +151,57 @@ func TestXDSHandlerStream(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := tc.xh.stream(tc.stream)
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestStreamLoggingConnectionClose(t *testing.T) {
+	log, logHook := test.NewNullLogger()
+	log.SetLevel(logrus.DebugLevel)
+
+	tests := map[string]struct {
+		closeErr     error
+		wantErr      bool
+		wantLogLevel logrus.Level
+	}{
+		"connection closed w/ context.Canceled": {
+			closeErr:     context.Canceled,
+			wantLogLevel: logrus.DebugLevel,
+		},
+		"connection closed w/ rpc error": {
+			closeErr:     status.Error(codes.Canceled, "error canceled"),
+			wantLogLevel: logrus.DebugLevel,
+		},
+		"connection closed w/ some other error": {
+			closeErr:     errors.New("some other error"),
+			wantLogLevel: logrus.ErrorLevel,
+			wantErr:      true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := contourServer{FieldLogger: log}
+			stream := &mockStream{
+				context: context.Background,
+				recv: func() (*envoy_service_discovery_v3.DiscoveryRequest, error) {
+					return nil, tc.closeErr
+				},
+			}
+			err := server.stream(stream)
+
+			assert.Len(t, logHook.AllEntries(), 1)
+			entry := logHook.AllEntries()[0]
+			assert.Equal(t, "stream terminated", entry.Message)
+			assert.Equal(t, tc.wantLogLevel, entry.Level)
+
+			if tc.wantErr {
+				assert.Equal(t, tc.closeErr, err)
+				assert.Equal(t, tc.closeErr, entry.Data["error"])
+			} else {
+				assert.Nil(t, err)
+			}
+
+			logHook.Reset()
 		})
 	}
 }
