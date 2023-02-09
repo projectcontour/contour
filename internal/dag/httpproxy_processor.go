@@ -643,7 +643,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 
 		// Check to see if we have any duplicate include conditions.
-		if includeMatchConditionsIdentical(include, seenConds) {
+		if includeMatchConditionsIdentical(include.Conditions, seenConds) {
 			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
 				"duplicate conditions defined on an include")
 			continue
@@ -1411,10 +1411,10 @@ type matchConditionAggregate struct {
 	queryParamConds []QueryParamMatchCondition
 }
 
-func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][]matchConditionAggregate) bool {
-	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
-	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
-	includeQueryParamConds := mergeQueryParamMatchConditions(include.Conditions)
+func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
+	pathPrefix := mergePathMatchConditions(includeConds).Prefix
+	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
+	includeQueryParamConds := mergeQueryParamMatchConditions(includeConds)
 
 	// Note: this is stop-gap that we intend to change.
 	// This means that an empty set of conditions or a lone path prefix match on "/"
