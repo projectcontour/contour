@@ -3471,6 +3471,156 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with request redirect filter with ReplacePrefixMatch to another value": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
+									Path: &gatewayapi_v1beta1.HTTPPathModifier{
+										Type:               gatewayapi_v1beta1.PrefixMatchHTTPPathModifier,
+										ReplacePrefixMatch: ref.To("/replacement"),
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixSegment("/prefix"),
+							Redirect: &Redirect{
+								PathRewritePolicy: &PathRewritePolicy{
+									PrefixRewrite: "/replacement",
+								},
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPRoute rule with request redirect filter with ReplacePrefixMatch to \"/\"": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
+									Path: &gatewayapi_v1beta1.HTTPPathModifier{
+										Type:               gatewayapi_v1beta1.PrefixMatchHTTPPathModifier,
+										ReplacePrefixMatch: ref.To("/"),
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixSegment("/prefix"),
+							Redirect: &Redirect{
+								PathRewritePolicy: &PathRewritePolicy{
+									PrefixRegexRemove: "^/prefix/*",
+								},
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPRoute rule with request redirect filter with ReplaceFullPath": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
+									Path: &gatewayapi_v1beta1.HTTPPathModifier{
+										Type:            gatewayapi_v1beta1.FullPathHTTPPathModifier,
+										ReplaceFullPath: ref.To("/replacement"),
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixSegment("/prefix"),
+							Redirect: &Redirect{
+								PathRewritePolicy: &PathRewritePolicy{
+									FullPathRewrite: "/replacement",
+								},
+							},
+						},
+					)),
+				},
+			),
+		},
 		"HTTPRoute rule with request mirror filter": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,

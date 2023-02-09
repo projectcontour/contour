@@ -224,14 +224,9 @@ type Redirect struct {
 	// use. Valid options are 301 or 302.
 	StatusCode int
 
-	// Path is the path to swap the url during a redirect.
-	// Valid options start with a `/`.
-	Path string
-
-	// Prefix is the value to swap with the  prefix of the url
-	// during a redirect.
-	// Valid options start with a `/`.
-	Prefix string
+	// PathRewritePolicy is the policy for rewriting
+	// the path during redirect.
+	PathRewritePolicy *PathRewritePolicy
 }
 
 // Route defines the properties of a route to a Cluster.

@@ -1577,23 +1577,26 @@ func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) (*R
 		return nil, fmt.Errorf("cannot specify both redirect path and redirect prefix")
 	}
 
-	var path string
+	var pathRewritePolicy *PathRewritePolicy
 	if redirect.Path != nil {
-		path = *redirect.Path
+		if pathRewritePolicy == nil {
+			pathRewritePolicy = &PathRewritePolicy{}
+		}
+		pathRewritePolicy.FullPathRewrite = *redirect.Path
 	}
-
-	var prefix string
 	if redirect.Prefix != nil {
-		prefix = *redirect.Prefix
+		if pathRewritePolicy == nil {
+			pathRewritePolicy = &PathRewritePolicy{}
+		}
+		pathRewritePolicy.PrefixRewrite = *redirect.Prefix
 	}
 
 	return &Redirect{
-		Hostname:   hostname,
-		Scheme:     scheme,
-		PortNumber: portNumber,
-		StatusCode: statusCode,
-		Path:       path,
-		Prefix:     prefix,
+		Hostname:          hostname,
+		Scheme:            scheme,
+		PortNumber:        portNumber,
+		StatusCode:        statusCode,
+		PathRewritePolicy: pathRewritePolicy,
 	}, nil
 }
 
