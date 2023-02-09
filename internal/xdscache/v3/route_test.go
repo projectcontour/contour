@@ -3531,6 +3531,37 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			}},
 		},
 
+		// The path and the length of query param condition list are equal,
+		// so we should order lexicographically by query param name.
+		"query params sort stably by name": {
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{Name: "zzz-2", MatchType: "present"},
+					{Name: "zzz-1", MatchType: "present"},
+				},
+			}, {
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{Name: "aaa-2", MatchType: "present"},
+					{Name: "aaa-1", MatchType: "present"},
+				},
+			}},
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{Name: "aaa-1", MatchType: "present"},
+					{Name: "aaa-2", MatchType: "present"},
+				},
+			}, {
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{Name: "zzz-1", MatchType: "present"},
+					{Name: "zzz-2", MatchType: "present"},
+				},
+			}},
+		},
+
 		// If we have multiple conditions on the same header, ensure
 		// that we order on the match type too.
 		"headers order by match type": {
@@ -3556,6 +3587,31 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			}},
 		},
 
+		// If we have multiple conditions on the same query param, ensure
+		// that we order on the match type too.
+		"query params order by match type": {
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+			}, {
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "param-1", MatchType: "present"},
+					{Name: "param-2", MatchType: "present", Invert: true},
+					{Name: "param-1", MatchType: "exact", Value: "foo"},
+				},
+			}},
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "param-1", MatchType: "exact", Value: "foo"},
+					{Name: "param-1", MatchType: "present"},
+					{Name: "param-2", MatchType: "present", Invert: true},
+				},
+			}, {
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+			}},
+		},
+
 		// Verify that we always order the headers, even if
 		// we don't need to compare the header conditions to
 		// order multiple routes with the same prefix.
@@ -3574,6 +3630,28 @@ func TestSortLongestRouteFirst(t *testing.T) {
 					{Name: "x-request-1", MatchType: "exact", Value: "foo"},
 					{Name: "x-request-1", MatchType: "present"},
 					{Name: "x-request-2", MatchType: "present", Invert: true},
+				},
+			}},
+		},
+
+		// Verify that we always order the query params, even if
+		// we don't need to compare the conditions to
+		// order multiple routes with the same prefix.
+		"query params order in single route": {
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "param-1", MatchType: "present"},
+					{Name: "param-2", MatchType: "present", Invert: true},
+					{Name: "param-1", MatchType: "exact", Value: "foo"},
+				},
+			}},
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "param-1", MatchType: "exact", Value: "foo"},
+					{Name: "param-1", MatchType: "present"},
+					{Name: "param-2", MatchType: "present", Invert: true},
 				},
 			}},
 		},
