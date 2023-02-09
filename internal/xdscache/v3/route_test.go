@@ -1965,7 +1965,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match: routePrefix("/", dag.HeaderMatchCondition{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "contains",
@@ -2023,7 +2023,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match: routePrefix("/", dag.HeaderMatchCondition{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "contains",
@@ -2082,7 +2082,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match: routePrefix("/", dag.HeaderMatchCondition{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "exact",
@@ -2141,7 +2141,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match: routePrefix("/", dag.HeaderMatchCondition{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "exact",
@@ -2152,7 +2152,7 @@ func TestRouteVisit(t *testing.T) {
 					)),
 			),
 		},
-		"httpproxy with header header present conditions": {
+		"httpproxy with header present conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2200,8 +2200,354 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match: routePrefix("/", dag.HeaderMatchCondition{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
+								MatchType: "present",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with query parameter contains conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}, {
+								QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									Name:     "param",
+									Contains: "abc",
+								},
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:      "param",
+								Value:     "abc",
+								MatchType: "contains",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with header prefix conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+										Name:   "param",
+										Prefix: "abc",
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:      "param",
+								Value:     "abc",
+								MatchType: "prefix",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with header suffix conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+										Name:   "param",
+										Suffix: "abc",
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:      "param",
+								Value:     "abc",
+								MatchType: "suffix",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with query parameter exact match conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+										Name:       "param",
+										Exact:      "abc",
+										IgnoreCase: true,
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:       "param",
+								Value:      "abc",
+								MatchType:  "exact",
+								IgnoreCase: true,
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with query parameter regex match conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+										Name:  "param",
+										Regex: "^abc.*",
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:      "param",
+								Value:     "^abc.*",
+								MatchType: "regex",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
+		"httpproxy with query parameter present conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+										Name:    "param",
+										Present: true,
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
+								Name:      "param",
 								MatchType: "present",
 							}),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
@@ -3302,12 +3648,29 @@ func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *env
 	})
 }
 
-func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.PrefixMatchCondition{
+			Prefix: prefix,
+		},
+	})
+}
+
+func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
 		},
 		HeaderMatchConditions: headers,
+	})
+}
+
+func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.PrefixMatchCondition{
+			Prefix: prefix,
+		},
+		QueryParamMatchConditions: queryParams,
 	})
 }
 

@@ -111,6 +111,10 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
+	f.NamespacedTest("httpproxy-query-parameter-condition-match", testQueryParameterConditionMatch)
+
+	f.NamespacedTest("httpproxy-query-parameter-condition-multiple", testQueryParameterConditionMultiple)
+
 	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)
 
 	f.NamespacedTest("httpproxy-path-prefix-rewrite", testPathPrefixRewrite)

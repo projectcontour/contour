@@ -80,6 +80,17 @@ func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderM
 	return headerMatchConditions(headerConditions)
 }
 
+func mergeQueryParamMatchConditions(conds []contour_api_v1.MatchCondition) []QueryParamMatchCondition {
+	var queryParameterConditions []contour_api_v1.QueryParameterMatchCondition
+	for _, cond := range conds {
+		if cond.QueryParameter != nil {
+			queryParameterConditions = append(queryParameterConditions, *cond.QueryParameter)
+		}
+	}
+
+	return queryParameterMatchConditions(queryParameterConditions)
+}
+
 func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []HeaderMatchCondition {
 	var hc []HeaderMatchCondition
 
@@ -125,6 +136,56 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 		}
 	}
 	return hc
+}
+
+func queryParameterMatchConditions(conditions []contour_api_v1.QueryParameterMatchCondition) []QueryParamMatchCondition {
+	var qpc []QueryParamMatchCondition
+
+	for _, cond := range conditions {
+		switch {
+		case cond.Exact != "":
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:       cond.Name,
+				Value:      cond.Exact,
+				MatchType:  QueryParamMatchTypeExact,
+				IgnoreCase: cond.IgnoreCase,
+			})
+		case cond.Prefix != "":
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:       cond.Name,
+				Value:      cond.Prefix,
+				MatchType:  QueryParamMatchTypePrefix,
+				IgnoreCase: cond.IgnoreCase,
+			})
+		case cond.Suffix != "":
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:       cond.Name,
+				Value:      cond.Suffix,
+				MatchType:  QueryParamMatchTypeSuffix,
+				IgnoreCase: cond.IgnoreCase,
+			})
+		case cond.Regex != "":
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:      cond.Name,
+				Value:     cond.Regex,
+				MatchType: QueryParamMatchTypeRegex,
+			})
+		case cond.Contains != "":
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:       cond.Name,
+				Value:      cond.Contains,
+				MatchType:  QueryParamMatchTypeContains,
+				IgnoreCase: cond.IgnoreCase,
+			})
+		case cond.Present:
+			qpc = append(qpc, QueryParamMatchCondition{
+				Name:      cond.Name,
+				MatchType: QueryParamMatchTypePresent,
+			})
+
+		}
+	}
+	return qpc
 }
 
 // headerMatchConditionsValid validates that the header conditions within a
@@ -206,6 +267,59 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 		// use the lower-cased header name so comparisons are case-insensitive
 		key.Name = headerName
 		seenMatchConditions[key] = true
+	}
+
+	return nil
+}
+
+// queryParameterMatchConditionsValid validates that the query parameter conditions within a
+// slice of MatchConditions are valid. Specifically, it returns an error for
+// any of the following scenarios:
+//   - no conditions are set
+//   - more than one condition is set in the same match condition branch
+//   - more than 1 'exact' condition for the same query parameter
+//   - invalid regular expression is specified for the Regex condition
+func queryParameterMatchConditionsValid(conditions []contour_api_v1.MatchCondition) error {
+	queryParametersWithExactMatch := map[string]bool{}
+
+	for _, v := range conditions {
+		if v.QueryParameter == nil {
+			continue
+		}
+
+		matches := []string{v.QueryParameter.Exact, v.QueryParameter.Prefix, v.QueryParameter.Suffix, v.QueryParameter.Regex, v.QueryParameter.Contains}
+		if v.QueryParameter.Present {
+			matches = append(matches, "true")
+		}
+
+		if strings.Join(matches, "") == "" {
+			return errors.New("must specify at least one query parameter condition")
+		}
+
+		for i, match := range matches {
+			if match == "" {
+				continue
+			}
+			excluding := matches
+			excluding[i] = ""
+			if strings.Join(excluding, "") != "" {
+				return errors.New("cannot specify more than one condition in the same match condition branch")
+			}
+		}
+
+		queryParameterName := strings.ToLower(v.QueryParameter.Name)
+		if v.QueryParameter.Exact != "" {
+			if queryParametersWithExactMatch[queryParameterName] {
+				return errors.New("cannot specify duplicate query parameter 'exact match' conditions in the same route")
+			}
+			queryParametersWithExactMatch[queryParameterName] = true
+		}
+
+		if v.QueryParameter.Regex != "" {
+			if err := ValidateRegex(v.QueryParameter.Regex); err != nil {
+				return errors.New("invalid regular expression specified for 'regex' condition")
+			}
+		}
 	}
 
 	return nil
