@@ -106,7 +106,6 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 				if s[i].Invert != s[j].Invert {
 					return !s[i].Invert
 				}
-				return false
 			}
 		}
 		return false
@@ -204,9 +203,6 @@ func (s queryParamMatchConditionSorter) Less(i, j int) bool {
 				return true
 			}
 		case dag.QueryParamMatchTypePresent:
-			if s[j].MatchType == dag.QueryParamMatchTypePresent {
-				return false
-			}
 		}
 		return false
 	}
