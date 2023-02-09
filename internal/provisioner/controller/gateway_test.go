@@ -1011,88 +1011,22 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.Empty(t, svc.Annotations)
 			},
 		},
-		"If ContourDeployment.Spec.Envoy.NetworkPublishing is specified, its settings are used for the Envoy service": {
-			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
-			gatewayClassParams: &contourv1alpha1.ContourDeployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "gatewayclass-1-params",
-				},
-				Spec: contourv1alpha1.ContourDeploymentSpec{
-					Envoy: &contourv1alpha1.EnvoySettings{
-						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
-							Type:                  contourv1alpha1.NodePortServicePublishingType,
-							ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
-							ServiceAnnotations: map[string]string{
-								"key-1": "val-1",
-								"key-2": "val-2",
-							},
-						},
-					},
-				},
-			},
-			gateway: &gatewayv1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "gateway-1",
-					Name:      "gateway-1",
-				},
-				Spec: gatewayv1beta1.GatewaySpec{
-					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
-					Listeners: []gatewayv1beta1.Listener{
-						{
-							Protocol: gatewayv1beta1.HTTPProtocolType,
-							AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
-								Namespaces: &gatewayv1beta1.RouteNamespaces{
-									From: ref.To(gatewayv1beta1.NamespacesFromAll),
-								},
-							},
-							Name: gatewayv1beta1.SectionName("http"),
-							Port: gatewayv1beta1.PortNumber(30000),
-						},
-						{
-							Name:     gatewayv1beta1.SectionName("https"),
-							Port:     gatewayv1beta1.PortNumber(30001),
-							Protocol: gatewayv1beta1.HTTPSProtocolType,
-							AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
-								Namespaces: &gatewayv1beta1.RouteNamespaces{
-									From: ref.To(gatewayv1beta1.NamespacesFromAll),
-								},
-							},
-							TLS: &gatewayv1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayv1beta1.TLSModeTerminate),
-							},
-						},
-					},
-				},
-			},
+		"If ContourDeployment.Spec.Envoy.NetworkPublishing is specified, its settings are used for the Envoy service/NodePort": {
+			gatewayClass:       reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: makeGatewayClassParams(contourv1alpha1.NodePortServicePublishingType),
+			gateway:            makeGateway(),
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
-
-				// Verify the Gateway has a "Accepted: true" condition
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
-				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
-
-				// Verify the service has been created
-				svc := &corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "gateway-1",
-						Name:      "envoy-gateway-1",
-					},
-				}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
-				assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
-				assert.Equal(t, corev1.ServiceTypeNodePort, svc.Spec.Type)
-				require.Len(t, svc.Annotations, 2)
-				assert.Equal(t, "val-1", svc.Annotations["key-1"])
-				assert.Equal(t, "val-2", svc.Annotations["key-2"])
-
-				assert.Len(t, svc.Spec.Ports, 2)
-				assert.Equal(t, int32(30000), svc.Spec.Ports[0].NodePort)
-				assert.Equal(t, int32(80), svc.Spec.Ports[0].Port)
-				assert.Equal(t, int32(30001), svc.Spec.Ports[1].NodePort)
-				assert.Equal(t, int32(443), svc.Spec.Ports[1].Port)
+				assertEnvoyService(t, r, gw, corev1.ServiceTypeNodePort)
+			},
+		},
+		"If ContourDeployment.Spec.Envoy.NetworkPublishing is specified, its settings are used for the Envoy service/LoadBalancer": {
+			gatewayClass:       reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: makeGatewayClassParams(contourv1alpha1.LoadBalancerServicePublishingType),
+			gateway:            makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyService(t, r, gw, corev1.ServiceTypeLoadBalancer)
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {
@@ -1369,4 +1303,91 @@ func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayv1beta1.Gate
 
 	// Verify expected Spec.LoadBalancerIP.
 	assert.Equal(t, want, envoyService.Spec.LoadBalancerIP)
+}
+
+func makeGatewayClassParams(typ contourv1alpha1.NetworkPublishingType) *contourv1alpha1.ContourDeployment {
+	return &contourv1alpha1.ContourDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "projectcontour",
+			Name:      "gatewayclass-1-params",
+		},
+		Spec: contourv1alpha1.ContourDeploymentSpec{
+			Envoy: &contourv1alpha1.EnvoySettings{
+				NetworkPublishing: &contourv1alpha1.NetworkPublishing{
+					Type:                  typ,
+					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
+					ServiceAnnotations: map[string]string{
+						"key-1": "val-1",
+						"key-2": "val-2",
+					},
+				},
+			},
+		},
+	}
+}
+
+func makeGateway() *gatewayv1beta1.Gateway {
+	return &gatewayv1beta1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "gateway-1",
+			Name:      "gateway-1",
+		},
+		Spec: gatewayv1beta1.GatewaySpec{
+			GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+			Listeners: []gatewayv1beta1.Listener{
+				{
+					Protocol: gatewayv1beta1.HTTPProtocolType,
+					AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
+						Namespaces: &gatewayv1beta1.RouteNamespaces{
+							From: ref.To(gatewayv1beta1.NamespacesFromAll),
+						},
+					},
+					Name: gatewayv1beta1.SectionName("http"),
+					Port: gatewayv1beta1.PortNumber(30000),
+				},
+				{
+					Name:     gatewayv1beta1.SectionName("https"),
+					Port:     gatewayv1beta1.PortNumber(30001),
+					Protocol: gatewayv1beta1.HTTPSProtocolType,
+					AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
+						Namespaces: &gatewayv1beta1.RouteNamespaces{
+							From: ref.To(gatewayv1beta1.NamespacesFromAll),
+						},
+					},
+					TLS: &gatewayv1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayv1beta1.TLSModeTerminate),
+					},
+				},
+			},
+		},
+	}
+}
+
+func assertEnvoyService(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, typ corev1.ServiceType) {
+	// Verify the Gateway has a "Accepted: true" condition
+	require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+	require.Len(t, gw.Status.Conditions, 1)
+	assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+	assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+	// Verify the service has been created
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "gateway-1",
+			Name:      "envoy-gateway-1",
+		},
+	}
+	require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
+	assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
+	assert.Equal(t, typ, svc.Spec.Type)
+	require.Len(t, svc.Annotations, 2)
+	assert.Equal(t, "val-1", svc.Annotations["key-1"])
+	assert.Equal(t, "val-2", svc.Annotations["key-2"])
+
+	assert.Len(t, svc.Spec.Ports, 2)
+	assert.Equal(t, int32(30000), svc.Spec.Ports[0].NodePort)
+	assert.Equal(t, int32(80), svc.Spec.Ports[0].Port)
+	assert.Equal(t, int32(30001), svc.Spec.Ports[1].NodePort)
+	assert.Equal(t, int32(443), svc.Spec.Ports[1].Port)
+
 }

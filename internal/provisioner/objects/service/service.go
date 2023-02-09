@@ -255,20 +255,8 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		epType == model.NodePortServicePublishingType {
 		svc.Spec.ExternalTrafficPolicy = contour.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy
 	}
-	switch epType {
-	case model.LoadBalancerServicePublishingType:
-		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
-		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == model.InternalLoadBalancer
-		if isInternal {
-			provider := providerParams.Type
-			internalAnnotations := InternalLBAnnotations[provider]
-			for name, value := range internalAnnotations {
-				svc.Annotations[name] = value
-			}
-		}
-	case model.NodePortServicePublishingType:
-		svc.Spec.Type = corev1.ServiceTypeNodePort
 
+	nodePortSetter := func() {
 		for _, p := range contour.Spec.NetworkPublishing.Envoy.Ports {
 			if p.NodePort == 0 {
 				continue
@@ -279,6 +267,25 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 				}
 			}
 		}
+	}
+
+	switch epType {
+	case model.LoadBalancerServicePublishingType:
+		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+		nodePortSetter()
+
+		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == model.InternalLoadBalancer
+		if isInternal {
+			provider := providerParams.Type
+			internalAnnotations := InternalLBAnnotations[provider]
+			for name, value := range internalAnnotations {
+				svc.Annotations[name] = value
+			}
+		}
+
+	case model.NodePortServicePublishingType:
+		svc.Spec.Type = corev1.ServiceTypeNodePort
+		nodePortSetter()
 
 	case model.ClusterIPServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeClusterIP

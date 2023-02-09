@@ -189,9 +189,17 @@ func TestDesiredEnvoyService(t *testing.T) {
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasNoExternalTrafficPolicy(t, svc)
 
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+
+	svc = DesiredEnvoyService(cntr)
+
+	// Check LB with NodePort had set.
+	checkServiceHasNodeport(t, svc, 30081)
+	checkServiceHasNodeport(t, svc, 30444)
+
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
-	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+
 	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
