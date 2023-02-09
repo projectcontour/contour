@@ -205,10 +205,6 @@ func (s queryParamMatchConditionSorter) Less(i, j int) bool {
 			}
 		case dag.QueryParamMatchTypePresent:
 			if s[j].MatchType == dag.QueryParamMatchTypePresent {
-				// The match that is case sensitive sorts first.
-				if s[i].IgnoreCase != s[j].IgnoreCase {
-					return !s[i].IgnoreCase
-				}
 				return false
 			}
 		}

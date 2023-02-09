@@ -262,11 +262,7 @@ func TestSortRoutesPriority(t *testing.T) {
 			PathMatchCondition: matchPrefixSegment("/"),
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortRoutesPathMatch(t *testing.T) {
@@ -314,11 +310,7 @@ func TestSortRoutesPathMatch(t *testing.T) {
 			PathMatchCondition: matchPrefixSegment("/path/p"),
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
@@ -414,11 +406,7 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 			PathMatchCondition: matchPrefixString("/path"),
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortRoutesQueryParams(t *testing.T) {
@@ -512,11 +500,7 @@ func TestSortRoutesQueryParams(t *testing.T) {
 			},
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortSecrets(t *testing.T) {
@@ -524,11 +508,7 @@ func TestSortSecrets(t *testing.T) {
 		{Name: "first"},
 		{Name: "second"},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortHeaderMatchConditions(t *testing.T) {
@@ -543,11 +523,7 @@ func TestSortHeaderMatchConditions(t *testing.T) {
 		presentHeader("header-name"),
 		exactHeader("long-header-name", "long-header-value"),
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortHeaderMatchConditionsInverted(t *testing.T) {
@@ -560,11 +536,7 @@ func TestSortHeaderMatchConditionsInverted(t *testing.T) {
 		presentHeader("header-name"),
 		invertHeaderMatch(presentHeader("header-name")),
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortHeaderMatchConditionsValue(t *testing.T) {
@@ -579,11 +551,7 @@ func TestSortHeaderMatchConditionsValue(t *testing.T) {
 		containsHeader("header-name", "b"),
 		containsHeader("header-name", "c"),
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortQueryParamMatchConditionsValue(t *testing.T) {
@@ -605,12 +573,9 @@ func TestSortQueryParamMatchConditionsValue(t *testing.T) {
 		ignoreCaseQueryParam(containsQueryParam("query-name", "a")),
 		containsQueryParam("query-name", "b"),
 		containsQueryParam("query-name", "c"),
+		presentQueryParam("query-name"),
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortClusters(t *testing.T) {
@@ -618,11 +583,7 @@ func TestSortClusters(t *testing.T) {
 		{Name: "first"},
 		{Name: "second"},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortClusterLoadAssignments(t *testing.T) {
@@ -630,11 +591,7 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 		{ClusterName: "first"},
 		{ClusterName: "second"},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
@@ -652,11 +609,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 			Weight: wrapperspb.UInt32(20),
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortTCPWeightedClusters(t *testing.T) {
@@ -674,11 +627,7 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 			Weight: 20,
 		},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortListeners(t *testing.T) {
@@ -686,11 +635,7 @@ func TestSortListeners(t *testing.T) {
 		{Name: "first"},
 		{Name: "second"},
 	}
-
-	have := shuffleSlice(want)
-
-	sort.Stable(For(have))
-	assert.Equal(t, want, have)
+	shuffleAndCheckSort(t, want)
 }
 
 func TestSortFilterChains(t *testing.T) {
@@ -729,4 +674,16 @@ func TestSortFilterChains(t *testing.T) {
 
 	sort.Stable(For(have))
 	assert.Equal(t, want, have)
+}
+
+func shuffleAndCheckSort[T any](t *testing.T, want []T) {
+	t.Helper()
+
+	// Run multiple trials so we catch any ordering/stability errors.
+	for i := 0; i < 10; i++ {
+		have := shuffleSlice(want)
+
+		sort.Stable(For(have))
+		assert.Equal(t, want, have)
+	}
 }
