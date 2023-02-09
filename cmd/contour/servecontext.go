@@ -87,6 +87,9 @@ type serveContext struct {
 
 	// Leader election configuration.
 	LeaderElection LeaderElection
+
+	// Features disabled by the user.
+	disabledFeatures []string
 }
 
 type ServerConfig struct {

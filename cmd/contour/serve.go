@@ -126,6 +126,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
+	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices>").EnumsVar(&ctx.disabledFeatures, "extensionservices")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
@@ -469,14 +470,22 @@ func (s *Server) doServe() error {
 		Counter: contourMetrics.EventHandlerOperations,
 	}
 
-	// Inform on default resources.
-	for name, r := range map[string]client.Object{
+	// Start to build informers.
+	informerResources := map[string]client.Object{
 		"httpproxies":               &contour_api_v1.HTTPProxy{},
 		"tlscertificatedelegations": &contour_api_v1.TLSCertificateDelegation{},
 		"extensionservices":         &contour_api_v1alpha1.ExtensionService{},
 		"services":                  &corev1.Service{},
 		"ingresses":                 &networking_v1.Ingress{},
-	} {
+	}
+
+	// Some of the resources are optional and can be disabled, do not create informers for those.
+	for _, feat := range s.ctx.disabledFeatures {
+		delete(informerResources, feat)
+	}
+
+	// Inform on the remaining resources.
+	for name, r := range informerResources {
 		if err := informOnResource(r, eventHandler, s.mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", name).Fatal("failed to create informer")
 		}
