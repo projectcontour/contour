@@ -37,10 +37,12 @@ const (
 	ReasonHeaderMatchType               gatewayapi_v1beta1.RouteConditionReason = "HeaderMatchType"
 	ReasonQueryParamMatchType           gatewayapi_v1beta1.RouteConditionReason = "QueryParamMatchType"
 	ReasonHTTPRouteFilterType           gatewayapi_v1beta1.RouteConditionReason = "HTTPRouteFilterType"
+	ReasonMethodMatchType               gatewayapi_v1beta1.RouteConditionReason = "MethodMatchType"
 	ReasonDegraded                      gatewayapi_v1beta1.RouteConditionReason = "Degraded"
 	ReasonErrorsExist                   gatewayapi_v1beta1.RouteConditionReason = "ErrorsExist"
 	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1beta1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
 	ReasonInvalidPathMatch              gatewayapi_v1beta1.RouteConditionReason = "InvalidPathMatch"
+	ReasonInvalidMethodMatch            gatewayapi_v1beta1.RouteConditionReason = "InvalidMethodMatch"
 	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
 	ReasonListenersNotReady             gatewayapi_v1beta1.RouteConditionReason = "ListenersNotReady"
 )
@@ -174,6 +176,20 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 		route.Status.Parents = newRouteParentStatuses
 
 		return route
+	case *gatewayapi_v1alpha2.GRPCRoute:
+		route := o.DeepCopy()
+
+		// Get all the RouteParentStatuses that are for other Gateways.
+		for _, rps := range o.Status.Parents {
+			if !gatewayapi.IsRefToGateway(rps.ParentRef, r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, rps)
+			}
+		}
+
+		route.Status.Parents = newRouteParentStatuses
+
+		return route
+
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator", obj, r.FullName.Namespace, r.FullName.Name))
 	}
