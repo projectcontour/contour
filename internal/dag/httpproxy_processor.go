@@ -617,8 +617,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	var routes []*Route
 
 	// Loop over and process all includes, including checking for duplicate conditions.
-	seenHeaderConds := map[string][][]HeaderMatchCondition{}
-	seenQueryParamConds := map[string][][]QueryParamMatchCondition{}
+	seenConds := map[string][]matchConditionAggregate{}
 	for _, include := range proxy.Spec.Includes {
 		namespace := include.Namespace
 		if namespace == "" {
@@ -644,7 +643,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 
 		// Check to see if we have any duplicate include conditions.
-		if includeMatchConditionsIdentical(include, seenHeaderConds, seenQueryParamConds) {
+		if includeMatchConditionsIdentical(include.Conditions, seenConds) {
 			validCond.AddError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions",
 				"duplicate conditions defined on an include")
 			continue
@@ -1406,10 +1405,16 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderConds map[string][][]HeaderMatchCondition, seenQueryParamConds map[string][][]QueryParamMatchCondition) bool {
-	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
-	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
-	includeQueryParamConds := mergeQueryParamMatchConditions(include.Conditions)
+// matchConditionAggregate is used to compare collections of match conditions
+type matchConditionAggregate struct {
+	headerConds     []HeaderMatchCondition
+	queryParamConds []QueryParamMatchCondition
+}
+
+func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
+	pathPrefix := mergePathMatchConditions(includeConds).Prefix
+	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
+	includeQueryParamConds := mergeQueryParamMatchConditions(includeConds)
 
 	// Note: this is stop-gap that we intend to change.
 	// This means that an empty set of conditions or a lone path prefix match on "/"
@@ -1422,6 +1427,7 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 		return false
 	}
 
+	// Sort header conditions so we can compare them to another slice.
 	sort.SliceStable(includeHeaderConds, func(i, j int) bool {
 		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
 			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
@@ -1438,33 +1444,7 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 		return false
 	})
 
-	headerConds, pathSeen := seenHeaderConds[pathPrefix]
-	if !pathSeen {
-		seenHeaderConds[pathPrefix] = [][]HeaderMatchCondition{
-			includeHeaderConds,
-		}
-		return false
-	}
-
-	for _, conds := range headerConds {
-		if len(conds) != len(includeHeaderConds) {
-			seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
-			continue
-		}
-
-		headerCondsIdentical := true
-		for i := range conds {
-			if conds[i] != includeHeaderConds[i] {
-				seenHeaderConds[pathPrefix] = append(seenHeaderConds[pathPrefix], includeHeaderConds)
-				headerCondsIdentical = false
-				break
-			}
-		}
-		if headerCondsIdentical {
-			return true
-		}
-	}
-
+	// Sort query conditions so we can compare them to another slice.
 	sort.SliceStable(includeQueryParamConds, func(i, j int) bool {
 		if includeQueryParamConds[i].MatchType != includeQueryParamConds[j].MatchType {
 			return includeQueryParamConds[i].MatchType < includeQueryParamConds[j].MatchType
@@ -1481,31 +1461,49 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenHeaderC
 		return false
 	})
 
-	queryParamConds, pathSeen := seenQueryParamConds[pathPrefix]
+	// Check if we have seen this path before.
+	// If so, get all the collections of header and query params we
+	// have seen with it.
+	condAggregates, pathSeen := seenConds[pathPrefix]
 	if !pathSeen {
-		seenQueryParamConds[pathPrefix] = [][]QueryParamMatchCondition{
-			includeQueryParamConds,
-		}
+		seenConds[pathPrefix] = []matchConditionAggregate{{
+			headerConds:     includeHeaderConds,
+			queryParamConds: includeQueryParamConds,
+		}}
 		return false
 	}
 
-	for _, conds := range queryParamConds {
-		if len(conds) != len(includeQueryParamConds) {
-			seenQueryParamConds[pathPrefix] = append(seenQueryParamConds[pathPrefix], includeQueryParamConds)
+	for _, ag := range condAggregates {
+		// Quick check to see if lengths of either header or query param
+		// condition lists are mismatched.
+		// If so, we can skip the rest of the checks.
+		if len(ag.headerConds) != len(includeHeaderConds) ||
+			len(ag.queryParamConds) != len(includeQueryParamConds) {
 			continue
 		}
 
-		queryParamCondsIdentical := true
-		for i := range conds {
-			if conds[i] != includeQueryParamConds[i] {
-				seenQueryParamConds[pathPrefix] = append(seenQueryParamConds[pathPrefix], includeQueryParamConds)
-				queryParamCondsIdentical = false
-				break
+		// Now compare (sorted) header conditions element-by-element.
+		// If any mismatch, we can skip the rest of the checks.
+		headerCondsIdentical := true
+		for i := range ag.headerConds {
+			if ag.headerConds[i] != includeHeaderConds[i] {
+				headerCondsIdentical = false
 			}
 		}
-		if queryParamCondsIdentical {
-			return true
+		if !headerCondsIdentical {
+			continue
 		}
+
+		// Now compare (sorted) query param conditions element-by-element.
+		// If any mismatch, we can return early.
+		for i := range ag.queryParamConds {
+			if ag.queryParamConds[i] != includeQueryParamConds[i] {
+				return false
+			}
+		}
+		// If we get here, all header and query param conditions
+		// must be equal.
+		return true
 	}
 
 	return false
