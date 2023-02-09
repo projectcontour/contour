@@ -464,6 +464,46 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			},
 			duplicate: true,
 		},
+		"prefix nonroot, seen duplicate and others": {
+			includeConds: []contour_api_v1.MatchCondition{
+				{Prefix: "/api"},
+			},
+			seenConds: map[string][]matchConditionAggregate{
+				"/api/v2": {
+					{
+						headerConds:     []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
+				"/api": {
+					{
+						headerConds:     []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
+			},
+			duplicate: true,
+		},
+		"prefix nonroot, seen others": {
+			includeConds: []contour_api_v1.MatchCondition{
+				{Prefix: "/api"},
+			},
+			seenConds: map[string][]matchConditionAggregate{
+				"/api/v2": {
+					{
+						headerConds:     []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
+				"/api/v3": {
+					{
+						headerConds:     []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
+			},
+			duplicate: false,
+		},
 		"prefix nonroot, seen headers only": {
 			includeConds: []contour_api_v1.MatchCondition{
 				{Prefix: "/api"},
@@ -507,6 +547,12 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 						queryParamConds: []QueryParamMatchCondition{},
 					},
 				},
+				"/api/v2": {
+					{
+						headerConds:     []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
 			},
 			duplicate: false,
 		},
@@ -516,6 +562,16 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-bar", Exact: "bar"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
+				// Same header conditions but different prefix.
+				"/other": {
+					{
+						headerConds: []HeaderMatchCondition{
+							{Name: "x-foo", MatchType: HeaderMatchTypePresent, Invert: true},
+							{Name: "x-bar", MatchType: HeaderMatchTypeExact, Value: "bar"},
+						},
+						queryParamConds: []QueryParamMatchCondition{},
+					},
+				},
 				"/": {
 					{
 						headerConds: []HeaderMatchCondition{
@@ -554,6 +610,16 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 						queryParamConds: []QueryParamMatchCondition{
 							{Name: "param-1", MatchType: QueryParamMatchTypePresent},
 							{Name: "param-2", MatchType: QueryParamMatchTypeExact, Value: "notbar"},
+						},
+					},
+				},
+				// Same query params but different prefix.
+				"/foo": {
+					{
+						headerConds: []HeaderMatchCondition{},
+						queryParamConds: []QueryParamMatchCondition{
+							{Name: "param-1", MatchType: QueryParamMatchTypePresent},
+							{Name: "param-2", MatchType: QueryParamMatchTypeExact, Value: "bar"},
 						},
 					},
 				},
@@ -601,6 +667,15 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
+				// Header and query params are the same, but different prefix.
+				"/api": {
+					{
+						headerConds: []HeaderMatchCondition{{Name: "x-foo", MatchType: HeaderMatchTypePresent}},
+						queryParamConds: []QueryParamMatchCondition{
+							{Name: "param-1", MatchType: QueryParamMatchTypePrefix, Value: "foo"},
+						},
+					},
+				},
 				"/": {
 					{
 						headerConds:     []HeaderMatchCondition{{Name: "x-foo", MatchType: HeaderMatchTypePresent}},
