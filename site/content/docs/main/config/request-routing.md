@@ -1,7 +1,7 @@
 # Request Routing
 
 A HTTPProxy object must have at least one route or include defined.
-In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2`.
+In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2` using the prefix conditions. Requests to `multi-path.bar.com/feed` will be routed to Service `s2` using exact match condition.
 All other requests to the host `multi-path.bar.com` will be routed to the Service `s1`.
 
 ```yaml
@@ -22,6 +22,11 @@ spec:
           port: 80
     - conditions:
       - prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      services:
+        - name: s2
+          port: 80
+    - conditions:
+      - exact: /feed # matches `multi-path.bar.com/feed` only
       services:
         - name: s2
           port: 80
@@ -71,7 +76,8 @@ spec:
 
 Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
-Conditions can be either a `prefix`, `header` or a `queryParameter` condition.
+Conditions can be either a `prefix`, `exact`, `header` or a `queryParameter` condition. `prefix` and `exact`
+conditions cannot be used together in one condition block.
 
 #### Prefix conditions
 
@@ -79,6 +85,14 @@ Paths defined are matched using prefix conditions.
 Up to one prefix condition may be present in any condition block.
 
 Prefix conditions **must** start with a `/` if they are present.
+
+#### Exact conditions
+
+Paths defined are matched using exact conditions.
+Up to one exact condition may be present in any condition block. Any condition block can
+either have an exact condition or prefix condition, but not both together.
+
+Exact conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 

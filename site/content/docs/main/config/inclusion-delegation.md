@@ -22,10 +22,12 @@ This process is recursive.
 
 Conditions are sets of individual condition statements, for example `prefix: /blog` is the condition that the matching request's path must start with `/blog`.
 When conditions are combined through inclusion Contour merges the conditions inherited via inclusion with any conditions specified on the route.
-This may result in duplicates, for example two `prefix:` conditions, or two header match conditions with the same name and value.
+This may result in duplicates, for example two `prefix:` conditions, two `exact:` conditions, mix of both `exact:` and `prefix`, or two header match conditions with the same name and value.
 To resolve this Contour applies the following logic.
 
 - `prefix:` conditions are concatenated together in the order they were applied from the root object. For example the conditions, `prefix: /api`, `prefix: /v1` becomes a single `prefix: /api/v1` conditions. Note: Multiple prefixes cannot be supplied on a single set of Route conditions.
+- `exact` conditions are also concatenated just like `prefix` conditions, but the condition in the child httpproxy
+decides the resulting merged path condition. For example, if root condition is `prefix: /api` and child httpproxy has `exact: /health` condition then it becomes a single `exact: /api/health` condition. Similarly, `exact: /api` + `prefix: /v1` becomes one `prefix: /api/v1` condition.
 - Proxies with repeated identical `header:` conditions of type "exact match" (the same header keys exactly) are marked as "Invalid" since they create an un-routable configuration.
 
 ## Configuring Inclusion
