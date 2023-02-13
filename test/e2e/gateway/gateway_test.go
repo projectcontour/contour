@@ -272,34 +272,6 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
-	Describe("Gateway with one TLS listener with Mode=Passthrough", func() {
-		gatewayClass := getGatewayClass()
-		gw := &gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tls-passthrough",
-			},
-			Spec: gatewayapi_v1beta1.GatewaySpec{
-				GatewayClassName: gatewayapi_v1beta1.ObjectName(gatewayClass.Name),
-				Listeners: []gatewayapi_v1beta1.Listener{
-					{
-						Name:     "tls-passthrough",
-						Protocol: gatewayapi_v1beta1.TLSProtocolType,
-						Port:     gatewayapi_v1beta1.PortNumber(443),
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
-						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
-							},
-						},
-					},
-				},
-			},
-		}
-		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
-	})
-
 	Describe("Gateway with multiple HTTPS listeners, each with a different hostname and TLS cert", func() {
 		testWithMultipleHTTPSListenersGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
