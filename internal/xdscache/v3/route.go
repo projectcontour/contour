@@ -91,11 +91,13 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 	// 	- one for all the HTTP vhost routes -- "ingress_http"
 	//	- one per svhost -- "https/<vhost fqdn>"
 	//	- one for fallback cert (if configured) -- "ingress_fallbackcert"
-	routeConfigs := map[string]*envoy_route_v3.RouteConfiguration{
-		ENVOY_HTTP_LISTENER: envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER),
-	}
+	routeConfigs := map[string]*envoy_route_v3.RouteConfiguration{}
 
 	for vhost, routes := range root.GetVirtualHostRoutes() {
+		if routeConfigs[ENVOY_HTTP_LISTENER] == nil {
+			routeConfigs[ENVOY_HTTP_LISTENER] = envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER)
+		}
+
 		sortRoutes(routes)
 		routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts = append(routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts,
 			envoy_v3.VirtualHostAndRoutes(vhost, routes, false, nil))
