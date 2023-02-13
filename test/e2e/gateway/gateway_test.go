@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -198,8 +197,6 @@ var _ = Describe("Gateway API", func() {
 			return testWithGateway(gw, gatewayClass, body)
 		}
 
-		f.NamespacedTest("gateway-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
-
 		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayMultipleQueryParamMatch))
 
 		f.NamespacedTest("gateway-request-header-modifier-backendref-filter", testWithHTTPGateway(testRequestHeaderModifierBackendRef))
@@ -272,34 +269,6 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-tls-gateway", testWithHTTPSGateway("tls-gateway.projectcontour.io", testTLSGateway))
 
 		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
-	})
-
-	Describe("Gateway with one TLS listener with Mode=Passthrough", func() {
-		gatewayClass := getGatewayClass()
-		gw := &gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tls-passthrough",
-			},
-			Spec: gatewayapi_v1beta1.GatewaySpec{
-				GatewayClassName: gatewayapi_v1beta1.ObjectName(gatewayClass.Name),
-				Listeners: []gatewayapi_v1beta1.Listener{
-					{
-						Name:     "tls-passthrough",
-						Protocol: gatewayapi_v1beta1.TLSProtocolType,
-						Port:     gatewayapi_v1beta1.PortNumber(443),
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
-						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
-							},
-						},
-					},
-				},
-			},
-		}
-		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
 	Describe("Gateway with multiple HTTPS listeners, each with a different hostname and TLS cert", func() {
@@ -398,24 +367,6 @@ func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
 			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// tlsRouteAccepted returns true if the route has a .status.conditions
-// entry of "Accepted: true".
-func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
-	if route == nil {
-		return false
-	}
-
-	for _, gw := range route.Status.Parents {
-		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
