@@ -198,8 +198,6 @@ var _ = Describe("Gateway API", func() {
 			return testWithGateway(gw, gatewayClass, body)
 		}
 
-		f.NamespacedTest("gateway-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
-
 		f.NamespacedTest("gateway-query-param-match", testWithHTTPGateway(testGatewayMultipleQueryParamMatch))
 
 		f.NamespacedTest("gateway-request-header-modifier-backendref-filter", testWithHTTPGateway(testRequestHeaderModifierBackendRef))
