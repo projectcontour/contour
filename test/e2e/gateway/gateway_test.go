@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -368,24 +367,6 @@ func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
 			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// tlsRouteAccepted returns true if the route has a .status.conditions
-// entry of "Accepted: true".
-func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
-	if route == nil {
-		return false
-	}
-
-	for _, gw := range route.Status.Parents {
-		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
