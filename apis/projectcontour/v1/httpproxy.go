@@ -61,7 +61,7 @@ type Include struct {
 }
 
 // MatchCondition are a general holder for matching rules for HTTPProxies.
-// One of Prefix or Header must be provided.
+// One of Prefix, Header or QueryParameter must be provided.
 type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
@@ -70,6 +70,10 @@ type MatchCondition struct {
 	// Header specifies the header condition to match.
 	// +optional
 	Header *HeaderMatchCondition `json:"header,omitempty"`
+
+	// QueryParameter specifies the query parameter condition to match.
+	// +optional
+	QueryParameter *QueryParameterMatchCondition `json:"queryParameter,omitempty"`
 }
 
 // HeaderMatchCondition specifies how to conditionally match against HTTP
@@ -111,6 +115,50 @@ type HeaderMatchCondition struct {
 	// equal to. The condition is true if the header has any other value.
 	// +optional
 	NotExact string `json:"notexact,omitempty"`
+}
+
+// QueryParameterMatchCondition specifies how to conditionally match against HTTP
+// query parameters. The Name field is required, only one of Exact, Prefix,
+// Suffix, Regex, Contains and Present can be set. IgnoreCase has no effect
+// for Regex.
+type QueryParameterMatchCondition struct {
+	// Name is the name of the query parameter to match against. Name is required.
+	// Query parameter names are case insensitive.
+	Name string `json:"name"`
+
+	// Exact specifies a string that the query parameter value must be equal to.
+	// +optional
+	Exact string `json:"exact,omitempty"`
+
+	// Prefix defines a prefix match for the query parameter value.
+	// +optional
+	Prefix string `json:"prefix,omitempty"`
+
+	// Suffix defines a suffix match for a query parameter value.
+	// +optional
+	Suffix string `json:"suffix,omitempty"`
+
+	// Regex specifies a regular expression pattern that must match the query
+	// parameter value.
+	// +optional
+	Regex string `json:"regex,omitempty"`
+
+	// Contains specifies a substring that must be present in
+	// the query parameter value.
+	// +optional
+	Contains string `json:"contains,omitempty"`
+
+	// IgnoreCase specifies that string matching should be case insensitive.
+	// Note that this has no effect on the Regex parameter.
+	// +optional
+	IgnoreCase bool `json:"ignoreCase,omitempty"`
+
+	// Present specifies that condition is true when the named query parameter
+	// is present, regardless of its value. Note that setting Present
+	// to false does not make the condition true if the named query parameter
+	// is absent.
+	// +optional
+	Present bool `json:"present,omitempty"`
 }
 
 // ExtensionServiceReference names an ExtensionService resource.
@@ -406,6 +454,9 @@ type CORSPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|0)$`
 	MaxAge string `json:"maxAge,omitempty"`
+	// AllowPrivateNetwork specifies whether to allow private network requests.
+	// See https://developer.chrome.com/blog/private-network-access-preflight.
+	AllowPrivateNetwork bool `json:"allowPrivateNetwork,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.

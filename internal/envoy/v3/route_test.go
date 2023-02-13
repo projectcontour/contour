@@ -1035,8 +1035,9 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
 			},
 		},
 		"allow origin regex and specific": {
@@ -1063,8 +1064,9 @@ func TestCORSPolicy(t *testing.T) {
 						IgnoreCase: true,
 					},
 				},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET",
 			},
 		},
 		"allow credentials": {
@@ -1081,8 +1083,9 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(true),
-				AllowMethods:     "GET,POST,PUT",
+				AllowCredentials:          wrapperspb.Bool(true),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
 			},
 		},
 		"allow headers": {
@@ -1099,9 +1102,10 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
-				AllowHeaders:     "header-1,header-2",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
+				AllowHeaders:              "header-1,header-2",
 			},
 		},
 		"expose headers": {
@@ -1118,9 +1122,10 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
-				ExposeHeaders:    "header-1,header-2",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
+				ExposeHeaders:             "header-1,header-2",
 			},
 		},
 		"max age": {
@@ -1137,9 +1142,10 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
-				MaxAge:           "600",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
+				MaxAge:                    "600",
 			},
 		},
 		"default max age": {
@@ -1156,8 +1162,9 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
 			},
 		},
 		"max age disabled": {
@@ -1174,9 +1181,29 @@ func TestCORSPolicy(t *testing.T) {
 						},
 						IgnoreCase: true,
 					}},
-				AllowCredentials: wrapperspb.Bool(false),
-				AllowMethods:     "GET,POST,PUT",
-				MaxAge:           "0",
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
+				MaxAge:                    "0",
+			},
+		},
+		"allow privateNetworkAccess": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:         []dag.CORSAllowOriginMatch{{Type: dag.CORSAllowOriginMatchExact, Value: "*"}},
+				AllowMethods:        []string{"GET", "POST", "PUT"},
+				AllowPrivateNetwork: true,
+			},
+			want: &envoy_cors_v3.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowPrivateNetworkAccess: wrapperspb.Bool(true),
+				AllowCredentials:          wrapperspb.Bool(false),
+				AllowMethods:              "GET,POST,PUT",
 			},
 		},
 	}
@@ -1380,6 +1407,234 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 		},
+		"query param exact match with IgnoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "exact",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param prefix match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "prefix",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Prefix{
+									Prefix: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param prefix match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "prefix",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Prefix{
+									Prefix: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param suffix match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "suffix",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Suffix{
+									Suffix: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param suffix match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "suffix",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Suffix{
+									Suffix: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param regex match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "^query-.*",
+						MatchType: "regex",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_SafeRegex{
+									SafeRegex: SafeRegexMatch("^query-.*"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param contains match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						Value:     "query-value-1",
+						MatchType: "contains",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Contains{
+									Contains: "query-value-1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param contains match with ignoreCase": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:       "query-param-1",
+						Value:      "query-value-1",
+						MatchType:  "contains",
+						IgnoreCase: true,
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_StringMatch{
+							StringMatch: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Contains{
+									Contains: "query-value-1",
+								},
+								IgnoreCase: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		"query param present match": {
+			route: &dag.Route{
+				QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+					{
+						Name:      "query-param-1",
+						MatchType: "present",
+					},
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				QueryParameters: []*envoy_route_v3.QueryParameterMatcher{
+					{
+						Name: "query-param-1",
+						QueryParameterMatchSpecifier: &envoy_route_v3.QueryParameterMatcher_PresentMatch{
+							PresentMatch: true,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1439,7 +1694,9 @@ func TestRouteRedirect(t *testing.T) {
 		},
 		"path specified": {
 			redirect: &dag.Redirect{
-				Path: "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					FullPathRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
@@ -1451,12 +1708,33 @@ func TestRouteRedirect(t *testing.T) {
 		},
 		"prefix specified": {
 			redirect: &dag.Redirect{
-				Prefix: "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					PrefixRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
 					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
 						PrefixRewrite: "/blog",
+					},
+				},
+			},
+		},
+		"prefix regex remove specified": {
+			redirect: &dag.Redirect{
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					PrefixRegexRemove: "^/blog/*",
+				},
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_RegexRewrite{
+						RegexRewrite: &matcher.RegexMatchAndSubstitute{
+							Pattern: &matcher.RegexMatcher{
+								Regex: "^/blog/*",
+							},
+							Substitution: "/",
+						},
 					},
 				},
 			},
@@ -1475,7 +1753,9 @@ func TestRouteRedirect(t *testing.T) {
 				Scheme:     "https",
 				PortNumber: 8443,
 				StatusCode: 302,
-				Path:       "/blog",
+				PathRewritePolicy: &dag.PathRewritePolicy{
+					FullPathRewrite: "/blog",
+				},
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{

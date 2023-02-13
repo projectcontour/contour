@@ -222,7 +222,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourconfigurations.projectcontour.io
 spec:
@@ -1046,7 +1046,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: contourdeployments.projectcontour.io
 spec:
@@ -3935,7 +3935,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -4357,7 +4357,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -4427,7 +4427,8 @@ spec:
                         include invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix or Header must be provided.
+                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          must be provided.
                         properties:
                           header:
                             description: Header specifies the header condition to
@@ -4474,6 +4475,50 @@ spec:
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
+                          queryParameter:
+                            description: QueryParameter specifies the query parameter
+                              condition to match.
+                            properties:
+                              contains:
+                                description: Contains specifies a substring that must
+                                  be present in the query parameter value.
+                                type: string
+                              exact:
+                                description: Exact specifies a string that the query
+                                  parameter value must be equal to.
+                                type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
+                              name:
+                                description: Name is the name of the query parameter
+                                  to match against. Name is required. Query parameter
+                                  names are case insensitive.
+                                type: string
+                              prefix:
+                                description: Prefix defines a prefix match for the
+                                  query parameter value.
+                                type: string
+                              present:
+                                description: Present specifies that condition is true
+                                  when the named query parameter is present, regardless
+                                  of its value. Note that setting Present to false
+                                  does not make the condition true if the named query
+                                  parameter is absent.
+                                type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the query parameter value.
+                                type: string
+                              suffix:
+                                description: Suffix defines a suffix match for a query
+                                  parameter value.
+                                type: string
+                            required:
+                            - name
+                            type: object
                         type: object
                       type: array
                     name:
@@ -4526,7 +4571,8 @@ spec:
                         Conditions, will make the route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix or Header must be provided.
+                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          must be provided.
                         properties:
                           header:
                             description: Header specifies the header condition to
@@ -4573,6 +4619,50 @@ spec:
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
+                          queryParameter:
+                            description: QueryParameter specifies the query parameter
+                              condition to match.
+                            properties:
+                              contains:
+                                description: Contains specifies a substring that must
+                                  be present in the query parameter value.
+                                type: string
+                              exact:
+                                description: Exact specifies a string that the query
+                                  parameter value must be equal to.
+                                type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
+                              name:
+                                description: Name is the name of the query parameter
+                                  to match against. Name is required. Query parameter
+                                  names are case insensitive.
+                                type: string
+                              prefix:
+                                description: Prefix defines a prefix match for the
+                                  query parameter value.
+                                type: string
+                              present:
+                                description: Present specifies that condition is true
+                                  when the named query parameter is present, regardless
+                                  of its value. Note that setting Present to false
+                                  does not make the condition true if the named query
+                                  parameter is absent.
+                                type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the query parameter value.
+                                type: string
+                              suffix:
+                                description: Suffix defines a suffix match for a query
+                                  parameter value.
+                                type: string
+                            required:
+                            - name
+                            type: object
                         type: object
                       type: array
                     cookieRewritePolicies:
@@ -5964,6 +6054,10 @@ spec:
                           type: string
                         minItems: 1
                         type: array
+                      allowPrivateNetwork:
+                        description: AllowPrivateNetwork specifies whether to allow
+                          private network requests. See https://developer.chrome.com/blog/private-network-access-preflight.
+                        type: boolean
                       exposeHeaders:
                         description: ExposeHeaders Specifies the content for the *access-control-expose-headers*
                           header.
@@ -6716,7 +6810,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:
@@ -7411,7 +7505,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.25.0
+        image: docker.io/envoyproxy/envoy:v1.25.1
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
@@ -7505,7 +7599,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -7941,7 +8035,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -9375,7 +9469,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -10863,7 +10957,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -14617,7 +14711,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -14896,7 +14990,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -15415,7 +15509,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -15983,7 +16077,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.0
+    gateway.networking.k8s.io/bundle-version: v0.6.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -16562,7 +16656,7 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.0
+          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.1
           imagePullPolicy: Always
           args:
             - -logtostderr
@@ -16622,7 +16716,6 @@ metadata:
   annotations:
   labels:
     name: gateway-api-webhook
-  namespace: gateway-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -48,6 +48,7 @@ If the content of the request doesn't meet the criteria above, the browser first
 In response to a preflight request, the server sends a response with the following headers:
 - `Access-Control-Allow-Origin`: Specifies the domains allowed to access the resource.
 - `Access-Control-Allow-Credentials`: Indicates whether browser credentials can be used to make the actual request (cookies for instance).
+- `Access-Control-Allow-Private-Network`: Part of the PNA specification Pre-check requests will carry this header.
 - `Access-Control-Expose-Headers`: Allows headers to be exposed to the browser.
 - `Access-Control-Max-Age`: Specifies how long preflight request results can be cached.
 - `Access-Control-Allow-Methods`: Indicates which methods are allowed when making an actual request.
@@ -97,6 +98,7 @@ spec:
        - Content-Range
      # Whether the server allows sending credentials (cookies for instance) in cross-origin requests.
      allowCredentials: true
+     allowPrivateNetwork: true
      # the amount of time the preflight response will be cached. It's expresed in the Go duration format. If not supplied, browser default values will apply.
      maxAge: 10m
    routes:
@@ -139,6 +141,8 @@ type CorsPolicy struct {
 	ExposeHeaders []string `json:"exposeHeaders"`
 	// MaxAgeSeconds specifies the content for the *access-control-max-age* header.
 	MaxAge string `json:"maxAge"`
+	// AllowPrivateNetwork specifies the content for the *access-control-allow-private-network* header.
+    AllowPrivateNetwork bool `json:"allowPrivateNetwork,omitempty"`
 }
 ```
 

@@ -1,0 +1,1 @@
+Gateway API: support the `path` field on the HTTPRoute RequestRedirect filter.

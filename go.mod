@@ -24,7 +24,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tsaarni/certyaml v0.9.1
-	github.com/vektra/mockery/v2 v2.16.0
+	github.com/vektra/mockery/v2 v2.18.0
 	golang.org/x/oauth2 v0.4.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20230117162540-28d6b9783ac4
@@ -37,9 +37,9 @@ require (
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
 	k8s.io/klog/v2 v2.90.0
-	sigs.k8s.io/controller-runtime v0.14.2
-	sigs.k8s.io/controller-tools v0.11.2
-	sigs.k8s.io/gateway-api v0.6.0
+	sigs.k8s.io/controller-runtime v0.14.4
+	sigs.k8s.io/controller-tools v0.11.3
+	sigs.k8s.io/gateway-api v0.6.1
 	sigs.k8s.io/kustomize/kyaml v0.14.0
 )
 

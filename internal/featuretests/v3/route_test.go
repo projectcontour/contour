@@ -1930,7 +1930,7 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("example.com",
 					&envoy_route_v3.Route{
-						Match: routePrefix("/blog", dag.HeaderMatchCondition{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
