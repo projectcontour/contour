@@ -24,6 +24,8 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.51.1
+          # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
+          # is resolved
           args: --build-tags=e2e,conformance,gcp,oidc,none
       - uses: act10ns/slack@v2
         with:

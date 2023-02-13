@@ -192,6 +192,8 @@ lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
+# TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
+# is resolved
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
