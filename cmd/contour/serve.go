@@ -136,6 +136,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").PlaceHolder("<port>").IntVar(&ctx.httpsPort)
 	serve.Flag("envoy-service-name", "Name of the Envoy service to inspect for Ingress status details.").PlaceHolder("<name>").StringVar(&ctx.Config.EnvoyServiceName)
 	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").PlaceHolder("<namespace>").StringVar(&ctx.Config.EnvoyServiceNamespace)
+	serve.Flag("envoy-ingress-name", "Name of the Envoy ingress to inspect for Ingress status details.").PlaceHolder("<name>").StringVar(&ctx.Config.EnvoyIngressName)
+	serve.Flag("envoy-ingress-namespace", "Envoy Ingress Namespace.").PlaceHolder("<namespace>").StringVar(&ctx.Config.EnvoyIngressNamespace)
 
 	serve.Flag("health-address", "Address the health HTTP endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.healthAddr)
 	serve.Flag("health-port", "Port the health HTTP endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.healthPort)
@@ -560,9 +562,28 @@ func (s *Server) doServe() error {
 			s.log.WithError(err).WithField("resource", "services").Fatal("failed to create informer")
 		}
 
+		ingressHandler := &k8s.IngressStatusLoadBalancerWatcher{
+			ServiceName: contourConfiguration.Envoy.Service.Name,
+			LBStatus:    lbsw.lbStatus,
+			Log:         s.log.WithField("context", "ingressStatusLoadBalancerWatcher"),
+		}
+
+		var ingressEventHandler cache.ResourceEventHandler = ingressHandler
+		if contourConfiguration.Envoy.Ingress.Namespace != "" {
+			handler = k8s.NewNamespaceFilter([]string{contourConfiguration.Envoy.Ingress.Namespace}, handler)
+		}
+
+		if err := informOnResource(&networking_v1.Ingress{}, ingressEventHandler, s.mgr.GetCache()); err != nil {
+			s.log.WithError(err).WithField("resource", "ingresses").Fatal("failed to create ingresses informer")
+		}
+
 		s.log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
 			WithField("envoy-service-namespace", contourConfiguration.Envoy.Service.Namespace).
 			Info("Watching Service for Ingress status")
+
+		s.log.WithField("envoy-ingress-name", contourConfiguration.Envoy.Ingress.Name).
+			WithField("envoy-ingress-namespace", contourConfiguration.Envoy.Ingress.Namespace).
+			Info("Watching Ingress for Ingress status")
 	}
 
 	xdsServer := &xdsServer{

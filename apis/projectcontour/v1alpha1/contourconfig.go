@@ -234,6 +234,12 @@ type EnvoyConfig struct {
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
+	// Ingress holds Envoy service parameters for setting Ingress status.
+	//
+	// Contour's default is { namespace: "projectcontour", name: "envoy" }.
+	// +optional
+	Ingress *NamespacedName `json:"ingress,omitempty"`
+
 	// Defines the HTTP Listener for Envoy.
 	//
 	// Contour's default is { address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout" }.

@@ -93,6 +93,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--contour-config-name=%s", contour.ContourConfigurationName()),
 		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
 		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
+		fmt.Sprintf("--envoy-ingress-name=%s", contour.EnvoyIngressName()),
 		fmt.Sprintf("--kubernetes-debug=%d", contour.Spec.KubernetesLogLevel),
 	}
 

@@ -32,6 +32,11 @@ func (c *Contour) EnvoyServiceName() string {
 	return "envoy-" + c.Name
 }
 
+// EnvoyIngressName returns the name of the Envoy Ingress resource.
+func (c *Contour) EnvoyIngressName() string {
+	return "envoy-" + c.Name
+}
+
 // ContourDeploymentName returns the name of the Contour Deployment resource.
 func (c *Contour) ContourDeploymentName() string {
 	return "contour-" + c.Name
