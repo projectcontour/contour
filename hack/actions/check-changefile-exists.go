@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build none
-// +build none
 
 // Versioning comment for rerunning jobs.
 // check-changefile-exists.go

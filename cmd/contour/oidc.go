@@ -12,10 +12,9 @@
 // limitations under the License.
 
 //go:build oidc
-// +build oidc
 
 package main
 
-// This file is protected by the +build oidc tag above to prevent
+// This file is protected by the go:build oidc tag above to prevent
 // the oicd dependencies from being part of the standard contour image.
 import _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"

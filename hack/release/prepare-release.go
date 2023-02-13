@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build none
-// +build none
 
 package main
 
