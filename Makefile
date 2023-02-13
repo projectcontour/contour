@@ -41,7 +41,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.19.5
+BUILD_BASE_IMAGE ?= golang:1.20.0
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -192,10 +192,12 @@ lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
+# TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
+# is resolved
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,tools,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 # The inline config is needed to allow the Gateway API validating webhook YAML
 # (which we import directly from the Gateway API repo) to pass.
