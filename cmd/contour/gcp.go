@@ -12,10 +12,9 @@
 // limitations under the License.
 
 //go:build gcp
-// +build gcp
 
 package main
 
-// This file is protected by the +build gcp tag above to prevent
+// This file is protected by the go:build gcp tag above to prevent
 // the gcp dependencies from being part of the standard contour image.
 import _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
