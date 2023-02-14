@@ -17,9 +17,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 func assertOptionFlagsAreSorted(t *testing.T, cmd *kingpin.CmdClause) {
