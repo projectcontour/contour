@@ -1,6 +1,6 @@
 # Design for Supporting Tracing in Contour
 
-Status: Draft
+Status: Accepted
 
 ## Abstract
 Envoy has rich support for [distributed tracing][1].
@@ -25,7 +25,7 @@ However, a few observations can be made:
 ## Goals
 - **Support a single global trace configuration** that applies to all requests.
 - **Support OpenTelemetry formats**, Because OpenTelemetry is an observability standard. Data can be ingested, transformed, and sent to an observability backend.
-- **Support custom tags to send additional span data**, including getting data from environment variables, request headers, etc.
+- **Support custom tags to send additional span data**, including getting data from request headers, etc.
 
 ## Non Goals
 - **Per-HTTPProxy trace configuration.** There is a technical limitation to enabling per-proxy configuration. Trace settings are configured on the HTTP connection manager (HCM). Each TLS-enabled virtual host uses its own HCM, but *all* non-TLS virtual hosts share a single HCM. As such, while it's possible to have unique trace settings for each TLS virtual host, it's not possible to do the same for non-TLS virtual hosts.  Note that this same limitation has come up when designing external authorization and global rate limiting as well.
@@ -79,7 +79,7 @@ tracing:
   # maxPathTagLength defines maximum length of the request path to extract and include in the HttpUrl tag.
   maxPathTagLength: 256
   # customTags defines a list of custom tags with unique tag name.
-  # A customTag can only set one of literal, environment and requestHeaderName
+  # A customTag can only set one of literal and requestHeaderName
   customTags:
     # tagName used to populate the tag name
     - tagName: literal
