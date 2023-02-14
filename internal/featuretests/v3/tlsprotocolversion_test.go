@@ -48,10 +48,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -91,13 +88,9 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	})
 
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: sec1.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/tls-minimum-protocol-version": "1.3",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
+			"projectcontour.io/tls-minimum-protocol-version": "1.3",
+		}),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -148,10 +141,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh.OnDelete(i2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",

@@ -46,10 +46,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []contour_api_v1.Route{{
@@ -85,10 +82,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []contour_api_v1.Route{{
@@ -137,10 +131,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnDelete(p2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []contour_api_v1.Route{{

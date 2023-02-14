@@ -25,7 +25,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -38,15 +37,11 @@ func TestRetryPolicy(t *testing.T) {
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello",
-			Namespace: s1.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":     "7",
-				"projectcontour.io/per-try-timeout": "120ms",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("hello", map[string]string{
+			"projectcontour.io/retry-on":        "5xx,gateway-error",
+			"projectcontour.io/num-retries":     "7",
+			"projectcontour.io/per-try-timeout": "120ms",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -68,14 +63,11 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":     "7",
-				"projectcontour.io/per-try-timeout": "120ms",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("hello", map[string]string{
+			"projectcontour.io/retry-on":        "5xx,gateway-error",
+			"projectcontour.io/num-retries":     "7",
+			"projectcontour.io/per-try-timeout": "120ms",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -97,14 +89,11 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":     "7",
-				"projectcontour.io/per-try-timeout": "120ms",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("hello", map[string]string{
+			"projectcontour.io/retry-on":        "5xx,gateway-error",
+			"projectcontour.io/num-retries":     "7",
+			"projectcontour.io/per-try-timeout": "120ms",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -126,14 +115,11 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	i4 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":     "-1",
-				"projectcontour.io/per-try-timeout": "120ms",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("hello", map[string]string{
+			"projectcontour.io/retry-on":        "5xx,gateway-error",
+			"projectcontour.io/num-retries":     "-1",
+			"projectcontour.io/per-try-timeout": "120ms",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -155,14 +141,11 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	i5 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":     "0",
-				"projectcontour.io/per-try-timeout": "120ms",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("hello", map[string]string{
+			"projectcontour.io/retry-on":        "5xx,gateway-error",
+			"projectcontour.io/num-retries":     "0",
+			"projectcontour.io/per-try-timeout": "120ms",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -186,10 +169,7 @@ func TestRetryPolicy(t *testing.T) {
 	rh.OnDelete(i5)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
 			Routes: []contour_api_v1.Route{{
@@ -221,10 +201,7 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	hp2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
 			Routes: []contour_api_v1.Route{{
@@ -256,10 +233,7 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	hp3 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
 			Routes: []contour_api_v1.Route{{

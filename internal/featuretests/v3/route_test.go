@@ -67,15 +67,13 @@ func TestEditIngress(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	meta := metav1.ObjectMeta{Name: "kuard", Namespace: "default"}
-
 	s1 := fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// add default/kuard to translator.
 	old := &networking_v1.Ingress{
-		ObjectMeta: meta,
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -99,7 +97,7 @@ func TestEditIngress(t *testing.T) {
 
 	// update old to new
 	rh.OnUpdate(old, &networking_v1.Ingress{
-		ObjectMeta: meta,
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				IngressRuleValue: networking_v1.IngressRuleValue{
@@ -243,7 +241,7 @@ func TestEditIngressInPlace(t *testing.T) {
 
 	// i2 is like i1 but adds a second route
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
+		ObjectMeta: fixture.ObjectMeta("default/hello"),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
@@ -284,12 +282,8 @@ func TestEditIngressInPlace(t *testing.T) {
 
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"ingress.kubernetes.io/force-ssl-redirect": "true"},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/hello", map[string]string{
+			"ingress.kubernetes.io/force-ssl-redirect": "true"}),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
@@ -503,12 +497,9 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	// Create an invalid TLS secret
 	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata("wrong", featuretests.RSA_PRIVATE_KEY),
+		ObjectMeta: fixture.ObjectMeta("example-tls"),
+		Type:       "kubernetes.io/tls",
+		Data:       featuretests.Secretdata("wrong", featuretests.RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(secret)
 
@@ -519,7 +510,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	// Create an ingress that uses the invalid secret
 	rh.OnAdd(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{Name: "kuard-ing", Namespace: "default"},
+		ObjectMeta: fixture.ObjectMeta("kuard-ing"),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.io"},
@@ -549,12 +540,9 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	// Correct the secret
 	rh.OnUpdate(secret, &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+		ObjectMeta: fixture.ObjectMeta("example-tls"),
+		Type:       "kubernetes.io/tls",
+		Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	assertRDS(t, c, "2", virtualhosts(
@@ -598,13 +586,9 @@ func TestIssue257(t *testing.T) {
 	//	      port:
 	//	        number: 80
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"kubernetes.io/ingress.class": "contour",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -640,13 +624,9 @@ func TestIssue257(t *testing.T) {
 	//	            number: 80
 	//	       path: /
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"kubernetes.io/ingress.class": "contour",
+		}),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.db.gd-ms.com",
@@ -942,13 +922,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "linkerd",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/ingress.class": "linkerd",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -964,13 +940,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	), nil)
 
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"kubernetes.io/ingress.class": "contour",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -979,13 +951,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	assertRDS(t, c, "2", nil, nil)
 
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "contour",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/ingress.class": "contour",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -994,13 +962,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	assertRDS(t, c, "2", nil, nil)
 
 	i4 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "linkerd",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"kubernetes.io/ingress.class": "linkerd",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
@@ -1016,13 +980,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	), nil)
 
 	i5 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "linkerd",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/ingress.class": "linkerd",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(s1),
 		},
