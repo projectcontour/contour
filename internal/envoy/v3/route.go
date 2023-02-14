@@ -39,10 +39,10 @@ import (
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
-func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.VirtualHost {
+func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool) *envoy_route_v3.VirtualHost {
 	var envoyRoutes []*envoy_route_v3.Route
 	for _, route := range dagRoutes {
-		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure, authService))
+		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure))
 	}
 
 	evh := VirtualHost(vh.Name, envoyRoutes...)
@@ -68,7 +68,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 }
 
 // buildRoute converts a DAG route to an Envoy route.
-func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.Route {
+func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
 	switch {
 	case dagRoute.HTTPSUpgrade && !secure:
 		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
@@ -111,20 +111,17 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
-		// If authorization is enabled on this host, we may need to set per-route filter overrides.
-		if authService != nil {
-			// Apply per-route authorization policy modifications.
-			if dagRoute.AuthDisabled {
-				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-				}
-				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
-			} else if len(dagRoute.AuthContext) > 0 {
-				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-				}
-				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+		// Apply per-route authorization policy modifications.
+		if dagRoute.AuthDisabled {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
+			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+		} else if len(dagRoute.AuthContext) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		// If JWT verification is enabled, add per-route filter

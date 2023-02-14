@@ -680,24 +680,9 @@ type SecureVirtualHost struct {
 	// DownstreamValidation defines how to verify the client's certificate.
 	DownstreamValidation *PeerValidationContext
 
-	// AuthorizationService points to the extension that client
-	// requests are forwarded to for authorization. If nil, no
-	// authorization is enabled for this host.
-	AuthorizationService *ExtensionCluster
-
-	// AuthorizationResponseTimeout sets how long the proxy should wait
-	// for authorization server responses.
-	AuthorizationResponseTimeout timeout.Setting
-
-	// AuthorizationFailOpen sets whether authorization server
-	// failures should cause the client request to also fail. The
-	// only reason to set this to `true` is when you are migrating
-	// from internal to external authorization.
-	AuthorizationFailOpen bool
-
-	// AuthorizationServerWithRequestBody specifies configuration
-	// for buffering request data sent to AuthorizationServer
-	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+	// ExternalAuthorization contains the configuration for enabling
+	// the ExtAuthz filter.
+	ExternalAuthorization *ExternalAuthorization
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
@@ -732,6 +717,29 @@ type JWTRule struct {
 	PathMatchCondition    MatchCondition
 	HeaderMatchConditions []HeaderMatchCondition
 	ProviderName          string
+}
+
+// ExternalAuthorization contains the configuration for enabling
+// the ExtAuthz filter.
+type ExternalAuthorization struct {
+	// AuthorizationService points to the extension that client
+	// requests are forwarded to for authorization. If nil, no
+	// authorization is enabled for this host.
+	AuthorizationService *ExtensionCluster
+
+	// AuthorizationResponseTimeout sets how long the proxy should wait
+	// for authorization server responses.
+	AuthorizationResponseTimeout timeout.Setting
+
+	// AuthorizationFailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	AuthorizationFailOpen bool
+
+	// AuthorizationServerWithRequestBody specifies configuration
+	// for buffering request data sent to AuthorizationServer
+	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

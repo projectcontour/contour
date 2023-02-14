@@ -21,14 +21,17 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
@@ -3389,6 +3392,245 @@ func TestRouteVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var rc RouteCache
 			rc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
+			protobuf.ExpectEqual(t, tc.want, rc.values)
+		})
+	}
+}
+
+func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
+	tests := map[string]struct {
+		objs                []interface{}
+		fallbackCertificate *types.NamespacedName
+		want                map[string]*envoy_route_v3.RouteConfiguration
+	}{
+		"HTTP virtual host, authcontext override": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+								Context: map[string]string{
+									"header_2": "new_message_2",
+									"header_3": "message_3",
+								},
+							},
+						}},
+					},
+				},
+				&contour_api_v1alpha1.ExtensionService{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "ns",
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+							TypedPerFilterConfig: map[string]*anypb.Any{
+								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+											ContextExtensions: map[string]string{
+												"header_1": "message_1",
+												"header_2": "new_message_2",
+												"header_3": "message_3",
+											},
+										},
+									},
+								}),
+							},
+						},
+					),
+				),
+			),
+		},
+		"HTTP virtual host, auth disabled for a route": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+								Disabled: true,
+							},
+						}},
+					},
+				},
+				&contour_api_v1alpha1.ExtensionService{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "ns",
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+							TypedPerFilterConfig: map[string]*anypb.Any{
+								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+										Disabled: true,
+									},
+								}),
+							},
+						},
+					),
+				),
+			),
+		},
+		"HTTPs virtual host, authcontext override": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+								Context: map[string]string{
+									"header_2": "new_message_2",
+									"header_3": "message_3",
+								},
+							},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&contour_api_v1alpha1.ExtensionService{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "ns",
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_route_v3.Route_Redirect{
+								Redirect: &envoy_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy_v3.RouteConfiguration("https/www.example.com",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+							TypedPerFilterConfig: map[string]*anypb.Any{
+								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+											ContextExtensions: map[string]string{
+												"header_1": "message_1",
+												"header_2": "new_message_2",
+												"header_3": "message_3",
+											},
+										},
+									},
+								}),
+							},
+						},
+					),
+				)),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var rc RouteCache
+			rc.OnChange(buildDAGGlobalExtAuth(t, tc.fallbackCertificate, tc.objs...))
 			protobuf.ExpectEqual(t, tc.want, rc.values)
 		})
 	}
