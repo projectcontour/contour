@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/parse"
 	"github.com/projectcontour/contour/pkg/config"
 
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"github.com/alecthomas/kingpin/v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"

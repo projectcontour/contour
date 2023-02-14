@@ -19,11 +19,11 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"

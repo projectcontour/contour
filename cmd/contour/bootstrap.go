@@ -14,8 +14,8 @@
 package main
 
 import (
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/projectcontour/contour/internal/envoy"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // registerBootstrap registers the bootstrap subcommand and flags
