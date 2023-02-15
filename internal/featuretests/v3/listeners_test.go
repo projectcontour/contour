@@ -73,10 +73,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("default/simple"),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -94,13 +91,8 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.allow-http": "false",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple", map[string]string{
+			"kubernetes.io/ingress.allow-http": "false"}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -118,13 +110,8 @@ func TestNonTLSListener(t *testing.T) {
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"ingress.kubernetes.io/force-ssl-redirect": "true",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple",
+			map[string]string{"ingress.kubernetes.io/force-ssl-redirect": "true"}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -173,10 +160,7 @@ func TestTLSListener(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -233,13 +217,9 @@ func TestTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.allow-http": "false",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
+			"kubernetes.io/ingress.allow-http": "false",
+		}),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -1066,10 +1046,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	// p1 is a tls httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
@@ -1124,10 +1101,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	// p2 is a tls httpproxy
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",

@@ -2950,7 +2950,7 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "fallback and client auth is invalid", testcase{
 		objs: []interface{}{fixture.SecretRootsCert, proxyAuthFallback},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyAuthFallback.Name, Namespace: proxyAuthFallback.Namespace}: fixture.NewValidCondition().
+			{Name: proxyAuthFallback.Name, Namespace: proxyAuthFallback.Namespace}: fixture.NewValidCondition().WithGeneration(proxyAuthFallback.Generation).
 				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible"),
 		},
 	})

@@ -26,7 +26,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -39,13 +38,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnAdd(svc)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: svc.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/response-timeout": "1m20s",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/response-timeout": "1m20s",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc),
 		},
@@ -68,13 +63,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: svc.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/response-timeout": "infinity",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/response-timeout": "infinity",
+		}),
 		Spec: i1.Spec,
 	}
 	rh.OnUpdate(i1, i2)
@@ -95,13 +86,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: svc.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/response-timeout": "monday",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/response-timeout": "monday",
+		}),
 		Spec: i2.Spec,
 	}
 	rh.OnUpdate(i2, i3)
@@ -122,14 +109,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i4 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: svc.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/request-timeout":  "90s",
-				"projectcontour.io/response-timeout": "99s",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
+			"projectcontour.io/request-timeout":  "90s",
+			"projectcontour.io/response-timeout": "99s",
+		}),
 		Spec: i2.Spec,
 	}
 	rh.OnUpdate(i3, i4)
@@ -291,10 +274,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 
 func httpProxyWithTimoutPolicy(svc *v1.Service, tp *contour_api_v1.TimeoutPolicy) *contour_api_v1.HTTPProxy {
 	return &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []contour_api_v1.Route{{

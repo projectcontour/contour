@@ -14,10 +14,14 @@
 package fixture
 
 import (
+	"strconv"
 	"strings"
+	"sync/atomic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var generation int64
 
 // ObjectMeta cracks a Kubernetes object name string of the form
 // "namespace/name" into a metav1.ObjectMeta struct. If the namespace
@@ -25,20 +29,42 @@ import (
 func ObjectMeta(nameStr string) metav1.ObjectMeta {
 	// NOTE: We don't use k8s.NamespacedNameFrom here, because that
 	// would generate an import cycle.
+
+	// NOTE: Not all objects have a generation field.
+	// In this helper function we do not know the type of the object where the return value gets used
+
 	v := strings.SplitN(nameStr, "/", 2)
 	switch len(v) {
 	case 1:
 		// No '/' separator.
-		return metav1.ObjectMeta{
+		return *UpdateObjectVersion(&metav1.ObjectMeta{
 			Name:        v[0],
 			Namespace:   metav1.NamespaceDefault,
 			Annotations: map[string]string{},
-		}
+		})
 	default:
-		return metav1.ObjectMeta{
+		return *UpdateObjectVersion(&metav1.ObjectMeta{
 			Name:        v[1],
 			Namespace:   v[0],
 			Annotations: map[string]string{},
-		}
+		})
 	}
+}
+
+// ObjectMetaWithAnnotations returns an ObjectMeta with the given annotations.
+func ObjectMetaWithAnnotations(nameStr string, annotations map[string]string) metav1.ObjectMeta {
+	meta := ObjectMeta(nameStr)
+	meta.Annotations = annotations
+	return meta
+}
+
+func UpdateObjectVersion(meta *metav1.ObjectMeta) *metav1.ObjectMeta {
+	meta.Generation = nextGeneration()
+	meta.ResourceVersion = strconv.FormatInt(meta.Generation, 10)
+	return meta
+}
+
+// nextGeneration returns the next generation number.
+func nextGeneration() int64 {
+	return atomic.AddInt64(&generation, 1)
 }

@@ -57,10 +57,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// add an httpproxy in a different namespace mentioning secret/wildcard.
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
@@ -91,10 +88,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// t1 is a TLSCertificateDelegation that permits default to access secret/wildcard
 	t1 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: sec1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
 		Spec: contour_api_v1.TLSCertificateDelegationSpec{
 			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
@@ -131,10 +125,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// t2 is a TLSCertificateDelegation that permits access to secret/wildcard from all namespaces.
 	t2 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: sec1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
 		Spec: contour_api_v1.TLSCertificateDelegationSpec{
 			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
@@ -157,10 +148,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// t3 is a TLSCertificateDelegation that permits access to secret/different all namespaces.
 	t3 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: sec1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
 		Spec: contour_api_v1.TLSCertificateDelegationSpec{
 			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: "different",
@@ -181,10 +169,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// t4 is a TLSCertificateDelegation that permits access to secret/wildcard from the kube-secret namespace.
 	t4 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: sec1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
 		Spec: contour_api_v1.TLSCertificateDelegationSpec{
 			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
@@ -208,10 +193,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// add a httpproxy in a different namespace mentioning secret/wildcard.
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
@@ -239,10 +221,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	t5 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: sec1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
 		Spec: contour_api_v1.TLSCertificateDelegationSpec{
 			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
@@ -274,13 +253,9 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	// add an ingress in a different namespace mentioning secret wildcard from namespace secret via annotation.
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/tls-cert-namespace": sec1.Namespace,
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
+			"projectcontour.io/tls-cert-namespace": sec1.Namespace,
+		}),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"example.com"},
