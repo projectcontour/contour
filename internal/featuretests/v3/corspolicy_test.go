@@ -461,10 +461,5 @@ func TestCorsPolicy(t *testing.T) {
 
 	rh.OnAdd(invvhost)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http")),
-		TypeUrl: routeType,
-	}).Status(invvhost).IsInvalid()
-
+	c.Request(routeType).HasNoResources().Status(invvhost).IsInvalid()
 }

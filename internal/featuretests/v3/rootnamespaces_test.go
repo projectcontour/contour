@@ -87,12 +87,7 @@ func TestRootNamespaces(t *testing.T) {
 	})
 
 	// assert that the route tables are present but empty.
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// hp2 is in the root namespace set.
 	hp2 := &contour_api_v1.HTTPProxy{

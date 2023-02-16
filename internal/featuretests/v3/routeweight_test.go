@@ -152,12 +152,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// proxy2 has a TCPProxy with multiple services,
 	// each with an explicit weight.
@@ -208,12 +203,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// proxy3 has a TCPProxy with multiple services,
 	// each with no weight specified.
@@ -264,12 +254,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// proxy4 has a TCPProxy with multiple services,
 	// some with weights specified and some without.
@@ -321,12 +306,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }
 
 func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
@@ -536,12 +516,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// TLSRoute with multiple weighted services.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
@@ -595,10 +570,5 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }

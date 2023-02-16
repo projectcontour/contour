@@ -948,7 +948,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i1, i2)
-	assertRDS(t, c, "2", nil, nil)
+	c.Request(routeType).HasNoResources()
 
 	i3 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
@@ -959,7 +959,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i2, i3)
-	assertRDS(t, c, "2", nil, nil)
+	c.Request(routeType).HasNoResources()
 
 	i4 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("kuard-ing", map[string]string{
@@ -998,7 +998,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	), nil)
 
 	rh.OnUpdate(i5, i3)
-	assertRDS(t, c, "5", nil, nil)
+	c.Request(routeType).HasNoResources()
 }
 
 // issue 523, check for data races caused by accidentally

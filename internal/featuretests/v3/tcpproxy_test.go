@@ -201,12 +201,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }
 
 // Assert that when a spec.vhost.tls spec is present with tls.passthrough
@@ -380,12 +375,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }
 
 // Assert that TCPProxy + a http service can be used to expose a ingress_http
@@ -804,14 +794,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			// ingress_http and ingress_https should be empty
-			// as hp1 is not valid.
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	hp2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: hp1.ObjectMeta,
@@ -850,14 +833,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			// ingress_http and ingress_https should be empty
-			// as hp2 is not valid.
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }
 
 // "Cookie" and "RequestHash" policies are not valid on TCPProxy.

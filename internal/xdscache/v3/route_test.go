@@ -145,9 +145,7 @@ func TestRouteVisit(t *testing.T) {
 	}{
 		"nothing": {
 			objs: nil,
-			want: routeConfigurations(
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
+			want: routeConfigurations(),
 		},
 		"one http only ingress with service": {
 			objs: []interface{}{
@@ -522,7 +520,6 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: routeConfigurations(
-				envoy_v3.RouteConfiguration("ingress_http"),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
@@ -1412,9 +1409,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: routeConfigurations(
-				envoy_v3.RouteConfiguration("ingress_http"), // should be blank, no fqdn defined.
-			),
+			want: routeConfigurations(),
 		},
 		"httpproxy with pathPrefix": {
 			objs: []interface{}{
@@ -3235,7 +3230,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: routeConfigurations(envoy_v3.RouteConfiguration("ingress_http")),
+			want: routeConfigurations(),
 		},
 		"httpproxy with fallback certificate - no fqdn enabled": {
 			fallbackCertificate: &types.NamespacedName{

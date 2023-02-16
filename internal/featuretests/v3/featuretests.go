@@ -469,6 +469,13 @@ func (r *Response) Equals(want *envoy_discovery_v3.DiscoveryResponse) *Contour {
 	return r.Contour
 }
 
+// HasNoResources tests that the response retrieved from Contour has no resources.
+func (r *Response) HasNoResources() *Contour {
+	r.Helper()
+	require.Nil(r.T, r.DiscoveryResponse.Resources)
+	return r.Contour
+}
+
 // Equals(...) only checks resources, so explicitly
 // check version & nonce here and subsequently.
 func (r *Response) assertEqualVersion(t *testing.T, expected string) {

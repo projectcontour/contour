@@ -137,12 +137,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	p2 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Response: "3m"})
 	rh.OnUpdate(p1, p2)
@@ -192,12 +187,7 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	p2 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Idle: "3m"})
 	rh.OnUpdate(p1, p2)

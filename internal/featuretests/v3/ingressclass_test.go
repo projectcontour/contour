@@ -86,12 +86,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 
 		rh.OnUpdate(ingressValid, ingressWrongClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- no ingress class specified
 		ingressNoClass := &networking_v1.Ingress{
@@ -102,12 +97,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		}
 		rh.OnUpdate(ingressWrongClass, ingressNoClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid ingress object
 		rh.OnAdd(ingressValid)
@@ -129,12 +119,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		rh.OnDelete(ingressValid)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 
 	// HTTPProxy
@@ -188,12 +173,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		rh.OnUpdate(proxyValid, proxyWrongClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- no ingress class specified
 		proxyNoClass := fixture.NewProxy(HTTPProxyName).
@@ -212,12 +192,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		rh.OnUpdate(proxyWrongClass, proxyNoClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid httpproxy object
 		rh.OnAdd(proxyValid)
@@ -239,12 +214,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		rh.OnDelete(proxyValid)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 }
 
@@ -323,12 +293,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		}
 		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid ingress object
 		rh.OnAdd(ingressNoClass)
@@ -350,12 +315,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		rh.OnDelete(ingressNoClass)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 
 	// HTTPProxy
@@ -439,12 +399,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		rh.OnUpdate(proxyMatchingClass, proxyNonMatchingClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid httpproxy object
 		rh.OnAdd(proxyNoClass)
@@ -466,12 +421,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		rh.OnDelete(proxyNoClass)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 }
 
@@ -599,12 +549,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 		rh.OnUpdate(ingressValid, ingressWrongClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// No ingress class specified.
 		ingressNoClass := &networking_v1.Ingress{
@@ -615,12 +560,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		}
 		rh.OnUpdate(ingressWrongClass, ingressNoClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// Remove Ingress class.
 		rh.OnDelete(ingressClass)
@@ -645,12 +585,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		rh.OnDelete(ingressValid)
 
 		// Verify ingress is gone.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 
 	// HTTPProxy
@@ -704,12 +639,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		rh.OnUpdate(proxyValid, proxyWrongClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- no ingress class specified
 		proxyNoClass := fixture.NewProxy(HTTPProxyName).
@@ -728,12 +658,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		rh.OnUpdate(proxyWrongClass, proxyNoClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid httpproxy object
 		rh.OnAdd(proxyValid)
@@ -755,12 +680,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		rh.OnDelete(proxyValid)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 }
 
@@ -842,12 +762,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		}
 		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
 
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// Remove Ingress class.
 		rh.OnDelete(ingressClass)
@@ -872,12 +787,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		rh.OnDelete(ingressMatchingClass)
 
 		// Verify ingress is gone.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 
 	// HTTPProxy
@@ -961,12 +871,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		rh.OnUpdate(proxyMatchingClass, proxyNonMatchingClass)
 
 		// ingress class does not match ingress controller, ignored.
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 
 		// --- insert valid httpproxy object
 		rh.OnAdd(proxyNoClass)
@@ -988,11 +893,6 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		rh.OnDelete(proxyNoClass)
 
 		// verify ingress is gone
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-			Resources: resources(t,
-				envoy_v3.RouteConfiguration("ingress_http"),
-			),
-			TypeUrl: routeType,
-		})
+		c.Request(routeType).HasNoResources()
 	}
 }

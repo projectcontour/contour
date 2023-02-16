@@ -120,12 +120,7 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	// Route2 doesn't define any SNIs, so this should become the default backend.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
@@ -168,12 +163,7 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	route3 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
@@ -240,12 +230,7 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 
 	rh.OnDelete(route1)
 	rh.OnDelete(route2)

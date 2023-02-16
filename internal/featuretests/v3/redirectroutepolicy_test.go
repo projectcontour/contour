@@ -143,10 +143,5 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxyPrefixRewrite, proxyInvalid)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	c.Request(routeType).HasNoResources()
 }
