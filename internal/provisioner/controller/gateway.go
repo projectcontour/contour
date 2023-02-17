@@ -236,6 +236,20 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if gatewayClassParams != nil {
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
+		if contourModel.Spec.RuntimeSettings != nil &&
+			contourModel.Spec.RuntimeSettings.Envoy != nil &&
+			contourModel.Spec.RuntimeSettings.Envoy.Metrics != nil &&
+			contourModel.Spec.RuntimeSettings.Envoy.Metrics.Port != 0 {
+
+			port := contourModel.Spec.RuntimeSettings.Envoy.Metrics.Port
+			contourModel.Spec.NetworkPublishing.Envoy.Ports = append(
+				contourModel.Spec.NetworkPublishing.Envoy.Ports,
+				model.Port{
+					Name:          "metrics",
+					ServicePort:   int32(port),
+					ContainerPort: int32(port),
+				})
+		}
 		// if there is a same name pair, overwrite it
 		for k, v := range gatewayClassParams.Spec.ResourceLabels {
 			contourModel.Spec.ResourceLabels[k] = v

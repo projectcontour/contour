@@ -152,11 +152,13 @@ func TestDesiredDeployment(t *testing.T) {
 		"key": "value",
 	}
 
-	// Use non-default container ports to test that --envoy-service-http(s)-port
+	// Use non-default container ports to test that
+	// --envoy-service-http(s)-port, --stats-port
 	// flags are added.
 	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
 		{Name: "http", ServicePort: 80, ContainerPort: 8081},
 		{Name: "https", ServicePort: 443, ContainerPort: 8444},
+		{Name: "metrics", ServicePort: 8003, ContainerPort: 8003},
 	}
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
@@ -175,6 +177,9 @@ func TestDesiredDeployment(t *testing.T) {
 			checkContainerHasArg(t, container, arg)
 		case "https":
 			arg := fmt.Sprintf("--envoy-service-https-port=%d", port.ContainerPort)
+			checkContainerHasArg(t, container, arg)
+		case "metrics":
+			arg := fmt.Sprintf("--stats-port=%d", port.ContainerPort)
 			checkContainerHasArg(t, container, arg)
 		default:
 			t.Errorf("Unexpected port %s", port.Name)

@@ -254,6 +254,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
 		{Name: "http", ServicePort: 80, ContainerPort: 8080},
 		{Name: "https", ServicePort: 443, ContainerPort: 8443},
+		{Name: "metrics", ServicePort: 8002, ContainerPort: 8002},
 	}
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
@@ -279,7 +280,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
-	assert.Len(t, container.Ports, 2)
+	assert.Len(t, container.Ports, 3)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)

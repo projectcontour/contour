@@ -50,7 +50,8 @@ BUILD_CGO_ENABLED ?= 0
 BUILD_GOPRIVATE ?= ""
 
 # Go module mirror to use.
-BUILD_GOPROXY ?= https://proxy.golang.org
+#BUILD_GOPROXY ?= https://proxy.golang.org
+BUILD_GOPROXY ?= https://goproxy.io
 
 # Checksum db to use.
 BUILD_GOSUMDB ?= sum.golang.org
@@ -151,6 +152,7 @@ container: ## Build the Contour container image
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
+		--network host \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)

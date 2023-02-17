@@ -100,13 +100,17 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		args = append(args, "--debug")
 	}
 
-	// Pass the insecure/secure flags to Contour if using non-default ports.
+	// Pass the insecure/secure/metrics flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
 		switch {
 		case port.Name == "http" && port.ContainerPort != objects.EnvoyInsecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-http-port=%d", port.ContainerPort))
+
 		case port.Name == "https" && port.ContainerPort != objects.EnvoySecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-https-port=%d", port.ContainerPort))
+
+		case port.Name == "metrics" && port.ContainerPort != objects.EnvoyMetricsPort:
+			args = append(args, fmt.Sprintf("--stats-port=%d", port.ContainerPort))
 		}
 	}
 	if contour.Spec.IngressClassName != nil {
