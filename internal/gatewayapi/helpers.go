@@ -167,7 +167,7 @@ func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayap
 
 func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service string, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
 	return &gatewayapi_v1alpha2.GRPCMethodMatch{
-		Type:    ref.To(gatewayapi_v1alpha2.GRPCMethodMatchType(matchType)),
+		Type:    ref.To(matchType),
 		Service: ref.To(service),
 		Method:  ref.To(method),
 	}
@@ -176,7 +176,7 @@ func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service 
 func GRPCHeaderMatch(name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
 	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
 		{
-			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact), //grpcroute_types.go def not using gatewayapi_v1alpha2.GRPCHeaderMatchExact,
+			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
 			Name:  gatewayapi_v1alpha2.GRPCHeaderName(name),
 			Value: value,
 		},
