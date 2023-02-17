@@ -1427,6 +1427,8 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
 						continue
 					}
+					// If protocol is not set on the service, need to set a default one based on listener's protocol type.
+					setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
 					mirrorPolicy = &MirrorPolicy{
 						Cluster: &Cluster{
 							Upstream: mirrorService,
@@ -1852,15 +1854,8 @@ func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []
 		// used later to understand if all the weights are set to zero.
 		totalWeight += routeWeight
 
-		// For GRPCRoute, if the protocol is not set on the Service,
-		// we should assume a protocol that matches what listener the route was attached to
-		if isBlank(service.Protocol) {
-			if protocolType == gatewayapi_v1beta1.HTTPProtocolType {
-				service.Protocol = "h2c"
-			} else if protocolType == gatewayapi_v1beta1.HTTPSProtocolType {
-				service.Protocol = "h2"
-			}
-		}
+		// If protocol is not set on the service, need to set a default one based on listener's protocol type.
+		setDefaultServiceProtocol(service, protocolType)
 
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
@@ -1933,6 +1928,18 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 	}
 
 	return routes
+}
+
+func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1.ProtocolType) {
+	// For GRPCRoute, if the protocol is not set on the Service via annotation,
+	// we should assume a protocol that matches what listener the route was attached to
+	if isBlank(service.Protocol) {
+		if protocolType == gatewayapi_v1beta1.HTTPProtocolType {
+			service.Protocol = "h2c"
+		} else if protocolType == gatewayapi_v1beta1.HTTPSProtocolType {
+			service.Protocol = "h2"
+		}
+	}
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
