@@ -25,7 +25,9 @@ import (
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/ref"
+
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -71,6 +73,9 @@ type KubernetesCache struct {
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
+	// Metrics contains Prometheus metrics.
+	Metrics *metrics.Metrics
+
 	Client client.Reader
 
 	initialize sync.Once
@@ -99,19 +104,22 @@ func (kc *KubernetesCache) init() {
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	kc.initialize.Do(kc.init)
 
-	maybeInsert := func(obj interface{}) bool {
+	maybeInsert := func(obj interface{}) (bool, int) {
 		switch obj := obj.(type) {
 		case *v1.Secret:
 			// Secret validation status is intentionally cleared, it needs
 			// to be re-validated after an insert.
 			kc.secrets[k8s.NamespacedNameOf(obj)] = &Secret{Object: obj}
-			return kc.secretTriggersRebuild(obj)
+			return kc.secretTriggersRebuild(obj), len(kc.secrets)
+
 		case *v1.Service:
 			kc.services[k8s.NamespacedNameOf(obj)] = obj
-			return kc.serviceTriggersRebuild(obj)
+			return kc.serviceTriggersRebuild(obj), len(kc.services)
+
 		case *v1.Namespace:
 			kc.namespaces[obj.Name] = obj
-			return true
+			return true, len(kc.namespaces)
+
 		case *networking_v1.Ingress:
 			if !ingressclass.MatchesIngress(obj, kc.IngressClassNames) {
 				// We didn't get a match so report this object is being ignored.
@@ -122,11 +130,12 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("ingress-class-name", ref.Val(obj.Spec.IngressClassName, "")).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
-				return false
+				return false, 0
 			}
 
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return true, len(kc.ingresses)
+
 		case *contour_api_v1.HTTPProxy:
 			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassNames) {
 				// We didn't get a match so report this object is being ignored.
@@ -137,37 +146,40 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("ingress-class-name", obj.Spec.IngressClassName).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring HTTPProxy with unmatched ingress class")
-				return false
+				return false, 0
 			}
 
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return true, len(kc.httpproxies)
+
 		case *contour_api_v1.TLSCertificateDelegation:
 			kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return true, len(kc.tlscertificatedelegations)
+
 		case *gatewayapi_v1beta1.GatewayClass:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway class
 			// matches that gateway's.
 			case kc.ConfiguredGatewayToCache != nil:
 				if kc.gateway == nil || obj.Name != string(kc.gateway.Spec.GatewayClassName) {
-					return false
+					return false, 0
 				}
 
 				kc.gatewayclass = obj
-				return true
+				return true, 1
 			// Otherwise, take whatever we're given.
 			default:
 				kc.gatewayclass = obj
-				return true
+				return true, 1
 			}
+
 		case *gatewayapi_v1beta1.Gateway:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway
 			// matches, and get its gateway class.
 			case kc.ConfiguredGatewayToCache != nil:
 				if k8s.NamespacedNameOf(obj) != *kc.ConfiguredGatewayToCache {
-					return false
+					return false, 0
 				}
 
 				kc.gateway = obj
@@ -179,39 +191,47 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					kc.gatewayclass = gatewayClass
 				}
 
-				return true
+				return true, 1
 			// Otherwise, take whatever we're given.
 			default:
 				kc.gateway = obj
-				return true
+				return true, 1
 			}
+
 		case *gatewayapi_v1beta1.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
+
 		case *gatewayapi_v1alpha2.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
+
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return true, len(kc.referencegrants)
+
 		case *contour_api_v1alpha1.ExtensionService:
 			kc.extensions[k8s.NamespacedNameOf(obj)] = obj
-			return true
+			return true, len(kc.extensions)
+
 		case *contour_api_v1alpha1.ContourConfiguration:
-			return false
+			return false, 0
+
 		default:
 			// not an interesting object
 			kc.WithField("object", obj).Error("insert unknown object")
-			return false
+			return false, 0
 		}
 	}
 
-	if maybeInsert(obj) {
+	if ok, count := maybeInsert(obj); ok {
 		// Only check annotations if we actually inserted
 		// the object in our cache; uninteresting objects
 		// should not be checked.
 		if obj, ok := obj.(metav1.Object); ok {
 			kind := k8s.KindOf(obj)
+			kc.Metrics.SetDAGCacheOjbectMetric(kind, count)
+
 			for key := range obj.GetAnnotations() {
 				// Emit a warning if this is a known annotation that has
 				// been applied to an invalid object kind. Note that we
@@ -244,89 +264,104 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 
 	switch obj := obj.(type) {
 	default:
-		return kc.remove(obj)
+		ok, count := kc.remove(obj)
+		if ok {
+			kc.Metrics.SetDAGCacheOjbectMetric(k8s.KindOf(obj), count)
+		}
+		return ok
 	case cache.DeletedFinalStateUnknown:
 		return kc.Remove(obj.Obj) // recurse into ourselves with the tombstoned value
 	}
 }
 
-func (kc *KubernetesCache) remove(obj interface{}) bool {
+func (kc *KubernetesCache) remove(obj interface{}) (bool, int) {
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.secrets, m)
-		return kc.secretTriggersRebuild(obj)
+		return kc.secretTriggersRebuild(obj), len(kc.secrets)
+
 	case *v1.Service:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.services, m)
-		return kc.serviceTriggersRebuild(obj)
+		return kc.serviceTriggersRebuild(obj), len(kc.services)
+
 	case *v1.Namespace:
 		_, ok := kc.namespaces[obj.Name]
 		delete(kc.namespaces, obj.Name)
-		return ok
+		return ok, len(kc.namespaces)
+
 	case *networking_v1.Ingress:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
-		return ok
+		return ok, len(kc.ingresses)
+
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]
 		delete(kc.httpproxies, m)
-		return ok
+		return ok, len(kc.httpproxies)
+
 	case *contour_api_v1.TLSCertificateDelegation:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tlscertificatedelegations[m]
 		delete(kc.tlscertificatedelegations, m)
-		return ok
+		return ok, len(kc.tlscertificatedelegations)
+
 	case *gatewayapi_v1beta1.GatewayClass:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gatewayclass == nil || obj.Name != kc.gatewayclass.Name {
-				return false
+				return false, 0
 			}
 			kc.gatewayclass = nil
-			return true
+			return true, 0
 		default:
 			kc.gatewayclass = nil
-			return true
+			return true, 0
 		}
+
 	case *gatewayapi_v1beta1.Gateway:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gateway == nil || k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
-				return false
+				return false, 0
 			}
 			kc.gateway = nil
-			return true
+			return true, 0
 		default:
 			kc.gateway = nil
-			return true
+			return true, 0
 		}
 	case *gatewayapi_v1beta1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.httproutes, m)
-		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
+
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.tlsroutes, m)
-		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
+
 	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
 		delete(kc.referencegrants, m)
-		return ok
+		return ok, len(kc.referencegrants)
+
 	case *contour_api_v1alpha1.ExtensionService:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.extensions[m]
 		delete(kc.extensions, m)
-		return ok
+		return ok, len(kc.extensions)
+
 	case *contour_api_v1alpha1.ContourConfiguration:
-		return false
+		return false, 0
 	default:
 		// not interesting
 		kc.WithField("object", obj).Error("remove unknown object")
-		return false
+		return false, 0
 	}
 }
 

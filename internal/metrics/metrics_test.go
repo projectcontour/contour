@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -687,6 +688,63 @@ func TestRemoveProxyMetric(t *testing.T) {
 			assert.Equal(t, tc.invalidWant, gotInvalid)
 			assert.Equal(t, tc.orphanedWant, gotOrphaned)
 			assert.Equal(t, tc.rootWant, gotRoot)
+		})
+	}
+}
+
+func TestSetDAGCacheOjbectMetric(t *testing.T) {
+	tests := map[string]struct {
+		countMetric testMetric
+		value       int
+		kind        string
+	}{
+		"simple": {
+			value: 123,
+			kind:  "test",
+			countMetric: testMetric{
+				metric: DAGCacheOjbectGauge,
+				want: []*io_prometheus_client.Metric{
+					{
+						Label: []*io_prometheus_client.LabelPair{
+							{
+								Name:  ref.To("kind"),
+								Value: ref.To("test"),
+							},
+						},
+						Gauge: &io_prometheus_client.Gauge{
+							Value: func() *float64 { i := float64(123); return &i }(),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := prometheus.NewRegistry()
+			m := NewMetrics(r)
+			m.SetDAGCacheOjbectMetric(tc.kind, tc.value)
+
+			gatherers := prometheus.Gatherers{
+				r,
+				prometheus.DefaultGatherer,
+			}
+
+			gathering, err := gatherers.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			gotCount := []*io_prometheus_client.Metric{}
+			for _, mf := range gathering {
+				if mf.GetName() == tc.countMetric.metric {
+					gotCount = mf.Metric
+					break
+				}
+			}
+
+			assert.Equal(t, tc.countMetric.want, gotCount)
 		})
 	}
 }
