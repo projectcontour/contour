@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -133,226 +134,20 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
 
+	// Process HTTPRoutes.
 	for _, httpRoute := range p.source.httproutes {
-		func() {
-			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
-				k8s.NamespacedNameOf(httpRoute),
-				httpRoute.Generation,
-				&gatewayapi_v1beta1.HTTPRoute{},
-			)
-			defer commit()
-
-			for _, routeParentRef := range httpRoute.Spec.ParentRefs {
-				// If this parent ref is to a different Gateway, ignore it.
-				if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-					continue
-				}
-
-				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
-
-				// If the Gateway is invalid, set status on the route and we're done.
-				if gatewayNotProgrammedCondition != nil {
-					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-					continue
-				}
-
-				// Get the list of listeners that are (a) included by this parent ref, and
-				// (b) allow the route (based on kind, namespace).
-				allowedListeners := p.getListenersForRouteParentRef(routeParentRef, httpRoute.Namespace, KindHTTPRoute, readyListeners, routeParentStatusAccessor)
-				if len(allowedListeners) == 0 {
-					continue
-				}
-
-				// Keep track of the number of intersecting hosts
-				// between the route and all allowed listeners for
-				// this parent ref so that we can set the appropriate
-				// route parent status condition if there were none.
-				hostCount := 0
-
-				for _, listener := range allowedListeners {
-					attached, hosts := p.computeHTTPRoute(httpRoute, routeParentStatusAccessor, listener)
-
-					if attached {
-						listenerAttachedRoutes[string(listener.listener.Name)]++
-					}
-
-					hostCount += hosts.Len()
-				}
-
-				if hostCount == 0 {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionFalse,
-						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
-						"No intersecting hostnames were found between the listener and the route.",
-					)
-				}
-
-				// Check for an existing "Accepted" condition, add one if one does
-				// not already exist.
-				hasAccepted := false
-				for _, cond := range routeParentStatusAccessor.ConditionsForParentRef(routeParentRef) {
-					if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
-						hasAccepted = true
-						break
-					}
-				}
-
-				if !hasAccepted {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionTrue,
-						gatewayapi_v1beta1.RouteReasonAccepted,
-						"Accepted HTTPRoute",
-					)
-				}
-			}
-		}()
+		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1beta1.HTTPRoute{})
 	}
 
-	// Compute each TLSRoute for each Listener that it potentially
-	// attaches to.
+	// Process TLSRoutes.
 	for _, tlsRoute := range p.source.tlsroutes {
-		func() {
-			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
-				k8s.NamespacedNameOf(tlsRoute),
-				tlsRoute.Generation,
-				&gatewayapi_v1alpha2.TLSRoute{},
-			)
-			defer commit()
-
-			for _, routeParentRef := range tlsRoute.Spec.ParentRefs {
-				// If this parent ref is to a different Gateway, ignore it.
-				if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-					continue
-				}
-
-				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
-
-				// If the Gateway is invalid, set status on the route and we're done.
-				if gatewayNotProgrammedCondition != nil {
-					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-					return
-				}
-
-				// Get the list of listeners that are (a) included by this parent ref, and
-				// (b) allow the route (based on kind, namespace).
-				allowedListeners := p.getListenersForRouteParentRef(routeParentRef, tlsRoute.Namespace, KindTLSRoute, readyListeners, routeParentStatusAccessor)
-				if len(allowedListeners) == 0 {
-					continue
-				}
-
-				// Keep track of the number of intersecting hosts
-				// between the route and all allowed listeners for
-				// this parent ref so that we can set the appropriate
-				// route parent status condition if there were none.
-				hostCount := 0
-
-				for _, listener := range allowedListeners {
-					attached, hosts := p.computeTLSRoute(tlsRoute, routeParentStatusAccessor, listener)
-
-					if attached {
-						listenerAttachedRoutes[string(listener.listener.Name)]++
-					}
-
-					hostCount += hosts.Len()
-				}
-
-				if hostCount == 0 {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionFalse,
-						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
-						"No intersecting hostnames were found between the listener and the route.",
-					)
-				} else {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionTrue,
-						gatewayapi_v1beta1.RouteReasonAccepted,
-						"Accepted TLSRoute",
-					)
-				}
-			}
-		}()
+		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.TLSRoute{})
 	}
 
-	// Compute each GRPCRoute for each Listener that it potentially attaches to.
+	// Process GRPCRoutes.
 	for _, grpcRoute := range p.source.grpcroutes {
-		func() {
-			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
-				k8s.NamespacedNameOf(grpcRoute),
-				grpcRoute.Generation,
-				&gatewayapi_v1alpha2.GRPCRoute{},
-			)
-			defer commit()
+		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.GRPCRoute{})
 
-			for _, routeParentRef := range grpcRoute.Spec.ParentRefs {
-				// If this parent ref is to a different Gateway, ignore it.
-				if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-					continue
-				}
-
-				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
-
-				// If the Gateway is invalid, set status on the route and we're done.
-				if gatewayNotProgrammedCondition != nil {
-					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-					return
-				}
-
-				// Get the list of listeners that are (a) included by this parent ref, and
-				// (b) allow the route (based on kind, namespace).
-				allowedListeners := p.getListenersForRouteParentRef(routeParentRef, grpcRoute.Namespace, KindGRPCRoute, readyListeners, routeParentStatusAccessor)
-				if len(allowedListeners) == 0 {
-					continue
-				}
-
-				// Keep track of the number of intersecting hosts
-				// between the route and all allowed listeners for
-				// this parent ref so that we can set the appropriate
-				// route parent status condition if there were none.
-				hostCount := 0
-
-				for _, listener := range allowedListeners {
-					attached, hosts := p.computeGRPCRoute(grpcRoute, routeParentStatusAccessor, listener)
-
-					if attached {
-						listenerAttachedRoutes[string(listener.listener.Name)]++
-					}
-
-					hostCount += hosts.Len()
-				}
-
-				if hostCount == 0 {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionFalse,
-						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
-						"No intersecting hostnames were found between the listener and the route.",
-					)
-				}
-
-				// Check for an existing "Accepted" condition, add one if one does
-				// not already exist.
-				hasAccepted := false
-				for _, cond := range routeParentStatusAccessor.ConditionsForParentRef(routeParentRef) {
-					if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
-						hasAccepted = true
-						break
-					}
-				}
-
-				if !hasAccepted {
-					routeParentStatusAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
-						metav1.ConditionTrue,
-						gatewayapi_v1beta1.RouteReasonAccepted,
-						"Accepted GRPCRoute",
-					)
-				}
-			}
-		}()
 	}
 
 	for listenerName, attachedRoutes := range listenerAttachedRoutes {
@@ -360,6 +155,124 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 
 	p.computeGatewayConditions(gwAccessor, gatewayNotProgrammedCondition)
+}
+
+func (p *GatewayAPIProcessor) processRoute(
+	routeKind gatewayapi_v1beta1.Kind,
+	route client.Object,
+	parentRefs []gatewayapi_v1beta1.ParentReference,
+	gatewayNotProgrammedCondition *metav1.Condition,
+	readyListeners []*listenerInfo,
+	listenerAttachedRoutes map[string]int,
+	emptyResource client.Object,
+) {
+	routeStatus, commit := p.dag.StatusCache.RouteConditionsAccessor(
+		k8s.NamespacedNameOf(route),
+		route.GetGeneration(),
+		emptyResource,
+	)
+	defer commit()
+
+	for _, routeParentRef := range parentRefs {
+		// If this parent ref is to a different Gateway, ignore it.
+		if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+			continue
+		}
+
+		routeParentStatus := routeStatus.StatusUpdateFor(routeParentRef)
+
+		// If the Gateway is invalid, set status on the route and we're done.
+		if gatewayNotProgrammedCondition != nil {
+			routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+			continue
+		}
+
+		// Get the list of listeners that are (a) included by this parent ref, and
+		// (b) allow the route (based on kind, namespace).
+		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus)
+		if len(allowedListeners) == 0 {
+			continue
+		}
+
+		// Keep track of the number of intersecting hosts
+		// between the route and all allowed listeners for
+		// this parent ref so that we can set the appropriate
+		// route parent status condition if there were none.
+		hostCount := 0
+
+		for _, listener := range allowedListeners {
+			var routeHostnames []gatewayapi_v1beta1.Hostname
+
+			switch route := route.(type) {
+			case *gatewayapi_v1beta1.HTTPRoute:
+				routeHostnames = route.Spec.Hostnames
+			case *gatewayapi_v1alpha2.TLSRoute:
+				routeHostnames = route.Spec.Hostnames
+			case *gatewayapi_v1alpha2.GRPCRoute:
+				routeHostnames = route.Spec.Hostnames
+			}
+
+			hosts, errs := p.computeHosts(routeHostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
+			for _, err := range errs {
+				// The Gateway API spec does not indicate what to do if syntactically
+				// invalid hostnames make it through, we're using our best judgment here.
+				// Theoretically these should be prevented by the combination of kubebuilder
+				// and admission webhook validations.
+				routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+			}
+
+			// If there were no intersections between the listener hostname and the
+			// route hostnames, the route is not programmed for this listener.
+			if len(hosts) == 0 {
+				continue
+			}
+
+			var attached bool
+
+			switch route := route.(type) {
+			case *gatewayapi_v1beta1.HTTPRoute:
+				attached = p.computeHTTPRouteForListener(route, routeParentStatus, listener, hosts)
+			case *gatewayapi_v1alpha2.TLSRoute:
+				attached = p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
+			case *gatewayapi_v1alpha2.GRPCRoute:
+				attached = p.computeGRPCRouteForListener(route, routeParentStatus, listener, hosts)
+			}
+
+			if attached {
+				listenerAttachedRoutes[string(listener.listener.Name)]++
+			}
+
+			hostCount += hosts.Len()
+		}
+
+		if hostCount == 0 {
+			routeParentStatus.AddCondition(
+				gatewayapi_v1beta1.RouteConditionAccepted,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
+				"No intersecting hostnames were found between the listener and the route.",
+			)
+		}
+
+		// Check for an existing "Accepted" condition, add one if one does
+		// not already exist.
+		hasAccepted := false
+		for _, cond := range routeParentStatus.ConditionsForParentRef(routeParentRef) {
+			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
+				hasAccepted = true
+				break
+			}
+		}
+
+		if !hasAccepted {
+			routeParentStatus.AddCondition(
+				gatewayapi_v1beta1.RouteConditionAccepted,
+				metav1.ConditionTrue,
+				gatewayapi_v1beta1.RouteReasonAccepted,
+				fmt.Sprintf("Accepted %s", routeKind),
+			)
+		}
+	}
 }
 
 func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
@@ -1012,22 +925,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
-	for _, err := range errs {
-		// The Gateway API spec does not indicate what to do if syntactically
-		// invalid hostnames make it through, we're using our best judgment here.
-		// Theoretically these should be prevented by the combination of kubebuilder
-		// and admission webhook validations.
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-	}
-
-	// If there were no intersections between the listener hostname and the
-	// route hostnames, the route is not programmed for this listener.
-	if len(hosts) == 0 {
-		return false, nil
-	}
-
+func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alpha2.TLSRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
 	for _, rule := range route.Spec.Rules {
 		if len(rule.BackendRefs) == 0 {
@@ -1092,25 +990,10 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		}
 	}
 
-	return programmed, hosts
+	return programmed
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
-	for _, err := range errs {
-		// The Gateway API spec does not indicate what to do if syntactically
-		// invalid hostnames make it through, we're using our best judgment here.
-		// Theoretically these should be prevented by the combination of kubebuilder
-		// and admission webhook validations.
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-	}
-
-	// If there were no intersections between the listener hostname and the
-	// route hostnames, the route is not programmed for this listener.
-	if len(hosts) == 0 {
-		return false, nil
-	}
-
+func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
@@ -1391,25 +1274,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		}
 	}
 
-	return programmed, hosts
+	return programmed
 }
 
-func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
-	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
-	for _, err := range errs {
-		// The Gateway API spec does not indicate what to do if syntactically
-		// invalid hostnames make it through, we're using our best judgment here.
-		// Theoretically these should be prevented by the combination of kubebuilder
-		// and admission webhook validations.
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-	}
-
-	// If there were no intersections between the listener hostname and the
-	// route hostnames, the route is not programmed for this listener.
-	if len(hosts) == 0 {
-		return false, nil
-	}
-
+func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
@@ -1544,7 +1412,7 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 		}
 	}
 
-	return programmed, hosts
+	return programmed
 }
 
 func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {
