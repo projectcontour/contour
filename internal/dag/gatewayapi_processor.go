@@ -373,7 +373,7 @@ func isAddressAssigned(specAddresses, statusAddresses []gatewayapi_v1beta1.Gatew
 	for _, specAddress := range specAddresses {
 		for _, statusAddress := range statusAddresses {
 			// Types must match
-			if addressTypeDerefOr(specAddress.Type, gatewayapi_v1beta1.IPAddressType) != addressTypeDerefOr(statusAddress.Type, gatewayapi_v1beta1.IPAddressType) {
+			if ref.Val(specAddress.Type, gatewayapi_v1beta1.IPAddressType) != ref.Val(statusAddress.Type, gatewayapi_v1beta1.IPAddressType) {
 				continue
 			}
 
@@ -388,13 +388,6 @@ func isAddressAssigned(specAddresses, statusAddresses []gatewayapi_v1beta1.Gatew
 
 	// No match found, so no spec address is assigned.
 	return false
-}
-
-func addressTypeDerefOr(addressType *gatewayapi_v1beta1.AddressType, defaultAddressType gatewayapi_v1beta1.AddressType) gatewayapi_v1beta1.AddressType {
-	if addressType != nil {
-		return *addressType
-	}
-	return defaultAddressType
 }
 
 // computeListener processes a Listener's spec, including TLS details,
