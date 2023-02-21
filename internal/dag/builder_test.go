@@ -476,6 +476,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	basicGRPCRoute := &gatewayapi_v1alpha2.GRPCRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			},
+			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+				Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+					Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+				}},
+				BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs         []interface{}
 		gatewayclass *gatewayapi_v1beta1.GatewayClass
@@ -4774,6 +4793,570 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
+		},
+		"GRPCRoute: insert basic single grpc route, single hostname": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				basicGRPCRoute,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+					),
+				},
+			),
+		},
+		"GRPCRotue: insert basic single route, single hostname, gateway same namespace selector, route in different namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPSameNamespace,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "different-ns-than-gateway",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"GRPCRoute: route does not include the gateway in its list of parent refs": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway"),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"GRPCRoute: gateway with HTTP and HTTPS listeners, each route selects a different listener": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAndHTTPS,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				blogService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basictls",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("blogsvc", 80, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "test.projectcontour.io",
+								Routes: routes(exactrouteGRPCRoute("io.projectcontour/Login", grpcService(blogService, "h2"))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with single method match and header match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("io.projectcontour/Login"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+							},
+							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with request header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
+									},
+								},
+								{
+
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Remove:      []string{"X-Remove"}, // Verify the header key is canonicalized.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
+									},
+								},
+								{
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							ResponseHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+									"Host":              "bar.com", // Host header isn't significant in a response so it can be set.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Remove: []string{"X-Remove"}, // Verify the header key is canonicalized.
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with invalid request header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								}},
+								BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+								Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "!invalid-header-add", Value: "foo-bar"},
+										},
+									},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set:         map[string]string{"Custom-Header-Set": "foo-bar"},
+								Add:         map[string]string{}, // Invalid header should not be set.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: HTTP backend with invalid response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								}},
+								BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
+									{
+										BackendRef: gatewayapi_v1alpha2.BackendRef{
+											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+											Weight:                 ref.To(int32(1)),
+										},
+										Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+											Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+											ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+												Set: []gatewayapi_v1alpha2.HTTPHeader{
+													{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+												},
+												Add: []gatewayapi_v1alpha2.HTTPHeader{
+													{Name: "!invalid-header-add", Value: "foo-bar"},
+												},
+											},
+										}},
+									},
+								},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("io.projectcontour/Login"),
+							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{}, nil, grpcService(kuardService, "h2c")),
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: rule with request mirror filter": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+								Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
+				},
+			),
+		},
+
+		"GRPCRoute: references a backend in a different namespace, with valid ReferenceGrant": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
+										Kind:      ref.To(gatewayapi_v1alpha2.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      ref.To(gatewayapi_v1alpha2.PortNumber(8080)),
+									},
+									Weight: ref.To(int32(1)),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1beta1.ReferenceGrant{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "GRPCRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Name:         HTTP_LISTENER_NAME,
+				Port:         80,
+				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c")))),
+			}),
 		},
 	}
 
@@ -13716,6 +14299,10 @@ func exactrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 	}
 }
 
+func exactrouteGRPCRoute(path string, first *Service, rest ...*Service) *Route {
+	return exactrouteHTTPRoute(path, first, rest...)
+}
+
 func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 
@@ -13842,6 +14429,19 @@ func weightedService(s *v1.Service, weight uint32) *Service {
 	return &Service{
 		Weighted: WeightedService{
 			Weight:           weight,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[0],
+		},
+	}
+}
+
+func grpcService(s *v1.Service, protocol string) *Service {
+	return &Service{
+		Protocol: protocol,
+		Weighted: WeightedService{
+			Weight:           1,
 			ServiceName:      s.Name,
 			ServiceNamespace: s.Namespace,
 			ServicePort:      s.Spec.Ports[0],

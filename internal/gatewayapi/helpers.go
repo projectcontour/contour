@@ -149,25 +149,36 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	}
 }
 
-func GRPCRouteMatch(methodType gatewayapi_v1alpha2.GRPCMethodMatchType, service, method string) []gatewayapi_v1alpha2.GRPCRouteMatch {
-	return []gatewayapi_v1alpha2.GRPCRouteMatch{
+func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.GRPCBackendRef {
+	return []gatewayapi_v1alpha2.GRPCBackendRef{
 		{
-			Method: &gatewayapi_v1alpha2.GRPCMethodMatch{
-				Type:    ref.To(methodType),
-				Service: ref.To(service),
-				Method:  ref.To(method),
-			},
+			BackendRef: gatewayapi_v1alpha2.BackendRef{
+				BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+					Group: ref.To(gatewayapi_v1beta1.Group("")),
+					Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+					Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
+				},
+				Weight: &weight},
+			Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{},
 		},
 	}
 }
 
-func GRPCBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.GRPCBackendRef {
-	return []gatewayapi_v1alpha2.GRPCBackendRef{
+func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service string, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
+	return &gatewayapi_v1alpha2.GRPCMethodMatch{
+		Type:    ref.To(matchType),
+		Service: ref.To(service),
+		Method:  ref.To(method),
+	}
+}
+
+func GRPCHeaderMatch(name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
+	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
 		{
-			BackendRef: gatewayapi_v1beta1.BackendRef{
-				BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
-				Weight:                 &weight,
-			},
+			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
+			Name:  gatewayapi_v1alpha2.GRPCHeaderName(name),
+			Value: value,
 		},
 	}
 }

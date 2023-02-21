@@ -37,7 +37,6 @@ const (
 	ReasonHeaderMatchType               gatewayapi_v1beta1.RouteConditionReason = "HeaderMatchType"
 	ReasonQueryParamMatchType           gatewayapi_v1beta1.RouteConditionReason = "QueryParamMatchType"
 	ReasonHTTPRouteFilterType           gatewayapi_v1beta1.RouteConditionReason = "HTTPRouteFilterType"
-	ReasonMethodMatchType               gatewayapi_v1beta1.RouteConditionReason = "MethodMatchType"
 	ReasonDegraded                      gatewayapi_v1beta1.RouteConditionReason = "Degraded"
 	ReasonErrorsExist                   gatewayapi_v1beta1.RouteConditionReason = "ErrorsExist"
 	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1beta1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"

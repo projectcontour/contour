@@ -8751,8 +8751,10 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
-						Matches:     gatewayapi.GRPCRouteMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
-						BackendRefs: gatewayapi.GRPCBackendRef("kuard", 8080, 1),
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
 			}},
@@ -8793,8 +8795,10 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					},
 					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
 						// RegularExpression type not yet supported
-						Matches:     gatewayapi.GRPCRouteMatch(gatewayapi_v1alpha2.GRPCMethodMatchRegularExpression, "com.example.service", "Login"),
-						BackendRefs: gatewayapi.GRPCBackendRef("kuard", 8080, 1),
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchRegularExpression, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
 			}},
@@ -8836,8 +8840,10 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
-						Matches:     gatewayapi.GRPCRouteMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "", "Login"),
-						BackendRefs: gatewayapi.GRPCBackendRef("kuard", 8080, 1),
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
 			}},
@@ -8879,8 +8885,10 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
-						Matches:     gatewayapi.GRPCRouteMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", ""),
-						BackendRefs: gatewayapi.GRPCBackendRef("kuard", 8080, 1),
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", ""),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
 			}},
@@ -8937,7 +8945,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 								},
 							},
 						}},
-						BackendRefs: gatewayapi.GRPCBackendRef("kuard", 8080, 1),
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
 			},
