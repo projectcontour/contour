@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.25.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.25.1
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -41,7 +41,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.19.5
+BUILD_BASE_IMAGE ?= golang:1.20.0
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -192,10 +192,12 @@ lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
+# TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
+# is resolved
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,tools,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 # The inline config is needed to allow the Gateway API validating webhook YAML
 # (which we import directly from the Gateway API repo) to pass.
@@ -316,7 +318,7 @@ e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
 		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s -r $(CONTOUR_E2E_PACKAGE_FOCUS)
+		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s -r $(CONTOUR_E2E_PACKAGE_FOCUS)
 
 .PHONY: cleanup-kind
 cleanup-kind:
@@ -340,7 +342,7 @@ upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-k
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -v ./test/e2e/upgrade
+		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -v ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance
 check-ingress-conformance: | install-contour-working run-ingress-conformance cleanup-kind ## Run Ingress controller conformance
@@ -366,7 +368,7 @@ teardown-gcp-bench-cluster:
 
 .PHONY: run-bench
 run-bench:
-	ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -poll-progress-after=4h -timeout=5h -r -v ./test/e2e/bench
+	go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -poll-progress-after=4h -timeout=5h -r -v ./test/e2e/bench
 
 .PHONY: bench
 bench: deploy-gcp-bench-cluster run-bench teardown-gcp-bench-cluster

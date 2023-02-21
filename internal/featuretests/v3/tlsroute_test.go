@@ -44,10 +44,8 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnAdd(svcAnother)
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-gc",
-		},
+		TypeMeta:   metav1.TypeMeta{},
+		ObjectMeta: fixture.ObjectMeta("test-gc"),
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
@@ -62,10 +60,7 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	gatewayPassthrough := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
+		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			Listeners: []gatewayapi_v1beta1.Listener{{
 				Port:     443,
@@ -85,10 +80,7 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnAdd(gatewayPassthrough)
 
 	route1 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -137,10 +129,7 @@ func TestTLSRoute(t *testing.T) {
 
 	// Route2 doesn't define any SNIs, so this should become the default backend.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -187,10 +176,7 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	route3 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -205,10 +191,7 @@ func TestTLSRoute(t *testing.T) {
 	}
 
 	route4 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic-wildcard",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("basic-wildcard"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{

@@ -336,6 +336,18 @@ type EnvoyListenerConfig struct {
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
+	// Defines the action to be applied to the Server header on the response path.
+	// When configured as overwrite, overwrites any Server header with "envoy".
+	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
+	// When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.
+	//
+	// Values: `overwrite` (default), `append_if_absent`, `pass_through`
+	//
+	// Other values will produce an error.
+	// Contour's default is overwrite.
+	// +optional
+	ServerHeaderTransformation ServerHeaderTransformationType `json:"serverHeaderTransformation,omitempty"`
+
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
@@ -530,6 +542,21 @@ const (
 	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 	// DNS lookups will attempt both v4 and v6 queries.
 	AllClusterDNSFamily ClusterDNSFamilyType = "all"
+)
+
+// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
+type ServerHeaderTransformationType string
+
+const (
+	// Overwrite any Server header with "envoy".
+	// This is the default value.
+	OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
+	// If no Server header is present, set it to "envoy".
+	// If a Server header is present, pass it through.
+	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
+	// Pass through the value of the Server header, and do not append a header
+	// if none is present.
+	PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 )
 
 // ClusterParameters holds various configurable cluster values.

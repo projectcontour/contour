@@ -1,1 +1,0 @@
-Add (update)Strategy configurability to ContourDeployment resource for components.

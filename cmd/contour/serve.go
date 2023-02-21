@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/alecthomas/kingpin/v2"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -48,12 +49,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -147,6 +148,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
 
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
+	serve.Flag("kubernetes-client-burst", "Burst allowed for the Kubernetes client.").IntVar(&ctx.Config.KubeClientBurst)
+	serve.Flag("kubernetes-client-qps", "QPS allowed for the Kubernetes client.").Float32Var(&ctx.Config.KubeClientQPS)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
 
 	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.LeaderElection.LeaseDuration)
@@ -180,8 +183,19 @@ type Server struct {
 // objects required to start an instance of Contour.
 func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
+	var restConfigOpts []func(*rest.Config)
+
+	if qps := ctx.Config.KubeClientQPS; qps > 0 {
+		log.Debugf("Setting Kubernetes client QPS to %v", qps)
+		restConfigOpts = append(restConfigOpts, k8s.OptSetQPS(qps))
+	}
+	if burst := ctx.Config.KubeClientBurst; burst > 0 {
+		log.Debugf("Setting Kubernetes client burst to %v", burst)
+		restConfigOpts = append(restConfigOpts, k8s.OptSetBurst(burst))
+	}
+
 	// Establish k8s core client connection.
-	restConfig, err := k8s.NewRestConfig(ctx.Config.Kubeconfig, ctx.Config.InCluster)
+	restConfig, err := k8s.NewRestConfig(ctx.Config.Kubeconfig, ctx.Config.InCluster, restConfigOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create REST config for Kubernetes clients: %w", err)
 	}
@@ -348,6 +362,7 @@ func (s *Server) doServe() error {
 		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
 		AllowChunkedLength:           !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
 		MergeSlashes:                 !*contourConfiguration.Envoy.Listener.DisableMergeSlashes,
+		ServerHeaderTransformation:   contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
 		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
 	}
@@ -431,6 +446,7 @@ func (s *Server) doServe() error {
 		fallbackCert:              fallbackCert,
 		connectTimeout:            timeouts.ConnectTimeout,
 		client:                    s.mgr.GetClient(),
+		metrics:                   contourMetrics,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -837,6 +853,7 @@ type dagBuilderConfig struct {
 	fallbackCert              *types.NamespacedName
 	connectTimeout            time.Duration
 	client                    client.Client
+	metrics                   *metrics.Metrics
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -946,6 +963,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			Client:                   dbc.client,
 		},
 		Processors: dagProcessors,
+		Metrics:    dbc.metrics,
 	}
 
 	// govet complains about copying the sync.Once that's in the dag.KubernetesCache

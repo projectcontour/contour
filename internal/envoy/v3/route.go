@@ -16,6 +16,7 @@ package v3
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"regexp"
 	"sort"
 	"strings"
@@ -258,23 +259,31 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 		r.Redirect.PortRedirect = redirect.PortNumber
 	}
 
-	if len(redirect.Path) > 0 {
-		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
-			PathRedirect: redirect.Path,
-		}
-	}
-
-	if len(redirect.Prefix) > 0 {
-		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
-			PrefixRewrite: redirect.Prefix,
+	if redirect.PathRewritePolicy != nil {
+		switch {
+		case len(redirect.PathRewritePolicy.FullPathRewrite) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
+				PathRedirect: redirect.PathRewritePolicy.FullPathRewrite,
+			}
+		case len(redirect.PathRewritePolicy.PrefixRewrite) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
+				PrefixRewrite: redirect.PathRewritePolicy.PrefixRewrite,
+			}
+		case len(redirect.PathRewritePolicy.PrefixRegexRemove) > 0:
+			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_RegexRewrite{
+				RegexRewrite: &matcher.RegexMatchAndSubstitute{
+					Pattern:      SafeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
+					Substitution: "/",
+				},
+			}
 		}
 	}
 
 	// Envoy's default is a 301 if not otherwise specified.
 	switch redirect.StatusCode {
-	case 301:
+	case http.StatusMovedPermanently:
 		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_MOVED_PERMANENTLY
-	case 302:
+	case http.StatusFound:
 		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_FOUND
 	}
 
@@ -532,10 +541,11 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 		return nil
 	}
 	ecp := &envoy_cors_v3.CorsPolicy{
-		AllowCredentials: wrapperspb.Bool(cp.AllowCredentials),
-		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
-		AllowMethods:     strings.Join(cp.AllowMethods, ","),
-		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
+		AllowCredentials:          wrapperspb.Bool(cp.AllowCredentials),
+		AllowHeaders:              strings.Join(cp.AllowHeaders, ","),
+		AllowMethods:              strings.Join(cp.AllowMethods, ","),
+		ExposeHeaders:             strings.Join(cp.ExposeHeaders, ","),
+		AllowPrivateNetworkAccess: wrapperspb.Bool(cp.AllowPrivateNetwork),
 	}
 
 	if cp.MaxAge.IsDisabled() {
@@ -621,11 +631,46 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_rout
 			Name: q.Name,
 		}
 
-		if q.MatchType == dag.QueryParamMatchTypeExact {
+		switch q.MatchType {
+		case dag.QueryParamMatchTypeExact:
 			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
 				StringMatch: &matcher.StringMatcher{
 					MatchPattern: &matcher.StringMatcher_Exact{Exact: q.Value},
+					IgnoreCase:   q.IgnoreCase,
 				},
+			}
+		case dag.QueryParamMatchTypePrefix:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Prefix{Prefix: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypeSuffix:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Suffix{Suffix: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypeRegex:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_SafeRegex{
+						SafeRegex: SafeRegexMatch(q.Value),
+					},
+				},
+			}
+		case dag.QueryParamMatchTypeContains:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Contains{Contains: q.Value},
+					IgnoreCase:   q.IgnoreCase,
+				},
+			}
+		case dag.QueryParamMatchTypePresent:
+			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_PresentMatch{
+				PresentMatch: true,
 			}
 		}
 

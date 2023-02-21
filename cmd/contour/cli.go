@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alecthomas/kingpin/v2"
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -33,14 +34,14 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // registerCli registers the cli subcommand and flags
 // with the Application provided.
-func registerCli(app *kingpin.Application) (*kingpin.CmdClause, *Client) {
+func registerCli(app *kingpin.Application, log *logrus.Logger) (*kingpin.CmdClause, *Client) {
+	client := Client{Log: log}
+
 	cli := app.Command("cli", "A CLI client for the Contour Kubernetes ingress controller.")
-	var client Client
 	cli.Flag("cafile", "CA bundle file for connecting to a TLS-secured Contour.").Envar("CLI_CAFILE").StringVar(&client.CAFile)
 	cli.Flag("cert-file", "Client certificate file for connecting to a TLS-secured Contour.").Envar("CLI_CERT_FILE").StringVar(&client.ClientCert)
 	cli.Flag("contour", "Contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
@@ -48,6 +49,7 @@ func registerCli(app *kingpin.Application) (*kingpin.CmdClause, *Client) {
 	cli.Flag("key-file", "Client key file for connecting to a TLS-secured Contour.").Envar("CLI_KEY_FILE").StringVar(&client.ClientKey)
 	cli.Flag("nack", "NACK all responses (for testing).").BoolVar(&client.Nack)
 	cli.Flag("node-id", "Node ID for the CLI client to use.").Envar("CLI_NODE_ID").Default("ContourCLI").StringVar(&client.NodeID)
+
 	return cli, &client
 }
 

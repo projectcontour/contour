@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build e2e
-// +build e2e
 
 package e2e
 
@@ -44,6 +43,7 @@ import (
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -328,31 +328,9 @@ func (d *Deployment) WaitForContourDeploymentUpdated() error {
 	if len(d.ContourDeployment.Spec.Template.Spec.Containers) != 1 {
 		return errors.New("invalid Contour Deployment containers spec")
 	}
-	contourPodImage := d.ContourDeployment.Spec.Template.Spec.Containers[0].Image
+	labelSelectAppContour := labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels)
 	updatedPods := func() (bool, error) {
-		pods := new(v1.PodList)
-		labelSelectAppContour := &client.ListOptions{
-			LabelSelector: labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels),
-			Namespace:     d.ContourDeployment.Namespace,
-		}
-		if err := d.client.List(context.TODO(), pods, labelSelectAppContour); err != nil {
-			return false, err
-		}
-
-		updatedPods := 0
-		for _, pod := range pods.Items {
-			if len(pod.Spec.Containers) != 1 {
-				return false, errors.New("invalid Contour Deployment pod containers")
-			}
-			if pod.Spec.Containers[0].Image != contourPodImage {
-				continue
-			}
-			for _, cond := range pod.Status.Conditions {
-				if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
-					updatedPods++
-				}
-			}
-		}
+		updatedPods := d.getPodsUpdatedWithContourImage(labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
 		return updatedPods == int(*d.ContourDeployment.Spec.Replicas), nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute, updatedPods)
@@ -374,28 +352,69 @@ func (d *Deployment) WaitForEnvoyUpdated() error {
 }
 
 func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
-	daemonSetUpdated := func() (bool, error) {
-		tempDS := new(apps_v1.DaemonSet)
-		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
+	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDaemonSet.Spec.Selector.MatchLabels)
+	updatedPods := func() (bool, error) {
+		ds := &apps_v1.DaemonSet{}
+		if err := d.client.Get(context.TODO(), types.NamespacedName{Name: d.EnvoyDaemonSet.Name, Namespace: d.EnvoyDaemonSet.Namespace}, ds); err != nil {
 			return false, err
 		}
-		return tempDS.Status.ObservedGeneration == tempDS.Generation &&
-			tempDS.Status.NumberAvailable > 0 &&
-			tempDS.Status.NumberAvailable == tempDS.Status.DesiredNumberScheduled &&
-			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
+		updatedPods := int(ds.Status.DesiredNumberScheduled)
+		if len(ds.Spec.Template.Spec.Containers) > 1 {
+			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+		}
+		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
+			ds.Status.NumberReady > 0, nil
 	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
+	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, updatedPods)
 }
 
 func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
-	deploymentUpdated := func() (bool, error) {
-		tempDeploy := new(apps_v1.Deployment)
-		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), tempDeploy); err != nil {
+	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDeployment.Spec.Selector.MatchLabels)
+	updatedPods := func() (bool, error) {
+		dp := new(apps_v1.Deployment)
+		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), dp); err != nil {
 			return false, err
 		}
-		return tempDeploy.Status.UnavailableReplicas == 0, nil
+		updatedPods := int(dp.Status.UpdatedReplicas)
+		if len(dp.Spec.Template.Spec.Containers) > 1 {
+			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+		}
+		return updatedPods == int(*d.EnvoyDeployment.Spec.Replicas) &&
+			int(dp.Status.ReadyReplicas) == updatedPods &&
+			int(dp.Status.UnavailableReplicas) == 0, nil
 	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, deploymentUpdated)
+	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, updatedPods)
+}
+
+func (d *Deployment) getPodsUpdatedWithContourImage(labelSelector labels.Selector, namespace string) int {
+	contourPodImage := d.ContourDeployment.Spec.Template.Spec.Containers[0].Image
+	pods := new(v1.PodList)
+	labelSelect := &client.ListOptions{
+		LabelSelector: labelSelector,
+		Namespace:     namespace,
+	}
+	if err := d.client.List(context.TODO(), pods, labelSelect); err != nil {
+		return 0
+	}
+	updatedPods := 0
+	for _, pod := range pods.Items {
+		updated := false
+		for _, container := range pod.Spec.Containers {
+			if container.Image == contourPodImage {
+				updated = true
+			}
+		}
+		if !updated {
+			continue
+		}
+
+		for _, cond := range pod.Status.Conditions {
+			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
+				updatedPods++
+			}
+		}
+	}
+	return updatedPods
 }
 
 func (d *Deployment) EnsureRateLimitResources(namespace string, configContents string) error {

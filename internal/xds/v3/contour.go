@@ -27,6 +27,8 @@ import (
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -77,13 +79,14 @@ func (s *contourServer) stream(st grpcStream) error {
 
 	// Notify whether the stream terminated on error.
 	done := func(log logrus.FieldLogger, err error) error {
-		if err != nil {
+		// If the stream has been closed by the client "gracefully",
+		// do not log as an error.
+		if err != nil && err != context.Canceled && status.Code(err) != codes.Canceled {
 			log.WithError(err).Error("stream terminated")
-		} else {
-			log.Info("stream terminated")
+			return err
 		}
-
-		return err
+		log.Debug("stream terminated")
+		return nil
 	}
 
 	ch := make(chan int, 1)

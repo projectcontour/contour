@@ -135,8 +135,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 
 // sortRoutes sorts the given Route slice in place. Routes are ordered
 // first by path match type, path match value via string comparison and
-// then by the length of the HeaderMatch slice (if any). The HeaderMatch
-// slice is also ordered by the matching header name.
+// then by the header and query param match conditions.
 // We sort dag.Route objects before converting to Envoy types to ensure
 // more accurate ordering of route matches. Contour route match types may
 // be implemented by Envoy route match types that change over time, or by
@@ -148,6 +147,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 func sortRoutes(routes []*dag.Route) {
 	for _, r := range routes {
 		sort.Stable(sorter.For(r.HeaderMatchConditions))
+		sort.Stable(sorter.For(r.QueryParamMatchConditions))
 	}
 
 	sort.Stable(sorter.For(routes))

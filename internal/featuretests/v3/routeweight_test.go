@@ -40,10 +40,7 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []contour_api_v1.Route{{
@@ -68,10 +65,7 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 	), nil)
 
 	proxy2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []contour_api_v1.Route{{
@@ -112,10 +106,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 
 	// proxy1 has a TCPProxy with a single service.
 	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.test.com",
@@ -171,10 +162,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	// proxy2 has a TCPProxy with multiple services,
 	// each with an explicit weight.
 	proxy2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.test.com",
@@ -230,10 +218,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	// proxy3 has a TCPProxy with multiple services,
 	// each with no weight specified.
 	proxy3 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.test.com",
@@ -289,10 +274,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 	// proxy4 has a TCPProxy with multiple services,
 	// some with weights specified and some without.
 	proxy4 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.test.com",
@@ -358,10 +340,8 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-gc",
-		},
+		TypeMeta:   metav1.TypeMeta{},
+		ObjectMeta: fixture.ObjectMeta("test-gc"),
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
@@ -395,14 +375,10 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// HTTPRoute with a single weight.
 	route1 := &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-			Labels: map[string]string{
-				"app":  "contour",
-				"type": "controller",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
+			"app":  "contour",
+			"type": "controller",
+		}),
 		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1beta1.ParentReference{
@@ -432,14 +408,10 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// HTTPRoute with multiple weights.
 	route2 := &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-			Labels: map[string]string{
-				"app":  "contour",
-				"type": "controller",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
+			"app":  "contour",
+			"type": "controller",
+		}),
 		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1beta1.ParentReference{
@@ -483,10 +455,8 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-gc",
-		},
+		TypeMeta:   metav1.TypeMeta{},
+		ObjectMeta: fixture.ObjectMeta("test-gc"),
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
@@ -523,14 +493,10 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// TLSRoute with a single service/weight.
 	route1 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-			Labels: map[string]string{
-				"app":  "contour",
-				"type": "controller",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
+			"app":  "contour",
+			"type": "controller",
+		}),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -579,14 +545,10 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// TLSRoute with multiple weighted services.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "basic",
-			Namespace: "default",
-			Labels: map[string]string{
-				"app":  "contour",
-				"type": "controller",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
+			"app":  "contour",
+			"type": "controller",
+		}),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{

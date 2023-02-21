@@ -73,10 +73,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("default/simple"),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -94,13 +91,8 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.allow-http": "false",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple", map[string]string{
+			"kubernetes.io/ingress.allow-http": "false"}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -118,13 +110,8 @@ func TestNonTLSListener(t *testing.T) {
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
 	i3 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"ingress.kubernetes.io/force-ssl-redirect": "true",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple",
+			map[string]string{"ingress.kubernetes.io/force-ssl-redirect": "true"}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -173,10 +160,7 @@ func TestTLSListener(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -233,13 +217,9 @@ func TestTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.allow-http": "false",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
+			"kubernetes.io/ingress.allow-http": "false",
+		}),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
@@ -1066,10 +1046,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	// p1 is a tls httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
@@ -1124,10 +1101,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	// p2 is a tls httpproxy
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
@@ -1284,6 +1258,60 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
 		NumTrustedHops(1).
+		DefaultFilters().
+		Get())
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			httpListener,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
+func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+	})
+
+	defer done()
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+
+	// p1 is a httpproxy
+	p1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(p1)
+
+	// verify that the server-header-transformation has been set to append_if_absent.
+	httpListener := defaultHTTPListener()
+
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		RequestTimeout(timeout.DurationSetting(0)).
+		ServerHeaderTransformation(contour_api_v1alpha1.AppendIfAbsentServerHeader).
 		DefaultFilters().
 		Get())
 

@@ -28,7 +28,6 @@ metadata:
   annotations:
   labels:
     name: gateway-api-webhook
-  namespace: gateway-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build e2e
-// +build e2e
 
 package e2e
 
@@ -79,6 +78,16 @@ func OptSetHeaders(headers map[string]string) func(*http.Request) {
 		for k, v := range headers {
 			r.Header.Set(k, v)
 		}
+	}
+}
+
+func OptSetQueryParams(queryParams map[string]string) func(*http.Request) {
+	return func(r *http.Request) {
+		q := r.URL.Query()
+		for k, v := range queryParams {
+			q.Add(k, v)
+		}
+		r.URL.RawQuery = q.Encode()
 	}
 }
 

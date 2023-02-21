@@ -55,7 +55,10 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 			return false
 		default:
 			// The match that is not inverted sorts first.
-			return !a.Invert
+			if a.Invert != b.Invert {
+				return !a.Invert
+			}
+			return false
 		}
 	}
 
@@ -100,8 +103,106 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 		case dag.HeaderMatchTypePresent:
 			if s[j].MatchType == dag.HeaderMatchTypePresent {
 				// The match that is not inverted sorts first.
-				return !s[i].Invert
+				if s[i].Invert != s[j].Invert {
+					return !s[i].Invert
+				}
 			}
+		}
+		return false
+	}
+}
+
+// Sorts QueryParameterMatchCondition objects, first by the query param name,
+// then by their matcher condition type and value.
+type queryParamMatchConditionSorter []dag.QueryParamMatchCondition
+
+func (s queryParamMatchConditionSorter) Len() int      { return len(s) }
+func (s queryParamMatchConditionSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s queryParamMatchConditionSorter) Less(i, j int) bool {
+	compareValue := func(a dag.QueryParamMatchCondition, b dag.QueryParamMatchCondition) bool {
+		switch strings.Compare(a.Value, b.Value) {
+		case -1:
+			return true
+		case 1:
+			return false
+		default:
+			// The match that is case sensitive sorts first.
+			if a.IgnoreCase != b.IgnoreCase {
+				return !a.IgnoreCase
+			}
+			return false
+		}
+	}
+
+	val := strings.Compare(s[i].Name, s[j].Name)
+	switch val {
+	case -1:
+		return true
+	case 1:
+		return false
+	default:
+		switch s[i].MatchType {
+		case dag.QueryParamMatchTypeExact:
+			// Exact matches are most specific so they sort first.
+			switch s[j].MatchType {
+			case dag.QueryParamMatchTypeExact:
+				return compareValue(s[i], s[j])
+			case dag.QueryParamMatchTypeRegex:
+				return true
+			case dag.QueryParamMatchTypePrefix:
+				return true
+			case dag.QueryParamMatchTypeSuffix:
+				return true
+			case dag.QueryParamMatchTypeContains:
+				return true
+			case dag.QueryParamMatchTypePresent:
+				return true
+			}
+		case dag.QueryParamMatchTypeRegex:
+			// Regex matches sort ahead of Prefix matches.
+			switch s[j].MatchType {
+			case dag.QueryParamMatchTypeRegex:
+				return compareValue(s[i], s[j])
+			case dag.QueryParamMatchTypePrefix:
+				return true
+			case dag.QueryParamMatchTypeSuffix:
+				return true
+			case dag.QueryParamMatchTypeContains:
+				return true
+			case dag.QueryParamMatchTypePresent:
+				return true
+			}
+		case dag.QueryParamMatchTypePrefix:
+			// Prefix matches sort ahead of Suffix matches.
+			switch s[j].MatchType {
+			case dag.QueryParamMatchTypePrefix:
+				return compareValue(s[i], s[j])
+			case dag.QueryParamMatchTypeSuffix:
+				return true
+			case dag.QueryParamMatchTypeContains:
+				return true
+			case dag.QueryParamMatchTypePresent:
+				return true
+			}
+		case dag.QueryParamMatchTypeSuffix:
+			// Suffix matches sort ahead of Contains matches.
+			switch s[j].MatchType {
+			case dag.QueryParamMatchTypeSuffix:
+				return compareValue(s[i], s[j])
+			case dag.QueryParamMatchTypeContains:
+				return true
+			case dag.QueryParamMatchTypePresent:
+				return true
+			}
+		case dag.QueryParamMatchTypeContains:
+			// Contains matches sort ahead of Present matches.
+			switch s[j].MatchType {
+			case dag.QueryParamMatchTypeContains:
+				return compareValue(s[i], s[j])
+			case dag.QueryParamMatchTypePresent:
+				return true
+			}
+		case dag.QueryParamMatchTypePresent:
 		}
 		return false
 	}
@@ -139,12 +240,14 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 		}
 	}
 
-	// QueryParamMatchConditions are equal length: compare name item by item.
-	// We can do this simple comparison since we only have one match type, will
-	// need to expand this with a sorter for query params if we introduce more.
+	// QueryParamMatchConditions are equal length: compare item by item.
 	for i := 0; i < len(lhs.QueryParamMatchConditions); i++ {
-		if lhs.QueryParamMatchConditions[i].Name != rhs.QueryParamMatchConditions[i].Name {
-			return lhs.QueryParamMatchConditions[i].Name < rhs.QueryParamMatchConditions[i].Name
+		qPair := make([]dag.QueryParamMatchCondition, 2)
+		qPair[0] = lhs.QueryParamMatchConditions[i]
+		qPair[1] = rhs.QueryParamMatchConditions[i]
+
+		if queryParamMatchConditionSorter(qPair).Less(0, 1) {
+			return true
 		}
 	}
 
@@ -310,6 +413,8 @@ func For(v interface{}) sort.Interface {
 		return routeSorter(v)
 	case []dag.HeaderMatchCondition:
 		return headerMatchConditionSorter(v)
+	case []dag.QueryParamMatchCondition:
+		return queryParamMatchConditionSorter(v)
 	case []*envoy_cluster_v3.Cluster:
 		return clusterSorter(v)
 	case []*envoy_endpoint_v3.ClusterLoadAssignment:

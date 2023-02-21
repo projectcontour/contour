@@ -1,1 +1,0 @@
-Added a section to the [Deployment Options](https://projectcontour.io/docs/main/deploy-options/) document describing how to deploy more than one Contour instance in a single cluster.

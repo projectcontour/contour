@@ -93,6 +93,22 @@ const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
 const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 const AllClusterDNSFamily ClusterDNSFamilyType = "all"
 
+// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
+type ServerHeaderTransformationType string
+
+func (s ServerHeaderTransformationType) Validate() error {
+	switch s {
+	case OverwriteServerHeader, AppendIfAbsentServerHeader, PassThroughServerHeader:
+		return nil
+	default:
+		return fmt.Errorf("invalid server header transformation %q", s)
+	}
+}
+
+const OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
+const AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
+const PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
+
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
 
@@ -440,8 +456,10 @@ type Parameters struct {
 	Debug bool
 
 	// Kubernetes client parameters.
-	InCluster  bool   `yaml:"incluster,omitempty"`
-	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+	InCluster       bool    `yaml:"incluster,omitempty"`
+	Kubeconfig      string  `yaml:"kubeconfig,omitempty"`
+	KubeClientQPS   float32 `yaml:"kubernetesClientQPS,omitempty"`
+	KubeClientBurst int     `yaml:"kubernetesClientBurst,omitempty"`
 
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
@@ -488,6 +506,14 @@ type Parameters struct {
 	// DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
+
+	// Defines the action to be applied to the Server header on the response path.
+	// When configured as overwrite, overwrites any Server header with "envoy".
+	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
+	// When configured as pass_through, pass through the value of the Server header, and do not append a header if none is present.
+	//
+	// Contour's default is overwrite.
+	ServerHeaderTransformation ServerHeaderTransformationType `yaml:"serverHeaderTransformation,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
@@ -694,14 +720,15 @@ func Defaults() Parameters {
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
 		},
-		IngressStatusAddress:      "",
-		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
-		AccessLogFields:           DefaultFields,
-		AccessLogLevel:            LogLevelInfo,
-		TLS:                       TLSParameters{},
-		DisablePermitInsecure:     false,
-		DisableAllowChunkedLength: false,
-		DisableMergeSlashes:       false,
+		IngressStatusAddress:       "",
+		AccessLogFormat:            DEFAULT_ACCESS_LOG_TYPE,
+		AccessLogFields:            DefaultFields,
+		AccessLogLevel:             LogLevelInfo,
+		TLS:                        TLSParameters{},
+		DisablePermitInsecure:      false,
+		DisableAllowChunkedLength:  false,
+		DisableMergeSlashes:        false,
+		ServerHeaderTransformation: OverwriteServerHeader,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

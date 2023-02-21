@@ -27,7 +27,6 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -51,13 +50,9 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	{
 		// --- ingress class matches explicitly
 		ingressValid := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "linkerd",
-				},
-			},
+			ObjectMeta: fixture.ObjectMetaWithAnnotations(IngressName, map[string]string{
+				"kubernetes.io/ingress.class": "linkerd",
+			}),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -81,13 +76,9 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 
 		// --- wrong ingress class specified
 		ingressWrongClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "invalid",
-				},
-			},
+			ObjectMeta: fixture.ObjectMetaWithAnnotations(IngressName, map[string]string{
+				"kubernetes.io/ingress.class": "invalid",
+			}),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -104,10 +95,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 
 		// --- no ingress class specified
 		ingressNoClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -276,10 +264,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	{
 		// --- no ingress class specified
 		ingressNoClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -303,13 +288,9 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 
 		// --- matching ingress class specified
 		ingressMatchingClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "contour",
-				},
-			},
+			ObjectMeta: fixture.ObjectMetaWithAnnotations(IngressName, map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			}),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -333,13 +314,9 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 
 		// --- non-matching ingress class specified
 		ingressNonMatchingClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "invalid",
-				},
-			},
+			ObjectMeta: fixture.ObjectMetaWithAnnotations(IngressName, map[string]string{
+				"kubernetes.io/ingress.class": "invalid",
+			}),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -576,9 +553,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 	rh.OnAdd(svc)
 
 	ingressClass := networking_v1.IngressClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "testingressclass",
-		},
+		ObjectMeta: fixture.ObjectMeta("testingressclass"),
 		Spec: networking_v1.IngressClassSpec{
 			Controller: "something",
 		},
@@ -590,10 +565,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 	{
 		// Spec.IngressClassName matches.
 		ingressValid := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				IngressClassName: ref.To("testingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
@@ -618,10 +590,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 		// Spec.IngressClassName does not match.
 		ingressWrongClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				IngressClassName: ref.To("wrongingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
@@ -639,10 +608,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 		// No ingress class specified.
 		ingressNoClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -807,9 +773,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 	rh.OnAdd(svc)
 
 	ingressClass := networking_v1.IngressClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "contour",
-		},
+		ObjectMeta: fixture.ObjectMeta("contour"),
 		Spec: networking_v1.IngressClassSpec{
 			Controller: "something",
 		},
@@ -821,10 +785,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 	{
 		// No class specified.
 		ingressNoClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				DefaultBackend: featuretests.IngressBackend(svc),
 			},
@@ -848,10 +809,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 		// Spec.IngressClassName matches.
 		ingressMatchingClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				IngressClassName: ref.To("contour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
@@ -876,10 +834,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 		// Spec.IngressClassName does not match.
 		ingressNonMatchingClass := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      IngressName,
-				Namespace: Namespace,
-			},
+			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
 				IngressClassName: ref.To("notcontour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),

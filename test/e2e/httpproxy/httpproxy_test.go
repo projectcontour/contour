@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build e2e
-// +build e2e
 
 package httpproxy
 
@@ -110,6 +109,10 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
+
+	f.NamespacedTest("httpproxy-query-parameter-condition-match", testQueryParameterConditionMatch)
+
+	f.NamespacedTest("httpproxy-query-parameter-condition-multiple", testQueryParameterConditionMultiple)
 
 	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)
 

@@ -156,13 +156,33 @@ func (hc *HeaderMatchCondition) String() string {
 const (
 	// QueryParamMatchTypeExact matches a querystring parameter value exactly.
 	QueryParamMatchTypeExact = "exact"
+
+	// QueryParamMatchTypePrefix matches a querystring parameter value is
+	// prefixed by a given string.
+	QueryParamMatchTypePrefix = "prefix"
+
+	// QueryParamMatchTypeSuffix matches a querystring parameter value is
+	// suffixed by a given string.
+	QueryParamMatchTypeSuffix = "suffix"
+
+	// QueryParamMatchTypeRegex matches a querystring parameter value against
+	// given regular expression.
+	QueryParamMatchTypeRegex = "regex"
+
+	// QueryParamMatchTypeContains matches a querystring parameter value
+	// contains the given string.
+	QueryParamMatchTypeContains = "contains"
+
+	// QueryParamMatchTypePresent matches a querystring parameter if present.
+	QueryParamMatchTypePresent = "present"
 )
 
 // QueryParamMatchCondition matches querystring parameters by MatchType
 type QueryParamMatchCondition struct {
-	Name      string
-	Value     string
-	MatchType string
+	Name       string
+	Value      string
+	MatchType  string
+	IgnoreCase bool
 }
 
 func (qc *QueryParamMatchCondition) String() string {
@@ -170,6 +190,7 @@ func (qc *QueryParamMatchCondition) String() string {
 		"name=" + qc.Name,
 		"value=" + qc.Value,
 		"matchtype=", qc.MatchType,
+		"ignorecase=", strconv.FormatBool(qc.IgnoreCase),
 	}, "&")
 
 	return "queryparam: " + details
@@ -203,14 +224,9 @@ type Redirect struct {
 	// use. Valid options are 301 or 302.
 	StatusCode int
 
-	// Path is the path to swap the url during a redirect.
-	// Valid options start with a `/`.
-	Path string
-
-	// Prefix is the value to swap with the  prefix of the url
-	// during a redirect.
-	// Valid options start with a `/`.
-	Prefix string
+	// PathRewritePolicy is the policy for rewriting
+	// the path during redirect.
+	PathRewritePolicy *PathRewritePolicy
 }
 
 // Route defines the properties of a route to a Cluster.
@@ -529,6 +545,8 @@ type CORSPolicy struct {
 	ExposeHeaders []string
 	// MaxAge specifies the content for the *access-control-max-age* header.
 	MaxAge timeout.Setting
+	// AllowPrivateNetwork specifies whether to allow private network requests.
+	AllowPrivateNetwork bool
 }
 
 type HeaderValue struct {

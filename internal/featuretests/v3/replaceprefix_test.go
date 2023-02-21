@@ -32,6 +32,7 @@ func update(rh cache.ResourceEventHandler, old *contour_api_v1.HTTPProxy, modify
 
 	modify(updated)
 
+	fixture.UpdateObjectVersion(&updated.ObjectMeta)
 	rh.OnUpdate(old, updated)
 	return updated
 }

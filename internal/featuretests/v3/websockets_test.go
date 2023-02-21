@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -37,13 +36,9 @@ func TestWebsocketsIngress(t *testing.T) {
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: s1.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/websocket-routes": "/ws2",
-			},
-		},
+		ObjectMeta: fixture.ObjectMetaWithAnnotations("ws", map[string]string{
+			"projectcontour.io/websocket-routes": "/ws2",
+		}),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "websocket.hello.world",
@@ -89,10 +84,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	rh.OnAdd(s2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []contour_api_v1.Route{{
@@ -143,10 +135,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	})
 
 	hp2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
+		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []contour_api_v1.Route{{
