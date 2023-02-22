@@ -1366,10 +1366,11 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
 		} else {
 			// Get clusters from rule backendRefs
-			clusters, totalWeight, ok := p.HTTPClusters(route.Namespace, rule.BackendRefs, routeAccessor)
-			if ok {
-				routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
+			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
+			if !ok {
+				continue
 			}
+			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1514,16 +1515,16 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 		// the same priority.
 		priority := uint8(ruleIndex)
 
-		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
 		// Note that we can end up with multiple routes here since the match conditions are
 		// logically "OR"-ed, which we express as multiple routes, each with one of the
 		// conditions, all with the same action.
 		var routes []*Route
 
-		clusters, totalWeight, ok := p.GRPCClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol)
-		if ok {
-			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+		clusters, totalWeight, ok := p.grpcClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol)
+		if !ok {
+			continue
 		}
+		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
@@ -1776,8 +1777,8 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 	return dagMatchConditions, nil
 }
 
-// HTTPClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) HTTPClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate) ([]*Cluster, uint32, bool) {
+// httpClusters builds clusters from backendRef.
+func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
@@ -1853,8 +1854,8 @@ func (p *GatewayAPIProcessor) HTTPClusters(routeNamespace string, backendRefs []
 	return clusters, totalWeight, true
 }
 
-// GRPCClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) GRPCClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1beta1.ProtocolType) ([]*Cluster, uint32, bool) {
+// grpcClusters builds clusters from backendRef.
+func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1beta1.ProtocolType) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
