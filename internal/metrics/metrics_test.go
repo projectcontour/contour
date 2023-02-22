@@ -692,7 +692,7 @@ func TestRemoveProxyMetric(t *testing.T) {
 	}
 }
 
-func TestSetDAGCacheOjbectMetric(t *testing.T) {
+func TestSetDAGCacheObjectMetric(t *testing.T) {
 	tests := map[string]struct {
 		countMetric testMetric
 		value       int
@@ -702,7 +702,7 @@ func TestSetDAGCacheOjbectMetric(t *testing.T) {
 			value: 123,
 			kind:  "test",
 			countMetric: testMetric{
-				metric: DAGCacheOjbectGauge,
+				metric: DAGCacheObjectGauge,
 				want: []*io_prometheus_client.Metric{
 					{
 						Label: []*io_prometheus_client.LabelPair{
@@ -724,7 +724,7 @@ func TestSetDAGCacheOjbectMetric(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := prometheus.NewRegistry()
 			m := NewMetrics(r)
-			m.SetDAGCacheOjbectMetric(tc.kind, tc.value)
+			m.SetDAGCacheObjectMetric(tc.kind, tc.value)
 
 			gatherers := prometheus.Gatherers{
 				r,

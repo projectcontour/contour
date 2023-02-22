@@ -34,7 +34,7 @@ type Metrics struct {
 	proxyOrphanedGauge  *prometheus.GaugeVec
 
 	dagRebuildGauge             prometheus.Gauge
-	dagCacheOjbectGauge         *prometheus.GaugeVec
+	dagCacheObjectGauge         *prometheus.GaugeVec
 	dagRebuildTotal             prometheus.Counter
 	DAGRebuildSeconds           prometheus.Summary
 	CacheHandlerOnUpdateSummary prometheus.Summary
@@ -67,7 +67,7 @@ const (
 	HTTPProxyValidGauge     = "contour_httpproxy_valid"
 	HTTPProxyOrphanedGauge  = "contour_httpproxy_orphaned"
 
-	DAGCacheOjbectGauge         = "contour_dag_cache_object"
+	DAGCacheObjectGauge         = "contour_dag_cache_object"
 	DAGRebuildGauge             = "contour_dagrebuild_timestamp"
 	DAGRebuildTotal             = "contour_dagrebuild_total"
 	DAGRebuildSeconds           = "contour_dagrebuild_seconds"
@@ -132,10 +132,10 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 				Help: "Timestamp of the last DAG rebuild.",
 			},
 		),
-		dagCacheOjbectGauge: prometheus.NewGaugeVec(
+		dagCacheObjectGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: DAGCacheOjbectGauge,
-				Help: "Total number of items are in the DAG cache at current.",
+				Name: DAGCacheObjectGauge,
+				Help: "Total number of items that are currently in the DAG cache.",
 			},
 			[]string{"kind"},
 		),
@@ -190,7 +190,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.proxyOrphanedGauge,
 		m.dagRebuildGauge,
 		m.dagRebuildTotal,
-		m.dagCacheOjbectGauge,
+		m.dagCacheObjectGauge,
 		m.DAGRebuildSeconds,
 		m.CacheHandlerOnUpdateSummary,
 		m.EventHandlerOperations,
@@ -217,7 +217,7 @@ func (m *Metrics) Zero() {
 	m.SetDAGLastRebuilt(time.Now())
 	m.SetHTTPProxyMetric(zeroes)
 	m.EventHandlerOperations.WithLabelValues("add", "Secret").Inc()
-	m.SetDAGCacheOjbectMetric("kind", 1)
+	m.SetDAGCacheObjectMetric("kind", 1)
 
 	m.CacheHandlerOnUpdateSummary.Observe(0)
 	m.DAGRebuildSeconds.Observe(0)
@@ -233,12 +233,12 @@ func (m *Metrics) SetDAGRebuiltTotal() {
 	m.dagRebuildTotal.Inc()
 }
 
-// SetDAGCacheOjbectMetric records the total number of items in cache at current
-func (m *Metrics) SetDAGCacheOjbectMetric(kind string, count int) {
+// SetDAGCacheObjectMetric records the total number of items that are currently in the DAG cache.
+func (m *Metrics) SetDAGCacheObjectMetric(kind string, count int) {
 	if m == nil {
 		return
 	}
-	m.dagCacheOjbectGauge.WithLabelValues(kind).Set(float64(count))
+	m.dagCacheObjectGauge.WithLabelValues(kind).Set(float64(count))
 }
 
 // SetHTTPProxyMetric sets metric values for a set of HTTPProxies

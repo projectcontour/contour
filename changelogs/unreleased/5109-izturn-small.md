@@ -1,1 +1,1 @@
-Adds a new gauge metric, `contour_dag_cache_object`, to indicate the total number of items are in the DAG cache at current.
+Adds a new gauge metric, `contour_dag_cache_object`, to indicate the total number of items that are currently in the DAG cache.
