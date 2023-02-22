@@ -4956,7 +4956,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
 				},
 			),
@@ -5079,7 +5079,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
-								Routes: routes(exactrouteGRPCRoute("io.projectcontour/Login", grpcService(blogService, "h2"))),
+								Routes: routes(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(blogService, "h2"))),
 							},
 							Secret: secret(sec1),
 						},
@@ -5089,7 +5089,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
 				},
 			),
@@ -5127,11 +5127,90 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: exact("io.projectcontour/Login"),
+							PathMatchCondition: exact("/io.projectcontour/Login"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
 							},
 							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with no method match and single header match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+							},
+							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with no matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches:     []gatewayapi_v1alpha2.GRPCRouteMatch{{}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
 						}),
 					),
 				},
@@ -5199,7 +5278,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: exact("io.projectcontour/Login"),
+							PathMatchCondition: exact("/io.projectcontour/Login"),
 							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -5277,7 +5356,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: exact("io.projectcontour/Login"),
+							PathMatchCondition: exact("/io.projectcontour/Login"),
 							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
 							ResponseHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -5339,7 +5418,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: exact("io.projectcontour/Login"),
+							PathMatchCondition: exact("/io.projectcontour/Login"),
 							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set:         map[string]string{"Custom-Header-Set": "foo-bar"},
@@ -5403,7 +5482,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: exact("io.projectcontour/Login"),
+							PathMatchCondition: exact("/io.projectcontour/Login"),
 							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{}, nil, grpcService(kuardService, "h2c")),
 						},
 					)),
@@ -5448,7 +5527,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
 				},
 			),
 		},
@@ -5505,7 +5584,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(&Listener{
 				Name:         HTTP_LISTENER_NAME,
 				Port:         80,
-				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("io.projectcontour/Login", grpcService(kuardService, "h2c")))),
+				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")))),
 			}),
 		},
 	}
