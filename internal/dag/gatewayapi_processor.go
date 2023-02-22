@@ -1429,7 +1429,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &ExactMatchCondition{Path: path}, true
 	}
 
-	routeAccessor.AddCondition(status.ConditionAccepted, metav1.ConditionFalse, status.ReasonUnsupportedValue, "Unsupported HTTPRoute path match type.")
+	routeAccessor.AddCondition(gatewayapi_v1beta1.ConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.ReasonUnsupportedValue, "Unsupported HTTPRoute path match type.")
 	return nil, false
 }
 
