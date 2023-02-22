@@ -1540,8 +1540,9 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 }
 
 func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {
+	// If method match is not specified, all services and methods will match.
 	if match == nil {
-		return nil, true
+		return &PrefixMatchCondition{Prefix: "/"}, true
 	}
 
 	// Type specifies how to match against the service and/or method.
@@ -1561,7 +1562,7 @@ func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch,
 	}
 
 	// Convert service and method into path
-	path := *match.Service + "/" + *match.Method
+	path := "/" + *match.Service + "/" + *match.Method
 
 	return &ExactMatchCondition{Path: path}, true
 }

@@ -9458,7 +9458,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
 	})
 
-	run(t, "grpcroute: more than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
+	run(t, "grpcroute: more than one RequestMirror filters in GRPCRoute.Spec.Rules.Filters", testcase{
 		objs: []interface{}{
 			kuardService,
 			kuardService2,
