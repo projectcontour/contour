@@ -1433,7 +1433,7 @@ func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRo
 		}
 
 		// If no matches are specified, the implementation MUST match every gRPC request.
-		if rule.Matches == nil {
+		if len(rule.Matches) == 0 {
 			matchconditions = append(matchconditions, &matchConditions{
 				path: &PrefixMatchCondition{Prefix: "/"},
 			})
