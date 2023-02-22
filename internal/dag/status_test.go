@@ -9068,6 +9068,36 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		},
 	}
 
+	kuardService2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	kuardService3 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard3",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	run(t, "simple grpcroute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -9286,7 +9316,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		},
-
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9304,6 +9333,495 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 			},
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
+	})
+
+	run(t, "grpcroute: invalid RequestHeaderModifier due to duplicated headers", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1beta1.HTTPHeader{
+									{Name: "custom", Value: "duplicated"},
+									{Name: "Custom", Value: "duplicated"},
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "duplicate header addition: \"Custom\" on request headers",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: invalid ResponseHeaderModifier due to invalid headers", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+							Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+							ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+								Add: []gatewayapi_v1beta1.HTTPHeader{
+									{Name: "!invalid-header", Value: "foo"},
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: more than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			kuardService3,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							},
+						}, {
+							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+							}},
+						},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(status.ConditionNotImplemented),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(status.ReasonNotImplemented),
+							Message: "GRPCRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: invalid RequestMirror filter due to unspecified backendRef.name", testcase{
+		objs: []interface{}{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi_v1beta1.BackendObjectReference{
+									Group: ref.To(gatewayapi_v1beta1.Group("")),
+									Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+									Port:  ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// This still results in an attached route because it returns a 404.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: custom filter type is not supported", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+							Type: "custom-filter",
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
+							Message: "GRPCRoute.Spec.Rules.Filters: invalid type \"custom-filter\": only RequestHeaderModifier, ResponseHeaderModifier and RequestMirror are supported.",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: at lease one backend need to be specified", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{}},
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "At least one Spec.Rules.BackendRef must be specified.",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
+	})
+
+	run(t, "grpcroute: invalid RequestHeaderModifier on backend due to duplicated headers", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
+							{
+								BackendRef: gatewayapi_v1beta1.BackendRef{
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+								},
+								Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "custom", Value: "duplicated"},
+											{Name: "Custom", Value: "duplicated"},
+										},
+									},
+								}},
+							},
+						}},
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "duplicate header addition: \"Custom\" on request headers",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
+	})
+
+	run(t, "grpcroute: invalid ResponseHeaderModifier on backend due to invalid headers", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
+							{
+								BackendRef: gatewayapi_v1beta1.BackendRef{
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+								},
+								Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1beta1.HTTPHeader{
+											{Name: "!invalid-header", Value: "foo"},
+										},
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonDegraded),
+							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted GRPCRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
 	})
 }
 
