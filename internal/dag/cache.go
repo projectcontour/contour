@@ -130,9 +130,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("ingress-class-name", ref.Val(obj.Spec.IngressClassName, "")).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
-				return false, 0
+				return false, len(kc.ingresses)
 			}
-
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.ingresses)
 
@@ -146,7 +145,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("ingress-class-name", obj.Spec.IngressClassName).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring HTTPProxy with unmatched ingress class")
-				return false, 0
+				return false, len(kc.httpproxies)
 			}
 
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
@@ -162,7 +161,10 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			// matches that gateway's.
 			case kc.ConfiguredGatewayToCache != nil:
 				if kc.gateway == nil || obj.Name != string(kc.gateway.Spec.GatewayClassName) {
-					return false, 0
+					if kc.gatewayclass == nil {
+						return false, 0
+					}
+					return false, 1
 				}
 
 				kc.gatewayclass = obj
@@ -179,7 +181,10 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			// matches, and get its gateway class.
 			case kc.ConfiguredGatewayToCache != nil:
 				if k8s.NamespacedNameOf(obj) != *kc.ConfiguredGatewayToCache {
-					return false, 0
+					if kc.gateway == nil {
+						return false, 0
+					}
+					return false, 1
 				}
 
 				kc.gateway = obj
@@ -224,14 +229,14 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		}
 	}
 
-	if ok, count := maybeInsert(obj); ok {
+	ok, count := maybeInsert(obj)
+	kind := k8s.KindOf(obj)
+	kc.Metrics.SetDAGCacheObjectMetric(kind, count)
+	if ok {
 		// Only check annotations if we actually inserted
 		// the object in our cache; uninteresting objects
 		// should not be checked.
 		if obj, ok := obj.(metav1.Object); ok {
-			kind := k8s.KindOf(obj)
-			kc.Metrics.SetDAGCacheObjectMetric(kind, count)
-
 			for key := range obj.GetAnnotations() {
 				// Emit a warning if this is a known annotation that has
 				// been applied to an invalid object kind. Note that we
@@ -265,10 +270,9 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	default:
 		ok, count := kc.remove(obj)
-		if ok {
-			kc.Metrics.SetDAGCacheObjectMetric(k8s.KindOf(obj), count)
-		}
+		kc.Metrics.SetDAGCacheObjectMetric(k8s.KindOf(obj), count)
 		return ok
+
 	case cache.DeletedFinalStateUnknown:
 		return kc.Remove(obj.Obj) // recurse into ourselves with the tombstoned value
 	}
@@ -312,11 +316,15 @@ func (kc *KubernetesCache) remove(obj interface{}) (bool, int) {
 	case *gatewayapi_v1beta1.GatewayClass:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
-			if kc.gatewayclass == nil || obj.Name != kc.gatewayclass.Name {
+			if kc.gatewayclass == nil {
 				return false, 0
+			}
+			if obj.Name != kc.gatewayclass.Name {
+				return false, 1
 			}
 			kc.gatewayclass = nil
 			return true, 0
+
 		default:
 			kc.gatewayclass = nil
 			return true, 0
@@ -325,8 +333,11 @@ func (kc *KubernetesCache) remove(obj interface{}) (bool, int) {
 	case *gatewayapi_v1beta1.Gateway:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
-			if kc.gateway == nil || k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
+			if kc.gateway == nil {
 				return false, 0
+			}
+			if k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
+				return false, 1
 			}
 			kc.gateway = nil
 			return true, 0
