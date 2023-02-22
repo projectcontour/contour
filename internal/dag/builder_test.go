@@ -5179,6 +5179,43 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"GRPCRoute: insert basic single route with no matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches:     []gatewayapi_v1alpha2.GRPCRouteMatch{{}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
 		"GRPCRoute: Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
