@@ -230,7 +230,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		// should not be checked.
 		if obj, ok := obj.(metav1.Object); ok {
 			kind := k8s.KindOf(obj)
-			kc.Metrics.SetDAGCacheOjbectMetric(kind, count)
+			kc.Metrics.SetDAGCacheObjectMetric(kind, count)
 
 			for key := range obj.GetAnnotations() {
 				// Emit a warning if this is a known annotation that has
@@ -266,7 +266,7 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 	default:
 		ok, count := kc.remove(obj)
 		if ok {
-			kc.Metrics.SetDAGCacheOjbectMetric(k8s.KindOf(obj), count)
+			kc.Metrics.SetDAGCacheObjectMetric(k8s.KindOf(obj), count)
 		}
 		return ok
 	case cache.DeletedFinalStateUnknown:
