@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/debug
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/debug  --disable-version-string
 
 func TestWriteDotEscapesLabels(t *testing.T) {
 	d := dag.DAG{}
