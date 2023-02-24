@@ -148,7 +148,7 @@ Gateway API now supports a specific resource [GRPCRoute][6] for routing gRPC req
 
 ## GRPCRoute Configuration
 
-Configuring GRPCRoute for routing gRPC requests needs to specify parentRefs, hostnames, and routing rules with specific backendRefs. In the below example, route path matching is conducted via mathod matching rule for declared services and their methods.
+Configuring GRPCRoute for routing gRPC requests needs to specify parentRefs, hostnames, and routing rules with specific backendRefs. In the below example, route path matching is conducted via method matching rule for declared services and their methods.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1alpha2
