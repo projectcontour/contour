@@ -4874,14 +4874,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonPathMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 						},
 					},
@@ -4923,14 +4917,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonPathMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 						},
 					},
@@ -4984,14 +4972,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonHeaderMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
 						},
 					},
@@ -5042,14 +5024,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []metav1.Condition{
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonQueryParamMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported",
 						},
 					},
@@ -6818,12 +6794,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonNotImplemented),
-							Message: "HTTPRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
-						},
-						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
@@ -7139,16 +7109,10 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonHTTPRouteFilterType),
-							Message: "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
-						},
-						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted HTTPRoute",
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
+							Message: "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
 						},
 					},
 				},
@@ -9504,12 +9468,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonNotImplemented),
-							Message: "GRPCRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
-						},
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
