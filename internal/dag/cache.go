@@ -68,6 +68,7 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1beta1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
+	grpcroutes                map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
@@ -89,6 +90,7 @@ func (kc *KubernetesCache) init() {
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute)
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
+	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -190,6 +192,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1alpha2.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+		case *gatewayapi_v1alpha2.GRPCRoute:
+			kc.grpcroutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
@@ -310,6 +315,10 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.tlsroutes, m)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
+	case *gatewayapi_v1alpha2.GRPCRoute:
+		m := k8s.NamespacedNameOf(obj)
+		delete(kc.grpcroutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs)
 	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)

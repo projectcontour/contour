@@ -38,6 +38,7 @@ import (
 const (
 	KindHTTPRoute = "HTTPRoute"
 	KindTLSRoute  = "TLSRoute"
+	KindGRPCRoute = "GRPCRoute"
 	KindGateway   = "Gateway"
 )
 
@@ -270,6 +271,84 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						metav1.ConditionTrue,
 						gatewayapi_v1beta1.RouteReasonAccepted,
 						"Accepted TLSRoute",
+					)
+				}
+			}
+		}()
+	}
+
+	// Compute each GRPCRoute for each Listener that it potentially attaches to.
+	for _, grpcRoute := range p.source.grpcroutes {
+		func() {
+			routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(
+				k8s.NamespacedNameOf(grpcRoute),
+				grpcRoute.Generation,
+				&gatewayapi_v1alpha2.GRPCRoute{},
+			)
+			defer commit()
+
+			for _, routeParentRef := range grpcRoute.Spec.ParentRefs {
+				// If this parent ref is to a different Gateway, ignore it.
+				if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+					continue
+				}
+
+				routeParentStatusAccessor := routeAccessor.StatusUpdateFor(routeParentRef)
+
+				// If the Gateway is invalid, set status on the route and we're done.
+				if gatewayNotProgrammedCondition != nil {
+					routeParentStatusAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+					return
+				}
+
+				// Get the list of listeners that are (a) included by this parent ref, and
+				// (b) allow the route (based on kind, namespace).
+				allowedListeners := p.getListenersForRouteParentRef(routeParentRef, grpcRoute.Namespace, KindGRPCRoute, readyListeners, routeParentStatusAccessor)
+				if len(allowedListeners) == 0 {
+					continue
+				}
+
+				// Keep track of the number of intersecting hosts
+				// between the route and all allowed listeners for
+				// this parent ref so that we can set the appropriate
+				// route parent status condition if there were none.
+				hostCount := 0
+
+				for _, listener := range allowedListeners {
+					attached, hosts := p.computeGRPCRoute(grpcRoute, routeParentStatusAccessor, listener)
+
+					if attached {
+						listenerAttachedRoutes[string(listener.listener.Name)]++
+					}
+
+					hostCount += hosts.Len()
+				}
+
+				if hostCount == 0 {
+					routeParentStatusAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionFalse,
+						gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
+						"No intersecting hostnames were found between the listener and the route.",
+					)
+				}
+
+				// Check for an existing "Accepted" condition, add one if one does
+				// not already exist.
+				hasAccepted := false
+				for _, cond := range routeParentStatusAccessor.ConditionsForParentRef(routeParentRef) {
+					if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
+						hasAccepted = true
+						break
+					}
+				}
+
+				if !hasAccepted {
+					routeParentStatusAccessor.AddCondition(
+						gatewayapi_v1beta1.RouteConditionAccepted,
+						metav1.ConditionTrue,
+						gatewayapi_v1beta1.RouteReasonAccepted,
+						"Accepted GRPCRoute",
 					)
 				}
 			}
@@ -587,9 +666,9 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 	if len(listener.AllowedRoutes.Kinds) == 0 {
 		switch listener.Protocol {
 		case gatewayapi_v1beta1.HTTPProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute}
+			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.HTTPSProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute}
+			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.TLSProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindTLSRoute}
 		}
@@ -608,13 +687,13 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			)
 			continue
 		}
-		if routeKind.Kind != KindHTTPRoute && routeKind.Kind != KindTLSRoute {
+		if routeKind.Kind != KindHTTPRoute && routeKind.Kind != KindTLSRoute && routeKind.Kind != KindGRPCRoute {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
-				fmt.Sprintf("Kind %q is not supported, kind must be %q or %q", routeKind.Kind, KindHTTPRoute, KindTLSRoute),
+				fmt.Sprintf("Kind %q is not supported, kind must be %q or %q or %q", routeKind.Kind, KindHTTPRoute, KindTLSRoute, KindGRPCRoute),
 			)
 			continue
 		}
@@ -1092,7 +1171,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				}
 
 				var err error
-				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
+				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
@@ -1105,7 +1184,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				}
 
 				var err error
-				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
+				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
@@ -1286,7 +1365,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 		if redirect != nil {
 			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
 		} else {
-			routes = p.clusterRoutes(route.Namespace, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, rule.BackendRefs, routeAccessor, priority, pathRewritePolicy)
+			// Get clusters from rule backendRefs
+			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
+			if !ok {
+				continue
+			}
+			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1308,6 +1392,216 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 	}
 
 	return programmed, hosts
+}
+
+func (p *GatewayAPIProcessor) computeGRPCRoute(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) (bool, sets.Set[string]) {
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
+	for _, err := range errs {
+		// The Gateway API spec does not indicate what to do if syntactically
+		// invalid hostnames make it through, we're using our best judgment here.
+		// Theoretically these should be prevented by the combination of kubebuilder
+		// and admission webhook validations.
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+	}
+
+	// If there were no intersections between the listener hostname and the
+	// route hostnames, the route is not programmed for this listener.
+	if len(hosts) == 0 {
+		return false, nil
+	}
+
+	var programmed bool
+	for ruleIndex, rule := range route.Spec.Rules {
+		// Get match conditions for the rule.
+		var matchconditions []*matchConditions
+		for _, match := range rule.Matches {
+			// Convert method match to path match
+			pathMatch, ok := gatewayGRPCMethodMatchCondition(match.Method, routeAccessor)
+			if !ok {
+				continue
+			}
+
+			headerMatches, err := gatewayGRPCHeaderMatchConditions(match.Headers)
+			if err != nil {
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
+				continue
+			}
+
+			matchconditions = append(matchconditions, &matchConditions{
+				path:    pathMatch,
+				headers: headerMatches,
+			})
+		}
+
+		// If no matches are specified, the implementation MUST match every gRPC request.
+		if len(rule.Matches) == 0 {
+			matchconditions = append(matchconditions, &matchConditions{
+				path: &PrefixMatchCondition{Prefix: "/"},
+			})
+		}
+
+		// Process rule-level filters.
+		var (
+			requestHeaderPolicy, responseHeaderPolicy *HeadersPolicy
+			mirrorPolicy                              *MirrorPolicy
+		)
+
+		for _, filter := range rule.Filters {
+			switch filter.Type {
+			case gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if requestHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if responseHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+				}
+			case gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror:
+				// Get the mirror filter if there is one. If there are more than one
+				// mirror filters, "NotImplemented" condition on the Route is set to
+				// status: True, with the "NotImplemented" reason.
+				if mirrorPolicy != nil {
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "GRPCRoute.Spec.Rules.Filters: Only one mirror filter is supported.")
+					continue
+				}
+
+				if filter.RequestMirror != nil {
+					mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
+					if cond != nil {
+						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+						continue
+					}
+					// If protocol is not set on the service, need to set a default one based on listener's protocol type.
+					setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
+					mirrorPolicy = &MirrorPolicy{
+						Cluster: &Cluster{
+							Upstream: mirrorService,
+						},
+					}
+				}
+			default:
+				routeAccessor.AddCondition(
+					gatewayapi_v1beta1.RouteConditionAccepted,
+					metav1.ConditionFalse,
+					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					fmt.Sprintf("GRPCRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier and RequestMirror are supported.", filter.Type),
+				)
+			}
+		}
+
+		// Priority is used to ensure if there are multiple matching route rules
+		// within an GRPCRoute, the one that comes first in the list has
+		// precedence. We treat lower values as higher priority so we use the
+		// index of the rule to ensure rules that come first have a higher
+		// priority. All dag.Routes generated from a single GRPCRoute rule have
+		// the same priority.
+		priority := uint8(ruleIndex)
+
+		// Note that we can end up with multiple routes here since the match conditions are
+		// logically "OR"-ed, which we express as multiple routes, each with one of the
+		// conditions, all with the same action.
+		var routes []*Route
+
+		clusters, totalWeight, ok := p.grpcClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol)
+		if !ok {
+			continue
+		}
+		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+
+		// Add each route to the relevant vhost(s)/svhosts(s).
+		for host := range hosts {
+			for _, route := range routes {
+				switch {
+				case listener.tlsSecret != nil:
+					svhost := p.dag.EnsureSecureVirtualHost(host)
+					svhost.Secret = listener.tlsSecret
+					svhost.AddRoute(route)
+				default:
+					vhost := p.dag.EnsureVirtualHost(host)
+					vhost.AddRoute(route)
+				}
+
+				programmed = true
+			}
+		}
+	}
+
+	return programmed, hosts
+}
+
+func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {
+	// If method match is not specified, all services and methods will match.
+	if match == nil {
+		return &PrefixMatchCondition{Prefix: "/"}, true
+	}
+
+	// Type specifies how to match against the service and/or method.
+	// Support: Core (Exact with service and method specified)
+	// Not Support: Implementation-specific (Exact with method specified but no service specified)
+	// Not Support: Implementation-specific (RegularExpression)
+
+	// Support "Exact" match type only. If match type is not specified, use "Exact" as default.
+	if match.Type != nil && *match.Type != gatewayapi_v1alpha2.GRPCMethodMatchExact {
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
+		return nil, false
+	}
+
+	if match.Service == nil || isBlank(*match.Service) || match.Method == nil || isBlank(*match.Method) {
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
+		return nil, false
+	}
+
+	// Convert service and method into path
+	path := "/" + *match.Service + "/" + *match.Method
+
+	return &ExactMatchCondition{Path: path}, true
+}
+
+func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMatch) ([]HeaderMatchCondition, error) {
+	var headerMatchConditions []HeaderMatchCondition
+	seenNames := sets.New[string]()
+
+	for _, match := range matches {
+		// "Exact" is the default if not defined in the object, and
+		// the only supported match type.
+		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
+			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+		}
+
+		// If multiple match conditions are found for the same header name (case-insensitive),
+		// use the first one and ignore subsequent ones.
+		upperName := strings.ToUpper(string(match.Name))
+		if seenNames.Has(upperName) {
+			continue
+		}
+		seenNames.Insert(upperName)
+
+		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
+			MatchType: HeaderMatchTypeExact,
+			Name:      string(match.Name),
+			Value:     match.Value,
+		})
+	}
+
+	return headerMatchConditions, nil
 }
 
 // validateBackendRef verifies that the specified BackendRef is valid.
@@ -1483,17 +1777,18 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 	return dagMatchConditions, nil
 }
 
-// clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, mirrorPolicy *MirrorPolicy, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
+// httpClusters builds clusters from backendRef.
+func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate) ([]*Cluster, uint32, bool) {
+	totalWeight := uint32(0)
+
 	if len(backendRefs) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
-		return nil
+		return nil, totalWeight, false
 	}
 
 	var clusters []*Cluster
 
 	// Validate the backend refs.
-	totalWeight := uint32(0)
 	for _, backendRef := range backendRefs {
 		service, cond := p.validateBackendRef(backendRef.BackendRef, KindHTTPRoute, routeNamespace)
 		if cond != nil {
@@ -1513,7 +1808,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 				}
 
 				var err error
-				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, filter.Type)
+				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
@@ -1526,7 +1821,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 				}
 
 				var err error
-				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, filter.Type)
+				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
@@ -1556,6 +1851,92 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 		})
 	}
+	return clusters, totalWeight, true
+}
+
+// grpcClusters builds clusters from backendRef.
+func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1beta1.ProtocolType) ([]*Cluster, uint32, bool) {
+	totalWeight := uint32(0)
+
+	if len(backendRefs) == 0 {
+		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
+		return nil, totalWeight, false
+	}
+
+	var clusters []*Cluster
+
+	// Validate the backend refs.
+	for _, backendRef := range backendRefs {
+		service, cond := p.validateBackendRef(backendRef.BackendRef, KindGRPCRoute, routeNamespace)
+		if cond != nil {
+			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+			continue
+		}
+
+		var clusterRequestHeaderPolicy, clusterResponseHeaderPolicy *HeadersPolicy
+		for _, filter := range backendRef.Filters {
+			switch filter.Type {
+			case gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterRequestHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if clusterResponseHeaderPolicy != nil {
+					continue
+				}
+
+				var err error
+				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
+				if err != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+				}
+			default:
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "GRPCRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.")
+			}
+		}
+
+		// Route defaults to a weight of "1" unless otherwise specified.
+		routeWeight := uint32(1)
+		if backendRef.Weight != nil {
+			routeWeight = uint32(*backendRef.Weight)
+		}
+
+		// Keep track of all the weights for this set of backend refs. This will be
+		// used later to understand if all the weights are set to zero.
+		totalWeight += routeWeight
+
+		// If protocol is not set on the service, need to set a default one based on listener's protocol type.
+		setDefaultServiceProtocol(service, protocolType)
+
+		// https://github.com/projectcontour/contour/issues/3593
+		service.Weighted.Weight = routeWeight
+		clusters = append(clusters, &Cluster{
+			Upstream:              service,
+			Weight:                routeWeight,
+			Protocol:              service.Protocol,
+			RequestHeadersPolicy:  clusterRequestHeaderPolicy,
+			ResponseHeadersPolicy: clusterResponseHeaderPolicy,
+			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+		})
+	}
+	return clusters, totalWeight, true
+}
+
+// clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
+func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
+	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
 
 	var routes []*Route
 
@@ -1595,6 +1976,18 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	}
 
 	return routes
+}
+
+func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1.ProtocolType) {
+	// For GRPCRoute, if the protocol is not set on the Service via annotation,
+	// we should assume a protocol that matches what listener the route was attached to
+	if isBlank(service.Protocol) {
+		if protocolType == gatewayapi_v1beta1.HTTPProtocolType {
+			service.Protocol = "h2c"
+		} else if protocolType == gatewayapi_v1beta1.HTTPSProtocolType {
+			service.Protocol = "h2"
+		}
+	}
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
