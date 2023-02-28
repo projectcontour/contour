@@ -43,6 +43,7 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 		log.SetLevel(logrus.DebugLevel)
 
 		b.Processors = []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.IngressProcessor{
 				ClientCertificate: &secret,
 				FieldLogger:       log.WithField("context", "IngressProcessor"),
@@ -54,7 +55,6 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 				ClientCertificate: &secret,
 				FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
 			},
-			&dag.ListenerProcessor{},
 		}
 
 		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{

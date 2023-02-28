@@ -13,8 +13,6 @@
 
 package dag
 
-import "sort"
-
 // nolint:revive
 const (
 	HTTP_LISTENER_NAME  = "ingress_http"
@@ -22,68 +20,37 @@ const (
 )
 
 // ListenerProcessor adds an HTTP and an HTTPS listener to
-// the DAG if there are virtual hosts and secure virtual
-// hosts already defined as roots in the DAG.
-type ListenerProcessor struct{}
-
-// Run adds HTTP and HTTPS listeners to the DAG if there are
-// virtual hosts and secure virtual hosts already defined as
-// roots in the DAG.
-func (p *ListenerProcessor) Run(dag *DAG, _ *KubernetesCache) {
-	p.buildHTTPListener(dag)
-	p.buildHTTPSListener(dag)
+// the DAG.
+type ListenerProcessor struct {
+	HTTPAddress  string
+	HTTPPort     int
+	HTTPSAddress string
+	HTTPSPort    int
 }
 
-// buildHTTPListener builds a *dag.Listener for the vhosts bound to port 80.
-// The list of virtual hosts attached to the listener will be sorted by hostname.
-func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
-	var vhosts []*VirtualHost
-	for _, vh := range dag.VirtualHosts {
-		if vh.Valid() {
-			vhosts = append(vhosts, vh)
-		}
+// Run adds HTTP and HTTPS listeners to the DAG.
+func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
+	dag.Listeners[HTTP_LISTENER_NAME] = &Listener{
+		Name:            HTTP_LISTENER_NAME,
+		Address:         p.HTTPAddress,
+		Port:            intOrDefault(p.HTTPPort, 8080),
+		RouteConfigName: "ingress_http",
+		vhostsByName:    map[string]*VirtualHost{},
 	}
 
-	if len(vhosts) == 0 {
-		return
+	dag.Listeners[HTTPS_LISTENER_NAME] = &Listener{
+		Name:                        HTTPS_LISTENER_NAME,
+		Address:                     p.HTTPSAddress,
+		Port:                        intOrDefault(p.HTTPSPort, 8443),
+		RouteConfigName:             "https",
+		FallbackCertRouteConfigName: "ingress_fallbackcert",
+		svhostsByName:               map[string]*SecureVirtualHost{},
 	}
-
-	sort.SliceStable(vhosts, func(i, j int) bool {
-		return vhosts[i].Name < vhosts[j].Name
-	})
-
-	http := &Listener{
-		Name:         HTTP_LISTENER_NAME,
-		Port:         80,
-		VirtualHosts: vhosts,
-	}
-
-	dag.Listeners = append(dag.Listeners, http)
 }
 
-// buildHTTPSListener builds a *dag.Listener for the vhosts bound to port 443.
-// The list of virtual hosts attached to the listener will be sorted by hostname.
-func (p *ListenerProcessor) buildHTTPSListener(dag *DAG) {
-	var vhosts []*SecureVirtualHost
-	for _, svh := range dag.SecureVirtualHosts {
-		if svh.Valid() {
-			vhosts = append(vhosts, svh)
-		}
+func intOrDefault(i, def int) int {
+	if i > 0 {
+		return i
 	}
-
-	if len(vhosts) == 0 {
-		return
-	}
-
-	sort.SliceStable(vhosts, func(i, j int) bool {
-		return vhosts[i].Name < vhosts[j].Name
-	})
-
-	https := &Listener{
-		Name:               HTTPS_LISTENER_NAME,
-		Port:               443,
-		SecureVirtualHosts: vhosts,
-	}
-
-	dag.Listeners = append(dag.Listeners, https)
+	return def
 }

@@ -335,22 +335,8 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto: *contourConfiguration.Envoy.Listener.UseProxyProto,
-		HTTPListeners: map[string]xdscache_v3.Listener{
-			xdscache_v3.ENVOY_HTTP_LISTENER: {
-				Name:    xdscache_v3.ENVOY_HTTP_LISTENER,
-				Address: contourConfiguration.Envoy.HTTPListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPListener.Port,
-			},
-		},
-		HTTPAccessLog: contourConfiguration.Envoy.HTTPListener.AccessLog,
-		HTTPSListeners: map[string]xdscache_v3.Listener{
-			xdscache_v3.ENVOY_HTTPS_LISTENER: {
-				Name:    xdscache_v3.ENVOY_HTTPS_LISTENER,
-				Address: contourConfiguration.Envoy.HTTPSListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
-			},
-		},
+		UseProxyProto:                *contourConfiguration.Envoy.Listener.UseProxyProto,
+		HTTPAccessLog:                contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
 		AccessLogJSONFields:          contourConfiguration.Envoy.Logging.AccessLogJSONFields,
@@ -452,6 +438,10 @@ func (s *Server) doServe() error {
 		connectTimeout:                     timeouts.ConnectTimeout,
 		client:                             s.mgr.GetClient(),
 		metrics:                            contourMetrics,
+		httpAddress:                        contourConfiguration.Envoy.HTTPListener.Address,
+		httpPort:                           contourConfiguration.Envoy.HTTPListener.Port,
+		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
+		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
 	})
 
@@ -925,6 +915,10 @@ type dagBuilderConfig struct {
 	connectTimeout                     time.Duration
 	client                             client.Client
 	metrics                            *metrics.Metrics
+	httpAddress                        string
+	httpPort                           int
+	httpsAddress                       string
+	httpsPort                          int
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 }
 
@@ -978,6 +972,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
+		// The listener processor has to go first since it
+		// adds listeners which are roots of the DAG.
+		&dag.ListenerProcessor{
+			HTTPAddress:  dbc.httpAddress,
+			HTTPPort:     dbc.httpPort,
+			HTTPSAddress: dbc.httpsAddress,
+			HTTPSPort:    dbc.httpsPort,
+		},
 		&dag.IngressProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "IngressProcessor"),
@@ -1013,10 +1015,6 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:            dbc.connectTimeout,
 		})
 	}
-
-	// The listener processor has to go last since it looks at
-	// the output of the other processors.
-	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
 
 	var configuredSecretRefs []*types.NamespacedName
 	if dbc.fallbackCert != nil {

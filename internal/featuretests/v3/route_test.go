@@ -1268,11 +1268,11 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		b.Processors = []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.IngressProcessor{},
 			&dag.HTTPProxyProcessor{
 				DisablePermitInsecure: true,
 			},
-			&dag.ListenerProcessor{},
 		}
 	})
 
@@ -1640,11 +1640,11 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		b.Processors = []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.IngressProcessor{},
 			&dag.HTTPProxyProcessor{
 				DisablePermitInsecure: true,
 			},
-			&dag.ListenerProcessor{},
 		}
 	})
 

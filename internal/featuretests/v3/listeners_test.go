@@ -741,20 +741,15 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
-		conf.HTTPListeners = map[string]xdscache_v3.Listener{
-			"ingress_http": {
-				Name:    "ingress_http",
-				Address: "127.0.0.100",
-				Port:    9100,
-			},
-		}
-		conf.HTTPSListeners = map[string]xdscache_v3.Listener{
-			"ingress_https": {
-				Name:    "ingress_https",
-				Address: "127.0.0.200",
-				Port:    9200,
-			},
+	rh, c, done := setup(t, func(builder *dag.Builder) {
+		for _, processor := range builder.Processors {
+			if listenerProcessor, ok := processor.(*dag.ListenerProcessor); ok {
+				listenerProcessor.HTTPAddress = "127.0.0.100"
+				listenerProcessor.HTTPPort = 9100
+
+				listenerProcessor.HTTPSAddress = "127.0.0.200"
+				listenerProcessor.HTTPSPort = 9200
+			}
 		}
 	})
 	defer done()

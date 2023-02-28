@@ -14,6 +14,8 @@
 package dag
 
 import (
+	"sort"
+
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/status"
@@ -65,9 +67,8 @@ func (b *Builder) Build() *DAG {
 	}
 
 	dag := &DAG{
-		VirtualHosts:       map[string]*VirtualHost{},
-		SecureVirtualHosts: map[string]*SecureVirtualHost{},
-		StatusCache:        status.NewCache(gatewayNSName, gatewayController),
+		StatusCache: status.NewCache(gatewayNSName, gatewayController),
+		Listeners:   map[string]*Listener{},
 	}
 
 	if b.Metrics != nil {
@@ -78,5 +79,45 @@ func (b *Builder) Build() *DAG {
 	for _, p := range b.Processors {
 		p.Run(dag, &b.Source)
 	}
+
+	// Prune invalid virtual hosts, and Listeners
+	// without any valid virtual hosts.
+	listeners := map[string]*Listener{}
+
+	for _, listener := range dag.Listeners {
+		var vhosts []*VirtualHost
+		for _, vh := range listener.VirtualHosts {
+			if vh.Valid() {
+				vhosts = append(vhosts, vh)
+			}
+		}
+		listener.VirtualHosts = vhosts
+
+		var svhosts []*SecureVirtualHost
+		for _, svh := range listener.SecureVirtualHosts {
+			if svh.Valid() {
+				svhosts = append(svhosts, svh)
+			}
+		}
+		listener.SecureVirtualHosts = svhosts
+
+		if len(listener.VirtualHosts) > 0 || len(listener.SecureVirtualHosts) > 0 {
+			sort.SliceStable(listener.VirtualHosts, func(i, j int) bool {
+				return listener.VirtualHosts[i].Name < listener.VirtualHosts[j].Name
+			})
+
+			sort.SliceStable(listener.SecureVirtualHosts, func(i, j int) bool {
+				return listener.SecureVirtualHosts[i].Name < listener.SecureVirtualHosts[j].Name
+			})
+
+			listener.vhostsByName = nil
+			listener.svhostsByName = nil
+
+			listeners[listener.Name] = listener
+		}
+	}
+
+	dag.Listeners = listeners
+
 	return dag
 }

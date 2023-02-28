@@ -121,14 +121,14 @@ func externalName(svc *v1.Service) string {
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
-func (d *DAG) GetSecureVirtualHost(hostname string) *SecureVirtualHost {
-	return d.SecureVirtualHosts[hostname]
+func (d *DAG) GetSecureVirtualHost(listener, hostname string) *SecureVirtualHost {
+	return d.Listeners[listener].svhostsByName[hostname]
 }
 
 // EnsureSecureVirtualHost adds a secure virtual host with the provided
 // name to the DAG if it does not already exist, and returns it.
-func (d *DAG) EnsureSecureVirtualHost(hostname string) *SecureVirtualHost {
-	if svh := d.GetSecureVirtualHost(hostname); svh != nil {
+func (d *DAG) EnsureSecureVirtualHost(listener, hostname string) *SecureVirtualHost {
+	if svh := d.GetSecureVirtualHost(listener, hostname); svh != nil {
 		return svh
 	}
 
@@ -137,27 +137,31 @@ func (d *DAG) EnsureSecureVirtualHost(hostname string) *SecureVirtualHost {
 			Name: hostname,
 		},
 	}
-	d.SecureVirtualHosts[hostname] = svh
+
+	d.Listeners[listener].SecureVirtualHosts = append(d.Listeners[listener].SecureVirtualHosts, svh)
+	d.Listeners[listener].svhostsByName[svh.Name] = svh
 	return svh
 }
 
 // GetVirtualHost returns the virtual host in the DAG that matches the
 // provided name, or nil if no matching virtual host is found.
-func (d *DAG) GetVirtualHost(hostname string) *VirtualHost {
-	return d.VirtualHosts[hostname]
+func (d *DAG) GetVirtualHost(listener, hostname string) *VirtualHost {
+	return d.Listeners[listener].vhostsByName[hostname]
 }
 
 // EnsureVirtualHost adds a virtual host with the provided name to the
 // DAG if it does not already exist, and returns it.
-func (d *DAG) EnsureVirtualHost(hostname string) *VirtualHost {
-	if vhost := d.GetVirtualHost(hostname); vhost != nil {
+func (d *DAG) EnsureVirtualHost(listener, hostname string) *VirtualHost {
+	if vhost := d.GetVirtualHost(listener, hostname); vhost != nil {
 		return vhost
 	}
 
 	vhost := &VirtualHost{
 		Name: hostname,
 	}
-	d.VirtualHosts[hostname] = vhost
+
+	d.Listeners[listener].VirtualHosts = append(d.Listeners[listener].VirtualHosts, vhost)
+	d.Listeners[listener].vhostsByName[vhost.Name] = vhost
 	return vhost
 }
 

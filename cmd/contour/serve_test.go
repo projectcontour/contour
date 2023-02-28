@@ -33,7 +33,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		// is configured, but we don't currently have test cases that cover
 		// that so it's OK to keep them in the "common" assertions for now.
 		assert.Len(t, builder.Processors, 4)
-		assert.IsType(t, &dag.ListenerProcessor{}, builder.Processors[len(builder.Processors)-1])
+		assert.IsType(t, &dag.ListenerProcessor{}, builder.Processors[0])
 	}
 
 	t.Run("all default options", func(t *testing.T) {

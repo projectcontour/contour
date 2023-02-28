@@ -4037,6 +4037,7 @@ func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedNa
 			FieldLogger: fixture.NewTestLogger(t),
 		},
 		Processors: []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.ExtensionServiceProcessor{},
 			&dag.IngressProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
@@ -4058,7 +4059,6 @@ func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedNa
 					ResponseTimeout: "10s",
 				},
 			},
-			&dag.ListenerProcessor{},
 		},
 	}
 

@@ -59,10 +59,13 @@ type DAG struct {
 	// StatusCache holds a cache of status updates to send.
 	StatusCache status.Cache
 
-	Listeners          []*Listener
-	VirtualHosts       map[string]*VirtualHost
-	SecureVirtualHosts map[string]*SecureVirtualHost
-	ExtensionClusters  []*ExtensionCluster
+	Listeners         map[string]*Listener
+	ExtensionClusters []*ExtensionCluster
+
+	// Set this to true if Contour is configured with a Gateway
+	// and Listeners are derived from the Gateway's Listeners, or
+	// false otherwise.
+	HasNonStaticListeners bool
 }
 
 type MatchCondition interface {
@@ -822,8 +825,25 @@ type Listener struct {
 	// Port is the TCP port to listen on.
 	Port int
 
+	// RouteConfigName is the Listener name component to use when
+	// constructing RouteConfig names. If empty, the Listener
+	// name will be used.
+	RouteConfigName string
+
+	// FallbackCertRouteConfigName is the name to use for the fallback
+	// cert route config, if one is generated. If empty, the
+	// Listener name will be used.
+	FallbackCertRouteConfigName string
+
+	// Store virtual hosts/secure virtual hosts in both
+	// a slice and a map. The map makes gets more efficient
+	// while building the DAG, but ultimately we need to
+	// produce sorted output which requires the slice.
 	VirtualHosts       []*VirtualHost
 	SecureVirtualHosts []*SecureVirtualHost
+
+	vhostsByName  map[string]*VirtualHost
+	svhostsByName map[string]*SecureVirtualHost
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
