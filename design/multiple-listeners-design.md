@@ -14,7 +14,7 @@ It's important to distinguish between **Envoy Listeners** and **Gateway Listener
 
 An **Envoy Listener** can be thought of simply as Envoy listening on a given port.
 
-A **Gateway Listener** describes listening on a given port, for requests with a given hostname, and optionally with certain TLS details.
+A **Gateway Listener** encompasses listening on a certain "exposed" port (typically defined on an Envoy LoadBalancer service), which is mapped to an underlying Envoy Listener, for requests with a given hostname, and optionally with certain TLS details.
 In Envoy terminology, this more closely corresponds to the combination of a Listener, a FilterChain, and a RouteConfiguration virtual host.
 
 ## Goals
@@ -79,6 +79,8 @@ Each generated Envoy Listener will have one or more corresponding Envoy RouteCon
 - HTTPS Listeners will have multiple corresponding RouteConfigurations:
     - each attached virtual host will have a RouteConfiguration. For non-Gateway mode, it will be named `https/<fqdn>`, and for Gateway mode, it will be named `<listener name>/<fqdn>`.
     - if any attached virtual host has the fallback certificate enabled, an additional RouteConfiguration will be created. For non-Gateway mode, it will be named `ingress_fallbackcert`, and for Gateway mode, it will be named `<listener name>/fallbackcert`.
+
+For both non-Gateway and Gateway mode, the stats prefix for the HTTP connection manager will equal the Envoy Listener's name, i.e. `ingress_http` and `ingress_https` for non-Gateway mode, and `<http|https>_<port number>` for Gateway mode.
 
 ## Alternatives Considered
 N/A
