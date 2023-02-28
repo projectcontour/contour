@@ -96,8 +96,8 @@ When using Gateway mode, it is possible to use Ingress and/or HTTPProxy to defin
 In this scenario, Contour must be able to determine which Listener(s) to attach virtual hosts and routes to.
 As an initial implementation, we are imposing a strict requirement for the Gateway spec in order to be compatible with Ingress and HTTPProxy:
 - the Gateway _must_ have one or two Listeners.
-- if the Gateway has one Listener, it _must_ be named `http` and will be used as the insecure Listener.
-- if the Gateway has two Listeners, the second _must_ be named `https` and will be used as the secure Listener.
+- if the Gateway has one Listener, it _must_ be named `ingress_http` and will be used as the insecure Listener.
+- if the Gateway has two Listeners, the second _must_ be named `ingress_https` and will be used as the secure Listener.
 
 A valid Gateway spec for this use case looks like:
 ```yaml
@@ -109,10 +109,10 @@ metadata:
 spec:
   gatewayClassName: contour
   listeners:
-    - name: http
+    - name: ingress_http
       protocol: HTTP
       port: 80
-    - name: https
+    - name: ingress_https
       protocol: HTTP # note, this can't be HTTPS because we aren't providing TLS details here.
       port: 443
 ```
