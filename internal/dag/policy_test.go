@@ -414,6 +414,20 @@ func TestHeadersPolicy(t *testing.T) {
 				},
 			},
 		},
+		"valid Envoy REQ header unescaped truncated": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Host",
+					Value: "%REQ(Host):9%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Host": "%REQ(Host):9%",
+				},
+			},
+		},
 		"valid Envoy REQ http/2 pseudo-header unescaped": {
 			hp: &contour_api_v1.HeadersPolicy{
 				Set: []contour_api_v1.HeaderValue{{
@@ -439,6 +453,34 @@ func TestHeadersPolicy(t *testing.T) {
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Request-Foo-Fallback": "%REQ(X-Foo?X-Bar)%",
+				},
+			},
+		},
+		"valid Envoy REQ header if not present truncated": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Foo-Fallback",
+					Value: "%REQ(X-Foo?X-Bar):10%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Foo-Fallback": "%REQ(X-Foo?X-Bar):10%",
+				},
+			},
+		},
+		"Envoy REQ header if not present invalid truncation": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Foo-Fallback",
+					Value: "%REQ(X-Foo?X-Bar):baz%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Foo-Fallback": "%%REQ(X-Foo?X-Bar):baz%%",
 				},
 			},
 		},

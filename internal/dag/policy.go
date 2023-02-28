@@ -318,7 +318,7 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 		escapedValue = strings.ReplaceAll(escapedValue, "%%"+envoyVar+"%%", "%"+envoyVar+"%")
 	}
 	// REQ(header-name)
-	var validReqEnvoyVar = regexp.MustCompile(`%(%REQ\(:?[\w-]+(\?:?[\w-]+)?\)%)%`)
+	var validReqEnvoyVar = regexp.MustCompile(`%(%REQ\(:?[\w-]+(\?:?[\w-]+)?\)(:\d+)?%)%`)
 	escapedValue = validReqEnvoyVar.ReplaceAllString(escapedValue, "$1")
 	return escapedValue
 }
