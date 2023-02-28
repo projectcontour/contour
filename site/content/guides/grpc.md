@@ -145,44 +145,10 @@ spec:
 
 ## Gateway API Configuration
 
-Gateway API now supports a specific resource [GRPCRoute][6] for routing gRPC requests.
+At the moment, configuring gRPC routes with Gateway API resources is achieved by the same method as with Ingress v1: annotation to select a protocol and port on a Service referenced by HTTPRoute `spec.rules[].backendRefs`.
 
-Configuring GRPCRoute for routing gRPC requests needs to specify parentRefs, hostnames, and routing rules with specific backendRefs. In the below example, route path matching is conducted via method matching rule for declared services and their methods.
-
-```yaml
-apiVersion: gateway.networking.k8s.io/v1alpha2
-kind: GRPCRoute
-metadata:
-  name: yages
-spec:
-  parentRefs:
-  - namespace: projectcontour
-    name: contour
-  hostnames:
-  - my-grpc-service.foo.com
-  rules:
-  - matches:
-    - method:
-        service: yages.Echo
-        method: Ping
-    - method:
-        service: grpc.reflection.v1alpha.ServerReflection
-        method: ServerReflectionInfo
-    backendRefs:
-    - name: grpc-echo
-      port: 9000
-```
-Using the sample deployment above along with this GRPCRoute example, you can test calling this plaintext gRPC server with the same grpccurl command:
-
-```yaml
-grpcurl -plaintext -authority=my-grpc-service.foo.com <load balancer IP and port if needed> yages.Echo/Ping
-```
-Note that the second matching method for service of ServerReflection is required by grpcurl command.
-
-When using GRPCRoute, user should annotate their Service similarly to when using Ingress Configuration, to indicate the protocol to use when connecting to the backend Service, i.e. h2c for HTTP plaintext and h2 for TLS encrypted HTTPS. If it's not specified, Contour will infer the protocol based on the Gateway Listener protocol, h2c for HTTP and h2 for HTTPS.
-
-
-
+Gateway API does include a specific resource [GRPCRoute][6] for routing gRPC requests.
+This may be supported in future versions of Contour.
 
 ## gRPC-Web
 
