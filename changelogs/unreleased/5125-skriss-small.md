@@ -1,0 +1,1 @@
+Gateway API: for routes, replace use of custom `NotImplemented` condition with the upstream `Accepted: false` condition with reason `UnsupportedValue` to match the spec.
