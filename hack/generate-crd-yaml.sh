@@ -6,7 +6,7 @@ set -o pipefail
 
 readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}/.." && pwd)
-readonly TEMPDIR=$(mktemp -d crd.XXXXXX)
+readonly TEMPDIR=$(mktemp -d crd-XXXXXX)
 
 # Optional first arg is the paths pattern.
 readonly PATHS="${1:-"./apis/..."}"

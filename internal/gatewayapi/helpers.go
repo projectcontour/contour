@@ -149,6 +149,40 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	}
 }
 
+func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.GRPCBackendRef {
+	return []gatewayapi_v1alpha2.GRPCBackendRef{
+		{
+			BackendRef: gatewayapi_v1alpha2.BackendRef{
+				BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+					Group: ref.To(gatewayapi_v1beta1.Group("")),
+					Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+					Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
+				},
+				Weight: &weight},
+			Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{},
+		},
+	}
+}
+
+func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service string, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
+	return &gatewayapi_v1alpha2.GRPCMethodMatch{
+		Type:    ref.To(matchType),
+		Service: ref.To(service),
+		Method:  ref.To(method),
+	}
+}
+
+func GRPCHeaderMatch(name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
+	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
+		{
+			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
+			Name:  gatewayapi_v1alpha2.GRPCHeaderName(name),
+			Value: value,
+		},
+	}
+}
+
 // IsRefToGateway returns whether the provided parent ref is a reference
 // to a Gateway with the given namespace/name, irrespective of whether a
 // section/listener name has been specified (i.e. a parent ref to a listener

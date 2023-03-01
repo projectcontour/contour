@@ -23,6 +23,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -149,7 +150,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
 		// Default to implementation specific path matching if not set.
-		pathType := derefPathTypeOr(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
+		pathType := ref.Val(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
@@ -311,13 +312,6 @@ func stringOrDefault(s, def string) string {
 		return def
 	}
 	return s
-}
-
-func derefPathTypeOr(ptr *networking_v1.PathType, def networking_v1.PathType) networking_v1.PathType {
-	if ptr != nil {
-		return *ptr
-	}
-	return def
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.

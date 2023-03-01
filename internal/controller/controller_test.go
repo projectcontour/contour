@@ -30,7 +30,7 @@ import (
 	controller_runtime_config_v1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Manager --srcpkg=sigs.k8s.io/controller-runtime/pkg/manager
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Manager --srcpkg=sigs.k8s.io/controller-runtime/pkg/manager --disable-version-string
 
 func TestRegisterControllers(t *testing.T) {
 	tests := map[string]func(*mocks.Manager) error{
@@ -47,6 +47,9 @@ func TestRegisterControllers(t *testing.T) {
 		},
 		"tlsroute controller": func(mockManager *mocks.Manager) error {
 			return controller.RegisterTLSRouteController(fixture.NewTestLogger(t), mockManager, nil)
+		},
+		"grpcroute controller": func(mockManager *mocks.Manager) error {
+			return controller.RegisterGRPCRouteController(fixture.NewTestLogger(t), mockManager, nil)
 		},
 	}
 
