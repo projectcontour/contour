@@ -691,6 +691,36 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			},
 			want: []int{1},
 		},
+		"route kind only allowed by first listener for GRPCRoute": {
+			routeParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+			routeNamespace: "projectcontour",
+			routeKind:      "GRPCRoute",
+			listeners: []*listenerInfo{
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-1",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"GRPCRoute"},
+				},
+				{
+					listener: gatewayapi_v1beta1.Listener{
+						Name: "http-2",
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+							},
+						},
+					},
+					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+				},
+			},
+			want: []int{0},
+		},
 	}
 
 	for name, tc := range tests {

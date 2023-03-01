@@ -34,7 +34,8 @@ params:
   docs_right_sidebar: true
   docs_search: true
   docs_search_index_name: projectcontour
-  docs_search_api_key: 5e2fa46757e313755936b88feae652d1
+  docs_search_api_key: c334c965f1dae0684bc36ec1f66f89a1
+  docs_search_app_id: IW9YQMJ8HH
   docs_versioning: true
   docs_versions:
   - main

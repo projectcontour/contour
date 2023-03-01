@@ -196,6 +196,7 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 			cmpopts.IgnoreFields(gatewayapi_v1beta1.Gateway{}, "Status"),
 			cmpopts.IgnoreFields(gatewayapi_v1beta1.HTTPRoute{}, "Status"),
 			cmpopts.IgnoreFields(gatewayapi_v1alpha2.TLSRoute{}, "Status"),
+			cmpopts.IgnoreFields(gatewayapi_v1alpha2.GRPCRoute{}, "Status"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ManagedFields"),
 		) {

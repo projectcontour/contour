@@ -22,6 +22,7 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -204,7 +205,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType gatewayapi_v1beta1.HTTPRouteFilterType) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType string) (*HeadersPolicy, error) {
 	var (
 		set         = make(map[string]string, len(hf.Set))
 		add         = make(map[string]string, len(hf.Add))
@@ -219,7 +220,8 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPoli
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
+		if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
+			headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
 			hostRewrite = setHeader.Value
 			continue
 		}
@@ -235,7 +237,8 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPoli
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
-		if key == "Host" && headerPolicyType == gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier {
+		if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
+			headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
 			hostRewrite = addHeader.Value
 			continue
 		}
