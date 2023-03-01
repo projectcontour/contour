@@ -123,6 +123,32 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.
 	return cond
 }
 
+// ConditionExists check the condition is exists or not
+func (r *RouteParentStatusUpdate) ConditionExists(conditionType gatewayapi_v1beta1.RouteConditionType) bool {
+	var rps *gatewayapi_v1beta1.RouteParentStatus
+
+	for _, v := range r.RouteParentStatuses {
+		if v.ParentRef == r.parentRef {
+			rps = v
+			break
+		}
+	}
+	if rps == nil {
+		return false
+	}
+
+	idx := -1
+
+	for i, c := range rps.Conditions {
+		if c.Type == string(conditionType) {
+			idx = i
+			break
+		}
+	}
+
+	return idx != -1
+}
+
 func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
 	for _, rps := range r.RouteParentStatuses {
 		if rps.ParentRef == parentRef {

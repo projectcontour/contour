@@ -534,6 +534,7 @@ func (p *GatewayAPIProcessor) computeListener(
 			// routes to be bound to this listener since it can't serve TLS traffic.
 			return false, nil
 		}
+
 	case gatewayapi_v1beta1.TLSProtocolType:
 		// The TLS protocol is used for TCP traffic encrypted with TLS.
 		// Gateway API allows TLS to be either terminated at the proxy
@@ -1020,6 +1021,14 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		}
 	}
 
+	if !routeAccessor.ConditionExists(gatewayapi_v1beta1.RouteConditionResolvedRefs) {
+		routeAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionResolvedRefs,
+			metav1.ConditionTrue,
+			gatewayapi_v1beta1.RouteReasonResolvedRefs,
+			"References Resolved")
+	}
+
 	return programmed, hosts
 }
 
@@ -1312,6 +1321,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1beta1.HTTPRou
 				programmed = true
 			}
 		}
+	}
+
+	if !routeAccessor.ConditionExists(gatewayapi_v1beta1.RouteConditionResolvedRefs) {
+		routeAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionResolvedRefs,
+			metav1.ConditionTrue,
+			gatewayapi_v1beta1.RouteReasonResolvedRefs,
+			"References Resolved")
 	}
 
 	return programmed, hosts
