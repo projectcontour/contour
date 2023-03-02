@@ -254,17 +254,19 @@ func (p *GatewayAPIProcessor) processRoute(
 			)
 		}
 
-		// Check for an existing "Accepted" condition, add one if one does
+		// Check for an existing "ResolvedRefs" condition, add one if one does
 		// not already exist.
-		hasAccepted := false
-		for _, cond := range routeParentStatus.ConditionsForParentRef(routeParentRef) {
-			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) {
-				hasAccepted = true
-				break
-			}
+		if !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionResolvedRefs) {
+			routeParentStatus.AddCondition(
+				gatewayapi_v1beta1.RouteConditionResolvedRefs,
+				metav1.ConditionTrue,
+				gatewayapi_v1beta1.RouteReasonResolvedRefs,
+				"References resolved")
 		}
 
-		if !hasAccepted {
+		// Check for an existing "Accepted" condition, add one if one does
+		// not already exist.
+		if !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
 			routeParentStatus.AddCondition(
 				gatewayapi_v1beta1.RouteConditionAccepted,
 				metav1.ConditionTrue,

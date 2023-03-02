@@ -116,6 +116,16 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.
 	return cond
 }
 
+// ConditionExists returns whether or not a condition with the given type exists.
+func (r *RouteParentStatusUpdate) ConditionExists(conditionType gatewayapi_v1beta1.RouteConditionType) bool {
+	for _, c := range r.ConditionsForParentRef(r.parentRef) {
+		if c.Type == string(conditionType) {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
 	for _, rps := range r.RouteParentStatuses {
 		if rps.ParentRef == parentRef {
