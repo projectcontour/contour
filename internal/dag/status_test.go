@@ -4481,12 +4481,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -4540,12 +4535,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{{
 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				Conditions: []metav1.Condition{
-					{
-						Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-						Status:  contour_api_v1.ConditionTrue,
-						Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-						Message: "References Resolved",
-					},
+					routeResolvedRefsCondition(),
 					{
 						Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 						Status:  contour_api_v1.ConditionTrue,
@@ -4604,12 +4594,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-								Message: "References Resolved",
-							},
+							routeResolvedRefsCondition(),
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 								Status:  contour_api_v1.ConditionTrue,
@@ -4626,12 +4611,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-								Message: "References Resolved",
-							},
+							routeResolvedRefsCondition(),
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 								Status:  contour_api_v1.ConditionTrue,
@@ -4693,19 +4673,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonInvalidPathMatch),
 							Message: "Match.Path.Value must start with '/'.",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 					},
 				},
 			},
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
-
 	run(t, "exact path match not starting with '/' for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -4741,12 +4715,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -4801,12 +4770,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -4861,12 +4825,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -4921,22 +4880,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonPathMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 						},
 					},
@@ -4976,22 +4924,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonPathMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 						},
 					},
@@ -5043,22 +4980,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonHeaderMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
 						},
 					},
@@ -5107,22 +5033,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.GatewayClassReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonQueryParamMatchType),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported",
 						},
 					},
@@ -6292,12 +6207,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -6427,7 +6337,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -6804,12 +6714,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80),
 						Conditions: []metav1.Condition{
-							{
-								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-								Status:  contour_api_v1.ConditionTrue,
-								Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-								Message: "References Resolved",
-							},
+							routeResolvedRefsCondition(),
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 								Status:  contour_api_v1.ConditionTrue,
@@ -6904,18 +6809,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonNotImplemented),
-							Message: "HTTPRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
-						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -7232,23 +7126,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonHTTPRouteFilterType),
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
 							Message: "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted HTTPRoute",
-						},
+						routeResolvedRefsCondition(),
 					},
 				},
 			},
@@ -7295,12 +7178,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  metav1.ConditionFalse,
@@ -7594,12 +7472,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  metav1.ConditionFalse,
@@ -9036,12 +8909,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonAllBackendRefsHaveZeroWeights),
 							Message: "At least one Spec.Rules.BackendRef must have a non-zero weight.",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-							Message: "References Resolved",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -9247,7 +9115,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -9293,7 +9161,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -9339,7 +9207,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -9385,7 +9253,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -9444,7 +9312,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -9627,13 +9495,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
-						{
-							Type:    string(status.ConditionNotImplemented),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(status.ReasonNotImplemented),
-							Message: "GRPCRoute.Spec.Rules.Filters: Only one mirror filter is supported.",
-						},
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -9747,7 +9609,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						gatewayResolvedRefsCondition(),
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  metav1.ConditionFalse,
@@ -9960,11 +9822,11 @@ func gatewayAcceptedCondition() metav1.Condition {
 	}
 }
 
-func gatewayResolvedRefsCondition() metav1.Condition {
+func routeResolvedRefsCondition() metav1.Condition {
 	return metav1.Condition{
 		Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
 		Status:  contour_api_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1beta1.RouteReasonResolvedRefs),
-		Message: "References Resolved",
+		Message: "References resolved",
 	}
 }

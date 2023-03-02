@@ -261,7 +261,7 @@ func (p *GatewayAPIProcessor) processRoute(
 				gatewayapi_v1beta1.RouteConditionResolvedRefs,
 				metav1.ConditionTrue,
 				gatewayapi_v1beta1.RouteReasonResolvedRefs,
-				"References Resolved")
+				"References resolved")
 		}
 
 		// Check for an existing "Accepted" condition, add one if one does
@@ -1008,7 +1008,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 
 			headerMatches, err := gatewayHeaderMatchConditions(match.Headers)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1024,7 +1024,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 
 			queryParamMatches, err := gatewayQueryParamMatchConditions(match.QueryParams)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonQueryParamMatchType, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1045,13 +1045,14 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			urlRewriteHostname   string
 		)
 
+		// Per Gateway API docs: "Specifying a core filter multiple times
+		// has unspecified or implementation-specific conformance." Contour
+		// chooses to use the first instance of each filter type and ignore
+		// subsequent instances.
 		for _, filter := range rule.Filters {
 			switch filter.Type {
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if requestHeaderPolicy != nil {
+				if filter.RequestHeaderModifier == nil || requestHeaderPolicy != nil {
 					continue
 				}
 
@@ -1061,10 +1062,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if responseHeaderPolicy != nil {
+				if filter.ResponseHeaderModifier == nil || responseHeaderPolicy != nil {
 					continue
 				}
 
@@ -1074,102 +1072,88 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect:
-				// Get the redirect filter if there is one. Note that per Gateway API
-				// docs, "specifying a core filter multiple times has unspecified or
-				// custom conformance.", here we choose to just select the first one.
-				if redirect == nil && filter.RequestRedirect != nil {
-					var hostname string
-					if filter.RequestRedirect.Hostname != nil {
-						hostname = string(*filter.RequestRedirect.Hostname)
-					}
-
-					var portNumber uint32
-					if filter.RequestRedirect.Port != nil {
-						portNumber = uint32(*filter.RequestRedirect.Port)
-					}
-
-					var scheme string
-					if filter.RequestRedirect.Scheme != nil {
-						scheme = *filter.RequestRedirect.Scheme
-					}
-
-					var statusCode int
-					if filter.RequestRedirect.StatusCode != nil {
-						statusCode = *filter.RequestRedirect.StatusCode
-					}
-
-					var pathRewritePolicy *PathRewritePolicy
-
-					if filter.RequestRedirect.Path != nil {
-						var prefixRewrite, fullPathRewrite string
-
-						switch filter.RequestRedirect.Path.Type {
-						case gatewayapi_v1beta1.PrefixMatchHTTPPathModifier:
-							if filter.RequestRedirect.Path.ReplacePrefixMatch == nil || len(*filter.RequestRedirect.Path.ReplacePrefixMatch) == 0 {
-								prefixRewrite = "/"
-							} else {
-								prefixRewrite = *filter.RequestRedirect.Path.ReplacePrefixMatch
-							}
-						case gatewayapi_v1beta1.FullPathHTTPPathModifier:
-							if filter.RequestRedirect.Path.ReplaceFullPath == nil || len(*filter.RequestRedirect.Path.ReplaceFullPath) == 0 {
-								fullPathRewrite = "/"
-							} else {
-								fullPathRewrite = *filter.RequestRedirect.Path.ReplaceFullPath
-							}
-						default:
-							routeAccessor.AddCondition(
-								gatewayapi_v1beta1.RouteConditionAccepted,
-								metav1.ConditionFalse,
-								gatewayapi_v1beta1.RouteReasonUnsupportedValue,
-								fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.RequestRedirect.Path.Type),
-							)
-							continue
-						}
-
-						pathRewritePolicy = &PathRewritePolicy{
-							PrefixRewrite:   prefixRewrite,
-							FullPathRewrite: fullPathRewrite,
-						}
-					}
-
-					redirect = &Redirect{
-						Hostname:          hostname,
-						PortNumber:        portNumber,
-						Scheme:            scheme,
-						StatusCode:        statusCode,
-						PathRewritePolicy: pathRewritePolicy,
-					}
-				}
-			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
-				// Get the mirror filter if there is one. If there are more than one
-				// mirror filters, "NotImplemented" condition on the Route is set to
-				// status: True, with the "NotImplemented" reason.
-				if mirrorPolicy != nil {
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.Rules.Filters: Only one mirror filter is supported.")
+				if filter.RequestRedirect == nil || redirect != nil {
 					continue
 				}
 
-				if filter.RequestMirror != nil {
-					mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
-					if cond != nil {
-						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+				var hostname string
+				if filter.RequestRedirect.Hostname != nil {
+					hostname = string(*filter.RequestRedirect.Hostname)
+				}
+
+				var portNumber uint32
+				if filter.RequestRedirect.Port != nil {
+					portNumber = uint32(*filter.RequestRedirect.Port)
+				}
+
+				var scheme string
+				if filter.RequestRedirect.Scheme != nil {
+					scheme = *filter.RequestRedirect.Scheme
+				}
+
+				var statusCode int
+				if filter.RequestRedirect.StatusCode != nil {
+					statusCode = *filter.RequestRedirect.StatusCode
+				}
+
+				var pathRewritePolicy *PathRewritePolicy
+
+				if filter.RequestRedirect.Path != nil {
+					var prefixRewrite, fullPathRewrite string
+
+					switch filter.RequestRedirect.Path.Type {
+					case gatewayapi_v1beta1.PrefixMatchHTTPPathModifier:
+						if filter.RequestRedirect.Path.ReplacePrefixMatch == nil || len(*filter.RequestRedirect.Path.ReplacePrefixMatch) == 0 {
+							prefixRewrite = "/"
+						} else {
+							prefixRewrite = *filter.RequestRedirect.Path.ReplacePrefixMatch
+						}
+					case gatewayapi_v1beta1.FullPathHTTPPathModifier:
+						if filter.RequestRedirect.Path.ReplaceFullPath == nil || len(*filter.RequestRedirect.Path.ReplaceFullPath) == 0 {
+							fullPathRewrite = "/"
+						} else {
+							fullPathRewrite = *filter.RequestRedirect.Path.ReplaceFullPath
+						}
+					default:
+						routeAccessor.AddCondition(
+							gatewayapi_v1beta1.RouteConditionAccepted,
+							metav1.ConditionFalse,
+							gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+							fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.RequestRedirect.Path.Type),
+						)
 						continue
 					}
-					mirrorPolicy = &MirrorPolicy{
-						Cluster: &Cluster{
-							Upstream: mirrorService,
-						},
+
+					pathRewritePolicy = &PathRewritePolicy{
+						PrefixRewrite:   prefixRewrite,
+						FullPathRewrite: fullPathRewrite,
 					}
 				}
-			case gatewayapi_v1beta1.HTTPRouteFilterURLRewrite:
-				// Get the URL rewrite filter if there is one. Note that per Gateway API
-				// docs, "specifying a core filter multiple times has unspecified or
-				// custom conformance.", here we choose to just select the first one.
-				if pathRewritePolicy != nil {
+
+				redirect = &Redirect{
+					Hostname:          hostname,
+					PortNumber:        portNumber,
+					Scheme:            scheme,
+					StatusCode:        statusCode,
+					PathRewritePolicy: pathRewritePolicy,
+				}
+			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
+				if filter.RequestMirror == nil || mirrorPolicy != nil {
 					continue
 				}
 
-				if filter.URLRewrite == nil {
+				mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
+				if cond != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					continue
+				}
+				mirrorPolicy = &MirrorPolicy{
+					Cluster: &Cluster{
+						Upstream: mirrorService,
+					},
+				}
+			case gatewayapi_v1beta1.HTTPRouteFilterURLRewrite:
+				if filter.URLRewrite == nil || pathRewritePolicy != nil {
 					continue
 				}
 
@@ -1316,13 +1300,14 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			mirrorPolicy                              *MirrorPolicy
 		)
 
+		// Per Gateway API docs: "Specifying a core filter multiple times
+		// has unspecified or implementation-specific conformance." Contour
+		// chooses to use the first instance of each filter type and ignore
+		// subsequent instances.
 		for _, filter := range rule.Filters {
 			switch filter.Type {
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if requestHeaderPolicy != nil {
+				if filter.RequestHeaderModifier == nil || requestHeaderPolicy != nil {
 					continue
 				}
 
@@ -1332,10 +1317,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if responseHeaderPolicy != nil {
+				if filter.ResponseHeaderModifier == nil || responseHeaderPolicy != nil {
 					continue
 				}
 
@@ -1345,27 +1327,21 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror:
-				// Get the mirror filter if there is one. If there are more than one
-				// mirror filters, "NotImplemented" condition on the Route is set to
-				// status: True, with the "NotImplemented" reason.
-				if mirrorPolicy != nil {
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "GRPCRoute.Spec.Rules.Filters: Only one mirror filter is supported.")
+				if filter.RequestMirror == nil || mirrorPolicy != nil {
 					continue
 				}
 
-				if filter.RequestMirror != nil {
-					mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
-					if cond != nil {
-						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
-						continue
-					}
-					// If protocol is not set on the service, need to set a default one based on listener's protocol type.
-					setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
-					mirrorPolicy = &MirrorPolicy{
-						Cluster: &Cluster{
-							Upstream: mirrorService,
-						},
-					}
+				mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
+				if cond != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					continue
+				}
+				// If protocol is not set on the service, need to set a default one based on listener's protocol type.
+				setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
+				mirrorPolicy = &MirrorPolicy{
+					Cluster: &Cluster{
+						Upstream: mirrorService,
+					},
 				}
 			default:
 				routeAccessor.AddCondition(
@@ -1586,7 +1562,12 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &ExactMatchCondition{Path: path}, true
 	}
 
-	routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+	routeAccessor.AddCondition(
+		gatewayapi_v1beta1.RouteConditionAccepted,
+		metav1.ConditionFalse,
+		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
+	)
 	return nil, false
 }
 
@@ -1666,14 +1647,17 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			continue
 		}
 
-		var clusterRequestHeaderPolicy, clusterResponseHeaderPolicy *HeadersPolicy
+		var clusterRequestHeaderPolicy *HeadersPolicy
+		var clusterResponseHeaderPolicy *HeadersPolicy
+
+		// Per Gateway API docs: "Specifying a core filter multiple times
+		// has unspecified or implementation-specific conformance." Contour
+		// chooses to use the first instance of each filter type and ignore
+		// subsequent instances.
 		for _, filter := range backendRef.Filters {
 			switch filter.Type {
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if clusterRequestHeaderPolicy != nil {
+				if filter.RequestHeaderModifier == nil || clusterRequestHeaderPolicy != nil {
 					continue
 				}
 
@@ -1683,10 +1667,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if clusterResponseHeaderPolicy != nil {
+				if filter.ResponseHeaderModifier == nil || clusterResponseHeaderPolicy != nil {
 					continue
 				}
 
@@ -1696,7 +1677,12 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.")
+				routeAccessor.AddCondition(
+					gatewayapi_v1beta1.RouteConditionAccepted,
+					metav1.ConditionFalse,
+					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					"HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
+				)
 			}
 		}
 
@@ -1744,13 +1730,15 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 		}
 
 		var clusterRequestHeaderPolicy, clusterResponseHeaderPolicy *HeadersPolicy
+
+		// Per Gateway API docs: "Specifying a core filter multiple times
+		// has unspecified or implementation-specific conformance." Contour
+		// chooses to use the first instance of each filter type and ignore
+		// subsequent instances.
 		for _, filter := range backendRef.Filters {
 			switch filter.Type {
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if clusterRequestHeaderPolicy != nil {
+				if filter.RequestHeaderModifier == nil || clusterRequestHeaderPolicy != nil {
 					continue
 				}
 
@@ -1760,10 +1748,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
-				// Per Gateway API docs, "specifying a core filter multiple times has
-				// unspecified or custom conformance.", here we choose to just process
-				// the first one.
-				if clusterResponseHeaderPolicy != nil {
+				if filter.ResponseHeaderModifier == nil || clusterResponseHeaderPolicy != nil {
 					continue
 				}
 
@@ -1773,7 +1758,12 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "GRPCRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.")
+				routeAccessor.AddCondition(
+					gatewayapi_v1beta1.RouteConditionAccepted,
+					metav1.ConditionFalse,
+					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					"GRPCRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
+				)
 			}
 		}
 

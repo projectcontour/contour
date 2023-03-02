@@ -95,7 +95,7 @@ func OptSetQueryParams(queryParams map[string]string) func(*http.Request) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -129,7 +129,7 @@ func OptDontFollowRedirects(c *http.Client) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLMetricsBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLMetricsBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
@@ -147,7 +147,7 @@ func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) 
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLAdminBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLAdminBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
@@ -188,7 +188,7 @@ func OptSetSNI(name string) func(*tls.Config) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -225,7 +225,7 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 // SecureRequestUntil will retry requests to account for eventual consistency and
 // other ephemeral issues.
 func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host

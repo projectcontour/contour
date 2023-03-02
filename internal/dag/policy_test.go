@@ -414,6 +414,90 @@ func TestHeadersPolicy(t *testing.T) {
 				},
 			},
 		},
+		"valid Envoy REQ header unescaped truncated": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Host",
+					Value: "%REQ(Host):9%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Host": "%REQ(Host):9%",
+				},
+			},
+		},
+		"valid Envoy REQ http/2 pseudo-header unescaped": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Path",
+					Value: "%REQ(:PATH)%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Path": "%REQ(:PATH)%",
+				},
+			},
+		},
+		"valid Envoy REQ header if not present": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Foo-Fallback",
+					Value: "%REQ(X-Foo?X-Bar)%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Foo-Fallback": "%REQ(X-Foo?X-Bar)%",
+				},
+			},
+		},
+		"valid Envoy REQ header if not present truncated": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Foo-Fallback",
+					Value: "%REQ(X-Foo?X-Bar):10%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Foo-Fallback": "%REQ(X-Foo?X-Bar):10%",
+				},
+			},
+		},
+		"Envoy REQ header if not present invalid truncation": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Foo-Fallback",
+					Value: "%REQ(X-Foo?X-Bar):baz%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Foo-Fallback": "%%REQ(X-Foo?X-Bar):baz%%",
+				},
+			},
+		},
+		"valid Envoy REQ header if not present http/2 pseudo-header": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Path-Fallback",
+					Value: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+				}},
+			},
+			dhp: HeadersPolicy{},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Path-Fallback": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+				},
+			},
+		},
 		"invalid Envoy REQ header is escaped": {
 			hp: &contour_api_v1.HeadersPolicy{
 				Set: []contour_api_v1.HeaderValue{{

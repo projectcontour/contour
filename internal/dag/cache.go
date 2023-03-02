@@ -202,8 +202,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		case *contour_api_v1alpha1.ExtensionService:
 			kc.extensions[k8s.NamespacedNameOf(obj)] = obj
 			return true
-		case *contour_api_v1alpha1.ContourConfiguration:
-			return false
 		default:
 			// not an interesting object
 			kc.WithField("object", obj).Error("insert unknown object")
@@ -330,8 +328,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.extensions[m]
 		delete(kc.extensions, m)
 		return ok
-	case *contour_api_v1alpha1.ContourConfiguration:
-		return false
 	default:
 		// not interesting
 		kc.WithField("object", obj).Error("remove unknown object")
