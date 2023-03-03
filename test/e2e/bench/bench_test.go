@@ -294,7 +294,7 @@ var _ = Describe("Benchmark", func() {
 				for i := 0; i < numServices; i++ {
 					appName := fmt.Sprintf("echo-%d", i)
 					deployApp(appName)
-					req, err := http.NewRequest("GET", "http://"+lbExternalIP, nil)
+					req, err := http.NewRequest(http.MethodGet, "http://"+lbExternalIP, nil)
 					require.NoError(f.T(), err, "error creating HTTP request")
 					req.Host = appName + ".projectcontour.io"
 

@@ -474,7 +474,6 @@ func (s *Server) doServe() error {
 		"httpproxies":               &contour_api_v1.HTTPProxy{},
 		"tlscertificatedelegations": &contour_api_v1.TLSCertificateDelegation{},
 		"extensionservices":         &contour_api_v1alpha1.ExtensionService{},
-		"contourconfigurations":     &contour_api_v1alpha1.ContourConfiguration{},
 		"services":                  &corev1.Service{},
 		"ingresses":                 &networking_v1.Ingress{},
 	} {

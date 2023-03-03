@@ -40,6 +40,8 @@ func TestKindOf(t *testing.T) {
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
 		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
 		{"ExtensionService", &v1alpha1.ExtensionService{}},
+		{"ContourConfiguration", &v1alpha1.ContourConfiguration{}},
+		{"ContourDeployment", &v1alpha1.ContourDeployment{}},
 		{"GRPCRoute", &gatewayapi_v1alpha2.GRPCRoute{}},
 		{"HTTPRoute", &gatewayapi_v1beta1.HTTPRoute{}},
 		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},

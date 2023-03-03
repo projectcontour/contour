@@ -64,6 +64,10 @@ func KindOf(obj interface{}) string {
 			return "TLSCertificateDelegation"
 		case *v1alpha1.ExtensionService:
 			return "ExtensionService"
+		case *v1alpha1.ContourConfiguration:
+			return "ContourConfiguration"
+		case *v1alpha1.ContourDeployment:
+			return "ContourDeployment"
 		case *v1.Namespace:
 			return "Namespace"
 		case *unstructured.Unstructured:
