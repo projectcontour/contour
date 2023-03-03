@@ -4482,7 +4482,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -4532,7 +4532,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				Conditions: []metav1.Condition{
 					routeResolvedRefsCondition(),
-					routeAcceptedCondition(),
+					routeAcceptedHTTPRouteCondition(),
 				},
 			}},
 		}},
@@ -4586,7 +4586,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []metav1.Condition{
 							routeResolvedRefsCondition(),
-							routeAcceptedCondition(),
+							routeAcceptedHTTPRouteCondition(),
 						},
 					},
 				},
@@ -4598,7 +4598,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []metav1.Condition{
 							routeResolvedRefsCondition(),
-							routeAcceptedCondition(),
+							routeAcceptedHTTPRouteCondition(),
 						},
 					},
 				},
@@ -4642,7 +4642,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 						routeResolvedRefsCondition(),
 						{
 							Type:    string(status.ConditionValidMatches),
@@ -4692,7 +4692,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 						{
 							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
@@ -4742,7 +4742,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 						{
 							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
@@ -4792,7 +4792,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 						{
 							Type:    string(status.ConditionValidMatches),
 							Status:  contour_api_v1.ConditionFalse,
@@ -5053,7 +5053,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "Spec.Rules.BackendRef.Name must be specified",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -5110,7 +5110,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
 							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -5164,7 +5164,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "Spec.Rules.BackendRef.Port must be specified",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -5208,7 +5208,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "At least one Spec.Rules.BackendRef must be specified.",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -5263,7 +5263,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6143,7 +6143,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6645,7 +6645,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80),
 						Conditions: []metav1.Condition{
 							routeResolvedRefsCondition(),
-							routeAcceptedCondition(),
+							routeAcceptedHTTPRouteCondition(),
 						},
 					},
 				},
@@ -6735,7 +6735,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6791,7 +6791,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6847,7 +6847,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Port must be specified",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6918,7 +6918,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
 							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -6976,7 +6976,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -7138,7 +7138,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "duplicate header addition: \"Custom\" on request headers",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -7197,7 +7197,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -7251,7 +7251,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "duplicate header addition: \"Custom\" on response headers",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -7310,7 +7310,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
 						},
-						routeAcceptedCondition(),
+						routeAcceptedHTTPRouteCondition(),
 					},
 				},
 			},
@@ -8996,12 +8996,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						}},
+						routeAcceptedGRPCRouteCondition(),
+					},
 				},
 			},
 		}},
@@ -9254,12 +9250,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "duplicate header addition: \"Custom\" on request headers",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9315,12 +9306,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9376,12 +9362,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9440,12 +9421,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9543,12 +9519,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "At least one Spec.Rules.BackendRef must be specified.",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9610,12 +9581,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "duplicate header addition: \"Custom\" on request headers",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9677,12 +9643,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Reason:  string(status.ReasonDegraded),
 							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
 						},
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
-							Message: "Accepted GRPCRoute",
-						},
+						routeAcceptedGRPCRouteCondition(),
 					},
 				},
 			},
@@ -9711,11 +9672,20 @@ func routeResolvedRefsCondition() metav1.Condition {
 	}
 }
 
-func routeAcceptedCondition() metav1.Condition {
+func routeAcceptedHTTPRouteCondition() metav1.Condition {
 	return metav1.Condition{
 		Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 		Status:  contour_api_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
 		Message: "Accepted HTTPRoute",
+	}
+}
+
+func routeAcceptedGRPCRouteCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+		Status:  contour_api_v1.ConditionTrue,
+		Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+		Message: "Accepted GRPCRoute",
 	}
 }
