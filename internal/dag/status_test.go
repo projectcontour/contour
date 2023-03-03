@@ -4458,9 +4458,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4497,9 +4494,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4614,9 +4608,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4663,9 +4654,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4713,9 +4701,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4763,9 +4748,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4813,9 +4795,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4862,9 +4841,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -4906,9 +4882,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5015,9 +4988,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5068,9 +5038,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5126,9 +5093,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5180,9 +5144,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5223,9 +5184,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5948,9 +5906,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -5996,9 +5951,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6044,9 +5996,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6700,9 +6649,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6752,9 +6698,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6808,9 +6751,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6864,9 +6804,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6935,9 +6872,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -6993,9 +6927,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7047,9 +6978,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7100,9 +7028,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7154,9 +7079,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7213,9 +7135,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7267,9 +7186,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -7326,9 +7242,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -8407,9 +8320,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8462,9 +8372,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8512,9 +8419,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8568,9 +8472,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8617,9 +8518,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8666,9 +8564,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8715,9 +8610,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
@@ -8970,9 +8862,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9011,9 +8900,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9058,9 +8944,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9104,9 +8987,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9150,9 +9030,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9209,9 +9086,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9266,9 +9140,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9324,9 +9195,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9379,9 +9247,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9437,9 +9302,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9487,9 +9349,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9534,9 +9393,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -9597,9 +9453,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "default",
-					Labels: map[string]string{
-						"app": "contour",
-					},
 				},
 				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
