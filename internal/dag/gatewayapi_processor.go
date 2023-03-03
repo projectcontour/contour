@@ -393,6 +393,16 @@ func (p *GatewayAPIProcessor) computeListener(
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
 ) (bool, *listenerInfo) {
+
+	addInvalidListenerCondition := func(msg string) {
+		gwAccessor.AddListenerCondition(
+			string(listener.Name),
+			gatewayapi_v1beta1.ListenerConditionProgrammed,
+			metav1.ConditionFalse,
+			gatewayapi_v1beta1.ListenerReasonInvalid,
+			msg,
+		)
+	}
 	// set the listener's "Programmed" condition based on whether we've
 	// added any other conditions for the listener. The assumption
 	// here is that if another condition is set, the listener is
@@ -422,13 +432,7 @@ func (p *GatewayAPIProcessor) computeListener(
 			// it will contain more specific information about what
 			// was invalid.
 			if !programmedConditionExists {
-				gwAccessor.AddListenerCondition(
-					string(listener.Name),
-					gatewayapi_v1beta1.ListenerConditionProgrammed,
-					metav1.ConditionFalse,
-					gatewayapi_v1beta1.ListenerReasonInvalid,
-					"Invalid listener, see other listener conditions for details",
-				)
+				addInvalidListenerCondition("Invalid listener, see other listener conditions for details")
 			}
 		}
 	}()
@@ -449,37 +453,19 @@ func (p *GatewayAPIProcessor) computeListener(
 		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gatewayapi_v1beta1.NamespacesFromSelector {
 
 		if listener.AllowedRoutes.Namespaces.Selector == nil {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				"Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".",
-			)
+			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".")
 			return false, nil
 		}
 
 		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				"Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.",
-			)
+			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.")
 			return false, nil
 		}
 
 		var err error
 		selector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
 		if err != nil {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err))
 			return false, nil
 		}
 	}
@@ -494,24 +480,12 @@ func (p *GatewayAPIProcessor) computeListener(
 		// backends using HTTPRoutes.
 
 		if listener.TLS == nil {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
 			return false, nil
 		}
 
 		if listener.TLS.Mode != nil && *listener.TLS.Mode != gatewayapi_v1beta1.TLSModeTerminate {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModeTerminate, listener.Protocol),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModeTerminate, listener.Protocol))
 			return false, nil
 		}
 
@@ -532,35 +506,17 @@ func (p *GatewayAPIProcessor) computeListener(
 		// still encrypted.
 
 		if listener.TLS == nil {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
 			return false, nil
 		}
 
 		if listener.TLS.Mode == nil || *listener.TLS.Mode != gatewayapi_v1beta1.TLSModePassthrough {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModePassthrough, listener.Protocol),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModePassthrough, listener.Protocol))
 			return false, nil
 		}
 
 		if len(listener.TLS.CertificateRefs) != 0 {
-			gwAccessor.AddListenerCondition(
-				string(listener.Name),
-				gatewayapi_v1beta1.ListenerConditionProgrammed,
-				metav1.ConditionFalse,
-				gatewayapi_v1beta1.ListenerReasonInvalid,
-				fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1beta1.TLSModePassthrough),
-			)
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1beta1.TLSModePassthrough))
 			return false, nil
 		}
 	}
