@@ -969,6 +969,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConfiguredSecretRefs:     configuredSecretRefs,
 			FieldLogger:              s.log.WithField("context", "KubernetesCache"),
 			Client:                   dbc.client,
+			Metrics:                  dbc.metrics,
 		},
 		Processors: dagProcessors,
 		Metrics:    dbc.metrics,

@@ -31,7 +31,11 @@ import (
 // objects, so we have to use a type assertion to detect kinds that
 // we care about.
 func KindOf(obj interface{}) string {
-	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
+	object, ok := obj.(runtime.Object)
+	if !ok {
+		return ""
+	}
+	gvk, _, err := scheme.Scheme.ObjectKinds(object)
 	if err != nil {
 		switch obj := obj.(type) {
 		case *v1.Secret:
