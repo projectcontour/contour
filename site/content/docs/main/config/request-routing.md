@@ -453,9 +453,48 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
+## Internal Redirects
+
+HTTPProxy supports handling 3xx redirects internally, that is capturing a configurable 3xx redirect response, synthesizing a new request, sending it to the upstream specified by the new route match, and returning the redirected response as the response to the original request.
+
+Internal redirects can be enabled in HTTPProxy by defining an `internalRedirectPolicy` on a route.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+ name: myservice
+ namespace: prod
+spec:
+ virtualhost:
+   fqdn: foo.com
+   routes:
+     - conditions:
+         - prefix: /download
+       services:
+         - name: foo
+           port: 8080
+       internalRedirectPolicy:
+         maxInternalRedirects: 5
+         redirectResponseCodes: [ 302 ]
+         allowCrossSchemeRedirect: SafeOnly
+         denyRepeatedRouteRedirect: true
+```
+
+In this example, a sample redirect flow might look like this:
+
+1. Client sends a `GET` request for http://foo.com/download.
+2. Upstream `foo` returns a `302` response with `location: http://foo.com/myfile`.
+3. Envoy lookups a route for http://foo.com/myfile and sends a new `GET` request to the corresponding upstream with the additional request header `x-envoy-original-url: http://foo.com/download`.
+4. Envoy proxies the response data for http://foo.com/myfile to the client as the response to the original request.
+
+See [the API specification][9] and [Envoy's documentation][10] for more detail.
+
 [3]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPRequestRedirectPolicy
 [4]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-timeout
 [5]: https://godoc.org/time#ParseDuration
 [6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
 [7]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
+[9] /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPInternalRedirectPolicy
+[10] https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http/http_connection_management.html#internal-redirects
