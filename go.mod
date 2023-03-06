@@ -23,7 +23,7 @@ require (
 	github.com/prometheus/client_model v0.3.0
 	github.com/prometheus/common v0.41.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/tsaarni/certyaml v0.9.1
 	github.com/vektra/mockery/v2 v2.20.2
 	golang.org/x/oauth2 v0.6.0
