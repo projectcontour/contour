@@ -90,6 +90,73 @@ N/A
 
 ## Compatibility
 
+### Static Gateway mode
+
+It's also possible to configure Contour to correspond to a particular Gateway, while not using the Gateway provisioner to dynamically manage infrastructure.
+This is described in detail [here](https://projectcontour.io/docs/v1.24.1/guides/gateway-api/#option-1-statically-provisioned).
+In this case, the user is responsible for defining the Envoy Service YAML, including exposing any relevant ports.
+
+For example, given the following Gateway:
+
+```yaml
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: example
+  listeners:
+    - name: http-1
+      protocol: HTTP
+      port: 80
+    - name: http-2
+      protocol: HTTP
+      port: 80
+    - name: https-1
+      protocol: HTTPS
+      port: 443
+      tls:
+         ...
+    - name: https-2
+      protocol: HTTPS
+      port: 444
+      tls:
+         ...
+```
+
+The user would need to define a corresponding Envoy Service:
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy
+  namespace: projectcontour
+spec:
+  ports:
+  - port: 80
+    name: http-1
+    protocol: TCP
+    targetPort: 64592 # matches Contour's mapping scheme described above
+  - port: 81
+    name: http-2
+    protocol: TCP
+    targetPort: 64593 # matches Contour's mapping scheme described above
+  - port: 443
+    name: https-1
+    protocol: TCP
+    targetPort: 64955 # matches Contour's mapping scheme described above
+  - port: 444
+    name: https-2
+    protocol: TCP
+    targetPort: 64956 # matches Contour's mapping scheme described above
+  selector:
+    app: envoy
+  type: LoadBalancer
+```
+
 ### Gateway mode with Ingress/HTTPProxy
 
 When using Gateway mode, it is possible to use Ingress and/or HTTPProxy to define routing config.
