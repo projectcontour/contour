@@ -54,7 +54,7 @@ jobs:
           ${{ runner.os }}-${{ github.job }}-go-
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.18.1'
+        go-version: 'stable'
     - run: go run ./hack/actions/check-changefile-exists.go
       env:
         PR_NUMBER: ${{ github.event.number }}
