@@ -28,25 +28,19 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Create the Contour namespace and service account.
-${KUBECTL} apply -f ${REPO}/examples/contour/namespace.yaml
-${KUBECTL} apply -f ${REPO}/examples/contour/service-account.yaml
-
 # Set the image tag to match the current Contour version.
 VERSION="v$$"
 
 # Build the Contour Provisioner image.
-make -C ${REPO}/provisioner container IMAGE=ghcr.io/projectcontour/contour-provisioner VERSION=${VERSION}
+make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
 
 # Push the Contour Provisioner image into the cluster.
 kind::cluster::load::docker ghcr.io/projectcontour/contour-provisioner:${VERSION}
 
 # Install the Contour Provisioner.
-${KUBECTL} apply -f ${REPO}/provisioner/deploy/00-crds.yaml
-${KUBECTL} apply -f ${REPO}/provisioner/deploy/01-rbac.yaml
-${KUBECTL} apply -f ${REPO}/provisioner/deploy/02-deployment.yaml
-${KUBECTL} apply -f ${REPO}/provisioner/deploy/02-service.yaml
+${KUBECTL} apply -f ${REPO}/examples/gateway-provisioner/deploy.yaml
+${KUBECTL} apply -f ${REPO}/examples/gateway-provisioner/service.yaml
 
 # Wait for the provisioner to report "Ready" status.
-${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour-provisioner deployments --for=condition=Available
-${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour-provisioner pods --for=condition=Ready
+${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available
+${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner pods --for=condition=Ready
