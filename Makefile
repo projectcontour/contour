@@ -311,9 +311,9 @@ install-contour-working: | setup-kind-cluster ## Install the local working direc
 install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
-.PHONY: setup-contour-provisioner
-setup-contour-provisioner: | setup-kind-cluster ## Set up the Contour provisioner for local testing
-	./test/scripts/setup-contour-provisioner.sh
+.PHONY: install-provisioner-working
+install-provisioner-working: | setup-kind-cluster ## Set up the Contour provisioner for local testing
+	./test/scripts/install-provisioner-working.sh
 
 
 .PHONY: e2e
