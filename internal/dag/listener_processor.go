@@ -13,6 +13,8 @@
 
 package dag
 
+import "github.com/projectcontour/contour/internal/gatewayapi"
+
 // nolint:revive
 const (
 	HTTP_LISTENER_NAME  = "ingress_http"
@@ -30,21 +32,35 @@ type ListenerProcessor struct {
 
 // Run adds HTTP and HTTPS listeners to the DAG.
 func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
-	dag.Listeners[HTTP_LISTENER_NAME] = &Listener{
-		Name:            HTTP_LISTENER_NAME,
-		Address:         p.HTTPAddress,
-		Port:            intOrDefault(p.HTTPPort, 8080),
-		RouteConfigName: "ingress_http",
-		vhostsByName:    map[string]*VirtualHost{},
-	}
+	if cache.gateway != nil {
+		dag.HasDynamicListeners = true
 
-	dag.Listeners[HTTPS_LISTENER_NAME] = &Listener{
-		Name:                        HTTPS_LISTENER_NAME,
-		Address:                     p.HTTPSAddress,
-		Port:                        intOrDefault(p.HTTPSPort, 8443),
-		RouteConfigName:             "https",
-		FallbackCertRouteConfigName: "ingress_fallbackcert",
-		svhostsByName:               map[string]*SecureVirtualHost{},
+		for _, port := range gatewayapi.ValidateListeners(cache.gateway.Spec.Listeners).Ports {
+			dag.Listeners[port.Name] = &Listener{
+				Name:          port.Name,
+				Address:       "0.0.0.0",
+				Port:          int(port.ContainerPort),
+				vhostsByName:  map[string]*VirtualHost{},
+				svhostsByName: map[string]*SecureVirtualHost{},
+			}
+		}
+	} else {
+		dag.Listeners[HTTP_LISTENER_NAME] = &Listener{
+			Name:            HTTP_LISTENER_NAME,
+			Address:         p.HTTPAddress,
+			Port:            intOrDefault(p.HTTPPort, 8080),
+			RouteConfigName: "ingress_http",
+			vhostsByName:    map[string]*VirtualHost{},
+		}
+
+		dag.Listeners[HTTPS_LISTENER_NAME] = &Listener{
+			Name:                        HTTPS_LISTENER_NAME,
+			Address:                     p.HTTPSAddress,
+			Port:                        intOrDefault(p.HTTPSPort, 8443),
+			RouteConfigName:             "https",
+			FallbackCertRouteConfigName: "ingress_fallbackcert",
+			svhostsByName:               map[string]*SecureVirtualHost{},
+		}
 	}
 }
 

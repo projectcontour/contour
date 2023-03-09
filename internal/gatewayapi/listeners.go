@@ -18,16 +18,31 @@ import (
 	"net"
 	"strings"
 
+	"github.com/projectcontour/contour/internal/ref"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type ValidateListenersResult struct {
-	InsecurePort int
-	SecurePort   int
+	// ListenerNames is a map from Gateway Listener name
+	// to DAG/Envoy Listener name. All Gateway Listeners
+	// that share a port map to the same DAG/Envoy Listener
+	// name.
+	ListenerNames map[string]string
 
+	// Ports is a list of ports to listen on.
+	Ports []ListenerPort
+
+	// InvalidListenerConditions is a map from Gateway Listener name
+	// to a condition to set, if the Listener is invalid.
 	InvalidListenerConditions map[gatewayapi_v1beta1.SectionName]metav1.Condition
+}
+
+type ListenerPort struct {
+	Name          string
+	Port          int32
+	ContainerPort int32
 }
 
 // ValidateListeners validates protocols, ports and hostnames on a set of listeners.
@@ -37,104 +52,32 @@ type ValidateListenersResult struct {
 //   - listener hostnames are syntactically valid
 //   - hostnames within each listener group are unique
 //
-// It returns the insecure & secure ports to use, as well as conditions for all invalid listeners.
+// It returns a Listener name map, the ports to use, and conditions for all invalid listeners.
 // If a listener is not in the "InvalidListenerConditions" map, it is assumed to be valid according
 // to the above rules.
 func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListenersResult {
 	result := ValidateListenersResult{
+		ListenerNames:             map[string]string{},
 		InvalidListenerConditions: map[gatewayapi_v1beta1.SectionName]metav1.Condition{},
 	}
 
-	// All listeners with a protocol of "HTTP" must use the same port number
-	// Heuristic: the first port number encountered is allowed, any other listeners with a different port number are marked "Detached" with "PortUnavailable"
-	// All listeners with a protocol of "HTTP" using the one allowed port must have a unique hostname
-	// Any listener with a duplicate hostname is marked "Conflicted" with "HostnameConflict"
-
-	var (
-		insecureHostnames = map[string]int{}
-		secureHostnames   = map[string]int{}
-	)
-
-	for _, listener := range listeners {
-		hostname := HostnameDeref(listener.Hostname)
-
-		switch listener.Protocol {
-		case gatewayapi_v1beta1.HTTPProtocolType:
-			// Keep the first insecure listener port we see
-			if result.InsecurePort == 0 {
-				result.InsecurePort = int(listener.Port)
-			}
-
-			// Count hostnames among insecure listeners with the "valid" port.
-			// For other insecure listeners with an "invalid" port, the
-			// "PortUnavailable" reason will take precedence.
-			if int(listener.Port) == result.InsecurePort {
-				insecureHostnames[hostname]++
-			}
-		case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
-			// Keep the first secure listener port we see
-			if result.SecurePort == 0 {
-				result.SecurePort = int(listener.Port)
-			}
-
-			// Count hostnames among secure listeners with the "valid" port.
-			// For other secure listeners with an "invalid" port, the
-			// "PortUnavailable" reason will take precedence.
-			if int(listener.Port) == result.SecurePort {
-				secureHostnames[hostname]++
-			}
-		}
-	}
-
-	for _, listener := range listeners {
-		hostname := HostnameDeref(listener.Hostname)
-
-		if len(hostname) > 0 {
-			if err := IsValidHostname(hostname); err != nil {
+	for i, listener := range listeners {
+		// Check for a valid hostname.
+		if hostname := ref.Val(listener.Hostname, ""); len(hostname) > 0 {
+			if err := IsValidHostname(string(hostname)); err != nil {
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 					Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 					Status:  metav1.ConditionFalse,
 					Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
 					Message: err.Error(),
 				}
+				continue
 			}
 		}
 
+		// Check for a supported protocol.
 		switch listener.Protocol {
-		case gatewayapi_v1beta1.HTTPProtocolType:
-			switch {
-			case int(listener.Port) != result.InsecurePort:
-				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
-					Status:  metav1.ConditionFalse,
-					Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
-					Message: "Only one HTTP port is supported",
-				}
-			case insecureHostnames[hostname] > 1:
-				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
-					Status:  metav1.ConditionTrue,
-					Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
-					Message: "Hostname must be unique among HTTP listeners",
-				}
-			}
-		case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
-			switch {
-			case int(listener.Port) != result.SecurePort:
-				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
-					Status:  metav1.ConditionFalse,
-					Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
-					Message: "Only one HTTPS/TLS port is supported",
-				}
-			case secureHostnames[hostname] > 1:
-				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
-					Status:  metav1.ConditionTrue,
-					Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
-					Message: "Hostname must be unique among HTTPS/TLS listeners",
-				}
-			}
+		case gatewayapi_v1beta1.HTTPProtocolType, gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
 		default:
 			result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
@@ -142,20 +85,107 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
 				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS or TLS", listener.Protocol),
 			}
+			continue
+		}
+
+		// Check for conflicts with other listeners.
+		conflicted := false
+		for j, otherListener := range listeners {
+			// Don't self-compare.
+			if i == j {
+				continue
+			}
+
+			// Listeners on other ports never conflict.
+			if listener.Port != otherListener.Port {
+				continue
+			}
+
+			// Protocol conflict
+			switch listener.Protocol {
+			case gatewayapi_v1beta1.HTTPProtocolType:
+				if otherListener.Protocol != gatewayapi_v1beta1.HTTPProtocolType {
+					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+						Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+						Status:  metav1.ConditionTrue,
+						Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+						Message: "All Listener protocols for a given port must be compatible",
+					}
+					conflicted = true
+				}
+			case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
+				if otherListener.Protocol != gatewayapi_v1beta1.HTTPSProtocolType && otherListener.Protocol != gatewayapi_v1beta1.TLSProtocolType {
+					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+						Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+						Status:  metav1.ConditionTrue,
+						Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+						Message: "All Listener protocols for a given port must be compatible",
+					}
+					conflicted = true
+				}
+			}
+			if conflicted {
+				break
+			}
+
+			// Hostname conflict
+			if ref.Val(listener.Hostname, "") == ref.Val(otherListener.Hostname, "") {
+				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+					Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+					Status:  metav1.ConditionTrue,
+					Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
+					Message: "All Listener hostnames for a given port must be unique",
+				}
+				conflicted = true
+			}
+
+			if conflicted {
+				break
+			}
+		}
+
+		if conflicted {
+			continue
+		}
+
+		// Add an entry in the Listener name map.
+		var prefix string
+		if listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType {
+			prefix = "http"
+		} else {
+			prefix = "https"
+		}
+		envoyListenerName := fmt.Sprintf("%s-%d", prefix, listener.Port)
+
+		result.ListenerNames[string(listener.Name)] = envoyListenerName
+
+		// Add the port to the list if it hasn't been added already.
+		found := false
+		for _, port := range result.Ports {
+			if port.Name == envoyListenerName {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			// Map privileged ports (1-1023) to the range 64513-65535 within
+			// the container. All other ports can be used as-is inside the
+			// container.
+			containerPort := listener.Port
+			if containerPort < 1024 {
+				containerPort += 64512
+			}
+
+			result.Ports = append(result.Ports, ListenerPort{
+				Name:          envoyListenerName,
+				Port:          int32(listener.Port),
+				ContainerPort: int32(containerPort),
+			})
 		}
 	}
 
 	return result
-}
-
-// HostnameDeref returns the hostname as a string if it's not nil,
-// or an empty string otherwise.
-func HostnameDeref(hostname *gatewayapi_v1beta1.Hostname) string {
-	if hostname == nil {
-		return ""
-	}
-
-	return string(*hostname)
 }
 
 // IsValidHostname validates that a given hostname is syntactically valid.
