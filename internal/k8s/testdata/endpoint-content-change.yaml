@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2023-02-09T15:06:20Z"
+  creationTimestamp: "2023-02-09T14:55:33Z"
+  name: echoserver
+  namespace: default
+  resourceVersion: "85303"
+  uid: 6cb4c5f2-60b2-4240-b2a3-91111c7e2527
+subsets:
+- addresses:
+  - ip: 10.244.1.4
+    nodeName: contour-worker
+    targetRef:
+      kind: Pod
+      name: echoserver-59db9c5778-cfwhz
+      namespace: default
+      uid: b0014607-0e3b-461e-8b06-df4407fa7a44
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2023-02-09T19:56:07Z"
+  creationTimestamp: "2023-02-09T14:55:33Z"
+  name: echoserver
+  namespace: default
+  resourceVersion: "112662"
+  uid: 6cb4c5f2-60b2-4240-b2a3-91111c7e2527
+subsets:
+- addresses:
+  - ip: 10.244.1.5
+    nodeName: contour-worker
+    targetRef:
+      kind: Pod
+      name: echoserver-59db9c5778-5wdhj
+      namespace: default
+      uid: 84878472-00b6-4ae2-b1fd-5508c900707c
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP

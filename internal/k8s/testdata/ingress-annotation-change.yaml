@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"echoserver","namespace":"default"},"spec":{"defaultBackend":{"service":{"name":"echoserver","port":{"number":80}}}}}
+  creationTimestamp: "2023-02-13T13:44:04Z"
+  generation: 1
+  name: echoserver
+  namespace: default
+  resourceVersion: "205783"
+  uid: 83e07d0d-c2dc-4314-a02c-0409838ad343
+spec:
+  defaultBackend:
+    service:
+      name: echoserver
+      port:
+        number: 80
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"echoserver","namespace":"default"},"spec":{"defaultBackend":{"service":{"name":"echoserver","port":{"number":80}}}}}
+    projectcontour.io/tls-minimum-protocol-version: "1.3"
+  creationTimestamp: "2023-02-13T13:44:04Z"
+  generation: 1
+  name: echoserver
+  namespace: default
+  resourceVersion: "205981"
+  uid: 83e07d0d-c2dc-4314-a02c-0409838ad343
+spec:
+  defaultBackend:
+    service:
+      name: echoserver
+      port:
+        number: 80
+status:
+  loadBalancer: {}
