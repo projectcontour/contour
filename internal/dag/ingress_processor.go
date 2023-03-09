@@ -154,13 +154,11 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
-		var port intstr.IntOrString
+		port := int(be.Service.Port.Number)
 		if len(be.Service.Port.Name) > 0 {
-			port = intstr.FromString(be.Service.Port.Name)
-		} else {
-			port = intstr.FromInt(int(be.Service.Port.Number))
+			_, svcPort, _ := p.source.LookupService(m, intstr.FromString(be.Service.Port.Name))
+			port = int(svcPort.Port)
 		}
-
 		s, err := p.dag.EnsureService(m, port, port, p.source, p.EnableExternalNameService)
 		if err != nil {
 			p.WithError(err).
