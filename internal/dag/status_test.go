@@ -5017,12 +5017,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.BackendRef.Name must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.BackendRef.Name must be specified"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -5071,12 +5066,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
-							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
-						},
+						*resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -5122,12 +5112,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.BackendRef.Port must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.BackendRef.Port must be specified"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -5163,12 +5148,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "At least one Spec.Rules.BackendRef must be specified.",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified."),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -5215,12 +5195,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
-							Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
-						},
+						*resolvedRefsFalse(
+							gatewayapi_v1beta1.RouteConditionReason(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
+							"Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -5925,12 +5902,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -5970,12 +5944,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -6015,12 +5986,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -6728,12 +6694,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -6781,12 +6742,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Port must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.Filters.RequestMirror.BackendRef.Port must be specified"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -6849,12 +6805,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
-							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
-						},
+						*resolvedRefsFalse(
+							gatewayapi_v1beta1.RouteReasonBackendNotFound,
+							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -6904,12 +6857,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
-							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
-						},
+						*resolvedRefsFalse(
+							gatewayapi_v1beta1.RouteConditionReason(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
+							"Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -7057,12 +7007,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "duplicate header addition: \"Custom\" on request headers",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "duplicate header addition: \"Custom\" on request headers"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -7113,12 +7058,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -7164,12 +7106,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "duplicate header addition: \"Custom\" on response headers",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "duplicate header addition: \"Custom\" on response headers"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -7220,12 +7157,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -8346,12 +8280,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.BackendRef.Name must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.BackendRef.Name must be specified"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -8392,12 +8321,9 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
-							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
-						},
+						*resolvedRefsFalse(
+							gatewayapi_v1beta1.RouteReasonBackendNotFound,
+							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -8445,12 +8371,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.BackendRef.Port must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.BackendRef.Port must be specified"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -8491,12 +8412,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "At least one Spec.Rules.BackendRef must be specified.",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified."),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionTrue,
@@ -8537,12 +8453,9 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -8583,12 +8496,9 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -8629,12 +8539,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address"),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -9118,12 +9023,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "duplicate header addition: \"Custom\" on request headers",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "duplicate header addition: \"Custom\" on request headers"),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -9171,12 +9071,9 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -9280,12 +9177,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "Spec.Rules.Filters.RequestMirror.BackendRef.Name must be specified"),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -9372,12 +9264,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "At least one Spec.Rules.BackendRef must be specified.",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified."),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -9431,12 +9318,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "duplicate header addition: \"Custom\" on request headers",
-						},
+						*resolvedRefsFalse(status.ReasonDegraded, "duplicate header addition: \"Custom\" on request headers"),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -9490,12 +9372,9 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(status.ReasonDegraded),
-							Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
-						},
+						*resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
