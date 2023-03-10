@@ -202,3 +202,28 @@ status = 302
   from = "/docs/v1.23.0/*"
   to = "/docs/1.23/:splat"
   status = 302
+
+[[redirects]]
+  from = "/docs/v1.22.4/*"
+  to = "/docs/1.22/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.22.3/*"
+  to = "/docs/1.22/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.22.2/*"
+  to = "/docs/1.22/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.22.1/*"
+  to = "/docs/1.22/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.22.0/*"
+  to = "/docs/1.22/:splat"
+  status = 302
