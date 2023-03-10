@@ -695,7 +695,6 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		Timeout:          responseTimeout,
 		FailOpen:         contourConfiguration.GlobalExternalAuthorization.FailOpen,
 		Context:          context,
-		WithRequestBody:  &dag.AuthorizationServerBufferSettings{},
 	}
 
 	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {
