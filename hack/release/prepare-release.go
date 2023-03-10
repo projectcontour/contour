@@ -27,6 +27,7 @@ import (
 	"strings"
 	"text/template"
 
+	"golang.org/x/mod/semver"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
@@ -139,12 +140,25 @@ func updateConfigForSite(filePath string, oldVers, vers string) error {
 
 	rn := yaml.MustParse(string(data))
 
-	// Set params.latest_version to the provided version.
-	if _, err := rn.Pipe(
-		yaml.Lookup("params"),
-		yaml.FieldSetter{Name: "latest_version", StringValue: vers},
-	); err != nil {
+	// Set params.latest_version to vers if it is the latest according
+	// to semver.
+	latest, err := rn.GetFieldValue("params.latest_version")
+	if err != nil {
 		return err
+	}
+
+	latestVers, ok := latest.(string)
+	if !ok {
+		return fmt.Errorf("could not convert params.latest version to string: %v", latest)
+	}
+
+	if semver.Compare(vers, latestVers) > 0 {
+		if _, err := rn.Pipe(
+			yaml.Lookup("params"),
+			yaml.FieldSetter{Name: "latest_version", StringValue: vers},
+		); err != nil {
+			return err
+		}
 	}
 
 	// Insert vers into params.docs_versions in the correct order.
