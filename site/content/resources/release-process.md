@@ -55,7 +55,6 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
 1. Add the new release to the compatibility YAML (`/versions.yaml`). Be sure to mark this new version as supported and mark oldest currently supported version as no longer supported.
 1. Update `.github/workflows/trivy-scan.yaml` to add new release branch and remove oldest listed (should always be 3 latest branches listed).
-1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Branch and tag release
@@ -193,9 +192,8 @@ git cherry-pick <SHA>
     ```bash
     go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
-1. Proofread the release notes and do any reordering, rewording, reformatting necessary. Note that you will likely have to delete changelog entries that were not part of this patch release, as well as empty sections in the changelog.
+1. Fill in the changelog with the changes being backported, and delete any irrelevant sections. Delete any associated "unreleased" changelog files from `changelogs/unreleased`.
 1. Add the new release to the compatibility matrix (`/site/content/resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/content/resources/upgrading.md`).
 1. Add the new release to the compatibility YAML (`/versions.yaml`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
