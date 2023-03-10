@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/prometheus/common/expfmt"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -42,10 +41,6 @@ const shutdownReadyFile = "/admin/ok"
 
 // shutdownReadyCheckInterval is the default polling interval for the file used in the /shutdown endpoint.
 const shutdownReadyCheckInterval = time.Second * 1
-
-func prometheusLabels() []string {
-	return []string{xdscache_v3.ENVOY_HTTP_LISTENER, xdscache_v3.ENVOY_HTTPS_LISTENER}
-}
 
 type shutdownmanagerContext struct {
 	// httpServePort defines what port the shutdown-manager listens on
@@ -273,10 +268,11 @@ func parseOpenConnections(stats io.Reader) (int, error) {
 	// Look up open connections value
 	for _, metrics := range metricFamilies[prometheusStat].Metric {
 		for _, labels := range metrics.Label {
-			for _, item := range prometheusLabels() {
-				if item == labels.GetValue() {
-					openConnections += int(metrics.Gauge.GetValue())
-				}
+			switch labels.GetValue() {
+			// don't count connections to these listeners.
+			case "envoy-admin", "stats", "health", "stats-health":
+			default:
+				openConnections += int(metrics.Gauge.GetValue())
 			}
 		}
 	}
