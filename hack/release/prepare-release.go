@@ -106,7 +106,32 @@ func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 	return rn, nil
 }
 
-func updateConfigForSite(filePath string, vers string) error {
+// InsertBefore is like yaml.ElementAppender except it inserts before the named node.
+type InsertBefore struct {
+	Before string
+	Node   *yaml.Node
+}
+
+// Filter ...
+func (a InsertBefore) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
+	if err := yaml.ErrorIfInvalid(rn, yaml.SequenceNode); err != nil {
+		return nil, err
+	}
+
+	content := make([]*yaml.Node, 0)
+
+	for _, node := range rn.YNode().Content {
+		if node.Value == a.Before {
+			content = append(content, a.Node)
+		}
+		content = append(content, node)
+	}
+
+	rn.YNode().Content = content
+	return rn, nil
+}
+
+func updateConfigForSite(filePath string, oldVers, vers string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -122,17 +147,28 @@ func updateConfigForSite(filePath string, vers string) error {
 		return err
 	}
 
+	// Insert vers into params.docs_versions in the correct order.
 	versNode := yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Value: vers,
 	}
 
-	// Add the new version to the params.docs_versions array.
-	// We insert after the "main" element so that it stays in
-	// order.
+	var insertVersion yaml.Filter
+	if oldVers == "main" {
+		insertVersion = InsertAfter{
+			After: "main",
+			Node:  &versNode,
+		}
+	} else {
+		insertVersion = InsertBefore{
+			Before: oldVers,
+			Node:   &versNode,
+		}
+	}
+
 	if _, err := rn.Pipe(
 		yaml.Lookup("params", "docs_versions"),
-		InsertAfter{After: "main", Node: &versNode},
+		insertVersion,
 	); err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -208,7 +244,7 @@ func main() {
 		run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
 
 		// Insert the versioned docs into the main site layout.
-		must(updateConfigForSite("site/config.yaml", newVers))
+		must(updateConfigForSite("site/config.yaml", oldVers, newVers))
 		run([]string{"git", "add", "site/config.yaml"})
 
 		// Now commit everything
