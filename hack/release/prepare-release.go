@@ -66,7 +66,7 @@ func capture(cmd []string) string {
 	return out.String()
 }
 
-func updateMappingForTOC(filePath string, vers string, toc string) error {
+func updateMappingForTOC(filePath string, vers string, oldTOC string, toc string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -74,8 +74,23 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 
 	rn := yaml.MustParse(string(data))
 
-	if _, err := rn.Pipe(
-		yaml.FieldSetter{Name: vers, StringValue: toc}); err != nil {
+	// Insert TOC mapping in the correct order. If this is a new
+	// minor release (i.e. based off "main-toc"), append it to the
+	// bottom; else, insert it in the correct order in the document.
+	var insertTOCMapping yaml.Filter
+	if oldTOC == "main-toc" {
+		insertTOCMapping = yaml.FieldSetter{Name: vers, StringValue: toc}
+	} else {
+		insertTOCMapping = InsertAfter{
+			After: oldTOC,
+			Nodes: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Value: vers},
+				{Kind: yaml.ScalarNode, Value: toc},
+			},
+		}
+	}
+
+	if _, err := rn.Pipe(insertTOCMapping); err != nil {
 		return err
 	}
 
@@ -85,21 +100,17 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 // InsertAfter is like yaml.ElementAppender except it inserts after the named node.
 type InsertAfter struct {
 	After string
-	Node  *yaml.Node
+	Nodes []*yaml.Node
 }
 
 // Filter ...
 func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
-	if err := yaml.ErrorIfInvalid(rn, yaml.SequenceNode); err != nil {
-		return nil, err
-	}
-
 	content := make([]*yaml.Node, 0)
 
 	for _, node := range rn.YNode().Content {
 		content = append(content, node)
 		if node.Value == a.After {
-			content = append(content, a.Node)
+			content = append(content, a.Nodes...)
 		}
 	}
 
@@ -110,7 +121,7 @@ func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 // InsertBefore is like yaml.ElementAppender except it inserts before the named node.
 type InsertBefore struct {
 	Before string
-	Node   *yaml.Node
+	Nodes  []*yaml.Node
 }
 
 // Filter ...
@@ -123,7 +134,7 @@ func (a InsertBefore) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 
 	for _, node := range rn.YNode().Content {
 		if node.Value == a.Before {
-			content = append(content, a.Node)
+			content = append(content, a.Nodes...)
 		}
 		content = append(content, node)
 	}
@@ -171,12 +182,12 @@ func updateConfigForSite(filePath string, oldVers, vers string) error {
 	if oldVers == "main" {
 		insertVersion = InsertAfter{
 			After: "main",
-			Node:  &versNode,
+			Nodes: []*yaml.Node{&versNode},
 		}
 	} else {
 		insertVersion = InsertBefore{
 			Before: oldVers,
-			Node:   &versNode,
+			Nodes:  []*yaml.Node{&versNode},
 		}
 	}
 
@@ -254,7 +265,7 @@ func main() {
 		run([]string{"git", "add", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
 
 		// Insert the versioned TOC.
-		must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, tocName))
+		must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, oldTocName, tocName))
 		run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
 
 		// Insert the versioned docs into the main site layout.
