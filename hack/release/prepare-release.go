@@ -220,6 +220,15 @@ func main() {
 	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", newVers)})
 }
 
+func isPatchRelease(version string) bool {
+	parts := strings.Split(version, ".")
+	if len(parts) < 3 {
+		panic("invalid version string")
+	}
+
+	return !strings.HasPrefix(parts[2], "0")
+}
+
 func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
 	d := Data{
 		Version:              version,
@@ -228,58 +237,62 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 		KubernetesMaxVersion: kubeMaxVersion,
 	}
 
-	dirEntries, err := os.ReadDir("changelogs/unreleased")
-	if err != nil {
-		return err
-	}
-
 	var deletions []string
 
-	for _, dirEntry := range dirEntries {
-		if strings.HasSuffix(dirEntry.Name(), "-sample.md") {
-			continue
-		}
-
-		entry, err := parseChangelogFilename(dirEntry.Name())
+	// If a patch release, generate an empty changelog to be filled
+	// in manually.
+	if !isPatchRelease(version) {
+		dirEntries, err := os.ReadDir("changelogs/unreleased")
 		if err != nil {
-			fmt.Printf("Skipping changelog file: %v\n", err)
-			continue
+			return err
 		}
 
-		contents, err := os.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
-		if err != nil {
-			return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
+		for _, dirEntry := range dirEntries {
+			if strings.HasSuffix(dirEntry.Name(), "-sample.md") {
+				continue
+			}
+
+			entry, err := parseChangelogFilename(dirEntry.Name())
+			if err != nil {
+				fmt.Printf("Skipping changelog file: %v\n", err)
+				continue
+			}
+
+			contents, err := os.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+			if err != nil {
+				return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
+			}
+
+			entry.Content = strings.TrimSpace(string(contents))
+
+			switch strings.ToLower(entry.Category) {
+			case "major":
+				d.Major = append(d.Major, entry)
+			case "minor":
+				d.Minor = append(d.Minor, entry)
+			case "small":
+				d.Small = append(d.Small, entry)
+			case "docs":
+				d.Docs = append(d.Docs, entry)
+			case "deprecation":
+				d.Deprecation = append(d.Deprecation, entry)
+			default:
+				fmt.Printf("Unrecognized category %q\n", entry.Category)
+				continue
+			}
+
+			d.Contributors = recordContributor(d.Contributors, entry.Author)
+
+			// If a prerelease, don't delete the individual changelog
+			// files since we want to keep them around for the GA release
+			// notes.
+			if !d.Prerelease {
+				deletions = append(deletions, filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+			}
 		}
 
-		entry.Content = strings.TrimSpace(string(contents))
-
-		switch strings.ToLower(entry.Category) {
-		case "major":
-			d.Major = append(d.Major, entry)
-		case "minor":
-			d.Minor = append(d.Minor, entry)
-		case "small":
-			d.Small = append(d.Small, entry)
-		case "docs":
-			d.Docs = append(d.Docs, entry)
-		case "deprecation":
-			d.Deprecation = append(d.Deprecation, entry)
-		default:
-			fmt.Printf("Unrecognized category %q\n", entry.Category)
-			continue
-		}
-
-		d.Contributors = recordContributor(d.Contributors, entry.Author)
-
-		// If a prerelease, don't delete the individual changelog
-		// files since we want to keep them around for the GA release
-		// notes.
-		if !d.Prerelease {
-			deletions = append(deletions, filepath.Join("changelogs", "unreleased", dirEntry.Name()))
-		}
+		sort.Strings(d.Contributors)
 	}
-
-	sort.Strings(d.Contributors)
 
 	tmpl, err := template.ParseFiles("hack/release/release-notes-template.md")
 	if err != nil {
@@ -346,7 +359,6 @@ var maintainers = map[string]bool{
 	"@stevesloka":   true,
 	"@sunjayBhatia": true,
 	"@tsaarni":      true,
-	"@youngnick":    true,
 }
 
 type Entry struct {
