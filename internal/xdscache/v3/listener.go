@@ -162,6 +162,7 @@ type GlobalExternalAuthConfig struct {
 	SNI              string
 	Timeout          timeout.Setting
 	Context          map[string]string
+	WithRequestBody  *dag.AuthorizationServerBufferSettings
 }
 
 // DefaultListeners returns the configured Listeners or a single
@@ -433,13 +434,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				var authFilter *http.HttpFilter
 
 				if vh.ExternalAuthorization != nil {
-					authFilter = envoy_v3.FilterExternalAuthz(
-						vh.ExternalAuthorization.AuthorizationService.Name,
-						vh.ExternalAuthorization.AuthorizationService.SNI,
-						vh.ExternalAuthorization.AuthorizationFailOpen,
-						vh.ExternalAuthorization.AuthorizationResponseTimeout,
-						vh.ExternalAuthorization.AuthorizationServerWithRequestBody,
-					)
+					authFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
 				// Create a uniquely named HTTP connection manager for
@@ -577,7 +572,16 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 		return nil
 	}
 
-	return envoy_v3.FilterExternalAuthz(dag.ExtensionClusterName(config.ExtensionService), config.SNI, config.FailOpen, config.Timeout, nil)
+	return envoy_v3.FilterExternalAuthz(&dag.ExternalAuthorization{
+		AuthorizationService: &dag.ExtensionCluster{
+			Name: dag.ExtensionClusterName(config.ExtensionService),
+			SNI:  config.SNI,
+		},
+		AuthorizationFailOpen:              config.FailOpen,
+		AuthorizationResponseTimeout:       config.Timeout,
+		AuthorizationServerWithRequestBody: config.WithRequestBody,
+	})
+
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {

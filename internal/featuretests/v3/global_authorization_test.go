@@ -69,28 +69,7 @@ func globalExternalAuthorizationFilterExists(t *testing.T, rh cache.ResourceEven
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
@@ -128,28 +107,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh cache.ResourceE
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -223,28 +181,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh cache
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -308,28 +245,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh cache.Reso
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
@@ -403,28 +319,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh cache.R
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -545,28 +440,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh cache.Resou
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	var hcm = envoy_v3.HTTPConnectionManagerBuilder().
-		RouteConfigName("ingress_http").
-		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: wellknown.HTTPExternalAuthorization,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type.HttpStatus{
-						Code: envoy_type.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}),
-			},
-		}).
-		Get()
-
-	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -707,4 +581,28 @@ func TestGlobalAuthorization(t *testing.T) {
 			f(t, rh, c)
 		})
 	}
+}
+
+// getGlobalExtAuthHCM returns a HTTP Connection Manager with Global External Authorization configured.
+func getGlobalExtAuthHCM() *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		DefaultFilters().
+		AddFilter(&http.HttpFilter{
+			Name: wellknown.HTTPExternalAuthorization,
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+					Services:               grpcCluster("extension/auth/extension"),
+					ClearRouteCache:        true,
+					IncludePeerCertificate: true,
+					StatusOnError: &envoy_type.HttpStatus{
+						Code: envoy_type.StatusCode_Forbidden,
+					},
+					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+				}),
+			},
+		}).
+		Get()
 }

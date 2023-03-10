@@ -689,13 +689,23 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		context = contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context
 	}
 
-	return &xdscache_v3.GlobalExternalAuthConfig{
+	globalExternalAuthConfig := &xdscache_v3.GlobalExternalAuthConfig{
 		ExtensionService: key,
 		SNI:              sni,
 		Timeout:          responseTimeout,
 		FailOpen:         contourConfiguration.GlobalExternalAuthorization.FailOpen,
 		Context:          context,
-	}, nil
+		WithRequestBody:  &dag.AuthorizationServerBufferSettings{},
+	}
+
+	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {
+		globalExternalAuthConfig.WithRequestBody = &dag.AuthorizationServerBufferSettings{
+			PackAsBytes:         contourConfiguration.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
+			AllowPartialMessage: contourConfiguration.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
+			MaxRequestBytes:     contourConfiguration.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
+		}
+	}
+	return globalExternalAuthConfig, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {

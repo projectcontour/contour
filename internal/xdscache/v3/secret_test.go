@@ -519,45 +519,6 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 	return builder.Build()
 }
 
-// buildDAGGlobalExtAuth produces a dag.DAG from the supplied objects with global external authorization configured.
-func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
-	builder := dag.Builder{
-		Source: dag.KubernetesCache{
-			FieldLogger: fixture.NewTestLogger(t),
-		},
-		Processors: []dag.Processor{
-			&dag.ExtensionServiceProcessor{},
-			&dag.IngressProcessor{
-				FieldLogger: fixture.NewTestLogger(t),
-			},
-			&dag.HTTPProxyProcessor{
-				FallbackCertificate: fallbackCertificate,
-				GlobalExternalAuthorization: &contour_api_v1.AuthorizationServer{
-					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
-						Name:      "test",
-						Namespace: "ns",
-					},
-					FailOpen: false,
-					AuthPolicy: &contour_api_v1.AuthorizationPolicy{
-						Context: map[string]string{
-							"header_1": "message_1",
-							"header_2": "message_2",
-						},
-					},
-					ResponseTimeout: "10s",
-				},
-			},
-			&dag.ListenerProcessor{},
-		},
-	}
-
-	for _, o := range objs {
-		builder.Source.Insert(o)
-	}
-
-	return builder.Build()
-}
-
 func secretmap(secrets ...*envoy_tls_v3.Secret) map[string]*envoy_tls_v3.Secret {
 	m := make(map[string]*envoy_tls_v3.Secret)
 	for _, s := range secrets {

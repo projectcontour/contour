@@ -108,7 +108,7 @@ type Deployment struct {
 	RateLimitService          *v1.Service
 	RateLimitExtensionService *contour_api_v1alpha1.ExtensionService
 
-	// // Global External Authorization deployment.
+	// Global External Authorization deployment.
 	GlobalExtAuthDeployment       *apps_v1.Deployment
 	GlobalExtAuthService          *v1.Service
 	GlobalExtAuthExtensionService *contour_api_v1alpha1.ExtensionService
@@ -233,7 +233,7 @@ func (d *Deployment) UnmarshalResources() error {
 		return err
 	}
 
-	// // Global external auth
+	// Global external auth
 	globalExtAuthExamplePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "global-external-auth")
 	globalExtAuthServerDeploymentFile := filepath.Join(globalExtAuthExamplePath, "01-authserver.yaml")
 	globalExtAuthExtSvcFile := filepath.Join(globalExtAuthExamplePath, "02-globalextauth-extsvc.yaml")

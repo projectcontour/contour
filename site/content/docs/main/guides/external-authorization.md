@@ -481,9 +481,9 @@ $ curl -k https://local.projectcontour.io/test/$((RANDOM))
 {"TestId":"","Path":"/test/51","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["18716e12-dcce-45ba-a3bb-bc26af3775d2"],"X-Request-Start":["t=1676901847.802"]}}
 ```
 
-### Overriding global external authorization for a virtual host
+### Overriding global external authorization for a HTTPS virtual host
 
-Sometimes you may want a different configuration than what is defined globally. To override the global external authorization, add the `authorization` block to your HTTPProxy as shown below
+You may want a different configuration than what is defined globally. To override the global external authorization, add the `authorization` block to your TLS enabled HTTPProxy as shown below
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -516,6 +516,8 @@ You can verify that the endpoint has applied the overridden external authorizati
 $ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM))
 {"TestId":"","Path":"/test/4514","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Overriden_message":["overriden_value"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["8a02d6ce-8be0-4e87-8ed8-cca7e239e986"],"X-Request-Start":["t=1676902237.111"]}}
 ```
+
+NOTE: You can only override the global external configuration on a HTTPS virtual host.
 
 ## Caveats
 
