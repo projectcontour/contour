@@ -151,13 +151,14 @@ func updateConfigForSite(filePath string, vers string) error {
 	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
-func updateIndexFile(filePath, oldVers, newVers string) error {
+func updateIndexFile(filePath, newVers string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	upd := strings.ReplaceAll(string(data), "version: "+oldVers, fmt.Sprintf("version: \"%s\"", newVers))
+	upd := strings.ReplaceAll(string(data), "version: main", fmt.Sprintf("version: \"%s\"", newVers))
+	upd = strings.ReplaceAll(upd, "branch: main", "branch: release-"+newVers)
 
 	return os.WriteFile(filePath, []byte(upd), 0600)
 }
@@ -206,7 +207,7 @@ func main() {
 		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", docsVersion)})
 
 		// Update site/content/docs/<newVers>/_index.md content.
-		must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", docsVersion), "main", docsVersion))
+		must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", docsVersion), docsVersion))
 		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", docsVersion)})
 
 		// Make a versioned TOC for the docs.

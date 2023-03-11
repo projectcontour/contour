@@ -44,4 +44,4 @@ You can now test your NLB.
 [1]: https://aws.amazon.com/blogs/aws/new-network-load-balancer-effortless-scaling-to-millions-of-requests-per-second/
 [2]: ../deploy-options/#testing-your-installation
 [3]: https://github.com/kubernetes/kubernetes/issues/52173
-[4]: {{< param github_url >}}/tree/{{< param version >}}
+[4]: {{< param github_url >}}/tree/{{< param branch >}}

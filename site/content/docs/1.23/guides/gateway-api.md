@@ -55,7 +55,7 @@ Dynamic provisioning may be more appropriate for users who want a simple declara
 
 Create Gateway API CRDs:
 ```shell
-$ kubectl apply -f {{< param github_raw_url>}}/release-{{< param version >}}/examples/gateway/00-crds.yaml
+$ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/gateway/00-crds.yaml
 ```
 
 Create a GatewayClass:
@@ -188,7 +188,7 @@ See the next section ([Testing the Gateway API](#testing-the-gateway-api)) for h
 
 Deploy the test application:
 ```shell
-$ kubectl apply -f {{< param github_raw_url>}}/release-{{< param version >}}/examples/example-workload/gatewayapi/kuard/kuard.yaml
+$ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/example-workload/gatewayapi/kuard/kuard.yaml
 ```
 This command creates:
 

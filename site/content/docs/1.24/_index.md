@@ -2,6 +2,7 @@
 cascade:
   layout: docs
   version: "1.24"
+  branch: release-1.24
 ---
 
 ## Overview
