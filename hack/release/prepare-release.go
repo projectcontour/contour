@@ -27,7 +27,7 @@ import (
 	"strings"
 	"text/template"
 
-	"golang.org/x/mod/semver"
+	"github.com/Masterminds/semver/v3"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
@@ -164,25 +164,18 @@ func updateIndexFile(filePath, newVers string) error {
 }
 
 func main() {
-	var (
-		version     = ""
-		kubeMinVers = ""
-		kubeMaxVers = ""
-	)
-
-	switch len(os.Args) {
-	case 4:
-		version = os.Args[1]
-		kubeMinVers = os.Args[2]
-		kubeMaxVers = os.Args[3]
-	default:
+	if len(os.Args) != 4 {
 		fmt.Printf("Usage: %s VERSION KUBE_MIN_VERSION KUBE_MAX_VERSION\n", path.Base(os.Args[0]))
 		os.Exit(1)
 	}
 
-	if !semver.IsValid(version) {
-		log.Fatalf("Version %s is not a valid semantic version string", version)
+	version, err := semver.NewVersion(os.Args[1])
+	if err != nil {
+		log.Fatalf("invalid version string %q: %s", os.Args[1], err)
 	}
+
+	kubeMinVers := os.Args[2]
+	kubeMaxVers := os.Args[3]
 
 	log.Printf("Verifying repository state ...")
 
@@ -194,8 +187,9 @@ func main() {
 		}
 	}
 
-	if !isPatchRelease(version) && !isPrereleaseVersion(version) {
-		docsVersion := strings.TrimPrefix(semver.MajorMinor(version), "v")
+	// Generate versioned docs for new minor releases.
+	if version.Patch() == 0 && version.Prerelease() == "" {
+		docsVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 
 		log.Printf("Creating versioned documentation for %s...", docsVersion)
 
@@ -223,18 +217,19 @@ func main() {
 		run([]string{"git", "add", "site/config.yaml"})
 
 		// Now commit everything
-		run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", version)})
+		run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", version.Original())})
 	}
 
+	// Generate release notes.
 	must(generateReleaseNotes(version, kubeMinVers, kubeMaxVers))
 	run([]string{"git", "add", "changelogs/*"})
-	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", version)})
+	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", version.Original())})
 }
 
-func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
+func generateReleaseNotes(version *semver.Version, kubeMinVersion, kubeMaxVersion string) error {
 	d := Data{
-		Version:              version,
-		Prerelease:           isPrereleaseVersion(version),
+		Version:              version.Original(),
+		Prerelease:           version.Prerelease() != "",
 		KubernetesMinVersion: kubeMinVersion,
 		KubernetesMaxVersion: kubeMaxVersion,
 	}
@@ -314,19 +309,6 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 	}
 
 	return nil
-}
-
-func isPrereleaseVersion(version string) bool {
-	return strings.Contains(version, "alpha") || strings.Contains(version, "beta") || strings.Contains(version, "rc")
-}
-
-func isPatchRelease(version string) bool {
-	parts := strings.Split(version, ".")
-	if len(parts) < 3 {
-		panic("invalid version string")
-	}
-
-	return !strings.HasPrefix(parts[2], "0")
 }
 
 func parseChangelogFilename(filename string) (Entry, error) {

@@ -3,6 +3,7 @@ module github.com/projectcontour/contour
 go 1.19
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/alecthomas/kingpin/v2 v2.3.1
 	github.com/bombsimon/logrusr/v2 v2.0.1
@@ -26,7 +27,6 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/tsaarni/certyaml v0.9.1
 	github.com/vektra/mockery/v2 v2.21.1
-	golang.org/x/mod v0.8.0
 	golang.org/x/oauth2 v0.6.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20230117162540-28d6b9783ac4
@@ -112,6 +112,7 @@ require (
 	github.com/xhit/go-str2duration v1.2.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/image v0.5.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
