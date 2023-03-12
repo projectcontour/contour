@@ -188,7 +188,7 @@ git cherry-pick <SHA>
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs, plus a changelog:
+1. Generate a changelog:
     
     ```bash
     go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
