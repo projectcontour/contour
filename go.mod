@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	github.com/tsaarni/certyaml v0.9.1
-	github.com/vektra/mockery/v2 v2.21.1
+	github.com/vektra/mockery/v2 v2.22.1
 	golang.org/x/oauth2 v0.6.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20230117162540-28d6b9783ac4
@@ -78,6 +78,7 @@ require (
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
