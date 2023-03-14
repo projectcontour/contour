@@ -36,7 +36,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-v1.24.1
+  name: contour-certgen-v1.24.2
   namespace: projectcontour
 spec:
   template:
@@ -46,7 +46,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: ghcr.io/projectcontour/contour:v1.24.1
+        image: ghcr.io/projectcontour/contour:v1.24.2
         imagePullPolicy: IfNotPresent
         command:
         - contour
