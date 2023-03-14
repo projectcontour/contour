@@ -112,7 +112,7 @@ require (
 	github.com/tsaarni/x500dn v0.0.0-20210331182804-14283c7f5a16 // indirect
 	github.com/xhit/go-str2duration v1.2.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/image v0.5.0 // indirect
+	golang.org/x/image v0.6.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
