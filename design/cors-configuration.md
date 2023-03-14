@@ -97,7 +97,7 @@ spec:
        - Content-Range
      # Whether the server allows sending credentials (cookies for instance) in cross-origin requests.
      allowCredentials: true
-     # the amount of time the preflight response will be cached. It's expresed in the Go duration format. If not supplied, browser default values will apply.
+     # the amount of time the preflight response will be cached. It's expressed in the Go duration format. If not supplied, browser default values will apply.
      maxAge: 10m
    routes:
      - conditions:
