@@ -50,7 +50,6 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--use-proxy-protocol`                                   | Use PROXY protocol for all listeners                                   |
 | `--accesslog-format=<envoy\|json>`                       | Format for Envoy access logs                                           |
 | `--disable-leader-election`                              | Disable leader election mechanism                                      |
-| `--disable-feature=<extensionservices>`                  | Do not start an informer for the specified resources.                  |
 | `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
 | `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
 | `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |

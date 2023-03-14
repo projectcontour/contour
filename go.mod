@@ -3,6 +3,7 @@ module github.com/projectcontour/contour
 go 1.19
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/alecthomas/kingpin/v2 v2.3.1
 	github.com/bombsimon/logrusr/v2 v2.0.1

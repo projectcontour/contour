@@ -201,12 +201,6 @@ Next, pass `--envoy-service-http-port=80 --envoy-service-https-port=443` to the 
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][10] as an example.
 
-## Disabling Features
-
-You can run Contour with certain features disabled by passing `--disable-feature` flag to the Contour `serve` command.
-Currently this flag can be used to disable the informer for ExtensionService resources, effectively making the ExtensionService CRD optional in the cluster.
-To do this, use the flag as follows: `--disable-feature=extensionservices`
-
 ## Upgrading Contour/Envoy
 
 At times, it's needed to upgrade Contour, the version of Envoy, or both.
