@@ -599,6 +599,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			namespace = proxy.Namespace
 		}
 
+		if err := includeMatchConditionsValid(include.Conditions); err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
+				"include: %s", err)
+			continue
+		}
+
 		if err := pathMatchConditionsValid(include.Conditions); err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
 				"include: %s", err)

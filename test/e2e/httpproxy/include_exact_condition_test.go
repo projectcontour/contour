@@ -57,6 +57,24 @@ func testIncludeExactCondition(namespace string) {
 								Port: 80,
 							},
 						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Exact: "/foo",
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-app",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/v1",
+							},
+						},
 					},
 				},
 			},
@@ -77,6 +95,24 @@ func testIncludeExactCondition(namespace string) {
 							{
 								Name: "echo-admin",
 								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/",
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-admin",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Exact: "/portal",
 							},
 						},
 					},
@@ -111,7 +147,7 @@ func testIncludeExactCondition(namespace string) {
 						Namespace: adminProxy.Namespace,
 						Conditions: []contourv1.MatchCondition{
 							{
-								Exact: "/app/admin",
+								Prefix: "/app/",
 							},
 						},
 					},
@@ -124,30 +160,25 @@ func testIncludeExactCondition(namespace string) {
 							},
 						},
 					},
+				},
+			},
+		}
+		invalidRootProxy := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-invalid",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "includeexactcondition-invalid.projectcontour.io",
+				},
+				Includes: []contourv1.Include{
 					{
 						Name:      appProxy.Name,
 						Namespace: appProxy.Namespace,
 						Conditions: []contourv1.MatchCondition{
 							{
-								Exact: "/admin/app",
-							},
-						},
-					},
-					{
-						Name:      appProxy.Name,
-						Namespace: appProxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
-							{
-								Exact: "/admin-app",
-							},
-						},
-					},
-					{
-						Name:      appProxy.Name,
-						Namespace: appProxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
-							{
-								Prefix: "/",
+								Exact: "/app",
 							},
 						},
 					},
@@ -155,18 +186,15 @@ func testIncludeExactCondition(namespace string) {
 			},
 		}
 		f.CreateHTTPProxyAndWaitFor(baseProxy, e2e.HTTPProxyValid)
+		f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid)
 
 		cases := map[string]string{
-			"/":              "echo-app",
-			"/app":           "echo-app",
-			"/app/admin":     "echo-admin",
-			"/app/adminfoo":  "echo-app",
-			"/app/admin/foo": "echo-app",
-			"/admin":         "echo-admin",
-			"/admin/":        "echo-admin",
-			"/admin-app":     "echo-app",
-			"/admin/app":     "echo-app",
-			"/random":        "echo-app",
+			"/app/foo":      "echo-app",
+			"/app/admin":    "echo-admin",
+			"/app/bar":      "echo-admin",
+			"/app/v1":       "echo-app",
+			"/app/v1/page":  "echo-app",
+			"/admin/portal": "echo-admin",
 		}
 
 		for path, expectedService := range cases {

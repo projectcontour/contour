@@ -23,13 +23,8 @@ import (
 )
 
 // mergePathMatchConditions merges the given slice of prefix or exact MatchConditions into a single
-// prefix/exact Condition.
-// If the root condition is prefix, and included condition is prefix then after merging we get one prefix condition.
-// If the root condition is prefix, and included condition is exact then after merging we get one exact condition.
-// If the root condition is exact, and included condition is exact then after merging we get one exact condition.
-// If the root condition is exact, and included condition is prefix then after merging we get one prefix condition.
-// Hence this can be concluded that the last rule in the delegation chain decides the path type
-//
+// prefix/exact Condition. The leaf condition of the include tree decides whether the merged condition
+// will be prefix or exact
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
 func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
@@ -98,6 +93,17 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 		}
 		if prefixCount > 1 || exactCount > 1 || prefixCount+exactCount > 1 {
 			return errors.New("more than one prefix or exact is not allowed in a condition block")
+		}
+	}
+
+	return nil
+}
+
+// includeMatchConditionsValid validates the MatchConditions supplied in the includes
+func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
+	for _, cond := range conds {
+		if cond.Exact != "" {
+			return fmt.Errorf("exact conditions are not allowed in includes block")
 		}
 	}
 

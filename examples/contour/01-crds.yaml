@@ -4592,9 +4592,6 @@ spec:
                             required:
                             - name
                             type: object
-                          exact:
-                            description: Exact defines a exact match for a request.
-                            type: string
                         type: object
                       type: array
                     name:
@@ -4695,7 +4692,6 @@ spec:
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
-<<<<<<< HEAD
                           queryParameter:
                             description: QueryParameter specifies the query parameter
                               condition to match.
@@ -4740,11 +4736,9 @@ spec:
                             required:
                             - name
                             type: object
-=======
                           exact:
-                            description: Prefix defines a prefix match for a request.
+                            description: Exact defines a prefix match for a request.
                             type: string
->>>>>>> edd85080 (internal/dag: Add exact path match condition in HttpProxy)
                         type: object
                       type: array
                     cookieRewritePolicies:
