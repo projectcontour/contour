@@ -214,11 +214,11 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 	dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(int(servicePort))
 
 	// Get default headersPolicies
-	reqHP, err := headersPolicyService(p.RequestHeadersPolicy, nil, dynamicHeaders)
+	reqHP, err := headersPolicyService(p.RequestHeadersPolicy, nil, true, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}
-	respHP, err := headersPolicyService(p.ResponseHeadersPolicy, nil, dynamicHeaders)
+	respHP, err := headersPolicyService(p.ResponseHeadersPolicy, nil, false, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}
