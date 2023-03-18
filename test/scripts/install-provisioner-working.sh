@@ -37,27 +37,16 @@ make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION
 # Push the Contour Provisioner image into the cluster.
 kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
 
-for file in ${REPO}/examples/gateway-provisioner/00-common.yaml ${REPO}/examples/gateway-provisioner/01-roles.yaml ${REPO}/examples/gateway-provisioner/02-rolebindings.yaml ${REPO}/examples/gateway-provisioner/03-gateway-provisioner.yaml ; do
-  # Set image pull policy to IfNotPresent so kubelet will use the
-  # images that we loaded onto the node, rather than trying to pull
-  # them from the registry.
-  run::sed \
-    "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
-    "$file"
+# Install the Gateway provisioner using the loaded image.
+export CONTOUR_IMG=ghcr.io/projectcontour/contour:${VERSION}
 
-  # Set the image tag to $VERSION to unambiguously use the image
-  # we built above.
-  run::sed \
-    "-es|image: ghcr.io/projectcontour/contour:.*$|image: ghcr.io/projectcontour/contour:${VERSION}|" \
-    "$file"
-
-  # Add an item to the args field with the value --contour-image=ghcr.io/projectcontour/contour:${VERSION}
-  run::sed \
-    "-e 's/- --ingress-class=contour/- --ingress-class=contour\n        - --contour-image=ghcr.io\/projectcontour\/contour:${VERSION}/' \
-    "$file"
-
-  ${KUBECTL} apply -f "$file"
-done
+${KUBECTL} apply -f examples/gateway-provisioner/00-common.yaml
+${KUBECTL} apply -f examples/gateway-provisioner/01-roles.yaml
+${KUBECTL} apply -f examples/gateway-provisioner/02-rolebindings.yaml
+${KUBECTL} apply -f <(cat examples/gateway-provisioner/03-gateway-provisioner.yaml | \
+    yq eval '.spec.template.spec.containers[0].image = env(CONTOUR_IMG)' - | \
+    yq eval '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' - | \
+    yq eval '.spec.template.spec.containers[0].args += "--contour-image="+env(CONTOUR_IMG)' -)
 
 # Wait for the provisioner to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available
