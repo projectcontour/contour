@@ -1011,8 +1011,17 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_api_v1.IPFilterPolicy, va
 	}
 	filters = make([]IPFilterRule, 0, len(ipPolicies))
 	for _, p := range ipPolicies {
+		// convert bare IPs to CIDRs
+		unparsedCIDR := p.CIDR
+		if !strings.Contains(unparsedCIDR, "/") {
+			if strings.Contains(unparsedCIDR, ":") {
+				unparsedCIDR += "/128"
+			} else {
+				unparsedCIDR += "/32"
+			}
+		}
 		var cidr *net.IPNet
-		_, cidr, err = net.ParseCIDR(p.CIDR)
+		_, cidr, err = net.ParseCIDR(unparsedCIDR)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "InvalidCIDR",
 				"%s failed to parse: %s", p.CIDR, err)

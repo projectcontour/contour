@@ -901,7 +901,7 @@ func TestToIPFilterRule(t *testing.T) {
 				Type:    "IPFilterError",
 				Status:  "True",
 				Reason:  "IncompatibleIPAddressFilters",
-				Message: "route cannot specify both `ipAllowPolicy` and `ipDenyPolicy`",
+				Message: "cannot specify both `ipAllowPolicy` and `ipDenyPolicy`",
 			}},
 		},
 		"reports invalid cidr ranges": {
@@ -918,7 +918,7 @@ func TestToIPFilterRule(t *testing.T) {
 					Type:    "IPFilterError",
 					Status:  "True",
 					Reason:  "InvalidCIDR",
-					Message: "!@#$!@#$ failed to parse: invalid CIDR address: !@#$!@#$",
+					Message: "!@#$!@#$ failed to parse: invalid CIDR address: !@#$!@#$/32",
 				},
 				{
 					Type:    "IPFilterError",
@@ -931,7 +931,7 @@ func TestToIPFilterRule(t *testing.T) {
 		"parses multiple allow rules": {
 			allowPolicy: []contour_api_v1.IPFilterPolicy{{
 				Source: contour_api_v1.IPFilterSourceRemote,
-				CIDR:   "1.1.1.1/24",
+				CIDR:   "1.1.1.1",
 			}, {
 				Source: contour_api_v1.IPFilterSourcePeer,
 				CIDR:   "2001:db8::68/24",
@@ -940,8 +940,8 @@ func TestToIPFilterRule(t *testing.T) {
 			want: []IPFilterRule{{
 				Remote: true,
 				CIDR: net.IPNet{
-					IP:   net.ParseIP("1.1.1.0").To4(),
-					Mask: net.CIDRMask(24, 32),
+					IP:   net.ParseIP("1.1.1.1").To4(),
+					Mask: net.CIDRMask(32, 32),
 				},
 			}, {
 				Remote: false,
@@ -957,7 +957,7 @@ func TestToIPFilterRule(t *testing.T) {
 				CIDR:   "1.1.1.1/24",
 			}, {
 				Source: contour_api_v1.IPFilterSourcePeer,
-				CIDR:   "2001:db8::68/24",
+				CIDR:   "2001:db8::68",
 			}},
 			wantAllow: false,
 			want: []IPFilterRule{{
@@ -969,8 +969,8 @@ func TestToIPFilterRule(t *testing.T) {
 			}, {
 				Remote: false,
 				CIDR: net.IPNet{
-					IP:   net.ParseIP("2001:d00::"),
-					Mask: net.CIDRMask(24, 128),
+					IP:   net.ParseIP("2001:db8::68"),
+					Mask: net.CIDRMask(128, 128),
 				},
 			}},
 		},
