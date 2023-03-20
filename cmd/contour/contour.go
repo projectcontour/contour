@@ -14,6 +14,7 @@
 package main
 
 import (
+	"go.uber.org/automaxprocs/maxprocs"
 	"os"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -28,6 +29,9 @@ import (
 func main() {
 	log := logrus.StandardLogger()
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
+
+	// set GOMAXPROCS
+	maxprocs.Set(maxprocs.Logger(log.Printf))
 
 	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
 	// to ensure the option flags in lexicographic order.
