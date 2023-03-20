@@ -4944,6 +4944,54 @@ spec:
                       required:
                       - path
                       type: object
+                    internalRedirectPolicy:
+                      description: The policy to define when to handle redirects responses
+                        internally.
+                      properties:
+                        allowCrossSchemeRedirect:
+                          default: Never
+                          description: AllowCrossSchemeRedirect Allow internal redirect
+                            to follow a target URI with a different scheme than the
+                            value of x-forwarded-proto. SafeOnly allows same scheme
+                            redirect and safe cross scheme redirect, which means if
+                            the downstream scheme is HTTPS, both HTTPS and HTTP redirect
+                            targets are allowed, but if the downstream scheme is HTTP,
+                            only HTTP redirect targets are allowed.
+                          enum:
+                          - Always
+                          - Never
+                          - SafeOnly
+                          type: string
+                        denyRepeatedRouteRedirect:
+                          description: If DenyRepeatedRouteRedirect is true, rejects
+                            redirect targets that are pointing to a route that has
+                            been followed by a previous redirect from the current
+                            route.
+                          type: boolean
+                        maxInternalRedirects:
+                          description: MaxInternalRedirects An internal redirect is
+                            not handled, unless the number of previous internal redirects
+                            that a downstream request has encountered is lower than
+                            this value.
+                          format: int32
+                          type: integer
+                        redirectResponseCodes:
+                          description: RedirectResponseCodes If unspecified, only
+                            302 will be treated as internal redirect. Only 301, 302,
+                            303, 307 and 308 are valid values.
+                          items:
+                            description: RedirectResponseCode is a uint32 type alias
+                              with validation to ensure that the value is valid.
+                            enum:
+                            - 301
+                            - 302
+                            - 303
+                            - 307
+                            - 308
+                            format: int32
+                            type: integer
+                          type: array
+                      type: object
                     jwtVerificationPolicy:
                       description: The policy for verifying JWTs for requests to this
                         route.
