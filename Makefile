@@ -307,6 +307,11 @@ install-contour-working: | setup-kind-cluster ## Install the local working direc
 install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
+.PHONY: install-provisioner-working
+install-provisioner-working: | setup-kind-cluster ## Set up the Contour provisioner for local testing
+	./test/scripts/install-provisioner-working.sh
+
+
 .PHONY: e2e
 e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
 
