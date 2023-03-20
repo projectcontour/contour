@@ -20,15 +20,14 @@ import (
 	"context"
 	"net/http"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	. "github.com/onsi/ginkgo/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func testInternalRedirectValidation(namespace string) {
@@ -193,9 +192,9 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
 					}},
 					Services: []contour_api_v1.Service{},
 					RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-						Hostname:   pointer.String(fqdn),
-						StatusCode: pointer.Int(302),
-						Path:       pointer.String("/echo"),
+						Hostname:   ref.To(fqdn),
+						StatusCode: ref.To(302),
+						Path:       ref.To("/echo"),
 					},
 				},
 				{
