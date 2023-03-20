@@ -66,7 +66,7 @@ func TestRouteRoute(t *testing.T) {
 				ServiceNamespace: s1.Namespace,
 				ServicePort:      s1.Spec.Ports[0],
 			},
-		},
+		}
 		LoadBalancerPolicy: "RequestHash",
 	}
 
@@ -580,6 +580,96 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(1),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+		"multiple service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 80,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 20,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s2.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(20),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s2.com"},
+							}, {
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(80),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+
 		"mirror": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{

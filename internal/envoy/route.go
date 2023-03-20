@@ -68,7 +68,8 @@ func SingleSimpleCluster(route *dag.Route) bool {
 		// no request headers policy
 	} else if len(cluster.RequestHeadersPolicy.Set) != 0 ||
 		len(cluster.RequestHeadersPolicy.Add) != 0 ||
-		len(cluster.RequestHeadersPolicy.Remove) != 0 {
+		len(cluster.RequestHeadersPolicy.Remove) != 0 ||
+		len(cluster.RequestHeadersPolicy.HostRewrite) != 0 {
 		return false
 	}
 	if cluster.ResponseHeadersPolicy == nil {

@@ -5186,7 +5186,7 @@ spec:
                             type: string
                           requestHeadersPolicy:
                             description: The policy for managing request headers during
-                              proxying. Rewriting the 'Host' header is not supported.
+                              proxying.
                             properties:
                               remove:
                                 description: Remove specifies a list of HTTP header
@@ -5572,7 +5572,7 @@ spec:
                           type: string
                         requestHeadersPolicy:
                           description: The policy for managing request headers during
-                            proxying. Rewriting the 'Host' header is not supported.
+                            proxying.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header

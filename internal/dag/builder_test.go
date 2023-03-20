@@ -12638,7 +12638,32 @@ func TestDAGInsert(t *testing.T) {
 				proxyReplaceHostHeaderService,
 				s9,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s9.Name,
+										ServiceNamespace: s9.Namespace,
+										ServicePort:      s9.Spec.Ports[0],
+										HealthPort:       s9.Spec.Ports[0],
+									},
+								},
+								SNI: "bar.com",
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+							}},
+						}),
+					),
+				},
+			),
 		},
 		"insert proxy with replace header policy - service - host header - externalName": {
 			objs: []interface{}{
@@ -12646,7 +12671,33 @@ func TestDAGInsert(t *testing.T) {
 				s14,
 			},
 			enableExternalNameSvc: true,
-			want:                  listeners(),
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+										HealthPort:       s14.Spec.Ports[0],
+									},
+								},
+								SNI: "bar.com",
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+							}},
+						}),
+					),
+				},
+			),
 		},
 		"insert proxy with response header policy - route - host header": {
 			objs: []interface{}{

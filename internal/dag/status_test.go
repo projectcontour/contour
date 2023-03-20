@@ -2683,40 +2683,6 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidRequestHeadersPolicyService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "invalidRHPService",
-			Namespace: fixture.ServiceRootsKuard.Namespace,
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{
-					{
-						Name: fixture.ServiceRootsKuard.Name,
-						Port: 8080,
-						RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-							Set: []contour_api_v1.HeaderValue{{
-								Name:  "Host",
-								Value: "external.com",
-							}},
-						},
-					},
-				},
-			}},
-		},
-	}
-
-	run(t, "requestHeadersPolicy, Host header invalid on Service", testcase{
-		objs: []interface{}{invalidRequestHeadersPolicyService, fixture.ServiceRootsKuard},
-		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: invalidRequestHeadersPolicyService.Name, Namespace: invalidRequestHeadersPolicyService.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid", `rewriting "Host" header is not supported on request headers`),
-		},
-	})
-
 	invalidResponseHeadersPolicyService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalidRHPService",
