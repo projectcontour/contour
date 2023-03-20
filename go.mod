@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/alecthomas/kingpin/v2 v2.3.1
+	github.com/alecthomas/kingpin/v2 v2.3.2
 	github.com/bombsimon/logrusr/v2 v2.0.1
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/davecgh/go-spew v1.1.1
@@ -110,7 +110,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tsaarni/x500dn v1.0.0 // indirect
-	github.com/xhit/go-str2duration v1.2.0 // indirect
+	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/image v0.6.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
