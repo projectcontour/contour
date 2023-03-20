@@ -32,7 +32,7 @@ func main() {
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
 
 	// set GOMAXPROCS
-	_ = maxprocs.Set(maxprocs.Logger(log.Printf))
+	_, _ = maxprocs.Set(maxprocs.Logger(log.Printf))
 
 	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
 	// to ensure the option flags in lexicographic order.
