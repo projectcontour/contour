@@ -103,7 +103,15 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
-	client := &http.Client{}
+	// Clone the DefaultTransport so we don't reuse
+	// connections across multiple calls to this method.
+	// This helps prevent requests in subsequent tests
+	// from being made to a draining Listener.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	client := &http.Client{
+		Transport: transport,
+	}
 	for _, opt := range opts.ClientOpts {
 		opt(client)
 	}
@@ -196,6 +204,10 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
+	// Clone the DefaultTransport so we don't reuse
+	// connections across multiple calls to this method.
+	// This helps prevent requests in subsequent tests
+	// from being made to a draining Listener.
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{
 		ServerName: opts.Host,
