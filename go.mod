@@ -25,7 +25,7 @@ require (
 	github.com/prometheus/common v0.42.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
-	github.com/tsaarni/certyaml v0.9.1
+	github.com/tsaarni/certyaml v0.9.2
 	github.com/vektra/mockery/v2 v2.22.1
 	golang.org/x/oauth2 v0.6.0
 	gonum.org/v1/plot v0.12.0
@@ -109,7 +109,7 @@ require (
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/tsaarni/x500dn v0.0.0-20210331182804-14283c7f5a16 // indirect
+	github.com/tsaarni/x500dn v1.0.0 // indirect
 	github.com/xhit/go-str2duration v1.2.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/image v0.6.0 // indirect
