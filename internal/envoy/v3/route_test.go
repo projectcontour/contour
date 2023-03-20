@@ -66,7 +66,7 @@ func TestRouteRoute(t *testing.T) {
 				ServiceNamespace: s1.Namespace,
 				ServicePort:      s1.Spec.Ports[0],
 			},
-		}
+		},
 		LoadBalancerPolicy: "RequestHash",
 	}
 

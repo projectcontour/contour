@@ -598,6 +598,42 @@ func TestHeadersPolicy(t *testing.T) {
 				Remove: []string{"X-Sensitive-Header"},
 			},
 		},
+		"Host header rewrite by user header policy": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "Host",
+					Value: "foo",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"Host": "bar",
+				},
+			},
+			want: HeadersPolicy{
+				HostRewrite: "foo",
+				Set:         map[string]string{},
+			},
+		},
+		"Host header rewrite by default header policy": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "K-Foo",
+					Value: "foo",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"Host": "bar",
+				},
+			},
+			want: HeadersPolicy{
+				HostRewrite: "bar",
+				Set: map[string]string{
+					"K-Foo": "foo",
+				},
+			},
+		},
 	}
 
 	dynamicHeaders := map[string]string{
@@ -1218,67 +1254,6 @@ func TestValidateHeaderAlteration(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
-			assert.Equal(t, test.want, got)
-			assert.Equal(t, test.wantErr, gotErr)
-		})
-	}
-}
-
-func TestAllowHostHeaderRewrite(t *testing.T) {
-	tests := []struct {
-		name    string
-		in      *contour_api_v1.HeadersPolicy
-		dyn     map[string]string
-		dhp     *HeadersPolicy
-		want    *HeadersPolicy
-		wantErr error
-	}{{
-		name: "Host header rewrite by user header policy",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "Host",
-				Value: "foo",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"Host": "bar",
-			},
-		},
-		want: &HeadersPolicy{
-			HostRewrite: "foo",
-			Set:         map[string]string{},
-		},
-	}, {
-		name: "Host header rewrite by default header policy",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "foo",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"Host": "bar",
-			},
-		},
-		want: &HeadersPolicy{
-			HostRewrite: "bar",
-			Set: map[string]string{
-				"K-Foo": "foo",
-			},
-		},
-	}}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.dhp, test.in, true, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})
