@@ -98,7 +98,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 	for vhost, routes := range root.GetVirtualHostRoutes() {
 		sortRoutes(routes)
 		routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts = append(routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts,
-			envoy_v3.VirtualHostAndRoutes(vhost, routes, false, nil))
+			envoy_v3.VirtualHostAndRoutes(vhost, routes, false))
 	}
 
 	for vhost, routes := range root.GetSecureVirtualHostRoutes() {
@@ -110,7 +110,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 
 		sortRoutes(routes)
 		routeConfigs[name].VirtualHosts = append(routeConfigs[name].VirtualHosts,
-			envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
+			envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
 
 		// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
 		// When a request is received, the default TLS filterchain will accept the connection,
@@ -122,7 +122,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 			}
 
 			routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts,
-				envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
+				envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
 		}
 	}
 

@@ -720,16 +720,16 @@ end
 
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
+func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *http.HttpFilter {
 	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(authzClusterName, sni, timeout),
+			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
 		// routing decisions?
 		ClearRouteCache:  true,
-		FailureModeAllow: failOpen,
+		FailureModeAllow: externalAuthorization.AuthorizationFailOpen,
 		StatusOnError: &envoy_type.HttpStatus{
 			Code: envoy_type.StatusCode_Forbidden,
 		},
@@ -740,11 +740,11 @@ func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout ti
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
 
-	if bufferSettings != nil {
+	if externalAuthorization.AuthorizationServerWithRequestBody != nil {
 		authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
-			MaxRequestBytes:     bufferSettings.MaxRequestBytes,
-			AllowPartialMessage: bufferSettings.AllowPartialMessage,
-			PackAsBytes:         bufferSettings.PackAsBytes,
+			MaxRequestBytes:     externalAuthorization.AuthorizationServerWithRequestBody.MaxRequestBytes,
+			AllowPartialMessage: externalAuthorization.AuthorizationServerWithRequestBody.AllowPartialMessage,
+			PackAsBytes:         externalAuthorization.AuthorizationServerWithRequestBody.PackAsBytes,
 		}
 
 	}

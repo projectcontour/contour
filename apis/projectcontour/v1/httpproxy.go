@@ -194,8 +194,8 @@ type ExtensionServiceReference struct {
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
-	// +required
-	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.

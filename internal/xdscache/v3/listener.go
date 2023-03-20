@@ -140,6 +140,10 @@ type ListenerConfig struct {
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
+
+	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
+	// used.
+	GlobalExternalAuthConfig *GlobalExternalAuthConfig
 }
 
 type RateLimitConfig struct {
@@ -150,6 +154,15 @@ type RateLimitConfig struct {
 	FailOpen                    bool
 	EnableXRateLimitHeaders     bool
 	EnableResourceExhaustedCode bool
+}
+
+type GlobalExternalAuthConfig struct {
+	ExtensionService types.NamespacedName
+	FailOpen         bool
+	SNI              string
+	Timeout          timeout.Setting
+	Context          map[string]string
+	WithRequestBody  *dag.AuthorizationServerBufferSettings
 }
 
 // DefaultListeners returns the configured Listeners or a single
@@ -395,6 +408,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+					AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 					Get()
 
 				listeners[httpListener.Name] = envoy_v3.Listener(
@@ -419,14 +433,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			if vh.TCPProxy == nil {
 				var authFilter *http.HttpFilter
 
-				if vh.AuthorizationService != nil {
-					authFilter = envoy_v3.FilterExternalAuthz(
-						vh.AuthorizationService.Name,
-						vh.AuthorizationService.SNI,
-						vh.AuthorizationFailOpen,
-						vh.AuthorizationResponseTimeout,
-						vh.AuthorizationServerWithRequestBody,
-					)
+				if vh.ExternalAuthorization != nil {
+					authFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
 				// Create a uniquely named HTTP connection manager for
@@ -557,6 +565,23 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	}
 
 	c.Update(listeners)
+}
+
+func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFilter {
+	if config == nil {
+		return nil
+	}
+
+	return envoy_v3.FilterExternalAuthz(&dag.ExternalAuthorization{
+		AuthorizationService: &dag.ExtensionCluster{
+			Name: dag.ExtensionClusterName(config.ExtensionService),
+			SNI:  config.SNI,
+		},
+		AuthorizationFailOpen:              config.FailOpen,
+		AuthorizationResponseTimeout:       config.Timeout,
+		AuthorizationServerWithRequestBody: config.WithRequestBody,
+	})
+
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {

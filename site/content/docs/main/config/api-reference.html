@@ -328,7 +328,8 @@ outer scope.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
 <p>AuthorizationServer configures an external server to authenticate
@@ -354,6 +355,7 @@ ExtensionServiceReference
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
 </td>
 </tr>
@@ -4625,6 +4627,22 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>globalExtAuth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServer">
+AuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>rateLimitService</code>
 <br>
 <em>
@@ -5299,6 +5317,22 @@ bool
 <em>(Optional)</em>
 <p>EnableExternalNameService allows processing of ExternalNameServices</p>
 <p>Contour&rsquo;s default is false for security reasons.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExtAuth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServer">
+AuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
 </td>
 </tr>
 <tr>

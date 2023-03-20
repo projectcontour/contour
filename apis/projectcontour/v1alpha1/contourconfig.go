@@ -62,6 +62,11 @@ type ContourConfigurationSpec struct {
 	// +optional
 	EnableExternalNameService *bool `json:"enableExternalNameService,omitempty"`
 
+	// GlobalExternalAuthorization allows envoys external authorization filter
+	// to be enabled for all virtual hosts.
+	// +optional
+	GlobalExternalAuthorization *contour_api_v1.AuthorizationServer `json:"globalExtAuth,omitempty"`
+
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
 	// +optional
