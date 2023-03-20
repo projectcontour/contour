@@ -40,7 +40,7 @@ require (
 	k8s.io/klog/v2 v2.90.1
 	sigs.k8s.io/controller-runtime v0.14.5
 	sigs.k8s.io/controller-tools v0.11.3
-	sigs.k8s.io/gateway-api v0.6.1
+	sigs.k8s.io/gateway-api v0.6.2
 	sigs.k8s.io/kustomize/kyaml v0.14.0
 )
 
