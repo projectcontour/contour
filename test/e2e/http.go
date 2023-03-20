@@ -103,11 +103,13 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
-	// Clone the DefaultTransport so we don't reuse
-	// connections across multiple calls to this method.
-	// This helps prevent requests in subsequent tests
-	// from being made to a draining Listener.
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
 
 	client := &http.Client{
 		Transport: transport,
@@ -204,11 +206,13 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
-	// Clone the DefaultTransport so we don't reuse
-	// connections across multiple calls to this method.
-	// This helps prevent requests in subsequent tests
-	// from being made to a draining Listener.
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
 	transport.TLSClientConfig = &tls.Config{
 		ServerName: opts.Host,
 		//nolint:gosec
