@@ -146,8 +146,20 @@ func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
@@ -164,8 +176,20 @@ func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
