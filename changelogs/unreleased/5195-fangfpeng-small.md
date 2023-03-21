@@ -1,0 +1,1 @@
+HTTPProxy: support Host header rewrites per-service.
