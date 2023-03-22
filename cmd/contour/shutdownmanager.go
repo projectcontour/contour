@@ -270,7 +270,7 @@ func parseOpenConnections(stats io.Reader) (int, error) {
 		for _, labels := range metrics.Label {
 			switch labels.GetValue() {
 			// don't count connections to these listeners.
-			case "envoy-admin", "stats", "health", "stats-health":
+			case "admin", "envoy-admin", "stats", "health", "stats-health":
 			default:
 				openConnections += int(metrics.Gauge.GetValue())
 			}
