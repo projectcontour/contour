@@ -32,15 +32,13 @@ import (
 
 func TestFallbackCertificate(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
-		b.Processors = []dag.Processor{
-			&dag.IngressProcessor{},
-			&dag.HTTPProxyProcessor{
-				FallbackCertificate: &types.NamespacedName{
+		for _, processor := range b.Processors {
+			if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
+				httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
 					Name:      "fallbacksecret",
 					Namespace: "admin",
-				},
-			},
-			&dag.ListenerProcessor{},
+				}
+			}
 		}
 
 		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{

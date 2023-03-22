@@ -605,89 +605,6 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"http listener on non default port": { // issue 72
-			ListenerConfig: ListenerConfig{
-				HTTPListeners: map[string]Listener{
-					ENVOY_HTTP_LISTENER: {
-						Name:    ENVOY_HTTP_LISTENER,
-						Address: "127.0.0.100",
-						Port:    9100,
-					},
-				},
-				HTTPSListeners: map[string]Listener{
-					ENVOY_HTTPS_LISTENER: {
-						Name:    ENVOY_HTTPS_LISTENER,
-						Address: "127.0.0.200",
-						Port:    9200,
-					},
-				},
-			},
-			objs: []interface{}{
-				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: networking_v1.IngressSpec{
-						TLS: []networking_v1.IngressTLS{{
-							Hosts:      []string{"whatever.example.com"},
-							SecretName: "secret",
-						}},
-						Rules: []networking_v1.IngressRule{{
-							Host: "whatever.example.com",
-							IngressRuleValue: networking_v1.IngressRuleValue{
-								HTTP: &networking_v1.HTTPIngressRuleValue{
-									Paths: []networking_v1.HTTPIngressPath{{
-										Backend: *backend("kuard", 8080),
-									}},
-								},
-							},
-						}},
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
-			},
-			want: listenermap(&envoy_listener_v3.Listener{
-				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoy_v3.SocketAddress("127.0.0.100", 9100),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			}, &envoy_listener_v3.Listener{
-				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy_v3.SocketAddress("127.0.0.200", 9200),
-				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
-				),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
-					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
-						ServerNames: []string{"whatever.example.com"},
-					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
-					Filters:         envoy_v3.Filters(httpsFilterFor("whatever.example.com")),
-				}},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			}),
-		},
 		"use proxy proto": {
 			ListenerConfig: ListenerConfig{
 				UseProxyProto: true,
@@ -814,12 +731,12 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoy_v3.SocketAddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
+				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy_v3.SocketAddress(DEFAULT_HTTPS_LISTENER_ADDRESS, DEFAULT_HTTPS_LISTENER_PORT),
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),

@@ -519,10 +519,9 @@ func TestGlobalAuthorization(t *testing.T) {
 					}
 				},
 				func(b *dag.Builder) {
-					b.Processors = []dag.Processor{
-						&dag.ExtensionServiceProcessor{},
-						&dag.HTTPProxyProcessor{
-							GlobalExternalAuthorization: &contour_api_v1.AuthorizationServer{
+					for _, processor := range b.Processors {
+						if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
+							httpProxyProcessor.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
 								ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 									Name:      "extension",
 									Namespace: "auth",
@@ -535,9 +534,8 @@ func TestGlobalAuthorization(t *testing.T) {
 										"header_1":    "message_1",
 									},
 								},
-							},
-						},
-						&dag.ListenerProcessor{},
+							}
+						}
 					}
 				})
 			defer done()

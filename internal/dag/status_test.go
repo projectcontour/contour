@@ -52,6 +52,7 @@ func TestDAGStatus(t *testing.T) {
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -61,7 +62,6 @@ func TestDAGStatus(t *testing.T) {
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
-					&ListenerProcessor{},
 				},
 			}
 			for _, o := range tc.objs {
@@ -4294,6 +4294,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					gateway: tc.gateway,
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -4301,7 +4302,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -8184,6 +8184,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -8191,7 +8192,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -8698,6 +8698,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					gateway: tc.gateway,
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -8705,7 +8706,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
-					&ListenerProcessor{},
 				},
 			}
 

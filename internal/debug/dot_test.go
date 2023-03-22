@@ -28,8 +28,12 @@ import (
 //go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/debug  --disable-version-string
 
 func TestWriteDotEscapesLabels(t *testing.T) {
-	d := dag.DAG{}
-	d.Listeners = append(d.Listeners, getTestListeners()...)
+	d := dag.DAG{
+		Listeners: map[string]*dag.Listener{},
+	}
+	for _, l := range getTestListeners() {
+		d.Listeners[l.Name] = l
+	}
 	b := mocks.DagBuilder{}
 	b.On("Build").Return(&d)
 
@@ -54,8 +58,12 @@ func TestWriteDotEscapesLabels(t *testing.T) {
 
 // TestWriteDotLineCount is a pinning test to sanity check during refactor.
 func TestWriteDotLineCount(t *testing.T) {
-	d := dag.DAG{}
-	d.Listeners = append(d.Listeners, getTestListeners()...)
+	d := dag.DAG{
+		Listeners: map[string]*dag.Listener{},
+	}
+	for _, l := range getTestListeners() {
+		d.Listeners[l.Name] = l
+	}
 	b := mocks.DagBuilder{}
 	b.On("Build").Return(&d)
 
