@@ -105,11 +105,11 @@ func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.HeadersPolicy, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
+func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.HeadersPolicy, allowHostRewrite bool, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
 	if defaultPolicy == nil {
-		return headersPolicyRoute(policy, false, dynamicHeaders)
+		return headersPolicyRoute(policy, allowHostRewrite, dynamicHeaders)
 	}
-	userPolicy, err := headersPolicyRoute(policy, false, dynamicHeaders)
+	userPolicy, err := headersPolicyRoute(policy, allowHostRewrite, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,13 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.H
 	for k, v := range defaultPolicy.Set {
 		key := http.CanonicalHeaderKey(k)
 		if key == "Host" {
-			return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			if !allowHostRewrite {
+				return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			}
+			if len(userPolicy.HostRewrite) == 0 {
+				userPolicy.HostRewrite = v
+			}
+			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
