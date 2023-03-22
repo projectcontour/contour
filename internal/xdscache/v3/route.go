@@ -95,7 +95,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 
 	// To maintain backwards compatibility, generate an "ingress_http" RouteConfiguration
 	// regardless of whether there are any vhosts if we are in static Listener mode.
-	if !root.HasNonStaticListeners {
+	if !root.HasDynamicListeners {
 		routeConfigs[ENVOY_HTTP_LISTENER] = envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER)
 	}
 

@@ -65,7 +65,7 @@ type DAG struct {
 	// Set this to true if Contour is configured with a Gateway
 	// and Listeners are derived from the Gateway's Listeners, or
 	// false otherwise.
-	HasNonStaticListeners bool
+	HasDynamicListeners bool
 }
 
 type MatchCondition interface {
