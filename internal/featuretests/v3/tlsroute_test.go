@@ -18,6 +18,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
+	"github.com/stretchr/testify/require"
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -99,11 +100,11 @@ func TestTLSRoute(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:    "https-443",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
-						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+						tcpproxy("https-443", "default/correct-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"tcp.projectcontour.io"},
@@ -119,13 +120,8 @@ func TestTLSRoute(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	// check that there is no route config
+	require.Empty(t, c.Request(routeType).Resources)
 
 	// Route2 doesn't define any SNIs, so this should become the default backend.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
@@ -147,11 +143,11 @@ func TestTLSRoute(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:    "https-443",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
-						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+						tcpproxy("https-443", "default/correct-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						TransportProtocol: "tls",
@@ -167,13 +163,8 @@ func TestTLSRoute(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	// check that there is no route config
+	require.Empty(t, c.Request(routeType).Resources)
 
 	route3 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
@@ -212,18 +203,18 @@ func TestTLSRoute(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:    "https-443",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
-						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+						tcpproxy("https-443", "default/correct-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"tcp.projectcontour.io"},
 					},
 				}, {
 					Filters: envoy_v3.Filters(
-						tcpproxy("ingress_https", "default/another-backend/80/da39a3ee5e"),
+						tcpproxy("https-443", "default/another-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						TransportProtocol: "tls",
@@ -239,13 +230,8 @@ func TestTLSRoute(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	// check that there is no route config
+	require.Empty(t, c.Request(routeType).Resources)
 
 	rh.OnDelete(route1)
 	rh.OnDelete(route2)

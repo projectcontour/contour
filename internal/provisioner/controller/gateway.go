@@ -300,18 +300,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 				if networkPublishing.Type == contour_api_v1alpha1.NodePortServicePublishingType {
 					// when the NetworkPublishingType is 'NodePortServicePublishingType',
-					// the gateway.Spec.Listeners' port will be used to set 'NodePort' NOT 'ServicePort'
-					// in this scenario, the service port values will be reassigned with 80/443.
+					// the gateway.Spec.Listeners' port will be used to set 'NodePort' in addition to 'ServicePort'
 					for i := range contourModel.Spec.NetworkPublishing.Envoy.Ports {
 						port := &contourModel.Spec.NetworkPublishing.Envoy.Ports[i]
-						switch port.Name {
-						case "http":
-							port.NodePort = port.ServicePort
-							port.ServicePort = 80
-						case "https":
-							port.NodePort = port.ServicePort
-							port.ServicePort = 443
-						}
+						port.NodePort = port.ServicePort
 					}
 				}
 

@@ -275,7 +275,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -297,7 +297,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -319,7 +319,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -510,8 +510,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -544,8 +545,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -613,8 +615,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
 					),
@@ -711,8 +714,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -749,8 +753,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -816,8 +821,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -1050,8 +1056,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("another.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1159,8 +1166,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost(
 							"test.projectcontour.io",
@@ -1217,8 +1225,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1251,8 +1260,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -1285,8 +1295,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("*.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -1398,8 +1409,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1437,8 +1449,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1477,8 +1490,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name:    "http-80",
+				Address: "0.0.0.0",
+				Port:    64592,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1532,8 +1546,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
+				Address:      "0.0.0.0",
+				Port:         64592,
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1586,8 +1601,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
+				Address:      "0.0.0.0",
+				Port:         64592,
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1639,8 +1655,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name:    "http-80",
+				Address: "0.0.0.0",
+				Port:    64592,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1694,8 +1711,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name:    "http-80",
+				Address: "0.0.0.0",
+				Port:    64592,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1749,8 +1767,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name:    "http-80",
+				Address: "0.0.0.0",
+				Port:    64592,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1805,8 +1824,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name:    "http-80",
+				Address: "0.0.0.0",
+				Port:    64592,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1838,8 +1858,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -1924,8 +1945,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -1966,8 +1988,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -2011,8 +2034,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2061,8 +2085,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2074,8 +2099,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2172,8 +2198,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2223,8 +2250,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2513,8 +2541,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2526,8 +2555,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2566,8 +2596,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2620,8 +2651,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/blog"),
@@ -2666,8 +2698,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2713,8 +2746,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2760,8 +2794,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2811,8 +2846,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2863,8 +2899,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2930,8 +2967,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3181,8 +3219,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3257,8 +3296,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3340,8 +3380,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3413,8 +3454,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3463,8 +3505,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3525,8 +3568,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3582,8 +3626,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3627,8 +3672,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3680,8 +3726,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3740,8 +3787,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3790,8 +3838,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3840,8 +3889,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3888,8 +3938,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
 				},
@@ -3931,8 +3982,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
 						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
@@ -3975,8 +4027,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4024,8 +4077,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4073,8 +4127,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4119,8 +4174,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition:   prefixSegment("/prefix"),
@@ -4176,8 +4232,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4222,8 +4279,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4287,8 +4345,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4348,8 +4407,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRouteService("/", http.StatusInternalServerError, &Service{
 							Weighted: WeightedService{
@@ -4387,8 +4447,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4474,8 +4535,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4539,8 +4601,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4778,8 +4841,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4836,8 +4900,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4908,8 +4973,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4974,8 +5040,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5023,8 +5090,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5072,8 +5140,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5115,8 +5184,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("gateway.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -5150,8 +5220,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("http.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -5168,8 +5239,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
@@ -5288,8 +5360,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name:    "https-443",
+					Address: "0.0.0.0",
+					Port:    64955,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5301,8 +5374,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
@@ -5338,8 +5412,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5423,8 +5498,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
@@ -5463,8 +5539,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
@@ -5532,8 +5609,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5610,8 +5688,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5672,8 +5751,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5736,8 +5816,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5782,8 +5863,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:    "http-80",
+					Address: "0.0.0.0",
+					Port:    64592,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
 				},
@@ -5840,8 +5922,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
+				Address:      "0.0.0.0",
+				Port:         64592,
 				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")))),
 			}),
 		},
