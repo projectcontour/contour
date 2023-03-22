@@ -62,5 +62,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   # Can implement with the -skip flag available with go 1.20
   # or if Gateway API supports skipping tests via custom flag.
-  go test -timeout=20m -run ./conformance -gateway-class=contour -all-features
+  go test -timeout=20m ./conformance -gateway-class=contour -all-features
 fi

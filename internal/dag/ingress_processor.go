@@ -156,7 +156,16 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 		port := int(be.Service.Port.Number)
 		if len(be.Service.Port.Name) > 0 {
-			_, svcPort, _ := p.source.LookupService(m, intstr.FromString(be.Service.Port.Name))
+			_, svcPort, err2 := p.source.LookupService(m, intstr.FromString(be.Service.Port.Name))
+			if err2 != nil {
+				p.WithError(err2).
+					WithField("name", ing.GetName()).
+					WithField("namespace", ing.GetNamespace()).
+					WithField("service", be.Service.Name).
+					Error("service is not found")
+				continue
+			}
+
 			port = int(svcPort.Port)
 		}
 		s, err := p.dag.EnsureService(m, port, port, p.source, p.EnableExternalNameService)

@@ -91,6 +91,9 @@ type HTTPProxyProcessor struct {
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
 
+	// GlobalExternalAuthorization defines how requests will be authorized.
+	GlobalExternalAuthorization *contour_api_v1.AuthorizationServer
+
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
 }
@@ -303,56 +306,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				svhost.DownstreamValidation = dv
 			}
 
-			if proxy.Spec.VirtualHost.AuthorizationConfigured() {
-				auth := proxy.Spec.VirtualHost.Authorization
-				ref := defaultExtensionRef(auth.ExtensionServiceRef)
-
-				if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthBadResourceVersion",
-						"Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", auth.ExtensionServiceRef.APIVersion)
-					return
-				}
-
-				// Lookup the extension service reference.
-				extensionName := types.NamespacedName{
-					Name:      ref.Name,
-					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
-				}
-
-				ext := p.dag.GetExtensionCluster(ExtensionClusterName(extensionName))
-				if ext == nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
-						"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
-					return
-				}
-
-				svhost.AuthorizationService = ext
-				svhost.AuthorizationFailOpen = auth.FailOpen
-
-				timeout, err := timeout.Parse(auth.ResponseTimeout)
-				if err != nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
-						"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
-					return
-				}
-
-				if timeout.UseDefault() {
-					svhost.AuthorizationResponseTimeout = ext.RouteTimeoutPolicy.ResponseTimeout
-				} else {
-					svhost.AuthorizationResponseTimeout = timeout
-				}
-
-				if auth.WithRequestBody != nil {
-					var maxRequestBytes = defaultMaxRequestBytes
-					if auth.WithRequestBody.MaxRequestBytes != 0 {
-						maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
-					}
-					svhost.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
-						MaxRequestBytes:     maxRequestBytes,
-						AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
-						PackAsBytes:         auth.WithRequestBody.PackAsBytes,
-					}
-				}
+			if !p.computeSecureVirtualHostAuthorization(validCond, proxy, svhost) {
+				return
 			}
 
 			providerNames := sets.NewString()
@@ -524,6 +479,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 	insecure.RateLimitPolicy = rlp
+
+	if p.GlobalExternalAuthorization != nil && !proxy.Spec.VirtualHost.DisableAuthorization() {
+		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
+	}
 
 	addRoutes(insecure, routes)
 
@@ -758,6 +717,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy)
+
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		r := &Route{
@@ -775,12 +736,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RequestHashPolicies:       requestHashPolicies,
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
+			InternalRedirectPolicy:    internalRedirectPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
 		// enable it on the route and propagate defaults
 		// downwards.
-		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
 			// When the ext_authz filter is added to a
 			// vhost, it is in enabled state, but we can
 			// disable it per route. We emulate disabling
@@ -796,7 +758,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			r.AuthDisabled = disabled
-			r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
+
+			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+				r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
+			} else if p.GlobalExternalAuthorization != nil {
+				r.AuthContext = route.AuthorizationContext(p.GlobalAuthorizationContext())
+			}
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
@@ -1188,6 +1155,111 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 		}
 	}
 	return false
+}
+
+func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_api_v1.AuthorizationServer, validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy) *ExternalAuthorization {
+	ok, ext := validateExternalAuthExtensionService(defaultExtensionRef(auth.ExtensionServiceRef),
+		validCond,
+		httpproxy,
+		p.dag.GetExtensionCluster,
+	)
+	if !ok {
+		return nil
+	}
+
+	ok, respTimeout := determineExternalAuthTimeout(auth.ResponseTimeout, validCond, ext)
+	if !ok {
+		return nil
+	}
+
+	globalExternalAuthorization := &ExternalAuthorization{
+		AuthorizationService:         ext,
+		AuthorizationFailOpen:        auth.FailOpen,
+		AuthorizationResponseTimeout: *respTimeout,
+	}
+
+	if auth.WithRequestBody != nil {
+		var maxRequestBytes = defaultMaxRequestBytes
+		if auth.WithRequestBody.MaxRequestBytes != 0 {
+			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
+		}
+		globalExternalAuthorization.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
+			MaxRequestBytes:     maxRequestBytes,
+			AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
+			PackAsBytes:         auth.WithRequestBody.PackAsBytes,
+		}
+	}
+	return globalExternalAuthorization
+}
+
+func validateExternalAuthExtensionService(ref contour_api_v1.ExtensionServiceReference, validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, getExtensionCluster func(name string) *ExtensionCluster) (bool, *ExtensionCluster) {
+	if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthBadResourceVersion",
+			"Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", ref.APIVersion)
+		return false, nil
+	}
+
+	// Lookup the extension service reference.
+	extensionName := types.NamespacedName{
+		Name:      ref.Name,
+		Namespace: stringOrDefault(ref.Namespace, httpproxy.Namespace),
+	}
+
+	ext := getExtensionCluster(ExtensionClusterName(extensionName))
+	if ext == nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
+			"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
+		return false, ext
+	}
+
+	return true, ext
+}
+
+func determineExternalAuthTimeout(responseTimeout string, validCond *contour_api_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
+	timeout, err := timeout.Parse(responseTimeout)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
+			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
+		return false, nil
+	}
+
+	if timeout.UseDefault() {
+		return true, &ext.RouteTimeoutPolicy.ResponseTimeout
+	}
+
+	return true, &timeout
+}
+
+func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
+	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+		authorization := p.computeVirtualHostAuthorization(httpproxy.Spec.VirtualHost.Authorization, validCond, httpproxy)
+		if authorization == nil {
+			return false
+		}
+
+		svhost.ExternalAuthorization = authorization
+	} else if p.GlobalExternalAuthorization != nil && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+		globalAuthorization := p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, httpproxy)
+		if globalAuthorization == nil {
+			return false
+		}
+
+		svhost.ExternalAuthorization = globalAuthorization
+	}
+
+	return true
+}
+
+func (p *HTTPProxyProcessor) GlobalAuthorizationConfigured() bool {
+	return p.GlobalExternalAuthorization != nil
+}
+
+// AuthorizationContext returns the authorization policy context (if present).
+func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
+	if p.GlobalAuthorizationConfigured() && p.GlobalExternalAuthorization.AuthPolicy != nil {
+		return p.GlobalExternalAuthorization.AuthPolicy.Context
+	}
+	return nil
 }
 
 // expandPrefixMatches adds new Routes to account for the difference
@@ -1605,6 +1677,33 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func internalRedirectPolicy(internal *contour_api_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
+	if internal == nil {
+		return nil
+	}
+
+	redirectResponseCodes := make([]uint32, len(internal.RedirectResponseCodes))
+	for i, responseCode := range internal.RedirectResponseCodes {
+		redirectResponseCodes[i] = uint32(responseCode)
+	}
+
+	policy := &InternalRedirectPolicy{
+		MaxInternalRedirects:      internal.MaxInternalRedirects,
+		RedirectResponseCodes:     redirectResponseCodes,
+		DenyRepeatedRouteRedirect: internal.DenyRepeatedRouteRedirect,
+	}
+	switch internal.AllowCrossSchemeRedirect {
+	case "Always":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeAlways
+	case "SafeOnly":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeSafeOnly
+	default:
+		// Value already checked by the generated validator, assume this is Never.
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeNever
+	}
+	return policy
 }
 
 func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {

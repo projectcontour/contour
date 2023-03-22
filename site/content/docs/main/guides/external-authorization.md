@@ -360,13 +360,172 @@ $ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM)
 {"TestId":"","Path":"/test/27132","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"Content-Length":["0"],"User-Agent":["curl/7.64.1"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["2c0ae102-4cf6-400e-a38f-5f0b844364cc"],"X-Request-Start":["t=1601601826.102"]}}
 ```
 
+## Global External Authorization
+
+Starting from version 1.25, Contour supports global external authorization. This allows you to setup a single external authorization configuration for all your virtual hosts (HTTP and HTTPS).
+
+To get started, ensure you have `contour-authserver` and the `ExtensionService` deployed as described above. 
+
+### Global Configuration
+
+Define the global external authorization configuration in your contour config. 
+
+```yaml
+globalExtAuth:
+  extensionService: projectcontour-auth/htpasswd
+  failOpen: false
+  authPolicy:
+    context:
+      header1: value1
+      header2: value2
+  responseTimeout: 1s
+```
+
+Setup a HTTPProxy without TLS
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+  routes:
+  - services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+```
+$ kubectl apply -f echo-proxy.yaml 
+httpproxy.projectcontour.io/echo created
+```
+
+When we make a HTTP request without authentication details, we can see that the endpoint is secured and returns a 401. 
+
+```
+$ curl -k -I http://local.projectcontour.io/test/$((RANDOM))
+HTTP/1.1 401 Unauthorized
+www-authenticate: Basic realm="default", charset="UTF-8"
+vary: Accept-Encoding
+date: Mon, 20 Feb 2023 13:45:31 GMT
+```
+
+If you add the username and password to the same request you can verify that the request succeeds. 
+```
+$ curl -k --user user1:password1 http://local.projectcontour.io/test/$((RANDOM))
+{"TestId":"","Path":"/test/27748","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Routq":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["http"],"X-Request-Id":["b6bb7036-8408-4b03-9ce5-7011d89799b4"],"X-Request-Start":["t=1676900780.118"]}}
+```
+
+Global external authorization can also be configured with TLS virtual hosts. Update your HTTPProxy by adding `tls` and `secretName` to it. 
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    tls:
+      secretName: ingress-conformance-echo
+  routes:
+  - services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+```
+$ kubectl apply -f echo-proxy.yaml
+httpproxy.projectcontour.io/echo configured
+```
+
+you can verify the HTTPS requests succeeds
+```
+$ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM))
+{"TestId":"","Path":"/test/13499","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Routq":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["2b3edbed-3c68-44ef-a659-2e1245d7fe13"],"X-Request-Start":["t=1676901557.918"]}}
+```
+
+### Excluding a virtual host from global external authorization
+
+You can exclude a virtual host from the global external authorization policy by setting the `disabled` flag to true under `authPolicy`. 
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    tls:
+      secretName: ingress-conformance-echo
+    authorization:
+      authPolicy:
+        disabled: true
+  routes:
+  - services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+```
+$ kubectl apply -f echo-proxy.yaml
+httpproxy.projectcontour.io/echo configured
+```
+
+You can verify that an insecure request succeeds without being authorized. 
+
+```
+$ curl -k https://local.projectcontour.io/test/$((RANDOM))
+{"TestId":"","Path":"/test/51","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["18716e12-dcce-45ba-a3bb-bc26af3775d2"],"X-Request-Start":["t=1676901847.802"]}}
+```
+
+### Overriding global external authorization for a HTTPS virtual host
+
+You may want a different configuration than what is defined globally. To override the global external authorization, add the `authorization` block to your TLS enabled HTTPProxy as shown below
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    tls:
+      secretName: ingress-conformance-echo
+    authorization:
+      extensionRef:
+        name: htpasswd
+        namespace: projectcontour-auth
+  routes:
+  - services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+```
+$ kubectl apply -f echo-proxy.yaml
+httpproxy.projectcontour.io/echo configured
+```
+
+You can verify that the endpoint has applied the overridden external authorization configuration.
+
+```
+$ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM))
+{"TestId":"","Path":"/test/4514","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Overriden_message":["overriden_value"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["8a02d6ce-8be0-4e87-8ed8-cca7e239e986"],"X-Request-Start":["t=1676902237.111"]}}
+```
+
+NOTE: You can only override the global external configuration on a HTTPS virtual host.
+
 ## Caveats
 
 There are a few caveats to consider when deploying external
 authorization:
 
 1. Only one external authorization server can be configured on a virtual host
-1. Only HTTPS virtual hosts are supported
+1. HTTP hosts are only supported with global external authorization.
 1. External authorization cannot be used with the TLS fallback certificate (i.e. client SNI support is required)
 
 [1]: https://github.com/projectcontour/contour-authserver

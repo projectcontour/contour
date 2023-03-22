@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -391,6 +392,34 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		serverHeaderTransformation = contour_api_v1alpha1.PassThroughServerHeader
 	}
 
+	var globalExtAuth *contour_api_v1.AuthorizationServer
+	if ctx.Config.GlobalExternalAuthorization.ExtensionService != "" {
+		nsedName := k8s.NamespacedNameFrom(ctx.Config.GlobalExternalAuthorization.ExtensionService)
+		globalExtAuth = &contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+				Name:      nsedName.Name,
+				Namespace: nsedName.Namespace,
+			},
+			ResponseTimeout: ctx.Config.GlobalExternalAuthorization.ResponseTimeout,
+			FailOpen:        ctx.Config.GlobalExternalAuthorization.FailOpen,
+		}
+
+		if ctx.Config.GlobalExternalAuthorization.AuthPolicy != nil {
+			globalExtAuth.AuthPolicy = &contour_api_v1.AuthorizationPolicy{
+				Disabled: ctx.Config.GlobalExternalAuthorization.AuthPolicy.Disabled,
+				Context:  ctx.Config.GlobalExternalAuthorization.AuthPolicy.Context,
+			}
+		}
+
+		if ctx.Config.GlobalExternalAuthorization.WithRequestBody != nil {
+			globalExtAuth.WithRequestBody = &contour_api_v1.AuthorizationServerBufferSettings{
+				MaxRequestBytes:     ctx.Config.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
+				AllowPartialMessage: ctx.Config.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
+				PackAsBytes:         ctx.Config.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
+			}
+		}
+	}
+
 	policy := &contour_api_v1alpha1.PolicyConfig{
 		RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
 			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
@@ -504,10 +533,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
 		},
-		EnableExternalNameService: &ctx.Config.EnableExternalNameService,
-		RateLimitService:          rateLimitService,
-		Policy:                    policy,
-		Metrics:                   &contourMetrics,
+		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
+		GlobalExternalAuthorization: globalExtAuth,
+		RateLimitService:            rateLimitService,
+		Policy:                      policy,
+		Metrics:                     &contourMetrics,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

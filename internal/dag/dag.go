@@ -229,6 +229,42 @@ type Redirect struct {
 	PathRewritePolicy *PathRewritePolicy
 }
 
+const (
+	// InternalRedirectCrossSchemeNever deny following a redirect if the schemes are different.
+	InternalRedirectCrossSchemeNever = "never"
+
+	// InternalRedirectCrossSchemeSafeOnly allow following a redirect if the schemes
+	// are the same, or if it is considered safe, which means if the downstream scheme is HTTPS,
+	// both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme is HTTP,
+	// only HTTP redirect targets are allowed.
+	InternalRedirectCrossSchemeSafeOnly = "safeOnly"
+
+	// InternalRedirectCrossSchemeAlways allow following a redirect whatever the schemes.
+	InternalRedirectCrossSchemeAlways = "always"
+)
+
+// InternalRedirectPolicy defines if envoy should handle redirect
+// response internally instead of sending it downstream.
+// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-internalredirectpolicy
+type InternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number
+	// of previous internal redirects that a downstream request has
+	// encountered is lower than this value
+	MaxInternalRedirects uint32
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values
+	RedirectResponseCodes []uint32
+
+	// AllowCrossSchemeRedirect specifies how to handle a redirect when the downstream url
+	// and the redirect target url have different scheme.
+	AllowCrossSchemeRedirect string
+
+	// If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has
+	// been followed by a previous redirect from the current route.
+	DenyRepeatedRouteRedirect bool
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
@@ -308,6 +344,10 @@ type Route struct {
 	// JWTProvider names a JWT provider defined on the virtual
 	// host to be used to validate JWTs on requests to this route.
 	JWTProvider string
+
+	// InternalRedirectPolicy defines if envoy should handle redirect
+	// response internally instead of sending it downstream.
+	InternalRedirectPolicy *InternalRedirectPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -680,24 +720,9 @@ type SecureVirtualHost struct {
 	// DownstreamValidation defines how to verify the client's certificate.
 	DownstreamValidation *PeerValidationContext
 
-	// AuthorizationService points to the extension that client
-	// requests are forwarded to for authorization. If nil, no
-	// authorization is enabled for this host.
-	AuthorizationService *ExtensionCluster
-
-	// AuthorizationResponseTimeout sets how long the proxy should wait
-	// for authorization server responses.
-	AuthorizationResponseTimeout timeout.Setting
-
-	// AuthorizationFailOpen sets whether authorization server
-	// failures should cause the client request to also fail. The
-	// only reason to set this to `true` is when you are migrating
-	// from internal to external authorization.
-	AuthorizationFailOpen bool
-
-	// AuthorizationServerWithRequestBody specifies configuration
-	// for buffering request data sent to AuthorizationServer
-	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+	// ExternalAuthorization contains the configuration for enabling
+	// the ExtAuthz filter.
+	ExternalAuthorization *ExternalAuthorization
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
@@ -732,6 +757,29 @@ type JWTRule struct {
 	PathMatchCondition    MatchCondition
 	HeaderMatchConditions []HeaderMatchCondition
 	ProviderName          string
+}
+
+// ExternalAuthorization contains the configuration for enabling
+// the ExtAuthz filter.
+type ExternalAuthorization struct {
+	// AuthorizationService points to the extension that client
+	// requests are forwarded to for authorization. If nil, no
+	// authorization is enabled for this host.
+	AuthorizationService *ExtensionCluster
+
+	// AuthorizationResponseTimeout sets how long the proxy should wait
+	// for authorization server responses.
+	AuthorizationResponseTimeout timeout.Setting
+
+	// AuthorizationFailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	AuthorizationFailOpen bool
+
+	// AuthorizationServerWithRequestBody specifies configuration
+	// for buffering request data sent to AuthorizationServer
+	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

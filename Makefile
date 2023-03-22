@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.25.1
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.25.2
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -252,11 +252,7 @@ generate-crd-yaml:
 .PHONY: generate-gateway-yaml
 generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
-	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=${GATEWAY_API_VERSION}"
-	@echo "Generating Gateway API webhook documents..."
-	@curl -s -o examples/gateway/00-namespace.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/0-namespace.yaml
-	@curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/admission_webhook.yaml
-	@curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/certificate_config.yaml
+	@GATEWAY_API_VERSION=$(GATEWAY_API_VERSION) ./hack/generate-gateway-yaml.sh
 	
 
 .PHONY: generate-api-docs
@@ -310,6 +306,11 @@ install-contour-working: | setup-kind-cluster ## Install the local working direc
 .PHONY: install-contour-release 
 install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
+
+.PHONY: install-provisioner-working
+install-provisioner-working: | setup-kind-cluster ## Set up the Contour provisioner for local testing
+	./test/scripts/install-provisioner-working.sh
+
 
 .PHONY: e2e
 e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster

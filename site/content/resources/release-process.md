@@ -18,7 +18,6 @@ A minor release requires:
 - a release branch to be created
 - YAML to be customized
 - a release tag to be created
-- an Operator release
 - a GitHub release with release notes
 - public communication
 - cleanup
@@ -39,7 +38,6 @@ export KUBERNETES_MIN_VERSION=1.20
 export KUBERNETES_MAX_VERSION=1.22
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
-export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
 
 ### Update the website with release-specific information
@@ -55,7 +53,6 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
 1. Add the new release to the compatibility YAML (`/versions.yaml`). Be sure to mark this new version as supported and mark oldest currently supported version as no longer supported.
 1. Update `.github/workflows/trivy-scan.yaml` to add new release branch and remove oldest listed (should always be 3 latest branches listed).
-1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Branch and tag release
@@ -91,44 +88,11 @@ git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR
 git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
 
-### Release the operator
-
-1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
-1. Create a local release branch:
-
-```bash
-git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-```
-
-1. Push the branch to `github.com/projectcontour/contour-operator`:
-
-```bash
-git push --set-upstream ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-```
-
-1. Update the deployment YAML and create a local tag:
-
-```bash
-./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
-```
-
-1. Push the branch to `github.com/projectcontour/contour-operator`:
-
-```bash
-git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-```
-
-1. Push the tag to `github.com/projectcontour/contour-operator`:
-
-```bash
-git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-```
-
 ### Update quickstart YAML redirects
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Update `netlify.toml` to redirect quickstart links to the new release branch.
+1. Update `netlify.toml` to redirect Contour quickstart links to the new release branch.
 1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Do the Github release
@@ -146,7 +110,6 @@ A patch release requires:
 - website updates
 - YAML to be customized
 - a release tag to be created
-- an Operator release
 - a GitHub release with release notes
 - public communication
 - cleanup
@@ -167,7 +130,6 @@ export KUBERNETES_MIN_VERSION=1.20
 export KUBERNETES_MAX_VERSION=1.22
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
-export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
 
 ### Cherry-pick relevant commits into release branch
@@ -188,14 +150,8 @@ git cherry-pick <SHA>
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs, plus a changelog:
-    
-    ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
-    ```
-1. Proofread the release notes and do any reordering, rewording, reformatting necessary. Note that you will likely have to delete changelog entries that were not part of this patch release, as well as empty sections in the changelog.
+1. Create release notes in `changelogs/CHANGELOG-<version>.md`.
 1. Add the new release to the compatibility matrix (`/site/content/resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/content/resources/upgrading.md`).
 1. Add the new release to the compatibility YAML (`/versions.yaml`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
@@ -219,40 +175,6 @@ git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR
 
 ```bash
 git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-```
-
-### Release the operator
-
-1. Get a list of commit SHAs from `main` to backport.
-1. Check out the release branch for the minor version you're patching (i.e. `release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}`), ensure it's up to date, and ensure you have a clean working directory.
-1. Create a new local feature branch from the release branch.
-1. Cherry-pick each commit from Step 1, fixing any conflicts as needed:
-
-```bash
-# repeat for each SHA
-git cherry-pick <SHA>
-```
-
-1. Commit all changes, push the branch, and PR it into the release branch.
-
-1. Check out the release branch, ensure it's up to date, and ensure you have a clean working directory.
-
-1. Update the deployment YAML and create a local tag:
-
-```bash
-./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-```
-
-1. Push the branch to `github.com/projectcontour/contour-operator`:
-
-```bash
-git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-```
-
-1. Push the tag to `github.com/projectcontour/contour-operator`:
-
-```bash
-git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
 
 ### Do the Github release
@@ -287,7 +209,6 @@ export KUBERNETES_MIN_VERSION=1.23
 export KUBERNETES_MAX_VERSION=1.25
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
-export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
 
 ### Create a branch for the release
