@@ -107,57 +107,43 @@ func TestBuilderLookupService(t *testing.T) {
 
 	tests := map[string]struct {
 		types.NamespacedName
-		port                  intstr.IntOrString
-		healthPort            intstr.IntOrString
+		port                  int
+		healthPort            int
 		enableExternalNameSvc bool
 		want                  *Service
 		wantErr               error
 	}{
 		"lookup service by port number": {
 			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromInt(8080),
+			port:           8080,
 			want:           service(s1),
 		},
-		"lookup service by port name": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("http"),
-			want:           service(s1),
-		},
-		"lookup service by port number (as string)": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.Parse("8080"),
-			want:           service(s1),
-		},
-		"lookup service by port number (from string)": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("8080"),
-			want:           service(s1),
-		},
+
 		"when service does not exist an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "nonexistent-service", Namespace: "default"},
-			port:           intstr.FromString("8080"),
+			port:           8080,
 			wantErr:        errors.New(`service "default/nonexistent-service" not found`),
 		},
 		"when service port does not exist an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("9999"),
+			port:           9999,
 			wantErr:        errors.New(`port "9999" on service "default/service1" not matched`),
 		},
 		"when health port and service port are different": {
 			NamespacedName: types.NamespacedName{Name: "servicehealthcheck", Namespace: "default"},
-			port:           intstr.FromString("8080"),
-			healthPort:     intstr.FromString("8998"),
+			port:           8080,
+			healthPort:     8998,
 			want:           healthService(s2),
 		},
 		"when health port does not exist an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "servicehealthcheck", Namespace: "default"},
-			port:           intstr.FromString("8080"),
-			healthPort:     intstr.FromString("8999"),
+			port:           8080,
+			healthPort:     8999,
 			wantErr:        errors.New(`port "8999" on service "default/servicehealthcheck" not matched`),
 		},
 		"When ExternalName Services are not disabled no error is returned": {
 			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
-			port:           intstr.FromString("80"),
+			port:           80,
 			want: &Service{
 				Weighted: WeightedService{
 					Weight:           1,
@@ -182,12 +168,12 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 		"When ExternalName Services are disabled an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
-			port:           intstr.FromString("80"),
+			port:           80,
 			wantErr:        errors.New(`default/externalnamevalid is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting`),
 		},
 		"When ExternalName Services are enabled but a localhost ExternalName is used an error is returned": {
 			NamespacedName:        types.NamespacedName{Name: "externalnamelocalhost", Namespace: "default"},
-			port:                  intstr.FromString("80"),
+			port:                  80,
 			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
 			enableExternalNameSvc: true,
 		},

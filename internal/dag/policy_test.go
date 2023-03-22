@@ -598,6 +598,42 @@ func TestHeadersPolicy(t *testing.T) {
 				Remove: []string{"X-Sensitive-Header"},
 			},
 		},
+		"Host header rewrite by user header policy": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "Host",
+					Value: "foo",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"Host": "bar",
+				},
+			},
+			want: HeadersPolicy{
+				HostRewrite: "foo",
+				Set:         map[string]string{},
+			},
+		},
+		"Host header rewrite by default header policy": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "K-Foo",
+					Value: "foo",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"Host": "bar",
+				},
+			},
+			want: HeadersPolicy{
+				HostRewrite: "bar",
+				Set: map[string]string{
+					"K-Foo": "foo",
+				},
+			},
+		},
 	}
 
 	dynamicHeaders := map[string]string{
@@ -607,7 +643,7 @@ func TestHeadersPolicy(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(&tc.dhp, tc.hp, dynamicHeaders)
+			got, gotErr := headersPolicyService(&tc.dhp, tc.hp, true, dynamicHeaders)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -1078,7 +1114,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 		},
 		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
 	}, {
-		name: "invalid set header (special headers)",
+		name: "invalid set header: rewrite Host header not supported",
 		in: &contour_api_v1.HeadersPolicy{
 			Set: []contour_api_v1.HeaderValue{{
 				Name:  "Host",
@@ -1091,7 +1127,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 		dhp:     nil,
 		wantErr: errors.New(`rewriting "Host" header is not supported`),
 	}, {
-		name: "invalid set default header (special headers)",
+		name: "invalid set default header: rewrite Host header not supported",
 		in: &contour_api_v1.HeadersPolicy{
 			Set: []contour_api_v1.HeaderValue{{
 				Name:  "K-Foo",
@@ -1217,7 +1253,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.dhp, test.in, test.dyn)
+			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})

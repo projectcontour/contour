@@ -514,6 +514,12 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		if cluster.RequestHeadersPolicy != nil {
 			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
+			// Check for host header policy and set if found
+			if val := envoy.HostReplaceHeader(cluster.RequestHeadersPolicy); val != "" {
+				c.HostRewriteSpecifier = &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{
+					HostRewriteLiteral: val,
+				}
+			}
 		}
 		if cluster.ResponseHeadersPolicy != nil {
 			c.ResponseHeadersToAdd = append(headerValueList(cluster.ResponseHeadersPolicy.Set, false), headerValueList(cluster.ResponseHeadersPolicy.Add, true)...)

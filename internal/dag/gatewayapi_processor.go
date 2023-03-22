@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -1469,8 +1468,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 		meta = types.NamespacedName{Name: string(backendObjectRef.Name), Namespace: routeNamespace}
 	}
 
-	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendObjectRef.Port)), intstr.FromInt(int(*backendObjectRef.Port)), p.source, p.EnableExternalNameService)
+	service, err := p.dag.EnsureService(meta, int(*backendObjectRef.Port), int(*backendObjectRef.Port), p.source, p.EnableExternalNameService)
 	if err != nil {
 		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
 	}

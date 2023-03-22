@@ -31,7 +31,6 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -825,7 +824,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, service.Port, healthPort, p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
@@ -863,13 +862,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			dynamicHeaders["CONTOUR_SERVICE_NAME"] = service.Name
 			dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(service.Port)
 
-			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, dynamicHeaders)
+			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, true, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid",
 					"%s on request headers", err)
 				return nil
 			}
-			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, dynamicHeaders)
+			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, false, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid",
 					"%s on response headers", err)
@@ -1021,7 +1020,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 			}
 
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, service.Port, healthPort, p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference",
 					"Spec.TCPProxy unresolved service reference: %s", err)
