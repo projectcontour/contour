@@ -1,0 +1,57 @@
+# This kustomize file can be used as an example for deploying Contour without ClusterRole and
+# ClusterRoleBinding RBAC privileges.
+# It changes the cluster-wide RBAC rules in the example deployment manifest to namespaced RBAC rules.
+# It is meant to be used together with contour serve --watch-namespaces=<ns> option to restrict
+# Contour to a certain namespace.
+# Run with:
+#   kubectl kustomize examples/namespaced/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../render/
+patches:
+  - patch: |-
+      - op: replace
+        path: /kind
+        value: RoleBinding
+      - op: replace
+        path: /metadata/name
+        value: contour-resources
+      - op: replace
+        path: /roleRef/kind
+        value: Role
+      - op: replace
+        path: /roleRef/name
+        value: contour-resources
+      - op: add
+        path: /metadata/namespace
+        value: projectcontour
+    target:
+      group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: contour
+      version: v1
+  - patch: |-
+      - op: replace
+        path: /kind
+        value: Role
+      - op: replace
+        path: /metadata/name
+        value: contour-resources
+      - op: add
+        path: /metadata/namespace
+        value: projectcontour
+    target:
+      group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: contour
+      version: v1
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --watch-namespaces=projectcontour
+    target:
+      group: apps
+      kind: Deployment
+      name: contour
+      version: v1

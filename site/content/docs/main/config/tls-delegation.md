@@ -4,6 +4,8 @@ In order to support wildcard certificates, TLS certificates for a `*.somedomain.
 This facility allows the owner of a TLS certificate to delegate, for the purposes of referencing the TLS certificate, permission to Contour to read the Secret object from another namespace.
 Delegation works for both HTTPProxy and Ingress resources, however it needs an annotation to work with Ingress v1.
 
+If the `--watch-namespaces` configuration flag is used, it must define all namespaces that will be referenced by the delegation.
+
 The [`TLSCertificateDelegation`][1] resource defines a set of `delegations` in the `spec`.
 Each delegation references a `secretName` from the namespace where the `TLSCertificateDelegation` is created as well as describing a set of `targetNamespaces` in which the certificate can be referenced.
 If all namespaces should be able to reference the secret, then set `"*"` as the value of `targetNamespaces` (see example below).
@@ -24,7 +26,7 @@ spec:
       - "*"
 ```
 
-In this example, the permission for Contour to reference the Secret `example-com-wildcard` in the `admin` namespace has been delegated to HTTPProxy and Ingress objects in the `example-com` namespace.
+In this example, the permission for Contour to reference the Secret `example-com-wildcard` in the `www-admin` namespace has been delegated to HTTPProxy and Ingress objects in the `example-com` namespace.
 Also, the permission for Contour to reference the Secret `another-com-wildcard` from all namespaces has been delegated to all HTTPProxy and Ingress objects in the cluster.
 
 To reference the secret from an HTTPProxy or Ingress v1beta1 you must use the slash syntax in the `secretName`:

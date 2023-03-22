@@ -535,9 +535,15 @@ func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
 }
 
 // HTTPProxyInvalid returns true if the proxy has a .status.currentStatus
-// of "valid".
+// of "invalid".
 func HTTPProxyInvalid(proxy *contourv1.HTTPProxy) bool {
 	return proxy != nil && proxy.Status.CurrentStatus == "invalid"
+}
+
+// HTTPProxyNotReconciled returns true if the proxy has a .status.currentStatus
+// of "NotReconciled".
+func HTTPProxyNotReconciled(proxy *contourv1.HTTPProxy) bool {
+	return proxy != nil && proxy.Status.CurrentStatus == "NotReconciled"
 }
 
 // HTTPProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.

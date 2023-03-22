@@ -223,6 +223,9 @@ Also see the [upgrade guides][15] on steps to roll out a new version of Contour.
 
 It's possible to run multiple instances of Contour within a single Kubernetes cluster.
 This can be useful for separating external vs. internal ingress, for having separate ingress controllers for different ingress classes, and more.
+Each Contour instance can also be configured via the `--watch-namespaces` flag to handle their own namespaces. This allows the Kubernetes RBAC objects
+to be restricted further.
+
 The recommended way to deploy multiple Contour instances is to put each instance in its own namespace.
 This avoids most naming conflicts that would otherwise occur, and provides better logical separation between the instances.
 However, it is also possible to deploy multiple instances in a single namespace if needed; this approach requires more modifications to the example manifests to function properly.
