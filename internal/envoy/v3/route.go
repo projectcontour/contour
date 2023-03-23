@@ -196,7 +196,7 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.Route
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
 					// Trim trailing slash as PathSeparatedPrefix expects
 					// no trailing slashes.
-					PathSeparatedPrefix: strings.TrimSuffix(c.Prefix, "/"),
+					PathSeparatedPrefix: strings.TrimRight(c.Prefix, "/"),
 				},
 			}
 		case dag.PrefixMatchString:
