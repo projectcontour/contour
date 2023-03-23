@@ -384,4 +384,36 @@ func TestValidateListeners(t *testing.T) {
 		assert.Len(t, res.Ports, 1)
 		assert.Len(t, res.ListenerNames, 3)
 	})
+
+	t.Run("Conflicting protocols on a port", func(t *testing.T) {
+		listeners := []gatewayapi_v1beta1.Listener{
+			{
+				Name:     "http",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     7777,
+			},
+			{
+				Name:     "https",
+				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Port:     7777,
+			},
+		}
+
+		res := ValidateListeners(listeners)
+		assert.Empty(t, res.Ports)
+		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
+			"http": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
+			"https": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
+		}, res.InvalidListenerConditions)
+	})
 }
