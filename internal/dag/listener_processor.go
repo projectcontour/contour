@@ -38,6 +38,7 @@ func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
 		for _, port := range gatewayapi.ValidateListeners(cache.gateway.Spec.Listeners).Ports {
 			dag.Listeners[port.Name] = &Listener{
 				Name:          port.Name,
+				Protocol:      port.Protocol,
 				Address:       "0.0.0.0",
 				Port:          int(port.ContainerPort),
 				vhostsByName:  map[string]*VirtualHost{},
@@ -47,6 +48,7 @@ func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
 	} else {
 		dag.Listeners[HTTP_LISTENER_NAME] = &Listener{
 			Name:            HTTP_LISTENER_NAME,
+			Protocol:        "HTTP",
 			Address:         p.HTTPAddress,
 			Port:            intOrDefault(p.HTTPPort, 8080),
 			RouteConfigName: "ingress_http",
@@ -55,6 +57,7 @@ func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
 
 		dag.Listeners[HTTPS_LISTENER_NAME] = &Listener{
 			Name:                        HTTPS_LISTENER_NAME,
+			Protocol:                    "HTTPS",
 			Address:                     p.HTTPSAddress,
 			Port:                        intOrDefault(p.HTTPSPort, 8443),
 			RouteConfigName:             "https",

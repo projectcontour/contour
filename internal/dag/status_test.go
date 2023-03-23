@@ -4659,6 +4659,167 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 		},
 	})
+
+	run(t, "HTTPProxy cannot attach to a Gateway with >1 HTTP Listener", testcase{
+		objs: []interface{}{
+			&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "http-2",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     81,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			&v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard",
+					Namespace: "roots",
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       8080,
+						TargetPort: intstr.FromInt(8080),
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "roots",
+					Name:      "kuard-proxy",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "kuard.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+							},
+							Services: []contour_api_v1.Service{
+								{
+									Name: "kuard",
+									Port: 8080,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Namespace: "roots", Name: "kuard-proxy"}: fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeListenerError,
+					"ListenerNotFound",
+					"more than one HTTP listener configured",
+				),
+		},
+	})
+
+	run(t, "HTTPProxy cannot attach to a Gateway with no HTTP Listener", testcase{
+		objs: []interface{}{
+			&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+							},
+						},
+					},
+				},
+			},
+			&v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard",
+					Namespace: "roots",
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       8080,
+						TargetPort: intstr.FromInt(8080),
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "roots",
+					Name:      "kuard-proxy",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "kuard.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+							},
+							Services: []contour_api_v1.Service{
+								{
+									Name: "kuard",
+									Port: 8080,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Namespace: "roots", Name: "kuard-proxy"}: fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeListenerError,
+					"ListenerNotFound",
+					"no HTTP listener configured",
+				),
+		},
+	})
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {

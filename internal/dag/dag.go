@@ -855,6 +855,10 @@ type Listener struct {
 	// Name is the unique name of the listener.
 	Name string
 
+	// Protocol is the listener protocol. Must be
+	// "HTTP" or "HTTPS".
+	Protocol string
+
 	// Address is the TCP address to listen on.
 	// If blank 0.0.0.0, or ::/0 for IPv6, is assumed.
 	Address string

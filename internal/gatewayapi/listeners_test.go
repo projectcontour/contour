@@ -58,8 +58,8 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
@@ -99,9 +99,9 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "http-8080", Port: 8080, ContainerPort: 8080},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "http-8080", Port: 8080, ContainerPort: 8080, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
@@ -147,9 +147,9 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "http-8080", Port: 8080, ContainerPort: 8080},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "http-8080", Port: 8080, ContainerPort: 8080, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"listener-2": {
@@ -202,8 +202,8 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
@@ -243,9 +243,9 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
-			{Name: "https-8443", Port: 8443, ContainerPort: 8443},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
+			{Name: "https-8443", Port: 8443, ContainerPort: 8443, Protocol: "HTTPS"},
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
@@ -291,9 +291,9 @@ func TestValidateListeners(t *testing.T) {
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
-			{Name: "http-80", Port: 80, ContainerPort: 64592},
-			{Name: "https-443", Port: 443, ContainerPort: 64955},
-			{Name: "https-8443", Port: 8443, ContainerPort: 8443},
+			{Name: "http-80", Port: 80, ContainerPort: 64592, Protocol: "HTTP"},
+			{Name: "https-443", Port: 443, ContainerPort: 64955, Protocol: "HTTPS"},
+			{Name: "https-8443", Port: 8443, ContainerPort: 8443, Protocol: "HTTPS"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"listener-2": {

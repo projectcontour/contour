@@ -43,6 +43,7 @@ type ListenerPort struct {
 	Name          string
 	Port          int32
 	ContainerPort int32
+	Protocol      string
 }
 
 // ValidateListeners validates protocols, ports and hostnames on a set of listeners.
@@ -177,10 +178,18 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				containerPort += 64512
 			}
 
+			var protocol string
+			if listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType {
+				protocol = "HTTP"
+			} else {
+				protocol = "HTTPS"
+			}
+
 			result.Ports = append(result.Ports, ListenerPort{
 				Name:          envoyListenerName,
 				Port:          int32(listener.Port),
 				ContainerPort: int32(containerPort),
+				Protocol:      protocol,
 			})
 		}
 	}

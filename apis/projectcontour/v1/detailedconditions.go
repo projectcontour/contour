@@ -193,4 +193,8 @@ const (
 	// ConditionTypeVirtualHostError describes an error condition relating
 	// to the VirtualHost configuration section of an HTTPProxy resource.
 	ConditionTypeVirtualHostError = "VirtualHostError"
+
+	// ConditionTypeListenerError describes an error condition relating
+	// to the configuration of Listeners.
+	ConditionTypeListenerError = "ListenerError"
 )

@@ -118,6 +118,30 @@ func externalName(svc *v1.Service) string {
 	return svc.Spec.ExternalName
 }
 
+// GetSingleListener returns the sole listener with the specified protocol,
+// or an error if there is not exactly one listener with that protocol.
+func (d *DAG) GetSingleListener(protocol string) (*Listener, error) {
+	var res *Listener
+
+	for _, listener := range d.Listeners {
+		if listener.Protocol != protocol {
+			continue
+		}
+
+		if res != nil {
+			return nil, fmt.Errorf("more than one %s listener configured", protocol)
+		}
+
+		res = listener
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no %s listener configured", protocol)
+	}
+
+	return res, nil
+}
+
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
