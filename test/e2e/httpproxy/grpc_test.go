@@ -98,7 +98,7 @@ func testGRPCServicePlaintext(namespace string) {
 				// may not be healthy yet.
 				// Also retry if we get the unimplemented status, see:
 				// https://github.com/projectcontour/contour/issues/4707
-				// Also retry unauthenticated to accomodate eventual consistency
+				// Also retry unauthenticated to accommodate eventual consistency
 				// after a global ExtAuth test.
 				grpc_retry.WithCodes(codes.Unavailable, codes.Unimplemented, codes.Unauthenticated),
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
