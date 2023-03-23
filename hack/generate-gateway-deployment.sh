@@ -40,6 +40,9 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
     */01-contour-config.yaml)
         sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/gateway-controller|  controllerName: projectcontour.io/gateway-controller|g' < "$y"
         ;;
+    */02-service-envoy.yaml)
+        sed 's/targetPort: 8080/targetPort: 64592/;s/targetPort: 8443/targetPort: 64955/g' < "$y"
+        ;;
     *)
         cat $y
         ;;
