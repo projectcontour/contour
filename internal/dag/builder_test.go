@@ -14445,6 +14445,63 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				},
 			),
 		},
+		"HTTPProxy with TLS attached to Gateway with no HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				sec1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+							TLS: &contour_api_v1.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
 
 		"Ingress attached to HTTP-only Gateway": {
 			gateway: &gatewayapi_v1beta1.Gateway{
@@ -14711,6 +14768,65 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			),
+		},
+		"Ingress with TLS (with HTTP not allowed) attached to Gateway with no HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				sec1,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.allow-http": "false",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"kuard.projectcontour.io"},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
 		},
 	}
 
