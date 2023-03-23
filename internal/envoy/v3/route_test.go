@@ -1500,6 +1500,19 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 		},
+		"path prefix match segment trailing slash": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo/",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
+				},
+			},
+		},
 		"path exact": {
 			route: &dag.Route{
 				PathMatchCondition: &dag.ExactMatchCondition{
