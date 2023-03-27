@@ -600,7 +600,7 @@ func (s *Server) doServe() error {
 	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
-func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.TracingConfig) (*dag.TracingConfig, error) {
+func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.TracingConfig) (*xdscache_v3.TracingConfig, error) {
 	if tracingConfig == nil {
 		return nil, nil
 	}
@@ -632,20 +632,20 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
 	}
 
-	var customTags []*dag.CustomTag
+	var customTags []*xdscache_v3.CustomTag
 
-	if pointer.BoolDeref(tracingConfig.IncludePodDetail, true) {
-		customTags = append(customTags, &dag.CustomTag{
+	if ref.Val(tracingConfig.IncludePodDetail, true) {
+		customTags = append(customTags, &xdscache_v3.CustomTag{
 			TagName:         "podName",
 			EnvironmentName: "HOSTNAME",
-		}, &dag.CustomTag{
+		}, &xdscache_v3.CustomTag{
 			TagName:         "podNamespaceName",
 			EnvironmentName: "CONTOUR_NAMESPACE",
 		})
 	}
 
 	for _, customTag := range tracingConfig.CustomTags {
-		customTags = append(customTags, &dag.CustomTag{
+		customTags = append(customTags, &xdscache_v3.CustomTag{
 			TagName:           customTag.TagName,
 			Literal:           customTag.Literal,
 			RequestHeaderName: customTag.RequestHeaderName,
@@ -657,13 +657,13 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 		overallSampling = 100.0
 	}
 
-	return &dag.TracingConfig{
-		ServiceName:      pointer.StringDeref(tracingConfig.ServiceName, "contour"),
+	return &xdscache_v3.TracingConfig{
+		ServiceName:      ref.Val(tracingConfig.ServiceName, "contour"),
 		ExtensionService: key,
 		SNI:              sni,
 		Timeout:          responseTimeout,
 		OverallSampling:  overallSampling,
-		MaxPathTagLength: pointer.Uint32Deref(tracingConfig.MaxPathTagLength, 256),
+		MaxPathTagLength: ref.Val(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:       customTags,
 	}, nil
 

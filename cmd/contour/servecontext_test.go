@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tsaarni/certyaml"
 	"google.golang.org/grpc"
-	"k8s.io/utils/pointer"
 )
 
 func TestServeContextProxyRootNamespaces(t *testing.T) {
@@ -764,9 +763,9 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
-					ServiceName:      pointer.String("contour"),
-					OverallSampling:  pointer.String("100.0"),
-					MaxPathTagLength: pointer.Uint32(256),
+					ServiceName:      ref.To("contour"),
+					OverallSampling:  ref.To("100.0"),
+					MaxPathTagLength: ref.To(uint32(256)),
 					CustomTags: []*contour_api_v1alpha1.CustomTag{
 						{
 							TagName: "literal",

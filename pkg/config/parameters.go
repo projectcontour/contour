@@ -588,7 +588,7 @@ type Tracing struct {
 	// CustomTags defines a list of custom tags with unique tag name.
 	CustomTags []CustomTag `yaml:"customTags,omitempty"`
 
-	// ExtensionService identifies the extension service defining the otle-collector,
+	// ExtensionService identifies the extension service defining the otel-collector,
 	// formatted as <namespace>/<name>.
 	ExtensionService string `yaml:"extensionService,omitempty"`
 }

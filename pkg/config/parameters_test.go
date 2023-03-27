@@ -14,6 +14,7 @@
 package config
 
 import (
+	"github.com/projectcontour/contour/internal/ref"
 	"os"
 	"strings"
 	"testing"
@@ -21,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"k8s.io/utils/pointer"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -499,7 +499,7 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: pointer.Bool(false),
+		IncludePodDetail: ref.To(false),
 		ServiceName:      "contour",
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
@@ -509,7 +509,7 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: pointer.Bool(false),
+		IncludePodDetail: ref.To(false),
 		ServiceName:      "contour",
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
@@ -518,7 +518,7 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: pointer.Bool(false),
+		IncludePodDetail: ref.To(false),
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
 		CustomTags:       nil,
@@ -553,7 +553,7 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: pointer.Bool(true),
+		IncludePodDetail: ref.To(true),
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
 		CustomTags: []CustomTag{

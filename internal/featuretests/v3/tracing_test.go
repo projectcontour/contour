@@ -19,20 +19,19 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func TestTracing(t *testing.T) {
-	tracingConfig := &dag.TracingConfig{
+	tracingConfig := &xdscache_v3.TracingConfig{
 		ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
 		ServiceName:      "contour",
 		Timeout:          timeout.DefaultSetting(),
@@ -59,7 +58,7 @@ func TestTracing(t *testing.T) {
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: "otel-collector", Port: 4317},
 			},
-			Protocol: pointer.String("h2c"),
+			Protocol: ref.To("h2c"),
 			TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 				Response: defaultResponseTimeout.String(),
 			},
@@ -103,7 +102,13 @@ func TestTracing(t *testing.T) {
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 		DefaultFilters().
-		Tracing(envoy_v3.TracingConfig(tracingConfig)).
+		Tracing(envoy_v3.TracingConfig(&envoy_v3.EnvoyTracingConfig{
+			ExtensionService: tracingConfig.ExtensionService,
+			ServiceName:      tracingConfig.ServiceName,
+			Timeout:          tracingConfig.Timeout,
+			OverallSampling:  tracingConfig.OverallSampling,
+			MaxPathTagLength: tracingConfig.MaxPathTagLength,
+		})).
 		Get(),
 	)
 

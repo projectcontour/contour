@@ -20,12 +20,14 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // TracingConfig returns a tracing config,
 // or nil if config is nil.
-func TracingConfig(tracing *dag.TracingConfig) *http.HttpConnectionManager_Tracing {
+func TracingConfig(tracing *EnvoyTracingConfig) *http.HttpConnectionManager_Tracing {
 	if tracing == nil {
 		return nil
 	}
@@ -55,7 +57,7 @@ func TracingConfig(tracing *dag.TracingConfig) *http.HttpConnectionManager_Traci
 	}
 }
 
-func customTag(tag *dag.CustomTag) *envoy_trace_v3.CustomTag {
+func customTag(tag *CustomTag) *envoy_trace_v3.CustomTag {
 	if tag == nil {
 		return nil
 	}
@@ -90,4 +92,21 @@ func customTag(tag *dag.CustomTag) *envoy_trace_v3.CustomTag {
 		}
 	}
 	return nil
+}
+
+type EnvoyTracingConfig struct {
+	ExtensionService types.NamespacedName
+	ServiceName      string
+	SNI              string
+	Timeout          timeout.Setting
+	OverallSampling  float64
+	MaxPathTagLength uint32
+	CustomTags       []*CustomTag
+}
+
+type CustomTag struct {
+	TagName           string
+	Literal           string
+	EnvironmentName   string
+	RequestHeaderName string
 }
