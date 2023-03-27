@@ -639,7 +639,7 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 			TagName:         "podName",
 			EnvironmentName: "HOSTNAME",
 		}, &xdscache_v3.CustomTag{
-			TagName:         "podNamespaceName",
+			TagName:         "podNamespace",
 			EnvironmentName: "CONTOUR_NAMESPACE",
 		})
 	}
