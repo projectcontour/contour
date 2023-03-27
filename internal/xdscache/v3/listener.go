@@ -338,7 +338,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
-				Tracing(envoy_v3.TracingConfig(cfg.TracingConfig)).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
