@@ -685,7 +685,7 @@ spec:
                     type: array
                   extensionService:
                     description: ExtensionService identifies the extension service
-                      defining the otle-collector.
+                      defining the otel-collector.
                     properties:
                       name:
                         type: string
@@ -3850,7 +3850,7 @@ spec:
                         type: array
                       extensionService:
                         description: ExtensionService identifies the extension service
-                          defining the otle-collector.
+                          defining the otel-collector.
                         properties:
                           name:
                             type: string

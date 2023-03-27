@@ -22,7 +22,6 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_trace_v3 "github.com/envoyproxy/go-control-plane/envoy/type/tracing/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -33,7 +32,7 @@ import (
 
 func TestTracingConfig(t *testing.T) {
 	tests := map[string]struct {
-		tracing *dag.TracingConfig
+		tracing *EnvoyTracingConfig
 		want    *http.HttpConnectionManager_Tracing
 	}{
 		"nil config": {
@@ -41,14 +40,14 @@ func TestTracingConfig(t *testing.T) {
 			want:    nil,
 		},
 		"normal config": {
-			tracing: &dag.TracingConfig{
+			tracing: &EnvoyTracingConfig{
 				ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
 				ServiceName:      "contour",
 				SNI:              "some-server.com",
 				Timeout:          timeout.DurationSetting(5 * time.Second),
 				OverallSampling:  100,
 				MaxPathTagLength: 256,
-				CustomTags: []*dag.CustomTag{
+				CustomTags: []*CustomTag{
 					{
 						TagName: "literal",
 						Literal: "this is literal",
@@ -114,7 +113,7 @@ func TestTracingConfig(t *testing.T) {
 			},
 		},
 		"no custom tag": {
-			tracing: &dag.TracingConfig{
+			tracing: &EnvoyTracingConfig{
 				ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
 				ServiceName:      "contour",
 				SNI:              "some-server.com",
@@ -149,7 +148,7 @@ func TestTracingConfig(t *testing.T) {
 			},
 		},
 		"no SNI set": {
-			tracing: &dag.TracingConfig{
+			tracing: &EnvoyTracingConfig{
 				ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
 				ServiceName:      "contour",
 				SNI:              "",
