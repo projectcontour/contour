@@ -1,0 +1,1 @@
+Gateway API: Contour now always sets the Accepted condition on Gateway Listeners. If there is a specific validation error of top-level fields (port, protocol, etc.) the status is set to False, otherwise it is set to True.

@@ -417,21 +417,42 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerReasonProgrammed,
 				"Valid listener",
 			)
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionAccepted,
+				metav1.ConditionTrue,
+				gatewayapi_v1beta1.ListenerReasonAccepted,
+				"Listener accepted",
+			)
 		} else {
 			programmedConditionExists := false
+			acceptedConditionExists := false
 			for _, cond := range listenerStatus.Conditions {
 				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionProgrammed) {
 					programmedConditionExists = true
-					break
+				}
+				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionAccepted) {
+					acceptedConditionExists = true
 				}
 			}
 
-			// Only set the Programmed condition if it doesn't already
-			// exist in the status update, since if it does exist,
-			// it will contain more specific information about what
-			// was invalid.
+			// Only set the Programmed or Accepted conditions if
+			// they don't already exist in the status update, since
+			// if they do exist, they will contain more specific
+			// information in the reason, message, etc.
 			if !programmedConditionExists {
 				addInvalidListenerCondition("Invalid listener, see other listener conditions for details")
+			}
+			// Accepted condition is always true for now if not
+			// explicitly set.
+			if !acceptedConditionExists {
+				gwAccessor.AddListenerCondition(
+					string(listener.Name),
+					gatewayapi_v1beta1.ListenerConditionAccepted,
+					metav1.ConditionTrue,
+					gatewayapi_v1beta1.ListenerReasonAccepted,
+					"Listener accepted",
+				)
 			}
 		}
 	}()
