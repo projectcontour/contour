@@ -1,8 +1,7 @@
 # Tracing Support
 
-- [Tracing Support](#tracing-support)
-  - [Overview](#overview)
-  - [tracing-config](#tracing-config)
+- [Overview](#overview)
+- [Tracing-config](#tracing-config)
 
 ## Overview
 
@@ -18,7 +17,7 @@ Contour supports configuring envoy to export data to open, and allows users to c
 - Customize span tags from literal and request headers.
 - Customize whether to include the pod's hostname and namespace.
 
-## tracing-config
+## Tracing-config
 
 In order to use this feature, you must first select and deploy an opentelemetry-collector to receive the tracing data exported by envoy. 
 
