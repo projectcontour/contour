@@ -14,11 +14,11 @@
 package config
 
 import (
-	"github.com/projectcontour/contour/internal/ref"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
