@@ -135,6 +135,11 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		}
 		ports = append(ports, p)
 	}
+	ports = append(ports, corev1.ContainerPort{
+		Name:          "metrics",
+		ContainerPort: int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port),
+		Protocol:      corev1.ProtocolTCP,
+	})
 
 	containers := []corev1.Container{
 		{

@@ -292,6 +292,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		checkContainerHasPort(t, ds, port.ContainerPort)
 	}
+	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port))
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
 	checkDaemonSecurityContext(t, ds)
