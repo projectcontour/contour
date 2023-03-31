@@ -1404,12 +1404,17 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 	for _, match := range matches {
 		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
 		var matchType string
-		if match.Type == nil || *match.Type == gatewayapi_v1beta1.HeaderMatchExact {
+		if match.Type == nil {
 			matchType = HeaderMatchTypeExact
-		} else if *match.Type == gatewayapi_v1beta1.HeaderMatchRegularExpression {
-			matchType = HeaderMatchTypeRegex
 		} else {
-			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+			switch *match.Type {
+			case gatewayapi_v1beta1.HeaderMatchExact:
+				matchType = HeaderMatchTypeExact
+			case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+				matchType = HeaderMatchTypeRegex
+			default:
+				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+			}
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
@@ -1538,11 +1543,11 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 			return nil, false
 		}
 
-		if *match.Type == gatewayapi_v1beta1.PathMatchExact {
-			return &ExactMatchCondition{Path: path}, true
-		} else {
+		if *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
 			return &RegexMatchCondition{Regex: path}, true
 		}
+
+		return &ExactMatchCondition{Path: path}, true
 	}
 
 	routeAccessor.AddCondition(
@@ -1561,12 +1566,17 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 	for _, match := range matches {
 		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
 		var matchType string
-		if match.Type == nil || *match.Type == gatewayapi_v1beta1.HeaderMatchExact {
+		if match.Type == nil {
 			matchType = HeaderMatchTypeExact
-		} else if *match.Type == gatewayapi_v1beta1.HeaderMatchRegularExpression {
-			matchType = HeaderMatchTypeRegex
 		} else {
-			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+			switch *match.Type {
+			case gatewayapi_v1beta1.HeaderMatchExact:
+				matchType = HeaderMatchTypeExact
+			case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+				matchType = HeaderMatchTypeRegex
+			default:
+				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+			}
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),

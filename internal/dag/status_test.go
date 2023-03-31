@@ -4918,7 +4918,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- uknown type to break the test
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1beta1.HTTPHeaderName("foo"),
 									Value: "bar",
 								},
@@ -9229,7 +9229,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1alpha2.GRPCHeaderMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")),
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1alpha2.GRPCHeaderName("foo"),
 									Value: "bar",
 								},
