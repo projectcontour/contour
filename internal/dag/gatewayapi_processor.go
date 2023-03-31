@@ -1575,7 +1575,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 			case gatewayapi_v1beta1.HeaderMatchRegularExpression:
 				matchType = HeaderMatchTypeRegex
 			default:
-				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
 			}
 		}
 
