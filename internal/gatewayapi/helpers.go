@@ -85,7 +85,7 @@ func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []g
 func HTTPHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value string) []gatewayapi_v1beta1.HTTPHeaderMatch {
 	return []gatewayapi_v1beta1.HTTPHeaderMatch{
 		{
-			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
+			Type:  ref.To(matchType),
 			Name:  gatewayapi_v1beta1.HTTPHeaderName(name),
 			Value: value,
 		},
@@ -173,10 +173,10 @@ func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service 
 	}
 }
 
-func GRPCHeaderMatch(name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
+func GRPCHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
 	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
 		{
-			Type:  ref.To(gatewayapi_v1beta1.HeaderMatchExact),
+			Type:  ref.To(matchType),
 			Name:  gatewayapi_v1alpha2.GRPCHeaderName(name),
 			Value: value,
 		},

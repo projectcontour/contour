@@ -4666,6 +4666,48 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
+	run(t, "regular expression match not starting with '/' for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchRegularExpression, "doesnt-start-with-slash"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+						{
+							Type:    string(status.ConditionValidMatches),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonInvalidPathMatch),
+							Message: "Match.Path.Value must start with '/'.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
 	run(t, "prefix path match with consecutive '/' characters for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -4760,6 +4802,53 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
+	run(t, "regular expression path match with consecutive '/' characters for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchRegularExpression),
+								Value: ref.To("//foo/bar"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+						{
+							Type:    string(status.ConditionValidMatches),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonInvalidPathMatch),
+							Message: "Match.Path.Value must not contain consecutive '/' characters.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
 	run(t, "invalid path match type for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -4797,7 +4886,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
+							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression type are supported.",
 						},
 					},
 				},
@@ -4806,48 +4895,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
-	run(t, "regular expression match not yet supported for httproute", testcase{
-		objs: []interface{}{
-			kuardService,
-			&gatewayapi_v1beta1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "default",
-				},
-				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-					},
-					Hostnames: []gatewayapi_v1beta1.Hostname{
-						"test.projectcontour.io",
-					},
-					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchRegularExpression, "/"),
-						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-					}},
-				},
-			}},
-		wantRouteConditions: []*status.RouteStatusUpdate{{
-			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-				{
-					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-					Conditions: []metav1.Condition{
-						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
-						},
-					},
-				},
-			},
-		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
-	})
-
-	run(t, "RegularExpression header match not yet supported for httproute", testcase{
+	run(t, "invalid header match type not supported for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -4870,7 +4918,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- uknown type to break the test
 									Name:  gatewayapi_v1beta1.HTTPHeaderName("foo"),
 									Value: "bar",
 								},
@@ -4891,7 +4939,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
+							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported",
 						},
 					},
 				},
@@ -9157,7 +9205,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
 	})
 
-	run(t, "grpcroute: regular expression header match is not yet supported", testcase{
+	run(t, "grpcroute: invalid header match type is not supported", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
@@ -9181,8 +9229,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1alpha2.GRPCHeaderMatch{
 								{
-									// <---- RegularExpression type not yet supported
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression),
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")),
 									Name:  gatewayapi_v1alpha2.GRPCHeaderName("foo"),
 									Value: "bar",
 								},
@@ -9204,7 +9251,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
+							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported",
 						},
 					},
 				},

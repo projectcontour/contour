@@ -1847,6 +1847,41 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert basic single route with regular expression path match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchRegularExpression, "/bl+og"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							regrexrouteHTTPRoute("/bl+og", service(kuardService))),
+					),
+				},
+			),
+		},
 		// Single host with single route containing multiple prefixes to the same service.
 		"insert basic single route with multiple prefixes, single hostname": {
 			gatewayclass: validClass,
@@ -2622,7 +2657,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-								Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "foo", "bar"),
+								Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1beta1.HeaderMatchRegularExpression, "foo", "^abc$"),
 							}},
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
@@ -2637,7 +2672,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						&Route{
 							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
-								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
+								{Name: "foo", Value: "^abc$", MatchType: "regex", Invert: false},
 							},
 							Clusters: clustersWeight(service(kuardService)),
 						},
@@ -5094,7 +5129,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"GRPCRoute: insert basic single route with single method match and header match": {
+		"GRPCRoute: insert basic single route with single method match and exact header match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -5114,7 +5149,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
 							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
 								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
-								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -5130,6 +5165,49 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							PathMatchCondition: exact("/io.projectcontour/Login"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+							},
+							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with single method match and regular expression header match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1beta1.HeaderMatchRegularExpression, "version", "2+"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "version", Value: "2+", MatchType: "regex", Invert: false},
 							},
 							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
 						}),
@@ -5156,7 +5234,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
 							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
-								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1beta1.HeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -14577,6 +14655,14 @@ func exactrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
 		PathMatchCondition: &ExactMatchCondition{Path: path},
+		Clusters:           clustersWeight(services...),
+	}
+}
+
+func regrexrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: &RegexMatchCondition{Regex: path},
 		Clusters:           clustersWeight(services...),
 	}
 }
