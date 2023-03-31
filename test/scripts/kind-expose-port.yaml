@@ -6,10 +6,10 @@ nodes:
   extraPortMappings:
   - containerPort: 80
     hostPort: 9080
-    listenAddress: "0.0.0.0"
+    listenAddress: "127.0.0.1"
   - containerPort: 443
     hostPort: 9443
-    listenAddress: "0.0.0.0"
+    listenAddress: "127.0.0.1"
   - containerPort: 8002
     hostPort: 8002
-    listenAddress: "0.0.0.0"
+    listenAddress: "127.0.0.1"
