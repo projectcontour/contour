@@ -44,8 +44,10 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Build the current version of Contour.
-VERSION="v$$"
+# Set the image tag to match the current git hash + dirty flag.
+VERSION=$(git describe --exclude="*" --always --dirty)
+
+# Build the image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
 
 # Push the Contour build image into the cluster.

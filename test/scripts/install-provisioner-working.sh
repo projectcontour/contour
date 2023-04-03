@@ -28,8 +28,8 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Set the image tag to match the current Contour version.
-VERSION="v$$"
+# Set the image tag to match the current git hash + dirty flag if repo has modifications.
+VERSION=$(git describe --exclude="*" --always --dirty)
 
 # Build the Contour Provisioner image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
