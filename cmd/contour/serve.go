@@ -126,7 +126,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
-	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices>").EnumsVar(&ctx.disabledFeatures, "extensionservices")
+	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
@@ -873,19 +873,32 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			needLeadershipNotification = append(needLeadershipNotification, gw)
 		}
 
+		// Some features may be disabled.
+		features := map[string]struct{}{
+			"tlsroutes":  {},
+			"grpcroutes": {},
+		}
+		for _, f := range s.ctx.disabledFeatures {
+			delete(features, f)
+		}
+
 		// Create and register the HTTPRoute controller with the manager.
 		if err := controller.RegisterHTTPRouteController(s.log.WithField("context", "httproute-controller"), mgr, eventHandler); err != nil {
 			s.log.WithError(err).Fatal("failed to create httproute-controller")
 		}
 
-		// Create and register the TLSRoute controller with the manager.
-		if err := controller.RegisterTLSRouteController(s.log.WithField("context", "tlsroute-controller"), mgr, eventHandler); err != nil {
-			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
+		// Create and register the TLSRoute controller with the manager, if enabled.
+		if _, enabled := features["tlsroutes"]; enabled {
+			if err := controller.RegisterTLSRouteController(s.log.WithField("context", "tlsroute-controller"), mgr, eventHandler); err != nil {
+				s.log.WithError(err).Fatal("failed to create tlsroute-controller")
+			}
 		}
 
-		// Create and register the GRPCRoute controller with the manager.
-		if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
-			s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+		// Create and register the GRPCRoute controller with the manager, if enabled.
+		if _, enabled := features["grpcroutes"]; enabled {
+			if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
+				s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+			}
 		}
 
 		// Inform on ReferenceGrants.
