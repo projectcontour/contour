@@ -776,7 +776,7 @@ func TestConvertServeContext(t *testing.T) {
 							RequestHeaderName: ":method",
 						},
 					},
-					ExtensionService: contour_api_v1alpha1.NamespacedName{
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
 						Name:      "otel-collector",
 						Namespace: "otel",
 					},
