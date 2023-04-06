@@ -5821,7 +5821,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Literal is a static custom tag value.</p>
+<p>Literal is a static custom tag value.
+Precisely one of Literal, RequestHeaderName must be set.</p>
 </td>
 </tr>
 <tr>
@@ -5835,7 +5836,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>RequestHeaderName indicates which request header
-the label value is obtained from.</p>
+the label value is obtained from.
+Precisely one of Literal, RequestHeaderName must be set.</p>
 </td>
 </tr>
 </tbody>
@@ -8094,7 +8096,8 @@ bool
 <em>(Optional)</em>
 <p>IncludePodDetail defines a flag.
 If it is true, contour will add the pod name and namespace to the span of the trace.
-the default is true.</p>
+the default is true.
+Note: The Envoy pods MUST have the HOSTNAME and CONTOUR_NAMESPACE environment variables set for this to work properly.</p>
 </td>
 </tr>
 <tr>
@@ -8107,7 +8110,7 @@ string
 </td>
 <td>
 <p>ServiceName defines the name for the service.
-contour&rsquo;s default is contour</p>
+contour&rsquo;s default is contour.</p>
 </td>
 </tr>
 <tr>
@@ -8121,7 +8124,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>OverallSampling defines the sampling rate of trace data.
-contour&rsquo;s default is 100</p>
+contour&rsquo;s default is 100.</p>
 </td>
 </tr>
 <tr>
@@ -8134,7 +8137,7 @@ uint32
 </td>
 <td>
 <em>(Optional)</em>
-<p>OverallSampling defines maximum length of the request path
+<p>MaxPathTagLength defines maximum length of the request path
 to extract and include in the HttpUrl tag.
 contour&rsquo;s default is 256.</p>
 </td>

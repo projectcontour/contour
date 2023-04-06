@@ -9,12 +9,12 @@ Envoy has rich support for [distributed tracing][1]，and supports exporting dat
 
 [OpenTelemetry][2] is a CNCF project which is working to become a standard in the space. It was formed as a merger of the OpenTracing and OpenCensus projects.
 
-Contour supports configuring envoy to export data to open, and allows users to customize some configurations.
+Contour supports configuring envoy to export data to OpenTelemetry, and allows users to customize some configurations.
 
 - Custom service name, the default is `contour`.
 - Custom sampling rate, the default is `100`.
 - Custom the maximum length of the request path, the default is `256`.
-- Customize span tags from literal and request headers.
+- Customize span tags from literal or request headers.
 - Customize whether to include the pod's hostname and namespace.
 
 ## Tracing-config

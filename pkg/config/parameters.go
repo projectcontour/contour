@@ -570,19 +570,20 @@ type Tracing struct {
 	// IncludePodDetail defines a flag.
 	// If it is true, contour will add the pod name and namespace to the span of the trace.
 	// the default is true.
+	// Note: The Envoy pods MUST have the HOSTNAME and CONTOUR_NAMESPACE environment variables set for this to work properly.
 	IncludePodDetail *bool `yaml:"includePodDetail,omitempty"`
 
 	// ServiceName defines the name for the service
-	// contour's default is contour
+	// contour's default is contour.
 	ServiceName string `yaml:"serviceName,omitempty"`
 
 	// OverallSampling defines the sampling rate of trace data.
-	// the default value is 100
+	// the default value is 100.
 	OverallSampling float64 `yaml:"overallSampling,omitempty"`
 
-	// OverallSampling defines maximum length of the request path
+	// MaxPathTagLength defines maximum length of the request path
 	// to extract and include in the HttpUrl tag.
-	// the default value is 256
+	// the default value is 256.
 	MaxPathTagLength uint32 `yaml:"maxPathTagLength,omitempty"`
 
 	// CustomTags defines a list of custom tags with unique tag name.
@@ -590,20 +591,22 @@ type Tracing struct {
 
 	// ExtensionService identifies the extension service defining the otel-collector,
 	// formatted as <namespace>/<name>.
-	ExtensionService string `yaml:"extensionService,omitempty"`
+	ExtensionService string `yaml:"extensionService"`
 }
 
 // CustomTag defines custom tags with unique tag name
 // to create tags for the active span.
 type CustomTag struct {
 	// TagName is the unique name of the custom tag.
-	TagName string `yaml:"tagName,omitempty"`
+	TagName string `yaml:"tagName"`
 
 	// Literal is a static custom tag value.
+	// Precisely one of Literal, RequestHeaderName must be set.
 	Literal string `yaml:"literal,omitempty"`
 
 	// RequestHeaderName indicates which request header
 	// the label value is obtained from.
+	// Precisely one of Literal, RequestHeaderName must be set.
 	RequestHeaderName string `yaml:"requestHeaderName,omitempty"`
 }
 

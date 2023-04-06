@@ -383,7 +383,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			OverallSampling:  ref.To(strconv.FormatFloat(ctx.Config.Tracing.OverallSampling, 'f', 1, 64)),
 			MaxPathTagLength: ref.To(ctx.Config.Tracing.MaxPathTagLength),
 			CustomTags:       customTags,
-			ExtensionService: contour_api_v1alpha1.NamespacedName{
+			ExtensionService: &contour_api_v1alpha1.NamespacedName{
 				Name:      namespacedName.Name,
 				Namespace: namespacedName.Namespace,
 			},
