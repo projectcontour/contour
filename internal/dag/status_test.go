@@ -2921,6 +2921,30 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyAuthHTTP := fixture.NewProxy("roots/http").
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "invalid.com",
+				Authorization: &contour_api_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+						Namespace: "auth",
+						Name:      "extension",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
+	run(t, "plain HTTP vhost and client auth is invalid", testcase{
+		objs: []interface{}{fixture.SecretRootsCert, proxyAuthHTTP},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(proxyAuthHTTP): fixture.NewValidCondition().WithGeneration(proxyAuthHTTP.Generation).
+				WithError(contour_api_v1.ConditionTypeAuthError, "AuthNotPermitted", "Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS"),
+		},
+	})
+
 	invalidResponseTimeout := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: fixture.ServiceRootsKuard.Namespace,
