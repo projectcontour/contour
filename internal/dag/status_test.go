@@ -6367,6 +6367,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 0),
 					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -6469,6 +6470,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "", 443),
 					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
 						{
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
@@ -6605,6 +6607,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "nonexistent", 80),
 						Conditions: []metav1.Condition{
+							routeResolvedRefsCondition(),
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 								Status:  contour_api_v1.ConditionFalse,
@@ -6621,6 +6624,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 443),
 						Conditions: []metav1.Condition{
+							routeResolvedRefsCondition(),
 							{
 								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 								Status:  contour_api_v1.ConditionFalse,
@@ -6688,6 +6692,74 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		},
+	})
+
+	run(t, "HTTPRoute: backendrefs still validated when route not accepted", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 81)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("invalid", 8080, 1),
+					}},
+				},
+			},
+		},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+				RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 81),
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+								Status:  contour_api_v1.ConditionFalse,
+								Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
+								Message: "service \"invalid\" is invalid: service \"default/invalid\" not found",
+							},
+							{
+								Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+								Status:  contour_api_v1.ConditionFalse,
+								Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+								Message: "No listeners match this parent ref",
+							},
+						},
+					},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("listener-1", "HTTPRoute", 0),
 	})
 
 	run(t, "More than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
@@ -8828,6 +8900,53 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
 	})
+
+	run(t, "TLSRoute: backendrefs still validated when route not accepted", testcase{
+		gateway: gw,
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							// Wrong port.
+							gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls-passthrough", 444),
+						},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls-passthrough", 444),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
+							Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+							Message: "No listeners match this parent ref",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
+	})
 }
 
 func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
@@ -9513,6 +9632,58 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Message: "At least one Spec.Rules.BackendRef must be specified.",
 						},
 						routeAcceptedGRPCRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
+	})
+
+	run(t, "grpcroute: still validate backendrefs when not accepted", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							// Wrong port.
+							gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 900),
+						},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("invalid", 8080, 1),
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 900),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonBackendNotFound),
+							Message: "service \"invalid\" is invalid: service \"default/invalid\" not found",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+							Message: "No listeners match this parent ref",
+						},
 					},
 				},
 			},
