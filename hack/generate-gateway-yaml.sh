@@ -19,4 +19,3 @@ echo "Generating Gateway API webhook documents..."
 curl -s -o examples/gateway/00-namespace.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/0-namespace.yaml
 curl -s -o examples/gateway/01-admission_webhook.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/admission_webhook.yaml
 curl -s -o examples/gateway/02-certificate_config.yaml https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/${GATEWAY_API_VERSION}/config/webhook/certificate_config.yaml
-run::sed 's/k8s.gcr.io/registry.k8s.io/g' examples/gateway/02-certificate_config.yaml
