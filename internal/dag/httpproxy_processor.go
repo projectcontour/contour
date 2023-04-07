@@ -171,7 +171,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS")
 			return
 		}
+	}
 
+	if proxy.Spec.VirtualHost.TLS == nil && proxy.Spec.VirtualHost.Authorization != nil && len(proxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.Name) > 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeAuthError, "AuthNotPermitted",
+			"Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
+		return
 	}
 
 	var tlsEnabled bool
