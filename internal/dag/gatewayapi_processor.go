@@ -1411,9 +1411,12 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 			case gatewayapi_v1beta1.HeaderMatchExact:
 				matchType = HeaderMatchTypeExact
 			case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+				if err := ValidateRegex(match.Value); err != nil {
+					return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+				}
 				matchType = HeaderMatchTypeRegex
 			default:
-				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 			}
 		}
 
@@ -1533,7 +1536,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}, true
 	}
 
-	if *match.Type == gatewayapi_v1beta1.PathMatchExact || *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
+	if *match.Type == gatewayapi_v1beta1.PathMatchExact {
 		if !strings.HasPrefix(path, "/") {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must start with '/'.")
 			return nil, false
@@ -1543,18 +1546,22 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 			return nil, false
 		}
 
-		if *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
-			return &RegexMatchCondition{Regex: path}, true
-		}
-
 		return &ExactMatchCondition{Path: path}, true
+	}
+
+	if *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
+		if err := ValidateRegex(*match.Value); err != nil {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value is invalid for RegularExpression match type.")
+			return nil, false
+		}
+		return &RegexMatchCondition{Regex: path}, true
 	}
 
 	routeAccessor.AddCondition(
 		gatewayapi_v1beta1.RouteConditionAccepted,
 		metav1.ConditionFalse,
 		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
-		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression type are supported.",
+		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 	)
 	return nil, false
 }
@@ -1573,9 +1580,12 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 			case gatewayapi_v1beta1.HeaderMatchExact:
 				matchType = HeaderMatchTypeExact
 			case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+				if err := ValidateRegex(match.Value); err != nil {
+					return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+				}
 				matchType = HeaderMatchTypeRegex
 			default:
-				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact type and RegularExpressionmatch type are supported")
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 			}
 		}
 
