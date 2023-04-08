@@ -91,7 +91,7 @@ Prefix conditions **must** start with a `/` if they are present.
 Paths defined are matched using exact conditions.
 Up to one exact condition may be present in any condition block. Any condition block can
 either have an exact condition or prefix condition, but not both together. Exact conditions are
-not allowed in root httpproxies or in includes blocks.
+only allowed in route match conditions and not in include match conditions.
 
 Exact conditions **must** start with a `/` if they are present.
 
