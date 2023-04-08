@@ -9117,6 +9117,86 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// Invalid because has exact in include match conditions
+	proxy113 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example113-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example113.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "kuarder",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/kuarder",
+				}},
+			}},
+		},
+	}
+
+	proxy114 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example114-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example114.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "proxy114a",
+				Namespace: s1.Namespace,
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name:      "proxy114b",
+				Namespace: s2.Namespace,
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	proxy114a := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "proxy114a",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/exact",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy114b := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "proxy114b",
+			Namespace: s2.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/prefix",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	cookieRewritePoliciesRoute := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -11799,6 +11879,51 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							routeCluster("/kuarder/withavengeance",
+								&Cluster{
+									Upstream: &Service{
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
+										},
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"invalid httpproxy with exact condition in include match conditions": {
+			objs: []interface{}{proxy113, s1},
+			want: listeners(),
+		},
+		"httpproxy with include, exact and prefix on included proxy": {
+			objs: []interface{}{
+				proxy114, proxy114a, proxy114b, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example114.com",
+							routeClusterExact("/foo/exact",
+								&Cluster{
+									Upstream: &Service{
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
+										},
+									},
+								},
+							),
+							routeCluster("/bar/prefix",
 								&Cluster{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -14738,6 +14863,13 @@ func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	}
 }
 
+func routeClusterExact(exact string, first *Cluster, rest ...*Cluster) *Route {
+	return &Route{
+		PathMatchCondition: exactString(exact),
+		Clusters:           append([]*Cluster{first}, rest...),
+	}
+}
+
 func routeUpgrade(prefix string, first *Service, rest ...*Service) *Route {
 	r := prefixroute(prefix, first, rest...)
 	r.HTTPSUpgrade = true
@@ -14957,6 +15089,9 @@ func listeners(ls ...*Listener) []*Listener {
 
 func prefixString(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchString}
+}
+func exactString(exact string) MatchCondition {
+	return &ExactMatchCondition{Path: exact}
 }
 func prefixSegment(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchSegment}

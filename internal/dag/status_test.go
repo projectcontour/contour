@@ -245,6 +245,109 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// Exact match condition in include match conditions, invalid
+	proxyExactIncludeInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "invalid-parent",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "exact-invalid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "child1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/foo",
+				}},
+			}, {
+				Name: "child2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	// Exact match condition in include match conditions, invalid
+	proxyExactMatchValid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "valid-parent",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "exact-valid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "child1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name: "child2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	proxyExactIncludeChild1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "child1",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/exact",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "foo1",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxyExactIncludeChild2 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "child2",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "foo2",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "proxy has exact match condition in include match conditions, should be invalid", testcase{
+		objs: []interface{}{proxyExactIncludeInvalid, proxyExactMatchValid, proxyExactIncludeChild1, proxyExactIncludeChild2, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyExactIncludeChild1.Name, Namespace: proxyExactIncludeChild1.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeChild1.Generation).
+				Valid(),
+			{Name: proxyExactIncludeChild2.Name, Namespace: proxyExactIncludeChild2.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeChild2.Generation).
+				Valid(),
+			{Name: proxyExactIncludeInvalid.Name, Namespace: proxyExactIncludeInvalid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeInvalid.Generation).
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", `include: exact conditions are not allowed in includes block`),
+			{Name: proxyExactMatchValid.Name, Namespace: proxyExactMatchValid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactMatchValid.Generation).
+				Valid(),
+		},
+	})
+
 	ingressSharedService := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
