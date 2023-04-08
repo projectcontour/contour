@@ -68,6 +68,7 @@ type MatchCondition struct {
 	Prefix string `json:"prefix,omitempty"`
 
 	// Exact defines a exact match for a request.
+	// This field is not allowed in include match conditions.
 	// +optional
 	Exact string `json:"exact,omitempty"`
 
