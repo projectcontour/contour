@@ -1505,13 +1505,16 @@ type matchConditionAggregate struct {
 }
 
 func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
-	mergedPath := ""
+	pathPrefix := ""
 
-	switch mergedPathRef := mergePathMatchConditions(includeConds).(type) {
+	switch pathPrefixRef := mergePathMatchConditions(includeConds).(type) {
 	case *PrefixMatchCondition:
-		mergedPath = mergedPathRef.Prefix
-	case *ExactMatchCondition:
-		mergedPath = mergedPathRef.Path
+		pathPrefix = pathPrefixRef.Prefix
+	default:
+		// This can never happen because include match conditions only have prefix match conditions.
+		// Validations before this step ensure this, so it is safe to mark this validation failed
+		// for anything else except a prefix condition.
+		return true
 	}
 
 	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
@@ -1524,7 +1527,7 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 	// behavior to set up their include tree.
 	// It is unlikely that there is much usage of duplicate non-default include
 	// conditions, so we think this special case is safe.
-	if mergedPath == "/" && len(includeHeaderConds) == 0 && len(includeQueryParamConds) == 0 {
+	if pathPrefix == "/" && len(includeHeaderConds) == 0 && len(includeQueryParamConds) == 0 {
 		return false
 	}
 
@@ -1565,9 +1568,9 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 	// Check if we have seen this path before.
 	// If so, get all the collections of header and query params we
 	// have seen with it.
-	condAggregates, pathSeen := seenConds[mergedPath]
+	condAggregates, pathSeen := seenConds[pathPrefix]
 	if !pathSeen {
-		seenConds[mergedPath] = []matchConditionAggregate{{
+		seenConds[pathPrefix] = []matchConditionAggregate{{
 			headerConds:     includeHeaderConds,
 			queryParamConds: includeQueryParamConds,
 		}}
