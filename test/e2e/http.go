@@ -91,11 +91,33 @@ func OptSetQueryParams(queryParams map[string]string) func(*http.Request) {
 	}
 }
 
+// httpClient returns an *http.Client with its own transport
+// and keep alives disabled.
+func httpClient(opts ...func(*http.Client)) *http.Client {
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
 // RequestUntil repeatedly makes HTTP requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -103,10 +125,7 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
-	client := &http.Client{}
-	for _, opt := range opts.ClientOpts {
-		opt(client)
-	}
+	client := httpClient(opts.ClientOpts...)
 
 	makeRequest := func() (*http.Response, error) {
 		return client.Do(req)
@@ -129,15 +148,17 @@ func OptDontFollowRedirects(c *http.Client) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLMetricsBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLMetricsBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
 		opt(req)
 	}
 
+	client := httpClient(opts.ClientOpts...)
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
@@ -147,15 +168,17 @@ func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) 
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLAdminBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLAdminBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
 		opt(req)
 	}
 
+	client := httpClient(opts.ClientOpts...)
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
@@ -188,7 +211,7 @@ func OptSetSNI(name string) func(*tls.Config) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -196,18 +219,17 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	client := httpClient()
+	transport := client.Transport.(*http.Transport)
+
 	transport.TLSClientConfig = &tls.Config{
 		ServerName: opts.Host,
 		//nolint:gosec
 		InsecureSkipVerify: true,
 	}
+
 	for _, opt := range opts.TLSConfigOpts {
 		opt(transport.TLSClientConfig)
-	}
-
-	client := &http.Client{
-		Transport: transport,
 	}
 
 	makeRequest := func() (*http.Response, error) {
@@ -225,7 +247,7 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 // SecureRequestUntil will retry requests to account for eventual consistency and
 // other ephemeral issues.
 func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
-	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host

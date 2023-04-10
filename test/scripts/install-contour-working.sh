@@ -44,17 +44,10 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Wrap sed to deal with GNU and BSD sed flags.
-run::sed() {
-    local -r vers="$(sed --version < /dev/null 2>&1 | grep -q GNU && echo gnu || echo bsd)"
-    case "$vers" in
-        gnu) sed -i "$@" ;;
-        *) sed -i '' "$@" ;;
-    esac
-}
+# Set the image tag to match the current git hash + dirty flag.
+VERSION=$(git describe --exclude="*" --always --dirty)
 
-# Build the current version of Contour.
-VERSION="v$$"
+# Build the image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
 
 # Push the Contour build image into the cluster.
@@ -73,17 +66,13 @@ for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contou
   # Set image pull policy to IfNotPresent so kubelet will use the
   # images that we loaded onto the node, rather than trying to pull
   # them from the registry.
-  run::sed \
-    "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
-    "$file"
-
   # Set the image tag to $VERSION to unambiguously use the image
   # we built above.
-  run::sed \
+  sed \
+    "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
     "-es|image: ghcr.io/projectcontour/contour:.*$|image: ghcr.io/projectcontour/contour:${VERSION}|" \
-    "$file"
-
-  ${KUBECTL} apply -f "$file"
+    "$file" | \
+  ${KUBECTL} apply -f -
 done
 
 # Wait for Contour and Envoy to report "Ready" status.

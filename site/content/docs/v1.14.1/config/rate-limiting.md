@@ -156,7 +156,7 @@ The `HTTPProxy` API also supports defining global rate limit policies on routes 
 In order to use global rate limiting, you must first select and deploy an external rate limit service (RLS).
 There is an [Envoy rate limit service implementation][2], but any service that implements the [RateLimitService gRPC interface][3] is supported.
 
-### Configuring an exernal RLS with Contour
+### Configuring an external RLS with Contour
 
 Once you have deployed your RLS, you must configure it with Contour.
 

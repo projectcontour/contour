@@ -7,6 +7,15 @@ if command -v ${PROGNAME} >/dev/null; then
 	exec ${PROGNAME} "$@"
 fi
 
+if command -v docker >/dev/null; then
+	exec docker run \
+		--rm \
+		--volume $(pwd):/workdir \
+		--workdir=/workdir \
+		--entrypoint=/usr/local/bin/codespell \
+		ghcr.io/codespell-project/actions-codespell/stable:v1.0 "$@"
+fi
+
 cat <<EOF
 Unable to run codespell. Please check installation instructions:
 	https://github.com/codespell-project/codespell#installation

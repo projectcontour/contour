@@ -670,14 +670,13 @@ func TestGlobalRateLimiting(t *testing.T) {
 					}
 				},
 				func(b *dag.Builder) {
-					b.Processors = []dag.Processor{
-						&dag.HTTPProxyProcessor{
-							FallbackCertificate: &types.NamespacedName{
+					for _, processor := range b.Processors {
+						if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
+							httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
 								Name:      "fallback-cert",
 								Namespace: "default",
-							},
-						},
-						&dag.ListenerProcessor{},
+							}
+						}
 					}
 				},
 			)

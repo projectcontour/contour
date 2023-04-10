@@ -425,6 +425,87 @@ spec:
                     - namespace
                     type: object
                 type: object
+              globalExtAuth:
+                description: GlobalExternalAuthorization allows envoys external authorization
+                  filter to be enabled for all virtual hosts.
+                properties:
+                  authPolicy:
+                    description: AuthPolicy sets a default authorization policy for
+                      client requests. This policy will be used unless overridden
+                      by individual routes.
+                    properties:
+                      context:
+                        additionalProperties:
+                          type: string
+                        description: Context is a set of key/value pairs that are
+                          sent to the authentication server in the check request.
+                          If a context is provided at an enclosing scope, the entries
+                          are merged such that the inner scope overrides matching
+                          keys from the outer scope.
+                        type: object
+                      disabled:
+                        description: When true, this field disables client request
+                          authentication for the scope of the policy.
+                        type: boolean
+                    type: object
+                  extensionRef:
+                    description: ExtensionServiceRef specifies the extension resource
+                      that will authorize client requests.
+                    properties:
+                      apiVersion:
+                        description: API version of the referent. If this field is
+                          not specified, the default "projectcontour.io/v1alpha1"
+                          will be used
+                        minLength: 1
+                        type: string
+                      name:
+                        description: "Name of the referent. \n More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names"
+                        minLength: 1
+                        type: string
+                      namespace:
+                        description: "Namespace of the referent. If this field is
+                          not specifies, the namespace of the resource that targets
+                          the referent will be used. \n More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/"
+                        minLength: 1
+                        type: string
+                    type: object
+                  failOpen:
+                    description: If FailOpen is true, the client request is forwarded
+                      to the upstream service even if the authorization server fails
+                      to respond. This field should not be set in most cases. It is
+                      intended for use only while migrating applications from internal
+                      authorization to Contour external authorization.
+                    type: boolean
+                  responseTimeout:
+                    description: ResponseTimeout configures maximum time to wait for
+                      a check response from the authorization server. Timeout durations
+                      are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                      Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                      The string "infinity" is also a valid input and specifies no
+                      timeout.
+                    pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                    type: string
+                  withRequestBody:
+                    description: WithRequestBody specifies configuration for sending
+                      the client request's body to authorization server.
+                    properties:
+                      allowPartialMessage:
+                        description: If AllowPartialMessage is true, then Envoy will
+                          buffer the body until MaxRequestBytes are reached.
+                        type: boolean
+                      maxRequestBytes:
+                        default: 1024
+                        description: MaxRequestBytes sets the maximum size of message
+                          body ExtAuthz filter will hold in-memory.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      packAsBytes:
+                        description: If PackAsBytes is true, the body sent to Authorization
+                          Server is in raw bytes.
+                        type: boolean
+                    type: object
+                type: object
               health:
                 description: "Health defines the endpoints Contour uses to serve health
                   checks. \n Contour's default is { address: \"0.0.0.0\", port: 8000
@@ -1034,7 +1115,8 @@ spec:
                         description: "Claims lists the names of resources, defined
                           in spec.resourceClaims, that are used by this container.
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
-                          feature gate. \n This field is immutable."
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
                         items:
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
@@ -1847,7 +1929,8 @@ spec:
                                             that are used by this container. \n This
                                             is an alpha field and requires enabling
                                             the DynamicResourceAllocation feature
-                                            gate. \n This field is immutable."
+                                            gate. \n This field is immutable. It can
+                                            only be set for containers."
                                           items:
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
@@ -3008,7 +3091,8 @@ spec:
                         description: "Claims lists the names of resources, defined
                           in spec.resourceClaims, that are used by this container.
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
-                          feature gate. \n This field is immutable."
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
                         items:
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
@@ -3445,6 +3529,87 @@ spec:
                         required:
                         - name
                         - namespace
+                        type: object
+                    type: object
+                  globalExtAuth:
+                    description: GlobalExternalAuthorization allows envoys external
+                      authorization filter to be enabled for all virtual hosts.
+                    properties:
+                      authPolicy:
+                        description: AuthPolicy sets a default authorization policy
+                          for client requests. This policy will be used unless overridden
+                          by individual routes.
+                        properties:
+                          context:
+                            additionalProperties:
+                              type: string
+                            description: Context is a set of key/value pairs that
+                              are sent to the authentication server in the check request.
+                              If a context is provided at an enclosing scope, the
+                              entries are merged such that the inner scope overrides
+                              matching keys from the outer scope.
+                            type: object
+                          disabled:
+                            description: When true, this field disables client request
+                              authentication for the scope of the policy.
+                            type: boolean
+                        type: object
+                      extensionRef:
+                        description: ExtensionServiceRef specifies the extension resource
+                          that will authorize client requests.
+                        properties:
+                          apiVersion:
+                            description: API version of the referent. If this field
+                              is not specified, the default "projectcontour.io/v1alpha1"
+                              will be used
+                            minLength: 1
+                            type: string
+                          name:
+                            description: "Name of the referent. \n More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names"
+                            minLength: 1
+                            type: string
+                          namespace:
+                            description: "Namespace of the referent. If this field
+                              is not specifies, the namespace of the resource that
+                              targets the referent will be used. \n More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/"
+                            minLength: 1
+                            type: string
+                        type: object
+                      failOpen:
+                        description: If FailOpen is true, the client request is forwarded
+                          to the upstream service even if the authorization server
+                          fails to respond. This field should not be set in most cases.
+                          It is intended for use only while migrating applications
+                          from internal authorization to Contour external authorization.
+                        type: boolean
+                      responseTimeout:
+                        description: ResponseTimeout configures maximum time to wait
+                          for a check response from the authorization server. Timeout
+                          durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                          Valid time units are "ns", "us" (or "µs"), "ms", "s", "m",
+                          "h". The string "infinity" is also a valid input and specifies
+                          no timeout.
+                        pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                        type: string
+                      withRequestBody:
+                        description: WithRequestBody specifies configuration for sending
+                          the client request's body to authorization server.
+                        properties:
+                          allowPartialMessage:
+                            description: If AllowPartialMessage is true, then Envoy
+                              will buffer the body until MaxRequestBytes are reached.
+                            type: boolean
+                          maxRequestBytes:
+                            default: 1024
+                            description: MaxRequestBytes sets the maximum size of
+                              message body ExtAuthz filter will hold in-memory.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          packAsBytes:
+                            description: If PackAsBytes is true, the body sent to
+                              Authorization Server is in raw bytes.
+                            type: boolean
                         type: object
                     type: object
                   health:
@@ -4577,6 +4742,54 @@ spec:
                       required:
                       - path
                       type: object
+                    internalRedirectPolicy:
+                      description: The policy to define when to handle redirects responses
+                        internally.
+                      properties:
+                        allowCrossSchemeRedirect:
+                          default: Never
+                          description: AllowCrossSchemeRedirect Allow internal redirect
+                            to follow a target URI with a different scheme than the
+                            value of x-forwarded-proto. SafeOnly allows same scheme
+                            redirect and safe cross scheme redirect, which means if
+                            the downstream scheme is HTTPS, both HTTPS and HTTP redirect
+                            targets are allowed, but if the downstream scheme is HTTP,
+                            only HTTP redirect targets are allowed.
+                          enum:
+                          - Always
+                          - Never
+                          - SafeOnly
+                          type: string
+                        denyRepeatedRouteRedirect:
+                          description: If DenyRepeatedRouteRedirect is true, rejects
+                            redirect targets that are pointing to a route that has
+                            been followed by a previous redirect from the current
+                            route.
+                          type: boolean
+                        maxInternalRedirects:
+                          description: MaxInternalRedirects An internal redirect is
+                            not handled, unless the number of previous internal redirects
+                            that a downstream request has encountered is lower than
+                            this value.
+                          format: int32
+                          type: integer
+                        redirectResponseCodes:
+                          description: RedirectResponseCodes If unspecified, only
+                            302 will be treated as internal redirect. Only 301, 302,
+                            303, 307 and 308 are valid values.
+                          items:
+                            description: RedirectResponseCode is a uint32 type alias
+                              with validation to ensure that the value is valid.
+                            enum:
+                            - 301
+                            - 302
+                            - 303
+                            - 307
+                            - 308
+                            format: int32
+                            type: integer
+                          type: array
+                      type: object
                     jwtVerificationPolicy:
                       description: The policy for verifying JWTs for requests to this
                         route.
@@ -5200,7 +5413,7 @@ spec:
                             type: string
                           requestHeadersPolicy:
                             description: The policy for managing request headers during
-                              proxying. Rewriting the 'Host' header is not supported.
+                              proxying.
                             properties:
                               remove:
                                 description: Remove specifies a list of HTTP header
@@ -5586,7 +5799,7 @@ spec:
                           type: string
                         requestHeadersPolicy:
                           description: The policy for managing request headers during
-                            proxying. Rewriting the 'Host' header is not supported.
+                            proxying.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header
@@ -5807,8 +6020,6 @@ spec:
                               Authorization Server is in raw bytes.
                             type: boolean
                         type: object
-                    required:
-                    - extensionRef
                     type: object
                   corsPolicy:
                     description: Specifies the cross-origin policy to apply to the
@@ -6898,7 +7109,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -7334,7 +7545,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -8768,7 +8979,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -10256,7 +10467,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -14010,7 +14221,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -14289,7 +14500,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -14808,7 +15019,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -15376,7 +15587,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1538
-    gateway.networking.k8s.io/bundle-version: v0.6.1
+    gateway.networking.k8s.io/bundle-version: v0.6.2
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -15955,7 +16166,7 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.1
+          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.2
           imagePullPolicy: Always
           args:
             - -logtostderr
@@ -16075,7 +16286,7 @@ spec:
     spec:
       containers:
         - name: create
-          image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -16109,7 +16320,7 @@ spec:
     spec:
       containers:
         - name: patch
-          image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - patch
@@ -16218,6 +16429,7 @@ rules:
   resources:
   - gatewayclasses
   - gateways
+  - grpcroutes
   - httproutes
   - referencegrants
   - tlsroutes
@@ -16237,6 +16449,7 @@ rules:
   resources:
   - gatewayclasses/status
   - gateways/status
+  - grpcroutes/status
   - httproutes/status
   - tlsroutes/status
   verbs:

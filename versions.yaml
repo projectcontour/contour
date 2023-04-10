@@ -7,7 +7,7 @@ versions:
   - version: main
     supported: "false"
     dependencies:
-      envoy: "1.25.0"
+      envoy: "1.25.4"
       kubernetes:
         - "1.26"
         - "1.25"
@@ -15,9 +15,33 @@ versions:
       gateway-api:
         - v1alpha2
         - v1beta1
-      contour-operator: main
-  - version: v1.24.1
+      contour-operator: "N/A"
+  - version: v1.24.3
     supported: "true"
+    dependencies:
+      envoy: "1.25.4"
+      kubernetes:
+        - "1.26"
+        - "1.25"
+        - "1.24"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.24.2
+    supported: "false"
+    dependencies:
+      envoy: "1.25.2"
+      kubernetes:
+        - "1.26"
+        - "1.25"
+        - "1.24"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.24.1
+    supported: "false"
     dependencies:
       envoy: "1.25.1"
       kubernetes:
@@ -40,8 +64,32 @@ versions:
         - v1alpha2
         - v1beta1
       contour-operator: v1.24.0
-  - version: v1.23.3
+  - version: v1.23.5
     supported: "true"
+    dependencies:
+      envoy: "1.24.5"
+      kubernetes:
+        - "1.25"
+        - "1.24"
+        - "1.23"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.23.4
+    supported: "false"
+    dependencies:
+      envoy: "1.24.3"
+      kubernetes:
+        - "1.25"
+        - "1.24"
+        - "1.23"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.23.3
+    supported: "false"
     dependencies:
       envoy: "1.24.2"
       kubernetes:
@@ -88,8 +136,32 @@ versions:
         - v1alpha2
         - v1beta1
       contour-operator: v1.23.0
-  - version: v1.22.4
+  - version: v1.22.6
     supported: "true"
+    dependencies:
+      envoy: "1.23.7"
+      kubernetes:
+        - "1.24"
+        - "1.23"
+        - "1.22"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.22.5
+    supported: "false"
+    dependencies:
+      envoy: "1.23.5"
+      kubernetes:
+        - "1.24"
+        - "1.23"
+        - "1.22"
+      gateway-api:
+        - v1alpha2
+        - v1beta1
+      contour-operator: "N/A"
+  - version: v1.22.4
+    supported: "false"
     dependencies:
       envoy: "1.23.4"
       kubernetes:

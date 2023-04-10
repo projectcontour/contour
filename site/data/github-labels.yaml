@@ -20,6 +20,11 @@ default:
       name: 'help wanted'
       target: issues
       addedBy: anyone
+    - color: 006b75
+      description: Issue to be worked on during ContribFest @ KubeCon EU 2023.
+      name: 'contribfest'
+      target: issues
+      addedBy: anyone
 
 # Area.
     - color: 0052cc

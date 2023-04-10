@@ -10,13 +10,19 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.25.0][25]         | 1.26, 1.25, 1.24    | [main][50]       | v1alpha2, v1beta1   |
+| main            | [1.25.4][32]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
+| 1.24.3          | [1.25.4][32]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
+| 1.24.2          | [1.25.2][31]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.1          | [1.25.1][28]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.0          | [1.25.0][25]         | 1.26, 1.25, 1.24    | [1.24.0][75]     | v1alpha2, v1beta1   |
+| 1.23.5          | [1.24.5][33]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
+| 1.23.4          | [1.24.3][30]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
 | 1.23.3          | [1.24.2][27]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
 | 1.23.2          | [1.24.1][24]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
 | 1.23.1          | [1.24.1][24]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
 | 1.23.0          | [1.24.0][21]         | 1.25, 1.24, 1.23    | [1.23.0][74]     | v1alpha2, v1beta1   |
+| 1.22.6          | [1.23.7][34]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
+| 1.22.5          | [1.23.5][29]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
 | 1.22.4          | [1.23.4][26]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
 | 1.22.3          | [1.23.3][23]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
 | 1.22.2          | [1.23.3][23]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
@@ -140,6 +146,12 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [26]: https://www.envoyproxy.io/docs/envoy/v1.23.4/version_history/v1.23/v1.23.4
 [27]: https://www.envoyproxy.io/docs/envoy/v1.24.2/version_history/v1.24/v1.24.2
 [28]: https://www.envoyproxy.io/docs/envoy/v1.25.1/version_history/v1.25/v1.25.1
+[29]: https://www.envoyproxy.io/docs/envoy/v1.23.5/version_history/v1.23/v1.23.5
+[30]: https://www.envoyproxy.io/docs/envoy/v1.24.3/version_history/v1.24/v1.24.3
+[31]: https://www.envoyproxy.io/docs/envoy/v1.25.2/version_history/v1.25/v1.25.2
+[32]: https://www.envoyproxy.io/docs/envoy/v1.25.4/version_history/v1.25/v1.25.4
+[33]: https://www.envoyproxy.io/docs/envoy/v1.24.5/version_history/v1.24/v1.24.5
+[34]: https://www.envoyproxy.io/docs/envoy/v1.23.7/version_history/v1.23/v1.23.7
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0

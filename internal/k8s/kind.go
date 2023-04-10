@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -30,7 +31,11 @@ import (
 // objects, so we have to use a type assertion to detect kinds that
 // we care about.
 func KindOf(obj interface{}) string {
-	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
+	object, ok := obj.(runtime.Object)
+	if !ok {
+		return ""
+	}
+	gvk, _, err := scheme.Scheme.ObjectKinds(object)
 	if err != nil {
 		switch obj := obj.(type) {
 		case *v1.Secret:
@@ -45,10 +50,26 @@ func KindOf(obj interface{}) string {
 			return "HTTPProxy"
 		case *gatewayapi_v1beta1.HTTPRoute:
 			return "HTTPRoute"
+		case *gatewayapi_v1alpha2.GRPCRoute:
+			return "GRPCRoute"
+		case *gatewayapi_v1alpha2.TLSRoute:
+			return "TLSRoute"
+		case *gatewayapi_v1beta1.Gateway:
+			return "Gateway"
+		case *gatewayapi_v1beta1.GatewayClass:
+			return "GatewayClass"
+		case *gatewayapi_v1beta1.ReferenceGrant:
+			return "ReferenceGrant"
 		case *contour_api_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"
 		case *v1alpha1.ExtensionService:
 			return "ExtensionService"
+		case *v1alpha1.ContourConfiguration:
+			return "ContourConfiguration"
+		case *v1alpha1.ContourDeployment:
+			return "ContourDeployment"
+		case *v1.Namespace:
+			return "Namespace"
 		case *unstructured.Unstructured:
 			return obj.GetKind()
 		default:

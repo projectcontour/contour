@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
@@ -107,6 +108,17 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
+
+	f.NamespacedTest("httpproxy-internal-redirect-validation", testInternalRedirectValidation)
+	f.NamespacedTest("httpproxy-internal-redirect-policy", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+			})
+			testInternalRedirectPolicy(namespace)
+		})
+	})
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
@@ -483,4 +495,53 @@ descriptors:
 
 		f.NamespacedTest("grpc-web", testGRPCWeb)
 	})
+
+	Context("global external auth", func() {
+		withGlobalExtAuth := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			return func(namespace string) {
+				Context("with global external auth service", func() {
+					BeforeEach(func() {
+						contourConfig.GlobalExternalAuthorization = config.GlobalExternalAuthorization{
+							ExtensionService: fmt.Sprintf("%s/%s", namespace, "testserver"),
+							FailOpen:         false,
+							AuthPolicy: &config.GlobalAuthorizationPolicy{
+								Context: map[string]string{
+									"location": "global_config",
+									"header_2": "message_2",
+								},
+							},
+							ResponseTimeout: "10s",
+						}
+						contourConfiguration.Spec.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
+							ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+								Namespace: namespace,
+								Name:      "testserver",
+							},
+							FailOpen: false,
+							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+								Disabled: false,
+								Context: map[string]string{
+									"location": "global_config",
+									"header_2": "message_2",
+								},
+							},
+							ResponseTimeout: "10s",
+						}
+						require.NoError(f.T(),
+							f.Deployment.EnsureGlobalExternalAuthResources(namespace))
+					})
+					body(namespace)
+				})
+			}
+		}
+
+		f.NamespacedTest("httpproxy-global-ext-auth-non-tls", withGlobalExtAuth(testGlobalExternalAuthVirtualHostNonTLS))
+
+		f.NamespacedTest("httpproxy-global-ext-auth-tls", withGlobalExtAuth(testGlobalExternalAuthTLS))
+
+		f.NamespacedTest("httpproxy-global-ext-auth-non-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthNonTLSAuthDisabled))
+
+		f.NamespacedTest("httpproxy-global-ext-auth-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthTLSAuthDisabled))
+	})
+
 })

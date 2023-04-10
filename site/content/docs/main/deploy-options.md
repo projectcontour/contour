@@ -201,6 +201,12 @@ Next, pass `--envoy-service-http-port=80 --envoy-service-https-port=443` to the 
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][10] as an example.
 
+## Disabling Features
+
+You can run Contour with certain features disabled by passing `--disable-feature` flag to the Contour `serve` command.
+Currently this flag can be used to disable the informer for ExtensionService resources, effectively making the ExtensionService CRD optional in the cluster.
+To do this, use the flag as follows: `--disable-feature=extensionservices`
+
 ## Upgrading Contour/Envoy
 
 At times, it's needed to upgrade Contour, the version of Envoy, or both.
@@ -361,19 +367,19 @@ $ kubectl delete ns contour-operator
 ```
 
 [1]: #running-without-a-kubernetes-loadbalancer
-[2]: {{< param github_url>}}/tree/{{< param version >}}/examples/render/contour.yaml
+[2]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour.yaml
 [3]: #host-networking
 [4]: guides/proxy-proto.md
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[7]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/02-service-envoy.yaml
+[7]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/02-service-envoy.yaml
 [8]: /getting-started
 [9]: config/fundamentals.md
 [10]: guides/deploy-aws-nlb.md
 [11]: redeploy-envoy.md
 [12]: https://github.com/projectcontour/contour-operator
 [13]: https://projectcontour.io/resources/deprecation-policy/
-[14]: {{< param github_url>}}/tree/{{< param version >}}/examples/render/contour-deployment.yaml
+[14]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour-deployment.yaml
 [15]: /resources/upgrading/
 [16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
-[17]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
+[17]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour
 [18]: guides/gateway-api/#next-steps

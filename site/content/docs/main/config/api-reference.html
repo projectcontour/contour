@@ -328,7 +328,8 @@ outer scope.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
 <p>AuthorizationServer configures an external server to authenticate
@@ -354,6 +355,7 @@ ExtensionServiceReference
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
 </td>
 </tr>
@@ -1390,6 +1392,85 @@ int64
 <td>
 <em>(Optional)</em>
 <p>The number of healthy health checks required before a host is marked healthy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>maxInternalRedirects</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxInternalRedirects An internal redirect is not handled, unless the number of previous internal
+redirects that a downstream request has encountered is lower than this value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>redirectResponseCodes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RedirectResponseCode">
+[]RedirectResponseCode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+Only 301, 302, 303, 307 and 308 are valid values.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowCrossSchemeRedirect</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme
+than the value of x-forwarded-proto.
+SafeOnly allows same scheme redirect and safe cross scheme redirect, which means if the downstream
+scheme is HTTPS, both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme
+is HTTP, only HTTP redirect targets are allowed.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>denyRepeatedRouteRedirect</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has
+been followed by a previous redirect from the current route.</p>
 </td>
 </tr>
 </tbody>
@@ -2742,6 +2823,15 @@ service (RLS) for a rate limit decision on each request.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.RedirectResponseCode">RedirectResponseCode
+(<code>uint32</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>)
+</p>
+<p>
+<p>RedirectResponseCode is a uint32 type alias with validation to ensure that the value is valid.</p>
+</p>
 <h3 id="projectcontour.io/v1.RemoteAddressDescriptor">RemoteAddressDescriptor
 </h3>
 <p>
@@ -3468,6 +3558,21 @@ HTTPDirectResponsePolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>internalRedirectPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">
+HTTPInternalRedirectPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy to define when to handle redirects responses internally.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>jwtVerificationPolicy</code>
 <br>
 <em>
@@ -3606,8 +3711,7 @@ HeadersPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The policy for managing request headers during proxying.
-Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
+<p>The policy for managing request headers during proxying.</p>
 </td>
 </tr>
 <tr>
@@ -4625,6 +4729,22 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>globalExtAuth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServer">
+AuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>rateLimitService</code>
 <br>
 <em>
@@ -5299,6 +5419,22 @@ bool
 <em>(Optional)</em>
 <p>EnableExternalNameService allows processing of ExternalNameServices</p>
 <p>Contour&rsquo;s default is false for security reasons.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExtAuth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServer">
+AuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
 </td>
 </tr>
 <tr>

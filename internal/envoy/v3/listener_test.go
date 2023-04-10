@@ -1710,7 +1710,15 @@ func TestAddFilter(t *testing.T) {
 		},
 		"Add to the default filters": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add:     FilterExternalAuthz("test", "", false, timeout.Setting{}, nil),
+			add: FilterExternalAuthz(&dag.ExternalAuthorization{
+				AuthorizationService: &dag.ExtensionCluster{
+					Name: "test",
+					SNI:  "",
+				},
+				AuthorizationFailOpen:              false,
+				AuthorizationResponseTimeout:       timeout.Setting{},
+				AuthorizationServerWithRequestBody: nil,
+			}),
 			want: []*http.HttpFilter{
 				{
 					Name: "compressor",
@@ -1775,7 +1783,15 @@ func TestAddFilter(t *testing.T) {
 						}),
 					},
 				},
-				FilterExternalAuthz("test", "", false, timeout.Setting{}, nil),
+				FilterExternalAuthz(&dag.ExternalAuthorization{
+					AuthorizationService: &dag.ExtensionCluster{
+						Name: "test",
+						SNI:  "",
+					},
+					AuthorizationFailOpen:              false,
+					AuthorizationResponseTimeout:       timeout.Setting{},
+					AuthorizationServerWithRequestBody: nil,
+				}),
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{
@@ -1786,12 +1802,19 @@ func TestAddFilter(t *testing.T) {
 		},
 		"Add to the default filters with AuthorizationServerBufferSettings": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add: FilterExternalAuthz(
-				"test", "ext-auth-server.com", false, timeout.Setting{}, &dag.AuthorizationServerBufferSettings{
+			add: FilterExternalAuthz(&dag.ExternalAuthorization{
+				AuthorizationService: &dag.ExtensionCluster{
+					Name: "test",
+					SNI:  "ext-auth-server.com",
+				},
+				AuthorizationFailOpen:        false,
+				AuthorizationResponseTimeout: timeout.Setting{},
+				AuthorizationServerWithRequestBody: &dag.AuthorizationServerBufferSettings{
 					MaxRequestBytes:     10,
 					AllowPartialMessage: true,
 					PackAsBytes:         true,
-				}),
+				},
+			}),
 			want: []*http.HttpFilter{
 				{
 					Name: "compressor",

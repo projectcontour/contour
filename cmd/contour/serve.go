@@ -126,6 +126,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
+	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices>").EnumsVar(&ctx.disabledFeatures, "extensionservices")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
@@ -334,22 +335,8 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto: *contourConfiguration.Envoy.Listener.UseProxyProto,
-		HTTPListeners: map[string]xdscache_v3.Listener{
-			xdscache_v3.ENVOY_HTTP_LISTENER: {
-				Name:    xdscache_v3.ENVOY_HTTP_LISTENER,
-				Address: contourConfiguration.Envoy.HTTPListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPListener.Port,
-			},
-		},
-		HTTPAccessLog: contourConfiguration.Envoy.HTTPListener.AccessLog,
-		HTTPSListeners: map[string]xdscache_v3.Listener{
-			xdscache_v3.ENVOY_HTTPS_LISTENER: {
-				Name:    xdscache_v3.ENVOY_HTTPS_LISTENER,
-				Address: contourConfiguration.Envoy.HTTPSListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
-			},
-		},
+		UseProxyProto:                *contourConfiguration.Envoy.Listener.UseProxyProto,
+		HTTPAccessLog:                contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
 		AccessLogJSONFields:          contourConfiguration.Envoy.Logging.AccessLogJSONFields,
@@ -368,6 +355,10 @@ func (s *Server) doServe() error {
 	}
 
 	if listenerConfig.RateLimitConfig, err = s.setupRateLimitService(contourConfiguration); err != nil {
+		return err
+	}
+
+	if listenerConfig.GlobalExternalAuthConfig, err = s.setupGlobalExternalAuthentication(contourConfiguration); err != nil {
 		return err
 	}
 
@@ -434,19 +425,24 @@ func (s *Server) doServe() error {
 	}
 
 	builder := s.getDAGBuilder(dagBuilderConfig{
-		ingressClassNames:         ingressClassNames,
-		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
-		gatewayControllerName:     gatewayControllerName,
-		gatewayRef:                gatewayRef,
-		disablePermitInsecure:     *contourConfiguration.HTTPProxy.DisablePermitInsecure,
-		enableExternalNameService: *contourConfiguration.EnableExternalNameService,
-		dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
-		headersPolicy:             contourConfiguration.Policy,
-		clientCert:                clientCert,
-		fallbackCert:              fallbackCert,
-		connectTimeout:            timeouts.ConnectTimeout,
-		client:                    s.mgr.GetClient(),
-		metrics:                   contourMetrics,
+		ingressClassNames:                  ingressClassNames,
+		rootNamespaces:                     contourConfiguration.HTTPProxy.RootNamespaces,
+		gatewayControllerName:              gatewayControllerName,
+		gatewayRef:                         gatewayRef,
+		disablePermitInsecure:              *contourConfiguration.HTTPProxy.DisablePermitInsecure,
+		enableExternalNameService:          *contourConfiguration.EnableExternalNameService,
+		dnsLookupFamily:                    contourConfiguration.Envoy.Cluster.DNSLookupFamily,
+		headersPolicy:                      contourConfiguration.Policy,
+		clientCert:                         clientCert,
+		fallbackCert:                       fallbackCert,
+		connectTimeout:                     timeouts.ConnectTimeout,
+		client:                             s.mgr.GetClient(),
+		metrics:                            contourMetrics,
+		httpAddress:                        contourConfiguration.Envoy.HTTPListener.Address,
+		httpPort:                           contourConfiguration.Envoy.HTTPListener.Port,
+		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
+		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
+		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -469,15 +465,22 @@ func (s *Server) doServe() error {
 		Counter: contourMetrics.EventHandlerOperations,
 	}
 
-	// Inform on default resources.
-	for name, r := range map[string]client.Object{
+	// Start to build informers.
+	informerResources := map[string]client.Object{
 		"httpproxies":               &contour_api_v1.HTTPProxy{},
 		"tlscertificatedelegations": &contour_api_v1.TLSCertificateDelegation{},
 		"extensionservices":         &contour_api_v1alpha1.ExtensionService{},
-		"contourconfigurations":     &contour_api_v1alpha1.ContourConfiguration{},
 		"services":                  &corev1.Service{},
 		"ingresses":                 &networking_v1.Ingress{},
-	} {
+	}
+
+	// Some of the resources are optional and can be disabled, do not create informers for those.
+	for _, feat := range s.ctx.disabledFeatures {
+		delete(informerResources, feat)
+	}
+
+	// Inform on the remaining resources.
+	for name, r := range informerResources {
 		if err := informOnResource(r, eventHandler, s.mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", name).Fatal("failed to create informer")
 		}
@@ -634,6 +637,64 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		EnableXRateLimitHeaders:     ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
 		EnableResourceExhaustedCode: ref.Val(contourConfiguration.RateLimitService.EnableResourceExhaustedCode, false),
 	}, nil
+}
+
+func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExternalAuthConfig, error) {
+	if contourConfiguration.GlobalExternalAuthorization == nil {
+		return nil, nil
+	}
+
+	// ensure the specified ExtensionService exists
+	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
+
+	key := client.ObjectKey{
+		Namespace: contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Namespace,
+		Name:      contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Name,
+	}
+
+	// Using GetAPIReader() here because the manager's caches won't be started yet,
+	// so reads from the manager's client (which uses the caches for reads) will fail.
+	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
+		return nil, fmt.Errorf("error getting global external authorization extension service %s: %v", key, err)
+	}
+
+	// get the response timeout from the ExtensionService
+	var responseTimeout timeout.Setting
+	var err error
+
+	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
+		responseTimeout, err = timeout.Parse(tp.Response)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing global http ext auth extension service %s response timeout: %v", key, err)
+		}
+	}
+
+	var sni string
+	if extensionSvc.Spec.UpstreamValidation != nil {
+		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	}
+
+	var context map[string]string
+	if contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context != nil {
+		context = contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context
+	}
+
+	globalExternalAuthConfig := &xdscache_v3.GlobalExternalAuthConfig{
+		ExtensionService: key,
+		SNI:              sni,
+		Timeout:          responseTimeout,
+		FailOpen:         contourConfiguration.GlobalExternalAuthorization.FailOpen,
+		Context:          context,
+	}
+
+	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {
+		globalExternalAuthConfig.WithRequestBody = &dag.AuthorizationServerBufferSettings{
+			PackAsBytes:         contourConfiguration.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
+			AllowPartialMessage: contourConfiguration.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
+			MaxRequestBytes:     contourConfiguration.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
+		}
+	}
+	return globalExternalAuthConfig, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {
@@ -822,6 +883,11 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
+		// Create and register the GRPCRoute controller with the manager.
+		if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
+			s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+		}
+
 		// Inform on ReferenceGrants.
 		if err := informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
@@ -836,19 +902,24 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 }
 
 type dagBuilderConfig struct {
-	ingressClassNames         []string
-	rootNamespaces            []string
-	gatewayControllerName     string
-	gatewayRef                *types.NamespacedName
-	disablePermitInsecure     bool
-	enableExternalNameService bool
-	dnsLookupFamily           contour_api_v1alpha1.ClusterDNSFamilyType
-	headersPolicy             *contour_api_v1alpha1.PolicyConfig
-	clientCert                *types.NamespacedName
-	fallbackCert              *types.NamespacedName
-	connectTimeout            time.Duration
-	client                    client.Client
-	metrics                   *metrics.Metrics
+	ingressClassNames                  []string
+	rootNamespaces                     []string
+	gatewayControllerName              string
+	gatewayRef                         *types.NamespacedName
+	disablePermitInsecure              bool
+	enableExternalNameService          bool
+	dnsLookupFamily                    contour_api_v1alpha1.ClusterDNSFamilyType
+	headersPolicy                      *contour_api_v1alpha1.PolicyConfig
+	clientCert                         *types.NamespacedName
+	fallbackCert                       *types.NamespacedName
+	connectTimeout                     time.Duration
+	client                             client.Client
+	metrics                            *metrics.Metrics
+	httpAddress                        string
+	httpPort                           int
+	httpsAddress                       string
+	httpsPort                          int
+	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -901,6 +972,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
+		// The listener processor has to go first since it
+		// adds listeners which are roots of the DAG.
+		&dag.ListenerProcessor{
+			HTTPAddress:  dbc.httpAddress,
+			HTTPPort:     dbc.httpPort,
+			HTTPSAddress: dbc.httpsAddress,
+			HTTPSPort:    dbc.httpsPort,
+		},
 		&dag.IngressProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "IngressProcessor"),
@@ -917,14 +996,15 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:    dbc.connectTimeout,
 		},
 		&dag.HTTPProxyProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			DisablePermitInsecure:     dbc.disablePermitInsecure,
-			FallbackCertificate:       dbc.fallbackCert,
-			DNSLookupFamily:           dbc.dnsLookupFamily,
-			ClientCertificate:         dbc.clientCert,
-			RequestHeadersPolicy:      &requestHeadersPolicy,
-			ResponseHeadersPolicy:     &responseHeadersPolicy,
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:   dbc.enableExternalNameService,
+			DisablePermitInsecure:       dbc.disablePermitInsecure,
+			FallbackCertificate:         dbc.fallbackCert,
+			DNSLookupFamily:             dbc.dnsLookupFamily,
+			ClientCertificate:           dbc.clientCert,
+			RequestHeadersPolicy:        &requestHeadersPolicy,
+			ResponseHeadersPolicy:       &responseHeadersPolicy,
+			ConnectTimeout:              dbc.connectTimeout,
+			GlobalExternalAuthorization: dbc.globalExternalAuthorizationService,
 		},
 	}
 
@@ -935,10 +1015,6 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:            dbc.connectTimeout,
 		})
 	}
-
-	// The listener processor has to go last since it looks at
-	// the output of the other processors.
-	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
 
 	var configuredSecretRefs []*types.NamespacedName
 	if dbc.fallbackCert != nil {
@@ -956,6 +1032,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConfiguredSecretRefs:     configuredSecretRefs,
 			FieldLogger:              s.log.WithField("context", "KubernetesCache"),
 			Client:                   dbc.client,
+			Metrics:                  dbc.metrics,
 		},
 		Processors: dagProcessors,
 		Metrics:    dbc.metrics,

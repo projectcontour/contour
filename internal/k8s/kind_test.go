@@ -22,6 +22,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestKindOf(t *testing.T) {
@@ -31,12 +33,21 @@ func TestKindOf(t *testing.T) {
 	}{
 		{"Secret", &v1.Secret{}},
 		{"Service", &v1.Service{}},
+		{"Namespace", &v1.Namespace{}},
 		{"Endpoints", &v1.Endpoints{}},
 		{"Pod", &v1.Pod{}},
 		{"Ingress", &networking_v1.Ingress{}},
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
 		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
 		{"ExtensionService", &v1alpha1.ExtensionService{}},
+		{"ContourConfiguration", &v1alpha1.ContourConfiguration{}},
+		{"ContourDeployment", &v1alpha1.ContourDeployment{}},
+		{"GRPCRoute", &gatewayapi_v1alpha2.GRPCRoute{}},
+		{"HTTPRoute", &gatewayapi_v1beta1.HTTPRoute{}},
+		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},
+		{"Gateway", &gatewayapi_v1beta1.Gateway{}},
+		{"GatewayClass", &gatewayapi_v1beta1.GatewayClass{}},
+		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
 		{"Foo", &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "test.projectcontour.io/v1",

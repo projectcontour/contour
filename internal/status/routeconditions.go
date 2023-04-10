@@ -26,23 +26,16 @@ import (
 )
 
 const (
-	ConditionNotImplemented   gatewayapi_v1beta1.RouteConditionType = "NotImplemented"
 	ConditionValidBackendRefs gatewayapi_v1beta1.RouteConditionType = "ValidBackendRefs"
 	ConditionValidMatches     gatewayapi_v1beta1.RouteConditionType = "ValidMatches"
 )
 
 const (
-	ReasonNotImplemented                gatewayapi_v1beta1.RouteConditionReason = "NotImplemented"
-	ReasonPathMatchType                 gatewayapi_v1beta1.RouteConditionReason = "PathMatchType"
-	ReasonHeaderMatchType               gatewayapi_v1beta1.RouteConditionReason = "HeaderMatchType"
-	ReasonQueryParamMatchType           gatewayapi_v1beta1.RouteConditionReason = "QueryParamMatchType"
-	ReasonHTTPRouteFilterType           gatewayapi_v1beta1.RouteConditionReason = "HTTPRouteFilterType"
 	ReasonDegraded                      gatewayapi_v1beta1.RouteConditionReason = "Degraded"
-	ReasonErrorsExist                   gatewayapi_v1beta1.RouteConditionReason = "ErrorsExist"
 	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1beta1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
 	ReasonInvalidPathMatch              gatewayapi_v1beta1.RouteConditionReason = "InvalidPathMatch"
+	ReasonInvalidMethodMatch            gatewayapi_v1beta1.RouteConditionReason = "InvalidMethodMatch"
 	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
-	ReasonListenersNotReady             gatewayapi_v1beta1.RouteConditionReason = "ListenersNotReady"
 )
 
 // RouteStatusUpdate represents an atomic update to a
@@ -123,6 +116,16 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.
 	return cond
 }
 
+// ConditionExists returns whether or not a condition with the given type exists.
+func (r *RouteParentStatusUpdate) ConditionExists(conditionType gatewayapi_v1beta1.RouteConditionType) bool {
+	for _, c := range r.ConditionsForParentRef(r.parentRef) {
+		if c.Type == string(conditionType) {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
 	for _, rps := range r.RouteParentStatuses {
 		if rps.ParentRef == parentRef {
@@ -174,6 +177,20 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 		route.Status.Parents = newRouteParentStatuses
 
 		return route
+	case *gatewayapi_v1alpha2.GRPCRoute:
+		route := o.DeepCopy()
+
+		// Get all the RouteParentStatuses that are for other Gateways.
+		for _, rps := range o.Status.Parents {
+			if !gatewayapi.IsRefToGateway(rps.ParentRef, r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, rps)
+			}
+		}
+
+		route.Status.Parents = newRouteParentStatuses
+
+		return route
+
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator", obj, r.FullName.Namespace, r.FullName.Name))
 	}

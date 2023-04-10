@@ -19,7 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -231,6 +231,26 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
+func checkContainerHasReadinessPort(t *testing.T, container *corev1.Container, port int32) {
+	t.Helper()
+
+	if container.ReadinessProbe != nil &&
+		container.ReadinessProbe.HTTPGet != nil &&
+		container.ReadinessProbe.HTTPGet.Port.IntVal == port {
+		return
+	}
+	t.Errorf("container has unexpected readiness port %d", port)
+}
+
+func checkDaemonSetHasMetricsPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
+	t.Helper()
+
+	if ds.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] == fmt.Sprint(port) {
+		return
+	}
+	t.Errorf("container has unexpected metrics port %d", port)
+}
+
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -254,7 +274,6 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
 		{Name: "http", ServicePort: 80, ContainerPort: 8080},
 		{Name: "https", ServicePort: 443, ContainerPort: 8443},
-		{Name: "metrics", ServicePort: 8002, ContainerPort: 8002},
 	}
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
@@ -275,12 +294,19 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	// Change the Envoy log level to test --log-level debug.
 	cntr.Spec.EnvoyLogLevel = v1alpha1.DebugLog
+	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
+		Envoy: &v1alpha1.EnvoyConfig{
+			Metrics: &v1alpha1.MetricsConfig{
+				Port: int(objects.EnvoyMetricsPort),
+			},
+		},
+	}
 
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
-	assert.Len(t, container.Ports, 3)
+	checkContainerHasReadinessPort(t, container, 8002)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)
@@ -293,11 +319,14 @@ func TestDesiredDaemonSet(t *testing.T) {
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		checkContainerHasPort(t, ds, port.ContainerPort)
 	}
+	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port))
+
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
 	checkDaemonSecurityContext(t, ds)
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
+	checkDaemonSetHasMetricsPort(t, ds, objects.EnvoyMetricsPort)
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
@@ -340,4 +369,27 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	checkDaemonSetHasNodeSelector(t, ds, selectors)
 	checkDaemonSetHasTolerations(t, ds, tolerations)
+}
+
+func TestEnvoyCustomPorts(t *testing.T) {
+	name := "envoy-runtime-ports"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
+		Envoy: &v1alpha1.EnvoyConfig{
+			Health: &v1alpha1.HealthConfig{
+				Port: 8020,
+			},
+			Metrics: &v1alpha1.MetricsConfig{
+				Port: 9090,
+			},
+		},
+	}
+
+	testContourImage := "ghcr.io/projectcontour/contour:test"
+	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
+	checkDaemonSetHasMetricsPort(t, ds, 9090)
+
+	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
+	checkContainerHasReadinessPort(t, container, 8020)
 }

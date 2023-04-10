@@ -169,10 +169,6 @@ func TestDesiredEnvoyService(t *testing.T) {
 			ServicePort: EnvoyServiceHTTPSPort,
 			NodePort:    30444,
 		},
-		{
-			Name:        "metrics",
-			ServicePort: objects.EnvoyMetricsPort,
-		},
 	}
 
 	svc := DesiredEnvoyService(cntr)
@@ -180,7 +176,6 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPPort)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPSPort)
-	checkServiceHasPort(t, svc, objects.EnvoyMetricsPort)
 	checkServiceHasNodeport(t, svc, 30081)
 	checkServiceHasNodeport(t, svc, 30444)
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {

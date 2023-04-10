@@ -934,6 +934,39 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert gateway-api GRPCRoute, no reference to Gateway": {
+			obj: &gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "grpcroute",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert gateway-api GRPCRoute, has reference to Gateway": {
+			pre: []interface{}{
+				&gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "grpcroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
 		"insert gateway-api ReferenceGrant": {
 			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1435,6 +1468,61 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api GRPCRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "Gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "grpcroute",
+						Namespace: "default",
+					},
+				}),
+			obj: &gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "grpcroute",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"remove gateway-api GRPCRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "grpcroute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "grpcroute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),

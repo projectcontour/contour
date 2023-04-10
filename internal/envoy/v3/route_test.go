@@ -20,6 +20,8 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
+	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -580,6 +582,96 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(1),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+		"multiple service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 80,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 20,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s2.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(20),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s2.com"},
+							}, {
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(80),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+
 		"mirror": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
@@ -665,6 +757,86 @@ func TestRouteRoute(t *testing.T) {
 							Regex: "^/prefix/*",
 						},
 						Substitution: "/",
+					},
+				},
+			},
+		},
+		"internal redirect - safe only": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:      5,
+					RedirectResponseCodes:     []uint32{307},
+					DenyRepeatedRouteRedirect: true,
+					AllowCrossSchemeRedirect:  dag.InternalRedirectCrossSchemeSafeOnly,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects:  wrapperspb.UInt32(5),
+						RedirectResponseCodes: []uint32{307},
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+							},
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+						},
+						AllowCrossSchemeRedirect: true,
+					},
+				},
+			},
+		},
+		"internal redirect - always": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:     5,
+					AllowCrossSchemeRedirect: dag.InternalRedirectCrossSchemeAlways,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects:     wrapperspb.UInt32(5),
+						Predicates:               []*envoy_core_v3.TypedExtensionConfig{},
+						AllowCrossSchemeRedirect: true,
+					},
+				},
+			},
+		},
+		"internal redirect without max": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:      0,
+					DenyRepeatedRouteRedirect: true,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects: nil,
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+						},
+						AllowCrossSchemeRedirect: false,
 					},
 				},
 			},
@@ -1319,6 +1491,32 @@ func TestRouteMatch(t *testing.T) {
 			route: &dag.Route{
 				PathMatchCondition: &dag.PrefixMatchCondition{
 					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment trailing slash": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo/",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment multiple trailing slashes": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo///",
 					PrefixMatchType: dag.PrefixMatchSegment,
 				},
 			},

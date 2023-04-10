@@ -1,0 +1,42 @@
+# httpproxy-header-rewrite.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: header-rewrite
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: rewrite.bar.com
+  routes:
+    - conditions:
+      - prefix: /rewrite      
+      requestHeadersPolicy:
+        set:
+          - name: Host
+            value: route-host
+      services:
+        - name: s1
+          port: 80
+          requestHeadersPolicy:
+            set:
+              - name: Host
+                value: s1-host
+        - name: s2
+          port: 80
+          requestHeadersPolicy:
+            set:
+              - name: Host
+                value: s2-host           
+    - conditions:
+      - prefix: /      
+      requestHeadersPolicy:
+        set:
+          - name: Host
+            value: route-host
+      services:
+        - name: s1
+          port: 80
+          requestHeadersPolicy:
+            set:
+              - name: Host
+                value: s1-host          

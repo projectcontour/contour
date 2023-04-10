@@ -59,10 +59,13 @@ type DAG struct {
 	// StatusCache holds a cache of status updates to send.
 	StatusCache status.Cache
 
-	Listeners          []*Listener
-	VirtualHosts       map[string]*VirtualHost
-	SecureVirtualHosts map[string]*SecureVirtualHost
-	ExtensionClusters  []*ExtensionCluster
+	Listeners         map[string]*Listener
+	ExtensionClusters []*ExtensionCluster
+
+	// Set this to true if Contour is configured with a Gateway
+	// and Listeners are derived from the Gateway's Listeners, or
+	// false otherwise.
+	HasDynamicListeners bool
 }
 
 type MatchCondition interface {
@@ -229,6 +232,42 @@ type Redirect struct {
 	PathRewritePolicy *PathRewritePolicy
 }
 
+const (
+	// InternalRedirectCrossSchemeNever deny following a redirect if the schemes are different.
+	InternalRedirectCrossSchemeNever = "never"
+
+	// InternalRedirectCrossSchemeSafeOnly allow following a redirect if the schemes
+	// are the same, or if it is considered safe, which means if the downstream scheme is HTTPS,
+	// both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme is HTTP,
+	// only HTTP redirect targets are allowed.
+	InternalRedirectCrossSchemeSafeOnly = "safeOnly"
+
+	// InternalRedirectCrossSchemeAlways allow following a redirect whatever the schemes.
+	InternalRedirectCrossSchemeAlways = "always"
+)
+
+// InternalRedirectPolicy defines if envoy should handle redirect
+// response internally instead of sending it downstream.
+// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-internalredirectpolicy
+type InternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number
+	// of previous internal redirects that a downstream request has
+	// encountered is lower than this value
+	MaxInternalRedirects uint32
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values
+	RedirectResponseCodes []uint32
+
+	// AllowCrossSchemeRedirect specifies how to handle a redirect when the downstream url
+	// and the redirect target url have different scheme.
+	AllowCrossSchemeRedirect string
+
+	// If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has
+	// been followed by a previous redirect from the current route.
+	DenyRepeatedRouteRedirect bool
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
@@ -308,6 +347,10 @@ type Route struct {
 	// JWTProvider names a JWT provider defined on the virtual
 	// host to be used to validate JWTs on requests to this route.
 	JWTProvider string
+
+	// InternalRedirectPolicy defines if envoy should handle redirect
+	// response internally instead of sending it downstream.
+	InternalRedirectPolicy *InternalRedirectPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -680,24 +723,9 @@ type SecureVirtualHost struct {
 	// DownstreamValidation defines how to verify the client's certificate.
 	DownstreamValidation *PeerValidationContext
 
-	// AuthorizationService points to the extension that client
-	// requests are forwarded to for authorization. If nil, no
-	// authorization is enabled for this host.
-	AuthorizationService *ExtensionCluster
-
-	// AuthorizationResponseTimeout sets how long the proxy should wait
-	// for authorization server responses.
-	AuthorizationResponseTimeout timeout.Setting
-
-	// AuthorizationFailOpen sets whether authorization server
-	// failures should cause the client request to also fail. The
-	// only reason to set this to `true` is when you are migrating
-	// from internal to external authorization.
-	AuthorizationFailOpen bool
-
-	// AuthorizationServerWithRequestBody specifies configuration
-	// for buffering request data sent to AuthorizationServer
-	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+	// ExternalAuthorization contains the configuration for enabling
+	// the ExtAuthz filter.
+	ExternalAuthorization *ExternalAuthorization
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
@@ -732,6 +760,29 @@ type JWTRule struct {
 	PathMatchCondition    MatchCondition
 	HeaderMatchConditions []HeaderMatchCondition
 	ProviderName          string
+}
+
+// ExternalAuthorization contains the configuration for enabling
+// the ExtAuthz filter.
+type ExternalAuthorization struct {
+	// AuthorizationService points to the extension that client
+	// requests are forwarded to for authorization. If nil, no
+	// authorization is enabled for this host.
+	AuthorizationService *ExtensionCluster
+
+	// AuthorizationResponseTimeout sets how long the proxy should wait
+	// for authorization server responses.
+	AuthorizationResponseTimeout timeout.Setting
+
+	// AuthorizationFailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	AuthorizationFailOpen bool
+
+	// AuthorizationServerWithRequestBody specifies configuration
+	// for buffering request data sent to AuthorizationServer
+	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client
@@ -774,8 +825,25 @@ type Listener struct {
 	// Port is the TCP port to listen on.
 	Port int
 
+	// RouteConfigName is the Listener name component to use when
+	// constructing RouteConfig names. If empty, the Listener
+	// name will be used.
+	RouteConfigName string
+
+	// FallbackCertRouteConfigName is the name to use for the fallback
+	// cert route config, if one is generated. If empty, the
+	// Listener name will be used.
+	FallbackCertRouteConfigName string
+
+	// Store virtual hosts/secure virtual hosts in both
+	// a slice and a map. The map makes gets more efficient
+	// while building the DAG, but ultimately we need to
+	// produce sorted output which requires the slice.
 	VirtualHosts       []*VirtualHost
 	SecureVirtualHosts []*SecureVirtualHost
+
+	vhostsByName  map[string]*VirtualHost
+	svhostsByName map[string]*SecureVirtualHost
 }
 
 // TCPProxy represents a cluster of TCP endpoints.

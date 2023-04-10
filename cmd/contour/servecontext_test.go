@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/tsaarni/certyaml"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -481,8 +482,9 @@ func TestConvertServeContext(t *testing.T) {
 				DisablePermitInsecure: ref.To(false),
 				FallbackCertificate:   nil,
 			},
-			EnableExternalNameService: ref.To(false),
-			RateLimitService:          nil,
+			EnableExternalNameService:   ref.To(false),
+			RateLimitService:            nil,
+			GlobalExternalAuthorization: nil,
 			Policy: &contour_api_v1alpha1.PolicyConfig{
 				RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
 				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
@@ -696,6 +698,46 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+				return cfg
+			},
+		},
+		"global external authorization": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.GlobalExternalAuthorization = config.GlobalExternalAuthorization{
+					ExtensionService: "extauthns/extauthtext",
+					FailOpen:         true,
+					AuthPolicy: &config.GlobalAuthorizationPolicy{
+						Context: map[string]string{
+							"foo": "bar",
+						},
+					},
+					WithRequestBody: &config.GlobalAuthorizationServerBufferSettings{
+						MaxRequestBytes:     512,
+						PackAsBytes:         true,
+						AllowPartialMessage: true,
+					},
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+						Name:      "extauthtext",
+						Namespace: "extauthns",
+					},
+					FailOpen: true,
+					AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+						Context: map[string]string{
+							"foo": "bar",
+						},
+						Disabled: false,
+					},
+					WithRequestBody: &contour_api_v1.AuthorizationServerBufferSettings{
+						MaxRequestBytes:     512,
+						PackAsBytes:         true,
+						AllowPartialMessage: true,
+					},
+				}
 				return cfg
 			},
 		},

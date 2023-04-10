@@ -194,8 +194,8 @@ type ExtensionServiceReference struct {
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
-	// +required
-	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.
@@ -524,6 +524,10 @@ type Route struct {
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
 
+	// The policy to define when to handle redirects responses internally.
+	// +optional
+	InternalRedirectPolicy *HTTPInternalRedirectPolicy `json:"internalRedirectPolicy,omitempty"`
+
 	// The policy for verifying JWTs for requests to this route.
 	// +optional
 	JWTVerificationPolicy *JWTVerificationPolicy `json:"jwtVerificationPolicy,omitempty"`
@@ -614,6 +618,37 @@ type HTTPRequestRedirectPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^\/.*$`
 	Prefix *string `json:"prefix,omitempty"`
+}
+
+// RedirectResponseCode is a uint32 type alias with validation to ensure that the value is valid.
+// +kubebuilder:validation:Enum=301;302;303;307;308
+type RedirectResponseCode uint32
+
+type HTTPInternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number of previous internal
+	// redirects that a downstream request has encountered is lower than this value.
+	// +optional
+	MaxInternalRedirects uint32 `json:"maxInternalRedirects,omitempty"`
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values.
+	// +optional
+	RedirectResponseCodes []RedirectResponseCode `json:"redirectResponseCodes,omitempty"`
+
+	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme
+	// than the value of x-forwarded-proto.
+	// SafeOnly allows same scheme redirect and safe cross scheme redirect, which means if the downstream
+	// scheme is HTTPS, both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme
+	// is HTTP, only HTTP redirect targets are allowed.
+	// +kubebuilder:validation:Enum=Always;Never;SafeOnly
+	// +kubebuilder:default=Never
+	// +optional
+	AllowCrossSchemeRedirect string `json:"allowCrossSchemeRedirect,omitempty"`
+
+	// If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has
+	// been followed by a previous redirect from the current route.
+	// +optional
+	DenyRepeatedRouteRedirect bool `json:"denyRepeatedRouteRedirect,omitempty"`
 }
 
 type CookieRewritePolicy struct {
@@ -882,7 +917,6 @@ type Service struct {
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
 	// The policy for managing request headers during proxying.
-	// Rewriting the 'Host' header is not supported.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.

@@ -476,6 +476,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	basicGRPCRoute := &gatewayapi_v1alpha2.GRPCRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			},
+			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+				Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+					Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+				}},
+				BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs         []interface{}
 		gatewayclass *gatewayapi_v1beta1.GatewayClass
@@ -492,7 +511,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -526,7 +545,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -595,7 +614,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
 					),
@@ -693,7 +712,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -731,7 +750,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -798,7 +817,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -1032,7 +1051,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("another.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1141,7 +1160,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost(
 							"test.projectcontour.io",
@@ -1199,7 +1218,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1233,7 +1252,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -1267,7 +1286,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("*.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -1380,7 +1399,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1419,7 +1438,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1459,7 +1478,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1514,7 +1533,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name:         HTTP_LISTENER_NAME,
-				Port:         80,
+				Port:         8080,
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1568,7 +1587,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name:         HTTP_LISTENER_NAME,
-				Port:         80,
+				Port:         8080,
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1621,7 +1640,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1676,7 +1695,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1731,7 +1750,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1787,7 +1806,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1820,7 +1839,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -1871,7 +1890,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -1913,7 +1932,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -1958,7 +1977,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2008,7 +2027,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2021,7 +2040,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2119,7 +2138,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2170,7 +2189,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2460,7 +2479,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2473,7 +2492,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2513,7 +2532,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2567,7 +2586,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/blog"),
@@ -2613,7 +2632,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2660,7 +2679,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2707,7 +2726,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2758,7 +2777,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2810,7 +2829,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2877,7 +2896,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2948,7 +2967,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3024,7 +3043,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3107,7 +3126,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3180,7 +3199,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3230,7 +3249,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3292,7 +3311,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3349,7 +3368,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3394,7 +3413,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3447,7 +3466,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3507,7 +3526,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3557,7 +3576,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3607,7 +3626,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3655,7 +3674,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
 				},
@@ -3698,7 +3717,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
 						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
@@ -3742,7 +3761,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3791,7 +3810,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3840,7 +3859,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3886,7 +3905,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition:   prefixSegment("/prefix"),
@@ -3943,7 +3962,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3989,7 +4008,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4054,7 +4073,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4115,7 +4134,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRouteService("/", http.StatusInternalServerError, &Service{
 							Weighted: WeightedService{
@@ -4154,7 +4173,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4241,7 +4260,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4306,7 +4325,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4545,7 +4564,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4603,7 +4622,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4675,7 +4694,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4741,7 +4760,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4790,7 +4809,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4839,7 +4858,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4882,7 +4901,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("gateway.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -4917,13 +4936,656 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("http.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
 					),
 				},
 			),
+		},
+		"GRPCRoute: insert basic single grpc route, single hostname": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				basicGRPCRoute,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+					),
+				},
+			),
+		},
+		"GRPCRotue: insert basic single route, single hostname, gateway same namespace selector, route in different namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPSameNamespace,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "different-ns-than-gateway",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"GRPCRoute: route does not include the gateway in its list of parent refs": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway"),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"GRPCRoute: gateway with HTTP and HTTPS listeners, each route selects a different listener": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAndHTTPS,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				blogService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basictls",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("blogsvc", 80, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 8443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "test.projectcontour.io",
+								Routes: routes(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(blogService, "h2"))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with single method match and header match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+							},
+							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with no method match and single header match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Headers: gatewayapi.GRPCHeaderMatch("version", "2"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+							},
+							Clusters: clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: insert basic single route with no matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches:     []gatewayapi_v1alpha2.GRPCRouteMatch{{}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+						}),
+					),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with request header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
+									},
+								},
+								{
+
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Remove:      []string{"X-Remove"}, // Verify the header key is canonicalized.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "foo-bar"},
+										},
+										Remove: []string{"x-remove"},
+									},
+								},
+								{
+									// Second instance of filter should be ignored.
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "custom-header-add", Value: "ignored"},
+										},
+										Remove: []string{"x-remove-ignored"},
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							ResponseHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+									"Host":              "bar.com", // Host header isn't significant in a response so it can be set.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Remove: []string{"X-Remove"}, // Verify the header key is canonicalized.
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: Route rule with invalid request header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								}},
+								BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+								Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+										Set: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+										},
+										Add: []gatewayapi_v1alpha2.HTTPHeader{
+											{Name: "!invalid-header-add", Value: "foo-bar"},
+										},
+									},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							Clusters:           clustersWeight(grpcService(kuardService, "h2c")),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set:         map[string]string{"Custom-Header-Set": "foo-bar"},
+								Add:         map[string]string{}, // Invalid header should not be set.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: HTTP backend with invalid response header modifier": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+								}},
+								BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
+									{
+										BackendRef: gatewayapi_v1alpha2.BackendRef{
+											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
+											Weight:                 ref.To(int32(1)),
+										},
+										Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+											Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
+											ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
+												Set: []gatewayapi_v1alpha2.HTTPHeader{
+													{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+												},
+												Add: []gatewayapi_v1alpha2.HTTPHeader{
+													{Name: "!invalid-header-add", Value: "foo-bar"},
+												},
+											},
+										}},
+									},
+								},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: exact("/io.projectcontour/Login"),
+							Clusters:           clusterHeaders(nil, nil, nil, "", map[string]string{"Custom-Header-Set": "foo-bar", "Host": "bar.com"}, map[string]string{}, nil, grpcService(kuardService, "h2c")),
+						},
+					)),
+				},
+			),
+		},
+		"GRPCRoute: rule with request mirror filter": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+								Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
+				},
+			),
+		},
+
+		"GRPCRoute: references a backend in a different namespace, with valid ReferenceGrant": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
+										Kind:      ref.To(gatewayapi_v1alpha2.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      ref.To(gatewayapi_v1alpha2.PortNumber(8080)),
+									},
+									Weight: ref.To(int32(1)),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1beta1.ReferenceGrant{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
+						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "GRPCRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferenceGrantTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Name:         HTTP_LISTENER_NAME,
+				Port:         8080,
+				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")))),
+			}),
 		},
 	}
 
@@ -4937,10 +5599,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					FieldLogger:  fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -8675,7 +9337,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8696,7 +9358,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8723,7 +9385,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
@@ -8759,7 +9421,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8774,7 +9436,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8789,7 +9451,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8804,7 +9466,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8833,7 +9495,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8856,14 +9518,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("kuard.example.com", sec1, prefixroute("/", service(s1))),
 					),
@@ -8879,14 +9541,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("kuard.example.com", sec3, prefixroute("/", service(s1))),
 					),
@@ -8909,7 +9571,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 					),
@@ -8932,7 +9594,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
@@ -8953,7 +9615,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("a.example.com", prefixroute("/", service(s1))),
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
@@ -8969,7 +9631,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("a.example.com", prefixroute("/", service(s1))),
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
@@ -8986,14 +9648,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("a.example.com", prefixroute("/", service(s1))),
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
@@ -9009,14 +9671,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("a.example.com", prefixroute("/", service(s1))),
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
@@ -9031,7 +9693,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
@@ -9049,7 +9711,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
@@ -9066,7 +9728,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
@@ -9091,7 +9753,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1,
 							prefixroute("/", service(s1)),
@@ -9126,7 +9788,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
@@ -9140,13 +9802,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
 					),
@@ -9161,13 +9823,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
 					),
@@ -9181,13 +9843,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -9210,13 +9872,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -9239,13 +9901,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
@@ -9259,7 +9921,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2))),
 					),
@@ -9273,7 +9935,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*.projectcontour.io",
 							&Route{
@@ -9294,7 +9956,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s1), service(s2))),
 					),
@@ -9310,13 +9972,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -9340,7 +10002,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", service(s1)),
@@ -9358,7 +10020,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9376,7 +10038,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9401,7 +10063,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9422,7 +10084,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9443,7 +10105,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9462,7 +10124,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9483,7 +10145,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9504,7 +10166,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9529,7 +10191,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9552,7 +10214,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9575,7 +10237,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9598,7 +10260,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -9621,7 +10283,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
 							PathMatchCondition: regex("/[^/]+/invoices(/.*|/?)"),
@@ -9646,7 +10308,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							&Route{
@@ -9691,7 +10353,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
 						virtualhost("*.example.com", &Route{
@@ -9716,7 +10378,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeUpgrade("/", service(s13a)),
@@ -9725,7 +10387,7 @@ func TestDAGInsert(t *testing.T) {
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("example.com", sec13,
 							routeUpgrade("/", service(s13a)),
@@ -9742,7 +10404,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
@@ -9767,7 +10429,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
@@ -9792,7 +10454,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
@@ -9818,7 +10480,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
@@ -9846,7 +10508,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/a", &Cluster{
@@ -9885,7 +10547,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/a",
@@ -9925,7 +10587,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s1))),
 					),
@@ -9939,7 +10601,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s1))),
 					),
@@ -9970,7 +10632,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/finance"),
@@ -9989,7 +10651,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/kuard"),
@@ -10013,7 +10675,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -10039,7 +10701,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -10065,7 +10727,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/kuard"),
@@ -10099,7 +10761,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/", &Cluster{
@@ -10120,7 +10782,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							withMirror(prefixroute("/", service(s1)), service(s2)),
@@ -10142,7 +10804,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
@@ -10159,7 +10821,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
@@ -10177,7 +10839,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeProtocol("/", protocol, service(s1))),
@@ -10193,13 +10855,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
@@ -10213,7 +10875,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10247,7 +10909,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10286,7 +10948,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
@@ -10321,7 +10983,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10355,13 +11017,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10386,7 +11048,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10414,13 +11076,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10445,13 +11107,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10477,13 +11139,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10509,13 +11171,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10542,13 +11204,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10580,13 +11242,13 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10628,7 +11290,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10649,7 +11311,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10671,7 +11333,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10692,7 +11354,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -10719,7 +11381,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10760,7 +11422,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10803,7 +11465,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10872,7 +11534,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10913,7 +11575,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10954,7 +11616,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -10995,7 +11657,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -11036,7 +11698,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/",
@@ -11083,7 +11745,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						// route on root proxy is served, includes is ignored since condition is invalid
 						virtualhost("example.com", prefixroute("/", service(s1))),
@@ -11098,7 +11760,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							// route on root proxy is served
@@ -11123,7 +11785,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11147,7 +11809,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com",
 							routeUpgrade("/", service(s1)),
@@ -11156,7 +11818,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11179,7 +11841,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com",
 							routeCluster("/",
@@ -11200,7 +11862,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11224,7 +11886,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeHeaders("/", map[string]string{
@@ -11283,14 +11945,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11342,7 +12004,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						// not upgraded because the route is permitInsecure: true
 						virtualhost("example.com", prefixroute("/", service(s9))),
@@ -11350,7 +12012,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11401,7 +12063,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						// not upgraded because the route is permitInsecure: true
 						virtualhost("example.com", prefixroute("/", service(s9))),
@@ -11409,7 +12071,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11453,7 +12115,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11496,7 +12158,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11548,7 +12210,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11604,7 +12266,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11643,7 +12305,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11701,7 +12363,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -11747,7 +12409,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2a))),
 					),
@@ -11763,7 +12425,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
@@ -11791,14 +12453,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("kuard.example.com", sec4, prefixroute("/", service(s1))),
 					),
@@ -11814,7 +12476,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -11852,7 +12514,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -11884,7 +12546,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -11921,7 +12583,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -11946,7 +12608,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -11976,7 +12638,32 @@ func TestDAGInsert(t *testing.T) {
 				proxyReplaceHostHeaderService,
 				s9,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s9.Name,
+										ServiceNamespace: s9.Namespace,
+										ServicePort:      s9.Spec.Ports[0],
+										HealthPort:       s9.Spec.Ports[0],
+									},
+								},
+								SNI: "bar.com",
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+							}},
+						}),
+					),
+				},
+			),
 		},
 		"insert proxy with replace header policy - service - host header - externalName": {
 			objs: []interface{}{
@@ -11984,7 +12671,33 @@ func TestDAGInsert(t *testing.T) {
 				s14,
 			},
 			enableExternalNameSvc: true,
-			want:                  listeners(),
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+										HealthPort:       s14.Spec.Ports[0],
+									},
+								},
+								SNI: "bar.com",
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+							}},
+						}),
+					),
+				},
+			),
 		},
 		"insert proxy with response header policy - route - host header": {
 			objs: []interface{}{
@@ -12008,7 +12721,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12036,7 +12749,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12059,7 +12772,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12082,7 +12795,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/foo"),
@@ -12114,7 +12827,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/foo"),
@@ -12177,7 +12890,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12206,7 +12919,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12237,7 +12950,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12270,7 +12983,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12303,7 +13016,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathMatchCondition: prefixString("/"),
@@ -12347,14 +13060,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12444,14 +13157,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12510,14 +13223,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12648,7 +13361,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 						virtualhost("projectcontour.io", routeUpgrade("/", service(s9))),
@@ -12656,7 +13369,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12711,14 +13424,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12765,14 +13478,14 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTP_LISTENER_NAME,
-					Port: 80,
+					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", routeUpgrade("/", service(s9))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12815,7 +13528,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12857,7 +13570,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12903,7 +13616,7 @@ func TestDAGInsert(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
+					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -12930,6 +13643,7 @@ func TestDAGInsert(t *testing.T) {
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger:               fixture.NewTestLogger(t),
 						EnableExternalNameService: tc.enableExternalNameSvc,
@@ -12942,7 +13656,6 @@ func TestDAGInsert(t *testing.T) {
 							Namespace: tc.fallbackCertificateNamespace,
 						},
 					},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -13117,11 +13830,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
 					&HTTPProxyProcessor{},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -13130,9 +13843,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 			}
 			dag := builder.Build()
 
-			if count := len(dag.VirtualHosts); tc.want != count {
-				t.Errorf("wanted %d vertices, but got %d", tc.want, count)
+			var got int
+			if l := dag.Listeners[HTTP_LISTENER_NAME]; l != nil {
+				got = len(l.VirtualHosts)
 			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -13170,8 +13885,8 @@ func TestHTTPProxyConficts(t *testing.T) {
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
-					&HTTPProxyProcessor{},
 					&ListenerProcessor{},
+					&HTTPProxyProcessor{},
 				},
 			}
 
@@ -13253,7 +13968,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com", directResponseRoute("/", http.StatusServiceUnavailable)),
 				),
@@ -13314,7 +14029,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com", directResponseRoute("/", http.StatusBadGateway)),
 				),
@@ -13356,7 +14071,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com",
 						directResponseRoute("/", http.StatusServiceUnavailable),
@@ -13405,7 +14120,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com",
 						routeCluster("/",
@@ -13472,7 +14187,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com",
 						directResponseRoute("/", http.StatusBadGateway),
@@ -13523,7 +14238,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com", directResponseRoute("/missing", http.StatusServiceUnavailable)),
 				),
@@ -13588,17 +14303,17 @@ func TestHTTPProxyConficts(t *testing.T) {
 			},
 			existingService1,
 		},
-		wantListeners: []*Listener{
-			{
+		wantListeners: listeners(
+			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: []*VirtualHost{
 					virtualhost("example.com",
 						directResponseRoute("/missing", http.StatusServiceUnavailable),
 						prefixroute("/existing", service(existingService1))),
 				},
 			},
-		},
+		),
 		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: "invalid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
@@ -13697,7 +14412,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		want: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("*", &Route{
 						PathMatchCondition: prefixString("/"),
@@ -13735,7 +14450,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		want: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
-				Port: 80,
+				Port: 8080,
 				VirtualHosts: virtualhosts(
 					virtualhost("example.com", &Route{
 						PathMatchCondition: prefixString("/"),
@@ -13775,6 +14490,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
+					&ListenerProcessor{},
 					&IngressProcessor{
 						FieldLogger:           fixture.NewTestLogger(t),
 						RequestHeadersPolicy:  tc.ingressReqHp,
@@ -13784,7 +14500,6 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 						RequestHeadersPolicy:  tc.httpProxyReqHp,
 						ResponseHeadersPolicy: tc.httpProxyRespHp,
 					},
-					&ListenerProcessor{},
 				},
 			}
 
@@ -13864,6 +14579,10 @@ func exactrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 		PathMatchCondition: &ExactMatchCondition{Path: path},
 		Clusters:           clustersWeight(services...),
 	}
+}
+
+func exactrouteGRPCRoute(path string, first *Service, rest ...*Service) *Route {
+	return exactrouteHTTPRoute(path, first, rest...)
 }
 
 func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
@@ -14000,6 +14719,19 @@ func weightedService(s *v1.Service, weight uint32) *Service {
 	}
 }
 
+func grpcService(s *v1.Service, protocol string) *Service {
+	return &Service{
+		Protocol: protocol,
+		Weighted: WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[0],
+		},
+	}
+}
+
 func healthService(s *v1.Service) *Service {
 	return weightedHealthService(s, 1)
 }
@@ -14075,6 +14807,17 @@ func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route
 
 func listeners(ls ...*Listener) []*Listener {
 	var v []*Listener
+
+	for _, listener := range ls {
+		switch listener.Name {
+		case HTTP_LISTENER_NAME:
+			listener.RouteConfigName = "ingress_http"
+		case HTTPS_LISTENER_NAME:
+			listener.RouteConfigName = "https"
+			listener.FallbackCertRouteConfigName = "ingress_fallbackcert"
+		}
+	}
+
 	v = append(v, ls...)
 	return v
 }
