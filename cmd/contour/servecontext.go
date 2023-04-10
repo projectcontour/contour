@@ -366,7 +366,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	}
 
 	var tracingConfig *contour_api_v1alpha1.TracingConfig
-	if ctx.Config.Tracing.ExtensionService != "" {
+	if ctx.Config.Tracing != nil {
 		namespacedName := k8s.NamespacedNameFrom(ctx.Config.Tracing.ExtensionService)
 		var customTags []*contour_api_v1alpha1.CustomTag
 		for _, customTag := range ctx.Config.Tracing.CustomTags {
@@ -378,7 +378,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 		tracingConfig = &contour_api_v1alpha1.TracingConfig{
 			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
-			ServiceName:      ref.To(ctx.Config.Tracing.ServiceName),
+			ServiceName:      ctx.Config.Tracing.ServiceName,
 			OverallSampling:  ctx.Config.Tracing.OverallSampling,
 			MaxPathTagLength: ctx.Config.Tracing.MaxPathTagLength,
 			CustomTags:       customTags,

@@ -562,7 +562,7 @@ type Parameters struct {
 	Metrics MetricsParameters `yaml:"metrics,omitempty"`
 
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
-	Tracing Tracing `yaml:"tracing,omitempty"`
+	Tracing *Tracing `yaml:"tracing,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -575,7 +575,7 @@ type Tracing struct {
 
 	// ServiceName defines the name for the service
 	// contour's default is contour.
-	ServiceName string `yaml:"serviceName,omitempty"`
+	ServiceName *string `yaml:"serviceName,omitempty"`
 
 	// OverallSampling defines the sampling rate of trace data.
 	// the default value is 100.
@@ -907,7 +907,6 @@ func Defaults() Parameters {
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
 		},
-		Tracing: Tracing{},
 	}
 }
 

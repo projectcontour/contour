@@ -500,7 +500,7 @@ func TestTracingConfigValidation(t *testing.T) {
 
 	trace = &Tracing{
 		IncludePodDetail: ref.To(false),
-		ServiceName:      "contour",
+		ServiceName:      ref.To("contour"),
 		OverallSampling:  ref.To("100"),
 		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags:       nil,
@@ -510,7 +510,7 @@ func TestTracingConfigValidation(t *testing.T) {
 
 	trace = &Tracing{
 		IncludePodDetail: ref.To(false),
-		ServiceName:      "contour",
+		ServiceName:      ref.To("contour"),
 		OverallSampling:  ref.To("100"),
 		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags:       nil,

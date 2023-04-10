@@ -742,9 +742,9 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"tracing config normal": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Tracing = config.Tracing{
-					IncludePodDetail: ref.To(true),
-					ServiceName:      "contour",
+				ctx.Config.Tracing = &config.Tracing{
+					IncludePodDetail: ref.To(false),
+					ServiceName:      ref.To("contour"),
 					OverallSampling:  ref.To("100"),
 					MaxPathTagLength: ref.To(uint32(256)),
 					CustomTags: []config.CustomTag{
@@ -765,7 +765,7 @@ func TestConvertServeContext(t *testing.T) {
 				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
 					IncludePodDetail: ref.To(false),
 					ServiceName:      ref.To("contour"),
-					OverallSampling:  ref.To("100.0"),
+					OverallSampling:  ref.To("100"),
 					MaxPathTagLength: ref.To(uint32(256)),
 					CustomTags: []*contour_api_v1alpha1.CustomTag{
 						{
@@ -787,7 +787,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"tracing config only extensionService": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Tracing = config.Tracing{
+				ctx.Config.Tracing = &config.Tracing{
 					ExtensionService: "otel/otel-collector",
 				}
 				return ctx
