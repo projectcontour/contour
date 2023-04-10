@@ -165,15 +165,15 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Tracing: &v1alpha1.TracingConfig{},
 		}
 
-		require.NoError(t, c.Validate())
-
-		c.Tracing.OverallSampling = ref.To("number")
 		require.Error(t, c.Validate())
 
 		c.Tracing.ExtensionService = &v1alpha1.NamespacedName{
 			Name:      "otel-collector",
 			Namespace: "projectcontour",
 		}
+		require.NoError(t, c.Validate())
+
+		c.Tracing.OverallSampling = ref.To("number")
 		require.Error(t, c.Validate())
 
 		c.Tracing.OverallSampling = ref.To("10")

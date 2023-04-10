@@ -740,13 +740,13 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
-		"tracing config": {
+		"tracing config normal": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.Tracing = config.Tracing{
-					IncludePodDetail: nil,
+					IncludePodDetail: ref.To(true),
 					ServiceName:      "contour",
-					OverallSampling:  100,
-					MaxPathTagLength: 256,
+					OverallSampling:  ref.To("100"),
+					MaxPathTagLength: ref.To(uint32(256)),
 					CustomTags: []config.CustomTag{
 						{
 							TagName: "literal",
@@ -763,6 +763,7 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+					IncludePodDetail: ref.To(false),
 					ServiceName:      ref.To("contour"),
 					OverallSampling:  ref.To("100.0"),
 					MaxPathTagLength: ref.To(uint32(256)),
@@ -776,6 +777,23 @@ func TestConvertServeContext(t *testing.T) {
 							RequestHeaderName: ":method",
 						},
 					},
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+						Name:      "otel-collector",
+						Namespace: "otel",
+					},
+				}
+				return cfg
+			},
+		},
+		"tracing config only extensionService": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Tracing = config.Tracing{
+					ExtensionService: "otel/otel-collector",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
 					ExtensionService: &contour_api_v1alpha1.NamespacedName{
 						Name:      "otel-collector",
 						Namespace: "otel",

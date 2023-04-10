@@ -53,10 +53,6 @@ func (c *ContourConfigurationSpec) Validate() error {
 }
 
 func (t *TracingConfig) Validate() error {
-	if t.OverallSampling == nil && t.MaxPathTagLength == nil && t.ExtensionService == nil && t.CustomTags == nil {
-		return nil
-	}
-
 	if t.ExtensionService == nil {
 		return fmt.Errorf("tracing.extensionService must be defined")
 	}

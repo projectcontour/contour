@@ -501,8 +501,8 @@ func TestTracingConfigValidation(t *testing.T) {
 	trace = &Tracing{
 		IncludePodDetail: ref.To(false),
 		ServiceName:      "contour",
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
 	}
@@ -511,24 +511,24 @@ func TestTracingConfigValidation(t *testing.T) {
 	trace = &Tracing{
 		IncludePodDetail: ref.To(false),
 		ServiceName:      "contour",
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags:       nil,
 	}
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
 		IncludePodDetail: ref.To(false),
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
 	}
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				TagName:           "first",
@@ -541,8 +541,8 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				Literal: "literal",
@@ -554,8 +554,8 @@ func TestTracingConfigValidation(t *testing.T) {
 
 	trace = &Tracing{
 		IncludePodDetail: ref.To(true),
-		OverallSampling:  100,
-		MaxPathTagLength: 256,
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				TagName: "first",

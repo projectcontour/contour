@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -380,8 +379,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		tracingConfig = &contour_api_v1alpha1.TracingConfig{
 			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
 			ServiceName:      ref.To(ctx.Config.Tracing.ServiceName),
-			OverallSampling:  ref.To(strconv.FormatFloat(ctx.Config.Tracing.OverallSampling, 'f', 1, 64)),
-			MaxPathTagLength: ref.To(ctx.Config.Tracing.MaxPathTagLength),
+			OverallSampling:  ctx.Config.Tracing.OverallSampling,
+			MaxPathTagLength: ctx.Config.Tracing.MaxPathTagLength,
 			CustomTags:       customTags,
 			ExtensionService: &contour_api_v1alpha1.NamespacedName{
 				Name:      namespacedName.Name,

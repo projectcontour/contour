@@ -650,7 +650,7 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 		})
 	}
 
-	overallSampling, err := strconv.ParseFloat(*tracingConfig.OverallSampling, 64)
+	overallSampling, err := strconv.ParseFloat(ref.Val(tracingConfig.OverallSampling, "100"), 64)
 	if err != nil || overallSampling == 0 {
 		overallSampling = 100.0
 	}

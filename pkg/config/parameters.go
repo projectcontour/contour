@@ -579,12 +579,12 @@ type Tracing struct {
 
 	// OverallSampling defines the sampling rate of trace data.
 	// the default value is 100.
-	OverallSampling float64 `yaml:"overallSampling,omitempty"`
+	OverallSampling *string `yaml:"overallSampling,omitempty"`
 
 	// MaxPathTagLength defines maximum length of the request path
 	// to extract and include in the HttpUrl tag.
 	// the default value is 256.
-	MaxPathTagLength uint32 `yaml:"maxPathTagLength,omitempty"`
+	MaxPathTagLength *uint32 `yaml:"maxPathTagLength,omitempty"`
 
 	// CustomTags defines a list of custom tags with unique tag name.
 	CustomTags []CustomTag `yaml:"customTags,omitempty"`
@@ -739,9 +739,6 @@ func (p *MetricsParameters) Validate() error {
 
 func (t *Tracing) Validate() error {
 	if t == nil {
-		return nil
-	}
-	if t.OverallSampling == 0 && t.MaxPathTagLength == 0 && t.ExtensionService == "" && t.CustomTags == nil {
 		return nil
 	}
 
