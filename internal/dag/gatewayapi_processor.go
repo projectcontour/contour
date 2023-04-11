@@ -1465,10 +1465,18 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.HeaderMatchExact) {
+		case gatewayapi_v1beta1.HeaderMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
@@ -1480,7 +1488,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 		seenNames.Insert(upperName)
 
 		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
-			MatchType: HeaderMatchTypeExact,
+			MatchType: matchType,
 			Name:      string(match.Name),
 			Value:     match.Value,
 		})
@@ -1600,11 +1608,19 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &ExactMatchCondition{Path: path}, true
 	}
 
+	if *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
+		if err := ValidateRegex(*match.Value); err != nil {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value is invalid for RegularExpression match type.")
+			return nil, false
+		}
+		return &RegexMatchCondition{Regex: path}, true
+	}
+
 	routeAccessor.AddCondition(
 		gatewayapi_v1beta1.RouteConditionAccepted,
 		metav1.ConditionFalse,
 		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
-		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
+		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 	)
 	return nil, false
 }
@@ -1614,10 +1630,18 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.HeaderMatchExact) {
+		case gatewayapi_v1beta1.HeaderMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
@@ -1629,7 +1653,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 		seenNames.Insert(upperName)
 
 		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
-			MatchType: HeaderMatchTypeExact,
+			MatchType: matchType,
 			Name:      string(match.Name),
 			Value:     match.Value,
 		})
