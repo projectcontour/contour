@@ -1877,7 +1877,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							regrexrouteHTTPRoute("/bl+og", service(kuardService))),
+							regexrouteHTTPRoute("/bl+og", service(kuardService))),
 					),
 				},
 			),
@@ -14659,7 +14659,7 @@ func exactrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 	}
 }
 
-func regrexrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
+func regexrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
 		PathMatchCondition: &RegexMatchCondition{Regex: path},
