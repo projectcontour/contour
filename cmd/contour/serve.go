@@ -675,7 +675,7 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	}
 
 	var context map[string]string
-	if contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context != nil {
+	if contourConfiguration.GlobalExternalAuthorization.AuthPolicy != nil {
 		context = contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context
 	}
 
