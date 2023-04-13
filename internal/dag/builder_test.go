@@ -10722,6 +10722,53 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httproxy with include references another root": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "example-com",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Includes: []contour_api_v1.Include{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/finance",
+							}},
+							Name:      "other-root",
+							Namespace: "default",
+						}},
+					},
+				},
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "other-root",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "example2.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/finance"),
+							DirectResponse: &DirectResponse{
+								StatusCode: http.StatusBadGateway,
+							},
+						}),
+					),
+				},
+			),
+		},
 		"insert httproxy w/ conditions": {
 			objs: []interface{}{
 				proxy1c, s1,
