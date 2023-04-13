@@ -15,6 +15,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -38,6 +39,9 @@ func (c *ContourConfigurationSpec) Validate() error {
 	if c.Gateway != nil {
 		validateFuncs = append(validateFuncs, c.Gateway.Validate)
 	}
+	if c.Tracing != nil {
+		validateFuncs = append(validateFuncs, c.Tracing.Validate)
+	}
 
 	for _, validate := range validateFuncs {
 		if err := validate(); err != nil {
@@ -45,6 +49,47 @@ func (c *ContourConfigurationSpec) Validate() error {
 		}
 	}
 
+	return nil
+}
+
+func (t *TracingConfig) Validate() error {
+	if t.ExtensionService == nil {
+		return fmt.Errorf("tracing.extensionService must be defined")
+	}
+
+	if t.OverallSampling != nil {
+		_, err := strconv.ParseFloat(*t.OverallSampling, 64)
+		if err != nil {
+			return fmt.Errorf("invalid tracing sampling: %v", err)
+		}
+	}
+
+	var customTagNames []string
+
+	for _, customTag := range t.CustomTags {
+		var fieldCount int
+		if customTag.TagName == "" {
+			return fmt.Errorf("tracing.customTag.tagName must be defined")
+		}
+
+		for _, customTagName := range customTagNames {
+			if customTagName == customTag.TagName {
+				return fmt.Errorf("tagName %s is duplicate", customTagName)
+			}
+		}
+
+		if customTag.Literal != "" {
+			fieldCount++
+		}
+
+		if customTag.RequestHeaderName != "" {
+			fieldCount++
+		}
+		if fieldCount != 1 {
+			return fmt.Errorf("must set exactly one of Literal or RequestHeaderName")
+		}
+		customTagNames = append(customTagNames, customTag.TagName)
+	}
 	return nil
 }
 

@@ -49,6 +49,8 @@ toc:
         url: /config/annotations
       - page: Slow Start Mode
         url: /config/slow-start
+      - page: Tracing Support
+        url: /config/tracing
       - page: API Reference
         url: /config/api
   - title: Deployment

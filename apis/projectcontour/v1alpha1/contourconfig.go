@@ -81,6 +81,9 @@ type ContourConfigurationSpec struct {
 	// Contour's default is { address: "0.0.0.0", port: 8000 }.
 	// +optional
 	Metrics *MetricsConfig `json:"metrics,omitempty"`
+
+	// Tracing defines properties for exporting trace data to OpenTelemetry.
+	Tracing *TracingConfig `json:"tracing,omitempty"`
 }
 
 // XDSServerType is the type of xDS server implementation.
@@ -657,6 +660,56 @@ type RateLimitServiceConfig struct {
 	//
 	// +optional
 	EnableResourceExhaustedCode *bool `json:"enableResourceExhaustedCode,omitempty"`
+}
+
+// TracingConfig defines properties for exporting trace data to OpenTelemetry.
+type TracingConfig struct {
+	// IncludePodDetail defines a flag.
+	// If it is true, contour will add the pod name and namespace to the span of the trace.
+	// the default is true.
+	// Note: The Envoy pods MUST have the HOSTNAME and CONTOUR_NAMESPACE environment variables set for this to work properly.
+	// +optional
+	IncludePodDetail *bool `json:"includePodDetail,omitempty"`
+
+	// ServiceName defines the name for the service.
+	// contour's default is contour.
+	ServiceName *string `json:"serviceName,omitempty"`
+
+	// OverallSampling defines the sampling rate of trace data.
+	// contour's default is 100.
+	// +optional
+	OverallSampling *string `json:"overallSampling,omitempty"`
+
+	// MaxPathTagLength defines maximum length of the request path
+	// to extract and include in the HttpUrl tag.
+	// contour's default is 256.
+	// +optional
+	MaxPathTagLength *uint32 `json:"maxPathTagLength,omitempty"`
+
+	// CustomTags defines a list of custom tags with unique tag name.
+	// +optional
+	CustomTags []*CustomTag `json:"customTags,omitempty"`
+
+	// ExtensionService identifies the extension service defining the otel-collector.
+	ExtensionService *NamespacedName `json:"extensionService"`
+}
+
+// CustomTag defines custom tags with unique tag name
+// to create tags for the active span.
+type CustomTag struct {
+	// TagName is the unique name of the custom tag.
+	TagName string `json:"tagName"`
+
+	// Literal is a static custom tag value.
+	// Precisely one of Literal, RequestHeaderName must be set.
+	// +optional
+	Literal string `json:"literal,omitempty"`
+
+	// RequestHeaderName indicates which request header
+	// the label value is obtained from.
+	// Precisely one of Literal, RequestHeaderName must be set.
+	// +optional
+	RequestHeaderName string `json:"requestHeaderName,omitempty"`
 }
 
 // PolicyConfig holds default policy used if not explicitly set by the user

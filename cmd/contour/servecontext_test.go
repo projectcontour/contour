@@ -24,16 +24,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/pkg/config"
-	"github.com/tsaarni/certyaml"
-
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/tsaarni/certyaml"
 	"google.golang.org/grpc"
 )
 
@@ -736,6 +735,68 @@ func TestConvertServeContext(t *testing.T) {
 						MaxRequestBytes:     512,
 						PackAsBytes:         true,
 						AllowPartialMessage: true,
+					},
+				}
+				return cfg
+			},
+		},
+		"tracing config normal": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Tracing = &config.Tracing{
+					IncludePodDetail: ref.To(false),
+					ServiceName:      ref.To("contour"),
+					OverallSampling:  ref.To("100"),
+					MaxPathTagLength: ref.To(uint32(256)),
+					CustomTags: []config.CustomTag{
+						{
+							TagName: "literal",
+							Literal: "this is literal",
+						},
+						{
+							TagName:           "header",
+							RequestHeaderName: ":method",
+						},
+					},
+					ExtensionService: "otel/otel-collector",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+					IncludePodDetail: ref.To(false),
+					ServiceName:      ref.To("contour"),
+					OverallSampling:  ref.To("100"),
+					MaxPathTagLength: ref.To(uint32(256)),
+					CustomTags: []*contour_api_v1alpha1.CustomTag{
+						{
+							TagName: "literal",
+							Literal: "this is literal",
+						},
+						{
+							TagName:           "header",
+							RequestHeaderName: ":method",
+						},
+					},
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+						Name:      "otel-collector",
+						Namespace: "otel",
+					},
+				}
+				return cfg
+			},
+		},
+		"tracing config only extensionService": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Tracing = &config.Tracing{
+					ExtensionService: "otel/otel-collector",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+						Name:      "otel-collector",
+						Namespace: "otel",
 					},
 				}
 				return cfg

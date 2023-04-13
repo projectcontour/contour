@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: otel-collector
+  name: otel-collector
+  namespace: projectcontour
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - args:
+            - --config=/etc/otel-collector-config.yaml
+          image: otel/opentelemetry-collector:latest
+          imagePullPolicy: IfNotPresent
+          name: otel-collector
+          ports:
+            - containerPort: 4317
+              name: grpc
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel-collector-config.yaml
+              subPath: otel-collector-config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: projectcontour
+  labels:
+    app: otel-collector
+spec:
+  ports:
+    - port: 4317
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    app: otel-collector
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: projectcontour
+  labels:
+    app: otel-collector
+data:
+  otel-collector-config.yaml: |+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+            
+    exporters:
+      logging:
+        loglevel: debug
+        
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [logging]
+      

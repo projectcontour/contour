@@ -128,6 +128,42 @@ type ListenerConfig struct {
 	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
+
+	// TracingConfig optionally configures the tracing collector Service to be
+	// used.
+	TracingConfig *TracingConfig
+}
+
+type TracingConfig struct {
+	ExtensionService types.NamespacedName
+
+	ServiceName string
+
+	SNI string
+
+	Timeout timeout.Setting
+
+	OverallSampling float64
+
+	MaxPathTagLength uint32
+
+	CustomTags []*CustomTag
+}
+
+type CustomTag struct {
+	// TagName is the unique name of the custom tag.
+	TagName string
+
+	// Literal is a static custom tag value.
+	Literal string
+
+	// EnvironmentName indicates that the label value is obtained
+	// from the environment variable.
+	EnvironmentName string
+
+	// RequestHeaderName indicates which request header
+	// the label value is obtained from.
+	RequestHeaderName string
 }
 
 type RateLimitConfig struct {
@@ -331,6 +367,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				MergeSlashes(cfg.MergeSlashes).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
+				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				Get()
@@ -398,6 +435,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()
@@ -461,6 +499,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					Get()
@@ -529,6 +568,38 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 		EnableXRateLimitHeaders:     config.EnableXRateLimitHeaders,
 		EnableResourceExhaustedCode: config.EnableResourceExhaustedCode,
 	}
+}
+
+func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
+	if config == nil {
+		return nil
+	}
+
+	return &envoy_v3.EnvoyTracingConfig{
+		ExtensionService: config.ExtensionService,
+		ServiceName:      config.ServiceName,
+		SNI:              config.SNI,
+		Timeout:          config.Timeout,
+		OverallSampling:  config.OverallSampling,
+		MaxPathTagLength: config.MaxPathTagLength,
+		CustomTags:       envoyTracingConfigCustomTag(config.CustomTags),
+	}
+}
+
+func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
+	if tags == nil {
+		return nil
+	}
+	var customTags = make([]*envoy_v3.CustomTag, len(tags))
+	for i, tag := range tags {
+		customTags[i] = &envoy_v3.CustomTag{
+			TagName:           tag.TagName,
+			Literal:           tag.Literal,
+			EnvironmentName:   tag.EnvironmentName,
+			RequestHeaderName: tag.RequestHeaderName,
+		}
+	}
+	return customTags
 }
 
 func proxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {

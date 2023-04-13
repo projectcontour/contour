@@ -354,6 +354,10 @@ func (s *Server) doServe() error {
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
 	}
 
+	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
+		return err
+	}
+
 	if listenerConfig.RateLimitConfig, err = s.setupRateLimitService(contourConfiguration); err != nil {
 		return err
 	}
@@ -592,6 +596,75 @@ func (s *Server) doServe() error {
 
 	// GO!
 	return s.mgr.Start(signals.SetupSignalHandler())
+}
+
+func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.TracingConfig) (*xdscache_v3.TracingConfig, error) {
+	if tracingConfig == nil {
+		return nil, nil
+	}
+
+	// ensure the specified ExtensionService exists
+	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
+	key := client.ObjectKey{
+		Namespace: tracingConfig.ExtensionService.Namespace,
+		Name:      tracingConfig.ExtensionService.Name,
+	}
+	// Using GetAPIReader() here because the manager's caches won't be started yet,
+	// so reads from the manager's client (which uses the caches for reads) will fail.
+	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
+		return nil, fmt.Errorf("error getting tracing extension service %s: %v", key, err)
+	}
+	// get the response timeout from the ExtensionService
+	var responseTimeout timeout.Setting
+	var err error
+
+	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
+		responseTimeout, err = timeout.Parse(tp.Response)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing tracing extension service %s response timeout: %v", key, err)
+		}
+	}
+
+	var sni string
+	if extensionSvc.Spec.UpstreamValidation != nil {
+		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	}
+
+	var customTags []*xdscache_v3.CustomTag
+
+	if ref.Val(tracingConfig.IncludePodDetail, true) {
+		customTags = append(customTags, &xdscache_v3.CustomTag{
+			TagName:         "podName",
+			EnvironmentName: "HOSTNAME",
+		}, &xdscache_v3.CustomTag{
+			TagName:         "podNamespace",
+			EnvironmentName: "CONTOUR_NAMESPACE",
+		})
+	}
+
+	for _, customTag := range tracingConfig.CustomTags {
+		customTags = append(customTags, &xdscache_v3.CustomTag{
+			TagName:           customTag.TagName,
+			Literal:           customTag.Literal,
+			RequestHeaderName: customTag.RequestHeaderName,
+		})
+	}
+
+	overallSampling, err := strconv.ParseFloat(ref.Val(tracingConfig.OverallSampling, "100"), 64)
+	if err != nil || overallSampling == 0 {
+		overallSampling = 100.0
+	}
+
+	return &xdscache_v3.TracingConfig{
+		ServiceName:      ref.Val(tracingConfig.ServiceName, "contour"),
+		ExtensionService: key,
+		SNI:              sni,
+		Timeout:          responseTimeout,
+		OverallSampling:  overallSampling,
+		MaxPathTagLength: ref.Val(tracingConfig.MaxPathTagLength, 256),
+		CustomTags:       customTags,
+	}, nil
+
 }
 
 func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.RateLimitConfig, error) {

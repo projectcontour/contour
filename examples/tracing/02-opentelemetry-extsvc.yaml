@@ -1,0 +1,10 @@
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  namespace: projectcontour
+  name: otel-collector
+spec:
+  protocol: h2c
+  services:
+    - name: otel-collector
+      port: 4317
