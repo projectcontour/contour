@@ -4713,9 +4713,13 @@ spec:
                         include invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
                           must be provided.
                         properties:
+                          exact:
+                            description: Exact defines a exact match for a request.
+                              This field is not allowed in include match conditions.
+                            type: string
                           header:
                             description: Header specifies the header condition to
                               match.
@@ -4857,9 +4861,13 @@ spec:
                         Conditions, will make the route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Header or QueryParameter
+                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
                           must be provided.
                         properties:
+                          exact:
+                            description: Exact defines a exact match for a request.
+                              This field is not allowed in include match conditions.
+                            type: string
                           header:
                             description: Header specifies the header condition to
                               match.
