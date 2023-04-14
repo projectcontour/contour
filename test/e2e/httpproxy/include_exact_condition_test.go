@@ -189,12 +189,12 @@ func testIncludeExactCondition(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid)
 
 		cases := map[string]string{
-			"/app/foo":      "echo-app",
-			"/app/admin":    "echo-admin",
-			"/app/bar":      "echo-admin",
-			"/app/v1":       "echo-app",
-			"/app/v1/page":  "echo-app",
-			"/admin/portal": "echo-admin",
+			"/app/foo":      "echo-app",   // Condition matched: "Prefix: /app"   +  "Exact:  /foo"    = "Exact:  /app/foo"
+			"/app/admin":    "echo-admin", // Condition matched: "Prefix: /app/"  +  "Prefix: /"       = "Prefix: /app"
+			"/app/bar":      "echo-admin", // Condition matched: "Prefix: /app/"  +  "Prefix: /"       = "Prefix: /app"
+			"/app/v1":       "echo-app",   // Condition matched: "Prefix: /app"   +  "Prefix: /v1"     = "Prefix: /app/v1"
+			"/app/v1/page":  "echo-app",   // Condition matched: "Prefix: /app"   +  "Prefix: /v1"     = "Prefix: /app/v1"
+			"/admin/portal": "echo-admin", // Condition matched: "Prefix: /admin" +  "Exact:  /portal" = "Exact:  /app/v1"
 		}
 
 		for path, expectedService := range cases {

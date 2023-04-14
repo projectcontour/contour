@@ -130,14 +130,14 @@ func testExactPathCondition(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(serviceProxy, e2e.HTTPProxyValid)
 
 		cases := map[string]string{
-			"/":                        "echo-default",
-			"/blue":                    "echo-blue",
-			"/blue/exact-green":        "echo-green",
-			"/common/exact-blue":       "echo-blue",
-			"/common/exact-blue/green": "echo-green",
-			"/blue-exact-green":        "echo-green",
-			"/blue-exact-green/extra":  "echo-blue",
-			"/app":                     "echo-default",
+			"/":                        "echo-default", // Condition matched: "Prefix: /"
+			"/blue":                    "echo-blue",    // Condition matched: "Prefix: /blue"
+			"/blue/exact-green":        "echo-green",   // Condition matched: "Exact:  /blue/exact" (exact takes precedence over "Prefix: /blue")
+			"/common/exact-blue":       "echo-blue",    // Condition matched: "Exact:  /common/exact-blue"
+			"/common/exact-blue/green": "echo-green",   // Condition matched: "Prefix: /common/exact-blue/"
+			"/blue-exact-green":        "echo-green",   // Condition matched: "Exact:  /blue-exact-green"
+			"/blue-exact-green/extra":  "echo-blue",    // Condition matched: "Prefix: /blue"
+			"/app":                     "echo-default", // Condition matched: "Prefix: /"
 		}
 
 		for path, expectedService := range cases {
