@@ -14863,9 +14863,9 @@ func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	}
 }
 
-func routeClusterExact(exact string, first *Cluster, rest ...*Cluster) *Route {
+func routeClusterExact(path string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
-		PathMatchCondition: exactString(exact),
+		PathMatchCondition: exact(path),
 		Clusters:           append([]*Cluster{first}, rest...),
 	}
 }
@@ -15089,9 +15089,6 @@ func listeners(ls ...*Listener) []*Listener {
 
 func prefixString(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchString}
-}
-func exactString(exact string) MatchCondition {
-	return &ExactMatchCondition{Path: exact}
 }
 func prefixSegment(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchSegment}
