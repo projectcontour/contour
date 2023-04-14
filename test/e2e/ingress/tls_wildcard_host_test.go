@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -53,7 +54,7 @@ func testTLSWildcardHost(namespace string) {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: e2e.IngressPathTypePtr(networkingv1.PathTypePrefix),
+										PathType: ref.To(networkingv1.PathTypePrefix),
 										Path:     "/",
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{

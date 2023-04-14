@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -136,7 +137,7 @@ func testExternalNameServiceTLS(namespace string) {
 							{
 								Name:     externalNameService.Name,
 								Port:     443,
-								Protocol: stringPtr("tls"),
+								Protocol: ref.To("tls"),
 							},
 						},
 						RequestHeadersPolicy: &contourv1.HeadersPolicy{
@@ -163,10 +164,6 @@ func testExternalNameServiceTLS(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
 
 func testExternalNameServiceLocalhostInvalid(namespace string) {

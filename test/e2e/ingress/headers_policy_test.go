@@ -19,6 +19,7 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,7 +61,7 @@ func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
 								HTTP: &networkingv1.HTTPIngressRuleValue{
 									Paths: []networkingv1.HTTPIngressPath{
 										{
-											PathType: e2e.IngressPathTypePtr(networkingv1.PathTypePrefix),
+											PathType: ref.To(networkingv1.PathTypePrefix),
 											Path:     "/",
 											Backend: networkingv1.IngressBackend{
 												Service: &networkingv1.IngressServiceBackend{

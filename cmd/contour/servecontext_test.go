@@ -26,7 +26,6 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/ref"
@@ -473,7 +472,7 @@ func TestConvertServeContext(t *testing.T) {
 				},
 				Network: &contour_api_v1alpha1.NetworkParameters{
 					EnvoyAdminPort:    ref.To(9001),
-					XffNumTrustedHops: contourconfig.UInt32Ptr(0),
+					XffNumTrustedHops: ref.To(uint32(0)),
 				},
 			},
 			Gateway: nil,

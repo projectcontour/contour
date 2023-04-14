@@ -23,16 +23,6 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
-// UIntPtr returns a pointer to a uint value.
-func UIntPtr(val uint) *uint {
-	return &val
-}
-
-// UInt32Ptr returns a pointer to a uint32 value.
-func UInt32Ptr(val uint32) *uint32 {
-	return &val
-}
-
 // OverlayOnDefaults overlays the settings in the provided spec onto the
 // default settings, and returns the results.
 func OverlayOnDefaults(spec contour_api_v1alpha1.ContourConfigurationSpec) (contour_api_v1alpha1.ContourConfigurationSpec, error) {
@@ -131,7 +121,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: UInt32Ptr(0),
+				XffNumTrustedHops: ref.To(uint32(0)),
 				EnvoyAdminPort:    ref.To(9001),
 			},
 		},

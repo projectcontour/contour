@@ -15,7 +15,7 @@ package model
 
 import (
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
+	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,20 +51,20 @@ func Default(namespace, name string) *Contour {
 			EnvoyDaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: opintstr.PointerTo(intstr.FromString("10%")),
+					MaxUnavailable: ref.To(intstr.FromString("10%")),
 				},
 			},
 			EnvoyDeploymentStrategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge: opintstr.PointerTo(intstr.FromString("10%")),
+					MaxSurge: ref.To(intstr.FromString("10%")),
 				},
 			},
 			ContourDeploymentStrategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge:       opintstr.PointerTo(intstr.FromString("50%")),
-					MaxUnavailable: opintstr.PointerTo(intstr.FromString("25%")),
+					MaxSurge:       ref.To(intstr.FromString("50%")),
+					MaxUnavailable: ref.To(intstr.FromString("25%")),
 				},
 			},
 			ResourceLabels:      map[string]string{},
