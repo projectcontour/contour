@@ -55,7 +55,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 		defer poller.wg.Done()
 		// Ignore error here since we know we are just polling until
 		// told to stop.
-		_ = wait.PollImmediateInfiniteWithContext(ctx, 200*time.Millisecond, func(ctx context.Context) (bool, error) {
+		_ = wait.PollUntilContextCancel(ctx, 200*time.Millisecond, true, func(ctx context.Context) (bool, error) {
 			// Stop polling if we are being shut down so we don't
 			// get extra failures.
 			select {

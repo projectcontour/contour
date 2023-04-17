@@ -212,8 +212,8 @@ func (p *Provisioner) EnsureDeleted(obj client.Object) error {
 	}
 
 	// Wait to ensure it's fully deleted.
-	if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
-		err := p.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+	if err := wait.PollUntilContextTimeout(context.Background(), 100*time.Millisecond, time.Minute, true, func(ctx context.Context) (bool, error) {
+		err := p.client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
 		if api_errors.IsNotFound(err) {
 			return true, nil
 		}

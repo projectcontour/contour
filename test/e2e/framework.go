@@ -307,8 +307,8 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 
 	res := &contourv1.HTTPProxy{}
 
-	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
-		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(proxy), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(proxy), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -331,8 +331,8 @@ func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1beta1.HTTPRout
 
 	res := &gatewayapi_v1beta1.HTTPRoute{}
 
-	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
-		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(route), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -355,8 +355,8 @@ func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute
 
 	res := &gatewayapi_v1alpha2.TLSRoute{}
 
-	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
-		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(route), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -421,8 +421,8 @@ func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1beta1.Gateway,
 
 	res := &gatewayapi_v1beta1.Gateway{}
 
-	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
-		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gateway), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(gateway), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -445,8 +445,8 @@ func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1beta
 
 	res := &gatewayapi_v1beta1.GatewayClass{}
 
-	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
-		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gatewayClass), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(gatewayClass), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
