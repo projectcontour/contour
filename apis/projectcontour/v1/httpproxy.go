@@ -592,7 +592,8 @@ type IPFilterPolicy struct {
 	//    X-Forwarded-For.
 	Source IPFilterSource `json:"source"`
 
-	// CIDR is a CIDR block of a ipv4 or ipv6 addresses to filter on.
+	// CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
+	// a bare IP address (without a mask) to filter on exactly one address.
 	CIDR string `json:"cidr"`
 }
 

@@ -4912,8 +4912,9 @@ spec:
                       items:
                         properties:
                           cidr:
-                            description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
-                              to filter on.
+                            description: CIDR is a CIDR block of ipv4 or ipv6 addresses
+                              to filter on. This can also be a bare IP address (without
+                              a mask) to filter on exactly one address.
                             type: string
                           source:
                             description: 'Source indicates how to determine the ip
@@ -4940,8 +4941,9 @@ spec:
                       items:
                         properties:
                           cidr:
-                            description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
-                              to filter on.
+                            description: CIDR is a CIDR block of ipv4 or ipv6 addresses
+                              to filter on. This can also be a bare IP address (without
+                              a mask) to filter on exactly one address.
                             type: string
                           source:
                             description: 'Source indicates how to determine the ip
@@ -6272,8 +6274,9 @@ spec:
                     items:
                       properties:
                         cidr:
-                          description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
-                            to filter on.
+                          description: CIDR is a CIDR block of ipv4 or ipv6 addresses
+                            to filter on. This can also be a bare IP address (without
+                            a mask) to filter on exactly one address.
                           type: string
                         source:
                           description: 'Source indicates how to determine the ip address
@@ -6299,8 +6302,9 @@ spec:
                     items:
                       properties:
                         cidr:
-                          description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
-                            to filter on.
+                          description: CIDR is a CIDR block of ipv4 or ipv6 addresses
+                            to filter on. This can also be a bare IP address (without
+                            a mask) to filter on exactly one address.
                           type: string
                         source:
                           description: 'Source indicates how to determine the ip address
