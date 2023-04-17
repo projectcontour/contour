@@ -2017,7 +2017,8 @@ If the header does not exist it will be added, otherwise it will be overwritten 
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>)
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
 </p>
 <p>
 </p>
@@ -2069,6 +2070,7 @@ string
 <a href="#projectcontour.io/v1.IPFilterPolicy">IPFilterPolicy</a>)
 </p>
 <p>
+<p>IPFilterSource indicates which IP should be considered for filtering</p>
 </p>
 <table>
 <thead>
@@ -3669,7 +3671,8 @@ JWTVerificationPolicy
 <td>
 <p>IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
 requests should be allowed. All other requests will be denied.
-Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.</p>
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here override any rules set on the root HTTPProxy.</p>
 </td>
 </tr>
 <tr>
@@ -3685,7 +3688,8 @@ Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.</p>
 <td>
 <p>IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
 requests should be denied. All other requests will be allowed.
-Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.</p>
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here override any rules set on the root HTTPProxy.</p>
 </td>
 </tr>
 </tbody>
@@ -4630,6 +4634,40 @@ RateLimitPolicy
 <td>
 <em>(Optional)</em>
 <p>Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipAllowPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be allowed. All other requests will be denied.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here may be overridden in a Route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipDenyPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be denied. All other requests will be allowed.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here may be overridden in a Route.</p>
 </td>
 </tr>
 </tbody>

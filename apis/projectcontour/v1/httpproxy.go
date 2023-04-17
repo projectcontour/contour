@@ -295,6 +295,18 @@ type VirtualHost struct {
 	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
 	// +optional
 	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
+
+	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be allowed. All other requests will be denied.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	IPAllowFilterPolicy []IPFilterPolicy `json:"ipAllowPolicy,omitempty"`
+
+	// IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be denied. All other requests will be allowed.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -535,11 +547,13 @@ type Route struct {
 	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
 	// requests should be allowed. All other requests will be denied.
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
 	IPAllowFilterPolicy []IPFilterPolicy `json:"ipAllowPolicy,omitempty"`
 
 	// IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
 	// requests should be denied. All other requests will be allowed.
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
@@ -560,6 +574,8 @@ type JWTVerificationPolicy struct {
 	Disabled bool `json:"disabled,omitempty"`
 }
 
+// IPFilterSource indicates which IP should be considered for filtering
+// +kubebuilder:validation:Enum=Peer;Remote
 type IPFilterSource string
 
 const (
@@ -577,7 +593,7 @@ type IPFilterPolicy struct {
 	Source IPFilterSource `json:"source"`
 
 	// CIDR is a CIDR block of a ipv4 or ipv6 addresses to filter on.
-	CIDR string `json:"cidr,omitempty"`
+	CIDR string `json:"cidr"`
 }
 
 type HTTPDirectResponsePolicy struct {

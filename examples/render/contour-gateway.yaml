@@ -5126,7 +5126,8 @@ spec:
                       description: IPAllowFilterPolicy is a list of ipv4/6 filter
                         rules for which matching requests should be allowed. All other
                         requests will be denied. Only one of IPAllowFilterPolicy and
-                        IPDenyFilterPolicy can be defined.
+                        IPDenyFilterPolicy can be defined. The rules defined here
+                        override any rules set on the root HTTPProxy.
                       items:
                         properties:
                           cidr:
@@ -5140,8 +5141,12 @@ spec:
                               accounting for PROXY and X-Forwarded-For as needed.
                               - `Peer` filters on the ip of the network request, ignoring
                               PROXY and X-Forwarded-For.'
+                            enum:
+                            - Peer
+                            - Remote
                             type: string
                         required:
+                        - cidr
                         - source
                         type: object
                       type: array
@@ -5149,7 +5154,8 @@ spec:
                       description: IPDenyFilterPolicy is a list of ipv4/6 filter rules
                         for which matching requests should be denied. All other requests
                         will be allowed. Only one of IPAllowFilterPolicy and IPDenyFilterPolicy
-                        can be defined.
+                        can be defined. The rules defined here override any rules
+                        set on the root HTTPProxy.
                       items:
                         properties:
                           cidr:
@@ -5163,8 +5169,12 @@ spec:
                               accounting for PROXY and X-Forwarded-For as needed.
                               - `Peer` filters on the ip of the network request, ignoring
                               PROXY and X-Forwarded-For.'
+                            enum:
+                            - Peer
+                            - Remote
                             type: string
                         required:
+                        - cidr
                         - source
                         type: object
                       type: array
@@ -6472,6 +6482,60 @@ spec:
                       to the fqdn.
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  ipAllowPolicy:
+                    description: IPAllowFilterPolicy is a list of ipv4/6 filter rules
+                      for which matching requests should be allowed. All other requests
+                      will be denied. Only one of IPAllowFilterPolicy and IPDenyFilterPolicy
+                      can be defined. The rules defined here may be overridden in
+                      a Route.
+                    items:
+                      properties:
+                        cidr:
+                          description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
+                            to filter on.
+                          type: string
+                        source:
+                          description: 'Source indicates how to determine the ip address
+                            to filter on, and can be one of two values: - `Remote`
+                            filters on the ip address of the client, accounting for
+                            PROXY and X-Forwarded-For as needed. - `Peer` filters
+                            on the ip of the network request, ignoring PROXY and X-Forwarded-For.'
+                          enum:
+                          - Peer
+                          - Remote
+                          type: string
+                      required:
+                      - cidr
+                      - source
+                      type: object
+                    type: array
+                  ipDenyPolicy:
+                    description: IPDenyFilterPolicy is a list of ipv4/6 filter rules
+                      for which matching requests should be denied. All other requests
+                      will be allowed. Only one of IPAllowFilterPolicy and IPDenyFilterPolicy
+                      can be defined. The rules defined here may be overridden in
+                      a Route.
+                    items:
+                      properties:
+                        cidr:
+                          description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
+                            to filter on.
+                          type: string
+                        source:
+                          description: 'Source indicates how to determine the ip address
+                            to filter on, and can be one of two values: - `Remote`
+                            filters on the ip address of the client, accounting for
+                            PROXY and X-Forwarded-For as needed. - `Peer` filters
+                            on the ip of the network request, ignoring PROXY and X-Forwarded-For.'
+                          enum:
+                          - Peer
+                          - Remote
+                          type: string
+                      required:
+                      - cidr
+                      - source
+                      type: object
+                    type: array
                   jwtProviders:
                     description: Providers to use for verifying JSON Web Tokens (JWTs)
                       on the virtual host.

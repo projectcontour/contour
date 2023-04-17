@@ -180,6 +180,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 
+	if len(proxy.Spec.VirtualHost.IPAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.IPDenyFilterPolicy) > 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.")
+		return
+	}
+
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if tls.Passthrough && tls.EnableFallbackCertificate {
@@ -490,6 +496,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
 	}
 
+	insecure.IPFilterAllow, insecure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+			"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+		return
+	}
+
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -505,6 +518,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			return
 		}
 		secure.RateLimitPolicy = rlp
+
+		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+			return
+		}
 
 		addRoutes(secure, routes)
 
@@ -996,7 +1016,7 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_api_v1.IPFilterPolicy, va
 	switch {
 	case len(allowPolicy) > 0 && len(denyPolicy) > 0:
 		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
-			"route cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
+			"cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
 		err = fmt.Errorf("invalid ip filter")
 		return
 	case len(allowPolicy) > 0:

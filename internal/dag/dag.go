@@ -689,6 +689,16 @@ type VirtualHost struct {
 	// are rate limited.
 	RateLimitPolicy *RateLimitPolicy
 
+	// IPFilterAllow determines how the IPFilterRules should be applied.
+	// If true, traffic is allowed only if it matches a rule.
+	// If false, traffic is allowed only if it doesn't match any rule.
+	IPFilterAllow bool
+
+	// IPFilterRules is a list of ipv4/6 filter rules for which matching
+	// requests should be filtered. The behavior of the filters is governed
+	// by IPFilterAllow.
+	IPFilterRules []IPFilterRule
+
 	Routes map[string]*Route
 }
 

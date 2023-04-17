@@ -287,6 +287,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with trusted xff hops", func() {
 			BeforeEach(func() {
 				contourConfig.Network.XffNumTrustedHops = 1
+				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ref.To(uint32(1))
 			})
 
 			testIPFilterPolicy(namespace)

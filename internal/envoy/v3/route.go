@@ -68,6 +68,15 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
 	}
 
+	if len(vh.IPFilterRules) > 0 {
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+			ipFilterConfig(vh.IPFilterAllow, vh.IPFilterRules),
+		)
+	}
+
 	return evh
 }
 

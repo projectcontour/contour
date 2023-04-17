@@ -4114,6 +4114,153 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	ipFilterVirtualHostValidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-valid-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{
+					{
+						Source: contour_api_v1.IPFilterSourcePeer,
+						CIDR:   "10.8.8.8/0",
+					},
+					{
+						Source: contour_api_v1.IPFilterSourceRemote,
+						CIDR:   "10.8.8.8/0",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter valid proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostValidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostValidProxy): fixture.NewValidCondition().Valid(),
+		},
+	})
+
+	ipFilterVirtualHostAllowAndDenyInvalidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-invalid-allow-and-deny-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourcePeer,
+					CIDR:   "10.8.8.8/0",
+				}},
+				IPDenyFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourceRemote,
+					CIDR:   "10.8.8.8/0",
+				}},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter invalid allow and deny proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostAllowAndDenyInvalidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostAllowAndDenyInvalidProxy): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeIPFilterError,
+					"IncompatibleIPAddressFilters",
+					"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.",
+				),
+		},
+	})
+
+	ipFilterVirtualHostFilterRulesInvalidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-invalid-filter-rules-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourcePeer,
+					CIDR:   "abcd",
+				}},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter invalid filter rules proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostFilterRulesInvalidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostFilterRulesInvalidProxy): {
+				Condition: contour_api_v1.Condition{
+					Type:    contour_api_v1.ValidConditionType,
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+				Errors: []contour_api_v1.SubCondition{
+					{
+						Type:    contour_api_v1.ConditionTypeIPFilterError,
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  "InvalidCIDR",
+						Message: "abcd failed to parse: invalid CIDR address: abcd/32",
+					},
+					{
+						Type:    contour_api_v1.ConditionTypeIPFilterError,
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  "IPFilterPolicyNotValid",
+						Message: "Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: invalid CIDR address: abcd/32",
+					},
+				},
+			},
+		},
+	})
+
 	// proxyWithInvalidSlowStartWindow is invalid because it has invalid window size syntax.
 	proxyWithInvalidSlowStartWindow := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
