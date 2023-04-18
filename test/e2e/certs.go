@@ -89,8 +89,8 @@ func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition 
 
 	res := &certmanagerv1.Certificate{}
 
-	if err := wait.PollImmediate(c.retryInterval, c.retryTimeout, func() (bool, error) {
-		if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(cert), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), c.retryInterval, c.retryTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := c.client.Get(ctx, client.ObjectKeyFromObject(cert), res); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
