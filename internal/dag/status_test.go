@@ -1904,6 +1904,84 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyInvalidDuplicateIncludeSamePathDiffHeaders := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				// First valid header matches on path /foo.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-another-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				// Second valid header matches on path /foo.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header-other",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteama",
+				Namespace: "teama",
+				// This match on /foo with same headers as previous should be invalid.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header-other",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate header conditions on an include with same path", testcase{
+		objs: []interface{}{proxyInvalidDuplicateIncludeSamePathDiffHeaders, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+		},
+	})
+
 	proxyInvalidDuplicateHeaderAndPathConditions := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",

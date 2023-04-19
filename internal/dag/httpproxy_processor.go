@@ -1570,6 +1570,7 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 		for i := range ag.headerConds {
 			if ag.headerConds[i] != includeHeaderConds[i] {
 				headerCondsIdentical = false
+				break
 			}
 		}
 		if !headerCondsIdentical {
@@ -1578,15 +1579,26 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 
 		// Now compare (sorted) query param conditions element-by-element.
 		// If any mismatch, we can return early.
+		queryParamCondsIdentical := true
 		for i := range ag.queryParamConds {
 			if ag.queryParamConds[i] != includeQueryParamConds[i] {
-				return false
+				queryParamCondsIdentical = false
+				break
 			}
+		}
+		if !queryParamCondsIdentical {
+			continue
 		}
 		// If we get here, all header and query param conditions
 		// must be equal.
 		return true
 	}
+
+	// Save the seen path and header/query conditions.
+	seenConds[pathPrefix] = append(seenConds[pathPrefix], matchConditionAggregate{
+		headerConds:     includeHeaderConds,
+		queryParamConds: includeQueryParamConds,
+	})
 
 	return false
 }
