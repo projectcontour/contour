@@ -32,7 +32,6 @@ import (
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
-	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_proxy_protocol_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3"
 	envoy_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
@@ -377,7 +376,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 	lastIndex := len(b.filters) - 1
 	routerIndex := -1
 	for i, filter := range b.filters {
-		if filter.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+		if filter.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 			routerIndex = i
 			break
 		}
@@ -388,7 +387,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		// If this happens, it has to be programmer error, so we panic to tell them
 		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 		// the second one earlier, because we're panicking anyway.
-		if f.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 			panic("Can't add more than one router to a filter chain")
 		}
 		if routerIndex != lastIndex {
@@ -424,7 +423,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	// with typeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`,
 	// which in this case is the one of type Router.
 	lastIndex := len(b.filters) - 1
-	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 		return errors.New("last filter is not a Router filter")
 	}
 
