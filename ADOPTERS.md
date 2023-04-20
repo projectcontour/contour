@@ -41,6 +41,12 @@ The company’s mission is to solve everyday challenges with technology innovati
 
 Gojek Data Platform team processes more than hundred terabyte data per day. We are fully using kubernetes in our production environment and chose Contour as the ingress for all kubernetes clusters that we have.
 
+**[DaoCloud](https://daocloud.io/)**
+
+DaoCloud is an innovation leader in the cloud-native field. With the competitive expertise of its proprietary intellectual property rights, DaoCloud is committed to creating an open Cloud OS which enables enterprises to easily carry out digital transformation.
+
+DaoCloud build Next Generation Microservices Gateway based on Contour, and also contribute in Contour Community deeply.
+
 ## Adding a logo to projectcontour.io
 
 If you would like to add your logo to a future `Adopters of Contour` section
