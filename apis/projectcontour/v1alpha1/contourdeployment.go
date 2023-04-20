@@ -114,6 +114,10 @@ type ContourSettings struct {
 	// Deployment describes the settings for running contour as a `Deployment`.
 	// +optional
 	Deployment *DeploymentSettings `json:"deployment,omitempty"`
+
+	// WatchNamespaces restricts watching contour instances to a subset of namespaces.
+	// +optional
+	WatchNamespaces string `json:"watchNamespaces,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

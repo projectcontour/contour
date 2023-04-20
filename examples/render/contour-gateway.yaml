@@ -1424,6 +1424,10 @@ spec:
                           Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  watchNamespaces:
+                    description: WatchNamespaces restricts watching contour instances
+                      to a subset of namespaces.
+                    type: string
                 type: object
               envoy:
                 description: Envoy specifies deployment-time settings for the Envoy

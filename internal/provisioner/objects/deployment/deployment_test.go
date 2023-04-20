@@ -222,3 +222,15 @@ func TestNodePlacementDeployment(t *testing.T) {
 	checkDeploymentHasTolerations(t, deploy, tolerations)
 
 }
+
+func TestWatchNamespacesArg(t *testing.T) {
+	name := "namespace-test"
+	namespace2Watch := "default"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.WatchNamespaces = namespace2Watch
+
+	deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+
+	container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+	checkContainerHasArg(t, container, fmt.Sprintf("--watch-namespaces=%s", namespace2Watch))
+}

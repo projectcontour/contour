@@ -100,6 +100,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		args = append(args, "--debug")
 	}
 
+	if contour.Spec.WatchNamespaces != corev1.NamespaceAll {
+		args = append(args, fmt.Sprintf("--watch-namespaces=%s", contour.Spec.WatchNamespaces))
+	}
+
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
 		switch {
