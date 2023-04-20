@@ -11,6 +11,8 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://gojek.io/" border="0" target="_blank"><img alt="gojek.io" src="site/img/adopters/gojek.svg" height="50"></a>
 
+<a href="https://daocloud.io/" border="0" target="_blank"><img alt="daocloud.io" src="site/img/adopters/daocloud.png" height="50"></a>
+
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
