@@ -72,7 +72,7 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
 fi
 
 # Install metallb.
-${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n metallb-system deployment/controller --for=condition=Available
 
 # Apply config with addresses based on docker network IPAM
