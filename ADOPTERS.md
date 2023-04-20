@@ -11,6 +11,8 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://gojek.io/" border="0" target="_blank"><img alt="gojek.io" src="site/img/adopters/gojek.svg" height="50"></a>
 
+<a href="https://daocloud.io/" border="0" target="_blank"><img alt="daocloud.io" src="site/img/adopters/daocloud.png" height="50"></a>
+
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
@@ -38,6 +40,12 @@ Gojek launched in 2010 as a call center for booking motorcycle taxi rides in Ind
 The company’s mission is to solve everyday challenges with technology innovation. To achieve that across multiple markets, the team at Gojek focused on building an infrastructure for speed, reliability, and scale.
 
 Gojek Data Platform team processes more than hundred terabyte data per day. We are fully using kubernetes in our production environment and chose Contour as the ingress for all kubernetes clusters that we have.
+
+**[DaoCloud](https://daocloud.io/)**
+
+DaoCloud is an innovation leader in the cloud-native field. With the competitive expertise of its proprietary intellectual property rights, DaoCloud is committed to creating an open Cloud OS which enables enterprises to easily carry out digital transformation.
+
+DaoCloud build Next Generation Microservices Gateway based on Contour, and also contribute in Contour Community deeply.
 
 ## Adding a logo to projectcontour.io
 
