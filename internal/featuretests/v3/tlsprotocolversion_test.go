@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -71,8 +73,9 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -111,8 +114,9 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 
 	l1 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),

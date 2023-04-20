@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
@@ -83,8 +85,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -135,8 +138,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -288,8 +292,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -396,8 +401,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -506,8 +512,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -620,8 +627,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -774,8 +782,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -938,8 +947,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1083,8 +1093,9 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1243,8 +1254,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1305,8 +1317,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1468,8 +1481,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1586,8 +1600,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -1706,8 +1721,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),

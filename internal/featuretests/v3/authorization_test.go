@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -81,8 +83,9 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 			defaultHTTPListener(),
 
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -167,8 +170,9 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -482,8 +486,9 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		Resources: resources(t,
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -546,8 +551,9 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh cache.ResourceEventHand
 		Resources: resources(t,
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),

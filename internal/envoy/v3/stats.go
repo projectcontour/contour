@@ -21,6 +21,7 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -41,41 +42,46 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 	// Create HTTPS listener for metrics and HTTP listener for health.
 	case metrics.TLS != nil:
 		listeners = []*envoy_listener_v3.Listener{{
-			Name:          "stats",
-			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			Name:                          "stats",
+			Address:                       SocketAddress(metrics.Address, metrics.Port),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
+			SocketOptions:                 TCPKeepaliveSocketOptions(),
 			FilterChains: filterChain("stats",
 				DownstreamTLSTransportSocket(
 					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats")),
 		}, {
-			Name:          "health",
-			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
+			Name:                          "health",
+			Address:                       SocketAddress(health.Address, health.Port),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
+			SocketOptions:                 TCPKeepaliveSocketOptions(),
+			FilterChains:                  filterChain("stats", nil, routeForAdminInterface("/ready")),
 		}}
 
 	// Create combined HTTP listener for metrics and health.
 	case (metrics.Address == health.Address) &&
 		(metrics.Port == health.Port):
 		listeners = []*envoy_listener_v3.Listener{{
-			Name:          "stats-health",
-			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready", "/stats")),
+			Name:                          "stats-health",
+			Address:                       SocketAddress(metrics.Address, metrics.Port),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
+			SocketOptions:                 TCPKeepaliveSocketOptions(),
+			FilterChains:                  filterChain("stats", nil, routeForAdminInterface("/ready", "/stats")),
 		}}
 
 	// Create separate HTTP listeners for metrics and health.
 	default:
 		listeners = []*envoy_listener_v3.Listener{{
-			Name:          "stats",
-			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/stats")),
+			Name:                          "stats",
+			Address:                       SocketAddress(metrics.Address, metrics.Port),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
+			SocketOptions:                 TCPKeepaliveSocketOptions(),
+			FilterChains:                  filterChain("stats", nil, routeForAdminInterface("/stats")),
 		}, {
-			Name:          "health",
-			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
+			Name:                          "health",
+			Address:                       SocketAddress(health.Address, health.Port),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
+			SocketOptions:                 TCPKeepaliveSocketOptions(),
+			FilterChains:                  filterChain("stats", nil, routeForAdminInterface("/ready")),
 		}}
 	}
 
@@ -86,8 +92,9 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 // debug routes from the admin webpage.
 func AdminListener(port int) *envoy_listener_v3.Listener {
 	return &envoy_listener_v3.Listener{
-		Name:    "envoy-admin",
-		Address: SocketAddress("127.0.0.1", port),
+		Name:                          "envoy-admin",
+		Address:                       SocketAddress("127.0.0.1", port),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		FilterChains: filterChain("envoy-admin", nil,
 			routeForAdminInterface(
 				"/certs",

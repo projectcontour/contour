@@ -372,9 +372,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				Get()
 
+			var defaultPerConnectionBufferLimitBytes uint32 = 32768
 			listeners[listener.Name] = envoy_v3.Listener(
 				listener.Name,
 				listener.Address,
+				defaultPerConnectionBufferLimitBytes,
 				listener.Port,
 				proxyProtocol(cfg.UseProxyProto),
 				cm,
@@ -385,9 +387,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		// will attach a filter chain per vhost matching on SNI,
 		// plus possibly one fallback cert filter chain.
 		if len(listener.SecureVirtualHosts) > 0 {
+			var defaultPerConnectionBufferLimitBytes uint32 = 32768
 			listeners[listener.Name] = envoy_v3.Listener(
 				listener.Name,
 				listener.Address,
+				defaultPerConnectionBufferLimitBytes,
 				listener.Port,
 				secureProxyProtocol(cfg.UseProxyProto),
 			)

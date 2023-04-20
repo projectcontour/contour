@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -78,8 +80,9 @@ func TestStatsListeners(t *testing.T) {
 		metrics: contour_api_v1alpha1.MetricsConfig{Address: "127.0.0.127", Port: 8123},
 		health:  contour_api_v1alpha1.HealthConfig{Address: "127.0.0.127", Port: 8123},
 		want: []*envoy_listener_v3.Listener{{
-			Name:    "stats-health",
-			Address: SocketAddress("127.0.0.127", 8123),
+			Name:                          "stats-health",
+			Address:                       SocketAddress("127.0.0.127", 8123),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: FilterChains(
 				&envoy_listener_v3.Filter{
 					Name: wellknown.HTTPConnectionManager,
@@ -122,8 +125,9 @@ func TestStatsListeners(t *testing.T) {
 			Address: "127.0.0.127",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{
-			Name:    "stats",
-			Address: SocketAddress("127.0.0.127", 8123),
+			Name:                          "stats",
+			Address:                       SocketAddress("127.0.0.127", 8123),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: []*envoy_listener_v3.FilterChain{{
 				Filters: []*envoy_listener_v3.Filter{{
 					Name: wellknown.HTTPConnectionManager,
@@ -166,8 +170,9 @@ func TestStatsListeners(t *testing.T) {
 			}},
 			SocketOptions: TCPKeepaliveSocketOptions(),
 		}, {
-			Name:    "health",
-			Address: SocketAddress("127.0.0.127", 8124),
+			Name:                          "health",
+			Address:                       SocketAddress("127.0.0.127", 8124),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: FilterChains(
 				&envoy_listener_v3.Filter{
 					Name: wellknown.HTTPConnectionManager,
@@ -211,8 +216,9 @@ func TestStatsListeners(t *testing.T) {
 			Address: "127.0.0.127",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{
-			Name:    "stats",
-			Address: SocketAddress("127.0.0.127", 8123),
+			Name:                          "stats",
+			Address:                       SocketAddress("127.0.0.127", 8123),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: []*envoy_listener_v3.FilterChain{{
 				Filters: []*envoy_listener_v3.Filter{{
 					Name: wellknown.HTTPConnectionManager,
@@ -262,8 +268,9 @@ func TestStatsListeners(t *testing.T) {
 			}},
 			SocketOptions: TCPKeepaliveSocketOptions(),
 		}, {
-			Name:    "health",
-			Address: SocketAddress("127.0.0.127", 8124),
+			Name:                          "health",
+			Address:                       SocketAddress("127.0.0.127", 8124),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: FilterChains(
 				&envoy_listener_v3.Filter{
 					Name: wellknown.HTTPConnectionManager,
@@ -302,8 +309,9 @@ func TestStatsListeners(t *testing.T) {
 			Address: "127.0.0.128",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{
-			Name:    "stats",
-			Address: SocketAddress("127.0.0.127", 8123),
+			Name:                          "stats",
+			Address:                       SocketAddress("127.0.0.127", 8123),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: FilterChains(
 				&envoy_listener_v3.Filter{
 					Name: wellknown.HTTPConnectionManager,
@@ -332,8 +340,9 @@ func TestStatsListeners(t *testing.T) {
 			),
 			SocketOptions: TCPKeepaliveSocketOptions(),
 		}, {
-			Name:    "health",
-			Address: SocketAddress("127.0.0.128", 8124),
+			Name:                          "health",
+			Address:                       SocketAddress("127.0.0.128", 8124),
+			PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 			FilterChains: FilterChains(
 				&envoy_listener_v3.Filter{
 					Name: wellknown.HTTPConnectionManager,

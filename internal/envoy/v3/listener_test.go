@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -83,18 +85,21 @@ func TestListener(t *testing.T) {
 		port          int
 		lf            []*envoy_listener_v3.ListenerFilter
 		f             []*envoy_listener_v3.Filter
+		connLimit     uint32
 		want          *envoy_listener_v3.Listener
 	}{
 		"insecure listener": {
-			name:    "http",
-			address: "0.0.0.0",
-			port:    9000,
+			name:      "http",
+			address:   "0.0.0.0",
+			connLimit: 32768,
+			port:      9000,
 			f: []*envoy_listener_v3.Filter{
 				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 			},
 			want: &envoy_listener_v3.Listener{
-				Name:    "http",
-				Address: SocketAddress("0.0.0.0", 9000),
+				Name:                          "http",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
@@ -102,9 +107,10 @@ func TestListener(t *testing.T) {
 			},
 		},
 		"insecure listener w/ proxy": {
-			name:    "http-proxy",
-			address: "0.0.0.0",
-			port:    9000,
+			name:      "http-proxy",
+			address:   "0.0.0.0",
+			connLimit: 32768,
+			port:      9000,
 			lf: []*envoy_listener_v3.ListenerFilter{
 				ProxyProtocol(),
 			},
@@ -112,8 +118,9 @@ func TestListener(t *testing.T) {
 				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 			},
 			want: &envoy_listener_v3.Listener{
-				Name:    "http-proxy",
-				Address: SocketAddress("0.0.0.0", 9000),
+				Name:                          "http-proxy",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
 				),
@@ -124,15 +131,17 @@ func TestListener(t *testing.T) {
 			},
 		},
 		"secure listener": {
-			name:    "https",
-			address: "0.0.0.0",
-			port:    9000,
+			name:      "https",
+			address:   "0.0.0.0",
+			connLimit: 32768,
+			port:      9000,
 			lf: ListenerFilters(
 				TLSInspector(),
 			),
 			want: &envoy_listener_v3.Listener{
-				Name:    "https",
-				Address: SocketAddress("0.0.0.0", 9000),
+				Name:                          "https",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: ListenerFilters(
 					TLSInspector(),
 				),
@@ -140,16 +149,18 @@ func TestListener(t *testing.T) {
 			},
 		},
 		"secure listener w/ proxy": {
-			name:    "https-proxy",
-			address: "0.0.0.0",
-			port:    9000,
+			name:      "https-proxy",
+			address:   "0.0.0.0",
+			connLimit: 32768,
+			port:      9000,
 			lf: ListenerFilters(
 				ProxyProtocol(),
 				TLSInspector(),
 			),
 			want: &envoy_listener_v3.Listener{
-				Name:    "https-proxy",
-				Address: SocketAddress("0.0.0.0", 9000),
+				Name:                          "https-proxy",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
 					TLSInspector(),
@@ -161,7 +172,7 @@ func TestListener(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
+			got := Listener(tc.name, tc.address, tc.connLimit, tc.port, tc.lf, tc.f...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

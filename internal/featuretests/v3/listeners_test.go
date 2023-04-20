@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -192,14 +194,15 @@ func TestTLSListener(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// add ingress and assert the existence of ingress_http and ingres_https
+	// add ingress and assert the existence of ingress_http and ingress_https
 	rh.OnAdd(i1)
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -243,8 +246,9 @@ func TestTLSListener(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -351,8 +355,9 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	})
 
 	l1 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -393,8 +398,9 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	// add secret
 	rh.OnAdd(secret1)
 	l2 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -474,8 +480,9 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	rh.OnAdd(secret1)
 
 	l1 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -560,8 +567,9 @@ func TestLDSFilter(t *testing.T) {
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -717,8 +725,9 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	httpListener.ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.ProxyProtocol())
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.ProxyProtocol(),
 			envoy_v3.TLSInspector(),
@@ -814,8 +823,9 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	httpListener.Address = envoy_v3.SocketAddress("127.0.0.100", 9100)
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("127.0.0.200", 9200),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("127.0.0.200", 9200),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -902,8 +912,9 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	)
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -956,7 +967,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
-	// p1 is a httpproxy that has TLS
+	// p1 is an httpproxy that has TLS
 	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
@@ -994,8 +1005,9 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	rh.OnAdd(p1)
 
 	ingressHTTPS := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -1064,8 +1076,9 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh.OnAdd(p1)
 
 	l1 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -1120,8 +1133,9 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh.OnUpdate(p1, p2)
 
 	l2 := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),

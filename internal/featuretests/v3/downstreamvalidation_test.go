@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -80,8 +82,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnAdd(proxy1)
 
 	ingressHTTPS := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -130,8 +133,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy1, proxy2)
 
 	ingressHTTPSSkipVerify := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -178,8 +182,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy2, proxy3)
 
 	ingressHTTPSSkipVerifyWithCA := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -241,8 +246,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy3, proxy4)
 
 	ingressHTTPSWithCRLandCA := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -293,8 +299,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy4, proxy5)
 
 	ingressHTTPSWithLeafCRLandCA := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -345,8 +352,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy5, proxy6)
 
 	ingressHTTPSOptionalVerify := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -400,8 +408,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy6, proxy7)
 
 	ingressHTTPSForwardClientCert := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -458,8 +467,9 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnUpdate(proxy7, proxy8)
 
 	ingressHTTPSForwardClientCertSkipValidation := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),

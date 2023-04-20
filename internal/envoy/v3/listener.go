@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -48,7 +50,6 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type HTTPVersionType = http.HttpConnectionManager_CodecType
@@ -130,12 +131,14 @@ func ProxyProtocol() *envoy_listener_v3.ListenerFilter {
 }
 
 // Listener returns a new envoy_listener_v3.Listener for the supplied address, port, and filters.
-func Listener(name, address string, port int, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
+// TODO: make the default connectionBufferLimit configurable
+func Listener(name, address string, connectionBufferLimit uint32, port int, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
 	l := &envoy_listener_v3.Listener{
-		Name:            name,
-		Address:         SocketAddress(address, port),
-		ListenerFilters: lf,
-		SocketOptions:   TCPKeepaliveSocketOptions(),
+		Name:                          name,
+		Address:                       SocketAddress(address, port),
+		PerConnectionBufferLimitBytes: wrapperspb.UInt32(connectionBufferLimit),
+		ListenerFilters:               lf,
+		SocketOptions:                 TCPKeepaliveSocketOptions(),
 	}
 	if len(filters) > 0 {
 		l.FilterChains = append(

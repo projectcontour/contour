@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -110,8 +112,9 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh cache.ResourceE
 	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -184,8 +187,9 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh cache
 	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -322,8 +326,9 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh cache.R
 	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
@@ -443,8 +448,9 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh cache.Resou
 	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
 
 	httpsListener := &envoy_listener_v3.Listener{
-		Name:    "ingress_https",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		Name:                          "ingress_https",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),

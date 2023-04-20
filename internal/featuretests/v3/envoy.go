@@ -19,6 +19,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
@@ -562,8 +564,9 @@ func envoyAdminListener(port int) *envoy_listener_v3.Listener {
 
 func defaultHTTPListener() *envoy_listener_v3.Listener {
 	return &envoy_listener_v3.Listener{
-		Name:    "ingress_http",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+		Name:                          "ingress_http",
+		Address:                       envoy_v3.SocketAddress("0.0.0.0", 8080),
+		PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 		FilterChains: envoy_v3.FilterChains(
 			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
 		),

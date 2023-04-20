@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/wrappers"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -89,8 +91,9 @@ func TestTCPProxy(t *testing.T) {
 			// See also https://github.com/projectcontour/contour/issues/3800
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"), nil),
 				),
@@ -185,8 +188,9 @@ func TestTCPProxyDelegation(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "app/backend/80/da39a3ee5e"), nil),
 				),
@@ -264,8 +268,9 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 			// See also https://github.com/projectcontour/contour/issues/3800
 			defaultHTTPListener(),
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
@@ -353,8 +358,9 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: appendFilterChains(
 					filterchaintls("k8s.run.ubisoft.org", s1,
 						tcpproxy("ingress_https", svc.Namespace+"/"+svc.Name+"/443/4929fca9d4"), nil),
@@ -446,8 +452,9 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 			// ingress_https is present for
 			// kuard-tcp.example.com:443 terminated at envoy then forwarded to default/backend:80
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
@@ -536,8 +543,9 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 			// ingress_https is present for
 			// kuard-tcp.example.com:443 terminated at envoy then tcpproxied to default/backend:80
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
@@ -619,8 +627,9 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 			// ingress_https is present for
 			// kuard-tcp.example.com:443 direct to default/backend:80
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
@@ -708,8 +717,9 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 			// kuard-tcp.example.com:443 direct to default/backend:80, envoy does not handle
 			// the TLS handshake beyond SNI demux because passthrough: true is in use.
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          "ingress_https",
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: &wrappers.UInt32Value{Value: 32768},
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
