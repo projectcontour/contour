@@ -1,0 +1,1 @@
+Upgrade metallb from v0.13.7 to v0.13.9, the main change in metallb v0.13.9 updated the IPAddressPool CRD to add serviceAllocation support.
