@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -144,7 +145,7 @@ func testIngressResourceRBAC(namespace string) {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: e2e.IngressPathTypePtr(networkingv1.PathTypePrefix),
+										PathType: ref.To(networkingv1.PathTypePrefix),
 										Path:     "/",
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{

@@ -119,7 +119,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				DNSLookupFamily: contour_api_v1alpha1.IPv4ClusterDNSFamily,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: contourconfig.UInt32Ptr(77),
+				XffNumTrustedHops: ref.To(uint32(77)),
 				EnvoyAdminPort:    ref.To(9997),
 			},
 		},
