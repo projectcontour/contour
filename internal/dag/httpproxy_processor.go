@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -975,12 +976,58 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.JWTProvider = defaultJWTProvider
 		}
 
+		r.IPFilterAllow, r.IPFilterRules, err = toIPFilterRules(route.IPAllowFilterPolicy, route.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			return nil
+		}
+
 		routes = append(routes, r)
 	}
 
 	routes = expandPrefixMatches(routes)
 
 	return routes
+}
+
+// toIPFilterRules converts ip filter settings from the api into the
+// dag representation
+func toIPFilterRules(allowPolicy, denyPolicy []contour_api_v1.IPFilterPolicy, validCond *contour_api_v1.DetailedCondition) (allow bool, filters []IPFilterRule, err error) {
+	var ipPolicies []contour_api_v1.IPFilterPolicy
+	switch {
+	case len(allowPolicy) > 0 && len(denyPolicy) > 0:
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"route cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
+		err = fmt.Errorf("invalid ip filter")
+		return
+	case len(allowPolicy) > 0:
+		allow = true
+		ipPolicies = allowPolicy
+	case len(denyPolicy) > 0:
+		allow = false
+		ipPolicies = denyPolicy
+	}
+	if ipPolicies == nil {
+		return
+	}
+	filters = make([]IPFilterRule, 0, len(ipPolicies))
+	for _, p := range ipPolicies {
+		var cidr *net.IPNet
+		_, cidr, err = net.ParseCIDR(p.CIDR)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "InvalidCIDR",
+				"%s failed to parse: %s", p.CIDR, err)
+			continue
+		}
+		filters = append(filters, IPFilterRule{
+			Remote: p.Source == contour_api_v1.IPFilterSourceRemote,
+			CIDR:   *cidr,
+		})
+	}
+	if err != nil {
+		allow = false
+		filters = nil
+	}
+	return
 }
 
 // processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document

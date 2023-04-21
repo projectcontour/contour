@@ -18,6 +18,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -351,6 +352,16 @@ type Route struct {
 	// InternalRedirectPolicy defines if envoy should handle redirect
 	// response internally instead of sending it downstream.
 	InternalRedirectPolicy *InternalRedirectPolicy
+
+	// IPFilterAllow determines how the IPFilterRules should be applied.
+	// If true, traffic is allowed only if it matches a rule.
+	// If false, traffic is allowed only if it doesn't match any rule.
+	IPFilterAllow bool
+
+	// IPFilterRules is a list of ipv4/6 filter rules for which matching
+	// requests should be filtered. The behavior of the filters is governed
+	// by IPFilterAllow.
+	IPFilterRules []IPFilterRule
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -760,6 +771,16 @@ type JWTRule struct {
 	PathMatchCondition    MatchCondition
 	HeaderMatchConditions []HeaderMatchCondition
 	ProviderName          string
+}
+
+type IPFilterRule struct {
+	// Remote determines what ip to filter on.
+	// If true, filters on the remote address. If false, filters on the
+	// immediate network address.
+	Remote bool
+
+	// CIDR is a CIDR block of a ipv4 or ipv6 addresses to filter on.
+	CIDR net.IPNet
 }
 
 // ExternalAuthorization contains the configuration for enabling

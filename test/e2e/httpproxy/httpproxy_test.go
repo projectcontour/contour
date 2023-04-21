@@ -282,6 +282,17 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
 
+	f.NamespacedTest("httpproxy-ip-filters", func(namespace string) {
+		// ip filter tests rely on the ability to forge x-forwarded-for
+		Context("with trusted xff hops", func() {
+			BeforeEach(func() {
+				contourConfig.Network.XffNumTrustedHops = 1
+			})
+
+			testIPFilterPolicy(namespace)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-multiple-ingress-classes-field", func(namespace string) {
 		Context("with more than one ingress ClassName set", func() {
 			BeforeEach(func() {

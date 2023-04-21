@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"net"
 	"testing"
 	"time"
 
@@ -868,6 +869,123 @@ func TestDetermineExternalAuthTimeout(t *testing.T) {
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantBool, gotBool)
 			require.Equal(t, tc.wantValidCond, validCond)
+		})
+	}
+}
+
+func TestToIPFilterRule(t *testing.T) {
+	tests := map[string]struct {
+		allowPolicy       []contour_api_v1.IPFilterPolicy
+		denyPolicy        []contour_api_v1.IPFilterPolicy
+		want              []IPFilterRule
+		wantAllow         bool
+		wantErr           bool
+		wantConditionErrs []contour_api_v1.SubCondition
+	}{
+		"no ip policy": {
+			allowPolicy: nil,
+			denyPolicy:  []contour_api_v1.IPFilterPolicy{},
+			want:        nil,
+		},
+		"both allow and deny rules not supported": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1/24",
+			}},
+			denyPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2.2.2.2/24",
+			}},
+			wantErr: true,
+			wantConditionErrs: []contour_api_v1.SubCondition{{
+				Type:    "IPFilterError",
+				Status:  "True",
+				Reason:  "IncompatibleIPAddressFilters",
+				Message: "route cannot specify both `ipAllowPolicy` and `ipDenyPolicy`",
+			}},
+		},
+		"reports invalid cidr ranges": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "!@#$!@#$",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2.2.2.2/512",
+			}},
+			wantErr: true,
+			wantConditionErrs: []contour_api_v1.SubCondition{
+				{
+					Type:    "IPFilterError",
+					Status:  "True",
+					Reason:  "InvalidCIDR",
+					Message: "!@#$!@#$ failed to parse: invalid CIDR address: !@#$!@#$",
+				},
+				{
+					Type:    "IPFilterError",
+					Status:  "True",
+					Reason:  "InvalidCIDR",
+					Message: "2.2.2.2/512 failed to parse: invalid CIDR address: 2.2.2.2/512",
+				},
+			},
+		},
+		"parses multiple allow rules": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1/24",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2001:db8::68/24",
+			}},
+			wantAllow: true,
+			want: []IPFilterRule{{
+				Remote: true,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("1.1.1.0").To4(),
+					Mask: net.CIDRMask(24, 32),
+				},
+			}, {
+				Remote: false,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("2001:d00::"),
+					Mask: net.CIDRMask(24, 128),
+				},
+			}},
+		},
+		"parses multiple deny rules": {
+			denyPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1/24",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2001:db8::68/24",
+			}},
+			wantAllow: false,
+			want: []IPFilterRule{{
+				Remote: true,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("1.1.1.0").To4(),
+					Mask: net.CIDRMask(24, 32),
+				},
+			}, {
+				Remote: false,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("2001:d00::"),
+					Mask: net.CIDRMask(24, 128),
+				},
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cond := contour_api_v1.DetailedCondition{}
+			gotAllow, got, gotErr := toIPFilterRules(tc.allowPolicy, tc.denyPolicy, &cond)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantAllow, gotAllow)
+			require.Equal(t, tc.wantConditionErrs, cond.Errors)
 		})
 	}
 }

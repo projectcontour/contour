@@ -4917,6 +4917,52 @@ spec:
                             type: integer
                           type: array
                       type: object
+                    ipAllowPolicy:
+                      description: IPAllowFilterPolicy is a list of ipv4/6 filter
+                        rules for which matching requests should be allowed. All other
+                        requests will be denied. Only one of IPAllowFilterPolicy and
+                        IPDenyFilterPolicy can be defined.
+                      items:
+                        properties:
+                          cidr:
+                            description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
+                              to filter on.
+                            type: string
+                          source:
+                            description: 'Source indicates how to determine the ip
+                              address to filter on, and can be one of two values:
+                              - `Remote` filters on the ip address of the client,
+                              accounting for PROXY and X-Forwarded-For as needed.
+                              - `Peer` filters on the ip of the network request, ignoring
+                              PROXY and X-Forwarded-For.'
+                            type: string
+                        required:
+                        - source
+                        type: object
+                      type: array
+                    ipDenyPolicy:
+                      description: IPDenyFilterPolicy is a list of ipv4/6 filter rules
+                        for which matching requests should be denied. All other requests
+                        will be allowed. Only one of IPAllowFilterPolicy and IPDenyFilterPolicy
+                        can be defined.
+                      items:
+                        properties:
+                          cidr:
+                            description: CIDR is a CIDR block of a ipv4 or ipv6 addresses
+                              to filter on.
+                            type: string
+                          source:
+                            description: 'Source indicates how to determine the ip
+                              address to filter on, and can be one of two values:
+                              - `Remote` filters on the ip address of the client,
+                              accounting for PROXY and X-Forwarded-For as needed.
+                              - `Peer` filters on the ip of the network request, ignoring
+                              PROXY and X-Forwarded-For.'
+                            type: string
+                        required:
+                        - source
+                        type: object
+                      type: array
                     jwtVerificationPolicy:
                       description: The policy for verifying JWTs for requests to this
                         route.

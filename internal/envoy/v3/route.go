@@ -23,11 +23,13 @@ import (
 	"text/template"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -138,6 +140,16 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 			})
 		}
 
+		// If IP filtering is enabled, add per-route filtering
+		if len(dagRoute.IPFilterRules) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+				ipFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules),
+			)
+		}
+
 		return rt
 	}
 }
@@ -165,6 +177,60 @@ func routeAuthzContext(settings map[string]string) *anypb.Any {
 			},
 		},
 	)
+}
+
+func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPerRoute {
+	action := envoy_config_rbac_v3.RBAC_ALLOW
+	if !allow {
+		action = envoy_config_rbac_v3.RBAC_DENY
+	}
+
+	principals := make([]*envoy_config_rbac_v3.Principal, 0, len(rules))
+
+	for _, f := range rules {
+		var principal *envoy_config_rbac_v3.Principal
+
+		prefixLen, _ := f.CIDR.Mask.Size()
+		cidr := &envoy_core_v3.CidrRange{
+			AddressPrefix: f.CIDR.IP.String(),
+			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)),
+		}
+
+		if f.Remote {
+			principal = &envoy_config_rbac_v3.Principal{
+				Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+					RemoteIp: cidr,
+				},
+			}
+		} else {
+			principal = &envoy_config_rbac_v3.Principal{
+				Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+					DirectRemoteIp: cidr,
+				},
+			}
+		}
+		// Note that `source_ip` is not supported: `source_ip` respects
+		// PROXY, but not X-Forwarded-For.
+		principals = append(principals, principal)
+	}
+
+	return &envoy_rbac_v3.RBACPerRoute{
+		Rbac: &envoy_rbac_v3.RBAC{
+			Rules: &envoy_config_rbac_v3.RBAC{
+				Action: action,
+				Policies: map[string]*envoy_config_rbac_v3.Policy{
+					"ip-rules": {
+						Permissions: []*envoy_config_rbac_v3.Permission{
+							{
+								Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+							},
+						},
+						Principals: principals,
+					},
+				},
+			},
+		},
+	}
 }
 
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
