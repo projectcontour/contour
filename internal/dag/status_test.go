@@ -4978,7 +4978,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
-	run(t, "RegularExpression query param match not supported for httproute", testcase{
+	run(t, "regular expression query param match with valid value for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -5001,9 +5001,62 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
 									Name:  "param-1",
-									Value: "value-1",
+									Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted HTTPRoute",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "regular expression query param match with invalid value for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Value: ref.To("/"),
+							},
+							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+								{
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
+									Name:  "param-1",
+									Value: "invalid-regex????",
 								},
 							},
 						}},
@@ -5022,7 +5075,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported",
+							Message: "FIXME: Invalid value for RegularExpression match type is specified",
 						},
 					},
 				},

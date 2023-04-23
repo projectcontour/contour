@@ -1667,10 +1667,17 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.QueryParamMatchExact {
-			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported")
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.QueryParamMatchExact) {
+		case gatewayapi_v1beta1.QueryParamMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.QueryParamMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("FIXME: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("FIXME: Only support Exact or RegularExpression match types")
 		}
 
 		// If multiple match conditions are found for the same value,
@@ -1681,7 +1688,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 		seenNames.Insert(match.Name)
 
 		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
-			MatchType: QueryParamMatchTypeExact,
+			MatchType: matchType,
 			Name:      match.Name,
 			Value:     match.Value,
 		})
