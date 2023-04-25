@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ matrix.branch }}
-      - uses: aquasecurity/trivy-action@0.9.2
+      - uses: aquasecurity/trivy-action@0.10.0
         with:
           scanners: vuln
           scan-type: 'fs'
