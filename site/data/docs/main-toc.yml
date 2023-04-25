@@ -45,6 +45,8 @@ toc:
         url: /config/overload-manager
       - page: JWT Verification
         url: /config/jwt-verification
+      - page: IP Filtering
+        url: /config/ip-filtering
       - page: Annotations Reference
         url: /config/annotations
       - page: Slow Start Mode

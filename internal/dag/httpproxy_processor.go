@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -176,6 +177,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if proxy.Spec.VirtualHost.TLS == nil && proxy.Spec.VirtualHost.Authorization != nil && len(proxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.Name) > 0 {
 		validCond.AddError(contour_api_v1.ConditionTypeAuthError, "AuthNotPermitted",
 			"Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
+		return
+	}
+
+	if len(proxy.Spec.VirtualHost.IPAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.IPDenyFilterPolicy) > 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.")
 		return
 	}
 
@@ -489,6 +496,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
 	}
 
+	insecure.IPFilterAllow, insecure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+			"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+		return
+	}
+
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -504,6 +518,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			return
 		}
 		secure.RateLimitPolicy = rlp
+
+		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+			return
+		}
 
 		addRoutes(secure, routes)
 
@@ -975,12 +996,67 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.JWTProvider = defaultJWTProvider
 		}
 
+		r.IPFilterAllow, r.IPFilterRules, err = toIPFilterRules(route.IPAllowFilterPolicy, route.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			return nil
+		}
+
 		routes = append(routes, r)
 	}
 
 	routes = expandPrefixMatches(routes)
 
 	return routes
+}
+
+// toIPFilterRules converts ip filter settings from the api into the
+// dag representation
+func toIPFilterRules(allowPolicy, denyPolicy []contour_api_v1.IPFilterPolicy, validCond *contour_api_v1.DetailedCondition) (allow bool, filters []IPFilterRule, err error) {
+	var ipPolicies []contour_api_v1.IPFilterPolicy
+	switch {
+	case len(allowPolicy) > 0 && len(denyPolicy) > 0:
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
+		err = fmt.Errorf("invalid ip filter")
+		return
+	case len(allowPolicy) > 0:
+		allow = true
+		ipPolicies = allowPolicy
+	case len(denyPolicy) > 0:
+		allow = false
+		ipPolicies = denyPolicy
+	}
+	if ipPolicies == nil {
+		return
+	}
+	filters = make([]IPFilterRule, 0, len(ipPolicies))
+	for _, p := range ipPolicies {
+		// convert bare IPs to CIDRs
+		unparsedCIDR := p.CIDR
+		if !strings.Contains(unparsedCIDR, "/") {
+			if strings.Contains(unparsedCIDR, ":") {
+				unparsedCIDR += "/128"
+			} else {
+				unparsedCIDR += "/32"
+			}
+		}
+		var cidr *net.IPNet
+		_, cidr, err = net.ParseCIDR(unparsedCIDR)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "InvalidCIDR",
+				"%s failed to parse: %s", p.CIDR, err)
+			continue
+		}
+		filters = append(filters, IPFilterRule{
+			Remote: p.Source == contour_api_v1.IPFilterSourceRemote,
+			CIDR:   *cidr,
+		})
+	}
+	if err != nil {
+		allow = false
+		filters = nil
+	}
+	return
 }
 
 // processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document
