@@ -204,8 +204,12 @@ See the [AWS NLB tutorial][10] as an example.
 ## Disabling Features
 
 You can run Contour with certain features disabled by passing `--disable-feature` flag to the Contour `serve` command.
-Currently this flag can be used to disable the informer for ExtensionService resources, effectively making the ExtensionService CRD optional in the cluster.
-To do this, use the flag as follows: `--disable-feature=extensionservices`
+The flag is used to disable the informer for a custom resource, effectively making the corresponding CRD optional in the cluster.
+You can provide the flag multiple times.
+
+For example, to disable ExtensionService CRD, use the flag as follows: `--disable-feature=extensionservices`.
+
+See the [configuration section entry][19] for all options.
 
 ## Upgrading Contour/Envoy
 
@@ -383,3 +387,4 @@ $ kubectl delete ns contour-operator
 [16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
 [17]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour
 [18]: guides/gateway-api/#next-steps
+[19]: configuration.md
