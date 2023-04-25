@@ -26,7 +26,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.27.1@sha256:9915f5629ef4d29f35b478e819249e89cfaffcbfeebda4324e5c01d53d937b09"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
