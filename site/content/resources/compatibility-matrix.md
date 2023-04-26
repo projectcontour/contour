@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.26.0][35]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
+| main            | [1.26.1][35]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.3          | [1.25.4][32]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.2          | [1.25.2][31]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.1          | [1.25.1][28]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
@@ -152,7 +152,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [32]: https://www.envoyproxy.io/docs/envoy/v1.25.4/version_history/v1.25/v1.25.4
 [33]: https://www.envoyproxy.io/docs/envoy/v1.24.5/version_history/v1.24/v1.24.5
 [34]: https://www.envoyproxy.io/docs/envoy/v1.23.7/version_history/v1.23/v1.23.7
-[35]: https://www.envoyproxy.io/docs/envoy/v1.26.0/version_history/v1.26/v1.26.0
+[35]: https://www.envoyproxy.io/docs/envoy/v1.26.1/version_history/v1.26/v1.26.1
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
