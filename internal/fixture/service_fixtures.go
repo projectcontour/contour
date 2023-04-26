@@ -41,6 +41,17 @@ var ServiceRootsHome = &v1.Service{
 	},
 }
 
+var ServiceRootsFoo1 = &v1.Service{
+	ObjectMeta: ObjectMeta("roots/foo1"),
+	Spec: v1.ServiceSpec{
+		Ports: []v1.ServicePort{{
+			Name:     "http",
+			Protocol: "TCP",
+			Port:     8080,
+		}},
+	},
+}
+
 var ServiceRootsFoo2 = &v1.Service{
 	ObjectMeta: ObjectMeta("roots/foo2"),
 	Spec: v1.ServiceSpec{

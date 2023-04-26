@@ -2465,7 +2465,7 @@ set when a request is rate-limited.</p>
 </p>
 <p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
-One of Prefix, Header or QueryParameter must be provided.</p>
+One of Prefix, Exact, Header or QueryParameter must be provided.</p>
 </p>
 <table>
 <thead>
@@ -2486,6 +2486,20 @@ string
 <td>
 <em>(Optional)</em>
 <p>Prefix defines a prefix match for a request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>exact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exact defines a exact match for a request.
+This field is not allowed in include match conditions.</p>
 </td>
 </tr>
 <tr>

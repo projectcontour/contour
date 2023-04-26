@@ -370,6 +370,12 @@ func (r *Route) HasPathPrefix() bool {
 	return ok
 }
 
+// HasPathExact returns whether this route has a ExactPathCondition.
+func (r *Route) HasPathExact() bool {
+	_, ok := r.PathMatchCondition.(*ExactMatchCondition)
+	return ok
+}
+
 // HasPathRegex returns whether this route has a RegexPathCondition.
 func (r *Route) HasPathRegex() bool {
 	_, ok := r.PathMatchCondition.(*RegexMatchCondition)

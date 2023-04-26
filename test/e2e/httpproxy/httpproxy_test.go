@@ -157,6 +157,10 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-include-prefix-condition", testIncludePrefixCondition)
 
+	f.NamespacedTest("httpproxy-include-exact-condition", testIncludeExactCondition)
+
+	f.NamespacedTest("httpproxy-exact-path-condition-app", testExactPathCondition)
+
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
 	f.NamespacedTest("httpproxy-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)

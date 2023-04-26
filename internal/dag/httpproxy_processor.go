@@ -620,6 +620,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			namespace = proxy.Namespace
 		}
 
+		if err := includeMatchConditionsValid(include.Conditions); err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
+				"include: %s", err)
+			continue
+		}
+
 		if err := pathMatchConditionsValid(include.Conditions); err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
 				"include: %s", err)
@@ -1376,6 +1382,11 @@ func expandPrefixMatches(routes []*Route) []*Route {
 			expandedRoutes = append(expandedRoutes, r)
 		}
 
+		// Skip for exact path match conditions
+		if r.HasPathExact() {
+			continue
+		}
+
 		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
 
 		if routingPrefix != "/" {
@@ -1570,7 +1581,18 @@ type matchConditionAggregate struct {
 }
 
 func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
-	pathPrefix := mergePathMatchConditions(includeConds).Prefix
+	pathPrefix := ""
+
+	switch pathPrefixRef := mergePathMatchConditions(includeConds).(type) {
+	case *PrefixMatchCondition:
+		pathPrefix = pathPrefixRef.Prefix
+	default:
+		// This can never happen because include match conditions only have prefix match conditions.
+		// Validations before this step ensure this, so it is safe to mark this validation failed
+		// for anything else except a prefix condition.
+		return true
+	}
+
 	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
 	includeQueryParamConds := mergeQueryParamMatchConditions(includeConds)
 
