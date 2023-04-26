@@ -37,6 +37,20 @@ func TestTracing(t *testing.T) {
 		Timeout:          timeout.DefaultSetting(),
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
+		CustomTags: []*xdscache_v3.CustomTag{
+			{
+				TagName: "literal",
+				Literal: "this is literal",
+			},
+			{
+				TagName:         "environment",
+				EnvironmentName: "HOSTNAME",
+			},
+			{
+				TagName:           "header",
+				RequestHeaderName: "X-Custom-Header",
+			},
+		},
 	}
 	withTrace := func(conf *xdscache_v3.ListenerConfig) {
 		conf.TracingConfig = tracingConfig
@@ -108,6 +122,20 @@ func TestTracing(t *testing.T) {
 			Timeout:          tracingConfig.Timeout,
 			OverallSampling:  tracingConfig.OverallSampling,
 			MaxPathTagLength: tracingConfig.MaxPathTagLength,
+			CustomTags: []*envoy_v3.CustomTag{
+				{
+					TagName: "literal",
+					Literal: "this is literal",
+				},
+				{
+					TagName:         "environment",
+					EnvironmentName: "HOSTNAME",
+				},
+				{
+					TagName:           "header",
+					RequestHeaderName: "X-Custom-Header",
+				},
+			},
 		})).
 		Get(),
 	)
