@@ -617,7 +617,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	var routes []*Route
 
 	// Loop over and process all includes, including checking for duplicate conditions.
-	seenConds := map[string][][]HeaderMatchCondition{}
+	seenConds := map[string][]matchConditionAggregate{}
 	for _, include := range proxy.Spec.Includes {
 		namespace := include.Namespace
 		if namespace == "" {
@@ -1390,7 +1390,12 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][][]HeaderMatchCondition) bool {
+// matchConditionAggregate is used to compare collections of match conditions
+type matchConditionAggregate struct {
+	headerConds []HeaderMatchCondition
+}
+
+func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds map[string][]matchConditionAggregate) bool {
 	pathPrefix := mergePathMatchConditions(include.Conditions).Prefix
 	includeHeaderConds := mergeHeaderMatchConditions(include.Conditions)
 
@@ -1421,32 +1426,47 @@ func includeMatchConditionsIdentical(include contour_api_v1.Include, seenConds m
 		return false
 	})
 
-	seenHeaderConds, pathSeen := seenConds[pathPrefix]
+	// Check if we have seen this path before.
+	// If so, get all the collections of header conditions we
+	// have seen with it.
+	condAggregates, pathSeen := seenConds[pathPrefix]
 	if !pathSeen {
-		seenConds[pathPrefix] = [][]HeaderMatchCondition{
-			includeHeaderConds,
-		}
+		seenConds[pathPrefix] = []matchConditionAggregate{{
+			headerConds: includeHeaderConds,
+		}}
 		return false
 	}
 
-	for _, headerConds := range seenHeaderConds {
-		if len(headerConds) != len(includeHeaderConds) {
-			seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+	for _, ag := range condAggregates {
+		// Quick check to see if lengths of header
+		// conditions are mismatched.
+		// If so, we can skip the rest of the checks.
+		if len(ag.headerConds) != len(includeHeaderConds) {
 			continue
 		}
 
+		// Now compare (sorted) header conditions element-by-element.
+		// If any mismatch, we can skip the rest of the checks.
 		headerCondsIdentical := true
-		for i := range headerConds {
-			if headerConds[i] != includeHeaderConds[i] {
-				seenConds[pathPrefix] = append(seenConds[pathPrefix], includeHeaderConds)
+		for i := range ag.headerConds {
+			if ag.headerConds[i] != includeHeaderConds[i] {
 				headerCondsIdentical = false
 				break
 			}
 		}
-		if headerCondsIdentical {
-			return true
+		if !headerCondsIdentical {
+			continue
 		}
+
+		// If we get here, all header conditions
+		// must be equal.
+		return true
 	}
+
+	// Save the seen path and header conditions.
+	seenConds[pathPrefix] = append(seenConds[pathPrefix], matchConditionAggregate{
+		headerConds: includeHeaderConds,
+	})
 
 	return false
 }
