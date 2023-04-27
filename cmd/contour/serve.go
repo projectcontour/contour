@@ -216,6 +216,46 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		Scheme:                 scheme,
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
+		NewCache: ctrl_cache.BuilderWithOptions(ctrl_cache.Options{
+			// TransformByObject is a function that allows changing incoming objects before they are cached by the informer.
+			// This is useful for saving memory by removing fields that are not needed by Contour.
+			TransformByObject: ctrl_cache.TransformByObject{
+				&corev1.Secret{}: func(obj interface{}) (interface{}, error) {
+					secret, ok := obj.(*corev1.Secret)
+					// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
+					if !ok {
+						return obj, nil
+					}
+
+					// Do not touch Secrets that might be needed.
+					if secret.Type == corev1.SecretTypeTLS || secret.Type == corev1.SecretTypeOpaque {
+						return obj, nil
+					}
+
+					// Other types of Secrets will never be referred to, so we can remove all data.
+					// For example Secrets of type helm.sh/release.v1 can be quite large.
+					// Last-applied-configuration annotation might contain a copy of the complete data.
+					secret.Data = nil
+					secret.SetManagedFields(nil)
+					secret.SetAnnotations(nil)
+
+					// Returning error will avoid handlers from being called.
+					// This does not avoid caching.
+					return nil, fmt.Errorf("ignoring secret %s/%s of type %s", secret.Namespace, secret.Name, secret.Type)
+				},
+			},
+			// DefaultTransform is called for objects that do not have a TransformByObject function.
+			DefaultTransform: func(obj interface{}) (interface{}, error) {
+				o, ok := obj.(client.Object)
+				// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
+				if !ok {
+					return obj, nil
+				}
+
+				o.SetManagedFields(nil)
+				return o, nil
+			},
+		}),
 	}
 	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")
