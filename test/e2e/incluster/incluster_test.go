@@ -29,6 +29,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -122,5 +123,25 @@ var _ = Describe("Incluster", func() {
 		})
 
 		f.NamespacedTest("ipv4-ipv6-compat-smoke-test", testSimpleSmoke)
+	})
+
+	Context("contour with memory limits", func() {
+		var originalResourceReq v1.ResourceRequirements
+		BeforeEach(func() {
+			originalResourceReq = f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources
+			// Set memory limit low so we can check if Contour is OOM-killed.
+			f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = v1.ResourceRequirements{
+				Limits: v1.ResourceList{
+					v1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			}
+		})
+
+		AfterEach(func() {
+			// Reset resource requests for other tests.
+			f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = originalResourceReq
+		})
+
+		f.NamespacedTest("header-match-includes-memory-usage", testHeaderMatchIncludesMemoryUsage)
 	})
 })
