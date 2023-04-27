@@ -1852,8 +1852,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							regexrouteHTTPRoute("/bl+og", service(kuardService))),
@@ -2964,7 +2963,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -3024,7 +3023,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -3077,7 +3076,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -5309,8 +5308,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
