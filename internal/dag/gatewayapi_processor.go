@@ -1673,11 +1673,11 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 			matchType = HeaderMatchTypeExact
 		case gatewayapi_v1beta1.QueryParamMatchRegularExpression:
 			if err := ValidateRegex(match.Value); err != nil {
-				return nil, fmt.Errorf("FIXME: Invalid value for RegularExpression match type is specified")
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Invalid value for RegularExpression match type is specified")
 			}
 			matchType = HeaderMatchTypeRegex
 		default:
-			return nil, fmt.Errorf("FIXME: Only support Exact or RegularExpression match types")
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact and RegularExpression match types are supported")
 		}
 
 		// If multiple match conditions are found for the same value,
