@@ -9,9 +9,9 @@ versions:
     dependencies:
       envoy: "1.26.1"
       kubernetes:
+        - "1.27"
         - "1.26"
         - "1.25"
-        - "1.24"
       gateway-api:
         - v1alpha2
         - v1beta1
