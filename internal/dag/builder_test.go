@@ -2946,6 +2946,186 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert single route with multiple query param matches including multiple for the same key and mixed types": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+								Path: &gatewayapi_v1beta1.HTTPPathMatch{
+									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+									Value: ref.To("/"),
+								},
+								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
+										Name:  "param-1",
+										Value: "value-1",
+									},
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
+										Name:  "param-2",
+										Value: "value-2",
+									},
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
+										Name:  "param-1",
+										Value: "value-3",
+									},
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
+										Name:  "Param-1",
+										Value: "value-4",
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							QueryParamMatchConditions: []QueryParamMatchCondition{
+								{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+								{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
+								{Name: "Param-1", Value: "value-4", MatchType: QueryParamMatchTypeRegex},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
+
+		"insert single route with duplicate key param matches with mixed types, ignores the second type": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+								Path: &gatewayapi_v1beta1.HTTPPathMatch{
+									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+									Value: ref.To("/"),
+								},
+								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
+										Name:  "param-1",
+										Value: "value-1",
+									},
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
+										Name:  "param-1",
+										Value: "value-2",
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							QueryParamMatchConditions: []QueryParamMatchCondition{
+								{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
+
+		"insert single route with single query param match with regex type specified and path match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+								Path: &gatewayapi_v1beta1.HTTPPathMatch{
+									Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+									Value: ref.To("/"),
+								},
+								QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+									{
+										Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
+										Name:  "query-param-regex",
+										Value: "value-%d-[a-zA-Z0-9]",
+									},
+								},
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							QueryParamMatchConditions: []QueryParamMatchCondition{
+								{Name: "query-param-regex", Value: "value-%d-[a-zA-Z0-9]", MatchType: QueryParamMatchTypeRegex},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
 		"Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
