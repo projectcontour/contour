@@ -217,6 +217,8 @@ type ContourSpec struct {
 	// EnvoyLogLevel sets the log level for Envoy
 	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
 	EnvoyLogLevel contourv1alpha1.LogLevel
+
+	DisabledFeatures string
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

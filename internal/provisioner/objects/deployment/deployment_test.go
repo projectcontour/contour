@@ -152,6 +152,8 @@ func TestDesiredDeployment(t *testing.T) {
 		"key": "value",
 	}
 
+	cntr.Spec.DisabledFeatures = "feature1,feature2"
+
 	// Use non-default container ports to test that --envoy-service-http(s)-port
 	// flags are added.
 	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
@@ -187,6 +189,9 @@ func TestDesiredDeployment(t *testing.T) {
 	checkContainerHasArg(t, container, arg)
 
 	arg = fmt.Sprintf("--kubernetes-debug=%d", cntr.Spec.KubernetesLogLevel)
+	checkContainerHasArg(t, container, arg)
+
+	arg = fmt.Sprintf("--disable-feature=%s", cntr.Spec.DisabledFeatures)
 	checkContainerHasArg(t, container, arg)
 
 	checkDeploymentHasNodeSelector(t, deploy, nil)

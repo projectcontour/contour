@@ -109,6 +109,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			args = append(args, fmt.Sprintf("--envoy-service-https-port=%d", port.ContainerPort))
 		}
 	}
+	if contour.Spec.DisabledFeatures != "" {
+		args = append(args, fmt.Sprintf("--disable-feature=%s", contour.Spec.DisabledFeatures))
+	}
+
 	if contour.Spec.IngressClassName != nil {
 		args = append(args, fmt.Sprintf("--ingress-class-name=%s", *contour.Spec.IngressClassName))
 	}

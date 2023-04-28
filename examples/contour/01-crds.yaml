@@ -1074,6 +1074,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabledFeatures:
+                    description: disabled features set
+                    type: string
                   kubernetesLogLevel:
                     description: KubernetesLogLevel Enable Kubernetes client debug
                       logging with log level. If unset, defaults to 0.

@@ -271,6 +271,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			contourModel.Spec.KubernetesLogLevel = contourParams.KubernetesLogLevel
 
+			contourModel.Spec.DisabledFeatures = contourParams.DisabledFeatures
+
 			if contourParams.Deployment != nil &&
 				contourParams.Deployment.Strategy != nil {
 				contourModel.Spec.ContourDeploymentStrategy = *contourParams.Deployment.Strategy
