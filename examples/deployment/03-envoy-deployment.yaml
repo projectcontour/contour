@@ -42,8 +42,8 @@ spec:
           args:
             - envoy
             - shutdown-manager
-          image: ghcr.io/projectcontour/contour:main
-          imagePullPolicy: Always
+          image: ghcr.io/projectcontour/contour:v1.25.0-rc.1
+          imagePullPolicy: IfNotPresent
           lifecycle:
             preStop:
               exec:
@@ -120,8 +120,8 @@ spec:
             - --envoy-key-file=/certs/tls.key
           command:
             - contour
-          image: ghcr.io/projectcontour/contour:main
-          imagePullPolicy: Always
+          image: ghcr.io/projectcontour/contour:v1.25.0-rc.1
+          imagePullPolicy: IfNotPresent
           name: envoy-initconfig
           volumeMounts:
             - name: envoy-config
