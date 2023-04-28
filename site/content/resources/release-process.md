@@ -217,7 +217,7 @@ Typically we will branch off of `main` to cut an RC of an upcoming release and a
 This process is easier than managing a `release-*` branch and having to cherry-pick changes over from `main` for additional commits.
 
 1. Make sure `main` is up to date
-1. Create a new local feature branch from `main` (i.e. `release-${CONTOUR_RELEASE_VERSION}`)
+1. Create a new local branch from `main` (e.g. `release-1.23.0-rc.1`)
 1. Commit all changes, push the branch to `github.com/projectcontour/contour`.
 
 ### Generate the RC changelog
@@ -226,7 +226,7 @@ This process is easier than managing a `release-*` branch and having to cherry-p
 1. Generate a changelog (the `prepare-release.go` script should detect the version is an RC and only generate a changelog):
 
     ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary.
 1. Commit all changes, push the branch to `github.com/projectcontour/contour`.
@@ -241,11 +241,7 @@ This process is easier than managing a `release-*` branch and having to cherry-p
 ./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
 ```
 
-1. Push the branch to `github.com/projectcontour/contour`:
-
-```bash
-git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION}
-```
+1. Push the branch to `github.com/projectcontour/contour` (e.g. `git push upstream release-1.23.0-rc.1`).
 
 1. Push the tag to `github.com/projectcontour/contour`:
 
