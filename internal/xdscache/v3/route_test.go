@@ -2213,6 +2213,65 @@ func TestRouteVisit(t *testing.T) {
 					)),
 			),
 		},
+
+		"httpproxy with header regex conditions": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &contour_api_v1.HeaderMatchCondition{
+										Name:  "x-header",
+										Regex: "foo.*",
+									},
+								},
+							},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
+								Name:      "x-header",
+								MatchType: "regex",
+								Value:     "foo.*",
+							}),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
+			),
+		},
 		"httpproxy with query parameter contains conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{

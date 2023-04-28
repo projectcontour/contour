@@ -39,6 +39,7 @@ func testHeaderConditionMatch(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-regex")
 
 		// This HTTPProxy tests everything except the "notpresent" match type,
 		// which is tested separately below.
@@ -132,6 +133,22 @@ func testHeaderConditionMatch(namespace string) {
 							},
 						},
 					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-regex",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:  "Target-Regex",
+									Regex: "Regex.*",
+								},
+							},
+						},
+					},
 				},
 			},
 		}
@@ -201,6 +218,15 @@ func testHeaderConditionMatch(namespace string) {
 			},
 			{
 				headers:        map[string]string{"Target-NotExact": "ExactValue"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-Regex": "RegexMatch"},
+				expectResponse: 200,
+				expectService:  "echo-header-regex",
+			},
+			{
+				headers:        map[string]string{"Target-Regex": "NonMatching"},
 				expectResponse: 404,
 			},
 		}

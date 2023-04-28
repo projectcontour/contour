@@ -9473,6 +9473,86 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// Invalid proxy because the regex match is in the includes block.
+	proxyInvalidRegexPath := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-invalid-regexpath-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.invalid.regexpath.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "path",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Regex: "/.*/path",
+				}},
+			}},
+		},
+	}
+
+	proxyRegexPath := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-valid-regexpath-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.valid.regexpath.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "child1",
+				Namespace: s1.Namespace,
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name:      "child2",
+				Namespace: s2.Namespace,
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	child1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child1",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Regex: "/regex/.*",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	child2 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child2",
+			Namespace: s2.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/prefix",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                         []interface{}
 		disablePermitInsecure        bool
@@ -13884,6 +13964,51 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"invalid httpproxy with regex in include block": {
+			objs: []interface{}{proxyInvalidRegexPath, s1},
+			want: listeners(),
+		},
+		"valid httpproxy with include, prefix and regex on included proxy": {
+			objs: []interface{}{
+				proxyRegexPath, child1, child2, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.valid.regexpath.com",
+							routeClusterRegex("/foo/regex/.*",
+								&Cluster{
+									Upstream: &Service{
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+											HealthPort:       s1.Spec.Ports[0],
+										},
+									},
+								},
+							),
+							routeCluster("/bar/prefix",
+								&Cluster{
+									Upstream: &Service{
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+											HealthPort:       s2.Spec.Ports[0],
+										},
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -14866,6 +14991,13 @@ func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 func routeClusterExact(path string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
 		PathMatchCondition: exact(path),
+		Clusters:           append([]*Cluster{first}, rest...),
+	}
+}
+
+func routeClusterRegex(regexp string, first *Cluster, rest ...*Cluster) *Route {
+	return &Route{
+		PathMatchCondition: regex(regexp),
 		Clusters:           append([]*Cluster{first}, rest...),
 	}
 }

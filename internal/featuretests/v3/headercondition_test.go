@@ -477,4 +477,67 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
+
+	// proxy with regex match header condition.
+	proxy8 := fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerRegexMatchCondition("x-header", "^123.*"),
+				),
+				Services: []contour_api_v1.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerRegexMatchCondition("x-header", "^789.*"),
+				),
+				Services: []contour_api_v1.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		})
+
+	rh.OnUpdate(proxy7, proxy8)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "^123.*",
+							MatchType: "regex",
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "^789.*",
+							MatchType: "regex",
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefixWithHeaderConditions("/"),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
 }

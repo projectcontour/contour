@@ -22,13 +22,16 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-// mergePathMatchConditions merges the given slice of prefix or exact MatchConditions into a single
-// prefix/exact Condition. The leaf condition of the include tree decides whether the merged condition
-// will be prefix or exact
+// mergePathMatchConditions merges the given slice of prefix, regex or exact MatchConditions into a single
+// prefix/exact/regex Condition.
+// In the case no regex is present then the leaf condition of the include tree
+// decides whether the merged condition will be prefix or exact.
+// In case there is a regex condition present the entire condition becomes a regex condition.
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
 func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
 	mergedPath := ""
+	isRegex := false
 
 	for _, cond := range conds {
 		switch {
@@ -36,6 +39,9 @@ func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondit
 			mergedPath += cond.Prefix
 		case cond.Exact != "":
 			mergedPath += cond.Exact
+		case cond.Regex != "":
+			mergedPath += cond.Regex
+			isRegex = true
 		}
 	}
 
@@ -57,6 +63,10 @@ func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondit
 	// If mergedPath is not empty then choose match type using the last rule of the delegation chain
 	lastCondition := conds[len(conds)-1]
 	switch {
+	case isRegex:
+		return &RegexMatchCondition{
+			Regex: mergedPath,
+		}
 	case lastCondition.Prefix != "":
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
@@ -77,6 +87,7 @@ func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondit
 func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	prefixCount := 0
 	exactCount := 0
+	regexCount := 0
 
 	for _, cond := range conds {
 		if cond.Prefix != "" {
@@ -91,9 +102,19 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 				return fmt.Errorf("exact conditions must start with /, %s was supplied", cond.Exact)
 			}
 		}
-		if prefixCount > 1 || exactCount > 1 || prefixCount+exactCount > 1 {
-			return errors.New("more than one prefix or exact is not allowed in a condition block")
+		if cond.Regex != "" {
+			regexCount++
+			if cond.Regex[0] != '/' {
+				return fmt.Errorf("regex conditions must start with /, %s was supplied", cond.Regex)
+			}
+			if err := ValidateRegex(cond.Regex); err != nil {
+				return fmt.Errorf("supplied regex: %s invalid. error: %s", cond.Regex, err)
+			}
 		}
+	}
+
+	if prefixCount > 1 || exactCount > 1 || regexCount > 1 || prefixCount+exactCount+regexCount > 1 {
+		return errors.New("more than one prefix, exact or regex is not allowed in a condition block")
 	}
 
 	return nil
@@ -104,6 +125,9 @@ func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	for _, cond := range conds {
 		if cond.Exact != "" {
 			return fmt.Errorf("exact conditions are not allowed in includes block")
+		}
+		if cond.Regex != "" {
+			return fmt.Errorf("regex conditions are not allowed in an included HTTPProxy")
 		}
 	}
 
@@ -174,6 +198,12 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 				MatchType: HeaderMatchTypeExact,
 				Invert:    true,
 			})
+		case cond.Regex != "":
+			hc = append(hc, HeaderMatchCondition{
+				Name:      cond.Name,
+				Value:     cond.Regex,
+				MatchType: HeaderMatchTypeRegex,
+			})
 		}
 	}
 	return hc
@@ -236,6 +266,7 @@ func queryParameterMatchConditions(conditions []contour_api_v1.QueryParameterMat
 //   - a 'present' and a 'notpresent' condition for the same header
 //   - an 'exact' and a 'notexact' condition for the same header, with the same values
 //   - a 'contains' and a 'notcontains' condition for the same header, with the same values
+//   - invalid regular expression is specified for the Regex condition
 //
 // Note that there are additional, more complex scenarios that we could check for here. For
 // example, "exact: foo" and "notcontains: <any substring of foo>" are contradictory.
@@ -301,6 +332,10 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 				Contains: v.Header.NotContains,
 			}] {
 				return errors.New("cannot specify contradictory 'contains' and 'notcontains' conditions for the same route and header")
+			}
+		case v.Header.Regex != "":
+			if err := ValidateRegex(v.Header.Regex); err != nil {
+				return errors.New("invalid regular expression specified for 'regex' condition")
 			}
 		}
 

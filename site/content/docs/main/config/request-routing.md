@@ -76,7 +76,7 @@ spec:
 
 Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
-Conditions can be either a `prefix`, `exact`, `header` or a `queryParameter` condition. `prefix` and `exact`
+Conditions can be either a `prefix`, `exact`, `regex`, `header` or a `queryParameter` condition. `prefix` and `exact`
 conditions cannot be used together in one condition block.
 
 #### Prefix conditions
@@ -90,10 +90,19 @@ Prefix conditions **must** start with a `/` if they are present.
 
 Paths defined are matched using exact conditions.
 Up to one exact condition may be present in any condition block. Any condition block can
-either have an exact condition or prefix condition, but not both together. Exact conditions are
+either have a  regex condition, exact condition or prefix condition, but not multiple together. Exact conditions are
 only allowed in route match conditions and not in include match conditions.
 
 Exact conditions **must** start with a `/` if they are present.
+
+#### Regex conditions
+
+Paths defined are matched using regex expressions.
+Up to one regex condition may be present in any condition block. Any condition block can
+either have a regex condition, exact condition or prefix condition, but not multiple together. Regex conditions are
+only allowed in route match conditions and not in include match conditions.
+
+Regex conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
@@ -106,6 +115,8 @@ For `header` conditions there is one required field, `name`, and six operator fi
 - `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
 
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
+
+- `regex` is a string representing a regular expression, and checks that the header value matches against the given regular expression.
 
 #### Query parameter conditions
 
@@ -327,7 +338,7 @@ Each route can have a load balancing strategy applied to determine which of its 
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round-robin order (Default strategy if none selected).
-- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection. 
+- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection.
 - `Random`: The random strategy selects a random healthy Endpoints.
 - `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. For example, requests that contain a consistent value in an HTTP request header will be routed to the same upstream Endpoint. Currently, only hashing of HTTP request headers, query parameters and the source IP of a request is supported.
 - `Cookie`: The cookie load balancing strategy is similar to the request hash strategy and is a convenience feature to implement session affinity, as described below.
@@ -396,7 +407,7 @@ Request hash source ip
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: lb-request-hash 
+  name: lb-request-hash
   namespace: default
 spec:
   virtualhost:
@@ -419,7 +430,7 @@ Request hash query parameters
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: lb-request-hash 
+  name: lb-request-hash
   namespace: default
 spec:
   virtualhost:

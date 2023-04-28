@@ -74,6 +74,15 @@ func headerPresentMatchCondition(name string) contour_api_v1.MatchCondition {
 	}
 }
 
+func headerRegexMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
+			Name:  name,
+			Regex: value,
+		},
+	}
+}
+
 func queryParameterExactMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		QueryParameter: &contour_api_v1.QueryParameterMatchCondition{

@@ -1395,7 +1395,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
-				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix or exact is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix, exact or regex is not allowed in a condition block"),
 		},
 	})
 
@@ -1448,7 +1448,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoPrefixesWithInclude.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix or exact is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix, exact or regex is not allowed in a condition block"),
 			{Name: proxyValidChildTeamA.Name, Namespace: proxyValidChildTeamA.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidChildTeamA.Generation).
 				Orphaned(),
@@ -4554,6 +4554,109 @@ func TestDAGStatus(t *testing.T) {
 					"SlowStartInvalid",
 					"slow start is only supported with RoundRobin or WeightedLeastRequest load balancer strategy",
 				),
+		},
+	})
+
+	// Invalid, Regex is in include match condition block
+	proxyRegexIncludeInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "regex include invalid",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "regex-invalid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "subproxy1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Regex: "/.*/foo",
+				}},
+			}, {
+				Name: "subproxy2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	// Valid regex proxy with regex in the sub proxy.
+	proxyRegexIncludeValid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "regex include valid",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "regex-valid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "subproxy1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name: "subproxy2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	Subproxy1Regex := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "subproxy1",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Regex: "/.*baz",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "foo1",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	Subproxy2Regex := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "subproxy2",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "foo2",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "proxy has regex in the includes block, should be invalid", testcase{
+		objs: []interface{}{proxyRegexIncludeInvalid, proxyRegexIncludeValid, Subproxy1Regex, Subproxy2Regex, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: Subproxy1Regex.Name, Namespace: Subproxy1Regex.Namespace}: fixture.NewValidCondition().
+				WithGeneration(Subproxy1Regex.Generation).
+				Valid(),
+			{Name: Subproxy2Regex.Name, Namespace: Subproxy2Regex.Namespace}: fixture.NewValidCondition().
+				WithGeneration(Subproxy2Regex.Generation).
+				Valid(),
+			{Name: proxyRegexIncludeInvalid.Name, Namespace: proxyRegexIncludeInvalid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyRegexIncludeInvalid.Generation).
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", `include: regex conditions are not allowed in an included HTTPProxy`),
+			{Name: proxyRegexIncludeValid.Name, Namespace: proxyRegexIncludeValid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyRegexIncludeValid.Generation).
+				Valid(),
 		},
 	})
 }
@@ -10269,7 +10372,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		// Invalid filters still result in an attached route.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 1),
 	})
-
 }
 
 func gatewayAcceptedCondition() metav1.Condition {

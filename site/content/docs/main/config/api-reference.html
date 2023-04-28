@@ -1915,6 +1915,20 @@ string
 equal to. The condition is true if the header has any other value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>regex</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Regex specifies a regular expression pattern that must match the header
+value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
@@ -2145,7 +2159,7 @@ In effect, they are added onto the Conditions of included HTTPProxy Route
 structs.
 When applied, they are merged using AND, with one exception:
 There can be only one Prefix MatchCondition per Conditions slice.
-More than one Prefix, or contradictory Conditions, will make the
+More than one Prefix or Regex, or contradictory Conditions, will make the
 include invalid.</p>
 </td>
 </tr>
@@ -2465,7 +2479,7 @@ set when a request is rate-limited.</p>
 </p>
 <p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
-One of Prefix, Exact, Header or QueryParameter must be provided.</p>
+One of Prefix, Exact, Regex, Header or QueryParameter must be provided.</p>
 </p>
 <table>
 <thead>
@@ -2500,6 +2514,20 @@ string
 <em>(Optional)</em>
 <p>Exact defines a exact match for a request.
 This field is not allowed in include match conditions.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>regex</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Regex defines a regex match for a request.
+Cannot be defined in included HTTPProxies</p>
 </td>
 </tr>
 <tr>
