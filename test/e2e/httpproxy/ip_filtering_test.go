@@ -76,16 +76,7 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].IPDenyFilterPolicy = []contourv1.IPFilterPolicy{
-				{
-					Source: contourv1.IPFilterSourcePeer,
-					CIDR:   "10.8.8.8/0",
-				},
-				{
-					Source: contourv1.IPFilterSourceRemote,
-					CIDR:   "10.8.8.8/0",
-				},
-			}
+			p.Spec.Routes[0].IPDenyFilterPolicy = ipFilterDenyAll()
 
 			return f.Client.Update(ctx, p)
 		}))
@@ -198,16 +189,7 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.VirtualHost.IPDenyFilterPolicy = []contourv1.IPFilterPolicy{
-				{
-					Source: contourv1.IPFilterSourcePeer,
-					CIDR:   "10.8.8.8/0",
-				},
-				{
-					Source: contourv1.IPFilterSourceRemote,
-					CIDR:   "10.8.8.8/0",
-				},
-			}
+			p.Spec.VirtualHost.IPDenyFilterPolicy = ipFilterDenyAll()
 
 			return f.Client.Update(ctx, p)
 		}))
@@ -335,16 +317,7 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].IPDenyFilterPolicy = []contourv1.IPFilterPolicy{
-				{
-					Source: contourv1.IPFilterSourcePeer,
-					CIDR:   "10.8.8.8/0",
-				},
-				{
-					Source: contourv1.IPFilterSourceRemote,
-					CIDR:   "10.8.8.8/0",
-				},
-			}
+			p.Spec.Routes[0].IPDenyFilterPolicy = ipFilterDenyAll()
 
 			return f.Client.Update(ctx, p)
 		}))
@@ -396,4 +369,26 @@ func testIPFilterPolicy(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 403 response code, got %d", res.StatusCode)
 	})
+}
+
+// Needs IPv4 and IPv6 rules to ensure this test works in both types of clusters.
+func ipFilterDenyAll() []contourv1.IPFilterPolicy {
+	return []contourv1.IPFilterPolicy{
+		{
+			Source: contourv1.IPFilterSourcePeer,
+			CIDR:   "10.8.8.8/0",
+		},
+		{
+			Source: contourv1.IPFilterSourceRemote,
+			CIDR:   "10.8.8.8/0",
+		},
+		{
+			Source: contourv1.IPFilterSourcePeer,
+			CIDR:   "::/0",
+		},
+		{
+			Source: contourv1.IPFilterSourceRemote,
+			CIDR:   "::/0",
+		},
+	}
 }
