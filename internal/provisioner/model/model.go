@@ -552,7 +552,7 @@ type Port struct {
 	// ContainerPort is the port to expose on the Envoy container(s).
 	ContainerPort int32
 	// NodePort is the network port number to expose for the NodePort Service.
-	// If unspecified, a port number will be assigned from the the cluster's
+	// If unspecified, a port number will be assigned from the cluster's
 	// nodeport service range, i.e. --service-node-port-range flag
 	// (default: 30000-32767).
 	//

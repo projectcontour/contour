@@ -1203,7 +1203,7 @@ type LoadBalancerPolicy struct {
 	// `RequestHash` load balancing strategy is chosen. If an element of the
 	// supplied list of hash policies is invalid, it will be ignored. If the
 	// list of hash policies is empty after validation, the load balancing
-	// strategy will fall back the the default `RoundRobin`.
+	// strategy will fall back to the default `RoundRobin`.
 	RequestHashPolicies []RequestHashPolicy `json:"requestHashPolicies,omitempty"`
 }
 

@@ -67,7 +67,7 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
     This protocol should be used for HTTP/1.1 services over TLS.
     _Note that validating the upstream TLS certificate requires additionally setting the [validation][17] field._
   - The `h2` protocol proxies requests to the upstream using HTTP/2 over TLS.
-  - The `h2c` protocol proxies requests to the the upstream using cleartext HTTP/2.
+  - The `h2c` protocol proxies requests to the upstream using cleartext HTTP/2.
 
 ## Contour specific HTTPProxy annotations
 - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the HTTPProxy. See the [main Ingress class annotation section](#ingress-class) for more details.

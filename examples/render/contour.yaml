@@ -4267,7 +4267,7 @@ spec:
                       to apply when the `RequestHash` load balancing strategy is chosen.
                       If an element of the supplied list of hash policies is invalid,
                       it will be ignored. If the list of hash policies is empty after
-                      validation, the load balancing strategy will fall back the the
+                      validation, the load balancing strategy will fall back to the
                       default `RoundRobin`.
                     items:
                       description: RequestHashPolicy contains configuration for an
@@ -5207,7 +5207,7 @@ spec:
                             strategy is chosen. If an element of the supplied list
                             of hash policies is invalid, it will be ignored. If the
                             list of hash policies is empty after validation, the load
-                            balancing strategy will fall back the the default `RoundRobin`.
+                            balancing strategy will fall back to the default `RoundRobin`.
                           items:
                             description: RequestHashPolicy contains configuration
                               for an individual hash policy on a request attribute.
@@ -6031,7 +6031,7 @@ spec:
                           is chosen. If an element of the supplied list of hash policies
                           is invalid, it will be ignored. If the list of hash policies
                           is empty after validation, the load balancing strategy will
-                          fall back the the default `RoundRobin`.
+                          fall back to the default `RoundRobin`.
                         items:
                           description: RequestHashPolicy contains configuration for
                             an individual hash policy on a request attribute.
@@ -7305,10 +7305,10 @@ spec:
                       type: string
                     targetNamespaces:
                       description: required, the namespaces the authority to reference
-                        the the secret will be delegated to. If TargetNamespaces is
-                        nil or empty, the CertificateDelegation' is ignored. If the
-                        TargetNamespace list contains the character, "*" the secret
-                        will be delegated to all namespaces.
+                        the secret will be delegated to. If TargetNamespaces is nil
+                        or empty, the CertificateDelegation' is ignored. If the TargetNamespace
+                        list contains the character, "*" the secret will be delegated
+                        to all namespaces.
                       items:
                         type: string
                       type: array
