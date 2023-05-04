@@ -1259,6 +1259,52 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 		},
 
+		"If ContourDeployment.Spec.Contour.PodAnnotations is specified, the Contour pods' have annotations for prometheus & user-defined": {
+
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Contour: &contourv1alpha1.ContourSettings{
+						PodAnnotations: map[string]string{
+							"key": "val",
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1beta1.GatewaySpec{
+					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Accepted: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the deployment has been created
+				deploy := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contour-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
+				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key")
+			},
+		},
+
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to DaemonSet," +
 			"an Envoy daemonset is provisioned with the strategy that come from DaemonsetSettings": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),

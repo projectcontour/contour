@@ -68,6 +68,17 @@ func checkDeploymentHasLabels(t *testing.T, deploy *appsv1.Deployment, expected 
 	t.Errorf("deployment has unexpected %q labels", deploy.Labels)
 }
 
+func checkPodHasAnnotations(t *testing.T, tmpl *corev1.PodTemplateSpec, annotations map[string]string) {
+	t.Helper()
+
+	for k, v := range annotations {
+		if val, ok := tmpl.Annotations[k]; !ok || val != v {
+			t.Errorf("pod template has unexpected %q annotations", tmpl.Annotations)
+		}
+	}
+
+}
+
 func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string) {
 	t.Helper()
 
@@ -140,6 +151,10 @@ func TestDesiredDeployment(t *testing.T) {
 			corev1.ResourceMemory: resource.MustParse("25Mi"),
 		},
 	}
+
+	annotations := map[string]string{
+		"key": "value",
+	}
 	cntr.Spec.ContourResources = resQutoa
 
 	// Change the Kubernetes log level to test --kubernetes-debug.
@@ -151,6 +166,7 @@ func TestDesiredDeployment(t *testing.T) {
 	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "value",
 	}
+	cntr.Spec.ContourPodAnnotations = annotations
 
 	// Use non-default container ports to test that --envoy-service-http(s)-port
 	// flags are added.
@@ -167,6 +183,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
 	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
+	checkPodHasAnnotations(t, &deploy.Spec.Template, annotations)
 
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		switch port.Name {

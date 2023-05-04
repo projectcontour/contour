@@ -1160,6 +1160,12 @@ spec:
                           type: object
                         type: array
                     type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: PodAnnotations defines annotations to add to the
+                      Contour pods.
+                    type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
                       \n Replicas is the desired number of Contour replicas. If if

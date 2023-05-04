@@ -114,6 +114,10 @@ type ContourSettings struct {
 	// Deployment describes the settings for running contour as a `Deployment`.
 	// +optional
 	Deployment *DeploymentSettings `json:"deployment,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Contour pods.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

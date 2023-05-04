@@ -67,8 +67,9 @@ func Default(namespace, name string) *Contour {
 					MaxUnavailable: ref.To(intstr.FromString("25%")),
 				},
 			},
-			ResourceLabels:      map[string]string{},
-			EnvoyPodAnnotations: map[string]string{},
+			ResourceLabels:        map[string]string{},
+			EnvoyPodAnnotations:   map[string]string{},
+			ContourPodAnnotations: map[string]string{},
 		},
 	}
 }
@@ -207,6 +208,9 @@ type ContourSpec struct {
 
 	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
 	EnvoyPodAnnotations map[string]string
+
+	// ContourPodAnnotations holds the annotations that will be add to the contour's pod.
+	ContourPodAnnotations map[string]string
 
 	// Compute Resources required by envoy container.
 	EnvoyResources corev1.ResourceRequirements
