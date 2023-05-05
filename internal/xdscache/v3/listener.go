@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sort"
 	"sync"
 
@@ -32,7 +33,6 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
 	"google.golang.org/protobuf/proto"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // nolint:revive
@@ -134,14 +134,16 @@ type ListenerConfig struct {
 	TracingConfig *TracingConfig
 }
 
+type ExtensionServiceConfig struct {
+	ExtensionService client.ObjectKey
+	Timeout          timeout.Setting
+	SNI              string
+}
+
 type TracingConfig struct {
-	ExtensionService types.NamespacedName
+	ExtensionServiceConfig *ExtensionServiceConfig
 
 	ServiceName string
-
-	SNI string
-
-	Timeout timeout.Setting
 
 	OverallSampling float64
 
@@ -167,22 +169,18 @@ type CustomTag struct {
 }
 
 type RateLimitConfig struct {
-	ExtensionService            types.NamespacedName
-	SNI                         string
+	ExtensionServiceConfig      *ExtensionServiceConfig
 	Domain                      string
-	Timeout                     timeout.Setting
 	FailOpen                    bool
 	EnableXRateLimitHeaders     bool
 	EnableResourceExhaustedCode bool
 }
 
 type GlobalExternalAuthConfig struct {
-	ExtensionService types.NamespacedName
-	FailOpen         bool
-	SNI              string
-	Timeout          timeout.Setting
-	Context          map[string]string
-	WithRequestBody  *dag.AuthorizationServerBufferSettings
+	ExtensionServiceConfig *ExtensionServiceConfig
+	FailOpen               bool
+	Context                map[string]string
+	WithRequestBody        *dag.AuthorizationServerBufferSettings
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -544,11 +542,11 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 
 	return envoy_v3.FilterExternalAuthz(&dag.ExternalAuthorization{
 		AuthorizationService: &dag.ExtensionCluster{
-			Name: dag.ExtensionClusterName(config.ExtensionService),
-			SNI:  config.SNI,
+			Name: dag.ExtensionClusterName(config.ExtensionServiceConfig.ExtensionService),
+			SNI:  config.ExtensionServiceConfig.SNI,
 		},
 		AuthorizationFailOpen:              config.FailOpen,
-		AuthorizationResponseTimeout:       config.Timeout,
+		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
 
@@ -560,10 +558,10 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 	}
 
 	return &envoy_v3.GlobalRateLimitConfig{
-		ExtensionService:            config.ExtensionService,
-		SNI:                         config.SNI,
+		ExtensionService:            config.ExtensionServiceConfig.ExtensionService,
+		SNI:                         config.ExtensionServiceConfig.SNI,
 		FailOpen:                    config.FailOpen,
-		Timeout:                     config.Timeout,
+		Timeout:                     config.ExtensionServiceConfig.Timeout,
 		Domain:                      config.Domain,
 		EnableXRateLimitHeaders:     config.EnableXRateLimitHeaders,
 		EnableResourceExhaustedCode: config.EnableResourceExhaustedCode,
@@ -576,10 +574,10 @@ func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
 	}
 
 	return &envoy_v3.EnvoyTracingConfig{
-		ExtensionService: config.ExtensionService,
+		ExtensionService: config.ExtensionServiceConfig.ExtensionService,
 		ServiceName:      config.ServiceName,
-		SNI:              config.SNI,
-		Timeout:          config.Timeout,
+		SNI:              config.ExtensionServiceConfig.SNI,
+		Timeout:          config.ExtensionServiceConfig.Timeout,
 		OverallSampling:  config.OverallSampling,
 		MaxPathTagLength: config.MaxPathTagLength,
 		CustomTags:       envoyTracingConfigCustomTag(config.CustomTags),
