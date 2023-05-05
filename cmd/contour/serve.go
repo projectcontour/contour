@@ -638,11 +638,17 @@ func (s *Server) doServe() error {
 	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
-func getExtensionSvcProperties(name string, namespace string) (*xdscache_v3.ExtensionServiceConfig, error) {
+func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
 	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
 	key := client.ObjectKey{
 		Namespace: namespace,
 		Name:      name,
+	}
+
+	// Using GetAPIReader() here because the manager's caches won't be started yet,
+	// so reads from the manager's client (which uses the caches for reads) will fail.
+	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
+		return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s: %v", key, err)
 	}
 
 	var responseTimeout timeout.Setting
@@ -651,7 +657,7 @@ func getExtensionSvcProperties(name string, namespace string) (*xdscache_v3.Exte
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return &xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing tracing extension service %s response timeout: %v", key, err)
+			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s response timeout: %v", key, err)
 		}
 	}
 
@@ -660,7 +666,7 @@ func getExtensionSvcProperties(name string, namespace string) (*xdscache_v3.Exte
 		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
 	}
 
-	extensionSvcConfig := &xdscache_v3.ExtensionServiceConfig{
+	extensionSvcConfig := xdscache_v3.ExtensionServiceConfig{
 		ExtensionService: key,
 		Timeout:          responseTimeout,
 		SNI:              sni,
@@ -675,7 +681,7 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 	}
 
 	// ensure the specified ExtensionService exists
-	extensionSvcConfig, err := getExtensionSvcProperties(tracingConfig.ExtensionService.Name, tracingConfig.ExtensionService.Namespace)
+	extensionSvcConfig, err := s.getExtensionSvcConfig(tracingConfig.ExtensionService.Name, tracingConfig.ExtensionService.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -721,9 +727,7 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	}
 
 	// ensure the specified ExtensionService exists
-	extensionSvcConfig, err := getExtensionSvcProperties(contourConfiguration.RateLimitService.ExtensionService.Name, contourConfiguration.RateLimitService.ExtensionService.Namespace)
-	// Using GetAPIReader() here because the manager's caches won't be started yet,
-	// so reads from the manager's client (which uses the caches for reads) will fail.
+	extensionSvcConfig, err := s.getExtensionSvcConfig(contourConfiguration.RateLimitService.ExtensionService.Name, contourConfiguration.RateLimitService.ExtensionService.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -743,7 +747,7 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	}
 
 	// ensure the specified ExtensionService exists
-	extensionSvcConfig, err := getExtensionSvcProperties(contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Name, contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Namespace)
+	extensionSvcConfig, err := s.getExtensionSvcConfig(contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Name, contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Namespace)
 	if err != nil {
 		return nil, err
 	}

@@ -2997,9 +2997,11 @@ func TestListenerVisit(t *testing.T) {
 		"insecure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					ExtensionServiceConfig: ExtensionServiceConfig{
+						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+						Timeout:          timeout.DurationSetting(7 * time.Second),
+					},
 					Domain:                      "contour",
-					Timeout:                     timeout.DurationSetting(7 * time.Second),
 					FailOpen:                    false,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,
@@ -3077,10 +3079,12 @@ func TestListenerVisit(t *testing.T) {
 		"secure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
-					SNI:                         "ratelimit-example.com",
+					ExtensionServiceConfig: ExtensionServiceConfig{
+						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+						SNI:              "ratelimit-example.com",
+						Timeout:          timeout.DurationSetting(7 * time.Second),
+					},
 					Domain:                      "contour",
-					Timeout:                     timeout.DurationSetting(7 * time.Second),
 					FailOpen:                    false,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,
@@ -3215,9 +3219,11 @@ func TestListenerVisit(t *testing.T) {
 			},
 			ListenerConfig: ListenerConfig{
 				RateLimitConfig: &RateLimitConfig{
-					ExtensionService:            types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					ExtensionServiceConfig: ExtensionServiceConfig{
+						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+						Timeout:          timeout.DurationSetting(7 * time.Second),
+					},
 					Domain:                      "contour",
-					Timeout:                     timeout.DurationSetting(7 * time.Second),
 					FailOpen:                    false,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,

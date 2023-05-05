@@ -141,7 +141,7 @@ type ExtensionServiceConfig struct {
 }
 
 type TracingConfig struct {
-	ExtensionServiceConfig *ExtensionServiceConfig
+	ExtensionServiceConfig
 
 	ServiceName string
 
@@ -169,7 +169,7 @@ type CustomTag struct {
 }
 
 type RateLimitConfig struct {
-	ExtensionServiceConfig      *ExtensionServiceConfig
+	ExtensionServiceConfig
 	Domain                      string
 	FailOpen                    bool
 	EnableXRateLimitHeaders     bool
@@ -177,10 +177,10 @@ type RateLimitConfig struct {
 }
 
 type GlobalExternalAuthConfig struct {
-	ExtensionServiceConfig *ExtensionServiceConfig
-	FailOpen               bool
-	Context                map[string]string
-	WithRequestBody        *dag.AuthorizationServerBufferSettings
+	ExtensionServiceConfig
+	FailOpen        bool
+	Context         map[string]string
+	WithRequestBody *dag.AuthorizationServerBufferSettings
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
