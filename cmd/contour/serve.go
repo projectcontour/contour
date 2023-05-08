@@ -648,7 +648,7 @@ func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_
 	// Using GetAPIReader() here because the manager's caches won't be started yet,
 	// so reads from the manager's client (which uses the caches for reads) will fail.
 	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
-		return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s: %v", key, err)
+		return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error getting extension service %s: %v", key, err)
 	}
 
 	var responseTimeout timeout.Setting
@@ -657,7 +657,7 @@ func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error getting extension service %s response timeout: %v", key, err)
+			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s response timeout: %v", key, err)
 		}
 	}
 
