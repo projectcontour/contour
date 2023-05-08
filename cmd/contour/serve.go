@@ -657,7 +657,7 @@ func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s response timeout: %v", key, err)
+			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error getting extension service %s response timeout: %v", key, err)
 		}
 	}
 

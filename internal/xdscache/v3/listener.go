@@ -14,7 +14,6 @@
 package v3
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sort"
 	"sync"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
 	"google.golang.org/protobuf/proto"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // nolint:revive
