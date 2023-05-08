@@ -1,1 +1,0 @@
-Add `AllowPrivateNetwork` to `CORSPolicy` for support Access-Control-Allow-Private-Network.
