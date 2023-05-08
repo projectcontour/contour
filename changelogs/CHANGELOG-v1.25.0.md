@@ -7,7 +7,6 @@ A big thank you to everyone who contributed to the release.
 - [Minor Changes](#minor-changes)
 - [Other Changes](#other-changes)
 - [Docs Changes](#docs-changes)
-- [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 - [Community Thanks!](#community-thanks)
@@ -168,7 +167,7 @@ For example, to disable ExtensionService CRD, use the flag as follows: `--disabl
 
 (#5080, @nsimons)
 
-## Gateway API: support the GRPCRoute
+## Gateway API: support GRPCRoute
 
 Contour now implements GRPCRoute (https://gateway-api.sigs.k8s.io/api-types/grpcroute/).
 The "core conformance" parts of the spec are implemented.
@@ -177,16 +176,9 @@ on how to use GRPCRoute.
 
 (#5114, @fangfpeng)
 
-## Bump Envoy to 1.25.4 for CVE patches
-
-Updates to Envoy v1.25.4. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.25.4/version_history/v1.25/v1.25.4) for more information about the content of the release. Details on the addressed CVEs can be found [here](https://github.com/envoyproxy/envoy/releases/tag/v1.25.4).
-
-(#5250, @sunjayBhatia)
-
 
 # Other Changes
 - Add `AllowPrivateNetwork` to `CORSPolicy` for support Access-Control-Allow-Private-Network. (#5034, @lvyanru8200)
-- Updates Envoy to v1.25.1. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.25.1/version_history/v1.25/v1.25.1) for more information about the contents of the release. (#5058, @skriss)
 - Optimize processing of HTTPProxy, Secret and other objects by avoiding full object comparison. This reduces CPU usage during object updates. (#5064, @tsaarni)
 - Gateway API: support the `path` field on the HTTPRoute RequestRedirect filter. (#5068, @skriss)
 - Optimized the memory usage when handling Secrets in Kubernetes client informer cache. (#5099, @tsaarni)
@@ -213,11 +205,6 @@ This is the default behavior but can be overridden by specifying `GOMAXPROCS` to
 - Upgrade algolia docsearch to v3 on the docs website (#5129, @pnbrown)
 - Updates Steve Kriss as Tech Lead and moves Nick Young to Emeritus Maintainer (#5151, @pnbrown)
 - Move to a single set of docs per minor release, e.g. 1.24, 1.23 and 1.22. (#5163, @skriss)
-
-
-# Deprecation and Removal Notices
-
-
 
 # Installing and Upgrading
 
