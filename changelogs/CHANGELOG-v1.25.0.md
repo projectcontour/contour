@@ -65,7 +65,7 @@ globalExtAuth:
 ```
 
 Individual hosts can also override or opt out of this global configuration. 
-You can read more about this feature in detail in the [guide](https://projectcontour.io/docs/v1.25.0/guides/external-authorization/#global-external-authorization).
+You can read more about this feature in detail in the [guide](https://projectcontour.io/docs/1.25/guides/external-authorization/#global-external-authorization).
 
 (#4994, @clayton-gonsalves)
 
@@ -171,7 +171,7 @@ For example, to disable ExtensionService CRD, use the flag as follows: `--disabl
 
 Contour now implements GRPCRoute (https://gateway-api.sigs.k8s.io/api-types/grpcroute/).
 The "core conformance" parts of the spec are implemented.
-See https://projectcontour.io/docs/v1.25.0/guides/grpc/#gateway-api-configuration
+See https://projectcontour.io/docs/1.25/guides/grpc/#gateway-api-configuration
 on how to use GRPCRoute.
 
 (#5114, @fangfpeng)
