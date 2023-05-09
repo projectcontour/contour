@@ -218,7 +218,16 @@ To upgrade an existing Contour installation, please consult the [upgrade documen
 Contour v1.25.0 is tested against Kubernetes 1.25 through 1.27.
 
 # Community Thanks!
-We’re immensely grateful for all the community contributions that help make Contour even better! For this release, special thanks go out to the following contributors:
+We’re immensely grateful for all the community contributions that help make Contour even better! For this release, we would like to give a special shoutout to the folks who joined our ContribFest at KubeCon EU 2023:
+
+- @padlar
+- @IdanAtias
+- @owayss
+- @shayyxi
+- @bhavaniMiro
+- @umutkocasarac
+
+We'd also like to thank the other contributors to this release:
 
 - @Jean-Daniel
 - @arjunsalyan
@@ -229,12 +238,10 @@ We’re immensely grateful for all the community contributions that help make Co
 - @liangyuanpeng
 - @lvyanru8200
 - @nsimons
-- @padlar
 - @pnbrown
 - @rajatvig
 - @relu
 - @yangyy93
-
 
 # Are you a Contour user? We would love to know!
 If you're using Contour and want to add your organization to our adopters list, please visit this [page](https://github.com/projectcontour/contour/blob/master/ADOPTERS.md). If you prefer to keep your organization name anonymous but still give us feedback into your usage and scenarios for Contour, please post on this [GitHub thread](https://github.com/projectcontour/contour/issues/1269).
