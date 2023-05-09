@@ -1,1 +1,0 @@
-Updates Envoy to v1.25.1. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.25.1/version_history/v1.25/v1.25.1) for more information about the contents of the release.
