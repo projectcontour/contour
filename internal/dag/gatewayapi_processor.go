@@ -1665,7 +1665,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 
 func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
 	var dagMatchConditions []QueryParamMatchCondition
-	seenNames := sets.New[string]()
+	seenNames := sets.New[gatewayapi_v1beta1.HTTPHeaderName]()
 
 	for _, match := range matches {
 		var matchType string
@@ -1690,7 +1690,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 
 		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
 			MatchType: matchType,
-			Name:      match.Name,
+			Name:      string(match.Name),
 			Value:     match.Value,
 		})
 	}
