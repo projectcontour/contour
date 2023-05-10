@@ -13,13 +13,13 @@ metadata:
   labels:
     name: gateway-api
 rules:
-  - apiGroups:
-      - admissionregistration.k8s.io
-    resources:
-      - validatingwebhookconfigurations
-    verbs:
-      - get
-      - update
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -33,9 +33,9 @@ roleRef:
   kind: ClusterRole
   name: gateway-api-admission
 subjects:
-  - kind: ServiceAccount
-    name: gateway-api-admission
-    namespace: gateway-system
+- kind: ServiceAccount
+  name: gateway-api-admission
+  namespace: gateway-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -46,13 +46,13 @@ metadata:
     name: gateway-api-webhook
   namespace: gateway-system
 rules:
-  - apiGroups:
-      - ''
-    resources:
-      - secrets
-    verbs:
-      - get
-      - create
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -67,9 +67,9 @@ roleRef:
   kind: Role
   name: gateway-api-admission
 subjects:
-  - kind: ServiceAccount
-    name: gateway-api-admission
-    namespace: gateway-system
+- kind: ServiceAccount
+  name: gateway-api-admission
+  namespace: gateway-system
 ---
 apiVersion: batch/v1
 kind: Job
@@ -87,19 +87,19 @@ spec:
         name: gateway-api-webhook
     spec:
       containers:
-        - name: create
-          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
-          imagePullPolicy: IfNotPresent
-          args:
-            - create
-            - --host=gateway-api-admission-server,gateway-api-admission-server.gateway-system.svc
-            - --namespace=gateway-system
-            - --secret-name=gateway-api-admission
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+      - name: create
+        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+        imagePullPolicy: IfNotPresent
+        args:
+        - create
+        - --host=gateway-api-admission-server,gateway-api-admission-server.gateway-system.svc
+        - --namespace=gateway-system
+        - --secret-name=gateway-api-admission
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
       restartPolicy: OnFailure
       serviceAccountName: gateway-api-admission
       securityContext:
@@ -121,22 +121,22 @@ spec:
         name: gateway-api-webhook
     spec:
       containers:
-        - name: patch
-          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
-          imagePullPolicy: IfNotPresent
-          args:
-            - patch
-            - --webhook-name=gateway-api-admission
-            - --namespace=gateway-system
-            - --patch-mutating=false
-            - --patch-validating=true
-            - --secret-name=gateway-api-admission
-            - --patch-failure-policy=Fail
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+      - name: patch
+        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+        imagePullPolicy: IfNotPresent
+        args:
+        - patch
+        - --webhook-name=gateway-api-admission
+        - --namespace=gateway-system
+        - --patch-mutating=false
+        - --patch-validating=true
+        - --secret-name=gateway-api-admission
+        - --patch-failure-policy=Fail
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
       restartPolicy: OnFailure
       serviceAccountName: gateway-api-admission
       securityContext:
