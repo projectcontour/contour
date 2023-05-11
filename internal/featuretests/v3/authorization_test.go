@@ -32,7 +32,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 const defaultResponseTimeout = time.Minute * 60
@@ -51,7 +50,7 @@ func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v3.ExtAuthz_Gr
 	}
 }
 
-func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "failopen.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -114,7 +113,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 	}).Status(p).IsValid()
 }
 
-func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzInvalidResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "failopen.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -141,7 +140,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	}).Status(p).HasError(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
 }
 
-func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzFailOpen(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "failopen.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -200,7 +199,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	}).Status(p).IsValid()
 }
 
-func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzFallbackIncompat(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := fixture.NewProxy("proxy").
 		WithFQDN("echo.projectcontour.io").
 		WithCertificate("certificate").
@@ -226,7 +225,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	}).Status(p).HasError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 }
 
-func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const enabled = "enabled.projectcontour.io"
 	const disabled = "disabled.projectcontour.io"
 
@@ -342,7 +341,7 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	})
 }
 
-func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzMergeRouteContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "echo.projectcontour.io"
 
 	rh.OnAdd(fixture.NewProxy("proxy-root").
@@ -425,7 +424,7 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 	})
 }
 
-func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "echo.projectcontour.io"
 
 	invalid := fixture.NewProxy("proxy").
@@ -515,7 +514,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	}).Status(invalid).IsValid()
 }
 
-func authzWithRequestBodyBufferSettings(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func authzWithRequestBodyBufferSettings(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "buffersettings.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -585,7 +584,7 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh cache.ResourceEventHand
 }
 
 func TestAuthorization(t *testing.T) {
-	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
+	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		"MissingExtension":                   authzInvalidReference,
 		"MergeRouteContext":                  authzMergeRouteContext,
 		"OverrideDisabled":                   authzOverrideDisabled,

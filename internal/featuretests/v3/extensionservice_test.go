@@ -32,10 +32,9 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
-func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extBasic(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -77,7 +76,7 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	})
 }
 
-func extCleartext(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extCleartext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -99,7 +98,7 @@ func extCleartext(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	})
 }
 
-func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	ext := &v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -224,7 +223,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	})
 }
 
-func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extExternalName(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(fixture.NewService("ns/external").
 		WithSpec(corev1.ServiceSpec{
 			Type:         corev1.ServiceTypeExternalName,
@@ -252,7 +251,7 @@ func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 }
 
 // extIdleConnectionTimeout sets timeout on ExtensionService which will be set in cluster.
-func extIdleConnectionTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extIdleConnectionTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -284,7 +283,7 @@ func extIdleConnectionTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Co
 	})
 }
 
-func extMissingService(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extMissingService(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -299,7 +298,7 @@ func extMissingService(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 	})
 }
 
-func extInvalidTimeout(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extInvalidTimeout(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -318,7 +317,7 @@ func extInvalidTimeout(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 	})
 }
 
-func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extInconsistentProto(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -340,7 +339,7 @@ func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contou
 }
 
 // "Cookie" and "RequestHash" policies are not valid on ExtensionService.
-func extInvalidLoadBalancerPolicy(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func extInvalidLoadBalancerPolicy(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	ext := &v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: v1alpha1.ExtensionServiceSpec{
@@ -411,7 +410,7 @@ func extInvalidLoadBalancerPolicy(t *testing.T, rh cache.ResourceEventHandler, c
 }
 
 func TestExtensionService(t *testing.T) {
-	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
+	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		"Basic":                     extBasic,
 		"Cleartext":                 extCleartext,
 		"UpstreamValidation":        extUpstreamValidation,

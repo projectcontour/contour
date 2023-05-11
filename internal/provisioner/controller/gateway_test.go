@@ -1335,12 +1335,14 @@ func TestGatewayReconcile(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.gatewayClass != nil {
 				client.WithObjects(tc.gatewayClass)
+				client.WithStatusSubresource(tc.gatewayClass)
 			}
 			if tc.gatewayClassParams != nil {
 				client.WithObjects(tc.gatewayClassParams)
 			}
 			if tc.gateway != nil {
 				client.WithObjects(tc.gateway)
+				client.WithStatusSubresource(tc.gateway)
 			}
 
 			r := &gatewayReconciler{

@@ -27,7 +27,7 @@ type countHandler struct {
 	deleted int
 }
 
-func (t *countHandler) OnAdd(_ interface{}) {
+func (t *countHandler) OnAdd(_ interface{}, _ bool) {
 	t.added++
 }
 
@@ -49,10 +49,10 @@ func TestNamespaceFilter(t *testing.T) {
 	// doesn't match the filter, so should not update the count.
 	// The second call is a match and does update the counter.
 
-	filter.OnAdd(fixture.NewProxy("ns3/proxy"))
+	filter.OnAdd(fixture.NewProxy("ns3/proxy"), false)
 	assert.Equal(t, 0, counter.added)
 
-	filter.OnAdd(fixture.NewProxy("ns1/proxy"))
+	filter.OnAdd(fixture.NewProxy("ns1/proxy"), false)
 	assert.Equal(t, 1, counter.added)
 
 	filter.OnUpdate(fixture.NewProxy("ns3/proxy"), fixture.NewProxy("ns3/proxy"))

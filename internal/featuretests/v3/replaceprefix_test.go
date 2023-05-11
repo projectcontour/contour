@@ -23,11 +23,10 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/cache"
 )
 
 // Update helper to modify a proxy and call rh.OnUpdate. Returns the modified object.
-func update(rh cache.ResourceEventHandler, old *contour_api_v1.HTTPProxy, modify func(*contour_api_v1.HTTPProxy)) *contour_api_v1.HTTPProxy {
+func update(rh ResourceEventHandlerWrapper, old *contour_api_v1.HTTPProxy, modify func(*contour_api_v1.HTTPProxy)) *contour_api_v1.HTTPProxy {
 	updated := old.DeepCopy()
 
 	modify(updated)

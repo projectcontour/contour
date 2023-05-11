@@ -52,7 +52,7 @@ func RegisterTLSRouteController(log logrus.FieldLogger, mgr manager.Manager, eve
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &gatewayapi_v1alpha2.TLSRoute{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -71,7 +71,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	}
 
 	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(tlsroute)
+	r.eventHandler.OnAdd(tlsroute, false)
 
 	return reconcile.Result{}, nil
 }

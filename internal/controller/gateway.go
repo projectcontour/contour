@@ -75,7 +75,7 @@ func RegisterGatewayController(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.Gateway{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.Gateway{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -85,7 +85,7 @@ func RegisterGatewayController(
 	// Watch GatewayClasses and reconcile their associated Gateways
 	// to handle changes in the GatewayClasses' "Accepted" conditions.
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.GatewayClass{}),
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayClassToGateways),
 		predicate.NewPredicateFuncs(r.gatewayClassHasMatchingController),
 	); err != nil {
@@ -121,9 +121,9 @@ func (r *gatewayReconciler) OnElectedLeader() {
 	}
 }
 
-func (r *gatewayReconciler) mapGatewayClassToGateways(gatewayClass client.Object) []reconcile.Request {
+func (r *gatewayReconciler) mapGatewayClassToGateways(ctx context.Context, gatewayClass client.Object) []reconcile.Request {
 	var gateways gatewayapi_v1beta1.GatewayList
-	if err := r.client.List(context.Background(), &gateways); err != nil {
+	if err := r.client.List(ctx, &gateways); err != nil {
 		r.log.WithError(err).Error("error listing gateways")
 		return nil
 	}
@@ -292,7 +292,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	// xref: https://github.com/projectcontour/contour/issues/3545
 
 	r.log.WithField("namespace", oldest.Namespace).WithField("name", oldest.Name).Info("assigning gateway to DAG")
-	r.eventHandler.OnAdd(oldest)
+	r.eventHandler.OnAdd(oldest, false)
 	return reconcile.Result{}, nil
 }
 

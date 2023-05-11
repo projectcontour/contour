@@ -453,6 +453,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.gatewayClass != nil {
 				client.WithObjects(tc.gatewayClass)
+				client.WithStatusSubresource(tc.gatewayClass)
 			}
 			if tc.params != nil {
 				client.WithObjects(tc.params)

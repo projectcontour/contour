@@ -29,10 +29,9 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
-func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func filterExists(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -64,7 +63,7 @@ func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	}).Status(p).IsValid()
 }
 
-func noRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func noRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -104,7 +103,7 @@ func noRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour
 	}).Status(p).IsValid()
 }
 
-func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func vhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -169,7 +168,7 @@ func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	}).Status(p).IsValid()
 }
 
-func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func routeRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -287,7 +286,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 	}).Status(p).IsValid()
 }
 
-func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -434,7 +433,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 	}).Status(p).IsValid()
 }
 
-func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func customResponseCode(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -507,7 +506,7 @@ func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour)
 	}).Status(p).IsValid()
 }
 
-func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func customResponseHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -620,7 +619,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 }
 
 func TestLocalRateLimiting(t *testing.T) {
-	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
+	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		"LocalRateLimitFilterExists":           filterExists,
 		"NoRateLimitsDefined":                  noRateLimitsDefined,
 		"VirtualHostRateLimitDefined":          vhostRateLimitDefined,

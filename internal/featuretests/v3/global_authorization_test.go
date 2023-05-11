@@ -38,10 +38,9 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
-func globalExternalAuthorizationFilterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -79,7 +78,7 @@ func globalExternalAuthorizationFilterExists(t *testing.T, rh cache.ResourceEven
 	}).Status(p).IsValid()
 }
 
-func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := fixture.NewProxy("TLSProxy").
 		WithFQDN("foo.com").
 		WithSpec(contour_api_v1.HTTPProxySpec{
@@ -148,7 +147,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh cache.ResourceE
 	}).Status(p).IsValid()
 }
 
-func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := fixture.NewProxy("TLSProxy").
 		WithFQDN("foo.com").
 		WithSpec(contour_api_v1.HTTPProxySpec{
@@ -211,7 +210,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh cache
 	}).Status(p).IsValid()
 }
 
-func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -285,7 +284,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh cache.Reso
 	})
 }
 
-func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := fixture.NewProxy("TLSProxy").
 		WithFQDN("foo.com").
 		WithSpec(contour_api_v1.HTTPProxySpec{
@@ -399,7 +398,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh cache.R
 	})
 }
 
-func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := fixture.NewProxy("TLSProxy").
 		WithFQDN("foo.com").
 		WithSpec(contour_api_v1.HTTPProxySpec{
@@ -488,7 +487,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh cache.Resou
 }
 
 func TestGlobalAuthorization(t *testing.T) {
-	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
+	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		// Default extAuthz on non TLS host.
 		"GlobalExternalAuthorizationFilterExists": globalExternalAuthorizationFilterExists,
 		// Default extAuthz on non TLS and TLS hosts.

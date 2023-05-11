@@ -35,9 +35,9 @@ type EventRecorder struct {
 	Counter *prometheus.CounterVec
 }
 
-func (e *EventRecorder) OnAdd(obj interface{}) {
+func (e *EventRecorder) OnAdd(obj interface{}, isInInitialList bool) {
 	e.recordOperation("add", obj)
-	e.Next.OnAdd(obj)
+	e.Next.OnAdd(obj, isInInitialList)
 }
 
 func (e *EventRecorder) OnUpdate(oldObj, newObj interface{}) {

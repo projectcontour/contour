@@ -57,7 +57,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.GatewayClass{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -67,7 +67,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	// Watch ContourDeployments since they can be used as parameters for
 	// GatewayClasses.
 	if err := c.Watch(
-		&source.Kind{Type: &contour_api_v1alpha1.ContourDeployment{}},
+		source.Kind(mgr.GetCache(), &contour_api_v1alpha1.ContourDeployment{}),
 		handler.EnqueueRequestsFromMapFunc(r.mapContourDeploymentToGatewayClasses),
 	); err != nil {
 		return nil, err
@@ -88,9 +88,9 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 // mapContourDeploymentToGatewayClasses returns a list of reconcile requests
 // for all provisioner-controlled GatewayClasses that have a ParametersRef to
 // the specified ContourDeployment object.
-func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(contourDeployment client.Object) []reconcile.Request {
+func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(ctx context.Context, contourDeployment client.Object) []reconcile.Request {
 	var gatewayClasses gatewayapi_v1beta1.GatewayClassList
-	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+	if err := r.client.List(ctx, &gatewayClasses); err != nil {
 		r.log.Error(err, "error listing gateway classes")
 		return nil
 	}
