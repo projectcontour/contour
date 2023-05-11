@@ -32,7 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
 	"google.golang.org/protobuf/proto"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // nolint:revive
@@ -135,7 +135,7 @@ type ListenerConfig struct {
 }
 
 type ExtensionServiceConfig struct {
-	ExtensionService client.ObjectKey
+	ExtensionService types.NamespacedName
 	Timeout          timeout.Setting
 	SNI              string
 }
