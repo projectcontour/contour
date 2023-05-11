@@ -43,7 +43,6 @@ import (
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -80,11 +79,6 @@ type Deployment struct {
 
 	// EnvoyDeploymentMode determines how Envoy is deployed (daemonset or deployment)
 	EnvoyDeploymentMode
-
-	// GatewayMode determines whether Listener configuration comes
-	// from Gateway Listeners. This affects how ports are mapped on
-	// the Envoy Service/in the Envoy containers.
-	GatewayMode bool
 
 	Namespace                 *v1.Namespace
 	ContourServiceAccount     *v1.ServiceAccount
@@ -354,11 +348,6 @@ func (d *Deployment) EnsureContourService() error {
 }
 
 func (d *Deployment) EnsureEnvoyService() error {
-	if d.GatewayMode {
-		d.EnvoyService.Spec.Ports[0].TargetPort = intstr.FromInt(64592)
-		d.EnvoyService.Spec.Ports[1].TargetPort = intstr.FromInt(64955)
-	}
-
 	return d.ensureResource(d.EnvoyService, new(v1.Service))
 }
 
@@ -371,20 +360,10 @@ func (d *Deployment) WaitForContourDeploymentUpdated() error {
 }
 
 func (d *Deployment) EnsureEnvoyDaemonSet() error {
-	if d.GatewayMode {
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = 64592
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort = 64955
-	}
-
 	return d.ensureResource(d.EnvoyDaemonSet, new(apps_v1.DaemonSet))
 }
 
 func (d *Deployment) EnsureEnvoyDeployment() error {
-	if d.GatewayMode {
-		d.EnvoyDeployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = 64592
-		d.EnvoyDeployment.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort = 64955
-	}
-
 	return d.ensureResource(d.EnvoyDeployment, new(apps_v1.Deployment))
 }
 

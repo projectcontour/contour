@@ -170,13 +170,20 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		}
 
 		if !found {
-			// Map privileged ports (1-1023) to the range 64513-65535 within
-			// the container. All other ports can be used as-is inside the
-			// container.
-			containerPort := listener.Port
-			if containerPort < 1024 {
-				containerPort += 64512
+			// Add 8000 to the Listener port, wrapping around if needed,
+			// and skipping over privileged ports 1-1023.
+			containerPort := listener.Port + 8000
+
+			if containerPort > 65535 {
+				containerPort -= 65535
 			}
+
+			if containerPort <= 1023 {
+				containerPort += 1023
+			}
+
+			// TODO port ranges 58559-59581 and 57536-58558 both map to 1024-2046,
+			// need to raise a condition if there's a conflict (Accepted: false [ListenerReasonPortUnavailable])
 
 			var protocol string
 			if listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType {

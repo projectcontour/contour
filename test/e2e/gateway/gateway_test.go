@@ -62,8 +62,6 @@ var _ = BeforeSuite(func() {
 		reconcileMode = ReconcileModeGateway
 	}
 
-	f.Deployment.GatewayMode = true
-
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 

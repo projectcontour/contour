@@ -519,7 +519,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
 				Name:    "https-443",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("https-443", "default/svc1/443/da39a3ee5e"),
@@ -569,7 +569,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
 				Name:    "https-443",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxyWeighted(

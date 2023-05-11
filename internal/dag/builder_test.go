@@ -1946,7 +1946,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name:     "http-443",
 					Protocol: "HTTP",
 					Address:  "0.0.0.0",
-					Port:     64955,
+					Port:     8443,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -16037,11 +16037,11 @@ func listeners(ls ...*Listener) []*Listener {
 		case "http-80":
 			listener.Protocol = "HTTP"
 			listener.Address = "0.0.0.0"
-			listener.Port = 64592
+			listener.Port = 8080
 		case "https-443":
 			listener.Protocol = "HTTPS"
 			listener.Address = "0.0.0.0"
-			listener.Port = 64955
+			listener.Port = 8443
 		}
 	}
 

@@ -171,7 +171,7 @@ func TestGateway_TLS(t *testing.T) {
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
 				Name:    "https-443",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 64955),
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),

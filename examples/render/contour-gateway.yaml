@@ -7846,11 +7846,11 @@ spec:
   - port: 80
     name: http
     protocol: TCP
-    targetPort: 64592
+    targetPort: 8080
   - port: 443
     name: https
     protocol: TCP
-    targetPort: 64955
+    targetPort: 8443
   selector:
     app: envoy
   type: LoadBalancer

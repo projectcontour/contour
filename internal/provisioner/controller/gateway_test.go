@@ -531,25 +531,25 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:       "http-80",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       80,
-					TargetPort: intstr.IntOrString{IntVal: 64592},
+					TargetPort: intstr.IntOrString{IntVal: 8080},
 				})
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
 					Name:       "http-81",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       81,
-					TargetPort: intstr.IntOrString{IntVal: 64593},
+					TargetPort: intstr.IntOrString{IntVal: 8081},
 				})
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
 					Name:       "https-443",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       443,
-					TargetPort: intstr.IntOrString{IntVal: 64955},
+					TargetPort: intstr.IntOrString{IntVal: 8443},
 				})
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
 					Name:       "https-8443",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       8443,
-					TargetPort: intstr.IntOrString{IntVal: 8443},
+					TargetPort: intstr.IntOrString{IntVal: 16443},
 				})
 			},
 		},
@@ -595,13 +595,13 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:       "http-80",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       80,
-					TargetPort: intstr.IntOrString{IntVal: 64592},
+					TargetPort: intstr.IntOrString{IntVal: 8080},
 				})
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
 					Name:       "http-8080",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       8080,
-					TargetPort: intstr.IntOrString{IntVal: 8080},
+					TargetPort: intstr.IntOrString{IntVal: 16080},
 				})
 			},
 		},
