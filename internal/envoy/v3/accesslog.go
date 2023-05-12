@@ -33,7 +33,7 @@ func FileAccessLogEnvoy(path string, format string, extensions []string, level c
 	var filter *envoy_accesslog_v3.AccessLogFilter
 	if level == contour_api_v1alpha1.LogLevelError {
 		filter = filterOnlyErrors(300) // We want to log resp status >= 300
-	} else if level == contour_api_v1alpha1.LogLevelServerError {
+	} else if level == contour_api_v1alpha1.LogLevelCritical {
 		filter = filterOnlyErrors(500) // We want to log resp status >= 500
 	}
 	// Nil by default to defer to Envoy's default log format.
@@ -76,7 +76,7 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFie
 	var filter *envoy_accesslog_v3.AccessLogFilter
 	if level == contour_api_v1alpha1.LogLevelError {
 		filter = filterOnlyErrors(300) // We want to log resp status >= 300
-	} else if level == contour_api_v1alpha1.LogLevelServerError {
+	} else if level == contour_api_v1alpha1.LogLevelCritical {
 		filter = filterOnlyErrors(500) // We want to log resp status >= 500
 	}
 

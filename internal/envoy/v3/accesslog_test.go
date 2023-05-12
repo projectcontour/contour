@@ -189,7 +189,7 @@ func TestAccessLogLevel(t *testing.T) {
 			wantRespStatus: 300,
 		},
 		"Server Error Logs": {
-			level:          contour_api_v1alpha1.LogLevelServerError,
+			level:          contour_api_v1alpha1.LogLevelCritical,
 			wantRespStatus: 500,
 		},
 	}

@@ -34,7 +34,7 @@ func TestValidateAccessLogLevel(t *testing.T) {
 
 	assert.NoError(t, v1alpha1.LogLevelInfo.Validate())
 	assert.NoError(t, v1alpha1.LogLevelError.Validate())
-	assert.NoError(t, v1alpha1.LogLevelServerError.Validate())
+	assert.NoError(t, v1alpha1.LogLevelCritical.Validate())
 	assert.NoError(t, v1alpha1.LogLevelDisabled.Validate())
 }
 

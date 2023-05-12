@@ -241,7 +241,7 @@ type AccessLogLevel string
 
 func (a AccessLogLevel) Validate() error {
 	switch a {
-	case LogLevelDisabled, LogLevelError, LogLevelServerError, LogLevelInfo:
+	case LogLevelDisabled, LogLevelError, LogLevelCritical, LogLevelInfo:
 		return nil
 	default:
 		return fmt.Errorf("invalid access log level %q", a)
@@ -254,7 +254,7 @@ const (
 	// Log only requests that result in an non-success response code.
 	LogLevelError AccessLogLevel = "error"
 	// Log only requests that result in an server error response code..
-	LogLevelServerError AccessLogLevel = "critical"
+	LogLevelCritical AccessLogLevel = "critical"
 	// Disable the access log.
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
