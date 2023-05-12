@@ -32,9 +32,11 @@ import (
 
 func TestTracing(t *testing.T) {
 	tracingConfig := &xdscache_v3.TracingConfig{
-		ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
+		ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+			ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
+			Timeout:          timeout.DefaultSetting(),
+		},
 		ServiceName:      "contour",
-		Timeout:          timeout.DefaultSetting(),
 		OverallSampling:  100,
 		MaxPathTagLength: 256,
 		CustomTags: []*xdscache_v3.CustomTag{
