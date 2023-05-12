@@ -459,7 +459,7 @@ type EnvoyLogging struct {
 
 	// AccessLogLevel sets the verbosity level of the access log.
 	//
-	// Values: `info` (default, meaning all requests are logged), `error` and `disabled`.
+	// Values: `info` (default, meaning all requests are logged), `error`, `critical` and `disabled`.
 	//
 	// Other values will produce an error.
 	// +optional
