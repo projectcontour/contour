@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -696,6 +697,10 @@ type RateLimitService struct {
 	// EnableResourceExhaustedCode enables translating error code 429 to
 	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
 	EnableResourceExhaustedCode bool `yaml:"enableResourceExhaustedCode,omitempty"`
+
+	// GeneralRateLimitPolicy allows setting global rate limit policy for all HTTPProxy
+	// HTTPProxy can overwrite this configuration.
+	GeneralRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"generalRateLimitPolicy,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both

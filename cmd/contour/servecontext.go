@@ -418,6 +418,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			FailOpen:                    ref.To(ctx.Config.RateLimitService.FailOpen),
 			EnableXRateLimitHeaders:     ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
 			EnableResourceExhaustedCode: ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
+			GeneralRateLimitPolicy:      ctx.Config.RateLimitService.GeneralRateLimitPolicy,
 		}
 	}
 

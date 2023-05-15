@@ -1222,7 +1222,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>)
+<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>, 
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>
 <p>
 <p>GlobalRateLimitPolicy defines global rate limiting parameters.</p>
@@ -2935,6 +2936,21 @@ GlobalRateLimitPolicy
 <p>Global defines global rate limiting parameters, i.e. parameters
 defining descriptors that are sent to an external rate limit
 service (RLS) for a rate limit decision on each request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>generalRateLimitPolicyEnabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GeneralRateLimitPolicyEnabled configures the HTTPProxy to use
+the general rate limit policy defined by the Contour configuration
+as a global rate limit policy for the virtual hosts entries.</p>
 </td>
 </tr>
 </tbody>
@@ -8042,6 +8058,22 @@ bool
 <em>(Optional)</em>
 <p>EnableResourceExhaustedCode enables translating error code 429 to
 grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>generalRateLimitPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
+GlobalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GeneralRateLimitPolicy allows setting a global rate limit policy for every HTTPProxy.
+HTTPProxy can overwrite this configuration.</p>
 </td>
 </tr>
 </tbody>

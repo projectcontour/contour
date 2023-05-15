@@ -515,6 +515,7 @@ func (s *Server) doServe() error {
 		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
+		globalRateLimitService:             contourConfiguration.RateLimitService,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1037,6 +1038,7 @@ type dagBuilderConfig struct {
 	httpsAddress                       string
 	httpsPort                          int
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
+	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {

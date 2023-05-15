@@ -776,6 +776,12 @@ type RateLimitPolicy struct {
 	// service (RLS) for a rate limit decision on each request.
 	// +optional
 	Global *GlobalRateLimitPolicy `json:"global,omitempty"`
+
+	// GeneralRateLimitPolicyEnabled configures the HTTPProxy to use
+	// the general rate limit policy defined by the Contour configuration
+	// as a global rate limit policy for the virtual hosts entries.
+	// +optional
+	GeneralRateLimitPolicyEnabled bool `json:"generalRateLimitPolicyEnabled,omitempty"`
 }
 
 // LocalRateLimitPolicy defines local rate limiting parameters.
