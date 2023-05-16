@@ -251,9 +251,9 @@ func (a AccessLogLevel) Validate() error {
 const (
 	// Log all requests. This is the default.
 	LogLevelInfo AccessLogLevel = "info"
-	// Log only requests that result in an non-success response code.
+	// Log only requests that result in a non-success (i.e. 300+) response code
 	LogLevelError AccessLogLevel = "error"
-	// Log only requests that result in an server error response code..
+	// Log only requests that result in an server error (i.e. 500+) response code.
 	LogLevelCritical AccessLogLevel = "critical"
 	// Disable the access log.
 	LogLevelDisabled AccessLogLevel = "disabled"

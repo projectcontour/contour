@@ -468,10 +468,10 @@ spec:
                         type: array
                       accessLogLevel:
                         description: "AccessLogLevel sets the verbosity level of the
-                          access log. \n Values: `info` (default, meaning all requests
-                          are logged), `error` (meaning all non-success requests are
-                          logged), `critical` (meaning all 5xx requests are logged)
-                          and `disabled` \n Other values will produce an error."
+                          access log. \n Values: `info` (default, all requests are
+                          logged), `error` (all non-success requests, i.e. 300+ response
+                          code, are logged), `critical` (all 5xx requests are logged)
+                          and `disabled`. \n Other values will produce an error."
                         type: string
                     type: object
                   metrics:
@@ -3633,11 +3633,11 @@ spec:
                             type: array
                           accessLogLevel:
                             description: "AccessLogLevel sets the verbosity level
-                              of the access log. \n Values: `info` (default, meaning
-                              all requests are logged), `error` (meaning all non-success
-                              requests are logged), `critical` (meaning all 5xx requests
-                              are logged) and `disabled` \n Other values will produce
-                              an error."
+                              of the access log. \n Values: `info` (default, all requests
+                              are logged), `error` (all non-success requests, i.e.
+                              300+ response code, are logged), `critical` (all 5xx
+                              requests are logged) and `disabled`. \n Other values
+                              will produce an error."
                             type: string
                         type: object
                       metrics:
