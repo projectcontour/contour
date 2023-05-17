@@ -22,6 +22,7 @@ A new field, `DefaultGlobalRateLimitPolicy` (optional), will be added to `RateLi
 
 HTTPProxy has to opt-in **explicitly** to use the default global rate limit policy using `rateLimitPolicy.defaultGlobalRateLimitPolicyEnabled` flag and still can have its own global `rateLimitPolicy` which overrides the default one.
 
+### Sample Configurations
 #### contour.yaml
 ```yaml
 apiVersion: v1
@@ -55,6 +56,71 @@ spec:
     fqdn: local.projectcontour.io
     rateLimitPolicy:
       defaultGlobalRateLimitPolicyEnabled: true
+      global:
+        descriptors:
+          - entries:
+            - remoteAddress: {}
+          - entries:
+            - genericKey:
+              value: foo
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+#### HTTPProxy With Local RateLimit
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      defaultGlobalRateLimitPolicyEnabled: true
+      global:
+        descriptors:
+          - entries:
+            - remoteAddress: {}
+          - entries:
+            - genericKey:
+              value: foo
+      local:
+        requests: 100
+        unit: hour
+        burst: 20
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+#### HTTPProxy Opted-out
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      defaultGlobalRateLimitPolicyEnabled: false
+      global:
+        descriptors:
+          - entries:
+            - genericKey:
+              value: bar
+      local:
+        requests: 100
+        unit: hour
+        burst: 20
   routes:
   - conditions:
     - prefix: /
@@ -65,8 +131,7 @@ spec:
 
 ## Detailed Design
 
-### Contour Configuration changes
-
+### Contour Configuration Changes
 A new field, `DefaultGlobalRateLimitPolicy` of type `GlobalRateLimitPolicy` (optional), will be added to `RateLimitServiceConfig` as part of `ContourConfigurationSpec`
 ```go
 ...
@@ -79,7 +144,7 @@ type RateLimitService struct {
 ...
 ```
 
-### HTTPProxy Configuration changes
+### HTTPProxy Configuration Changes
 A new field `DefaultGlobalRateLimitPolicyEnabled` (optional), will be added to HTTPProxy `RateLimitPolicy`
 ```go
 ...
@@ -94,7 +159,22 @@ type RateLimitPolicy struct {
 ...
 ```
 
+`GlobalRateLimitPolicy` is part of Contour API v1 definition for HTTPProxy's global `rateLimitPolicy`
+```go
+// GlobalRateLimitPolicy defines global rate limiting parameters.
+type GlobalRateLimitPolicy struct {
+	// Descriptors defines the list of descriptors that will
+	// be generated and sent to the rate limit service. Each
+	// descriptor contains 1+ key-value pair entries.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Descriptors []RateLimitDescriptor `json:"descriptors,omitempty"`
+}
+
+``` 
+
 HTTPProxy processor will check this flag and attach the default global rate limit policy as a global rate limit policy in case it is set to `true`.
+If `virtualhost` defines its own global `rateLimitPolicy`, `defaultGlobalRateLimitPolicy` won't be considered at all.
 
 ## Compatibility
 HTTPProxy will opt-in to use the default global rate limit policy optionally and the `DefaultGlobalRateLimitPolicy` in the Contour configuration is optional. This solution should not introduce any regressions and is backward-compatible.
