@@ -24,6 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	"github.com/projectcontour/contour/internal/ref"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -248,6 +249,10 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		} else if providerParams.Type == model.GCPLoadBalancerProvider {
 			svc.Spec.LoadBalancerIP = *providerParams.GCP.Address
 		}
+	}
+
+	if contour.Spec.NetworkPublishing.Envoy.IPFamilyPolicy != "" {
+		svc.Spec.IPFamilyPolicy = ref.To(contour.Spec.NetworkPublishing.Envoy.IPFamilyPolicy)
 	}
 
 	epType := contour.Spec.NetworkPublishing.Envoy.Type

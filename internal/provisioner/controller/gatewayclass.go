@@ -184,6 +184,14 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 					invalidParamsMessages = append(invalidParamsMessages, msg)
 				}
 
+				switch params.Spec.Envoy.NetworkPublishing.IPFamilyPolicy {
+				case "", corev1.IPFamilyPolicySingleStack, corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
+				default:
+					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.ipFamilyPolicy %q, must be SingleStack, PreferDualStack or RequireDualStack",
+						params.Spec.Envoy.NetworkPublishing.IPFamilyPolicy)
+					invalidParamsMessages = append(invalidParamsMessages, msg)
+				}
+
 				switch params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy {
 				case "", corev1.ServiceExternalTrafficPolicyTypeCluster, corev1.ServiceExternalTrafficPolicyTypeLocal:
 				default:
