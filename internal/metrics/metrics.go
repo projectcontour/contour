@@ -82,10 +82,10 @@ const (
 	eventHandlerOperations      = "contour_eventhandler_operation_total"
 
 	statusUpdateTotal           = "contour_status_update_total"
-	statusUpdateSuccess         = "contour_status_update_success"
-	statusUpdateFailed          = "contour_status_update_failed"
-	statusUpdateConflict        = "contour_status_update_conflict"
-	statusUpdateNoop            = "contour_status_update_noop"
+	statusUpdateSuccess         = "contour_status_update_success_total"
+	statusUpdateFailed          = "contour_status_update_failed_total"
+	statusUpdateConflict        = "contour_status_update_conflict_total"
+	statusUpdateNoop            = "contour_status_update_noop_total"
 	statusUpdateDurationSeconds = "contour_status_update_duration_seconds"
 )
 
@@ -225,7 +225,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 		statusUpdateDurationSeconds: prometheus.NewSummaryVec(
 			prometheus.SummaryOpts{
 				Name: statusUpdateDurationSeconds,
-				Help: "How long a status update takes to finish",
+				Help: "How long a status update takes to finish.",
 				Objectives: map[float64]float64{
 					0.00: 0.01,
 					0.25: 0.01,
@@ -290,6 +290,12 @@ func (m *Metrics) Zero() {
 	m.SetHTTPProxyMetric(zeroes)
 	m.EventHandlerOperations.WithLabelValues("add", "Secret").Inc()
 	m.SetDAGCacheObjectMetric("kind", 1)
+	m.SetStatusUpdateTotal("kind")
+	m.SetStatusUpdateSuccess("kind")
+	m.SetStatusUpdateNoop("kind")
+	m.SetStatusUpdateFailed("kind")
+	m.SetStatusUpdateConflict("kind")
+	m.SetStatusUpdateDuration(time.Nanosecond, "kind", false)
 
 	m.CacheHandlerOnUpdateSummary.Observe(0)
 	m.DAGRebuildSeconds.Observe(0)
