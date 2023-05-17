@@ -877,6 +877,10 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		if err := d.EnsureContourDeployment(); err != nil {
 			return err
 		}
+
+		if err := d.WaitForContourDeploymentUpdated(); err != nil {
+			return err
+		}
 	}
 
 	var envoyPodSpec *v1.PodSpec
