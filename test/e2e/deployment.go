@@ -918,7 +918,13 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		}
 	}
 
-	return d.WaitForEnvoyUpdated()
+	if startContourDeployment {
+		// Envoys will only be ready if Contour
+		// has started.
+		return d.WaitForEnvoyUpdated()
+	}
+
+	return nil
 }
 
 // DeleteResourcesForInclusterContour ensures deletion of all resources
