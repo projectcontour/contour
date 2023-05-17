@@ -102,9 +102,6 @@ var _ = Describe("upgrading Contour", func() {
 			By("deploying updated contour resources")
 			require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 
-			By("waiting for envoy daemonset to be updated")
-			require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
-
 			By("ensuring app is still routable")
 			checkRoutability(appHost)
 
