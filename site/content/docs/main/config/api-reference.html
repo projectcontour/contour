@@ -5328,11 +5328,14 @@ ExtensionServiceStatus
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;disabled&#34;</p></td>
+<tbody><tr><td><p>&#34;critical&#34;</p></td>
+<td><p>Log only requests that result in an server error (i.e. 500+) response code.</p>
+</td>
+</tr><tr><td><p>&#34;disabled&#34;</p></td>
 <td><p>Disable the access log.</p>
 </td>
 </tr><tr><td><p>&#34;error&#34;</p></td>
-<td><p>Log only requests that result in an error.</p>
+<td><p>Log only requests that result in a non-success (i.e. 300+) response code</p>
 </td>
 </tr><tr><td><p>&#34;info&#34;</p></td>
 <td><p>Log all requests. This is the default.</p>
@@ -6594,7 +6597,7 @@ AccessLogLevel
 <td>
 <em>(Optional)</em>
 <p>AccessLogLevel sets the verbosity level of the access log.</p>
-<p>Values: <code>info</code> (default, meaning all requests are logged), <code>error</code> and <code>disabled</code>.</p>
+<p>Values: <code>info</code> (default, all requests are logged), <code>error</code> (all non-success requests, i.e. 300+ response code, are logged), <code>critical</code> (all 5xx requests are logged) and <code>disabled</code>.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>

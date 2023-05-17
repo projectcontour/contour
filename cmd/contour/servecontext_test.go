@@ -679,6 +679,46 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"access log -- error": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.AccessLogFormat = config.JSONAccessLog
+				ctx.Config.AccessLogFormatString = "foo-bar-baz"
+				ctx.Config.AccessLogFields = []string{"custom_field"}
+				ctx.Config.AccessLogLevel = config.LogLevelError
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+					AccessLogFormatString: "foo-bar-baz",
+					AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+						"custom_field",
+					}),
+				}
+				return cfg
+			},
+		},
+		"access log -- critical": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.AccessLogFormat = config.JSONAccessLog
+				ctx.Config.AccessLogFormatString = "foo-bar-baz"
+				ctx.Config.AccessLogFields = []string{"custom_field"}
+				ctx.Config.AccessLogLevel = config.LogLevelCritical
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+					AccessLogFormatString: "foo-bar-baz",
+					AccessLogLevel:        contour_api_v1alpha1.LogLevelCritical,
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+						"custom_field",
+					}),
+				}
+				return cfg
+			},
+		},
 		"disable merge slashes": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.DisableMergeSlashes = true
