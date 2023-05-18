@@ -22,15 +22,18 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 var (
@@ -45,13 +48,15 @@ func TestUpgrade(t *testing.T) {
 	RunSpecs(t, "Upgrade Suite")
 }
 
+var _ = BeforeSuite(func() {
+	contourUpgradeFromVersion = os.Getenv("CONTOUR_UPGRADE_FROM_VERSION")
+	require.NotEmpty(f.T(), contourUpgradeFromVersion, "CONTOUR_UPGRADE_FROM_VERSION environment variable not supplied")
+	By("Testing upgrades from " + contourUpgradeFromVersion)
+})
+
 var _ = Describe("When upgrading", func() {
 	Describe("Contour", func() {
 		BeforeEach(func() {
-			contourUpgradeFromVersion = os.Getenv("CONTOUR_UPGRADE_FROM_VERSION")
-			require.NotEmpty(f.T(), contourUpgradeFromVersion, "CONTOUR_UPGRADE_FROM_VERSION environment variable not supplied")
-			By("Testing Contour upgrade from " + contourUpgradeFromVersion)
-
 			cmd := exec.Command("make", "install-contour-release")
 			cmd.Dir = "../../.."
 
@@ -118,6 +123,164 @@ var _ = Describe("When upgrading", func() {
 
 				By("deploying updated contour resources")
 				require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
+
+				By("ensuring app is still routable")
+				checkRoutability(appHost)
+
+				poller.Stop()
+				totalRequests, successfulRequests := poller.Results()
+				fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+				require.Greater(f.T(), totalRequests, uint(0))
+				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
+				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
+			})
+		})
+	})
+
+	var _ = Describe("the Gateway provisioner", func() {
+		const gatewayClassName = "upgrade-gc"
+
+		BeforeEach(func() {
+			cmd := exec.Command("make", "install-provisioner-release")
+			cmd.Dir = "../../.."
+
+			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			require.NoError(f.T(), err)
+
+			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
+
+			gc, ok := f.CreateGatewayClassAndWaitFor(&v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: gatewayClassName,
+				},
+				Spec: v1beta1.GatewayClassSpec{
+					ControllerName: v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+				},
+			}, func(gc *v1beta1.GatewayClass) bool {
+				for _, cond := range gc.Status.Conditions {
+					if cond.Type == string(v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
+						return true
+					}
+				}
+
+				return false
+			})
+			require.True(f.T(), ok)
+			require.NotNil(f.T(), gc)
+		})
+
+		AfterEach(func() {
+			require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
+
+			gc := &v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: gatewayClassName,
+				},
+			}
+
+			f.Client.Delete(context.Background(), gc)
+		})
+
+		f.NamespacedTest("provisioner-upgrade-test", func(namespace string) {
+			Specify("provisioner upgrade test", func() {
+				t := f.T()
+
+				appHost := "upgrade.provisioner.projectcontour.io"
+
+				gateway, ok := f.CreateGatewayAndWaitFor(&v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "upgrade-gateway",
+					},
+					Spec: v1beta1.GatewaySpec{
+						GatewayClassName: gatewayClassName,
+						Listeners: []v1beta1.Listener{
+							{
+								Name:     "http",
+								Port:     v1beta1.PortNumber(80),
+								Protocol: v1beta1.HTTPProtocolType,
+								Hostname: ref.To(v1beta1.Hostname(appHost)),
+							},
+						},
+					},
+				}, func(gw *v1beta1.Gateway) bool {
+					for _, cond := range gw.Status.Conditions {
+						if cond.Type == string(v1beta1.GatewayConditionProgrammed) && cond.Status == metav1.ConditionTrue {
+							return len(gw.Status.Addresses) > 0
+						}
+					}
+					return false
+				})
+				require.True(t, ok)
+				require.NotNil(t, gateway)
+
+				f.HTTP.HTTPURLBase = "http://" + gateway.Status.Addresses[0].Value
+
+				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
+
+				f.CreateHTTPRouteAndWaitFor(&v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "echo",
+					},
+					Spec: v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: v1beta1.CommonRouteSpec{
+							ParentRefs: []v1beta1.ParentReference{
+								{Name: v1beta1.ObjectName(gateway.Name)},
+							},
+						},
+						Rules: []v1beta1.HTTPRouteRule{
+							{
+								BackendRefs: []v1beta1.HTTPBackendRef{
+									{
+										BackendRef: v1beta1.BackendRef{
+											BackendObjectReference: v1beta1.BackendObjectReference{
+												Name: v1beta1.ObjectName("echo"),
+												Port: ref.To(v1beta1.PortNumber(80)),
+											},
+										},
+									},
+								},
+								Filters: []v1beta1.HTTPRouteFilter{
+									{
+										Type: v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										ResponseHeaderModifier: &v1beta1.HTTPHeaderFilter{
+											Set: []v1beta1.HTTPHeader{
+												{
+													Name:  v1beta1.HTTPHeaderName("X-Envoy-Response-Flags"),
+													Value: "%RESPONSE_FLAGS%",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}, func(route *v1beta1.HTTPRoute) bool {
+					if len(route.Status.Parents) != 1 {
+						return false
+					}
+					for _, cond := range route.Status.Parents[0].Conditions {
+						if cond.Type == string(v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
+							return true
+						}
+					}
+					return false
+				})
+
+				By("ensuring it is routable")
+				checkRoutability(appHost)
+
+				poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
+				require.NoError(f.T(), err)
+
+				By("deploying updated provisioner")
+				require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
+
+				By("waiting for Gateway to upgrade")
+				time.Sleep(3 * time.Minute)
+				// TODO use similar logic to WaitForContourDeploymentUpdated, WaitForEnvoyDaemonSetUpdated
 
 				By("ensuring app is still routable")
 				checkRoutability(appHost)
