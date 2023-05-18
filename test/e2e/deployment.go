@@ -877,6 +877,10 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		if err := d.EnsureContourDeployment(); err != nil {
 			return err
 		}
+
+		if err := d.WaitForContourDeploymentUpdated(); err != nil {
+			return err
+		}
 	}
 
 	var envoyPodSpec *v1.PodSpec
@@ -904,11 +908,23 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		// node, so scale the deployment to 1.
 		d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
 
-		return d.EnsureEnvoyDeployment()
+		if err := d.EnsureEnvoyDeployment(); err != nil {
+			return err
+		}
+	} else {
+		// Otherwise, we're deploying Envoy as a DaemonSet.
+		if err := d.EnsureEnvoyDaemonSet(); err != nil {
+			return err
+		}
 	}
 
-	// Otherwise, we're deploying Envoy as a DaemonSet.
-	return d.EnsureEnvoyDaemonSet()
+	if startContourDeployment {
+		// Envoys will only be ready if Contour
+		// has started.
+		return d.WaitForEnvoyUpdated()
+	}
+
+	return nil
 }
 
 // DeleteResourcesForInclusterContour ensures deletion of all resources

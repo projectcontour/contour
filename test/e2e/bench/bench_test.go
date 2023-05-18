@@ -94,8 +94,6 @@ var _ = BeforeSuite(func() {
 	)
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
-	require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
-	require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 	require.Eventually(f.T(), func() bool {
 		s := &corev1.Service{}
