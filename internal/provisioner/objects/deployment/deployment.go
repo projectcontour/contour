@@ -105,7 +105,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		switch {
 		case port.Name == "http" && port.ContainerPort != objects.EnvoyInsecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-http-port=%d", port.ContainerPort))
-
 		case port.Name == "https" && port.ContainerPort != objects.EnvoySecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-https-port=%d", port.ContainerPort))
 		}

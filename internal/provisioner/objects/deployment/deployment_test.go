@@ -152,8 +152,7 @@ func TestDesiredDeployment(t *testing.T) {
 		"key": "value",
 	}
 
-	// Use non-default container ports to test that
-	// --envoy-service-http(s)-port
+	// Use non-default container ports to test that --envoy-service-http(s)-port
 	// flags are added.
 	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
 		{Name: "http", ServicePort: 80, ContainerPort: 8081},
