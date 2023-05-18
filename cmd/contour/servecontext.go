@@ -30,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
-
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -317,6 +316,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		accessLogLevel = contour_api_v1alpha1.LogLevelInfo
 	case config.LogLevelError:
 		accessLogLevel = contour_api_v1alpha1.LogLevelError
+	case config.LogLevelCritical:
+		accessLogLevel = contour_api_v1alpha1.LogLevelCritical
 	case config.LogLevelDisabled:
 		accessLogLevel = contour_api_v1alpha1.LogLevelDisabled
 	}
@@ -364,6 +365,30 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		dnsLookupFamily = contour_api_v1alpha1.IPv4ClusterDNSFamily
 	case config.AllClusterDNSFamily:
 		dnsLookupFamily = contour_api_v1alpha1.AllClusterDNSFamily
+	}
+
+	var tracingConfig *contour_api_v1alpha1.TracingConfig
+	if ctx.Config.Tracing != nil {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.Tracing.ExtensionService)
+		var customTags []*contour_api_v1alpha1.CustomTag
+		for _, customTag := range ctx.Config.Tracing.CustomTags {
+			customTags = append(customTags, &contour_api_v1alpha1.CustomTag{
+				TagName:           customTag.TagName,
+				Literal:           customTag.Literal,
+				RequestHeaderName: customTag.RequestHeaderName,
+			})
+		}
+		tracingConfig = &contour_api_v1alpha1.TracingConfig{
+			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
+			ServiceName:      ctx.Config.Tracing.ServiceName,
+			OverallSampling:  ctx.Config.Tracing.OverallSampling,
+			MaxPathTagLength: ctx.Config.Tracing.MaxPathTagLength,
+			CustomTags:       customTags,
+			ExtensionService: &contour_api_v1alpha1.NamespacedName{
+				Name:      namespacedName.Name,
+				Namespace: namespacedName.Namespace,
+			},
+		}
 	}
 
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
@@ -538,6 +563,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		RateLimitService:            rateLimitService,
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
+		Tracing:                     tracingConfig,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

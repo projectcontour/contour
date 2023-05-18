@@ -654,7 +654,7 @@ string
 </td>
 <td>
 <p>required, the namespaces the authority to reference the
-the secret will be delegated to.
+secret will be delegated to.
 If TargetNamespaces is nil or empty, the CertificateDelegation&rsquo;
 is ignored. If the TargetNamespace list contains the character, &ldquo;*&rdquo;
 the secret will be delegated to all namespaces.</p>
@@ -2013,6 +2013,79 @@ If the header does not exist it will be added, otherwise it will be overwritten 
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.IPFilterPolicy">IPFilterPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>source</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterSource">
+IPFilterSource
+</a>
+</em>
+</td>
+<td>
+<p>Source indicates how to determine the ip address to filter on, and can be
+one of two values:
+- <code>Remote</code> filters on the ip address of the client, accounting for PROXY and
+X-Forwarded-For as needed.
+- <code>Peer</code> filters on the ip of the network request, ignoring PROXY and
+X-Forwarded-For.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>cidr</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
+a bare IP address (without a mask) to filter on exactly one address.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.IPFilterSource">IPFilterSource
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">IPFilterPolicy</a>)
+</p>
+<p>
+<p>IPFilterSource indicates which IP should be considered for filtering</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Peer&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Remote&#34;</p></td>
+<td></td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1.Include">Include
 </h3>
 <p>
@@ -2286,7 +2359,7 @@ is used.</p>
 <code>RequestHash</code> load balancing strategy is chosen. If an element of the
 supplied list of hash policies is invalid, it will be ignored. If the
 list of hash policies is empty after validation, the load balancing
-strategy will fall back the the default <code>RoundRobin</code>.</p>
+strategy will fall back to the default <code>RoundRobin</code>.</p>
 </td>
 </tr>
 </tbody>
@@ -2392,7 +2465,7 @@ set when a request is rate-limited.</p>
 </p>
 <p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
-One of Prefix, Header or QueryParameter must be provided.</p>
+One of Prefix, Exact, Header or QueryParameter must be provided.</p>
 </p>
 <table>
 <thead>
@@ -2413,6 +2486,20 @@ string
 <td>
 <em>(Optional)</em>
 <p>Prefix defines a prefix match for a request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>exact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exact defines a exact match for a request.
+This field is not allowed in include match conditions.</p>
 </td>
 </tr>
 <tr>
@@ -3586,6 +3673,40 @@ JWTVerificationPolicy
 <p>The policy for verifying JWTs for requests to this route.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipAllowPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be allowed. All other requests will be denied.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here override any rules set on the root HTTPProxy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipDenyPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be denied. All other requests will be allowed.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here override any rules set on the root HTTPProxy.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.Service">Service
@@ -4530,6 +4651,40 @@ RateLimitPolicy
 <p>Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipAllowPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be allowed. All other requests will be denied.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here may be overridden in a Route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipDenyPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.IPFilterPolicy">
+[]IPFilterPolicy
+</a>
+</em>
+</td>
+<td>
+<p>IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+requests should be denied. All other requests will be allowed.
+Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+The rules defined here may be overridden in a Route.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <hr/>
@@ -4788,6 +4943,20 @@ MetricsConfig
 <em>(Optional)</em>
 <p>Metrics defines the endpoint Contour uses to serve metrics.</p>
 <p>Contour&rsquo;s default is { address: &ldquo;0.0.0.0&rdquo;, port: 8000 }.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tracing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TracingConfig">
+TracingConfig
+</a>
+</em>
+</td>
+<td>
+<p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
 </td>
 </tr>
 </table>
@@ -5159,11 +5328,14 @@ ExtensionServiceStatus
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;disabled&#34;</p></td>
+<tbody><tr><td><p>&#34;critical&#34;</p></td>
+<td><p>Log only requests that result in an server error (i.e. 500+) response code.</p>
+</td>
+</tr><tr><td><p>&#34;disabled&#34;</p></td>
 <td><p>Disable the access log.</p>
 </td>
 </tr><tr><td><p>&#34;error&#34;</p></td>
-<td><p>Log only requests that result in an error.</p>
+<td><p>Log only requests that result in a non-success (i.e. 300+) response code</p>
 </td>
 </tr><tr><td><p>&#34;info&#34;</p></td>
 <td><p>Log all requests. This is the default.</p>
@@ -5484,6 +5656,20 @@ MetricsConfig
 <p>Contour&rsquo;s default is { address: &ldquo;0.0.0.0&rdquo;, port: 8000 }.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tracing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TracingConfig">
+TracingConfig
+</a>
+</em>
+</td>
+<td>
+<p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus
@@ -5753,6 +5939,63 @@ DeploymentSettings
 <td>
 <em>(Optional)</em>
 <p>Deployment describes the settings for running contour as a <code>Deployment</code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
+</h3>
+<p>
+<p>CustomTag defines custom tags with unique tag name
+to create tags for the active span.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>tagName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>TagName is the unique name of the custom tag.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>literal</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Literal is a static custom tag value.
+Precisely one of Literal, RequestHeaderName must be set.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeaderName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RequestHeaderName indicates which request header
+the label value is obtained from.
+Precisely one of Literal, RequestHeaderName must be set.</p>
 </td>
 </tr>
 </tbody>
@@ -6354,7 +6597,7 @@ AccessLogLevel
 <td>
 <em>(Optional)</em>
 <p>AccessLogLevel sets the verbosity level of the access log.</p>
-<p>Values: <code>info</code> (default, meaning all requests are logged), <code>error</code> and <code>disabled</code>.</p>
+<p>Values: <code>info</code> (default, all requests are logged), <code>error</code> (all non-success requests, i.e. 300+ response code, are logged), <code>critical</code> (all 5xx requests are logged) and <code>disabled</code>.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>
@@ -7311,7 +7554,8 @@ string
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>, 
+<a href="#projectcontour.io/v1alpha1.TracingConfig">TracingConfig</a>)
 </p>
 <p>
 <p>NamespacedName defines the namespace/name of the Kubernetes resource referred from the config file.
@@ -7977,6 +8221,112 @@ string
 If not set, a default value of 2 seconds will be used.</p>
 <p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout</a>
 for more information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.TracingConfig">TracingConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>TracingConfig defines properties for exporting trace data to OpenTelemetry.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>includePodDetail</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IncludePodDetail defines a flag.
+If it is true, contour will add the pod name and namespace to the span of the trace.
+the default is true.
+Note: The Envoy pods MUST have the HOSTNAME and CONTOUR_NAMESPACE environment variables set for this to work properly.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ServiceName defines the name for the service.
+contour&rsquo;s default is contour.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overallSampling</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverallSampling defines the sampling rate of trace data.
+contour&rsquo;s default is 100.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxPathTagLength</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxPathTagLength defines maximum length of the request path
+to extract and include in the HttpUrl tag.
+contour&rsquo;s default is 256.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>customTags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag">
+[]*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CustomTags defines a list of custom tags with unique tag name.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extensionService</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NamespacedName">
+NamespacedName
+</a>
+</em>
+</td>
+<td>
+<p>ExtensionService identifies the extension service defining the otel-collector.</p>
 </td>
 </tr>
 </tbody>

@@ -16,6 +16,7 @@
 package e2e
 
 import (
+	"context"
 	"crypto/tls"
 	"io"
 	"net/http"
@@ -288,7 +289,7 @@ func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
 func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*HTTPResponse) bool) (*HTTPResponse, bool) {
 	var res *HTTPResponse
 
-	if err := wait.PollImmediate(h.RetryInterval, h.RetryTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), h.RetryInterval, h.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		r, err := makeRequest()
 		if err != nil {
 			// if there was an error, we want to keep

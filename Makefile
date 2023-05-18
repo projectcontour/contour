@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.25.4
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.26.1
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -41,7 +41,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.20.3
+BUILD_BASE_IMAGE ?= golang:1.20.4
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -310,6 +310,10 @@ install-contour-release: | setup-kind-cluster ## Install the release version of 
 .PHONY: install-provisioner-working
 install-provisioner-working: | setup-kind-cluster ## Set up the Contour provisioner for local testing
 	./test/scripts/install-provisioner-working.sh
+
+.PHONY: install-provisioner-release
+install-provisioner-release: | setup-kind-cluster ## Install the release version of the Contour gateway provisioner in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
+	./test/scripts/install-provisioner-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
 
 .PHONY: e2e

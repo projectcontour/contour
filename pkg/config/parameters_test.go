@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -491,4 +492,81 @@ func TestListenerValidation(t *testing.T) {
 		ConnectionBalancer: "invalid",
 	}
 	require.Error(t, l.Validate())
+}
+
+func TestTracingConfigValidation(t *testing.T) {
+	var trace *Tracing
+	require.NoError(t, trace.Validate())
+
+	trace = &Tracing{
+		IncludePodDetail: ref.To(false),
+		ServiceName:      ref.To("contour"),
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags:       nil,
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.NoError(t, trace.Validate())
+
+	trace = &Tracing{
+		IncludePodDetail: ref.To(false),
+		ServiceName:      ref.To("contour"),
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags:       nil,
+	}
+	require.Error(t, trace.Validate())
+
+	trace = &Tracing{
+		IncludePodDetail: ref.To(false),
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags:       nil,
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.NoError(t, trace.Validate())
+
+	trace = &Tracing{
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags: []CustomTag{
+			{
+				TagName:           "first",
+				Literal:           "literal",
+				RequestHeaderName: ":path",
+			},
+		},
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.Error(t, trace.Validate())
+
+	trace = &Tracing{
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags: []CustomTag{
+			{
+				Literal: "literal",
+			},
+		},
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.Error(t, trace.Validate())
+
+	trace = &Tracing{
+		IncludePodDetail: ref.To(true),
+		OverallSampling:  ref.To("100"),
+		MaxPathTagLength: ref.To(uint32(256)),
+		CustomTags: []CustomTag{
+			{
+				TagName: "first",
+				Literal: "literal",
+			},
+			{
+				TagName:           "first",
+				RequestHeaderName: ":path",
+			},
+		},
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.Error(t, trace.Validate())
 }

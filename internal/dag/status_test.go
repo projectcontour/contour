@@ -245,6 +245,109 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// Exact match condition in include match conditions, invalid
+	proxyExactIncludeInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "invalid-parent",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "exact-invalid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "child1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/foo",
+				}},
+			}, {
+				Name: "child2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	// Exact match condition in include match conditions, invalid
+	proxyExactMatchValid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "valid-parent",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "exact-valid.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name: "child1",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name: "child2",
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	proxyExactIncludeChild1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "child1",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Exact: "/exact",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "foo1",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxyExactIncludeChild2 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "child2",
+			Generation: 1,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "foo2",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "proxy has exact match condition in include match conditions, should be invalid", testcase{
+		objs: []interface{}{proxyExactIncludeInvalid, proxyExactMatchValid, proxyExactIncludeChild1, proxyExactIncludeChild2, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyExactIncludeChild1.Name, Namespace: proxyExactIncludeChild1.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeChild1.Generation).
+				Valid(),
+			{Name: proxyExactIncludeChild2.Name, Namespace: proxyExactIncludeChild2.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeChild2.Generation).
+				Valid(),
+			{Name: proxyExactIncludeInvalid.Name, Namespace: proxyExactIncludeInvalid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactIncludeInvalid.Generation).
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", `include: exact conditions are not allowed in includes block`),
+			{Name: proxyExactMatchValid.Name, Namespace: proxyExactMatchValid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyExactMatchValid.Generation).
+				Valid(),
+		},
+	})
+
 	ingressSharedService := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
@@ -1292,7 +1395,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
-				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix or exact is not allowed in a condition block"),
 		},
 	})
 
@@ -1345,7 +1448,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoPrefixesWithInclude.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix or exact is not allowed in a condition block"),
 			{Name: proxyValidChildTeamA.Name, Namespace: proxyValidChildTeamA.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidChildTeamA.Generation).
 				Orphaned(),
@@ -1898,6 +2001,84 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyValidBlogTeamB.Name,
 				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
+			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+		},
+	})
+
+	proxyInvalidDuplicateIncludeSamePathDiffHeaders := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []contour_api_v1.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				// First valid header matches on path /foo.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-another-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				// Second valid header matches on path /foo.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header-other",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteama",
+				Namespace: "teama",
+				// This match on /foo with same headers as previous should be invalid.
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:     "x-header-other",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "duplicate header conditions on an include with same path", testcase{
+		objs: []interface{}{proxyInvalidDuplicateIncludeSamePathDiffHeaders, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{Name: proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+				Valid(),   // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
 				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
@@ -4114,6 +4295,153 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	ipFilterVirtualHostValidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-valid-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{
+					{
+						Source: contour_api_v1.IPFilterSourcePeer,
+						CIDR:   "10.8.8.8/0",
+					},
+					{
+						Source: contour_api_v1.IPFilterSourceRemote,
+						CIDR:   "10.8.8.8/0",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter valid proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostValidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostValidProxy): fixture.NewValidCondition().Valid(),
+		},
+	})
+
+	ipFilterVirtualHostAllowAndDenyInvalidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-invalid-allow-and-deny-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourcePeer,
+					CIDR:   "10.8.8.8/0",
+				}},
+				IPDenyFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourceRemote,
+					CIDR:   "10.8.8.8/0",
+				}},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter invalid allow and deny proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostAllowAndDenyInvalidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostAllowAndDenyInvalidProxy): fixture.NewValidCondition().
+				WithError(
+					contour_api_v1.ConditionTypeIPFilterError,
+					"IncompatibleIPAddressFilters",
+					"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.",
+				),
+		},
+	})
+
+	ipFilterVirtualHostFilterRulesInvalidProxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ip-filter-invalid-filter-rules-proxy",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				IPAllowFilterPolicy: []contour_api_v1.IPFilterPolicy{{
+					Source: contour_api_v1.IPFilterSourcePeer,
+					CIDR:   "abcd",
+				}},
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: []contour_api_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_api_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "virtualhost ip-filter invalid filter rules proxy", testcase{
+		objs: []interface{}{
+			ipFilterVirtualHostFilterRulesInvalidProxy,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(ipFilterVirtualHostFilterRulesInvalidProxy): {
+				Condition: contour_api_v1.Condition{
+					Type:    contour_api_v1.ValidConditionType,
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+				Errors: []contour_api_v1.SubCondition{
+					{
+						Type:    contour_api_v1.ConditionTypeIPFilterError,
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  "InvalidCIDR",
+						Message: "abcd failed to parse: invalid CIDR address: abcd/32",
+					},
+					{
+						Type:    contour_api_v1.ConditionTypeIPFilterError,
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  "IPFilterPolicyNotValid",
+						Message: "Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: invalid CIDR address: abcd/32",
+					},
+				},
+			},
+		},
+	})
+
 	// proxyWithInvalidSlowStartWindow is invalid because it has invalid window size syntax.
 	proxyWithInvalidSlowStartWindow := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -4690,6 +5018,48 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
+	run(t, "regular expression path match with invalid value for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchRegularExpression, "invalid-regex???"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+						{
+							Type:    string(status.ConditionValidMatches),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(status.ReasonInvalidPathMatch),
+							Message: "Match.Path.Value is invalid for RegularExpression match type.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
 	run(t, "prefix path match with consecutive '/' characters for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
@@ -4821,7 +5191,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
+							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 						},
 					},
 				},
@@ -4830,48 +5200,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
-	run(t, "regular expression match not yet supported for httproute", testcase{
-		objs: []interface{}{
-			kuardService,
-			&gatewayapi_v1beta1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "default",
-				},
-				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-					},
-					Hostnames: []gatewayapi_v1beta1.Hostname{
-						"test.projectcontour.io",
-					},
-					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchRegularExpression, "/"),
-						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-					}},
-				},
-			}},
-		wantRouteConditions: []*status.RouteStatusUpdate{{
-			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-				{
-					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-					Conditions: []metav1.Condition{
-						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
-						},
-					},
-				},
-			},
-		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
-	})
-
-	run(t, "RegularExpression header match not yet supported for httproute", testcase{
+	run(t, "invalid header match type not supported for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -4894,7 +5223,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1beta1.HTTPHeaderName("foo"),
 									Value: "bar",
 								},
@@ -4915,7 +5244,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
+							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported",
 						},
 					},
 				},
@@ -4924,7 +5253,60 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 
-	run(t, "RegularExpression query param match not supported for httproute", testcase{
+	run(t, "regular expression header match with invalid value for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Value: ref.To("/"),
+							},
+							Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
+								{
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression),
+									Name:  gatewayapi_v1beta1.HTTPHeaderName("foo"),
+									Value: "invalid-regrex\\",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
+							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "regular expression query param match with valid value for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -4947,9 +5329,62 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
 								{
-									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression), // <---- RegularExpression type not yet supported
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
 									Name:  "param-1",
-									Value: "value-1",
+									Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted HTTPRoute",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
+	run(t, "regular expression query param match with invalid value for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Value: ref.To("/"),
+							},
+							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+								{
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchRegularExpression),
+									Name:  "param-1",
+									Value: "invalid-regex????",
 								},
 							},
 						}},
@@ -4968,7 +5403,60 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported",
+							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Invalid value for RegularExpression match type is specified",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "query param match with invalid type for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Type:  ref.To(gatewayapi_v1beta1.PathMatchPathPrefix),
+								Value: ref.To("/"),
+							},
+							QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+								{
+									Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchType("Invalid")),
+									Name:  "param-1",
+									Value: "invalid query param type",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
+							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact and RegularExpression match types are supported",
 						},
 					},
 				},
@@ -9300,7 +9788,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
 	})
 
-	run(t, "grpcroute: regular expression header match is not yet supported", testcase{
+	run(t, "grpcroute: invalid header match type is not supported", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
@@ -9324,8 +9812,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1alpha2.GRPCHeaderMatch{
 								{
-									// <---- RegularExpression type not yet supported
-									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression),
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1alpha2.GRPCHeaderName("foo"),
 									Value: "bar",
 								},
@@ -9347,7 +9834,62 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
 							Status:  contour_api_v1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
-							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported",
+							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "GRPCRoute", 0),
+	})
+
+	run(t, "grpcroute: regular expression header match has invalid value", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.GRPCRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+							Method: &gatewayapi_v1alpha2.GRPCMethodMatch{
+								Type:    ref.To(gatewayapi_v1alpha2.GRPCMethodMatchExact),
+								Service: ref.To("come.example.service"),
+								Method:  ref.To("Login"),
+							},
+							Headers: []gatewayapi_v1alpha2.GRPCHeaderMatch{
+								{
+									Type:  ref.To(gatewayapi_v1beta1.HeaderMatchRegularExpression),
+									Name:  gatewayapi_v1alpha2.GRPCHeaderName("foo"),
+									Value: "invalid(-)regex)",
+								},
+							},
+						}},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonUnsupportedValue),
+							Message: "GRPCRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified",
 						},
 					},
 				},

@@ -31,18 +31,41 @@ This section describes how to build Contour from source.
 
 ### Fetch the source
 
-Contour uses [`go modules`][2] for dependency management.
+1. [Fork][3] the projectcontour/contour repository.
 
-1. [Fork][3] the repo
+2. Create a local clone:
 
-2. Create a local clone
-
-```
-git clone git@github.com:YOUR-USERNAME/contour.git
-```
-
+    ```
+    git clone git@github.com:YOUR-USERNAME/contour.git
+    ```
+    or
+    ```
+    git clone https://github.com:YOUR-USERNAME/contour
+    ```
 
 ### Running your first build
+
+To build the Contour binary:
+
+```shell
+go build ./cmd/contour
+```
+
+### Running unit tests
+
+To run all of the unit tests:
+
+```shell
+go test ./...
+```
+
+To run the tests for a single package, change to the package directory and run:
+
+```shell
+go test .
+```
+
+### Deploying to a local kind cluster
 
 The simplest way to get up and running is to build Contour in a Docker container and to deploy it to a local Kind cluster.
 These commands will launch a Kind cluster and deploy your build of Contour to it.
@@ -65,43 +88,21 @@ To remove the Kind cluster and all resources, run:
 make cleanup-kind
 ```
 
+### Pre-submit checks
 
-### Building locally
-
-To build Contour locally, run:
-
-```
-make
-```
-
-This uses a `go install` and produces a `contour` binary in your `$GOPATH/bin` directory.
-
-
-### Running the unit tests
-
-Once you have Contour building, you can run all the unit tests for the project:
-
-```
-make check
-```
-
-To run the tests for a single package, change to package directory and run:
-
-```
-go test .
-```
-
-### Lint
-
-Before making a commit, it's always a good idea to check the code for common programming mistakes, misspellings and other potential errors. The lint checks can be run by invoking the make lint task:
+To run all checks locally before submitting a pull request, run:
 
 ```shell
-make lint
+make checkall
 ```
+
+This builds the binary, runs unit tests, runs the linters, and verifies that code generation (`make generate`) has been run and the results have been committed.
+
+See `make help` for more information on other useful `make` targets.
 
 ### Local Development/Testing
 
-It's very helpful to be able to test out changes to Contour locally without building images and pushing into clusters.
+As an alternative to using `make install-contour-working` from above, you may prefer to be able to test out changes to Contour locally without building images and pushing into clusters.
 
 To accomplish this, Envoy can be run inside a Kubernetes cluster, typically a `kind` cluster.
 Then Contour is run on your local machine and Envoy will be configured to look for Contour running on your machine vs running in the cluster.

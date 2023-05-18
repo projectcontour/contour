@@ -44,8 +44,9 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Set the image tag to match the current git hash + dirty flag.
-VERSION=$(git describe --exclude="*" --always --dirty)
+# Set (pseudo) random image tag to trigger restarts at every deployment.
+# TODO: Come up with a scheme that doesn't fill up the dev environment with randomly-tagged images.
+VERSION="v$$"
 
 # Build the image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}

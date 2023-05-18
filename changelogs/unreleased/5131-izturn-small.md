@@ -1,1 +1,0 @@
-Gateway API: for routes, always set ResolvedRefs condition, even if true to match the spec.

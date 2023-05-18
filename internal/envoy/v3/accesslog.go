@@ -32,9 +32,10 @@ func FileAccessLogEnvoy(path string, format string, extensions []string, level c
 
 	var filter *envoy_accesslog_v3.AccessLogFilter
 	if level == contour_api_v1alpha1.LogLevelError {
-		filter = filterOnlyErrors()
+		filter = filterOnlyErrors(300) // We want to log resp status >= 300
+	} else if level == contour_api_v1alpha1.LogLevelCritical {
+		filter = filterOnlyErrors(500) // We want to log resp status >= 500
 	}
-
 	// Nil by default to defer to Envoy's default log format.
 	var logFormat *envoy_file_v3.FileAccessLog_LogFormat
 
@@ -74,7 +75,9 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFie
 
 	var filter *envoy_accesslog_v3.AccessLogFilter
 	if level == contour_api_v1alpha1.LogLevelError {
-		filter = filterOnlyErrors()
+		filter = filterOnlyErrors(300) // We want to log resp status >= 300
+	} else if level == contour_api_v1alpha1.LogLevelCritical {
+		filter = filterOnlyErrors(500) // We want to log resp status >= 500
 	}
 
 	jsonformat := &structpb.Struct{
@@ -132,7 +135,7 @@ func extensionConfig(extensions []string) []*envoy_config_core_v3.TypedExtension
 	return config
 }
 
-func filterOnlyErrors() *envoy_accesslog_v3.AccessLogFilter {
+func filterOnlyErrors(respCodeMin uint32) *envoy_accesslog_v3.AccessLogFilter {
 	return &envoy_accesslog_v3.AccessLogFilter{
 		FilterSpecifier: &envoy_accesslog_v3.AccessLogFilter_OrFilter{
 			OrFilter: &envoy_accesslog_v3.OrFilter{
@@ -143,7 +146,7 @@ func filterOnlyErrors() *envoy_accesslog_v3.AccessLogFilter {
 								Comparison: &envoy_accesslog_v3.ComparisonFilter{
 									Op: envoy_accesslog_v3.ComparisonFilter_GE,
 									Value: &envoy_config_core_v3.RuntimeUInt32{
-										DefaultValue: 300,
+										DefaultValue: respCodeMin,
 										RuntimeKey:   "contour.accesslog.filter.status_code",
 									},
 								},

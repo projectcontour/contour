@@ -157,6 +157,10 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-include-prefix-condition", testIncludePrefixCondition)
 
+	f.NamespacedTest("httpproxy-include-exact-condition", testIncludeExactCondition)
+
+	f.NamespacedTest("httpproxy-exact-path-condition-app", testExactPathCondition)
+
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
 	f.NamespacedTest("httpproxy-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
@@ -281,6 +285,18 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
+
+	f.NamespacedTest("httpproxy-ip-filters", func(namespace string) {
+		// ip filter tests rely on the ability to forge x-forwarded-for
+		Context("with trusted xff hops", func() {
+			BeforeEach(func() {
+				contourConfig.Network.XffNumTrustedHops = 1
+				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ref.To(uint32(1))
+			})
+
+			testIPFilterPolicy(namespace)
+		})
+	})
 
 	f.NamespacedTest("httpproxy-multiple-ingress-classes-field", func(namespace string) {
 		Context("with more than one ingress ClassName set", func() {

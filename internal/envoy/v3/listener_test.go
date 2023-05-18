@@ -28,6 +28,7 @@ import (
 	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
@@ -584,6 +585,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 						},
 					},
 				}),
+			},
+		}, {
+			Name: "envoy.filters.http.rbac",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 			},
 		}, {
 			Name: "router",
@@ -1783,6 +1789,12 @@ func TestAddFilter(t *testing.T) {
 						}),
 					},
 				},
+				{
+					Name: "envoy.filters.http.rbac",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
+					},
+				},
 				FilterExternalAuthz(&dag.ExternalAuthorization{
 					AuthorizationService: &dag.ExtensionCluster{
 						Name: "test",
@@ -1877,6 +1889,12 @@ func TestAddFilter(t *testing.T) {
 								},
 							},
 						}),
+					},
+				},
+				{
+					Name: "envoy.filters.http.rbac",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 					},
 				},
 				{

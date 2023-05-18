@@ -509,13 +509,15 @@ func TestGlobalAuthorization(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {
 					cfg.GlobalExternalAuthConfig = &xdscache_v3.GlobalExternalAuthConfig{
-						ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
-						FailOpen:         false,
+						ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+							ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
+							Timeout:          timeout.DurationSetting(defaultResponseTimeout),
+						},
+						FailOpen: false,
 						Context: map[string]string{
 							"header_type": "root_config",
 							"header_1":    "message_1",
 						},
-						Timeout: timeout.DurationSetting(defaultResponseTimeout),
 					}
 				},
 				func(b *dag.Builder) {

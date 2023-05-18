@@ -16,51 +16,51 @@ The `contour serve` command is the main command which is used to watch for Kuber
 There are a number of flags that can be passed to this command which further configures how Contour operates.
 Many of these flags are mirrored in the [Contour Configuration File](#configuration-file).
 
-| Flag Name                                                | Description                                                            |
-| -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `--config-path`                                          | Path to base configuration                                             |
-| `--contour-config-name`                                  | Name of the ContourConfiguration resource to use                       |
-| `--incluster`                                            | Use in cluster configuration                                           |
-| `--kubeconfig=</path/to/file>`                           | Path to kubeconfig (if not in running inside a cluster)                |
-| `--xds-address=<ipaddr>`                                 | xDS gRPC API address                                                   |
-| `--xds-port=<port>`                                      | xDS gRPC API port                                                      |
-| `--stats-address=<ipaddr>`                               | Envoy /stats interface address                                         |
-| `--stats-port=<port>`                                    | Envoy /stats interface port                                            |
-| `--debug-http-address=<address>`                         | Address the debug http endpoint will bind to.                          |
-| `--debug-http-port=<port>`                               | Port the debug http endpoint will bind to                              |
-| `--http-address=<ipaddr>`                                | Address the metrics HTTP endpoint will bind to                         |
-| `--http-port=<port>`                                     | Port the metrics HTTP endpoint will bind to.                           |
-| `--health-address=<ipaddr>`                              | Address the health HTTP endpoint will bind to                          |
-| `--health-port=<port>`                                   | Port the health HTTP endpoint will bind to                             |
-| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>`    | CA bundle file name for serving gRPC with TLS                          |
-| `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>` | Contour certificate file name for serving gRPC over TLS                |
-| `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`   | Contour key file name for serving gRPC over TLS                        |
-| `--insecure`                                             | Allow serving without TLS secured gRPC                                 |
-| `--root-namespaces=<ns,ns>`                              | Restrict contour to searching these namespaces for root ingress routes |
-| `--ingress-class-name=<name>`                            | Contour IngressClass name (comma-separated list allowed)               |
-| `--ingress-status-address=<address>`                     | Address to set in Ingress object status                                |
-| `--envoy-http-access-log=</path/to/file>`                | Envoy HTTP access log                                                  |
-| `--envoy-https-access-log=</path/to/file>`               | Envoy HTTPS access log                                                 |
-| `--envoy-service-http-address=<ipaddr>`                  | Kubernetes Service address for HTTP requests                           |
-| `--envoy-service-https-address=<ipaddr>`                 | Kubernetes Service address for HTTPS requests                          |
-| `--envoy-service-http-port=<port>`                       | Kubernetes Service port for HTTP requests                              |
-| `--envoy-service-https-port=<port>`                      | Kubernetes Service port for HTTPS requests                             |
-| `--envoy-service-name=<name>`                            | Name of the Envoy service to inspect for Ingress status details.       |
-| `--envoy-service-namespace=<namespace>`                  | Envoy Service Namespace                                                |
-| `--use-proxy-protocol`                                   | Use PROXY protocol for all listeners                                   |
-| `--accesslog-format=<envoy\|json>`                       | Format for Envoy access logs                                           |
-| `--disable-leader-election`                              | Disable leader election mechanism                                      |
-| `--disable-feature=<extensionservices>`                  | Do not start an informer for the specified resources.                  |
-| `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
-| `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
-| `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
-| `--leader-election-resource-name`                        | The name of the resource (Lease) leader election will lease.           |
-| `--leader-election-resource-namespace`                   | The namespace of the resource (Lease) leader election will lease.      |
-| `-d, --debug`                                            | Enable debug logging                                                   |
-| `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
-| `--log-format=<text\|json>`                              | Log output format for Contour. Either text (default) or json.          |
-| `--kubernetes-client-qps=<qps>`                          | QPS allowed for the Kubernetes client.                                 |
-| `--kubernetes-client-burst=<burst>`                      | Burst allowed for the Kubernetes client.                               |
+| Flag Name                                                       | Description                                                                             |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `--config-path`                                                 | Path to base configuration                                                              |
+| `--contour-config-name`                                         | Name of the ContourConfiguration resource to use                                        |
+| `--incluster`                                                   | Use in cluster configuration                                                            |
+| `--kubeconfig=</path/to/file>`                                  | Path to kubeconfig (if not in running inside a cluster)                                 |
+| `--xds-address=<ipaddr>`                                        | xDS gRPC API address                                                                    |
+| `--xds-port=<port>`                                             | xDS gRPC API port                                                                       |
+| `--stats-address=<ipaddr>`                                      | Envoy /stats interface address                                                          |
+| `--stats-port=<port>`                                           | Envoy /stats interface port                                                             |
+| `--debug-http-address=<address>`                                | Address the debug http endpoint will bind to.                                           |
+| `--debug-http-port=<port>`                                      | Port the debug http endpoint will bind to                                               |
+| `--http-address=<ipaddr>`                                       | Address the metrics HTTP endpoint will bind to                                          |
+| `--http-port=<port>`                                            | Port the metrics HTTP endpoint will bind to.                                            |
+| `--health-address=<ipaddr>`                                     | Address the health HTTP endpoint will bind to                                           |
+| `--health-port=<port>`                                          | Port the health HTTP endpoint will bind to                                              |
+| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>`           | CA bundle file name for serving gRPC with TLS                                           |
+| `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>`        | Contour certificate file name for serving gRPC over TLS                                 |
+| `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`          | Contour key file name for serving gRPC over TLS                                         |
+| `--insecure`                                                    | Allow serving without TLS secured gRPC                                                  |
+| `--root-namespaces=<ns,ns>`                                     | Restrict contour to searching these namespaces for root ingress routes                  |
+| `--ingress-class-name=<name>`                                   | Contour IngressClass name (comma-separated list allowed)                                |
+| `--ingress-status-address=<address>`                            | Address to set in Ingress object status                                                 |
+| `--envoy-http-access-log=</path/to/file>`                       | Envoy HTTP access log                                                                   |
+| `--envoy-https-access-log=</path/to/file>`                      | Envoy HTTPS access log                                                                  |
+| `--envoy-service-http-address=<ipaddr>`                         | Kubernetes Service address for HTTP requests                                            |
+| `--envoy-service-https-address=<ipaddr>`                        | Kubernetes Service address for HTTPS requests                                           |
+| `--envoy-service-http-port=<port>`                              | Kubernetes Service port for HTTP requests                                               |
+| `--envoy-service-https-port=<port>`                             | Kubernetes Service port for HTTPS requests                                              |
+| `--envoy-service-name=<name>`                                   | Name of the Envoy service to inspect for Ingress status details.                        |
+| `--envoy-service-namespace=<namespace>`                         | Envoy Service Namespace                                                                 |
+| `--use-proxy-protocol`                                          | Use PROXY protocol for all listeners                                                    |
+| `--accesslog-format=<envoy\|json>`                              | Format for Envoy access logs                                                            |
+| `--disable-leader-election`                                     | Disable leader election mechanism                                                       |
+| `--disable-feature=<extensionservices\|tlsroutes\|grpcroutes>`  | Do not start an informer for the specified resources. Flag can be given multiple times. |
+| `--leader-election-lease-duration`                              | The duration of the leadership lease.                                                   |
+| `--leader-election-renew-deadline`                              | The duration leader will retry refreshing leadership before giving up.                  |
+| `--leader-election-retry-period`                                | The interval which Contour will attempt to acquire leadership lease.                    |
+| `--leader-election-resource-name`                               | The name of the resource (Lease) leader election will lease.                            |
+| `--leader-election-resource-namespace`                          | The namespace of the resource (Lease) leader election will lease.                       |
+| `-d, --debug`                                                   | Enable debug logging                                                                    |
+| `--kubernetes-debug=<log level>`                                | Enable Kubernetes client debug logging                                                  |
+| `--log-format=<text\|json>`                                     | Log output format for Contour. Either text (default) or json.                           |
+| `--kubernetes-client-qps=<qps>`                                 | QPS allowed for the Kubernetes client.                                                  |
+| `--kubernetes-client-burst=<burst>`                             | Burst allowed for the Kubernetes client.                                                |
 
 ## Configuration File
 
@@ -75,11 +75,11 @@ Where Contour settings can also be specified with command-line flags, the comman
 |---------------------------| ---------------------- |------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | accesslog-format          | string                 | `envoy`                                                                                              | This key sets the global [access log format][2] for Envoy. Valid options are `envoy` or `json`.                                                                                                                                                                                       |
 | accesslog-format-string   | string                 | None                                                                                                 | If present, this specifies custom access log format for Envoy. See [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage) for more information about the syntax. This field only has effect if `accesslog-format` is `envoy` |
-| accesslog-level           | string                 | `info`                                                                                               | This field specifies the verbosity level of the access log. Valid options are `info`, `error` and `disabled`. |
+| accesslog-level           | string                 | `info`                                                                                               | This field specifies the verbosity level of the access log. Valid options are `info` (default, all requests are logged), `error` (all non-success, i.e. 300+ response code, requests are logged), `critical` (all server error, i.e. 500+ response code, requests are logged) and `disabled`. |
 | debug                     | boolean                | `false`                                                                                              | Enables debug logging.                                                                                                                                                                                                                                                                |
 | default-http-versions     | string array           | <code style="white-space:nowrap">HTTP/1.1</code> <br> <code style="white-space:nowrap">HTTP/2</code> | This array specifies the HTTP versions that Contour should program Envoy to serve. HTTP versions are specified as strings of the form "HTTP/x", where "x" represents the version number.                                                                                              |
 | disableAllowChunkedLength | boolean                | `false`                                                                                              | If this field is true, Contour will disable the RFC-compliant Envoy behavior to strip the `Content-Length` header if `Transfer-Encoding: chunked` is also set. This is an emergency off-switch to revert back to Envoy's default behavior in case of failures.
-| disableMergeSlashes       | boolean                | `false`                                                                                              | This field disables Envoy's non-standard merge_slashes path transformation behavior that strips duplicate slashes from request URL paths. 
+| disableMergeSlashes       | boolean                | `false`                                                                                              | This field disables Envoy's non-standard merge_slashes path transformation behavior that strips duplicate slashes from request URL paths.
 | serverHeaderTransformation       | string                | `overwrite`                                                                                              | This field defines the action to be applied to the Server header on the response path. Values: `overwrite` (default), `append_if_absent`, `pass_through`
 | disablePermitInsecure     | boolean                | `false`                                                                                              | If this field is true, Contour will ignore `PermitInsecure` field in HTTPProxy documents.                                                                                                                                                                                             |
 | envoy-service-name        | string                 | `envoy`                                                                                              | This sets the service name that will be inspected for address details to be applied to Ingress objects.                                                                                                                                                                               |

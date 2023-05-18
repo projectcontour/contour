@@ -22,37 +22,61 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-// mergePathMatchConditions merges the given slice of prefix MatchConditions into a single
-// prefix Condition.
+// mergePathMatchConditions merges the given slice of prefix or exact MatchConditions into a single
+// prefix/exact Condition. The leaf condition of the include tree decides whether the merged condition
+// will be prefix or exact
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) *PrefixMatchCondition {
-	prefix := ""
+func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
+	mergedPath := ""
+
 	for _, cond := range conds {
-		prefix += cond.Prefix
+		switch {
+		case cond.Prefix != "":
+			mergedPath += cond.Prefix
+		case cond.Exact != "":
+			mergedPath += cond.Exact
+		}
 	}
 
 	re := regexp.MustCompile(`//+`)
-	prefix = re.ReplaceAllString(prefix, `/`)
+	mergedPath = re.ReplaceAllString(mergedPath, `/`)
 
 	// After the merge operation is done, if the string is still empty, then
 	// we need to set the prefix to /.
 	// Remember that this step is done AFTER all the includes have happened.
 	// Setting this to / allows us to pass this prefix to Envoy, as there must
 	// be at least one path, prefix, or regex set on each Envoy route.
-	if prefix == "" {
-		prefix = `/`
+	if mergedPath == "" || len(conds) == 0 {
+		mergedPath = `/`
+		return &PrefixMatchCondition{
+			Prefix: mergedPath,
+		}
 	}
 
-	return &PrefixMatchCondition{
-		Prefix: prefix,
+	// If mergedPath is not empty then choose match type using the last rule of the delegation chain
+	lastCondition := conds[len(conds)-1]
+	switch {
+	case lastCondition.Prefix != "":
+		return &PrefixMatchCondition{
+			Prefix: mergedPath,
+		}
+	case lastCondition.Exact != "":
+		return &ExactMatchCondition{
+			Path: mergedPath,
+		}
+	default:
+		return &PrefixMatchCondition{
+			Prefix: mergedPath,
+		}
 	}
 }
 
 // pathMatchConditionsValid validates a slice of MatchConditions can be correctly merged.
-// It encodes the business rules about what is allowed for prefix MatchConditions.
+// It encodes the business rules about what is allowed for MatchConditions.
 func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	prefixCount := 0
+	exactCount := 0
 
 	for _, cond := range conds {
 		if cond.Prefix != "" {
@@ -61,8 +85,25 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 				return fmt.Errorf("prefix conditions must start with /, %s was supplied", cond.Prefix)
 			}
 		}
-		if prefixCount > 1 {
-			return errors.New("more than one prefix is not allowed in a condition block")
+		if cond.Exact != "" {
+			exactCount++
+			if cond.Exact[0] != '/' {
+				return fmt.Errorf("exact conditions must start with /, %s was supplied", cond.Exact)
+			}
+		}
+		if prefixCount > 1 || exactCount > 1 || prefixCount+exactCount > 1 {
+			return errors.New("more than one prefix or exact is not allowed in a condition block")
+		}
+	}
+
+	return nil
+}
+
+// includeMatchConditionsValid validates the MatchConditions supplied in the includes
+func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
+	for _, cond := range conds {
+		if cond.Exact != "" {
+			return fmt.Errorf("exact conditions are not allowed in includes block")
 		}
 	}
 
