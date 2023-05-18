@@ -5,7 +5,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: contour-gateway-provisioner
 rules:
 - apiGroups:
@@ -173,7 +172,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  creationTimestamp: null
   name: contour-gateway-provisioner
   namespace: projectcontour
 rules:

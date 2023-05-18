@@ -136,6 +136,14 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		ports = append(ports, p)
 	}
 
+	healthPort := 8002
+	if contour.Spec.RuntimeSettings != nil &&
+		contour.Spec.RuntimeSettings.Envoy != nil &&
+		contour.Spec.RuntimeSettings.Envoy.Health != nil &&
+		contour.Spec.RuntimeSettings.Envoy.Health.Port > 0 {
+		healthPort = contour.Spec.RuntimeSettings.Envoy.Health.Port
+	}
+
 	containers := []corev1.Container{
 		{
 			Name:            ShutdownContainerName,
@@ -204,7 +212,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 					HTTPGet: &corev1.HTTPGetAction{
 						Scheme: corev1.URISchemeHTTP,
 						Path:   "/ready",
-						Port:   intstr.IntOrString{IntVal: int32(8002)},
+						Port:   intstr.IntOrString{IntVal: int32(healthPort)},
 					},
 				},
 				InitialDelaySeconds: int32(3),
@@ -503,8 +511,16 @@ func envoyPodAnnotations(contour *model.Contour) map[string]string {
 		annotations[k] = v
 	}
 
+	metricsPort := 8002
+	if contour.Spec.RuntimeSettings != nil &&
+		contour.Spec.RuntimeSettings.Envoy != nil &&
+		contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
+		contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
+		metricsPort = contour.Spec.RuntimeSettings.Envoy.Metrics.Port
+	}
+
 	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = "8002"
+	annotations["prometheus.io/port"] = fmt.Sprint(metricsPort)
 	annotations["prometheus.io/path"] = "/stats/prometheus"
 
 	return annotations

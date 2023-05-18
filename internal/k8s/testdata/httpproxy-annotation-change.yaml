@@ -1,0 +1,62 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"projectcontour.io/v1","kind":"HTTPProxy","metadata":{"annotations":{},"name":"echoserver","namespace":"default"},"spec":{"routes":[{"services":[{"name":"echoserver","port":80}]}],"virtualhost":{"fqdn":"echoserver.127-0-0-101.nip.io"}}}
+  creationTimestamp: "2023-02-08T18:32:43Z"
+  generation: 1
+  name: echoserver
+  namespace: default
+  resourceVersion: "84327"
+  uid: fd31fdfc-bbcd-46c3-af0d-8907da000320
+spec:
+  routes:
+  - services:
+    - name: echoserver
+      port: 80
+  virtualhost:
+    fqdn: echoserver.127-0-0-101.nip.io
+status:
+  conditions:
+  - lastTransitionTime: "2023-02-09T14:56:45Z"
+    message: Valid HTTPProxy
+    observedGeneration: 1
+    reason: Valid
+    status: "True"
+    type: Valid
+  currentStatus: valid
+  description: Valid HTTPProxy
+  loadBalancer: {}
+---
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"projectcontour.io/v1","kind":"HTTPProxy","metadata":{"annotations":{},"name":"echoserver","namespace":"default"},"spec":{"routes":[{"services":[{"name":"echoserver","port":80}]}],"virtualhost":{"fqdn":"echoserver.127-0-0-101.nip.io"}}}
+    kubernetes.io/ingress.class: my-ingress
+  creationTimestamp: "2023-02-08T18:32:43Z"
+  generation: 1
+  name: echoserver
+  namespace: default
+  resourceVersion: "205411"
+  uid: fd31fdfc-bbcd-46c3-af0d-8907da000320
+spec:
+  routes:
+  - services:
+    - name: echoserver
+      port: 80
+  virtualhost:
+    fqdn: echoserver.127-0-0-101.nip.io
+status:
+  conditions:
+  - lastTransitionTime: "2023-02-09T14:56:45Z"
+    message: Valid HTTPProxy
+    observedGeneration: 1
+    reason: Valid
+    status: "True"
+    type: Valid
+  currentStatus: valid
+  description: Valid HTTPProxy
+  loadBalancer: {}

@@ -29,11 +29,35 @@ func TestPathMatchCondition(t *testing.T) {
 			matchconditions: nil,
 			want:            &PrefixMatchCondition{Prefix: "/"},
 		},
-		"single slash": {
+		"single slash prefix": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Prefix: "/",
 			}},
 			want: &PrefixMatchCondition{Prefix: "/"},
+		},
+		"single slash exact": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/",
+			}},
+			want: &ExactMatchCondition{Path: "/"},
+		},
+		"empty exact": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "",
+			}},
+			want: &PrefixMatchCondition{Prefix: "/"},
+		},
+		"prefix match": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/a",
+			}},
+			want: &PrefixMatchCondition{Prefix: "/a"},
+		},
+		"exact match": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/a",
+			}},
+			want: &ExactMatchCondition{Path: "/a"},
 		},
 		"two slashes": {
 			matchconditions: []contour_api_v1.MatchCondition{{
@@ -43,6 +67,14 @@ func TestPathMatchCondition(t *testing.T) {
 			}},
 			want: &PrefixMatchCondition{Prefix: "/"},
 		},
+		"prefix-exact mixed two slashes": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/",
+			}, {
+				Exact: "/",
+			}},
+			want: &ExactMatchCondition{Path: "/"},
+		},
 		"mixed matchconditions": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Prefix: "/a/",
@@ -51,11 +83,25 @@ func TestPathMatchCondition(t *testing.T) {
 			}},
 			want: &PrefixMatchCondition{Prefix: "/a/b"},
 		},
-		"trailing slash": {
+		"prefix-exact mixed matchconditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/a/",
+			}, {
+				Exact: "/b",
+			}},
+			want: &ExactMatchCondition{Path: "/a/b"},
+		},
+		"trailing slash prefix": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Prefix: "/a/",
 			}},
 			want: &PrefixMatchCondition{Prefix: "/a/"},
+		},
+		"trailing slash exact": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/a/",
+			}},
+			want: &ExactMatchCondition{Path: "/a/"},
 		},
 		"trailing slash on second prefix condition": {
 			matchconditions: []contour_api_v1.MatchCondition{{
@@ -66,7 +112,7 @@ func TestPathMatchCondition(t *testing.T) {
 				}},
 			want: &PrefixMatchCondition{Prefix: "/a/b/"},
 		},
-		"nothing but slashes": {
+		"nothing but slashes prefix": {
 			matchconditions: []contour_api_v1.MatchCondition{
 				{
 					Prefix: "///",
@@ -76,11 +122,35 @@ func TestPathMatchCondition(t *testing.T) {
 				}},
 			want: &PrefixMatchCondition{Prefix: "/"},
 		},
+		"nothing but slashes one exact": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Exact: "///",
+				}},
+			want: &ExactMatchCondition{Path: "/"},
+		},
+		"nothing but slashes mixed": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Prefix: "///",
+				},
+				{
+					Exact: "/",
+				}},
+			want: &ExactMatchCondition{Path: "/"},
+		},
 		"header condition": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Header: new(contour_api_v1.HeaderMatchCondition),
 			}},
 			want: &PrefixMatchCondition{Prefix: "/"},
+		},
+		"header condition with exact": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Header: new(contour_api_v1.HeaderMatchCondition),
+				Exact:  "/a",
+			}},
+			want: &ExactMatchCondition{Path: "/a"},
 		},
 	}
 
@@ -310,6 +380,81 @@ func TestPrefixMatchConditionsValid(t *testing.T) {
 		"invalid prefix condition with headers": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Prefix: "api",
+				Header: &contour_api_v1.HeaderMatchCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := pathMatchConditionsValid(tc.matchconditions)
+			assert.Equal(t, tc.want, err == nil)
+		})
+	}
+}
+
+func TestExactMatchConditionsValid(t *testing.T) {
+	tests := map[string]struct {
+		matchconditions []contour_api_v1.MatchCondition
+		want            bool
+	}{
+		"valid exact condition only": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/api",
+			}},
+			want: true,
+		},
+		"valid exact condition with headers": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/api",
+				Header: &contour_api_v1.HeaderMatchCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}},
+			want: true,
+		},
+		"two exact matchconditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/api",
+			}, {
+				Exact: "/v1",
+			}},
+			want: false,
+		},
+		"exact-prefix two matchconditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/api",
+			}, {
+				Prefix: "/v1",
+			}},
+			want: false,
+		},
+		"two exact matchconditions with headers": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "/api",
+				Header: &contour_api_v1.HeaderMatchCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}, {
+				Exact: "/v1",
+			}},
+			want: false,
+		},
+		"invalid exact condition": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "api",
+			}},
+			want: false,
+		},
+		"invalid exact condition with headers": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Exact: "api",
 				Header: &contour_api_v1.HeaderMatchCondition{
 					Name:     "x-header",
 					Contains: "abc",

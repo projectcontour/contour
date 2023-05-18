@@ -483,11 +483,11 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 			FieldLogger: fixture.NewTestLogger(t),
 		},
 		Processors: []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.IngressProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 			},
 			&dag.HTTPProxyProcessor{},
-			&dag.ListenerProcessor{},
 		},
 	}
 
@@ -504,13 +504,18 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 			FieldLogger: fixture.NewTestLogger(t),
 		},
 		Processors: []dag.Processor{
+			&dag.ListenerProcessor{
+				HTTPAddress:  "0.0.0.0",
+				HTTPPort:     8080,
+				HTTPSAddress: "0.0.0.0",
+				HTTPSPort:    8443,
+			},
 			&dag.IngressProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 			},
 			&dag.HTTPProxyProcessor{
 				FallbackCertificate: fallbackCertificate,
 			},
-			&dag.ListenerProcessor{},
 		},
 	}
 	for _, o := range objs {

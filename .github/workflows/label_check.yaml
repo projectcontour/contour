@@ -20,17 +20,17 @@ jobs:
     name: Check release-note label set
     runs-on: ubuntu-latest
     steps:
-      - uses: mheap/github-action-required-labels@v3
+      - uses: mheap/github-action-required-labels@v4
         with:
           mode: minimum
           count: 1
           labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/deprecation, release-note/none-required"
-      - uses: mheap/github-action-required-labels@v3
+      - uses: mheap/github-action-required-labels@v4
         with:
           mode: maximum
           count: 1
           labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/none-required"
-      - uses: mheap/github-action-required-labels@v3
+      - uses: mheap/github-action-required-labels@v4
         with:
           mode: maximum
           count: 1
@@ -52,9 +52,10 @@ jobs:
         key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-${{ github.job }}-go-
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: 'stable'
+        cache: false
     - run: go run ./hack/actions/check-changefile-exists.go
       env:
         PR_NUMBER: ${{ github.event.number }}

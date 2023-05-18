@@ -105,11 +105,11 @@ func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.HeadersPolicy, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
+func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.HeadersPolicy, allowHostRewrite bool, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
 	if defaultPolicy == nil {
-		return headersPolicyRoute(policy, false, dynamicHeaders)
+		return headersPolicyRoute(policy, allowHostRewrite, dynamicHeaders)
 	}
-	userPolicy, err := headersPolicyRoute(policy, false, dynamicHeaders)
+	userPolicy, err := headersPolicyRoute(policy, allowHostRewrite, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,13 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.H
 	for k, v := range defaultPolicy.Set {
 		key := http.CanonicalHeaderKey(k)
 		if key == "Host" {
-			return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			if !allowHostRewrite {
+				return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			}
+			if len(userPolicy.HostRewrite) == 0 {
+				userPolicy.HostRewrite = v
+			}
+			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
@@ -207,47 +213,36 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
 func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType string) (*HeadersPolicy, error) {
 	var (
-		set         = make(map[string]string, len(hf.Set))
-		add         = make(map[string]string, len(hf.Add))
 		remove      = sets.NewString()
 		hostRewrite = ""
 		errlist     = []error{}
 	)
 
-	for _, setHeader := range hf.Set {
-		key := http.CanonicalHeaderKey(string(setHeader.Name))
-		if _, ok := set[key]; ok {
-			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
-			continue
+	addOrSetHeader := func(headers []gatewayapi_v1beta1.HTTPHeader, op string) map[string]string {
+		m := make(map[string]string, len(headers))
+
+		for _, header := range headers {
+			key := http.CanonicalHeaderKey(string(header.Name))
+			if _, ok := m[key]; ok {
+				errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
+				continue
+			}
+			if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
+				headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
+				hostRewrite = header.Value
+				continue
+			}
+			if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+				errlist = append(errlist, fmt.Errorf("invalid %s header %q: %v", op, key, msgs))
+				continue
+			}
+			m[key] = escapeHeaderValue(header.Value, nil)
 		}
-		if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
-			headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
-			hostRewrite = setHeader.Value
-			continue
-		}
-		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-			errlist = append(errlist, fmt.Errorf("invalid set header %q: %v", key, msgs))
-			continue
-		}
-		set[key] = escapeHeaderValue(setHeader.Value, nil)
+		return m
 	}
-	for _, addHeader := range hf.Add {
-		key := http.CanonicalHeaderKey(string(addHeader.Name))
-		if _, ok := add[key]; ok {
-			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
-			continue
-		}
-		if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
-			headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
-			hostRewrite = addHeader.Value
-			continue
-		}
-		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-			errlist = append(errlist, fmt.Errorf("invalid add header %q: %v", key, msgs))
-			continue
-		}
-		add[key] = escapeHeaderValue(addHeader.Value, nil)
-	}
+
+	set := addOrSetHeader(hf.Set, "set")
+	add := addOrSetHeader(hf.Add, "add")
 
 	for _, k := range hf.Remove {
 		key := http.CanonicalHeaderKey(k)

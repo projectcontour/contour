@@ -16,6 +16,7 @@
 package e2e
 
 import (
+	"context"
 	"crypto/tls"
 	"io"
 	"net/http"
@@ -91,6 +92,28 @@ func OptSetQueryParams(queryParams map[string]string) func(*http.Request) {
 	}
 }
 
+// httpClient returns an *http.Client with its own transport
+// and keep alives disabled.
+func httpClient(opts ...func(*http.Client)) *http.Client {
+	// Clone the DefaultTransport and disable keep alives
+	// so we don't reuse connections within this method or
+	// across multiple calls to this method. This helps
+	// prevent requests from inadvertently being made to
+	// a draining Listener.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
 // RequestUntil repeatedly makes HTTP requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
@@ -103,10 +126,7 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
-	client := &http.Client{}
-	for _, opt := range opts.ClientOpts {
-		opt(client)
-	}
+	client := httpClient(opts.ClientOpts...)
 
 	makeRequest := func() (*http.Response, error) {
 		return client.Do(req)
@@ -136,8 +156,10 @@ func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
+	client := httpClient(opts.ClientOpts...)
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
@@ -154,8 +176,10 @@ func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
+	client := httpClient(opts.ClientOpts...)
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
@@ -196,18 +220,17 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 		opt(req)
 	}
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	client := httpClient()
+	transport := client.Transport.(*http.Transport)
+
 	transport.TLSClientConfig = &tls.Config{
 		ServerName: opts.Host,
 		//nolint:gosec
 		InsecureSkipVerify: true,
 	}
+
 	for _, opt := range opts.TLSConfigOpts {
 		opt(transport.TLSClientConfig)
-	}
-
-	client := &http.Client{
-		Transport: transport,
 	}
 
 	makeRequest := func() (*http.Response, error) {
@@ -266,7 +289,7 @@ func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
 func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*HTTPResponse) bool) (*HTTPResponse, bool) {
 	var res *HTTPResponse
 
-	if err := wait.PollImmediate(h.RetryInterval, h.RetryTimeout, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), h.RetryInterval, h.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		r, err := makeRequest()
 		if err != nil {
 			// if there was an error, we want to keep

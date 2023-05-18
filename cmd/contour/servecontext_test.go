@@ -24,15 +24,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/pkg/config"
-	"github.com/tsaarni/certyaml"
-
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/tsaarni/certyaml"
 	"google.golang.org/grpc"
 )
 
@@ -473,7 +472,7 @@ func TestConvertServeContext(t *testing.T) {
 				},
 				Network: &contour_api_v1alpha1.NetworkParameters{
 					EnvoyAdminPort:    ref.To(9001),
-					XffNumTrustedHops: contourconfig.UInt32Ptr(0),
+					XffNumTrustedHops: ref.To(uint32(0)),
 				},
 			},
 			Gateway: nil,
@@ -481,8 +480,9 @@ func TestConvertServeContext(t *testing.T) {
 				DisablePermitInsecure: ref.To(false),
 				FallbackCertificate:   nil,
 			},
-			EnableExternalNameService: ref.To(false),
-			RateLimitService:          nil,
+			EnableExternalNameService:   ref.To(false),
+			RateLimitService:            nil,
+			GlobalExternalAuthorization: nil,
 			Policy: &contour_api_v1alpha1.PolicyConfig{
 				RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
 				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
@@ -679,6 +679,46 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"access log -- error": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.AccessLogFormat = config.JSONAccessLog
+				ctx.Config.AccessLogFormatString = "foo-bar-baz"
+				ctx.Config.AccessLogFields = []string{"custom_field"}
+				ctx.Config.AccessLogLevel = config.LogLevelError
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+					AccessLogFormatString: "foo-bar-baz",
+					AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+						"custom_field",
+					}),
+				}
+				return cfg
+			},
+		},
+		"access log -- critical": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.AccessLogFormat = config.JSONAccessLog
+				ctx.Config.AccessLogFormatString = "foo-bar-baz"
+				ctx.Config.AccessLogFields = []string{"custom_field"}
+				ctx.Config.AccessLogLevel = config.LogLevelCritical
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+					AccessLogFormatString: "foo-bar-baz",
+					AccessLogLevel:        contour_api_v1alpha1.LogLevelCritical,
+					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+						"custom_field",
+					}),
+				}
+				return cfg
+			},
+		},
 		"disable merge slashes": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.DisableMergeSlashes = true
@@ -696,6 +736,108 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+				return cfg
+			},
+		},
+		"global external authorization": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.GlobalExternalAuthorization = config.GlobalExternalAuthorization{
+					ExtensionService: "extauthns/extauthtext",
+					FailOpen:         true,
+					AuthPolicy: &config.GlobalAuthorizationPolicy{
+						Context: map[string]string{
+							"foo": "bar",
+						},
+					},
+					WithRequestBody: &config.GlobalAuthorizationServerBufferSettings{
+						MaxRequestBytes:     512,
+						PackAsBytes:         true,
+						AllowPartialMessage: true,
+					},
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+						Name:      "extauthtext",
+						Namespace: "extauthns",
+					},
+					FailOpen: true,
+					AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+						Context: map[string]string{
+							"foo": "bar",
+						},
+						Disabled: false,
+					},
+					WithRequestBody: &contour_api_v1.AuthorizationServerBufferSettings{
+						MaxRequestBytes:     512,
+						PackAsBytes:         true,
+						AllowPartialMessage: true,
+					},
+				}
+				return cfg
+			},
+		},
+		"tracing config normal": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Tracing = &config.Tracing{
+					IncludePodDetail: ref.To(false),
+					ServiceName:      ref.To("contour"),
+					OverallSampling:  ref.To("100"),
+					MaxPathTagLength: ref.To(uint32(256)),
+					CustomTags: []config.CustomTag{
+						{
+							TagName: "literal",
+							Literal: "this is literal",
+						},
+						{
+							TagName:           "header",
+							RequestHeaderName: ":method",
+						},
+					},
+					ExtensionService: "otel/otel-collector",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+					IncludePodDetail: ref.To(false),
+					ServiceName:      ref.To("contour"),
+					OverallSampling:  ref.To("100"),
+					MaxPathTagLength: ref.To(uint32(256)),
+					CustomTags: []*contour_api_v1alpha1.CustomTag{
+						{
+							TagName: "literal",
+							Literal: "this is literal",
+						},
+						{
+							TagName:           "header",
+							RequestHeaderName: ":method",
+						},
+					},
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+						Name:      "otel-collector",
+						Namespace: "otel",
+					},
+				}
+				return cfg
+			},
+		},
+		"tracing config only extensionService": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Tracing = &config.Tracing{
+					ExtensionService: "otel/otel-collector",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+						Name:      "otel-collector",
+						Namespace: "otel",
+					},
+				}
 				return cfg
 			},
 		},

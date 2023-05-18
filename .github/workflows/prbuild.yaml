@@ -11,14 +11,15 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.20.1
+  GO_VERSION: 1.20.4
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - uses: actions/checkout@v3
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
@@ -40,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Codespell
-        uses: codespell-project/actions-codespell@v1.0
+        uses: codespell-project/actions-codespell@v2.0
         with:
           skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
           ignore_words_file: './.codespell.ignorewords'
@@ -66,9 +67,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -127,11 +129,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"
+            node_image: "docker.io/kindest/node:v1.27.1@sha256:9915f5629ef4d29f35b478e819249e89cfaffcbfeebda4324e5c01d53d937b09"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
+            node_image: "docker.io/kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
+            node_image: "docker.io/kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f"
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
@@ -154,9 +156,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -189,11 +192,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"
+            node_image: "docker.io/kindest/node:v1.27.1@sha256:9915f5629ef4d29f35b478e819249e89cfaffcbfeebda4324e5c01d53d937b09"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
+            node_image: "docker.io/kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315"
+            node_image: "docker.io/kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -215,9 +218,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -266,9 +270,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -306,9 +311,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -343,9 +349,10 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin

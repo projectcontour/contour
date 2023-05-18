@@ -26,7 +26,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.26.0@sha256:691e24bd2417609db7e589e1a479b902d2e209892a10ce375fab60a8407c7352"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.27.1@sha256:9915f5629ef4d29f35b478e819249e89cfaffcbfeebda4324e5c01d53d937b09"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -72,7 +72,7 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
 fi
 
 # Install metallb.
-${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n metallb-system deployment/controller --for=condition=Available
 
 # Apply config with addresses based on docker network IPAM
@@ -127,7 +127,7 @@ fi
 
 
 # Install cert-manager.
-${KUBECTL} apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+${KUBECTL} apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.1/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 

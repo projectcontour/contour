@@ -88,7 +88,7 @@ spec:
     spec:
       containers:
         - name: create
-          image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -122,7 +122,7 @@ spec:
     spec:
       containers:
         - name: patch
-          image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+          image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - patch

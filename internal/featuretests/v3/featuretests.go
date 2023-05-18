@@ -107,6 +107,12 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			FieldLogger: log,
 		},
 		Processors: []dag.Processor{
+			&dag.ListenerProcessor{
+				HTTPAddress:  "0.0.0.0",
+				HTTPPort:     8080,
+				HTTPSAddress: "0.0.0.0",
+				HTTPSPort:    8443,
+			},
 			&dag.IngressProcessor{
 				FieldLogger: log.WithField("context", "IngressProcessor"),
 			},
@@ -117,7 +123,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			&dag.GatewayAPIProcessor{
 				FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
 			},
-			&dag.ListenerProcessor{},
 		},
 	}
 	for _, opt := range opts {

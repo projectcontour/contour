@@ -32,7 +32,7 @@ import (
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
-	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_proxy_protocol_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3"
 	envoy_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
@@ -165,6 +165,7 @@ type httpConnectionManagerBuilder struct {
 	serverHeaderTransformation    http.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
+	tracingConfig                 *http.HttpConnectionManager_Tracing
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -346,6 +347,12 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
+			Name: "envoy.filters.http.rbac",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
+			},
+		},
+		&http.HttpFilter{
 			Name: "router",
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
@@ -376,7 +383,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 	lastIndex := len(b.filters) - 1
 	routerIndex := -1
 	for i, filter := range b.filters {
-		if filter.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+		if filter.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 			routerIndex = i
 			break
 		}
@@ -387,7 +394,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		// If this happens, it has to be programmer error, so we panic to tell them
 		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 		// the second one earlier, because we're panicking anyway.
-		if f.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 			panic("Can't add more than one router to a filter chain")
 		}
 		if routerIndex != lastIndex {
@@ -398,6 +405,14 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		}
 	}
 
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) Tracing(tracing *http.HttpConnectionManager_Tracing) *httpConnectionManagerBuilder {
+	if tracing == nil {
+		return b
+	}
+	b.tracingConfig = tracing
 	return b
 }
 
@@ -415,7 +430,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	// with typeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`,
 	// which in this case is the one of type Router.
 	lastIndex := len(b.filters) - 1
-	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
+	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
 		return errors.New("last filter is not a Router filter")
 	}
 
@@ -442,6 +457,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 				ConfigSource:    ConfigSource("contour"),
 			},
 		},
+		Tracing:     b.tracingConfig,
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 			IdleTimeout: envoy.Timeout(b.connectionIdleTimeout),
@@ -720,16 +736,16 @@ end
 
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
+func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *http.HttpFilter {
 	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(authzClusterName, sni, timeout),
+			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
 		// routing decisions?
 		ClearRouteCache:  true,
-		FailureModeAllow: failOpen,
+		FailureModeAllow: externalAuthorization.AuthorizationFailOpen,
 		StatusOnError: &envoy_type.HttpStatus{
 			Code: envoy_type.StatusCode_Forbidden,
 		},
@@ -740,11 +756,11 @@ func FilterExternalAuthz(authzClusterName, sni string, failOpen bool, timeout ti
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
 
-	if bufferSettings != nil {
+	if externalAuthorization.AuthorizationServerWithRequestBody != nil {
 		authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
-			MaxRequestBytes:     bufferSettings.MaxRequestBytes,
-			AllowPartialMessage: bufferSettings.AllowPartialMessage,
-			PackAsBytes:         bufferSettings.PackAsBytes,
+			MaxRequestBytes:     externalAuthorization.AuthorizationServerWithRequestBody.MaxRequestBytes,
+			AllowPartialMessage: externalAuthorization.AuthorizationServerWithRequestBody.AllowPartialMessage,
+			PackAsBytes:         externalAuthorization.AuthorizationServerWithRequestBody.PackAsBytes,
 		}
 
 	}

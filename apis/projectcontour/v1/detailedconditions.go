@@ -144,6 +144,9 @@ const (
 	// ConditionTypeCORSError describes an error condition related to CORS.
 	ConditionTypeCORSError = "CORSError"
 
+	// ConditionTypeIPFilterError describes an error condition related to IP filters.
+	ConditionTypeIPFilterError = "IPFilterError"
+
 	// ConditionTypeJWTVerificationError describes an error condition related to JWT verification.
 	ConditionTypeJWTVerificationError = "JWTVerificationError"
 

@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -31,7 +32,6 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -91,6 +91,9 @@ type HTTPProxyProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// GlobalExternalAuthorization defines how requests will be authorized.
+	GlobalExternalAuthorization *contour_api_v1.AuthorizationServer
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
@@ -169,7 +172,18 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS")
 			return
 		}
+	}
 
+	if proxy.Spec.VirtualHost.TLS == nil && proxy.Spec.VirtualHost.Authorization != nil && len(proxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.Name) > 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeAuthError, "AuthNotPermitted",
+			"Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
+		return
+	}
+
+	if len(proxy.Spec.VirtualHost.IPAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.IPDenyFilterPolicy) > 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.")
+		return
 	}
 
 	var tlsEnabled bool
@@ -214,7 +228,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				return
 			}
 
-			svhost := p.dag.EnsureSecureVirtualHost(host)
+			svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 			svhost.Secret = sec
 			// default to a minimum TLS version of 1.2 if it's not specified
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, "1.2")
@@ -304,56 +318,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				svhost.DownstreamValidation = dv
 			}
 
-			if proxy.Spec.VirtualHost.AuthorizationConfigured() {
-				auth := proxy.Spec.VirtualHost.Authorization
-				ref := defaultExtensionRef(auth.ExtensionServiceRef)
-
-				if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthBadResourceVersion",
-						"Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", auth.ExtensionServiceRef.APIVersion)
-					return
-				}
-
-				// Lookup the extension service reference.
-				extensionName := types.NamespacedName{
-					Name:      ref.Name,
-					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
-				}
-
-				ext := p.dag.GetExtensionCluster(ExtensionClusterName(extensionName))
-				if ext == nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
-						"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
-					return
-				}
-
-				svhost.AuthorizationService = ext
-				svhost.AuthorizationFailOpen = auth.FailOpen
-
-				timeout, err := timeout.Parse(auth.ResponseTimeout)
-				if err != nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
-						"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
-					return
-				}
-
-				if timeout.UseDefault() {
-					svhost.AuthorizationResponseTimeout = ext.RouteTimeoutPolicy.ResponseTimeout
-				} else {
-					svhost.AuthorizationResponseTimeout = timeout
-				}
-
-				if auth.WithRequestBody != nil {
-					var maxRequestBytes = defaultMaxRequestBytes
-					if auth.WithRequestBody.MaxRequestBytes != 0 {
-						maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
-					}
-					svhost.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
-						MaxRequestBytes:     maxRequestBytes,
-						AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
-						PackAsBytes:         auth.WithRequestBody.PackAsBytes,
-					}
-				}
+			if !p.computeSecureVirtualHostAuthorization(validCond, proxy, svhost) {
+				return
 			}
 
 			providerNames := sets.NewString()
@@ -509,7 +475,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
-	insecure := p.dag.EnsureVirtualHost(host)
+	insecure := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeCORSError, "PolicyDidNotParse",
@@ -526,12 +492,23 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 	insecure.RateLimitPolicy = rlp
 
+	if p.GlobalExternalAuthorization != nil && !proxy.Spec.VirtualHost.DisableAuthorization() {
+		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
+	}
+
+	insecure.IPFilterAllow, insecure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+			"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+		return
+	}
+
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := p.dag.EnsureSecureVirtualHost(host)
+		secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 		secure.CORSPolicy = cp
 
 		rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
@@ -541,6 +518,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			return
 		}
 		secure.RateLimitPolicy = rlp
+
+		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
+				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+			return
+		}
 
 		addRoutes(secure, routes)
 
@@ -590,6 +574,18 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
+func addStatusBadGatewayRoute(routes []*Route, conds []contour_api_v1.MatchCondition) []*Route {
+	if len(conds) > 0 {
+		routes = append(routes, &Route{
+			PathMatchCondition:        mergePathMatchConditions(conds),
+			HeaderMatchConditions:     mergeHeaderMatchConditions(conds),
+			QueryParamMatchConditions: mergeQueryParamMatchConditions(conds),
+			DirectResponse:            directResponse(http.StatusBadGateway, ""),
+		})
+	}
+	return routes
+}
+
 func (p *HTTPProxyProcessor) computeRoutes(
 	validCond *contour_api_v1.DetailedCondition,
 	rootProxy *contour_api_v1.HTTPProxy,
@@ -624,6 +620,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			namespace = proxy.Namespace
 		}
 
+		if err := includeMatchConditionsValid(include.Conditions); err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
+				"include: %s", err)
+			continue
+		}
+
 		if err := pathMatchConditionsValid(include.Conditions); err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid",
 				"include: %s", err)
@@ -655,21 +657,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				"include %s/%s not found", namespace, include.Name)
 
 			// Set 502 response when include was not found but include condition was valid.
-			if len(include.Conditions) > 0 {
-				routes = append(routes, &Route{
-					PathMatchCondition:        mergePathMatchConditions(include.Conditions),
-					HeaderMatchConditions:     mergeHeaderMatchConditions(include.Conditions),
-					QueryParamMatchConditions: mergeQueryParamMatchConditions(include.Conditions),
-					DirectResponse:            directResponse(http.StatusBadGateway, ""),
-				})
-			}
-
+			routes = addStatusBadGatewayRoute(routes, include.Conditions)
 			continue
 		}
 
 		if includedProxy.Spec.VirtualHost != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot",
 				"root httpproxy cannot include another root httpproxy")
+			// Set 502 response if include references another root
+			routes = addStatusBadGatewayRoute(routes, include.Conditions)
 			continue
 		}
 
@@ -759,6 +755,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy)
+
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		r := &Route{
@@ -776,12 +774,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RequestHashPolicies:       requestHashPolicies,
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
+			InternalRedirectPolicy:    internalRedirectPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
 		// enable it on the route and propagate defaults
 		// downwards.
-		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
 			// When the ext_authz filter is added to a
 			// vhost, it is in enabled state, but we can
 			// disable it per route. We emulate disabling
@@ -797,7 +796,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			r.AuthDisabled = disabled
-			r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
+
+			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+				r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
+			} else if p.GlobalExternalAuthorization != nil {
+				r.AuthContext = route.AuthorizationContext(p.GlobalAuthorizationContext())
+			}
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
@@ -858,7 +862,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, service.Port, healthPort, p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
@@ -896,13 +900,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			dynamicHeaders["CONTOUR_SERVICE_NAME"] = service.Name
 			dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(service.Port)
 
-			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, dynamicHeaders)
+			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, true, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid",
 					"%s on request headers", err)
 				return nil
 			}
-			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, dynamicHeaders)
+			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, false, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid",
 					"%s on response headers", err)
@@ -998,12 +1002,67 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.JWTProvider = defaultJWTProvider
 		}
 
+		r.IPFilterAllow, r.IPFilterRules, err = toIPFilterRules(route.IPAllowFilterPolicy, route.IPDenyFilterPolicy, validCond)
+		if err != nil {
+			return nil
+		}
+
 		routes = append(routes, r)
 	}
 
 	routes = expandPrefixMatches(routes)
 
 	return routes
+}
+
+// toIPFilterRules converts ip filter settings from the api into the
+// dag representation
+func toIPFilterRules(allowPolicy, denyPolicy []contour_api_v1.IPFilterPolicy, validCond *contour_api_v1.DetailedCondition) (allow bool, filters []IPFilterRule, err error) {
+	var ipPolicies []contour_api_v1.IPFilterPolicy
+	switch {
+	case len(allowPolicy) > 0 && len(denyPolicy) > 0:
+		validCond.AddError(contour_api_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
+			"cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
+		err = fmt.Errorf("invalid ip filter")
+		return
+	case len(allowPolicy) > 0:
+		allow = true
+		ipPolicies = allowPolicy
+	case len(denyPolicy) > 0:
+		allow = false
+		ipPolicies = denyPolicy
+	}
+	if ipPolicies == nil {
+		return
+	}
+	filters = make([]IPFilterRule, 0, len(ipPolicies))
+	for _, p := range ipPolicies {
+		// convert bare IPs to CIDRs
+		unparsedCIDR := p.CIDR
+		if !strings.Contains(unparsedCIDR, "/") {
+			if strings.Contains(unparsedCIDR, ":") {
+				unparsedCIDR += "/128"
+			} else {
+				unparsedCIDR += "/32"
+			}
+		}
+		var cidr *net.IPNet
+		_, cidr, err = net.ParseCIDR(unparsedCIDR)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeIPFilterError, "InvalidCIDR",
+				"%s failed to parse: %s", p.CIDR, err)
+			continue
+		}
+		filters = append(filters, IPFilterRule{
+			Remote: p.Source == contour_api_v1.IPFilterSourceRemote,
+			CIDR:   *cidr,
+		})
+	}
+	if err != nil {
+		allow = false
+		filters = nil
+	}
+	return
 }
 
 // processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document
@@ -1054,7 +1113,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 			}
 
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), intstr.FromInt(healthPort), p.source, p.EnableExternalNameService)
+			s, err := p.dag.EnsureService(m, service.Port, healthPort, p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference",
 					"Spec.TCPProxy unresolved service reference: %s", err)
@@ -1078,7 +1137,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
-		secure := p.dag.EnsureSecureVirtualHost(host)
+		secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 		secure.TCPProxy = &proxy
 
 		return true
@@ -1191,6 +1250,111 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 	return false
 }
 
+func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_api_v1.AuthorizationServer, validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy) *ExternalAuthorization {
+	ok, ext := validateExternalAuthExtensionService(defaultExtensionRef(auth.ExtensionServiceRef),
+		validCond,
+		httpproxy,
+		p.dag.GetExtensionCluster,
+	)
+	if !ok {
+		return nil
+	}
+
+	ok, respTimeout := determineExternalAuthTimeout(auth.ResponseTimeout, validCond, ext)
+	if !ok {
+		return nil
+	}
+
+	globalExternalAuthorization := &ExternalAuthorization{
+		AuthorizationService:         ext,
+		AuthorizationFailOpen:        auth.FailOpen,
+		AuthorizationResponseTimeout: *respTimeout,
+	}
+
+	if auth.WithRequestBody != nil {
+		var maxRequestBytes = defaultMaxRequestBytes
+		if auth.WithRequestBody.MaxRequestBytes != 0 {
+			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
+		}
+		globalExternalAuthorization.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
+			MaxRequestBytes:     maxRequestBytes,
+			AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
+			PackAsBytes:         auth.WithRequestBody.PackAsBytes,
+		}
+	}
+	return globalExternalAuthorization
+}
+
+func validateExternalAuthExtensionService(ref contour_api_v1.ExtensionServiceReference, validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, getExtensionCluster func(name string) *ExtensionCluster) (bool, *ExtensionCluster) {
+	if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthBadResourceVersion",
+			"Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", ref.APIVersion)
+		return false, nil
+	}
+
+	// Lookup the extension service reference.
+	extensionName := types.NamespacedName{
+		Name:      ref.Name,
+		Namespace: stringOrDefault(ref.Namespace, httpproxy.Namespace),
+	}
+
+	ext := getExtensionCluster(ExtensionClusterName(extensionName))
+	if ext == nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
+			"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
+		return false, ext
+	}
+
+	return true, ext
+}
+
+func determineExternalAuthTimeout(responseTimeout string, validCond *contour_api_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
+	timeout, err := timeout.Parse(responseTimeout)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
+			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
+		return false, nil
+	}
+
+	if timeout.UseDefault() {
+		return true, &ext.RouteTimeoutPolicy.ResponseTimeout
+	}
+
+	return true, &timeout
+}
+
+func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
+	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+		authorization := p.computeVirtualHostAuthorization(httpproxy.Spec.VirtualHost.Authorization, validCond, httpproxy)
+		if authorization == nil {
+			return false
+		}
+
+		svhost.ExternalAuthorization = authorization
+	} else if p.GlobalExternalAuthorization != nil && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+		globalAuthorization := p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, httpproxy)
+		if globalAuthorization == nil {
+			return false
+		}
+
+		svhost.ExternalAuthorization = globalAuthorization
+	}
+
+	return true
+}
+
+func (p *HTTPProxyProcessor) GlobalAuthorizationConfigured() bool {
+	return p.GlobalExternalAuthorization != nil
+}
+
+// AuthorizationContext returns the authorization policy context (if present).
+func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
+	if p.GlobalAuthorizationConfigured() && p.GlobalExternalAuthorization.AuthPolicy != nil {
+		return p.GlobalExternalAuthorization.AuthPolicy.Context
+	}
+	return nil
+}
+
 // expandPrefixMatches adds new Routes to account for the difference
 // between prefix replacement when matching on '/foo' and '/foo/'.
 //
@@ -1216,6 +1380,11 @@ func expandPrefixMatches(routes []*Route) []*Route {
 		// If there is no path prefix, we won't do any expansion, so skip it.
 		if !r.HasPathPrefix() {
 			expandedRoutes = append(expandedRoutes, r)
+		}
+
+		// Skip for exact path match conditions
+		if r.HasPathExact() {
+			continue
 		}
 
 		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
@@ -1412,7 +1581,18 @@ type matchConditionAggregate struct {
 }
 
 func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
-	pathPrefix := mergePathMatchConditions(includeConds).Prefix
+	pathPrefix := ""
+
+	switch pathPrefixRef := mergePathMatchConditions(includeConds).(type) {
+	case *PrefixMatchCondition:
+		pathPrefix = pathPrefixRef.Prefix
+	default:
+		// This can never happen because include match conditions only have prefix match conditions.
+		// Validations before this step ensure this, so it is safe to mark this validation failed
+		// for anything else except a prefix condition.
+		return true
+	}
+
 	includeHeaderConds := mergeHeaderMatchConditions(includeConds)
 	includeQueryParamConds := mergeQueryParamMatchConditions(includeConds)
 
@@ -1488,6 +1668,7 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 		for i := range ag.headerConds {
 			if ag.headerConds[i] != includeHeaderConds[i] {
 				headerCondsIdentical = false
+				break
 			}
 		}
 		if !headerCondsIdentical {
@@ -1496,15 +1677,26 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 
 		// Now compare (sorted) query param conditions element-by-element.
 		// If any mismatch, we can return early.
+		queryParamCondsIdentical := true
 		for i := range ag.queryParamConds {
 			if ag.queryParamConds[i] != includeQueryParamConds[i] {
-				return false
+				queryParamCondsIdentical = false
+				break
 			}
+		}
+		if !queryParamCondsIdentical {
+			continue
 		}
 		// If we get here, all header and query param conditions
 		// must be equal.
 		return true
 	}
+
+	// Save the seen path and header/query conditions.
+	seenConds[pathPrefix] = append(seenConds[pathPrefix], matchConditionAggregate{
+		headerConds:     includeHeaderConds,
+		queryParamConds: includeQueryParamConds,
+	})
 
 	return false
 }
@@ -1606,6 +1798,33 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func internalRedirectPolicy(internal *contour_api_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
+	if internal == nil {
+		return nil
+	}
+
+	redirectResponseCodes := make([]uint32, len(internal.RedirectResponseCodes))
+	for i, responseCode := range internal.RedirectResponseCodes {
+		redirectResponseCodes[i] = uint32(responseCode)
+	}
+
+	policy := &InternalRedirectPolicy{
+		MaxInternalRedirects:      internal.MaxInternalRedirects,
+		RedirectResponseCodes:     redirectResponseCodes,
+		DenyRepeatedRouteRedirect: internal.DenyRepeatedRouteRedirect,
+	}
+	switch internal.AllowCrossSchemeRedirect {
+	case "Always":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeAlways
+	case "SafeOnly":
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeSafeOnly
+	default:
+		// Value already checked by the generated validator, assume this is Never.
+		policy.AllowCrossSchemeRedirect = InternalRedirectCrossSchemeNever
+	}
+	return policy
 }
 
 func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {

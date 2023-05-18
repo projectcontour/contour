@@ -100,7 +100,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
 				AccessLogFormatString: "foo",
 				AccessLogJSONFields:   []string{"field-1", "field-2"},
-				AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
+				AccessLogLevel:        contour_api_v1alpha1.LogLevelCritical,
 			},
 			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 				"HTTP/2.2",
@@ -119,7 +119,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				DNSLookupFamily: contour_api_v1alpha1.IPv4ClusterDNSFamily,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: contourconfig.UInt32Ptr(77),
+				XffNumTrustedHops: ref.To(uint32(77)),
 				EnvoyAdminPort:    ref.To(9997),
 			},
 		},

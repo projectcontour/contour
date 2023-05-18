@@ -2387,7 +2387,7 @@ $ kubectl apply -f examples/contour/01-crds.yaml
 ```
 
 In this release, the format of the TLS Secrets that are used to secure the gRPC session between Envoy and Contour has changed.
-This means that the Envoy Daemonset and the Contour Deployment have been changed to mount the the TLS secrets volume differently.
+This means that the Envoy Daemonset and the Contour Deployment have been changed to mount the TLS secrets volume differently.
 Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
 
 

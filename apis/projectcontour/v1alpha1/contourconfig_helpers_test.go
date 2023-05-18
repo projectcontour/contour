@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -157,6 +158,60 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Gateway.ControllerName = "foo"
 		c.Gateway.GatewayRef = &v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
 		require.Error(t, c.Validate())
+	})
+
+	t.Run("tracing validation", func(t *testing.T) {
+		c := v1alpha1.ContourConfigurationSpec{
+			Tracing: &v1alpha1.TracingConfig{},
+		}
+
+		require.Error(t, c.Validate())
+
+		c.Tracing.ExtensionService = &v1alpha1.NamespacedName{
+			Name:      "otel-collector",
+			Namespace: "projectcontour",
+		}
+		require.NoError(t, c.Validate())
+
+		c.Tracing.OverallSampling = ref.To("number")
+		require.Error(t, c.Validate())
+
+		c.Tracing.OverallSampling = ref.To("10")
+		require.NoError(t, c.Validate())
+
+		customTags := []*v1alpha1.CustomTag{
+			{
+				TagName: "first tag",
+				Literal: "literal",
+			},
+		}
+		c.Tracing.CustomTags = customTags
+		require.NoError(t, c.Validate())
+
+		customTags = append(customTags, &v1alpha1.CustomTag{
+			TagName:           "second tag",
+			RequestHeaderName: "x-custom-header",
+		})
+		c.Tracing.CustomTags = customTags
+		require.NoError(t, c.Validate())
+
+		customTags = append(customTags, &v1alpha1.CustomTag{
+			TagName:           "first tag",
+			RequestHeaderName: "x-custom-header",
+		})
+		c.Tracing.CustomTags = customTags
+		require.Error(t, c.Validate())
+
+		customTags = []*v1alpha1.CustomTag{
+			{
+				TagName:           "first tag",
+				Literal:           "literal",
+				RequestHeaderName: "x-custom-header",
+			},
+		}
+		c.Tracing.CustomTags = customTags
+		require.Error(t, c.Validate())
+
 	})
 }
 

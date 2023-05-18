@@ -61,11 +61,16 @@ type Include struct {
 }
 
 // MatchCondition are a general holder for matching rules for HTTPProxies.
-// One of Prefix, Header or QueryParameter must be provided.
+// One of Prefix, Exact, Header or QueryParameter must be provided.
 type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
 	Prefix string `json:"prefix,omitempty"`
+
+	// Exact defines a exact match for a request.
+	// This field is not allowed in include match conditions.
+	// +optional
+	Exact string `json:"exact,omitempty"`
 
 	// Header specifies the header condition to match.
 	// +optional
@@ -194,8 +199,8 @@ type ExtensionServiceReference struct {
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
-	// +required
-	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.
@@ -295,6 +300,18 @@ type VirtualHost struct {
 	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
 	// +optional
 	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
+
+	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be allowed. All other requests will be denied.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	IPAllowFilterPolicy []IPFilterPolicy `json:"ipAllowPolicy,omitempty"`
+
+	// IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be denied. All other requests will be allowed.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -524,9 +541,25 @@ type Route struct {
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
 
+	// The policy to define when to handle redirects responses internally.
+	// +optional
+	InternalRedirectPolicy *HTTPInternalRedirectPolicy `json:"internalRedirectPolicy,omitempty"`
+
 	// The policy for verifying JWTs for requests to this route.
 	// +optional
 	JWTVerificationPolicy *JWTVerificationPolicy `json:"jwtVerificationPolicy,omitempty"`
+
+	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be allowed. All other requests will be denied.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
+	IPAllowFilterPolicy []IPFilterPolicy `json:"ipAllowPolicy,omitempty"`
+
+	// IPDenyFilterPolicy is a list of ipv4/6 filter rules for which matching
+	// requests should be denied. All other requests will be allowed.
+	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
+	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {
@@ -544,6 +577,29 @@ type JWTVerificationPolicy struct {
 	// "require" field can be specified.
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
+}
+
+// IPFilterSource indicates which IP should be considered for filtering
+// +kubebuilder:validation:Enum=Peer;Remote
+type IPFilterSource string
+
+const (
+	IPFilterSourcePeer   IPFilterSource = "Peer"
+	IPFilterSourceRemote IPFilterSource = "Remote"
+)
+
+type IPFilterPolicy struct {
+	// Source indicates how to determine the ip address to filter on, and can be
+	// one of two values:
+	//  - `Remote` filters on the ip address of the client, accounting for PROXY and
+	//    X-Forwarded-For as needed.
+	//  - `Peer` filters on the ip of the network request, ignoring PROXY and
+	//    X-Forwarded-For.
+	Source IPFilterSource `json:"source"`
+
+	// CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
+	// a bare IP address (without a mask) to filter on exactly one address.
+	CIDR string `json:"cidr"`
 }
 
 type HTTPDirectResponsePolicy struct {
@@ -614,6 +670,37 @@ type HTTPRequestRedirectPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^\/.*$`
 	Prefix *string `json:"prefix,omitempty"`
+}
+
+// RedirectResponseCode is a uint32 type alias with validation to ensure that the value is valid.
+// +kubebuilder:validation:Enum=301;302;303;307;308
+type RedirectResponseCode uint32
+
+type HTTPInternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number of previous internal
+	// redirects that a downstream request has encountered is lower than this value.
+	// +optional
+	MaxInternalRedirects uint32 `json:"maxInternalRedirects,omitempty"`
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values.
+	// +optional
+	RedirectResponseCodes []RedirectResponseCode `json:"redirectResponseCodes,omitempty"`
+
+	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme
+	// than the value of x-forwarded-proto.
+	// SafeOnly allows same scheme redirect and safe cross scheme redirect, which means if the downstream
+	// scheme is HTTPS, both HTTPS and HTTP redirect targets are allowed, but if the downstream scheme
+	// is HTTP, only HTTP redirect targets are allowed.
+	// +kubebuilder:validation:Enum=Always;Never;SafeOnly
+	// +kubebuilder:default=Never
+	// +optional
+	AllowCrossSchemeRedirect string `json:"allowCrossSchemeRedirect,omitempty"`
+
+	// If DenyRepeatedRouteRedirect is true, rejects redirect targets that are pointing to a route that has
+	// been followed by a previous redirect from the current route.
+	// +optional
+	DenyRepeatedRouteRedirect bool `json:"denyRepeatedRouteRedirect,omitempty"`
 }
 
 type CookieRewritePolicy struct {
@@ -882,7 +969,6 @@ type Service struct {
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
 	// The policy for managing request headers during proxying.
-	// Rewriting the 'Host' header is not supported.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.
@@ -1117,7 +1203,7 @@ type LoadBalancerPolicy struct {
 	// `RequestHash` load balancing strategy is chosen. If an element of the
 	// supplied list of hash policies is invalid, it will be ignored. If the
 	// list of hash policies is empty after validation, the load balancing
-	// strategy will fall back the the default `RoundRobin`.
+	// strategy will fall back to the default `RoundRobin`.
 	RequestHashPolicies []RequestHashPolicy `json:"requestHashPolicies,omitempty"`
 }
 

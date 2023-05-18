@@ -107,6 +107,11 @@ type Deployment struct {
 	RateLimitDeployment       *apps_v1.Deployment
 	RateLimitService          *v1.Service
 	RateLimitExtensionService *contour_api_v1alpha1.ExtensionService
+
+	// Global External Authorization deployment.
+	GlobalExtAuthDeployment       *apps_v1.Deployment
+	GlobalExtAuthService          *v1.Service
+	GlobalExtAuthExtensionService *contour_api_v1alpha1.ExtensionService
 }
 
 // UnmarshalResources unmarshals resources from rendered Contour manifest in
@@ -196,6 +201,7 @@ func (d *Deployment) UnmarshalResources() error {
 		}
 	}
 
+	// ratelimit
 	rateLimitExamplePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "ratelimit")
 	rateLimitDeploymentFile := filepath.Join(rateLimitExamplePath, "02-ratelimit.yaml")
 	rateLimitExtSvcFile := filepath.Join(rateLimitExamplePath, "03-ratelimit-extsvc.yaml")
@@ -223,7 +229,39 @@ func (d *Deployment) UnmarshalResources() error {
 	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLESFile)
 	d.RateLimitExtensionService = new(contour_api_v1alpha1.ExtensionService)
 
-	return decoder.Decode(d.RateLimitExtensionService)
+	if err := decoder.Decode(d.RateLimitExtensionService); err != nil {
+		return err
+	}
+
+	// Global external auth
+	globalExtAuthExamplePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "global-external-auth")
+	globalExtAuthServerDeploymentFile := filepath.Join(globalExtAuthExamplePath, "01-authserver.yaml")
+	globalExtAuthExtSvcFile := filepath.Join(globalExtAuthExamplePath, "02-globalextauth-extsvc.yaml")
+
+	rGlobalExtAuthDeploymentFile, err := os.Open(globalExtAuthServerDeploymentFile)
+	if err != nil {
+		return err
+	}
+	defer rGlobalExtAuthDeploymentFile.Close()
+	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rGlobalExtAuthDeploymentFile)
+	d.GlobalExtAuthDeployment = new(apps_v1.Deployment)
+	if err := decoder.Decode(d.GlobalExtAuthDeployment); err != nil {
+		return err
+	}
+	d.GlobalExtAuthService = new(v1.Service)
+	if err := decoder.Decode(d.GlobalExtAuthService); err != nil {
+		return err
+	}
+
+	rGlobalExtAuthExtSvcFile, err := os.Open(globalExtAuthExtSvcFile)
+	if err != nil {
+		return err
+	}
+	defer rGlobalExtAuthExtSvcFile.Close()
+	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rGlobalExtAuthExtSvcFile)
+	d.GlobalExtAuthExtensionService = new(contour_api_v1alpha1.ExtensionService)
+
+	return decoder.Decode(d.GlobalExtAuthExtensionService)
 }
 
 // Common case of updating object if exists, create otherwise.
@@ -276,15 +314,15 @@ func (d *Deployment) EnsureCertgenRole() error {
 func (d *Deployment) EnsureCertgenJob() error {
 	// Delete job if exists with same name, then create.
 	tempJ := new(batch_v1.Job)
-	jobDeleted := func() (bool, error) {
-		return api_errors.IsNotFound(d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.CertgenJob), tempJ)), nil
+	jobDeleted := func(ctx context.Context) (bool, error) {
+		return api_errors.IsNotFound(d.client.Get(ctx, client.ObjectKeyFromObject(d.CertgenJob), tempJ)), nil
 	}
-	if ok, _ := jobDeleted(); !ok {
+	if ok, _ := jobDeleted(context.TODO()); !ok {
 		if err := d.client.Delete(context.TODO(), tempJ); err != nil {
 			return err
 		}
 	}
-	if err := wait.PollImmediate(time.Millisecond*50, time.Minute, jobDeleted); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute, true, jobDeleted); err != nil {
 		return err
 	}
 	return d.client.Create(context.TODO(), d.CertgenJob)
@@ -329,11 +367,11 @@ func (d *Deployment) WaitForContourDeploymentUpdated() error {
 		return errors.New("invalid Contour Deployment containers spec")
 	}
 	labelSelectAppContour := labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels)
-	updatedPods := func() (bool, error) {
-		updatedPods := d.getPodsUpdatedWithContourImage(labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
+	updatedPods := func(ctx context.Context) (bool, error) {
+		updatedPods := d.getPodsUpdatedWithContourImage(ctx, labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
 		return updatedPods == int(*d.ContourDeployment.Spec.Replicas), nil
 	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute, true, updatedPods)
 }
 
 func (d *Deployment) EnsureEnvoyDaemonSet() error {
@@ -353,47 +391,47 @@ func (d *Deployment) WaitForEnvoyUpdated() error {
 
 func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
 	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDaemonSet.Spec.Selector.MatchLabels)
-	updatedPods := func() (bool, error) {
+	updatedPods := func(ctx context.Context) (bool, error) {
 		ds := &apps_v1.DaemonSet{}
-		if err := d.client.Get(context.TODO(), types.NamespacedName{Name: d.EnvoyDaemonSet.Name, Namespace: d.EnvoyDaemonSet.Namespace}, ds); err != nil {
+		if err := d.client.Get(ctx, types.NamespacedName{Name: d.EnvoyDaemonSet.Name, Namespace: d.EnvoyDaemonSet.Namespace}, ds); err != nil {
 			return false, err
 		}
 		updatedPods := int(ds.Status.DesiredNumberScheduled)
 		if len(ds.Spec.Template.Spec.Containers) > 1 {
-			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+			updatedPods = d.getPodsUpdatedWithContourImage(ctx, labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
 		}
 		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
 			ds.Status.NumberReady > 0, nil
 	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
 func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
 	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDeployment.Spec.Selector.MatchLabels)
-	updatedPods := func() (bool, error) {
+	updatedPods := func(ctx context.Context) (bool, error) {
 		dp := new(apps_v1.Deployment)
-		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), dp); err != nil {
+		if err := d.client.Get(ctx, client.ObjectKeyFromObject(d.EnvoyDeployment), dp); err != nil {
 			return false, err
 		}
 		updatedPods := int(dp.Status.UpdatedReplicas)
 		if len(dp.Spec.Template.Spec.Containers) > 1 {
-			updatedPods = d.getPodsUpdatedWithContourImage(labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
+			updatedPods = d.getPodsUpdatedWithContourImage(ctx, labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
 		}
 		return updatedPods == int(*d.EnvoyDeployment.Spec.Replicas) &&
 			int(dp.Status.ReadyReplicas) == updatedPods &&
 			int(dp.Status.UnavailableReplicas) == 0, nil
 	}
-	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
-func (d *Deployment) getPodsUpdatedWithContourImage(labelSelector labels.Selector, namespace string) int {
+func (d *Deployment) getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace string) int {
 	contourPodImage := d.ContourDeployment.Spec.Template.Spec.Containers[0].Image
 	pods := new(v1.PodList)
 	labelSelect := &client.ListOptions{
 		LabelSelector: labelSelector,
 		Namespace:     namespace,
 	}
-	if err := d.client.List(context.TODO(), pods, labelSelect); err != nil {
+	if err := d.client.List(ctx, pods, labelSelect); err != nil {
 		return 0
 	}
 	updatedPods := 0
@@ -463,6 +501,30 @@ func (d *Deployment) EnsureRateLimitResources(namespace string, configContents s
 
 	extSvc := d.RateLimitExtensionService.DeepCopy()
 	extSvc.Namespace = setNamespace
+	return d.ensureResource(extSvc, new(contour_api_v1alpha1.ExtensionService))
+}
+
+func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
+	setNamespace := d.Namespace.Name
+	if len(namespace) > 0 {
+		setNamespace = namespace
+	}
+
+	deployment := d.GlobalExtAuthDeployment.DeepCopy()
+	deployment.Namespace = setNamespace
+	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
+		return err
+	}
+
+	service := d.GlobalExtAuthService.DeepCopy()
+	service.Namespace = setNamespace
+	if err := d.ensureResource(service, new(v1.Service)); err != nil {
+		return err
+	}
+
+	extSvc := d.GlobalExtAuthExtensionService.DeepCopy()
+	extSvc.Namespace = setNamespace
+
 	return d.ensureResource(extSvc, new(contour_api_v1alpha1.ExtensionService))
 }
 
@@ -954,8 +1016,8 @@ func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	}
 
 	// Wait to ensure it's fully deleted.
-	if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
-		err := d.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+	if err := wait.PollUntilContextTimeout(context.Background(), 100*time.Millisecond, time.Minute, true, func(ctx context.Context) (bool, error) {
+		err := d.client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
 		if api_errors.IsNotFound(err) {
 			return true, nil
 		}

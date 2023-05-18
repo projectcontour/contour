@@ -231,6 +231,26 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
+func checkContainerHasReadinessPort(t *testing.T, container *corev1.Container, port int32) {
+	t.Helper()
+
+	if container.ReadinessProbe != nil &&
+		container.ReadinessProbe.HTTPGet != nil &&
+		container.ReadinessProbe.HTTPGet.Port.IntVal == port {
+		return
+	}
+	t.Errorf("container has unexpected readiness port %d", port)
+}
+
+func checkDaemonSetHasMetricsPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
+	t.Helper()
+
+	if ds.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] == fmt.Sprint(port) {
+		return
+	}
+	t.Errorf("container has unexpected metrics port %d", port)
+}
+
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -279,6 +299,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
+	checkContainerHasReadinessPort(t, container, 8002)
 	assert.Len(t, container.Ports, 2)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
@@ -297,6 +318,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSecurityContext(t, ds)
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
+	checkDaemonSetHasMetricsPort(t, ds, 8002)
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
@@ -339,4 +361,27 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	checkDaemonSetHasNodeSelector(t, ds, selectors)
 	checkDaemonSetHasTolerations(t, ds, tolerations)
+}
+
+func TestEnvoyCustomPorts(t *testing.T) {
+	name := "envoy-runtime-ports"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
+		Envoy: &v1alpha1.EnvoyConfig{
+			Health: &v1alpha1.HealthConfig{
+				Port: 8020,
+			},
+			Metrics: &v1alpha1.MetricsConfig{
+				Port: 9090,
+			},
+		},
+	}
+
+	testContourImage := "ghcr.io/projectcontour/contour:test"
+	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
+	checkDaemonSetHasMetricsPort(t, ds, 9090)
+
+	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
+	checkContainerHasReadinessPort(t, container, 8020)
 }

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: "2023-03-02T17:31:09Z"
+  labels:
+    kubernetes.io/metadata.name: default
+  name: default
+  resourceVersion: "11368"
+  uid: 49ff2754-c682-410c-818f-d28975dde44e
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: "2023-03-02T17:31:09Z"
+  labels:
+    foo: bar
+    kubernetes.io/metadata.name: default
+  name: default
+  resourceVersion: "11519"
+  uid: 49ff2754-c682-410c-818f-d28975dde44e
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

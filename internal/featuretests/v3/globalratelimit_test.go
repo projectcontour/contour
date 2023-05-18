@@ -665,19 +665,20 @@ func TestGlobalRateLimiting(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {
 					cfg.RateLimitConfig = &xdscache_v3.RateLimitConfig{
-						ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
-						Domain:           "contour",
+						ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+							ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+						},
+						Domain: "contour",
 					}
 				},
 				func(b *dag.Builder) {
-					b.Processors = []dag.Processor{
-						&dag.HTTPProxyProcessor{
-							FallbackCertificate: &types.NamespacedName{
+					for _, processor := range b.Processors {
+						if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
+							httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
 								Name:      "fallback-cert",
 								Namespace: "default",
-							},
-						},
-						&dag.ListenerProcessor{},
+							}
+						}
 					}
 				},
 			)

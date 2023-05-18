@@ -14,12 +14,17 @@
 package v3
 
 import (
+	"net"
 	"testing"
 	"time"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
+	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
+	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -580,6 +585,96 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(1),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+		"multiple service host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 80,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s1.com",
+					},
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+
+					Weight: 20,
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						HostRewrite: "s2.com",
+					},
+				}},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(20),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s2.com"},
+							}, {
+								Name:                 "default/kuard/8080/da39a3ee5e",
+								Weight:               wrapperspb.UInt32(80),
+								HostRewriteSpecifier: &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{HostRewriteLiteral: "s1.com"},
+							}},
+						},
+					},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
+				},
+			},
+		},
+
 		"mirror": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
@@ -665,6 +760,86 @@ func TestRouteRoute(t *testing.T) {
 							Regex: "^/prefix/*",
 						},
 						Substitution: "/",
+					},
+				},
+			},
+		},
+		"internal redirect - safe only": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:      5,
+					RedirectResponseCodes:     []uint32{307},
+					DenyRepeatedRouteRedirect: true,
+					AllowCrossSchemeRedirect:  dag.InternalRedirectCrossSchemeSafeOnly,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects:  wrapperspb.UInt32(5),
+						RedirectResponseCodes: []uint32{307},
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+							},
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+						},
+						AllowCrossSchemeRedirect: true,
+					},
+				},
+			},
+		},
+		"internal redirect - always": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:     5,
+					AllowCrossSchemeRedirect: dag.InternalRedirectCrossSchemeAlways,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects:     wrapperspb.UInt32(5),
+						Predicates:               []*envoy_core_v3.TypedExtensionConfig{},
+						AllowCrossSchemeRedirect: true,
+					},
+				},
+			},
+		},
+		"internal redirect without max": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:      0,
+					DenyRepeatedRouteRedirect: true,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects: nil,
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+						},
+						AllowCrossSchemeRedirect: false,
 					},
 				},
 			},
@@ -1215,6 +1390,445 @@ func TestCORSPolicy(t *testing.T) {
 	}
 }
 
+func TestIPFilters(t *testing.T) {
+	tests := map[string]struct {
+		ipRules []dag.IPFilterRule
+		allow   bool
+		want    *envoy_rbac_v3.RBACPerRoute
+	}{
+		"allow remote ipv4": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: true,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_ALLOW,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+										RemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "192.168.0.0",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"deny remote ipv4": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: false,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_DENY,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+										RemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "192.168.0.0",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"allow remote ipv6": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+			},
+			allow: true,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_ALLOW,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+										RemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "2001:db8::68",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"deny remote ipv6": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+			},
+			allow: false,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_DENY,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+										RemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "2001:db8::68",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"allow local ipv4": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: true,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_ALLOW,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+										DirectRemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "192.168.0.0",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"deny local ipv4": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: false,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_DENY,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+										DirectRemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "192.168.0.0",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"allow local ipv6": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+			},
+			allow: true,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_ALLOW,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+										DirectRemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "2001:db8::68",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"deny local ipv6": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+			},
+			allow: false,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_DENY,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{{
+									Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+										DirectRemoteIp: &envoy_core_v3.CidrRange{
+											AddressPrefix: "2001:db8::68",
+											PrefixLen:     wrapperspb.UInt32(24),
+										},
+									},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"allow multiple rules": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db6::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: true,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_ALLOW,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+											DirectRemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "2001:db8::68",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+											DirectRemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "2001:db6::68",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+											RemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "192.168.0.0",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"deny multiple rules": {
+			ipRules: []dag.IPFilterRule{
+				{
+					Remote: false,
+					CIDR: net.IPNet{
+						IP:   net.ParseIP("2001:db8::68"),
+						Mask: net.CIDRMask(24, 128),
+					},
+				},
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 168, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+				{
+					Remote: true,
+					CIDR: net.IPNet{
+						IP:   net.IPv4(192, 165, 0, 0),
+						Mask: net.CIDRMask(24, 32),
+					},
+				},
+			},
+			allow: false,
+			want: &envoy_rbac_v3.RBACPerRoute{
+				Rbac: &envoy_rbac_v3.RBAC{
+					Rules: &envoy_config_rbac_v3.RBAC{
+						Action: envoy_config_rbac_v3.RBAC_DENY,
+						Policies: map[string]*envoy_config_rbac_v3.Policy{
+							"ip-rules": {
+								Permissions: []*envoy_config_rbac_v3.Permission{
+									{
+										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+									},
+								},
+								Principals: []*envoy_config_rbac_v3.Principal{
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+											DirectRemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "2001:db8::68",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+											RemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "192.168.0.0",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+									{
+										Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+											RemoteIp: &envoy_core_v3.CidrRange{
+												AddressPrefix: "192.165.0.0",
+												PrefixLen:     wrapperspb.UInt32(24),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := ipFilterConfig(tc.allow, tc.ipRules)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
 func TestUpgradeHTTPS(t *testing.T) {
 	got := UpgradeHTTPS()
 	want := &envoy_route_v3.Route_Redirect{
@@ -1319,6 +1933,32 @@ func TestRouteMatch(t *testing.T) {
 			route: &dag.Route{
 				PathMatchCondition: &dag.PrefixMatchCondition{
 					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment trailing slash": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo/",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+					PathSeparatedPrefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment multiple trailing slashes": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo///",
 					PrefixMatchType: dag.PrefixMatchSegment,
 				},
 			},

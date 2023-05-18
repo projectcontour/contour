@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    globalExtAuth:
+      extensionService: projectcontour/testserver
+      failOpen: false
+      authPolicy:
+        context:
+          header1: value1
+          header2: value2
+      responseTimeout: 1s

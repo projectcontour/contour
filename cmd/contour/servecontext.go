@@ -23,13 +23,13 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
-
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -316,6 +316,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		accessLogLevel = contour_api_v1alpha1.LogLevelInfo
 	case config.LogLevelError:
 		accessLogLevel = contour_api_v1alpha1.LogLevelError
+	case config.LogLevelCritical:
+		accessLogLevel = contour_api_v1alpha1.LogLevelCritical
 	case config.LogLevelDisabled:
 		accessLogLevel = contour_api_v1alpha1.LogLevelDisabled
 	}
@@ -365,6 +367,30 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		dnsLookupFamily = contour_api_v1alpha1.AllClusterDNSFamily
 	}
 
+	var tracingConfig *contour_api_v1alpha1.TracingConfig
+	if ctx.Config.Tracing != nil {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.Tracing.ExtensionService)
+		var customTags []*contour_api_v1alpha1.CustomTag
+		for _, customTag := range ctx.Config.Tracing.CustomTags {
+			customTags = append(customTags, &contour_api_v1alpha1.CustomTag{
+				TagName:           customTag.TagName,
+				Literal:           customTag.Literal,
+				RequestHeaderName: customTag.RequestHeaderName,
+			})
+		}
+		tracingConfig = &contour_api_v1alpha1.TracingConfig{
+			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
+			ServiceName:      ctx.Config.Tracing.ServiceName,
+			OverallSampling:  ctx.Config.Tracing.OverallSampling,
+			MaxPathTagLength: ctx.Config.Tracing.MaxPathTagLength,
+			CustomTags:       customTags,
+			ExtensionService: &contour_api_v1alpha1.NamespacedName{
+				Name:      namespacedName.Name,
+				Namespace: namespacedName.Namespace,
+			},
+		}
+	}
+
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 	if ctx.Config.RateLimitService.ExtensionService != "" {
 
@@ -389,6 +415,34 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		serverHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
 	case config.PassThroughServerHeader:
 		serverHeaderTransformation = contour_api_v1alpha1.PassThroughServerHeader
+	}
+
+	var globalExtAuth *contour_api_v1.AuthorizationServer
+	if ctx.Config.GlobalExternalAuthorization.ExtensionService != "" {
+		nsedName := k8s.NamespacedNameFrom(ctx.Config.GlobalExternalAuthorization.ExtensionService)
+		globalExtAuth = &contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+				Name:      nsedName.Name,
+				Namespace: nsedName.Namespace,
+			},
+			ResponseTimeout: ctx.Config.GlobalExternalAuthorization.ResponseTimeout,
+			FailOpen:        ctx.Config.GlobalExternalAuthorization.FailOpen,
+		}
+
+		if ctx.Config.GlobalExternalAuthorization.AuthPolicy != nil {
+			globalExtAuth.AuthPolicy = &contour_api_v1.AuthorizationPolicy{
+				Disabled: ctx.Config.GlobalExternalAuthorization.AuthPolicy.Disabled,
+				Context:  ctx.Config.GlobalExternalAuthorization.AuthPolicy.Context,
+			}
+		}
+
+		if ctx.Config.GlobalExternalAuthorization.WithRequestBody != nil {
+			globalExtAuth.WithRequestBody = &contour_api_v1.AuthorizationServerBufferSettings{
+				MaxRequestBytes:     ctx.Config.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
+				AllowPartialMessage: ctx.Config.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
+				PackAsBytes:         ctx.Config.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
+			}
+		}
 	}
 
 	policy := &contour_api_v1alpha1.PolicyConfig{
@@ -504,10 +558,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
 		},
-		EnableExternalNameService: &ctx.Config.EnableExternalNameService,
-		RateLimitService:          rateLimitService,
-		Policy:                    policy,
-		Metrics:                   &contourMetrics,
+		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
+		GlobalExternalAuthorization: globalExtAuth,
+		RateLimitService:            rateLimitService,
+		Policy:                      policy,
+		Metrics:                     &contourMetrics,
+		Tracing:                     tracingConfig,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

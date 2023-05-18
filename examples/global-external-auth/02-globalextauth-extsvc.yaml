@@ -1,0 +1,12 @@
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  namespace: projectcontour
+  name: testserver
+spec:
+  protocol: h2c
+  services:
+    - name: testserver
+      port: 9443
+  timeoutPolicy:
+    response: 100ms

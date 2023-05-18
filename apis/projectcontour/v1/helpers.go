@@ -20,7 +20,7 @@ import (
 // AuthorizationConfigured returns whether authorization  is
 // configured on this virtual host.
 func (v *VirtualHost) AuthorizationConfigured() bool {
-	return v.TLS != nil && v.Authorization != nil
+	return v.Authorization != nil
 }
 
 // DisableAuthorization returns true if this virtual host disables

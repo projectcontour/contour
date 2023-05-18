@@ -607,6 +607,41 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
+		"slow start mode: LB policy LEAST_REQUEST": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				SlowStartConfig: &dag.SlowStartConfig{
+					Window:           10 * time.Second,
+					Aggression:       1.0,
+					MinWeightPercent: 10,
+				},
+				LoadBalancerPolicy: dag.LoadBalancerPolicyWeightedLeastRequest,
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/0b01a6912a",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				LbPolicy: envoy_cluster_v3.Cluster_LEAST_REQUEST,
+				LbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig_{
+					LeastRequestLbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig{
+						SlowStartConfig: &envoy_cluster_v3.Cluster_SlowStartConfig{
+							SlowStartWindow: durationpb.New(10 * time.Second),
+							Aggression: &envoy_core_v3.RuntimeDouble{
+								DefaultValue: 1.0,
+								RuntimeKey:   "contour.slowstart.aggression",
+							},
+							MinWeightPercent: &envoy_type.Percent{
+								Value: 10.0,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

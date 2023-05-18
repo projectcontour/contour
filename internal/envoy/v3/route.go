@@ -23,11 +23,15 @@ import (
 	"text/template"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
+	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
+	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -39,10 +43,10 @@ import (
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
-func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.VirtualHost {
+func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool) *envoy_route_v3.VirtualHost {
 	var envoyRoutes []*envoy_route_v3.Route
 	for _, route := range dagRoutes {
-		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure, authService))
+		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure))
 	}
 
 	evh := VirtualHost(vh.Name, envoyRoutes...)
@@ -64,11 +68,20 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
 	}
 
+	if len(vh.IPFilterRules) > 0 {
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+			ipFilterConfig(vh.IPFilterAllow, vh.IPFilterRules),
+		)
+	}
+
 	return evh
 }
 
 // buildRoute converts a DAG route to an Envoy route.
-func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.Route {
+func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
 	switch {
 	case dagRoute.HTTPSUpgrade && !secure:
 		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
@@ -111,20 +124,17 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
-		// If authorization is enabled on this host, we may need to set per-route filter overrides.
-		if authService != nil {
-			// Apply per-route authorization policy modifications.
-			if dagRoute.AuthDisabled {
-				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-				}
-				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
-			} else if len(dagRoute.AuthContext) > 0 {
-				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-				}
-				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+		// Apply per-route authorization policy modifications.
+		if dagRoute.AuthDisabled {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
+			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+		} else if len(dagRoute.AuthContext) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		// If JWT verification is enabled, add per-route filter
@@ -137,6 +147,16 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService 
 			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
 				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
 			})
+		}
+
+		// If IP filtering is enabled, add per-route filtering
+		if len(dagRoute.IPFilterRules) > 0 {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+				ipFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules),
+			)
 		}
 
 		return rt
@@ -168,6 +188,60 @@ func routeAuthzContext(settings map[string]string) *anypb.Any {
 	)
 }
 
+func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPerRoute {
+	action := envoy_config_rbac_v3.RBAC_ALLOW
+	if !allow {
+		action = envoy_config_rbac_v3.RBAC_DENY
+	}
+
+	principals := make([]*envoy_config_rbac_v3.Principal, 0, len(rules))
+
+	for _, f := range rules {
+		var principal *envoy_config_rbac_v3.Principal
+
+		prefixLen, _ := f.CIDR.Mask.Size()
+		cidr := &envoy_core_v3.CidrRange{
+			AddressPrefix: f.CIDR.IP.String(),
+			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)),
+		}
+
+		if f.Remote {
+			principal = &envoy_config_rbac_v3.Principal{
+				Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+					RemoteIp: cidr,
+				},
+			}
+		} else {
+			principal = &envoy_config_rbac_v3.Principal{
+				Identifier: &envoy_config_rbac_v3.Principal_DirectRemoteIp{
+					DirectRemoteIp: cidr,
+				},
+			}
+		}
+		// Note that `source_ip` is not supported: `source_ip` respects
+		// PROXY, but not X-Forwarded-For.
+		principals = append(principals, principal)
+	}
+
+	return &envoy_rbac_v3.RBACPerRoute{
+		Rbac: &envoy_rbac_v3.RBAC{
+			Rules: &envoy_config_rbac_v3.RBAC{
+				Action: action,
+				Policies: map[string]*envoy_config_rbac_v3.Policy{
+					"ip-rules": {
+						Permissions: []*envoy_config_rbac_v3.Permission{
+							{
+								Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
+							},
+						},
+						Principals: principals,
+					},
+				},
+			},
+		},
+	}
+}
+
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	routeMatch := PathRouteMatch(route.PathMatchCondition)
@@ -195,7 +269,9 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.Route
 		case dag.PrefixMatchSegment:
 			return &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
-					PathSeparatedPrefix: c.Prefix,
+					// Trim trailing slash as PathSeparatedPrefix expects
+					// no trailing slashes.
+					PathSeparatedPrefix: strings.TrimRight(c.Prefix, "/"),
 				},
 			}
 		case dag.PrefixMatchString:
@@ -295,11 +371,12 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 // weighted cluster.
 func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	ra := envoy_route_v3.RouteAction{
-		RetryPolicy:           retryPolicy(r),
-		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
-		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
-		HashPolicy:            hashPolicy(r.RequestHashPolicies),
-		RequestMirrorPolicies: mirrorPolicy(r),
+		RetryPolicy:            retryPolicy(r),
+		Timeout:                envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
+		IdleTimeout:            envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
+		HashPolicy:             hashPolicy(r.RequestHashPolicies),
+		RequestMirrorPolicies:  mirrorPolicy(r),
+		InternalRedirectPolicy: internalRedirectPolicy(r.InternalRedirectPolicy),
 	}
 
 	if r.PathRewritePolicy != nil {
@@ -429,6 +506,40 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 	return rp
 }
 
+func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.InternalRedirectPolicy {
+	if p == nil {
+		return nil
+	}
+
+	var predicates []*envoy_core_v3.TypedExtensionConfig
+	allowCrossSchemeRedirect := false
+
+	switch p.AllowCrossSchemeRedirect {
+	case dag.InternalRedirectCrossSchemeAlways:
+		allowCrossSchemeRedirect = true
+	case dag.InternalRedirectCrossSchemeSafeOnly:
+		allowCrossSchemeRedirect = true
+		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+			Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+		})
+	}
+
+	if p.DenyRepeatedRouteRedirect {
+		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+			Name:        "envoy.internal_redirect_predicates.previous_routes",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+		})
+	}
+
+	return &envoy_route_v3.InternalRedirectPolicy{
+		MaxInternalRedirects:     protobuf.UInt32OrNil(p.MaxInternalRedirects),
+		RedirectResponseCodes:    p.RedirectResponseCodes,
+		Predicates:               predicates,
+		AllowCrossSchemeRedirect: allowCrossSchemeRedirect,
+	}
+}
+
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
 func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
 	return &envoy_route_v3.Route_Redirect{
@@ -480,6 +591,12 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 		if cluster.RequestHeadersPolicy != nil {
 			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
+			// Check for host header policy and set if found
+			if val := envoy.HostReplaceHeader(cluster.RequestHeadersPolicy); val != "" {
+				c.HostRewriteSpecifier = &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{
+					HostRewriteLiteral: val,
+				}
+			}
 		}
 		if cluster.ResponseHeadersPolicy != nil {
 			c.ResponseHeadersToAdd = append(headerValueList(cluster.ResponseHeadersPolicy.Set, false), headerValueList(cluster.ResponseHeadersPolicy.Add, true)...)

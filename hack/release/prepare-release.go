@@ -27,6 +27,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/semver/v3"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
@@ -73,10 +74,17 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 
 	rn := yaml.MustParse(string(data))
 
-	if _, err := rn.Pipe(
-		yaml.FieldSetter{Name: vers, StringValue: toc}); err != nil {
-		return err
-	}
+	rn.YNode().Content = append(rn.YNode().Content,
+		&yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Value: vers,
+			Style: yaml.DoubleQuotedStyle,
+		},
+		&yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Value: toc,
+		},
+	)
 
 	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
@@ -114,7 +122,9 @@ func updateConfigForSite(filePath string, vers string) error {
 
 	rn := yaml.MustParse(string(data))
 
-	// Set params.latest_version to the provided version.
+	// Set params.latest_version to the provided version. Since the
+	// existing value is already double-quoted, yaml.FieldSetter will
+	// keep that style.
 	if _, err := rn.Pipe(
 		yaml.Lookup("params"),
 		yaml.FieldSetter{Name: "latest_version", StringValue: vers},
@@ -125,6 +135,7 @@ func updateConfigForSite(filePath string, vers string) error {
 	versNode := yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Value: vers,
+		Style: yaml.DoubleQuotedStyle,
 	}
 
 	// Add the new version to the params.docs_versions array.
@@ -140,39 +151,31 @@ func updateConfigForSite(filePath string, vers string) error {
 	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
 }
 
-func updateIndexFile(filePath, oldVers, newVers string) error {
+func updateIndexFile(filePath, newVers string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	upd := strings.ReplaceAll(string(data), "version: "+oldVers, "version: "+newVers)
+	upd := strings.ReplaceAll(string(data), "version: main", fmt.Sprintf("version: \"%s\"", newVers))
+	upd = strings.ReplaceAll(upd, "branch: main", "branch: release-"+newVers)
 
 	return os.WriteFile(filePath, []byte(upd), 0600)
 }
 
 func main() {
-	var (
-		oldVers     = "main"
-		newVers     = ""
-		kubeMinVers = ""
-		kubeMaxVers = ""
-	)
-
-	switch len(os.Args) {
-	case 4:
-		newVers = os.Args[1]
-		kubeMinVers = os.Args[2]
-		kubeMaxVers = os.Args[3]
-	case 5:
-		oldVers = os.Args[1]
-		newVers = os.Args[2]
-		kubeMinVers = os.Args[3]
-		kubeMaxVers = os.Args[4]
-	default:
-		fmt.Printf("Usage: %s NEWVERS KUBEMINVERS KUBEMAXVERS | OLDVERS NEWVERS KUBEMINVERS KUBEMAXVERS\n", path.Base(os.Args[0]))
+	if len(os.Args) != 4 {
+		fmt.Printf("Usage: %s VERSION KUBE_MIN_VERSION KUBE_MAX_VERSION\n", path.Base(os.Args[0]))
 		os.Exit(1)
 	}
+
+	version, err := semver.NewVersion(os.Args[1])
+	if err != nil {
+		log.Fatalf("invalid version string %q: %s", os.Args[1], err)
+	}
+
+	kubeMinVers := os.Args[2]
+	kubeMaxVers := os.Args[3]
 
 	log.Printf("Verifying repository state ...")
 
@@ -184,46 +187,49 @@ func main() {
 		}
 	}
 
-	if !isPrereleaseVersion(newVers) {
-		log.Printf("Cloning versioned documentation ...")
+	// Generate versioned docs for new minor releases.
+	if version.Patch() == 0 && version.Prerelease() == "" {
+		docsVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
+
+		log.Printf("Creating versioned documentation for %s...", docsVersion)
 
 		// Jekyll hates it when the TOC file name contains a dot.
-		tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", newVers), ".", "-")
-		oldTocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", oldVers), ".", "-")
+		tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", docsVersion), ".", "-")
 
-		// Make a versioned copy of the oldVers docs.
-		run([]string{"cp", "-r", fmt.Sprintf("site/content/docs/%s", oldVers), fmt.Sprintf("site/content/docs/%s", newVers)})
-		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", newVers)})
+		// Make a versioned copy of the docs.
+		run([]string{"cp", "-r", "site/content/docs/main", fmt.Sprintf("site/content/docs/%s", docsVersion)})
+		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", docsVersion)})
 
 		// Update site/content/docs/<newVers>/_index.md content.
-		must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", newVers), oldVers, newVers))
-		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", newVers)})
+		must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", docsVersion), docsVersion))
+		run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", docsVersion)})
 
 		// Make a versioned TOC for the docs.
-		run([]string{"cp", "-r", fmt.Sprintf("site/data/docs/%s.yml", oldTocName), fmt.Sprintf("site/data/docs/%s.yml", tocName)})
+		run([]string{"cp", "-r", "site/data/docs/main-toc.yml", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
 		run([]string{"git", "add", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
 
 		// Insert the versioned TOC.
-		must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, tocName))
+		must(updateMappingForTOC("site/data/docs/toc-mapping.yml", docsVersion, tocName))
 		run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
 
 		// Insert the versioned docs into the main site layout.
-		must(updateConfigForSite("site/config.yaml", newVers))
+		must(updateConfigForSite("site/config.yaml", docsVersion))
 		run([]string{"git", "add", "site/config.yaml"})
 
 		// Now commit everything
-		run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
+		run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", version.Original())})
 	}
 
-	must(generateReleaseNotes(newVers, kubeMinVers, kubeMaxVers))
+	// Generate release notes.
+	must(generateReleaseNotes(version, kubeMinVers, kubeMaxVers))
 	run([]string{"git", "add", "changelogs/*"})
-	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", newVers)})
+	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", version.Original())})
 }
 
-func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
+func generateReleaseNotes(version *semver.Version, kubeMinVersion, kubeMaxVersion string) error {
 	d := Data{
-		Version:              version,
-		Prerelease:           isPrereleaseVersion(version),
+		Version:              version.Original(),
+		Prerelease:           version.Prerelease() != "",
 		KubernetesMinVersion: kubeMinVersion,
 		KubernetesMaxVersion: kubeMaxVersion,
 	}
@@ -303,10 +309,6 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 	}
 
 	return nil
-}
-
-func isPrereleaseVersion(version string) bool {
-	return strings.Contains(version, "alpha") || strings.Contains(version, "beta") || strings.Contains(version, "rc")
 }
 
 func parseChangelogFilename(filename string) (Entry, error) {

@@ -327,6 +327,7 @@ func enableExternalNameService(t *testing.T) func(*dag.Builder) {
 		log.SetLevel(logrus.DebugLevel)
 
 		b.Processors = []dag.Processor{
+			&dag.ListenerProcessor{},
 			&dag.IngressProcessor{
 				EnableExternalNameService: true,
 				FieldLogger:               log.WithField("context", "IngressProcessor"),
@@ -337,7 +338,6 @@ func enableExternalNameService(t *testing.T) func(*dag.Builder) {
 			&dag.ExtensionServiceProcessor{
 				FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
 			},
-			&dag.ListenerProcessor{},
 		}
 	}
 }

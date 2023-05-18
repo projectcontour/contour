@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -191,7 +190,7 @@ func (p *GatewayAPIProcessor) processRoute(
 		// (b) allow the route (based on kind, namespace).
 		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus)
 		if len(allowedListeners) == 0 {
-			continue
+			p.resolveRouteRefs(route, routeParentStatus)
 		}
 
 		// Keep track of the number of intersecting hosts
@@ -245,7 +244,7 @@ func (p *GatewayAPIProcessor) processRoute(
 			hostCount += hosts.Len()
 		}
 
-		if hostCount == 0 {
+		if hostCount == 0 && !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
 			routeParentStatus.AddCondition(
 				gatewayapi_v1beta1.RouteConditionAccepted,
 				metav1.ConditionFalse,
@@ -418,21 +417,42 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerReasonProgrammed,
 				"Valid listener",
 			)
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionAccepted,
+				metav1.ConditionTrue,
+				gatewayapi_v1beta1.ListenerReasonAccepted,
+				"Listener accepted",
+			)
 		} else {
 			programmedConditionExists := false
+			acceptedConditionExists := false
 			for _, cond := range listenerStatus.Conditions {
 				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionProgrammed) {
 					programmedConditionExists = true
-					break
+				}
+				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionAccepted) {
+					acceptedConditionExists = true
 				}
 			}
 
-			// Only set the Programmed condition if it doesn't already
-			// exist in the status update, since if it does exist,
-			// it will contain more specific information about what
-			// was invalid.
+			// Only set the Programmed or Accepted conditions if
+			// they don't already exist in the status update, since
+			// if they do exist, they will contain more specific
+			// information in the reason, message, etc.
 			if !programmedConditionExists {
 				addInvalidListenerCondition("Invalid listener, see other listener conditions for details")
+			}
+			// Accepted condition is always true for now if not
+			// explicitly set.
+			if !acceptedConditionExists {
+				gwAccessor.AddListenerCondition(
+					string(listener.Name),
+					gatewayapi_v1beta1.ListenerConditionAccepted,
+					metav1.ConditionTrue,
+					gatewayapi_v1beta1.ListenerReasonAccepted,
+					"Listener accepted",
+				)
 			}
 		}
 	}()
@@ -936,7 +956,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 		}
 
 		for host := range hosts {
-			secure := p.dag.EnsureSecureVirtualHost(host)
+			secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 
 			if listener.tlsSecret != nil {
 				secure.Secret = listener.tlsSecret
@@ -949,6 +969,69 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 	}
 
 	return programmed
+}
+
+// Resolve route references for a route and do not program any routes.
+func (p *GatewayAPIProcessor) resolveRouteRefs(route interface{}, routeAccessor *status.RouteParentStatusUpdate) {
+	switch route := route.(type) {
+	case *gatewayapi_v1beta1.HTTPRoute:
+		for _, r := range route.Spec.Rules {
+			for _, f := range r.Filters {
+				if f.Type == gatewayapi_v1beta1.HTTPRouteFilterRequestMirror && f.RequestMirror != nil {
+					_, cond := p.validateBackendObjectRef(f.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
+					if cond != nil {
+						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					}
+				}
+			}
+
+			// TODO: validate filter extension refs if they become relevant
+
+			for _, br := range r.BackendRefs {
+				_, cond := p.validateBackendRef(br.BackendRef, KindHTTPRoute, route.Namespace)
+				if cond != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+				}
+
+				// RequestMirror filter is not supported so we don't check it here
+
+				// TODO: validate filter extension refs if they become relevant
+			}
+		}
+	case *gatewayapi_v1alpha2.TLSRoute:
+		for _, r := range route.Spec.Rules {
+			for _, b := range r.BackendRefs {
+				_, cond := p.validateBackendRef(b, KindTLSRoute, route.Namespace)
+				if cond != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+				}
+			}
+		}
+	case *gatewayapi_v1alpha2.GRPCRoute:
+		for _, r := range route.Spec.Rules {
+			for _, f := range r.Filters {
+				if f.Type == gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror && f.RequestMirror != nil {
+					_, cond := p.validateBackendObjectRef(f.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
+					if cond != nil {
+						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					}
+				}
+			}
+
+			// TODO: validate filter extension refs if they become relevant
+
+			for _, br := range r.BackendRefs {
+				_, cond := p.validateBackendRef(br.BackendRef, KindGRPCRoute, route.Namespace)
+				if cond != nil {
+					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+				}
+
+				// RequestMirror filter is not supported so we don't check it here
+
+				// TODO: validate filter extension refs if they become relevant
+			}
+		}
+	}
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
@@ -1203,11 +1286,11 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(host)
+					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(host)
+					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
 					vhost.AddRoute(route)
 				}
 
@@ -1333,11 +1416,11 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(host)
+					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(host)
+					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
 					vhost.AddRoute(route)
 				}
 
@@ -1382,10 +1465,18 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.HeaderMatchExact) {
+		case gatewayapi_v1beta1.HeaderMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
@@ -1397,7 +1488,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 		seenNames.Insert(upperName)
 
 		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
-			MatchType: HeaderMatchTypeExact,
+			MatchType: matchType,
 			Name:      string(match.Name),
 			Value:     match.Value,
 		})
@@ -1470,8 +1561,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 		meta = types.NamespacedName{Name: string(backendObjectRef.Name), Namespace: routeNamespace}
 	}
 
-	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendObjectRef.Port)), intstr.FromInt(int(*backendObjectRef.Port)), p.source, p.EnableExternalNameService)
+	service, err := p.dag.EnsureService(meta, int(*backendObjectRef.Port), int(*backendObjectRef.Port), p.source, p.EnableExternalNameService)
 	if err != nil {
 		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
 	}
@@ -1519,11 +1609,19 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		return &ExactMatchCondition{Path: path}, true
 	}
 
+	if *match.Type == gatewayapi_v1beta1.PathMatchRegularExpression {
+		if err := ValidateRegex(*match.Value); err != nil {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value is invalid for RegularExpression match type.")
+			return nil, false
+		}
+		return &RegexMatchCondition{Regex: path}, true
+	}
+
 	routeAccessor.AddCondition(
 		gatewayapi_v1beta1.RouteConditionAccepted,
 		metav1.ConditionFalse,
 		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
-		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
+		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 	)
 	return nil, false
 }
@@ -1533,10 +1631,18 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.HeaderMatchExact {
-			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type is supported")
+		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.HeaderMatchExact) {
+		case gatewayapi_v1beta1.HeaderMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.HeaderMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported")
 		}
 
 		// If multiple match conditions are found for the same header name (case-insensitive),
@@ -1548,7 +1654,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 		seenNames.Insert(upperName)
 
 		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{
-			MatchType: HeaderMatchTypeExact,
+			MatchType: matchType,
 			Name:      string(match.Name),
 			Value:     match.Value,
 		})
@@ -1562,10 +1668,17 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 	seenNames := sets.New[string]()
 
 	for _, match := range matches {
-		// "Exact" is the default if not defined in the object, and
-		// the only supported match type.
-		if match.Type != nil && *match.Type != gatewayapi_v1beta1.QueryParamMatchExact {
-			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact match type is supported")
+		var matchType string
+		switch ref.Val(match.Type, gatewayapi_v1beta1.QueryParamMatchExact) {
+		case gatewayapi_v1beta1.QueryParamMatchExact:
+			matchType = HeaderMatchTypeExact
+		case gatewayapi_v1beta1.QueryParamMatchRegularExpression:
+			if err := ValidateRegex(match.Value); err != nil {
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Invalid value for RegularExpression match type is specified")
+			}
+			matchType = HeaderMatchTypeRegex
+		default:
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact and RegularExpression match types are supported")
 		}
 
 		// If multiple match conditions are found for the same value,
@@ -1576,7 +1689,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 		seenNames.Insert(match.Name)
 
 		dagMatchConditions = append(dagMatchConditions, QueryParamMatchCondition{
-			MatchType: QueryParamMatchTypeExact,
+			MatchType: matchType,
 			Name:      match.Name,
 			Value:     match.Value,
 		})

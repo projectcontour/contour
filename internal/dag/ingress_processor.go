@@ -104,7 +104,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := p.dag.EnsureSecureVirtualHost(host)
+				svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
 				svhost.Secret = sec
 				// default to a minimum TLS version of 1.2 if it's not specified
 				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
@@ -154,13 +154,20 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
-		var port intstr.IntOrString
+		port := int(be.Service.Port.Number)
 		if len(be.Service.Port.Name) > 0 {
-			port = intstr.FromString(be.Service.Port.Name)
-		} else {
-			port = intstr.FromInt(int(be.Service.Port.Number))
-		}
+			_, svcPort, err2 := p.source.LookupService(m, intstr.FromString(be.Service.Port.Name))
+			if err2 != nil {
+				p.WithError(err2).
+					WithField("name", ing.GetName()).
+					WithField("namespace", ing.GetNamespace()).
+					WithField("service", be.Service.Name).
+					Error("service is not found")
+				continue
+			}
 
+			port = int(svcPort.Port)
+		}
 		s, err := p.dag.EnsureService(m, port, port, p.source, p.EnableExternalNameService)
 		if err != nil {
 			p.WithError(err).
@@ -183,14 +190,14 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			vhost := p.dag.EnsureVirtualHost(host)
+			vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
 			vhost.AddRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
+		if svh := p.dag.GetSecureVirtualHost(HTTPS_LISTENER_NAME, host); svh != nil && host != "*" {
 			svh.AddRoute(r)
 		}
 	}
@@ -214,11 +221,11 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 	dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(int(servicePort))
 
 	// Get default headersPolicies
-	reqHP, err := headersPolicyService(p.RequestHeadersPolicy, nil, dynamicHeaders)
+	reqHP, err := headersPolicyService(p.RequestHeadersPolicy, nil, true, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}
-	respHP, err := headersPolicyService(p.ResponseHeadersPolicy, nil, dynamicHeaders)
+	respHP, err := headersPolicyService(p.ResponseHeadersPolicy, nil, false, dynamicHeaders)
 	if err != nil {
 		return nil, err
 	}

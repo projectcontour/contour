@@ -16,6 +16,8 @@ package main
 import (
 	"os"
 
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/alecthomas/kingpin/v2"
 	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/build"
@@ -28,6 +30,12 @@ import (
 func main() {
 	log := logrus.StandardLogger()
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
+
+	// set GOMAXPROCS
+	_, err := maxprocs.Set(maxprocs.Logger(log.Printf))
+	if err != nil {
+		log.WithError(err).Fatal("failed to set GOMAXPROCS")
+	}
 
 	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
 	// to ensure the option flags in lexicographic order.

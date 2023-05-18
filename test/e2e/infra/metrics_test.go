@@ -27,8 +27,7 @@ import (
 )
 
 func testMetrics() {
-	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4229
-	Specify("requests to default metrics listener are served", FlakeAttempts(3), func() {
+	Specify("requests to default metrics listener are served", func() {
 		t := f.T()
 
 		res, ok := f.HTTP.MetricsRequestUntil(&e2e.HTTPRequestOpts{

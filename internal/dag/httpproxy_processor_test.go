@@ -14,13 +14,16 @@
 package dag
 
 import (
+	"net"
 	"testing"
 	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDetermineSNI(t *testing.T) {
@@ -693,6 +696,296 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.Equal(t, tc.duplicate, includeMatchConditionsIdentical(tc.includeConds, tc.seenConds))
+		})
+	}
+}
+
+func TestValidateExternalAuthExtensionService(t *testing.T) {
+	tests := map[string]struct {
+		ref                 contour_api_v1.ExtensionServiceReference
+		wantValidCond       *contour_api_v1.DetailedCondition
+		httpproxy           *contour_api_v1.HTTPProxy
+		getExtensionCluster func(name string) *ExtensionCluster
+		want                *ExtensionCluster
+		wantBool            bool
+	}{
+		"Unsupported API version": {
+			ref: contour_api_v1.ExtensionServiceReference{
+				APIVersion: "wrong version",
+				Namespace:  "ns",
+				Name:       "test",
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{
+				Condition: v1.Condition{
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+				Errors: []contour_api_v1.SubCondition{
+					{
+						Type:    "AuthError",
+						Reason:  "AuthBadResourceVersion",
+						Message: "Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version \"wrong version\"",
+						Status:  contour_api_v1.ConditionTrue,
+					},
+				},
+			},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+			},
+			want: nil,
+			getExtensionCluster: func(name string) *ExtensionCluster {
+				return &ExtensionCluster{
+					Name: "test",
+				}
+			},
+			wantBool: false,
+		},
+		"ExtensionService does not exist": {
+			ref: contour_api_v1.ExtensionServiceReference{
+				APIVersion: "projectcontour.io/v1alpha1",
+				Namespace:  "ns",
+				Name:       "test",
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{
+				Condition: v1.Condition{
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+				Errors: []contour_api_v1.SubCondition{
+					{
+						Type:    "AuthError",
+						Reason:  "ExtensionServiceNotFound",
+						Message: "Spec.Virtualhost.Authorization.ServiceRef extension service \"ns/test\" not found",
+						Status:  contour_api_v1.ConditionTrue,
+					},
+				},
+			},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+			},
+			getExtensionCluster: func(name string) *ExtensionCluster {
+				return nil
+			},
+			want:     nil,
+			wantBool: false,
+		},
+		"Validation successful": {
+			ref: contour_api_v1.ExtensionServiceReference{
+				APIVersion: "projectcontour.io/v1alpha1",
+				Namespace:  "ns",
+				Name:       "test",
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+			},
+			getExtensionCluster: func(name string) *ExtensionCluster {
+				return &ExtensionCluster{
+					Name: "test",
+				}
+			},
+			want: &ExtensionCluster{
+				Name: "test",
+			},
+			wantBool: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			validCond := &contour_api_v1.DetailedCondition{}
+			gotBool, got := validateExternalAuthExtensionService(tc.ref, validCond, tc.httpproxy, tc.getExtensionCluster)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantBool, gotBool)
+			require.Equal(t, tc.wantValidCond, validCond)
+		})
+	}
+}
+
+func TestDetermineExternalAuthTimeout(t *testing.T) {
+	tests := map[string]struct {
+		responseTimeout string
+		wantValidCond   *contour_api_v1.DetailedCondition
+		ext             *ExtensionCluster
+		want            *timeout.Setting
+		wantBool        bool
+	}{
+		"invalid timeout": {
+			responseTimeout: "foo",
+			wantValidCond: &contour_api_v1.DetailedCondition{
+				Condition: v1.Condition{
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+				Errors: []contour_api_v1.SubCondition{
+					{
+						Type:    "AuthError",
+						Reason:  "AuthResponseTimeoutInvalid",
+						Message: "Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string \"foo\": time: invalid duration \"foo\"",
+						Status:  contour_api_v1.ConditionTrue,
+					},
+				},
+			},
+		},
+		"default timeout": {
+			responseTimeout: "",
+			wantValidCond:   &contour_api_v1.DetailedCondition{},
+			ext: &ExtensionCluster{
+				Name: "test",
+				RouteTimeoutPolicy: RouteTimeoutPolicy{
+					ResponseTimeout: timeout.DurationSetting(time.Second * 10),
+				},
+			},
+			want:     ref.To(timeout.DurationSetting(time.Second * 10)),
+			wantBool: true,
+		},
+		"success": {
+			responseTimeout: "20s",
+			wantValidCond:   &contour_api_v1.DetailedCondition{},
+			ext: &ExtensionCluster{
+				Name: "test",
+				RouteTimeoutPolicy: RouteTimeoutPolicy{
+					ResponseTimeout: timeout.DurationSetting(time.Second * 10),
+				},
+			},
+			want:     ref.To(timeout.DurationSetting(time.Second * 20)),
+			wantBool: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			validCond := &contour_api_v1.DetailedCondition{}
+			gotBool, got := determineExternalAuthTimeout(tc.responseTimeout, validCond, tc.ext)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantBool, gotBool)
+			require.Equal(t, tc.wantValidCond, validCond)
+		})
+	}
+}
+
+func TestToIPFilterRule(t *testing.T) {
+	tests := map[string]struct {
+		allowPolicy       []contour_api_v1.IPFilterPolicy
+		denyPolicy        []contour_api_v1.IPFilterPolicy
+		want              []IPFilterRule
+		wantAllow         bool
+		wantErr           bool
+		wantConditionErrs []contour_api_v1.SubCondition
+	}{
+		"no ip policy": {
+			allowPolicy: nil,
+			denyPolicy:  []contour_api_v1.IPFilterPolicy{},
+			want:        nil,
+		},
+		"both allow and deny rules not supported": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1/24",
+			}},
+			denyPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2.2.2.2/24",
+			}},
+			wantErr: true,
+			wantConditionErrs: []contour_api_v1.SubCondition{{
+				Type:    "IPFilterError",
+				Status:  "True",
+				Reason:  "IncompatibleIPAddressFilters",
+				Message: "cannot specify both `ipAllowPolicy` and `ipDenyPolicy`",
+			}},
+		},
+		"reports invalid cidr ranges": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "!@#$!@#$",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2.2.2.2/512",
+			}},
+			wantErr: true,
+			wantConditionErrs: []contour_api_v1.SubCondition{
+				{
+					Type:    "IPFilterError",
+					Status:  "True",
+					Reason:  "InvalidCIDR",
+					Message: "!@#$!@#$ failed to parse: invalid CIDR address: !@#$!@#$/32",
+				},
+				{
+					Type:    "IPFilterError",
+					Status:  "True",
+					Reason:  "InvalidCIDR",
+					Message: "2.2.2.2/512 failed to parse: invalid CIDR address: 2.2.2.2/512",
+				},
+			},
+		},
+		"parses multiple allow rules": {
+			allowPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2001:db8::68/24",
+			}},
+			wantAllow: true,
+			want: []IPFilterRule{{
+				Remote: true,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("1.1.1.1").To4(),
+					Mask: net.CIDRMask(32, 32),
+				},
+			}, {
+				Remote: false,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("2001:d00::"),
+					Mask: net.CIDRMask(24, 128),
+				},
+			}},
+		},
+		"parses multiple deny rules": {
+			denyPolicy: []contour_api_v1.IPFilterPolicy{{
+				Source: contour_api_v1.IPFilterSourceRemote,
+				CIDR:   "1.1.1.1/24",
+			}, {
+				Source: contour_api_v1.IPFilterSourcePeer,
+				CIDR:   "2001:db8::68",
+			}},
+			wantAllow: false,
+			want: []IPFilterRule{{
+				Remote: true,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("1.1.1.0").To4(),
+					Mask: net.CIDRMask(24, 32),
+				},
+			}, {
+				Remote: false,
+				CIDR: net.IPNet{
+					IP:   net.ParseIP("2001:db8::68"),
+					Mask: net.CIDRMask(128, 128),
+				},
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cond := contour_api_v1.DetailedCondition{}
+			gotAllow, got, gotErr := toIPFilterRules(tc.allowPolicy, tc.denyPolicy, &cond)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantAllow, gotAllow)
+			require.Equal(t, tc.wantConditionErrs, cond.Errors)
 		})
 	}
 }

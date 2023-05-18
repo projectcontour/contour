@@ -91,38 +91,73 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 	// 	- one for all the HTTP vhost routes -- "ingress_http"
 	//	- one per svhost -- "https/<vhost fqdn>"
 	//	- one for fallback cert (if configured) -- "ingress_fallbackcert"
-	routeConfigs := map[string]*envoy_route_v3.RouteConfiguration{
-		ENVOY_HTTP_LISTENER: envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER),
+	routeConfigs := map[string]*envoy_route_v3.RouteConfiguration{}
+
+	// To maintain backwards compatibility, generate an "ingress_http" RouteConfiguration
+	// regardless of whether there are any vhosts if we are in static Listener mode.
+	if !root.HasDynamicListeners {
+		routeConfigs[ENVOY_HTTP_LISTENER] = envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER)
 	}
 
-	for vhost, routes := range root.GetVirtualHostRoutes() {
-		sortRoutes(routes)
-		routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts = append(routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts,
-			envoy_v3.VirtualHostAndRoutes(vhost, routes, false, nil))
-	}
+	for _, dagListener := range root.Listeners {
+		if len(dagListener.VirtualHosts) > 0 {
+			routeConfigName := httpRouteConfigName(dagListener)
 
-	for vhost, routes := range root.GetSecureVirtualHostRoutes() {
-		// Add secure vhost route config if not already present.
-		name := path.Join("https", vhost.VirtualHost.Name)
-		if _, ok := routeConfigs[name]; !ok {
-			routeConfigs[name] = envoy_v3.RouteConfiguration(name)
+			routeConfigs[routeConfigName] = envoy_v3.RouteConfiguration(routeConfigName)
+
+			for _, vhost := range dagListener.VirtualHosts {
+				if len(vhost.Routes) == 0 {
+					continue
+				}
+
+				var routes []*dag.Route
+				for _, route := range vhost.Routes {
+					routes = append(routes, route)
+				}
+				sortRoutes(routes)
+
+				routeConfigs[routeConfigName].VirtualHosts = append(routeConfigs[routeConfigName].VirtualHosts,
+					envoy_v3.VirtualHostAndRoutes(vhost, routes, false),
+				)
+			}
 		}
 
-		sortRoutes(routes)
-		routeConfigs[name].VirtualHosts = append(routeConfigs[name].VirtualHosts,
-			envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
+		if len(dagListener.SecureVirtualHosts) > 0 {
+			for _, vhost := range dagListener.SecureVirtualHosts {
+				if len(vhost.Routes) == 0 {
+					continue
+				}
 
-		// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
-		// When a request is received, the default TLS filterchain will accept the connection,
-		// and this routing table in RDS defines where the request proxies next.
-		if vhost.FallbackCertificate != nil {
-			// Add fallback route config if not already present.
-			if _, ok := routeConfigs[ENVOY_FALLBACK_ROUTECONFIG]; !ok {
-				routeConfigs[ENVOY_FALLBACK_ROUTECONFIG] = envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
+				// Add secure vhost route config if not already present.
+				routeConfigName := httpsRouteConfigName(dagListener, vhost.VirtualHost.Name)
+
+				if _, ok := routeConfigs[routeConfigName]; !ok {
+					routeConfigs[routeConfigName] = envoy_v3.RouteConfiguration(routeConfigName)
+				}
+
+				var routes []*dag.Route
+				for _, route := range vhost.Routes {
+					routes = append(routes, route)
+				}
+				sortRoutes(routes)
+
+				routeConfigs[routeConfigName].VirtualHosts = append(routeConfigs[routeConfigName].VirtualHosts,
+					envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
+
+				// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
+				// When a request is received, the default TLS filterchain will accept the connection,
+				// and this routing table in RDS defines where the request proxies next.
+				if vhost.FallbackCertificate != nil {
+					routeConfigName := fallbackCertRouteConfigName(dagListener)
+
+					if _, ok := routeConfigs[routeConfigName]; !ok {
+						routeConfigs[routeConfigName] = envoy_v3.RouteConfiguration(routeConfigName)
+					}
+
+					routeConfigs[routeConfigName].VirtualHosts = append(routeConfigs[routeConfigName].VirtualHosts,
+						envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
+				}
 			}
-
-			routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts,
-				envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
 		}
 	}
 
@@ -151,4 +186,23 @@ func sortRoutes(routes []*dag.Route) {
 	}
 
 	sort.Stable(sorter.For(routes))
+}
+
+func httpRouteConfigName(listener *dag.Listener) string {
+	if len(listener.RouteConfigName) > 0 {
+		return listener.RouteConfigName
+	}
+	return listener.Name
+}
+
+func httpsRouteConfigName(listener *dag.Listener, hostname string) string {
+	return path.Join(httpRouteConfigName(listener), hostname)
+}
+
+func fallbackCertRouteConfigName(listener *dag.Listener) string {
+	if len(listener.FallbackCertRouteConfigName) > 0 {
+		return listener.FallbackCertRouteConfigName
+	}
+
+	return path.Join(httpRouteConfigName(listener), "fallbackcert")
 }
