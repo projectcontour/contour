@@ -1503,34 +1503,35 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1beta1.B
 	return p.validateBackendObjectRef(backendRef.BackendObjectReference, "Spec.Rules.BackendRef", routeKind, routeNamespace)
 }
 
+func resolvedRefsFalse(reason gatewayapi_v1beta1.RouteConditionReason, msg string) metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+		Status:  metav1.ConditionFalse,
+		Reason:  string(reason),
+		Message: msg,
+	}
+}
+
 // validateBackendObjectRef verifies that the specified BackendObjectReference
 // is valid. Returns a metav1.Condition for the route if any errors are detected.
 // As BackendObjectReference is used in multiple fields, the given field is used
 // to build the message in metav1.Condition.
 func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewayapi_v1beta1.BackendObjectReference, field string, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
-	resolvedRefsFalse := func(reason gatewayapi_v1beta1.RouteConditionReason, msg string) *metav1.Condition {
-		return &metav1.Condition{
-			Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
-			Status:  metav1.ConditionFalse,
-			Reason:  string(reason),
-			Message: msg,
-		}
-	}
 
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
-		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
 
 	if !(backendObjectRef.Kind != nil && *backendObjectRef.Kind == "Service") {
-		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
 	}
 
 	if backendObjectRef.Name == "" {
-		return nil, resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Name must be specified", field))
+		return nil, ref.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Name must be specified", field)))
 	}
 
 	if backendObjectRef.Port == nil {
-		return nil, resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Port must be specified", field))
+		return nil, ref.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Port must be specified", field)))
 	}
 
 	// If the backend is in a different namespace than the route, then we need to
@@ -1549,7 +1550,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 				name:      string(backendObjectRef.Name),
 			},
 		) {
-			return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field))
+			return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field)))
 		}
 	}
 
@@ -1562,7 +1563,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 
 	service, err := p.dag.EnsureService(meta, int(*backendObjectRef.Port), int(*backendObjectRef.Port), p.source, p.EnableExternalNameService)
 	if err != nil {
-		return nil, resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
 	return service, nil
