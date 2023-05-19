@@ -22,15 +22,16 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -274,9 +275,25 @@ var _ = Describe("When upgrading", func() {
 				By("deploying updated provisioner")
 				require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
 
-				By("waiting for Gateway to upgrade")
-				time.Sleep(3 * time.Minute)
-				// TODO use similar logic to WaitForContourDeploymentUpdated, WaitForEnvoyDaemonSetUpdated
+				By("waiting for Gateway's Contour deployment to upgrade")
+				deployment := &appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      fmt.Sprintf("contour-%s", gateway.Name),
+					},
+				}
+				require.NoError(t, f.Client.Get(context.Background(), k8s.NamespacedNameOf(deployment), deployment))
+				require.NoError(t, e2e.WaitForContourDeploymentUpdated(deployment, f.Client, "ghcr.io/projectcontour/contour:main"))
+
+				By("waiting for Gateway's Envoy daemonset to upgrade")
+				daemonset := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      fmt.Sprintf("envoy-%s", gateway.Name),
+					},
+				}
+				require.NoError(t, f.Client.Get(context.Background(), k8s.NamespacedNameOf(daemonset), daemonset))
+				require.NoError(t, e2e.WaitForEnvoyDaemonSetUpdated(daemonset, f.Client, "ghcr.io/projectcontour/contour:main"))
 
 				By("ensuring app is still routable")
 				checkRoutability(appHost)
