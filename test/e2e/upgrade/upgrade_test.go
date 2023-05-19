@@ -283,7 +283,7 @@ var _ = Describe("When upgrading", func() {
 					},
 				}
 				require.NoError(t, f.Client.Get(context.Background(), k8s.NamespacedNameOf(deployment), deployment))
-				require.NoError(t, e2e.WaitForContourDeploymentUpdated(deployment, f.Client, "ghcr.io/projectcontour/contour:main"))
+				require.NoError(t, e2e.WaitForContourDeploymentUpdated(deployment, f.Client, os.Getenv("CONTOUR_E2E_IMAGE")))
 
 				By("waiting for Gateway's Envoy daemonset to upgrade")
 				daemonset := &appsv1.DaemonSet{
@@ -293,7 +293,7 @@ var _ = Describe("When upgrading", func() {
 					},
 				}
 				require.NoError(t, f.Client.Get(context.Background(), k8s.NamespacedNameOf(daemonset), daemonset))
-				require.NoError(t, e2e.WaitForEnvoyDaemonSetUpdated(daemonset, f.Client, "ghcr.io/projectcontour/contour:main"))
+				require.NoError(t, e2e.WaitForEnvoyDaemonSetUpdated(daemonset, f.Client, os.Getenv("CONTOUR_E2E_IMAGE")))
 
 				By("ensuring app is still routable")
 				checkRoutability(appHost)
