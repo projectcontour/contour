@@ -56,12 +56,12 @@ func WaitForEnvoyDaemonSetUpdated(daemonset *appsv1.DaemonSet, cli client.Client
 			return false, err
 		}
 
-		updatedPods := int(daemonset.Status.DesiredNumberScheduled)
+		updatedPods := int(ds.Status.DesiredNumberScheduled)
 		if len(daemonset.Spec.Template.Spec.Containers) > 1 {
 			updatedPods = getPodsUpdatedWithContourImage(ctx, labelSelectAppEnvoy, daemonset.Namespace, image, cli)
 		}
-		return updatedPods == int(daemonset.Status.DesiredNumberScheduled) &&
-			daemonset.Status.NumberReady > 0, nil
+		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
+			ds.Status.NumberReady > 0, nil
 	}
 	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
