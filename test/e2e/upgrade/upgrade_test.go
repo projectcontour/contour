@@ -175,7 +175,7 @@ var _ = Describe("When upgrading", func() {
 				},
 			}
 
-			f.Client.Delete(context.Background(), gc)
+			require.NoError(f.T(), f.Client.Delete(context.Background(), gc))
 		})
 
 		f.NamespacedTest("provisioner-upgrade-test", func(namespace string) {
