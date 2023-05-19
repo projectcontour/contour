@@ -341,7 +341,7 @@ load-contour-image-kind: ## Load Contour image from building working source or p
 	./test/scripts/kind-load-contour-image.sh
 
 .PHONY: upgrade
-upgrade: | load-contour-image-kind run-upgrade cleanup-kind ## Run upgrade tests against a real k8s cluster
+upgrade: | setup-kind-cluster load-contour-image-kind run-upgrade cleanup-kind ## Run upgrade tests against a real k8s cluster
 
 .PHONY: run-upgrade
 run-upgrade:
