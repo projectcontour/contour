@@ -57,9 +57,7 @@ var _ = BeforeSuite(func() {
 var _ = Describe("When upgrading", func() {
 	Describe("Contour", func() {
 		BeforeEach(func() {
-			cmd := exec.Command("make", "install-contour-release")
-			cmd.Dir = "../../.."
-
+			cmd := exec.Command("../../scripts/install-contour-release.sh", contourUpgradeFromVersion)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			require.NoError(f.T(), err)
 
@@ -141,9 +139,7 @@ var _ = Describe("When upgrading", func() {
 		const gatewayClassName = "upgrade-gc"
 
 		BeforeEach(func() {
-			cmd := exec.Command("make", "install-provisioner-release")
-			cmd.Dir = "../../.."
-
+			cmd := exec.Command("../../scripts/install-provisioner-release.sh", contourUpgradeFromVersion)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			require.NoError(f.T(), err)
 
