@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -38,50 +41,65 @@ var (
 )
 
 func TestUpgrade(t *testing.T) {
+	RegisterFailHandler(Fail)
 	RunSpecs(t, "Upgrade Suite")
 }
 
-var _ = BeforeSuite(func() {
-	contourUpgradeFromVersion = os.Getenv("CONTOUR_UPGRADE_FROM_VERSION")
-	require.NotEmpty(f.T(), contourUpgradeFromVersion, "CONTOUR_UPGRADE_FROM_VERSION environment variable not supplied")
-	By("Testing Contour upgrade from " + contourUpgradeFromVersion)
+var _ = Describe("When upgrading", func() {
+	Describe("Contour", func() {
+		BeforeEach(func() {
+			contourUpgradeFromVersion = os.Getenv("CONTOUR_UPGRADE_FROM_VERSION")
+			require.NotEmpty(f.T(), contourUpgradeFromVersion, "CONTOUR_UPGRADE_FROM_VERSION environment variable not supplied")
+			By("Testing Contour upgrade from " + contourUpgradeFromVersion)
 
-	// We should be running in a multi-node cluster with a proper load
-	// balancer, so fetch load balancer ip to make requests to.
-	require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), f.Deployment.EnvoyService))
-	require.Greater(f.T(), len(f.Deployment.EnvoyService.Status.LoadBalancer.Ingress), 0)
-	require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP)
-	f.HTTP.HTTPURLBase = "http://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
-	f.HTTP.HTTPSURLBase = "https://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
-})
+			cmd := exec.Command("make", "install-contour-release")
+			cmd.Dir = "../../.."
 
-var _ = Describe("upgrading Contour", func() {
-	const appHost = "upgrade-echo.test.com"
+			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			require.NoError(f.T(), err)
 
-	f.NamespacedTest("contour-upgrade-test", func(namespace string) {
-		Specify("applications remain routable after the upgrade", func() {
-			By("deploying an app")
-			f.Fixtures.Echo.DeployN(namespace, "echo", 2)
-			p := &contourv1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: namespace,
-					Name:      "echo",
-				},
-				Spec: contourv1.HTTPProxySpec{
-					VirtualHost: &contourv1.VirtualHost{
-						Fqdn: appHost,
+			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
+
+			// We should be running in a multi-node cluster with a proper load
+			// balancer, so fetch load balancer ip to make requests to.
+			require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), f.Deployment.EnvoyService))
+			require.Greater(f.T(), len(f.Deployment.EnvoyService.Status.LoadBalancer.Ingress), 0)
+			require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP)
+			f.HTTP.HTTPURLBase = "http://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
+			f.HTTP.HTTPSURLBase = "https://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
+		})
+
+		AfterEach(func() {
+			require.NoError(f.T(), f.Deployment.DeleteResourcesForInclusterContour())
+		})
+
+		const appHost = "upgrade-echo.test.com"
+
+		f.NamespacedTest("contour-upgrade-test", func(namespace string) {
+			Specify("applications remain routable after the upgrade", func() {
+				By("deploying an app")
+				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
+				p := &contourv1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "echo",
 					},
-					Routes: []contourv1.Route{
-						{
-							Services: []contourv1.Service{
-								{
-									Name: "echo",
-									Port: 80,
-									ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-										Set: []contourv1.HeaderValue{
-											{
-												Name:  "X-Envoy-Response-Flags",
-												Value: "%RESPONSE_FLAGS%",
+					Spec: contourv1.HTTPProxySpec{
+						VirtualHost: &contourv1.VirtualHost{
+							Fqdn: appHost,
+						},
+						Routes: []contourv1.Route{
+							{
+								Services: []contourv1.Service{
+									{
+										Name: "echo",
+										Port: 80,
+										ResponseHeadersPolicy: &contourv1.HeadersPolicy{
+											Set: []contourv1.HeaderValue{
+												{
+													Name:  "X-Envoy-Response-Flags",
+													Value: "%RESPONSE_FLAGS%",
+												},
 											},
 										},
 									},
@@ -89,28 +107,28 @@ var _ = Describe("upgrading Contour", func() {
 							},
 						},
 					},
-				},
-			}
-			require.NoError(f.T(), f.Client.Create(context.TODO(), p))
+				}
+				require.NoError(f.T(), f.Client.Create(context.TODO(), p))
 
-			By("ensuring it is routable")
-			checkRoutability(appHost)
+				By("ensuring it is routable")
+				checkRoutability(appHost)
 
-			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
-			require.NoError(f.T(), err)
+				poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
+				require.NoError(f.T(), err)
 
-			By("deploying updated contour resources")
-			require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
+				By("deploying updated contour resources")
+				require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 
-			By("ensuring app is still routable")
-			checkRoutability(appHost)
+				By("ensuring app is still routable")
+				checkRoutability(appHost)
 
-			poller.Stop()
-			totalRequests, successfulRequests := poller.Results()
-			fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
-			require.Greater(f.T(), totalRequests, uint(0))
-			successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
-			require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
+				poller.Stop()
+				totalRequests, successfulRequests := poller.Results()
+				fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+				require.Greater(f.T(), totalRequests, uint(0))
+				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
+				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
+			})
 		})
 	})
 })
