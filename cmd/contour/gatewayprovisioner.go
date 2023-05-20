@@ -132,13 +132,14 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 	}
 
 	mgr, err := ctrl.NewManager(restConfig, manager.Options{
-		Scheme:                     scheme,
-		LeaderElection:             provisionerConfig.leaderElection,
-		LeaderElectionResourceLock: "leases",
-		LeaderElectionID:           provisionerConfig.leaderElectionID,
-		LeaderElectionNamespace:    provisionerConfig.leaderElectionNamespace,
-		MetricsBindAddress:         provisionerConfig.metricsBindAddress,
-		Logger:                     ctrl.Log.WithName("contour-gateway-provisioner"),
+		Scheme:                        scheme,
+		LeaderElection:                provisionerConfig.leaderElection,
+		LeaderElectionResourceLock:    "leases",
+		LeaderElectionID:              provisionerConfig.leaderElectionID,
+		LeaderElectionNamespace:       provisionerConfig.leaderElectionNamespace,
+		LeaderElectionReleaseOnCancel: true,
+		MetricsBindAddress:            provisionerConfig.metricsBindAddress,
+		Logger:                        ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)

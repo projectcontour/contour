@@ -47,7 +47,6 @@ import (
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -60,6 +59,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -275,10 +275,10 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		return nil, fmt.Errorf("unable to set up controller manager: %w", err)
 	}
 
-	// Set up Prometheus registry and register base metrics.
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	registry.MustRegister(collectors.NewGoCollector())
+	// Use the controller-runtime registry to get the benefit of the
+	// metrics collected by that library (which includes process and Go
+	// statistics).
+	registry := controller_runtime_metrics.Registry.(*prometheus.Registry)
 
 	return &Server{
 		log:        log,
