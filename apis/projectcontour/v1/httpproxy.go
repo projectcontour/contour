@@ -73,7 +73,7 @@ type MatchCondition struct {
 	Exact string `json:"exact,omitempty"`
 
 	// Regex defines a regex match for a request.
-	// Cannot be defined in included HTTPProxies
+	// Cannot be defined in include MatchConditions
 	// +optional
 	Regex string `json:"regex,omitempty"`
 

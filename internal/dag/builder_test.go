@@ -13980,28 +13980,12 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.valid.regexpath.com",
 							routeClusterRegex("/foo/regex/.*",
 								&Cluster{
-									Upstream: &Service{
-										Weighted: WeightedService{
-											Weight:           1,
-											ServiceName:      s1.Name,
-											ServiceNamespace: s1.Namespace,
-											ServicePort:      s1.Spec.Ports[0],
-											HealthPort:       s1.Spec.Ports[0],
-										},
-									},
+									Upstream: service(s1),
 								},
 							),
 							routeCluster("/bar/prefix",
 								&Cluster{
-									Upstream: &Service{
-										Weighted: WeightedService{
-											Weight:           1,
-											ServiceName:      s2.Name,
-											ServiceNamespace: s2.Namespace,
-											ServicePort:      s2.Spec.Ports[0],
-											HealthPort:       s2.Spec.Ports[0],
-										},
-									},
+									Upstream: service(s2),
 								},
 							),
 						),

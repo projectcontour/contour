@@ -90,7 +90,7 @@ Prefix conditions **must** start with a `/` if they are present.
 
 Paths defined are matched using exact conditions.
 Up to one exact condition may be present in any condition block. Any condition block can
-either have a  regex condition, exact condition or prefix condition, but not multiple together. Exact conditions are
+either have a regex condition, exact condition or prefix condition, but not multiple together. Exact conditions are
 only allowed in route match conditions and not in include match conditions.
 
 Exact conditions **must** start with a `/` if they are present.

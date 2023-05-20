@@ -165,6 +165,14 @@ func TestPathMatchCondition(t *testing.T) {
 			}},
 			want: &RegexMatchCondition{Regex: "/.*"},
 		},
+		"regex-prefix with trailing slash match conditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/api/",
+			}, {
+				Regex: "/v[0-9]+",
+			}},
+			want: &RegexMatchCondition{Regex: "/api/v[0-9]+"},
+		},
 		"header condition": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Header: new(contour_api_v1.HeaderMatchCondition),
@@ -900,9 +908,15 @@ func TestRegexMatchConditionsValid(t *testing.T) {
 			}},
 			want: false,
 		},
-		"invalid regex": {
+		"invalid regex, no slash": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Regex: "234",
+			}},
+			want: false,
+		},
+		"invalid regex, ": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/[a-zA-Z+",
 			}},
 			want: false,
 		},

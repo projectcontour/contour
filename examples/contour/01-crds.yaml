@@ -4598,7 +4598,7 @@ spec:
                             type: object
                           regex:
                             description: Regex defines a regex match for a request.
-                              Cannot be defined in included HTTPProxies
+                              Cannot be defined in include MatchConditions
                             type: string
                         type: object
                       type: array
@@ -4754,7 +4754,7 @@ spec:
                             type: object
                           regex:
                             description: Regex defines a regex match for a request.
-                              Cannot be defined in included HTTPProxies
+                              Cannot be defined in include MatchConditions
                             type: string
                         type: object
                       type: array
