@@ -35,6 +35,9 @@ const (
 
 	// EnvoyMetricsPort is the network port number of Envoy's metrics listener.
 	EnvoyMetricsPort = int32(8002)
+
+	// EnvoyHealthPort is the network port number of Envoy's health listener.
+	EnvoyHealthPort = 8002
 )
 
 // NewUnprivilegedPodSecurity makes a a non-root PodSecurityContext object
