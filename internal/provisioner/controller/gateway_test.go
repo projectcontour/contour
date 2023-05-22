@@ -355,6 +355,9 @@ func TestGatewayReconcile(t *testing.T) {
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
 								DisableMergeSlashes: ref.To(true),
 							},
+							Metrics: &contourv1alpha1.MetricsConfig{
+								Port: 8003,
+							},
 						},
 					},
 				},
@@ -401,6 +404,9 @@ func TestGatewayReconcile(t *testing.T) {
 						Service: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Namespace,
 							Name:      "envoy-" + gw.Name,
+						},
+						Metrics: &contourv1alpha1.MetricsConfig{
+							Port: 8003,
 						},
 					},
 				}
