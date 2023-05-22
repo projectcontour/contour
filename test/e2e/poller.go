@@ -41,7 +41,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 		cancel: cancel,
 	}
 
-	// Disable keep-alives so connections don't stay
+	// Disable keep alives so connections don't stay
 	// open to terminating Envoy pods, which would cause
 	// the shutdown-manager to block waiting for the
 	// connections to drain. This lets the upgrade test
