@@ -693,7 +693,9 @@ func FilterChains(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.Fil
 func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
 	var target string
 
-	if strings.HasPrefix(fqdn, "*.") {
+	// fqdn can be "*" to match all hostnames or a wildcard prefix
+	// e.g. "*.foo"
+	if strings.HasPrefix(fqdn, "*") {
 		// When we have a wildcard hostname, we will have already matched
 		// the filter chain on an SNI that falls under the wildcard so we
 		// retrieve that and make sure the :authority header matches.
