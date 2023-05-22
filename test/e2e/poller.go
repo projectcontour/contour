@@ -41,8 +41,17 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 		cancel: cancel,
 	}
 
+	// Disable keep alives so connections don't stay
+	// open to terminating Envoy pods, which would cause
+	// the shutdown-manager to block waiting for the
+	// connections to drain. This lets the upgrade test
+	// be more efficient.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+
 	client := &http.Client{
-		Timeout: 100 * time.Millisecond,
+		Transport: transport,
+		Timeout:   100 * time.Millisecond,
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
 	if err != nil {
