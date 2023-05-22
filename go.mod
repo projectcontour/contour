@@ -21,7 +21,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/imdario/mergo v0.3.15
 	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/projectcontour/yages v0.1.0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/client_model v0.4.0
