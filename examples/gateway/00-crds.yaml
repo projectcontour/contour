@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -435,7 +435,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -811,11 +811,12 @@ spec:
                               namespace:
                                 description: "Namespace is the namespace of the backend.
                                   When unspecified, the local namespace is inferred.
-                                  \n Note that when a namespace is specified, a ReferenceGrant
-                                  object is required in the referent namespace to
-                                  allow that namespace's owner to accept the reference.
-                                  See the ReferenceGrant documentation for details.
-                                  \n Support: Core"
+                                  \n Note that when a namespace different than the
+                                  local namespace is specified, a ReferenceGrant object
+                                  is required in the referent namespace to allow that
+                                  namespace's owner to accept the reference. See the
+                                  ReferenceGrant documentation for details. \n Support:
+                                  Core"
                                 maxLength: 63
                                 minLength: 1
                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1017,8 +1018,8 @@ spec:
                   description: ListenerStatus is the status associated with a Listener.
                   properties:
                     attachedRoutes:
-                      description: AttachedRoutes represents the total number of Routes
-                        that have been successfully attached to this Listener.
+                      description: AttachedRoutes represents the total number of accepted
+                        Routes that have been successfully attached to this Listener.
                       format: int32
                       type: integer
                     conditions:
@@ -1513,11 +1514,12 @@ spec:
                               namespace:
                                 description: "Namespace is the namespace of the backend.
                                   When unspecified, the local namespace is inferred.
-                                  \n Note that when a namespace is specified, a ReferenceGrant
-                                  object is required in the referent namespace to
-                                  allow that namespace's owner to accept the reference.
-                                  See the ReferenceGrant documentation for details.
-                                  \n Support: Core"
+                                  \n Note that when a namespace different than the
+                                  local namespace is specified, a ReferenceGrant object
+                                  is required in the referent namespace to allow that
+                                  namespace's owner to accept the reference. See the
+                                  ReferenceGrant documentation for details. \n Support:
+                                  Core"
                                 maxLength: 63
                                 minLength: 1
                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1719,8 +1721,8 @@ spec:
                   description: ListenerStatus is the status associated with a Listener.
                   properties:
                     attachedRoutes:
-                      description: AttachedRoutes represents the total number of Routes
-                        that have been successfully attached to this Listener.
+                      description: AttachedRoutes represents the total number of accepted
+                        Routes that have been successfully attached to this Listener.
                       format: int32
                       type: integer
                     conditions:
@@ -1871,7 +1873,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -2369,7 +2371,8 @@ spec:
                                           description: "Namespace is the namespace
                                             of the backend. When unspecified, the
                                             local namespace is inferred. \n Note that
-                                            when a namespace is specified, a ReferenceGrant
+                                            when a namespace different than the local
+                                            namespace is specified, a ReferenceGrant
                                             object is required in the referent namespace
                                             to allow that namespace's owner to accept
                                             the reference. See the ReferenceGrant
@@ -2576,11 +2579,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -2834,11 +2837,12 @@ spec:
                                   namespace:
                                     description: "Namespace is the namespace of the
                                       backend. When unspecified, the local namespace
-                                      is inferred. \n Note that when a namespace is
-                                      specified, a ReferenceGrant object is required
-                                      in the referent namespace to allow that namespace's
-                                      owner to accept the reference. See the ReferenceGrant
-                                      documentation for details. \n Support: Core"
+                                      is inferred. \n Note that when a namespace different
+                                      than the local namespace is specified, a ReferenceGrant
+                                      object is required in the referent namespace
+                                      to allow that namespace's owner to accept the
+                                      reference. See the ReferenceGrant documentation
+                                      for details. \n Support: Core"
                                     maxLength: 63
                                     minLength: 1
                                     pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -3369,7 +3373,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -3419,11 +3423,13 @@ spec:
             properties:
               hostnames:
                 description: "Hostnames defines a set of hostname that should match
-                  against the HTTP Host header to select a HTTPRoute to process the
-                  request. This matches the RFC 1123 definition of a hostname with
-                  2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname may
-                  be prefixed with a wildcard label (`*.`). The wildcard label must
-                  appear by itself as the first label. \n If a hostname is specified
+                  against the HTTP Host header to select a HTTPRoute used to process
+                  the request. Implementations MUST ignore any port value specified
+                  in the HTTP Host header while performing a match. \n Valid values
+                  for Hostnames are determined by RFC 1123 definition of a hostname
+                  with 2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                  may be prefixed with a wildcard label (`*.`). The wildcard label
+                  must appear by itself as the first label. \n If a hostname is specified
                   by both the Listener and HTTPRoute, there must be at least one intersecting
                   hostname for the HTTPRoute to be attached to the Listener. For example:
                   \n * A Listener with `test.example.com` as the hostname matches
@@ -3851,7 +3857,8 @@ spec:
                                           description: "Namespace is the namespace
                                             of the backend. When unspecified, the
                                             local namespace is inferred. \n Note that
-                                            when a namespace is specified, a ReferenceGrant
+                                            when a namespace different than the local
+                                            namespace is specified, a ReferenceGrant
                                             object is required in the referent namespace
                                             to allow that namespace's owner to accept
                                             the reference. See the ReferenceGrant
@@ -4247,11 +4254,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -4511,11 +4518,12 @@ spec:
                                   namespace:
                                     description: "Namespace is the namespace of the
                                       backend. When unspecified, the local namespace
-                                      is inferred. \n Note that when a namespace is
-                                      specified, a ReferenceGrant object is required
-                                      in the referent namespace to allow that namespace's
-                                      owner to accept the reference. See the ReferenceGrant
-                                      documentation for details. \n Support: Core"
+                                      is inferred. \n Note that when a namespace different
+                                      than the local namespace is specified, a ReferenceGrant
+                                      object is required in the referent namespace
+                                      to allow that namespace's owner to accept the
+                                      reference. See the ReferenceGrant documentation
+                                      for details. \n Support: Core"
                                     maxLength: 63
                                     minLength: 1
                                     pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -4871,21 +4879,21 @@ spec:
                         request. \n Proxy or Load Balancer routing configuration generated
                         from HTTPRoutes MUST prioritize matches based on the following
                         criteria, continuing on ties. Across all rules specified on
-                        applicable Routes, precedence must be given to the match with
-                        the largest number of: \n * Characters in a matching \"Exact\"
-                        path match * Characters in a matching \"Prefix\" path match
-                        * Header matches. * Query param matches. \n Note: The precedence
-                        of RegularExpression path matches are implementation-specific.
-                        \n If ties still exist across multiple Routes, matching precedence
-                        MUST be determined in order of the following criteria, continuing
-                        on ties: \n * The oldest Route based on creation timestamp.
-                        * The Route appearing first in alphabetical order by \"{namespace}/{name}\".
-                        \n If ties still exist within an HTTPRoute, matching precedence
-                        MUST be granted to the FIRST matching rule (in list order)
-                        with a match meeting the above criteria. \n When no rules
-                        matching a request have been successfully attached to the
-                        parent a request is coming from, a HTTP 404 status code MUST
-                        be returned."
+                        applicable Routes, precedence must be given to the match having:
+                        \n * \"Exact\" path match. * \"Prefix\" path match with largest
+                        number of characters. * Method match. * Largest number of
+                        header matches. * Largest number of query param matches. \n
+                        Note: The precedence of RegularExpression path matches are
+                        implementation-specific. \n If ties still exist across multiple
+                        Routes, matching precedence MUST be determined in order of
+                        the following criteria, continuing on ties: \n * The oldest
+                        Route based on creation timestamp. * The Route appearing first
+                        in alphabetical order by \"{namespace}/{name}\". \n If ties
+                        still exist within an HTTPRoute, matching precedence MUST
+                        be granted to the FIRST matching rule (in list order) with
+                        a match meeting the above criteria. \n When no rules matching
+                        a request have been successfully attached to the parent a
+                        request is coming from, a HTTP 404 status code MUST be returned."
                       items:
                         description: "HTTPRouteMatch defines the predicate used to
                           match requests to a given action. Multiple match types are
@@ -5337,11 +5345,13 @@ spec:
             properties:
               hostnames:
                 description: "Hostnames defines a set of hostname that should match
-                  against the HTTP Host header to select a HTTPRoute to process the
-                  request. This matches the RFC 1123 definition of a hostname with
-                  2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname may
-                  be prefixed with a wildcard label (`*.`). The wildcard label must
-                  appear by itself as the first label. \n If a hostname is specified
+                  against the HTTP Host header to select a HTTPRoute used to process
+                  the request. Implementations MUST ignore any port value specified
+                  in the HTTP Host header while performing a match. \n Valid values
+                  for Hostnames are determined by RFC 1123 definition of a hostname
+                  with 2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
+                  may be prefixed with a wildcard label (`*.`). The wildcard label
+                  must appear by itself as the first label. \n If a hostname is specified
                   by both the Listener and HTTPRoute, there must be at least one intersecting
                   hostname for the HTTPRoute to be attached to the Listener. For example:
                   \n * A Listener with `test.example.com` as the hostname matches
@@ -5769,7 +5779,8 @@ spec:
                                           description: "Namespace is the namespace
                                             of the backend. When unspecified, the
                                             local namespace is inferred. \n Note that
-                                            when a namespace is specified, a ReferenceGrant
+                                            when a namespace different than the local
+                                            namespace is specified, a ReferenceGrant
                                             object is required in the referent namespace
                                             to allow that namespace's owner to accept
                                             the reference. See the ReferenceGrant
@@ -6165,11 +6176,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -6429,11 +6440,12 @@ spec:
                                   namespace:
                                     description: "Namespace is the namespace of the
                                       backend. When unspecified, the local namespace
-                                      is inferred. \n Note that when a namespace is
-                                      specified, a ReferenceGrant object is required
-                                      in the referent namespace to allow that namespace's
-                                      owner to accept the reference. See the ReferenceGrant
-                                      documentation for details. \n Support: Core"
+                                      is inferred. \n Note that when a namespace different
+                                      than the local namespace is specified, a ReferenceGrant
+                                      object is required in the referent namespace
+                                      to allow that namespace's owner to accept the
+                                      reference. See the ReferenceGrant documentation
+                                      for details. \n Support: Core"
                                     maxLength: 63
                                     minLength: 1
                                     pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -6789,21 +6801,21 @@ spec:
                         request. \n Proxy or Load Balancer routing configuration generated
                         from HTTPRoutes MUST prioritize matches based on the following
                         criteria, continuing on ties. Across all rules specified on
-                        applicable Routes, precedence must be given to the match with
-                        the largest number of: \n * Characters in a matching \"Exact\"
-                        path match * Characters in a matching \"Prefix\" path match
-                        * Header matches. * Query param matches. \n Note: The precedence
-                        of RegularExpression path matches are implementation-specific.
-                        \n If ties still exist across multiple Routes, matching precedence
-                        MUST be determined in order of the following criteria, continuing
-                        on ties: \n * The oldest Route based on creation timestamp.
-                        * The Route appearing first in alphabetical order by \"{namespace}/{name}\".
-                        \n If ties still exist within an HTTPRoute, matching precedence
-                        MUST be granted to the FIRST matching rule (in list order)
-                        with a match meeting the above criteria. \n When no rules
-                        matching a request have been successfully attached to the
-                        parent a request is coming from, a HTTP 404 status code MUST
-                        be returned."
+                        applicable Routes, precedence must be given to the match having:
+                        \n * \"Exact\" path match. * \"Prefix\" path match with largest
+                        number of characters. * Method match. * Largest number of
+                        header matches. * Largest number of query param matches. \n
+                        Note: The precedence of RegularExpression path matches are
+                        implementation-specific. \n If ties still exist across multiple
+                        Routes, matching precedence MUST be determined in order of
+                        the following criteria, continuing on ties: \n * The oldest
+                        Route based on creation timestamp. * The Route appearing first
+                        in alphabetical order by \"{namespace}/{name}\". \n If ties
+                        still exist within an HTTPRoute, matching precedence MUST
+                        be granted to the FIRST matching rule (in list order) with
+                        a match meeting the above criteria. \n When no rules matching
+                        a request have been successfully attached to the parent a
+                        request is coming from, a HTTP 404 status code MUST be returned."
                       items:
                         description: "HTTPRouteMatch defines the predicate used to
                           match requests to a given action. Multiple match types are
@@ -7235,7 +7247,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -7514,7 +7526,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -7696,10 +7708,10 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferenceGrant object is required
-                          in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferenceGrant documentation
-                          for details."
+                          namespace different than the local namespace is specified,
+                          a ReferenceGrant object is required in the referent namespace
+                          to allow that namespace's owner to accept the reference.
+                          See the ReferenceGrant documentation for details."
                         properties:
                           group:
                             default: ""
@@ -7734,11 +7746,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -8041,7 +8053,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -8272,10 +8284,10 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferenceGrant object is required
-                          in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferenceGrant documentation
-                          for details."
+                          namespace different than the local namespace is specified,
+                          a ReferenceGrant object is required in the referent namespace
+                          to allow that namespace's owner to accept the reference.
+                          See the ReferenceGrant documentation for details."
                         properties:
                           group:
                             default: ""
@@ -8310,11 +8322,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -8617,7 +8629,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.0-rc2
+    gateway.networking.k8s.io/bundle-version: v0.7.0
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -8799,10 +8811,10 @@ spec:
                       items:
                         description: "BackendRef defines how a Route should forward
                           a request to a Kubernetes resource. \n Note that when a
-                          namespace is specified, a ReferenceGrant object is required
-                          in the referent namespace to allow that namespace's owner
-                          to accept the reference. See the ReferenceGrant documentation
-                          for details."
+                          namespace different than the local namespace is specified,
+                          a ReferenceGrant object is required in the referent namespace
+                          to allow that namespace's owner to accept the reference.
+                          See the ReferenceGrant documentation for details."
                         properties:
                           group:
                             default: ""
@@ -8837,11 +8849,11 @@ spec:
                           namespace:
                             description: "Namespace is the namespace of the backend.
                               When unspecified, the local namespace is inferred. \n
-                              Note that when a namespace is specified, a ReferenceGrant
-                              object is required in the referent namespace to allow
-                              that namespace's owner to accept the reference. See
-                              the ReferenceGrant documentation for details. \n Support:
-                              Core"
+                              Note that when a namespace different than the local
+                              namespace is specified, a ReferenceGrant object is required
+                              in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. \n Support: Core"
                             maxLength: 63
                             minLength: 1
                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
