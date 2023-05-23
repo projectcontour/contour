@@ -17,8 +17,8 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -29,6 +29,7 @@ import (
 type AppPoller struct {
 	cancel             context.CancelFunc
 	wg                 *sync.WaitGroup
+	logger             *log.Logger
 	totalRequests      uint
 	successfulRequests uint
 }
@@ -39,6 +40,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 	poller := &AppPoller{
 		wg:     new(sync.WaitGroup),
 		cancel: cancel,
+		logger: log.New(errorWriter, "", log.LstdFlags|log.Lmicroseconds|log.LUTC),
 	}
 
 	// Disable keep alives so connections don't stay
@@ -62,6 +64,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 	poller.wg.Add(1)
 	go func() {
 		defer poller.wg.Done()
+		poller.logger.Println("started app poller loop")
 		// Ignore error here since we know we are just polling until
 		// told to stop.
 		_ = wait.PollUntilContextCancel(ctx, 200*time.Millisecond, true, func(ctx context.Context) (bool, error) {
@@ -76,13 +79,13 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 			poller.totalRequests++
 			res, err := client.Do(req)
 			if err != nil {
-				fmt.Fprintln(errorWriter, "error making request:", err)
+				poller.logger.Printf("error making request #%d: %s\n", poller.totalRequests, err)
 				return false, nil
 			}
 			if res.StatusCode == expectedStatus {
 				poller.successfulRequests++
 			} else {
-				fmt.Fprintln(errorWriter, "unexpected status code:", res.StatusCode, "response flags:", res.Header["X-Envoy-Response-Flags"])
+				poller.logger.Printf("unexpected status code for request #%d: %d response flags: %v\n", poller.totalRequests, res.StatusCode, res.Header["X-Envoy-Response-Flags"])
 			}
 			return false, nil
 		})
@@ -92,6 +95,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 }
 
 func (p *AppPoller) Stop() {
+	defer p.logger.Println("stopped app poller")
 	p.cancel()
 	p.wg.Wait()
 }

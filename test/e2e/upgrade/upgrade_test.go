@@ -128,7 +128,7 @@ var _ = Describe("When upgrading", func() {
 
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
-				fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
 				require.Greater(f.T(), totalRequests, uint(0))
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
 				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
@@ -278,7 +278,7 @@ var _ = Describe("When upgrading", func() {
 
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
-				fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
 				require.Greater(f.T(), totalRequests, uint(0))
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
 				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
