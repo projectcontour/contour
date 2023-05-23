@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
+	"github.com/projectcontour/contour/internal/ref"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -303,6 +304,13 @@ func TestClusterIpServiceChanged(t *testing.T) {
 			expect: true,
 		},
 		{
+			description: "if ip family policy changed",
+			mutate: func(svc *corev1.Service) {
+				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
+			},
+			expect: true,
+		},
+		{
 			description: "if service type changed",
 			mutate: func(svc *corev1.Service) {
 				svc.Spec.Type = corev1.ServiceTypeLoadBalancer
@@ -429,6 +437,13 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 			expect: true,
 		},
 		{
+			description: "if ip family policy changed",
+			mutate: func(svc *corev1.Service) {
+				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
+			},
+			expect: true,
+		},
+		{
 			description: "if annotations have changed",
 			mutate: func(svc *corev1.Service) {
 				svc.Annotations = map[string]string{}
@@ -516,6 +531,13 @@ func TestNodePortServiceChanged(t *testing.T) {
 			description: "if the number of ports changed",
 			mutate: func(svc *corev1.Service) {
 				svc.Spec.Ports = append(svc.Spec.Ports, svc.Spec.Ports[0])
+			},
+			expect: true,
+		},
+		{
+			description: "if ip family policy changed",
+			mutate: func(svc *corev1.Service) {
+				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},

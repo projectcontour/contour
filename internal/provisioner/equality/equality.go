@@ -98,6 +98,11 @@ func ClusterIPServiceChanged(current, expected *corev1.Service) (*corev1.Service
 		changed = true
 	}
 
+	if !apiequality.Semantic.DeepEqual(current.Spec.IPFamilyPolicy, expected.Spec.IPFamilyPolicy) {
+		updated.Spec.IPFamilyPolicy = expected.Spec.IPFamilyPolicy
+		changed = true
+	}
+
 	if !apiequality.Semantic.DeepEqual(current.Spec.SessionAffinity, expected.Spec.SessionAffinity) {
 		updated.Spec.SessionAffinity = expected.Spec.SessionAffinity
 		changed = true
@@ -157,6 +162,11 @@ func LoadBalancerServiceChanged(current, expected *corev1.Service) (*corev1.Serv
 		changed = true
 	}
 
+	if !apiequality.Semantic.DeepEqual(current.Spec.IPFamilyPolicy, expected.Spec.IPFamilyPolicy) {
+		updated.Spec.IPFamilyPolicy = expected.Spec.IPFamilyPolicy
+		changed = true
+	}
+
 	if !apiequality.Semantic.DeepEqual(current.Spec.SessionAffinity, expected.Spec.SessionAffinity) {
 		updated.Spec.SessionAffinity = expected.Spec.SessionAffinity
 		changed = true
@@ -210,6 +220,11 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.ExternalTrafficPolicy, expected.Spec.ExternalTrafficPolicy) {
 		updated.Spec.ExternalTrafficPolicy = expected.Spec.ExternalTrafficPolicy
+		changed = true
+	}
+
+	if !apiequality.Semantic.DeepEqual(current.Spec.IPFamilyPolicy, expected.Spec.IPFamilyPolicy) {
+		updated.Spec.IPFamilyPolicy = expected.Spec.IPFamilyPolicy
 		changed = true
 	}
 

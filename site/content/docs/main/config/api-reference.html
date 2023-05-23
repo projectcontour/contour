@@ -7723,6 +7723,26 @@ and LoadBalancer IPs).</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>ipFamilyPolicy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#ipfamilypolicy-v1-core">
+Kubernetes core/v1.IPFamilyPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IPFamilyPolicy represents the dual-stack-ness requested or required by
+this Service. If there is no value provided, then this field will be set
+to SingleStack. Services can be &ldquo;SingleStack&rdquo; (a single IP family),
+&ldquo;PreferDualStack&rdquo; (two IP families on dual-stack configured clusters or
+a single IP family on single-stack clusters), or &ldquo;RequireDualStack&rdquo;
+(two IP families on dual-stack configured clusters, otherwise fail).</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>serviceAnnotations</code>
 <br>
 <em>

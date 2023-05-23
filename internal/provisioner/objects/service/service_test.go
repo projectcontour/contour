@@ -131,6 +131,15 @@ func checkServiceHasNoExternalTrafficPolicy(t *testing.T, svc *corev1.Service) {
 		t.Errorf("service has invalid external traffic policy type %s", svc.Spec.ExternalTrafficPolicy)
 	}
 }
+
+func checkServiceHasIPFamilyPolicy(t *testing.T, svc *corev1.Service, policy corev1.IPFamilyPolicy) {
+	t.Helper()
+
+	if *svc.Spec.IPFamilyPolicy != policy {
+		t.Errorf("service is missing ip family policy %s", policy)
+	}
+}
+
 func checkServiceHasLoadBalancerAddress(t *testing.T, svc *corev1.Service, address string) {
 	t.Helper()
 
@@ -174,6 +183,7 @@ func TestDesiredEnvoyService(t *testing.T) {
 	svc := DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, corev1.ServiceTypeNodePort)
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
+	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicySingleStack)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPPort)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPSPort)
 	checkServiceHasNodeport(t, svc, 30081)
@@ -186,18 +196,22 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasPortProtocol(t, svc, corev1.ProtocolTCP)
 
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = corev1.IPFamilyPolicyRequireDualStack
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasNoExternalTrafficPolicy(t, svc)
+	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicyRequireDualStack)
 
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
 	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
+	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = corev1.IPFamilyPolicyPreferDualStack
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, corev1.ServiceTypeLoadBalancer)
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeCluster)
+	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicyPreferDualStack)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Test proxy protocol for AWS Classic load balancer (when provider params are specified).

@@ -1029,6 +1029,7 @@ func TestGatewayReconcile(t *testing.T) {
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
 							Type:                  contourv1alpha1.NodePortServicePublishingType,
 							ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
+							IPFamilyPolicy:        corev1.IPFamilyPolicyPreferDualStack,
 							ServiceAnnotations: map[string]string{
 								"key-1": "val-1",
 								"key-2": "val-2",
@@ -1089,6 +1090,7 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
 				assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
+				assert.Equal(t, ref.To(corev1.IPFamilyPolicyPreferDualStack), svc.Spec.IPFamilyPolicy)
 				assert.Equal(t, corev1.ServiceTypeNodePort, svc.Spec.Type)
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])
