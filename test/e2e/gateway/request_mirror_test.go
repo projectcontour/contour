@@ -67,7 +67,7 @@ func testRequestMirrorRule(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 
 		// Wait for "echo-shadow" deployment to be available
 		require.Eventually(f.T(), func() bool {

@@ -58,7 +58,7 @@ func testTLSGateway(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 
 		route = &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
@@ -84,7 +84,7 @@ func testTLSGateway(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 
 		// Ensure http (insecure) request routes to echo-insecure.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

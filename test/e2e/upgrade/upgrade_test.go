@@ -34,7 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 var (
@@ -146,22 +146,15 @@ var _ = Describe("When upgrading", func() {
 
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
-			gc, ok := f.CreateGatewayClassAndWaitFor(&v1beta1.GatewayClass{
+			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: gatewayClassName,
 				},
-				Spec: v1beta1.GatewayClassSpec{
-					ControllerName: v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
 				},
-			}, func(gc *v1beta1.GatewayClass) bool {
-				for _, cond := range gc.Status.Conditions {
-					if cond.Type == string(v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
-						return true
-					}
-				}
+			}, e2e.GatewayClassAccepted)
 
-				return false
-			})
 			require.True(f.T(), ok)
 			require.NotNil(f.T(), gc)
 		})
@@ -169,7 +162,7 @@ var _ = Describe("When upgrading", func() {
 		AfterEach(func() {
 			require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
-			gc := &v1beta1.GatewayClass{
+			gc := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: gatewayClassName,
 				},
@@ -184,29 +177,24 @@ var _ = Describe("When upgrading", func() {
 
 				appHost := "upgrade.provisioner.projectcontour.io"
 
-				gateway, ok := f.CreateGatewayAndWaitFor(&v1beta1.Gateway{
+				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "upgrade-gateway",
 					},
-					Spec: v1beta1.GatewaySpec{
+					Spec: gatewayapi_v1beta1.GatewaySpec{
 						GatewayClassName: gatewayClassName,
-						Listeners: []v1beta1.Listener{
+						Listeners: []gatewayapi_v1beta1.Listener{
 							{
 								Name:     "http",
-								Port:     v1beta1.PortNumber(80),
-								Protocol: v1beta1.HTTPProtocolType,
-								Hostname: ref.To(v1beta1.Hostname(appHost)),
+								Port:     gatewayapi_v1beta1.PortNumber(80),
+								Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+								Hostname: ref.To(gatewayapi_v1beta1.Hostname(appHost)),
 							},
 						},
 					},
-				}, func(gw *v1beta1.Gateway) bool {
-					for _, cond := range gw.Status.Conditions {
-						if cond.Type == string(v1beta1.GatewayConditionProgrammed) && cond.Status == metav1.ConditionTrue {
-							return len(gw.Status.Addresses) > 0
-						}
-					}
-					return false
+				}, func(gw *gatewayapi_v1beta1.Gateway) bool {
+					return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 				})
 				require.True(t, ok)
 				require.NotNil(t, gateway)
@@ -215,36 +203,36 @@ var _ = Describe("When upgrading", func() {
 
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 
-				f.CreateHTTPRouteAndWaitFor(&v1beta1.HTTPRoute{
+				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
 					},
-					Spec: v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: v1beta1.CommonRouteSpec{
-							ParentRefs: []v1beta1.ParentReference{
-								{Name: v1beta1.ObjectName(gateway.Name)},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+								{Name: gatewayapi_v1beta1.ObjectName(gateway.Name)},
 							},
 						},
-						Rules: []v1beta1.HTTPRouteRule{
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 							{
-								BackendRefs: []v1beta1.HTTPBackendRef{
+								BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
 									{
-										BackendRef: v1beta1.BackendRef{
-											BackendObjectReference: v1beta1.BackendObjectReference{
-												Name: v1beta1.ObjectName("echo"),
-												Port: ref.To(v1beta1.PortNumber(80)),
+										BackendRef: gatewayapi_v1beta1.BackendRef{
+											BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
+												Name: gatewayapi_v1beta1.ObjectName("echo"),
+												Port: ref.To(gatewayapi_v1beta1.PortNumber(80)),
 											},
 										},
 									},
 								},
-								Filters: []v1beta1.HTTPRouteFilter{
+								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
-										Type: v1beta1.HTTPRouteFilterResponseHeaderModifier,
-										ResponseHeaderModifier: &v1beta1.HTTPHeaderFilter{
-											Set: []v1beta1.HTTPHeader{
+										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+											Set: []gatewayapi_v1beta1.HTTPHeader{
 												{
-													Name:  v1beta1.HTTPHeaderName("X-Envoy-Response-Flags"),
+													Name:  gatewayapi_v1beta1.HTTPHeaderName("X-Envoy-Response-Flags"),
 													Value: "%RESPONSE_FLAGS%",
 												},
 											},
@@ -254,17 +242,7 @@ var _ = Describe("When upgrading", func() {
 							},
 						},
 					},
-				}, func(route *v1beta1.HTTPRoute) bool {
-					if len(route.Status.Parents) != 1 {
-						return false
-					}
-					for _, cond := range route.Status.Parents[0].Conditions {
-						if cond.Type == string(v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
-							return true
-						}
-					}
-					return false
-				})
+				}, e2e.HTTPRouteAccepted)
 
 				By("ensuring it is routable")
 				checkRoutability(appHost)
