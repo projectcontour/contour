@@ -153,7 +153,7 @@ var _ = Describe("Gateway API", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
-		gatewayClassCond := gatewayClassValid
+		gatewayClassCond := e2e.GatewayClassAccepted
 		// If we're reconciling a specific Gateway,
 		// we don't expect GatewayClasses to be reconciled
 		// or become valid.
@@ -162,7 +162,7 @@ var _ = Describe("Gateway API", func() {
 		}
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
-		f.CreateGatewayAndWaitFor(contourGateway, gatewayProgrammed)
+		f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed)
 	})
 
 	AfterEach(func() {
@@ -356,56 +356,6 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
 	})
 })
-
-// httpRouteAccepted returns true if the route has a .status.conditions
-// entry of "Accepted: true".
-func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
-	if route == nil {
-		return false
-	}
-
-	for _, gw := range route.Status.Parents {
-		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1beta1.RouteConditionAccepted) && cond.Status == metav1.ConditionTrue {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// gatewayProgrammed returns true if the gateway has a .status.conditions
-// entry of "Programmed: true".
-func gatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
-	if gateway == nil {
-		return false
-	}
-
-	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionProgrammed) && cond.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
-}
-
-// gatewayClassValid returns true if the gateway has a .status.conditions
-// entry of Accepted: true".
-func gatewayClassValid(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
-	if gatewayClass == nil {
-		return false
-	}
-
-	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
-}
 
 func getRandomNumber() int64 {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(10000))

@@ -104,12 +104,12 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(nonMatching), nonMatching); err != nil {
 					return true
 				}
-				return gatewayClassValid(nonMatching)
+				return e2e.GatewayClassAccepted(nonMatching)
 			}, 5*time.Second, time.Second)
 
 			// create a matching GC: should be accepted
 			oldest := newGatewayClass("oldest-matching-gatewayclass", controllerName)
-			_, valid := f.CreateGatewayClassAndWaitFor(oldest, gatewayClassValid)
+			_, valid := f.CreateGatewayClassAndWaitFor(oldest, e2e.GatewayClassAccepted)
 			require.True(f.T(), valid)
 
 			// create another matching GC: should not be accepted since it's not oldest
@@ -129,7 +129,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// double-check that the oldest matching GC is still accepted
 			require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(oldest), oldest))
-			require.True(f.T(), gatewayClassValid(oldest))
+			require.True(f.T(), e2e.GatewayClassAccepted(oldest))
 
 			// delete the first matching GC: second one should now be accepted
 			require.NoError(f.T(), f.Client.Delete(context.Background(), oldest))
@@ -137,7 +137,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(secondOldest), secondOldest); err != nil {
 					return false
 				}
-				return gatewayClassValid(secondOldest)
+				return e2e.GatewayClassAccepted(secondOldest)
 			}, f.RetryTimeout, f.RetryInterval)
 		})
 	})
@@ -153,7 +153,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					ControllerName: gatewayapi_v1beta1.GatewayController(controllerName),
 				},
 			}
-			_, valid := f.CreateGatewayClassAndWaitFor(gc, gatewayClassValid)
+			_, valid := f.CreateGatewayClassAndWaitFor(gc, e2e.GatewayClassAccepted)
 			require.True(f.T(), valid)
 
 			// Create a matching gateway and verify it's accepted.
@@ -178,7 +178,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					},
 				},
 			}
-			_, valid = f.CreateGatewayAndWaitFor(oldest, gatewayProgrammed)
+			_, valid = f.CreateGatewayAndWaitFor(oldest, e2e.GatewayProgrammed)
 			require.True(f.T(), valid)
 
 			// Create another matching gateway and verify it's not accepted.
@@ -217,7 +217,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// Double-check that the oldest gateway is still accepted.
 			require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(oldest), oldest))
-			require.True(f.T(), gatewayProgrammed(oldest))
+			require.True(f.T(), e2e.GatewayProgrammed(oldest))
 
 			// Delete the oldest gateway and verify that the second
 			// oldest is now accepted.
@@ -226,7 +226,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(secondOldest), secondOldest); err != nil {
 					return false
 				}
-				return gatewayProgrammed(secondOldest)
+				return e2e.GatewayProgrammed(secondOldest)
 			}, f.RetryTimeout, f.RetryInterval)
 		})
 	})
@@ -242,7 +242,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					ControllerName: gatewayapi_v1beta1.GatewayController(controllerName),
 				},
 			}
-			_, valid := f.CreateGatewayClassAndWaitFor(olderGC, gatewayClassValid)
+			_, valid := f.CreateGatewayClassAndWaitFor(olderGC, e2e.GatewayClassAccepted)
 			require.True(f.T(), valid)
 
 			// Create a matching gateway and verify it's accepted.
@@ -267,7 +267,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					},
 				},
 			}
-			_, valid = f.CreateGatewayAndWaitFor(olderGCGateway1, gatewayProgrammed)
+			_, valid = f.CreateGatewayAndWaitFor(olderGCGateway1, e2e.GatewayProgrammed)
 			require.True(f.T(), valid)
 
 			// Create a second matching gatewayclass & 2 associated gateways
@@ -285,7 +285,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGC), newerGC); err != nil {
 					return true
 				}
-				return gatewayClassValid(newerGC)
+				return e2e.GatewayClassAccepted(newerGC)
 			}, 5*time.Second, time.Second)
 
 			newerGCGateway1 := &gatewayapi_v1beta1.Gateway{
@@ -314,7 +314,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGCGateway1), newerGCGateway1); err != nil {
 					return true
 				}
-				return gatewayProgrammed(newerGCGateway1)
+				return e2e.GatewayProgrammed(newerGCGateway1)
 			}, 5*time.Second, time.Second)
 
 			newerGCGateway2 := &gatewayapi_v1beta1.Gateway{
@@ -343,7 +343,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGCGateway2), newerGCGateway2); err != nil {
 					return true
 				}
-				return gatewayProgrammed(newerGCGateway2)
+				return e2e.GatewayProgrammed(newerGCGateway2)
 			}, 5*time.Second, time.Second)
 
 			// Now delete the older gatewayclass and associated gateway.
@@ -355,14 +355,14 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGC), newerGC); err != nil {
 					return false
 				}
-				return gatewayClassValid(newerGC)
+				return e2e.GatewayClassAccepted(newerGC)
 			}, f.RetryTimeout, f.RetryInterval)
 
 			require.Eventually(f.T(), func() bool {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGCGateway1), newerGCGateway1); err != nil {
 					return false
 				}
-				return gatewayProgrammed(newerGCGateway1)
+				return e2e.GatewayProgrammed(newerGCGateway1)
 			}, f.RetryTimeout, f.RetryInterval)
 		})
 	})

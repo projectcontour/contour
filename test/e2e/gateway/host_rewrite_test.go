@@ -70,7 +70,7 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),
