@@ -1238,6 +1238,20 @@ string
 <tbody>
 <tr>
 <td style="white-space:nowrap">
+<code>defaultGlobalRateLimitPolicyDisabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DefaultGlobalRateLimitPolicyDisabled configures the HTTPProxy to not use
+the default global rate limit policy defined by the Contour configuration.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>descriptors</code>
 <br>
 <em>
@@ -1247,6 +1261,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Descriptors defines the list of descriptors that will
 be generated and sent to the rate limit service. Each
 descriptor contains 1+ key-value pair entries.</p>
@@ -2936,21 +2951,6 @@ GlobalRateLimitPolicy
 <p>Global defines global rate limiting parameters, i.e. parameters
 defining descriptors that are sent to an external rate limit
 service (RLS) for a rate limit decision on each request.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>generalRateLimitPolicyEnabled</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GeneralRateLimitPolicyEnabled configures the HTTPProxy to use
-the general rate limit policy defined by the Contour configuration
-as a global rate limit policy for the virtual hosts entries.</p>
 </td>
 </tr>
 </tbody>
@@ -8062,7 +8062,7 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>generalRateLimitPolicy</code>
+<code>defaultGlobalRateLimitPolicy</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
@@ -8072,7 +8072,7 @@ GlobalRateLimitPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>GeneralRateLimitPolicy allows setting a global rate limit policy for every HTTPProxy.
+<p>DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for every HTTPProxy.
 HTTPProxy can overwrite this configuration.</p>
 </td>
 </tr>

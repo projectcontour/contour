@@ -414,11 +414,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				Name:      nsedName.Name,
 				Namespace: nsedName.Namespace,
 			},
-			Domain:                      ctx.Config.RateLimitService.Domain,
-			FailOpen:                    ref.To(ctx.Config.RateLimitService.FailOpen),
-			EnableXRateLimitHeaders:     ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
-			EnableResourceExhaustedCode: ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
-			GeneralRateLimitPolicy:      ctx.Config.RateLimitService.GeneralRateLimitPolicy,
+			Domain:                       ctx.Config.RateLimitService.Domain,
+			FailOpen:                     ref.To(ctx.Config.RateLimitService.FailOpen),
+			EnableXRateLimitHeaders:      ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
+			EnableResourceExhaustedCode:  ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
+			DefaultGlobalRateLimitPolicy: ctx.Config.RateLimitService.DefaultGlobalRateLimitPolicy,
 		}
 	}
 

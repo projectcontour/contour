@@ -148,7 +148,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 			Domain:                  "ratelimitservicedomain",
 			FailOpen:                ref.To(true),
 			EnableXRateLimitHeaders: ref.To(true),
-			GeneralRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+			DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
 				Descriptors: []contour_api_v1.RateLimitDescriptor{
 					{
 						Entries: []contour_api_v1.RateLimitDescriptorEntry{

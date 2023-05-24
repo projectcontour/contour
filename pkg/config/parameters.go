@@ -698,9 +698,9 @@ type RateLimitService struct {
 	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
 	EnableResourceExhaustedCode bool `yaml:"enableResourceExhaustedCode,omitempty"`
 
-	// GeneralRateLimitPolicy allows setting global rate limit policy for all HTTPProxy
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for all HTTPProxy
 	// HTTPProxy can overwrite this configuration.
-	GeneralRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"generalRateLimitPolicy,omitempty"`
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both

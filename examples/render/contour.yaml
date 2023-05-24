@@ -824,43 +824,16 @@ spec:
                 description: RateLimitService optionally holds properties of the Rate
                   Limit Service to be used for global rate limiting.
                 properties:
-                  domain:
-                    description: Domain is passed to the Rate Limit Service.
-                    type: string
-                  enableResourceExhaustedCode:
-                    description: EnableResourceExhaustedCode enables translating error
-                      code 429 to grpc code RESOURCE_EXHAUSTED. When disabled it's
-                      translated to UNAVAILABLE
-                    type: boolean
-                  enableXRateLimitHeaders:
-                    description: "EnableXRateLimitHeaders defines whether to include
-                      the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
-                      and X-RateLimit-Reset (as defined by the IETF Internet-Draft
-                      linked below), on responses to clients when the Rate Limit Service
-                      is consulted for a request. \n ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html"
-                    type: boolean
-                  extensionService:
-                    description: ExtensionService identifies the extension service
-                      defining the RLS.
+                  defaultGlobalRateLimitPolicy:
+                    description: DefaultGlobalRateLimitPolicy allows setting a default
+                      global rate limit policy for every HTTPProxy. HTTPProxy can
+                      overwrite this configuration.
                     properties:
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                    required:
-                    - name
-                    - namespace
-                    type: object
-                  failOpen:
-                    description: FailOpen defines whether to allow requests to proceed
-                      when the Rate Limit Service fails to respond with a valid rate
-                      limit decision within the timeout defined on the extension service.
-                    type: boolean
-                  generalRateLimitPolicy:
-                    description: GeneralRateLimitPolicy allows setting a global rate
-                      limit policy for every HTTPProxy. HTTPProxy can overwrite this
-                      configuration.
-                    properties:
+                      defaultGlobalRateLimitPolicyDisabled:
+                        description: DefaultGlobalRateLimitPolicyDisabled configures
+                          the HTTPProxy to not use the default global rate limit policy
+                          defined by the Contour configuration.
+                        type: boolean
                       descriptors:
                         description: Descriptors defines the list of descriptors that
                           will be generated and sent to the rate limit service. Each
@@ -1001,6 +974,38 @@ spec:
                         minItems: 1
                         type: array
                     type: object
+                  domain:
+                    description: Domain is passed to the Rate Limit Service.
+                    type: string
+                  enableResourceExhaustedCode:
+                    description: EnableResourceExhaustedCode enables translating error
+                      code 429 to grpc code RESOURCE_EXHAUSTED. When disabled it's
+                      translated to UNAVAILABLE
+                    type: boolean
+                  enableXRateLimitHeaders:
+                    description: "EnableXRateLimitHeaders defines whether to include
+                      the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
+                      and X-RateLimit-Reset (as defined by the IETF Internet-Draft
+                      linked below), on responses to clients when the Rate Limit Service
+                      is consulted for a request. \n ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html"
+                    type: boolean
+                  extensionService:
+                    description: ExtensionService identifies the extension service
+                      defining the RLS.
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  failOpen:
+                    description: FailOpen defines whether to allow requests to proceed
+                      when the Rate Limit Service fails to respond with a valid rate
+                      limit decision within the timeout defined on the extension service.
+                    type: boolean
                 required:
                 - extensionService
                 type: object
@@ -4162,44 +4167,16 @@ spec:
                     description: RateLimitService optionally holds properties of the
                       Rate Limit Service to be used for global rate limiting.
                     properties:
-                      domain:
-                        description: Domain is passed to the Rate Limit Service.
-                        type: string
-                      enableResourceExhaustedCode:
-                        description: EnableResourceExhaustedCode enables translating
-                          error code 429 to grpc code RESOURCE_EXHAUSTED. When disabled
-                          it's translated to UNAVAILABLE
-                        type: boolean
-                      enableXRateLimitHeaders:
-                        description: "EnableXRateLimitHeaders defines whether to include
-                          the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
-                          and X-RateLimit-Reset (as defined by the IETF Internet-Draft
-                          linked below), on responses to clients when the Rate Limit
-                          Service is consulted for a request. \n ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html"
-                        type: boolean
-                      extensionService:
-                        description: ExtensionService identifies the extension service
-                          defining the RLS.
+                      defaultGlobalRateLimitPolicy:
+                        description: DefaultGlobalRateLimitPolicy allows setting a
+                          default global rate limit policy for every HTTPProxy. HTTPProxy
+                          can overwrite this configuration.
                         properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                      failOpen:
-                        description: FailOpen defines whether to allow requests to
-                          proceed when the Rate Limit Service fails to respond with
-                          a valid rate limit decision within the timeout defined on
-                          the extension service.
-                        type: boolean
-                      generalRateLimitPolicy:
-                        description: GeneralRateLimitPolicy allows setting a global
-                          rate limit policy for every HTTPProxy. HTTPProxy can overwrite
-                          this configuration.
-                        properties:
+                          defaultGlobalRateLimitPolicyDisabled:
+                            description: DefaultGlobalRateLimitPolicyDisabled configures
+                              the HTTPProxy to not use the default global rate limit
+                              policy defined by the Contour configuration.
+                            type: boolean
                           descriptors:
                             description: Descriptors defines the list of descriptors
                               that will be generated and sent to the rate limit service.
@@ -4347,6 +4324,39 @@ spec:
                             minItems: 1
                             type: array
                         type: object
+                      domain:
+                        description: Domain is passed to the Rate Limit Service.
+                        type: string
+                      enableResourceExhaustedCode:
+                        description: EnableResourceExhaustedCode enables translating
+                          error code 429 to grpc code RESOURCE_EXHAUSTED. When disabled
+                          it's translated to UNAVAILABLE
+                        type: boolean
+                      enableXRateLimitHeaders:
+                        description: "EnableXRateLimitHeaders defines whether to include
+                          the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining,
+                          and X-RateLimit-Reset (as defined by the IETF Internet-Draft
+                          linked below), on responses to clients when the Rate Limit
+                          Service is consulted for a request. \n ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html"
+                        type: boolean
+                      extensionService:
+                        description: ExtensionService identifies the extension service
+                          defining the RLS.
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
+                      failOpen:
+                        description: FailOpen defines whether to allow requests to
+                          proceed when the Rate Limit Service fails to respond with
+                          a valid rate limit decision within the timeout defined on
+                          the extension service.
+                        type: boolean
                     required:
                     - extensionService
                     type: object
@@ -5648,18 +5658,17 @@ spec:
                     rateLimitPolicy:
                       description: The policy for rate limiting on the route.
                       properties:
-                        generalRateLimitPolicyEnabled:
-                          description: GeneralRateLimitPolicyEnabled configures the
-                            HTTPProxy to use the general rate limit policy defined
-                            by the Contour configuration as a global rate limit policy
-                            for the virtual hosts entries.
-                          type: boolean
                         global:
                           description: Global defines global rate limiting parameters,
                             i.e. parameters defining descriptors that are sent to
                             an external rate limit service (RLS) for a rate limit
                             decision on each request.
                           properties:
+                            defaultGlobalRateLimitPolicyDisabled:
+                              description: DefaultGlobalRateLimitPolicyDisabled configures
+                                the HTTPProxy to not use the default global rate limit
+                                policy defined by the Contour configuration.
+                              type: boolean
                             descriptors:
                               description: Descriptors defines the list of descriptors
                                 that will be generated and sent to the rate limit
@@ -6987,18 +6996,17 @@ spec:
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
                     properties:
-                      generalRateLimitPolicyEnabled:
-                        description: GeneralRateLimitPolicyEnabled configures the
-                          HTTPProxy to use the general rate limit policy defined by
-                          the Contour configuration as a global rate limit policy
-                          for the virtual hosts entries.
-                        type: boolean
                       global:
                         description: Global defines global rate limiting parameters,
                           i.e. parameters defining descriptors that are sent to an
                           external rate limit service (RLS) for a rate limit decision
                           on each request.
                         properties:
+                          defaultGlobalRateLimitPolicyDisabled:
+                            description: DefaultGlobalRateLimitPolicyDisabled configures
+                              the HTTPProxy to not use the default global rate limit
+                              policy defined by the Contour configuration.
+                            type: boolean
                           descriptors:
                             description: Descriptors defines the list of descriptors
                               that will be generated and sent to the rate limit service.

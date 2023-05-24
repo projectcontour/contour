@@ -998,7 +998,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 		httpproxy              *contour_api_v1.HTTPProxy
 		want                   *RateLimitPolicy
 	}{
-		"general RateLimit Policy is not set": {
+		"default global RateLimit Policy is not set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
@@ -1046,11 +1046,47 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"general RateLimit Policy is set but HTTPProxy is not opted in": {
+		"default global RateLimit Policy is set but HTTPProxy is opted out": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				GeneralRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Global: &contour_api_v1.GlobalRateLimitPolicy{
+								DefaultGlobalRateLimitPolicyDisabled: true,
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		"default global RateLimit Policy is set but HTTPProxy defines its own global RateLimit policy": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
 							Entries: []contour_api_v1.RateLimitDescriptorEntry{
@@ -1108,11 +1144,11 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"general RateLimit Policy is set and HTTPProxy is explicitly opted in": {
+		"Default RateLimit Policy is set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				GeneralRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
 							Entries: []contour_api_v1.RateLimitDescriptorEntry{
@@ -1133,11 +1169,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					Namespace: "ns",
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							GeneralRateLimitPolicyEnabled: true,
-						},
-					},
+					VirtualHost: &contour_api_v1.VirtualHost{},
 				},
 			},
 			want: &RateLimitPolicy{
@@ -1157,11 +1189,11 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"general RateLimit Policy is set and HTTPProxy is explicitly opted in and local rateLimitPolicy should not change": {
+		"general RateLimit Policy is set and HTTPProxy's local rateLimitPolicy should not change": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				GeneralRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
 							Entries: []contour_api_v1.RateLimitDescriptorEntry{
@@ -1184,7 +1216,6 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
 						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							GeneralRateLimitPolicyEnabled: true,
 							Local: &contour_api_v1.LocalRateLimitPolicy{
 								Requests: 10,
 								Unit:     "second",

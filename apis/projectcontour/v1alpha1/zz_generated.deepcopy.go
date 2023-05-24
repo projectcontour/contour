@@ -1090,8 +1090,8 @@ func (in *RateLimitServiceConfig) DeepCopyInto(out *RateLimitServiceConfig) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.GeneralRateLimitPolicy != nil {
-		in, out := &in.GeneralRateLimitPolicy, &out.GeneralRateLimitPolicy
+	if in.DefaultGlobalRateLimitPolicy != nil {
+		in, out := &in.DefaultGlobalRateLimitPolicy, &out.DefaultGlobalRateLimitPolicy
 		*out = new(v1.GlobalRateLimitPolicy)
 		(*in).DeepCopyInto(*out)
 	}

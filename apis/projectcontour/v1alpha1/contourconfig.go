@@ -661,11 +661,11 @@ type RateLimitServiceConfig struct {
 	// +optional
 	EnableResourceExhaustedCode *bool `json:"enableResourceExhaustedCode,omitempty"`
 
-	// GeneralRateLimitPolicy allows setting a global rate limit policy for every HTTPProxy.
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for every HTTPProxy.
 	// HTTPProxy can overwrite this configuration.
 	//
 	// +optional
-	GeneralRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `json:"generalRateLimitPolicy,omitempty"`
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `json:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // TracingConfig defines properties for exporting trace data to OpenTelemetry.
