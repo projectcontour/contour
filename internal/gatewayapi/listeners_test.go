@@ -117,7 +117,7 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")), // duplicate hostname
+				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
@@ -152,12 +152,6 @@ func TestValidateListeners(t *testing.T) {
 			{Name: "https-443", Port: 443, ContainerPort: 8443, Protocol: "HTTPS"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
-			"listener-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
-				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
-				Message: "All Listener hostnames for a given port must be unique",
-			},
 			"listener-3": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
@@ -261,7 +255,7 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")), // duplicate hostname
+				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
@@ -296,12 +290,6 @@ func TestValidateListeners(t *testing.T) {
 			{Name: "https-8443", Port: 8443, ContainerPort: 16443, Protocol: "HTTPS"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
-			"listener-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
-				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
-				Message: "All Listener hostnames for a given port must be unique",
-			},
 			"listener-3": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
@@ -400,14 +388,10 @@ func TestValidateListeners(t *testing.T) {
 		}
 
 		res := ValidateListeners(listeners)
-		assert.Empty(t, res.Ports)
+		assert.ElementsMatch(t, res.Ports, []ListenerPort{
+			{Name: "http-7777", Port: 7777, ContainerPort: 15777, Protocol: "HTTP"},
+		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
-			"http": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
-				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
-				Message: "All Listener protocols for a given port must be compatible",
-			},
 			"https": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
