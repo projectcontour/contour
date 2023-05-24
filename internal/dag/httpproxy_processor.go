@@ -230,7 +230,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			listener, err := p.dag.GetSingleListener("HTTPS")
 			if err != nil {
-				validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ListenerNotFound", err.Error())
+				validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 				return
 			}
 
@@ -484,7 +484,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	listener, err := p.dag.GetSingleListener("HTTP")
 	if err != nil {
-		validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ListenerNotFound", err.Error())
+		validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 		return
 	}
 
@@ -524,7 +524,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
 		listener, err := p.dag.GetSingleListener("HTTPS")
 		if err != nil {
-			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ListenerNotFound", err.Error())
+			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 			return
 		}
 
@@ -1160,7 +1160,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 
 		listener, err := p.dag.GetSingleListener("HTTPS")
 		if err != nil {
-			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ListenerNotFound", err.Error())
+			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 			return false
 		}
 

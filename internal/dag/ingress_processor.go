@@ -108,7 +108,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 					p.WithError(err).
 						WithField("name", ing.GetName()).
 						WithField("namespace", ing.GetNamespace()).
-						Errorf("listener not found")
+						Errorf("error identifying listener")
 					return
 				}
 
@@ -203,7 +203,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 				p.WithError(err).
 					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
-					Errorf("listener not found")
+					Errorf("error identifying listener")
 				return
 			}
 
@@ -216,7 +216,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			p.WithError(err).
 				WithField("name", ing.GetName()).
 				WithField("namespace", ing.GetNamespace()).
-				Errorf("listener not found")
+				Errorf("error identifying listener")
 			return
 		}
 

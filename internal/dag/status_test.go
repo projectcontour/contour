@@ -4738,7 +4738,7 @@ func TestDAGStatus(t *testing.T) {
 			{Namespace: "roots", Name: "kuard-proxy"}: fixture.NewValidCondition().
 				WithError(
 					contour_api_v1.ConditionTypeListenerError,
-					"ListenerNotFound",
+					"ErrorIdentifyingListener",
 					"more than one HTTP listener configured",
 				),
 		},
@@ -4815,7 +4815,7 @@ func TestDAGStatus(t *testing.T) {
 			{Namespace: "roots", Name: "kuard-proxy"}: fixture.NewValidCondition().
 				WithError(
 					contour_api_v1.ConditionTypeListenerError,
-					"ListenerNotFound",
+					"ErrorIdentifyingListener",
 					"no HTTP listener configured",
 				),
 		},
