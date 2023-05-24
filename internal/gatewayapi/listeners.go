@@ -24,6 +24,12 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
+// ContourHTTPSProtocolType is the protocol for an HTTPS Listener
+// that is to be used with HTTPProxy/Ingress, where the TLS
+// details are provided on the HTTPProxy/Ingress rather than
+// on the Listener.
+const ContourHTTPSProtocolType = "projectcontour.io/https"
+
 type ValidateListenersResult struct {
 	// ListenerNames is a map from Gateway Listener name
 	// to DAG/Envoy Listener name. All Gateway Listeners
@@ -78,13 +84,13 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 
 		// Check for a supported protocol.
 		switch listener.Protocol {
-		case gatewayapi_v1beta1.HTTPProtocolType, gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
+		case gatewayapi_v1beta1.HTTPProtocolType, gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType, ContourHTTPSProtocolType:
 		default:
 			result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
 				Status:  metav1.ConditionFalse,
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
-				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS or TLS", listener.Protocol),
+				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS, TLS or projectcontour.io/https", listener.Protocol),
 			}
 			continue
 		}
@@ -114,8 +120,8 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 					}
 					conflicted = true
 				}
-			case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType:
-				if otherListener.Protocol != gatewayapi_v1beta1.HTTPSProtocolType && otherListener.Protocol != gatewayapi_v1beta1.TLSProtocolType {
+			case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType, ContourHTTPSProtocolType:
+				if otherListener.Protocol != gatewayapi_v1beta1.HTTPSProtocolType && otherListener.Protocol != gatewayapi_v1beta1.TLSProtocolType && otherListener.Protocol != ContourHTTPSProtocolType {
 					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 						Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 						Status:  metav1.ConditionTrue,

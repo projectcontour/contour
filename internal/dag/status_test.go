@@ -8568,7 +8568,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
-							Message: "Listener protocol \"invalid\" is unsupported, must be one of HTTP, HTTPS or TLS",
+							Message: "Listener protocol \"invalid\" is unsupported, must be one of HTTP, HTTPS, TLS or projectcontour.io/https",
 						},
 					},
 				},
