@@ -50,7 +50,7 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 	}
 
 	// assert adding something other than a service generates no notification.
-	sw.OnAdd(&v1.Pod{})
+	sw.OnAdd(&v1.Pod{}, false)
 	_, ok := recv()
 	if ok {
 		t.Fatalf("expected no result when adding")
@@ -59,7 +59,7 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 	// assert adding a service with an different name generates no notification
 	var svc v1.Service
 	svc.Name = "potato"
-	sw.OnAdd(&svc)
+	sw.OnAdd(&svc, false)
 	_, ok = recv()
 	if ok {
 		t.Fatalf("expected no result when adding a service with a different name")
@@ -68,7 +68,7 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 	// assert adding a service with the correct name generates a notification
 	svc.Name = sw.ServiceName
 	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
-	sw.OnAdd(&svc)
+	sw.OnAdd(&svc, false)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when adding a service with the correct name")
@@ -322,7 +322,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 				isu.IngressClassNames = []string{tc.ingressClassName}
 			}
 
-			isu.OnAdd(tc.preop)
+			isu.OnAdd(tc.preop, false)
 
 			newObj := suc.Get(objName, objName)
 			assert.Equal(t, tc.postop, newObj)
@@ -613,7 +613,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				StatusUpdater:         &suc,
 			}
 
-			isu.OnAdd(tc.preop)
+			isu.OnAdd(tc.preop, false)
 
 			newObj := suc.Get(tc.preop.Name, tc.preop.Namespace)
 			assert.Equal(t, tc.postop, newObj)

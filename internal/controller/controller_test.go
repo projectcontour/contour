@@ -22,12 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	// This package is deprecated and will be removed in future versions of
-	// controller-runtime.
-	// nolint:staticcheck
-	controller_runtime_config_v1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
 //go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Manager --srcpkg=sigs.k8s.io/controller-runtime/pkg/manager --disable-version-string
@@ -64,8 +60,8 @@ func TestRegisterControllers(t *testing.T) {
 			mockManager.On("Elected").Return(nil).Maybe()
 			// This type is deprecated and will be removed in future versions of
 			// controller-runtime.
-			options := controller_runtime_config_v1alpha1.ControllerConfigurationSpec{} // nolint:staticcheck
-			mockManager.On("GetControllerOptions").Return(options).Maybe()
+			mockManager.On("GetControllerOptions").Return(config.Controller{}).Maybe()
+			mockManager.On("GetCache").Return(nil).Maybe()
 
 			mockManager.On("Add", mock.MatchedBy(func(r manager.LeaderElectionRunnable) bool {
 				return r.NeedLeaderElection() == false

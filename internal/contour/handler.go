@@ -82,7 +82,7 @@ type opDelete struct {
 	obj interface{}
 }
 
-func (e *EventHandler) OnAdd(obj interface{}) {
+func (e *EventHandler) OnAdd(obj interface{}, isInInitialList bool) {
 	e.update <- opAdd{obj: obj}
 }
 

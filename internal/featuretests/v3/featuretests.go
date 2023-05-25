@@ -66,7 +66,15 @@ const (
 	secretType   = resource.SecretType
 )
 
-func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Contour, func()) {
+// ResourceEventHandlerWrapper wraps the ResourceEventHandler interface from client-go/tools/cache.
+// The OnAdd function has a boolean parameter that we do not need for testing.
+type ResourceEventHandlerWrapper interface {
+	OnAdd(obj interface{})
+	OnUpdate(oldObj, newObj interface{})
+	OnDelete(obj interface{})
+}
+
+func setup(t *testing.T, opts ...interface{}) (ResourceEventHandlerWrapper, *Contour, func()) {
 	t.Parallel()
 
 	log := fixture.NewTestLogger(t)
@@ -221,9 +229,9 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 
 	switch obj.(type) {
 	case *v1.Endpoints:
-		r.EndpointsHandler.OnAdd(obj)
+		r.EndpointsHandler.OnAdd(obj, false)
 	default:
-		r.EventHandler.OnAdd(obj)
+		r.EventHandler.OnAdd(obj, false)
 
 		// Wait for the sequence counter to be incremented, which happens
 		// after the DAG has been rebuilt and observed.

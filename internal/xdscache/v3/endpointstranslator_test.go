@@ -353,7 +353,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			et.Observer = observer
 
 			require.NoError(t, et.cache.SetClusters(clusters))
-			et.OnAdd(tc.ep)
+			et.OnAdd(tc.ep, false)
 			got := et.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 			require.Equal(t, tc.wantUpdate, observer.updated)
@@ -419,7 +419,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Ports: ports(
 						port("", 8080),
 					),
-				}))
+				}), false)
 			},
 			ep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
@@ -441,7 +441,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Ports: ports(
 						port("", 8080),
 					),
-				}))
+				}), false)
 			},
 			ep: endpoints("default", "different", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
@@ -490,7 +490,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 						),
 					},
 				)
-				et.OnAdd(e1)
+				et.OnAdd(e1, false)
 			},
 			ep: endpoints(
 				"super-long-namespace-name-oh-boy",
@@ -568,7 +568,7 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 					Ports: ports(
 						port("", 8080),
 					),
-				}))
+				}), false)
 			},
 			old: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
@@ -597,7 +597,7 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 					Ports: ports(
 						port("", 8080),
 					),
-				}))
+				}), false)
 			},
 			old: endpoints("default", "different", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
@@ -802,7 +802,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{&tc.cluster}))
-			et.OnAdd(tc.ep)
+			et.OnAdd(tc.ep, false)
 			got := et.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
@@ -831,7 +831,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 			port("", 8080),
 		),
 	})
-	et.OnAdd(e1)
+	et.OnAdd(e1, false)
 
 	// Assert endpoint was added
 	want := []proto.Message{
@@ -891,9 +891,9 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 		Ports:     ports(port("", 8080)),
 	}
 
-	et.OnAdd(endpoints("default", "weight0", epSubset))
-	et.OnAdd(endpoints("default", "weight1", epSubset))
-	et.OnAdd(endpoints("default", "weight2", epSubset))
+	et.OnAdd(endpoints("default", "weight0", epSubset), false)
+	et.OnAdd(endpoints("default", "weight1", epSubset), false)
+	et.OnAdd(endpoints("default", "weight2", epSubset), false)
 
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching
@@ -949,9 +949,9 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 		Ports:     ports(port("", 8080)),
 	}
 
-	et.OnAdd(endpoints("default", "weight0", epSubset))
-	et.OnAdd(endpoints("default", "weight1", epSubset))
-	et.OnAdd(endpoints("default", "weight2", epSubset))
+	et.OnAdd(endpoints("default", "weight0", epSubset), false)
+	et.OnAdd(endpoints("default", "weight1", epSubset), false)
+	et.OnAdd(endpoints("default", "weight2", epSubset), false)
 
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching

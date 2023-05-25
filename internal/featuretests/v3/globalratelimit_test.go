@@ -35,10 +35,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/cache"
 )
 
-func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -103,7 +102,7 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 	}).Status(p).IsValid()
 }
 
-func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
+func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -187,7 +186,7 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHand
 
 }
 
-func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
+func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -279,7 +278,7 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 	}
 }
 
-func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
+func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -372,7 +371,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 	}
 }
 
-func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
+func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -497,7 +496,7 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.Resourc
 	}
 }
 
-func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -611,48 +610,48 @@ func TestGlobalRateLimiting(t *testing.T) {
 		fallbackEnabled = tlsConfig{enabled: true, fallbackEnabled: true}
 	)
 
-	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
+	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		"GlobalRateLimitFilterExists": globalRateLimitFilterExists,
 
 		// test cases for insecure/non-TLS vhosts
-		"NoRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"NoRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitNoRateLimitsDefined(t, rh, c, tlsDisabled)
 		},
-		"VirtualHostRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"VirtualHostRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostRateLimitDefined(t, rh, c, tlsDisabled)
 		},
-		"RouteRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"RouteRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitRouteRateLimitDefined(t, rh, c, tlsDisabled)
 		},
-		"VirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"VirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, tlsDisabled)
 		},
 
 		// test cases for secure/TLS vhosts
-		"TLSNoRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"TLSNoRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitNoRateLimitsDefined(t, rh, c, tlsEnabled)
 		},
-		"TLSVirtualHostRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"TLSVirtualHostRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostRateLimitDefined(t, rh, c, tlsEnabled)
 		},
-		"TLSRouteRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"TLSRouteRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitRouteRateLimitDefined(t, rh, c, tlsEnabled)
 		},
-		"TLSVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"TLSVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, tlsEnabled)
 		},
 
 		// test cases for secure/TLS vhosts with fallback cert enabled
-		"FallbackNoRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"FallbackNoRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitNoRateLimitsDefined(t, rh, c, fallbackEnabled)
 		},
-		"FallbackVirtualHostRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"FallbackVirtualHostRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostRateLimitDefined(t, rh, c, fallbackEnabled)
 		},
-		"FallbackRouteRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"FallbackRouteRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitRouteRateLimitDefined(t, rh, c, fallbackEnabled)
 		},
-		"FallbackVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+		"FallbackVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, fallbackEnabled)
 		},
 

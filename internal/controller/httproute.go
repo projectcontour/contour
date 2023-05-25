@@ -52,7 +52,7 @@ func RegisterHTTPRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &gatewayapi_v1beta1.HTTPRoute{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.HTTPRoute{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -71,7 +71,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(httpRoute)
+	r.eventHandler.OnAdd(httpRoute, false)
 
 	return reconcile.Result{}, nil
 }

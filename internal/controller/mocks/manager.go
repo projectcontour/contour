@@ -6,6 +6,8 @@ import (
 	cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 
+	config "sigs.k8s.io/controller-runtime/pkg/config"
+
 	context "context"
 
 	healthz "sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -25,8 +27,6 @@ import (
 	rest "k8s.io/client-go/rest"
 
 	runtime "k8s.io/apimachinery/pkg/runtime"
-
-	v1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
 	webhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -173,14 +173,14 @@ func (_m *Manager) GetConfig() *rest.Config {
 }
 
 // GetControllerOptions provides a mock function with given fields:
-func (_m *Manager) GetControllerOptions() v1alpha1.ControllerConfigurationSpec {
+func (_m *Manager) GetControllerOptions() config.Controller {
 	ret := _m.Called()
 
-	var r0 v1alpha1.ControllerConfigurationSpec
-	if rf, ok := ret.Get(0).(func() v1alpha1.ControllerConfigurationSpec); ok {
+	var r0 config.Controller
+	if rf, ok := ret.Get(0).(func() config.Controller); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(v1alpha1.ControllerConfigurationSpec)
+		r0 = ret.Get(0).(config.Controller)
 	}
 
 	return r0
@@ -212,6 +212,22 @@ func (_m *Manager) GetFieldIndexer() client.FieldIndexer {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.FieldIndexer)
+		}
+	}
+
+	return r0
+}
+
+// GetHTTPClient provides a mock function with given fields:
+func (_m *Manager) GetHTTPClient() *http.Client {
+	ret := _m.Called()
+
+	var r0 *http.Client
+	if rf, ok := ret.Get(0).(func() *http.Client); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Client)
 		}
 	}
 
@@ -265,30 +281,16 @@ func (_m *Manager) GetScheme() *runtime.Scheme {
 }
 
 // GetWebhookServer provides a mock function with given fields:
-func (_m *Manager) GetWebhookServer() *webhook.Server {
+func (_m *Manager) GetWebhookServer() webhook.Server {
 	ret := _m.Called()
 
-	var r0 *webhook.Server
-	if rf, ok := ret.Get(0).(func() *webhook.Server); ok {
+	var r0 webhook.Server
+	if rf, ok := ret.Get(0).(func() webhook.Server); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*webhook.Server)
+			r0 = ret.Get(0).(webhook.Server)
 		}
-	}
-
-	return r0
-}
-
-// SetFields provides a mock function with given fields: _a0
-func (_m *Manager) SetFields(_a0 interface{}) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0
