@@ -491,7 +491,7 @@ type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
 	// There can be only one Prefix MatchCondition per Conditions slice.
-	// More than one Prefix, or contradictory Conditions, will make the
+	// More than one Prefix or Regex, or contradictory Conditions, will make the
 	// route invalid.
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`

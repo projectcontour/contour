@@ -4653,7 +4653,7 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 			{Name: proxyRegexIncludeInvalid.Name, Namespace: proxyRegexIncludeInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRegexIncludeInvalid.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", `include: regex conditions are not allowed in an included HTTPProxy`),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", `include: regex conditions are not allowed in includes block`),
 			{Name: proxyRegexIncludeValid.Name, Namespace: proxyRegexIncludeValid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRegexIncludeValid.Generation).
 				Valid(),

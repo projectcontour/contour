@@ -76,8 +76,7 @@ spec:
 
 Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
-Conditions can be either a `prefix`, `exact`, `regex`, `header` or a `queryParameter` condition. `prefix` and `exact`
-conditions cannot be used together in one condition block.
+Conditions can be either a `prefix`, `exact`, `regex`, `header` or a `queryParameter` condition. At most one of `prefix`, `exact` or `regex` can be used in one condition block.
 
 #### Prefix conditions
 

@@ -127,7 +127,7 @@ func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 			return fmt.Errorf("exact conditions are not allowed in includes block")
 		}
 		if cond.Regex != "" {
-			return fmt.Errorf("regex conditions are not allowed in an included HTTPProxy")
+			return fmt.Errorf("regex conditions are not allowed in includes block")
 		}
 	}
 

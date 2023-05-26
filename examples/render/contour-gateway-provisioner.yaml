@@ -4662,7 +4662,7 @@ spec:
                       description: 'Conditions are a set of rules that are applied
                         to a Route. When applied, they are merged using AND, with
                         one exception: There can be only one Prefix MatchCondition
-                        per Conditions slice. More than one Prefix, or contradictory
+                        per Conditions slice. More than one Prefix or Regex, or contradictory
                         Conditions, will make the route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
