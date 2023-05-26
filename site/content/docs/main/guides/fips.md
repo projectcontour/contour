@@ -104,6 +104,8 @@ We can first compile the Envoy binary by running the following in a `bash` shell
 BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envoy-output-dir> ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release //test/exe:envoy_static_test'
 ```
 
+*This command mimics the Envoy release CI process with the target `bazel.release` but differs in only running a single test for brevity. You may omit the `//test/exe:envoy_static_test` test entirely to run the full suite of Envoy tests.*
+
 Replace `<envoy-output-dir>` with a directory you would like the build output to be placed on your host computer.
 Once that build completes, you should have a file named `envoy_binary.tar.gz` in your specified output directory.
 
