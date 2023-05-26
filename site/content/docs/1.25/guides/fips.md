@@ -101,7 +101,7 @@ Note that if you do build with FIPS mode outside of the build container, you can
 We can first compile the Envoy binary by running the following in a `bash` shell from the Envoy source directory:
 
 ```bash
-BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envoy-output-dir> ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release.server_only'
+BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envoy-output-dir> ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release //test/exe:envoy_static_test'
 ```
 
 Replace `<envoy-output-dir>` with a directory you would like the build output to be placed on your host computer.
