@@ -109,6 +109,12 @@ spec:
                           for more information. \n Values: `auto` (default), `v4`,
                           `v6`, `all`. \n Other values will produce an error."
                         type: string
+                      maxRequestsPerConnection:
+                        description: Defines the maximum requests for upstream connections.
+                          If not specified, there is no limit. see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+                          for more information.
+                        format: int32
+                        type: integer
                     type: object
                   defaultHTTPVersions:
                     description: "DefaultHTTPVersions defines the default set of HTTPS
@@ -194,6 +200,12 @@ spec:
                           slashes from request URL paths. \n Contour's default is
                           false."
                         type: boolean
+                      maxRequestsPerConnection:
+                        description: Defines the maximum requests for downstream connections.
+                          If not specified, there is no limit. see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+                          for more information.
+                        format: int32
+                        type: integer
                       serverHeaderTransformation:
                         description: "Defines the action to be applied to the Server
                           header on the response path. When configured as overwrite,
@@ -3289,6 +3301,13 @@ spec:
                               for more information. \n Values: `auto` (default), `v4`,
                               `v6`, `all`. \n Other values will produce an error."
                             type: string
+                          maxRequestsPerConnection:
+                            description: Defines the maximum requests for upstream
+                              connections. If not specified, there is no limit. see
+                              https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+                              for more information.
+                            format: int32
+                            type: integer
                         type: object
                       defaultHTTPVersions:
                         description: "DefaultHTTPVersions defines the default set
@@ -3377,6 +3396,13 @@ spec:
                               duplicate slashes from request URL paths. \n Contour's
                               default is false."
                             type: boolean
+                          maxRequestsPerConnection:
+                            description: Defines the maximum requests for downstream
+                              connections. If not specified, there is no limit. see
+                              https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+                              for more information.
+                            format: int32
+                            type: integer
                           serverHeaderTransformation:
                             description: "Defines the action to be applied to the
                               Server header on the response path. When configured

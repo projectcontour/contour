@@ -166,6 +166,7 @@ type httpConnectionManagerBuilder struct {
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
 	tracingConfig                 *http.HttpConnectionManager_Tracing
+	maxRequestsPerConnection      *uint32
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -263,6 +264,12 @@ func (b *httpConnectionManagerBuilder) ForwardClientCertificate(details *dag.Cli
 
 func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
 	b.numTrustedHops = num
+	return b
+}
+
+// MaxRequestsPerConnection sets max requests per connection for the downstream.
+func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerConnection *uint32) *httpConnectionManagerBuilder {
+	b.maxRequestsPerConnection = maxRequestsPerConnection
 	return b
 }
 
@@ -513,6 +520,11 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 			Dns:     b.forwardClientCertificate.DNS,
 			Uri:     b.forwardClientCertificate.URI,
 		}
+	}
+
+	// if maxConnectionsPerRequest is defined, set it.
+	if b.maxRequestsPerConnection != nil {
+		cm.CommonHttpProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*b.maxRequestsPerConnection)
 	}
 
 	return &envoy_listener_v3.Filter{

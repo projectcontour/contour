@@ -366,6 +366,13 @@ type EnvoyListenerConfig struct {
 	// +optional
 	ConnectionBalancer string `json:"connectionBalancer,omitempty"`
 
+	// Defines the maximum requests for downstream connections. If not specified, there is no limit.
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+	// for more information.
+	//
+	// +optional
+	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
+
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
@@ -589,6 +596,13 @@ type ClusterParameters struct {
 	// Other values will produce an error.
 	// +optional
 	DNSLookupFamily ClusterDNSFamilyType `json:"dnsLookupFamily,omitempty"`
+
+	// Defines the maximum requests for upstream connections. If not specified, there is no limit.
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+	// for more information.
+	//
+	// +optional
+	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

@@ -418,6 +418,20 @@ network:
   num-trusted-hops: 1
   admin-port: 9001
 `)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerConnection)
+	}, `
+listener:
+  max-requests-per-connection: 1
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
+	}, `
+cluster:
+  max-requests-per-connection: 1
+`)
 }
 
 func TestMetricsParametersValidation(t *testing.T) {

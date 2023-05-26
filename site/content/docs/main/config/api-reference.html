@@ -5477,6 +5477,21 @@ for more information.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequestsPerConnection</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the maximum requests for upstream connections. If not specified, there is no limit.
+see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions</a>
+for more information.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
@@ -6544,6 +6559,21 @@ See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.
 for more information.</p>
 <p>Values: (empty string): use the default ConnectionBalancer, <code>exact</code>: use the Exact ConnectionBalancer.</p>
 <p>Other values will produce an error.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequestsPerConnection</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the maximum requests for downstream connections. If not specified, there is no limit.
+see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions</a>
+for more information.</p>
 </td>
 </tr>
 <tr>
