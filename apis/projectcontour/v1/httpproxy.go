@@ -54,8 +54,9 @@ type Include struct {
 	// structs.
 	// When applied, they are merged using AND, with one exception:
 	// There can be only one Prefix MatchCondition per Conditions slice.
-	// More than one Prefix or Regex, or contradictory Conditions, will make the
-	// include invalid.
+	// More than one Prefix, or contradictory Conditions, will make the
+	// include invalid. Exact and Regex match conditions are not allowed
+	// on includes.
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`
 }
@@ -73,7 +74,7 @@ type MatchCondition struct {
 	Exact string `json:"exact,omitempty"`
 
 	// Regex defines a regex match for a request.
-	// Cannot be defined in include MatchConditions
+	// This field is not allowed in include match conditions.
 	// +optional
 	Regex string `json:"regex,omitempty"`
 
@@ -490,9 +491,9 @@ type CORSPolicy struct {
 type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
-	// There can be only one Prefix MatchCondition per Conditions slice.
-	// More than one Prefix or Regex, or contradictory Conditions, will make the
-	// route invalid.
+	// There can be only one Prefix, Exact or Regex MatchCondition
+	// per Conditions slice. More than one of these condition types,
+	// or contradictory Conditions, will make the route invalid.
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic.

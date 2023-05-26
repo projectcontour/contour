@@ -4727,8 +4727,9 @@ spec:
                         Conditions of included HTTPProxy Route structs. When applied,
                         they are merged using AND, with one exception: There can be
                         only one Prefix MatchCondition per Conditions slice. More
-                        than one Prefix or Regex, or contradictory Conditions, will
-                        make the include invalid.'
+                        than one Prefix, or contradictory Conditions, will make the
+                        include invalid. Exact and Regex match conditions are not
+                        allowed on includes.'
                       items:
                         description: MatchCondition are a general holder for matching
                           rules for HTTPProxies. One of Prefix, Exact, Regex, Header
@@ -4833,7 +4834,7 @@ spec:
                             type: object
                           regex:
                             description: Regex defines a regex match for a request.
-                              Cannot be defined in include MatchConditions
+                              This field is not allowed in include match conditions.
                             type: string
                         type: object
                       type: array
@@ -4882,9 +4883,10 @@ spec:
                     conditions:
                       description: 'Conditions are a set of rules that are applied
                         to a Route. When applied, they are merged using AND, with
-                        one exception: There can be only one Prefix MatchCondition
-                        per Conditions slice. More than one Prefix or Regex, or contradictory
-                        Conditions, will make the route invalid.'
+                        one exception: There can be only one Prefix, Exact or Regex
+                        MatchCondition per Conditions slice. More than one of these
+                        condition types, or contradictory Conditions, will make the
+                        route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
                           rules for HTTPProxies. One of Prefix, Exact, Regex, Header
@@ -4989,7 +4991,7 @@ spec:
                             type: object
                           regex:
                             description: Regex defines a regex match for a request.
-                              Cannot be defined in include MatchConditions
+                              This field is not allowed in include match conditions.
                             type: string
                         type: object
                       type: array

@@ -2159,8 +2159,9 @@ In effect, they are added onto the Conditions of included HTTPProxy Route
 structs.
 When applied, they are merged using AND, with one exception:
 There can be only one Prefix MatchCondition per Conditions slice.
-More than one Prefix or Regex, or contradictory Conditions, will make the
-include invalid.</p>
+More than one Prefix, or contradictory Conditions, will make the
+include invalid. Exact and Regex match conditions are not allowed
+on includes.</p>
 </td>
 </tr>
 </tbody>
@@ -2527,7 +2528,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Regex defines a regex match for a request.
-Cannot be defined in include MatchConditions</p>
+This field is not allowed in include match conditions.</p>
 </td>
 </tr>
 <tr>
@@ -3438,9 +3439,9 @@ Ignored if NumRetries is not supplied.</p>
 <em>(Optional)</em>
 <p>Conditions are a set of rules that are applied to a Route.
 When applied, they are merged using AND, with one exception:
-There can be only one Prefix MatchCondition per Conditions slice.
-More than one Prefix or Regex, or contradictory Conditions, will make the
-route invalid.</p>
+There can be only one Prefix, Exact or Regex MatchCondition
+per Conditions slice. More than one of these condition types,
+or contradictory Conditions, will make the route invalid.</p>
 </td>
 </tr>
 <tr>
