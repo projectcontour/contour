@@ -4721,12 +4721,12 @@ spec:
                         Conditions of included HTTPProxy Route structs. When applied,
                         they are merged using AND, with one exception: There can be
                         only one Prefix MatchCondition per Conditions slice. More
-                        than one Prefix, or contradictory Conditions, will make the
-                        include invalid.'
+                        than one Prefix or Regex, or contradictory Conditions, will
+                        make the include invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
-                          must be provided.
+                          rules for HTTPProxies. One of Prefix, Exact, Regex, Header
+                          or QueryParameter must be provided.
                         properties:
                           exact:
                             description: Exact defines a exact match for a request.
@@ -4771,6 +4771,10 @@ spec:
                                   not make the condition true if the named header
                                   is absent.
                                 type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the header value.
+                                type: string
                             required:
                             - name
                             type: object
@@ -4821,6 +4825,10 @@ spec:
                             required:
                             - name
                             type: object
+                          regex:
+                            description: Regex defines a regex match for a request.
+                              Cannot be defined in include MatchConditions
+                            type: string
                         type: object
                       type: array
                     name:
@@ -4869,12 +4877,12 @@ spec:
                       description: 'Conditions are a set of rules that are applied
                         to a Route. When applied, they are merged using AND, with
                         one exception: There can be only one Prefix MatchCondition
-                        per Conditions slice. More than one Prefix, or contradictory
+                        per Conditions slice. More than one Prefix or Regex, or contradictory
                         Conditions, will make the route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
-                          must be provided.
+                          rules for HTTPProxies. One of Prefix, Exact, Regex, Header
+                          or QueryParameter must be provided.
                         properties:
                           exact:
                             description: Exact defines a exact match for a request.
@@ -4919,6 +4927,10 @@ spec:
                                   not make the condition true if the named header
                                   is absent.
                                 type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the header value.
+                                type: string
                             required:
                             - name
                             type: object
@@ -4969,6 +4981,10 @@ spec:
                             required:
                             - name
                             type: object
+                          regex:
+                            description: Regex defines a regex match for a request.
+                              Cannot be defined in include MatchConditions
+                            type: string
                         type: object
                       type: array
                     cookieRewritePolicies:
@@ -5465,6 +5481,11 @@ spec:
                                                       true if the named header is
                                                       absent.
                                                     type: boolean
+                                                  regex:
+                                                    description: Regex specifies a
+                                                      regular expression pattern that
+                                                      must match the header value.
+                                                    type: string
                                                 required:
                                                 - name
                                                 type: object
@@ -6788,6 +6809,11 @@ spec:
                                                     the condition true if the named
                                                     header is absent.
                                                   type: boolean
+                                                regex:
+                                                  description: Regex specifies a regular
+                                                    expression pattern that must match
+                                                    the header value.
+                                                  type: string
                                               required:
                                               - name
                                               type: object

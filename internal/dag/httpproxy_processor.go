@@ -1383,7 +1383,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 		}
 
 		// Skip for exact path match conditions
-		if r.HasPathExact() {
+		if r.HasPathExact() || r.HasPathRegex() {
 			continue
 		}
 
