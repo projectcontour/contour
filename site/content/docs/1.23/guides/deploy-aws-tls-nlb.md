@@ -16,7 +16,7 @@ The TLS implementation used by the AWS NLB is formally verified and maintained. 
 
 An external client transmits a request to the NLB. The request is encrypted with TLS using the production (e.g., client facing) certificate, and on port 443. 
 
-The NLB decrypts the request, and transmits it on to your cluster on port 80. It follows the standard request routing configured within the cluster. Notably, the request received within the cluster includes the actual origin IP address of the external client. 
+The NLB decrypts the request, and transmits it on to Envoy running in your cluster on port 8080. It follows the standard request routing configured within the cluster. Notably, the request received within the cluster includes the actual origin IP address of the external client. 
 
 Alternate ports may be configured. End-to-end encryption technically requires the segment between the NLB and cluster pods be encrypted also. A follow-up post will describe the NLB originating TLS based on a cluster certificate. 
 
@@ -84,7 +84,7 @@ spec:
   externalTrafficPolicy: Local
   ports:
   - port: 443
-    targetPort: 80
+    targetPort: 8080
     name: http
     protocol: TCP
   selector:
