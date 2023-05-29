@@ -998,7 +998,23 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 		httpproxy              *contour_api_v1.HTTPProxy
 		want                   *RateLimitPolicy
 	}{
-		"default global RateLimit Policy is not set": {
+		"no rate limit policy is set anywhere": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{},
+				},
+			},
+			want: nil,
+		},
+		"default global rate limit Policy is not set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
@@ -1046,7 +1062,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"default global RateLimit Policy is set but HTTPProxy is opted out": {
+		"default global rate limit policy is set but HTTPProxy is opted out": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
@@ -1082,7 +1098,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			},
 			want: nil,
 		},
-		"default global RateLimit Policy is set but HTTPProxy defines its own global RateLimit policy": {
+		"default global rate limit policy is set but HTTPProxy defines its own global RateLimit policy": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
@@ -1144,7 +1160,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"Default RateLimit Policy is set": {
+		"Default rate limit policy is set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
@@ -1189,7 +1205,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-		"general RateLimit Policy is set and HTTPProxy's local rateLimitPolicy should not change": {
+		"general rate limit policy is set and HTTPProxy's local rate limit should not change": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),

@@ -1,6 +1,6 @@
 # Default Global RateLimit Policy
 
-Status: Reviewing
+Status: Accepted
 
 ## Abstract
 Define a default global rate limit policy in the Contour configuration to be used as a global rate limit policy by all HTTPProxy objects.
