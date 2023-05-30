@@ -107,19 +107,22 @@ BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envo
 *This command mimics the Envoy release CI process with the target `bazel.release` but differs in only running a single test for brevity. You may omit the `//test/exe:envoy_static_test` test entirely to run the full suite of Envoy tests.*
 
 Replace `<envoy-output-dir>` with a directory you would like the build output to be placed on your host computer.
-Once that build completes, you should have a file named `envoy_binary.tar.gz` in your specified output directory.
 
-If you would like to build an image with Envoy according to your own specifications, you can unpack the resulting tar archive and you will find a stripped Envoy binary in the `build_release_stripped` directory and a unstripped Envoy with debug info in the `build_release` directory.
+Once that build completes, you should have a file named `release.tar.zst` in your specified output directory.
+This file is a [Zstandard](https://github.com/facebook/zstd) compressed archive containing the compiled Envoy release and debug binaries.
+If you would like to build an image with Envoy according to your own specifications, you can unpack the resulting archive and you will find a stripped Envoy binary in the root and an unstripped Envoy binary with debug info in the `dbg` directory.
 
 To build an image matching the canonical Envoy upstream release image ([`envoyproxy/envoy`][13]), run the following:
+
+*Note: You will need a recent version of Docker/BuildKit that supports Zstandard decompression.*
 
 ```bash
 # Make ./linux/amd64 directories.
 mkdir -p ./linux/amd64
-# Untar tar archive from build step.
-tar xzf <envoy-output-dir>/envoy_binary.tar.gz -C ./linux/amd64
+# Copy Zstandard archive from build step.
+cp -a <envoy-output-dir>/envoy/x64/bin/release.tar.zst ./linux/amd64/release.tar.zst
 # Run the Docker image build.
-docker build -f ./ci/Dockerfile-envoy .
+docker build -f ./ci/Dockerfile-envoy --target envoy .
 ```
 
 Once you have an image built, you can tag it as needed, push the image to a registry, and use it in an Envoy deployment.
