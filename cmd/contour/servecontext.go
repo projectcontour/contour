@@ -316,6 +316,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		accessLogLevel = contour_api_v1alpha1.LogLevelInfo
 	case config.LogLevelError:
 		accessLogLevel = contour_api_v1alpha1.LogLevelError
+	case config.LogLevelCritical:
+		accessLogLevel = contour_api_v1alpha1.LogLevelCritical
 	case config.LogLevelDisabled:
 		accessLogLevel = contour_api_v1alpha1.LogLevelDisabled
 	}

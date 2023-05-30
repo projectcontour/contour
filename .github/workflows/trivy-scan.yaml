@@ -13,9 +13,9 @@ jobs:
       matrix:
         branch:
         - main
+        - release-1.25
         - release-1.24
         - release-1.23
-        - release-1.22
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

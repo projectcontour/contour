@@ -355,6 +355,9 @@ func TestGatewayReconcile(t *testing.T) {
 							Listener: &contourv1alpha1.EnvoyListenerConfig{
 								DisableMergeSlashes: ref.To(true),
 							},
+							Metrics: &contourv1alpha1.MetricsConfig{
+								Port: 8003,
+							},
 						},
 					},
 				},
@@ -401,6 +404,9 @@ func TestGatewayReconcile(t *testing.T) {
 						Service: &contourv1alpha1.NamespacedName{
 							Namespace: gw.Namespace,
 							Name:      "envoy-" + gw.Name,
+						},
+						Metrics: &contourv1alpha1.MetricsConfig{
+							Port: 8003,
 						},
 					},
 				}
@@ -1023,6 +1029,7 @@ func TestGatewayReconcile(t *testing.T) {
 						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
 							Type:                  contourv1alpha1.NodePortServicePublishingType,
 							ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeCluster,
+							IPFamilyPolicy:        corev1.IPFamilyPolicyPreferDualStack,
 							ServiceAnnotations: map[string]string{
 								"key-1": "val-1",
 								"key-2": "val-2",
@@ -1083,6 +1090,7 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
 				assert.Equal(t, corev1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
+				assert.Equal(t, ref.To(corev1.IPFamilyPolicyPreferDualStack), svc.Spec.IPFamilyPolicy)
 				assert.Equal(t, corev1.ServiceTypeNodePort, svc.Spec.Type)
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])
@@ -1373,12 +1381,14 @@ func TestGatewayReconcile(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.gatewayClass != nil {
 				client.WithObjects(tc.gatewayClass)
+				client.WithStatusSubresource(tc.gatewayClass)
 			}
 			if tc.gatewayClassParams != nil {
 				client.WithObjects(tc.gatewayClassParams)
 			}
 			if tc.gateway != nil {
 				client.WithObjects(tc.gateway)
+				client.WithStatusSubresource(tc.gateway)
 			}
 
 			r := &gatewayReconciler{

@@ -124,10 +124,10 @@ if [ $success != "true" ]; then
   exit 1
 fi
 
-
-
 # Install cert-manager.
-${KUBECTL} apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.1/cert-manager.yaml
+CERT_MANAGER_VERSION=$(go list -m all | grep github.com/cert-manager/cert-manager | awk '{print $2}')
+
+${KUBECTL} apply -f https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 

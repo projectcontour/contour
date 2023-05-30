@@ -1,1 +1,0 @@
-Gateway API: support regex path/header match for HTTPRoute and regex header match for GRPCRoute.

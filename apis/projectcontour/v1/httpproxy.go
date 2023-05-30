@@ -55,13 +55,14 @@ type Include struct {
 	// When applied, they are merged using AND, with one exception:
 	// There can be only one Prefix MatchCondition per Conditions slice.
 	// More than one Prefix, or contradictory Conditions, will make the
-	// include invalid.
+	// include invalid. Exact and Regex match conditions are not allowed
+	// on includes.
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`
 }
 
 // MatchCondition are a general holder for matching rules for HTTPProxies.
-// One of Prefix, Exact, Header or QueryParameter must be provided.
+// One of Prefix, Exact, Regex, Header or QueryParameter must be provided.
 type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
@@ -71,6 +72,11 @@ type MatchCondition struct {
 	// This field is not allowed in include match conditions.
 	// +optional
 	Exact string `json:"exact,omitempty"`
+
+	// Regex defines a regex match for a request.
+	// This field is not allowed in include match conditions.
+	// +optional
+	Regex string `json:"regex,omitempty"`
 
 	// Header specifies the header condition to match.
 	// +optional
@@ -120,6 +126,11 @@ type HeaderMatchCondition struct {
 	// equal to. The condition is true if the header has any other value.
 	// +optional
 	NotExact string `json:"notexact,omitempty"`
+
+	// Regex specifies a regular expression pattern that must match the header
+	// value.
+	// +optional
+	Regex string `json:"regex,omitempty"`
 }
 
 // QueryParameterMatchCondition specifies how to conditionally match against HTTP
@@ -480,9 +491,9 @@ type CORSPolicy struct {
 type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
-	// There can be only one Prefix MatchCondition per Conditions slice.
-	// More than one Prefix, or contradictory Conditions, will make the
-	// route invalid.
+	// There can be only one Prefix, Exact or Regex MatchCondition
+	// per Conditions slice. More than one of these condition types,
+	// or contradictory Conditions, will make the route invalid.
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic.

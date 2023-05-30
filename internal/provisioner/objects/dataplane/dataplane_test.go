@@ -19,7 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -294,13 +294,19 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	// Change the Envoy log level to test --log-level debug.
 	cntr.Spec.EnvoyLogLevel = v1alpha1.DebugLog
+	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
+		Envoy: &v1alpha1.EnvoyConfig{
+			Metrics: &v1alpha1.MetricsConfig{
+				Port: int(objects.EnvoyMetricsPort),
+			},
+		},
+	}
 
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
 	checkContainerHasReadinessPort(t, container, 8002)
-	assert.Len(t, container.Ports, 2)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)
@@ -313,12 +319,14 @@ func TestDesiredDaemonSet(t *testing.T) {
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		checkContainerHasPort(t, ds, port.ContainerPort)
 	}
+	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port))
+
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)
 	checkDaemonSecurityContext(t, ds)
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
-	checkDaemonSetHasMetricsPort(t, ds, 8002)
+	checkDaemonSetHasMetricsPort(t, ds, objects.EnvoyMetricsPort)
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
@@ -365,6 +373,7 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 
 func TestEnvoyCustomPorts(t *testing.T) {
 	name := "envoy-runtime-ports"
+	metricPort := 9090
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
 		Envoy: &v1alpha1.EnvoyConfig{
@@ -372,7 +381,7 @@ func TestEnvoyCustomPorts(t *testing.T) {
 				Port: 8020,
 			},
 			Metrics: &v1alpha1.MetricsConfig{
-				Port: 9090,
+				Port: metricPort,
 			},
 		},
 	}
@@ -380,7 +389,8 @@ func TestEnvoyCustomPorts(t *testing.T) {
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
-	checkDaemonSetHasMetricsPort(t, ds, 9090)
+	checkDaemonSetHasMetricsPort(t, ds, int32(metricPort))
+	checkContainerHasPort(t, ds, int32(metricPort))
 
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasReadinessPort(t, container, 8020)

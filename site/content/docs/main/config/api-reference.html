@@ -1915,6 +1915,20 @@ string
 equal to. The condition is true if the header has any other value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>regex</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Regex specifies a regular expression pattern that must match the header
+value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
@@ -2146,7 +2160,8 @@ structs.
 When applied, they are merged using AND, with one exception:
 There can be only one Prefix MatchCondition per Conditions slice.
 More than one Prefix, or contradictory Conditions, will make the
-include invalid.</p>
+include invalid. Exact and Regex match conditions are not allowed
+on includes.</p>
 </td>
 </tr>
 </tbody>
@@ -2465,7 +2480,7 @@ set when a request is rate-limited.</p>
 </p>
 <p>
 <p>MatchCondition are a general holder for matching rules for HTTPProxies.
-One of Prefix, Exact, Header or QueryParameter must be provided.</p>
+One of Prefix, Exact, Regex, Header or QueryParameter must be provided.</p>
 </p>
 <table>
 <thead>
@@ -2499,6 +2514,20 @@ string
 <td>
 <em>(Optional)</em>
 <p>Exact defines a exact match for a request.
+This field is not allowed in include match conditions.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>regex</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Regex defines a regex match for a request.
 This field is not allowed in include match conditions.</p>
 </td>
 </tr>
@@ -3410,9 +3439,9 @@ Ignored if NumRetries is not supplied.</p>
 <em>(Optional)</em>
 <p>Conditions are a set of rules that are applied to a Route.
 When applied, they are merged using AND, with one exception:
-There can be only one Prefix MatchCondition per Conditions slice.
-More than one Prefix, or contradictory Conditions, will make the
-route invalid.</p>
+There can be only one Prefix, Exact or Regex MatchCondition
+per Conditions slice. More than one of these condition types,
+or contradictory Conditions, will make the route invalid.</p>
 </td>
 </tr>
 <tr>
@@ -5328,11 +5357,14 @@ ExtensionServiceStatus
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;disabled&#34;</p></td>
+<tbody><tr><td><p>&#34;critical&#34;</p></td>
+<td><p>Log only requests that result in an server error (i.e. 500+) response code.</p>
+</td>
+</tr><tr><td><p>&#34;disabled&#34;</p></td>
 <td><p>Disable the access log.</p>
 </td>
 </tr><tr><td><p>&#34;error&#34;</p></td>
-<td><p>Log only requests that result in an error.</p>
+<td><p>Log only requests that result in a non-success (i.e. 300+) response code</p>
 </td>
 </tr><tr><td><p>&#34;info&#34;</p></td>
 <td><p>Log all requests. This is the default.</p>
@@ -6607,7 +6639,7 @@ AccessLogLevel
 <td>
 <em>(Optional)</em>
 <p>AccessLogLevel sets the verbosity level of the access log.</p>
-<p>Values: <code>info</code> (default, meaning all requests are logged), <code>error</code> and <code>disabled</code>.</p>
+<p>Values: <code>info</code> (default, all requests are logged), <code>error</code> (all non-success requests, i.e. 300+ response code, are logged), <code>critical</code> (all 5xx requests are logged) and <code>disabled</code>.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>
@@ -7718,8 +7750,8 @@ ClusterIP Service is created to publish the network endpoints.</p>
 <code>externalTrafficPolicy</code>
 <br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#serviceexternaltrafficpolicytype-v1-core">
-Kubernetes core/v1.ServiceExternalTrafficPolicyType
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#serviceexternaltrafficpolicy-v1-core">
+Kubernetes core/v1.ServiceExternalTrafficPolicy
 </a>
 </em>
 </td>
@@ -7729,6 +7761,26 @@ Kubernetes core/v1.ServiceExternalTrafficPolicyType
 receive on one of the Service&rsquo;s &ldquo;externally-facing&rdquo; addresses (NodePorts, ExternalIPs,
 and LoadBalancer IPs).</p>
 <p>If unset, defaults to &ldquo;Local&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ipFamilyPolicy</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#ipfamilypolicy-v1-core">
+Kubernetes core/v1.IPFamilyPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IPFamilyPolicy represents the dual-stack-ness requested or required by
+this Service. If there is no value provided, then this field will be set
+to SingleStack. Services can be &ldquo;SingleStack&rdquo; (a single IP family),
+&ldquo;PreferDualStack&rdquo; (two IP families on dual-stack configured clusters or
+a single IP family on single-stack clusters), or &ldquo;RequireDualStack&rdquo;
+(two IP families on dual-stack configured clusters, otherwise fail).</p>
 </td>
 </tr>
 <tr>

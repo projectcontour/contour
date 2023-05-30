@@ -802,6 +802,7 @@ func (a AccessLogLevel) Validate() error {
 
 const LogLevelInfo AccessLogLevel = "info" // Default log level.
 const LogLevelError AccessLogLevel = "error"
+const LogLevelCritical AccessLogLevel = "critical"
 const LogLevelDisabled AccessLogLevel = "disabled"
 
 // Validate verifies that the parameter values do not have any syntax errors.

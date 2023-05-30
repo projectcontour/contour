@@ -41,7 +41,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.20.3
+BUILD_BASE_IMAGE ?= golang:1.20.4
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -341,7 +341,7 @@ load-contour-image-kind: ## Load Contour image from building working source or p
 	./test/scripts/kind-load-contour-image.sh
 
 .PHONY: upgrade
-upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-kind ## Run upgrade tests against a real k8s cluster
+upgrade: | setup-kind-cluster load-contour-image-kind run-upgrade cleanup-kind ## Run upgrade tests against a real k8s cluster
 
 .PHONY: run-upgrade
 run-upgrade:

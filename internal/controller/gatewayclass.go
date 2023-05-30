@@ -77,7 +77,7 @@ func RegisterGatewayClassController(
 
 	// Only enqueue GatewayClass objects that match name.
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.GatewayClass{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -201,7 +201,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, err
 	}
 
-	r.eventHandler.OnAdd(controlledClasses.acceptedClass())
+	r.eventHandler.OnAdd(controlledClasses.acceptedClass(), false)
 
 	return reconcile.Result{}, nil
 }

@@ -46,6 +46,7 @@ func Default(namespace, name string) *Contour {
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
 					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
+					IPFamilyPolicy:        corev1.IPFamilyPolicySingleStack,
 				},
 			},
 			EnvoyDaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -367,6 +368,11 @@ type EnvoyNetworkPublishing struct {
 
 	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
 	ServiceAnnotations map[string]string
+
+	// IPFamilyPolicy represents the dual-stack-ness requested or required by
+	// this Service. If there is no value provided, then this field will be set
+	// to SingleStack.
+	IPFamilyPolicy corev1.IPFamilyPolicy
 
 	// ExternalTrafficPolicy describes how nodes distribute service traffic they
 	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,

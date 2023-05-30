@@ -100,7 +100,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
 				AccessLogFormatString: "foo",
 				AccessLogJSONFields:   []string{"field-1", "field-2"},
-				AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
+				AccessLogLevel:        contour_api_v1alpha1.LogLevelCritical,
 			},
 			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 				"HTTP/2.2",

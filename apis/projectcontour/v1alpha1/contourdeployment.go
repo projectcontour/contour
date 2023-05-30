@@ -267,6 +267,16 @@ type NetworkPublishing struct {
 	// +optional
 	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
 
+	// IPFamilyPolicy represents the dual-stack-ness requested or required by
+	// this Service. If there is no value provided, then this field will be set
+	// to SingleStack. Services can be "SingleStack" (a single IP family),
+	// "PreferDualStack" (two IP families on dual-stack configured clusters or
+	// a single IP family on single-stack clusters), or "RequireDualStack"
+	// (two IP families on dual-stack configured clusters, otherwise fail).
+	//
+	// +optional
+	IPFamilyPolicy corev1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+
 	// ServiceAnnotations is the annotations to add to
 	// the provisioned Envoy service.
 	//

@@ -80,7 +80,7 @@ var _ = BeforeSuite(func() {
 		}
 	}
 
-	_, ok := f.CreateGatewayClassAndWaitFor(gc, gatewayClassAccepted)
+	_, ok := f.CreateGatewayClassAndWaitFor(gc, e2e.GatewayClassAccepted)
 	require.True(f.T(), ok)
 
 	paramsEnvoyDeployment := &contour_api_v1alpha1.ContourDeployment{
@@ -111,7 +111,7 @@ var _ = BeforeSuite(func() {
 			},
 		},
 	}
-	_, ok = f.CreateGatewayClassAndWaitFor(gcWithEnvoyDeployment, gatewayClassAccepted)
+	_, ok = f.CreateGatewayClassAndWaitFor(gcWithEnvoyDeployment, e2e.GatewayClassAccepted)
 	require.True(f.T(), ok)
 })
 
@@ -153,7 +153,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, gatewayClassNotAccepted)
+			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
 			require.True(f.T(), ok)
 
 			// Create a Gateway using that GatewayClass, it should not be accepted
@@ -187,7 +187,7 @@ var _ = Describe("Gateway provisioner", func() {
 					return false
 				}
 
-				return gatewayAccepted(gw)
+				return e2e.GatewayAccepted(gw)
 			}, 10*time.Second, time.Second)
 
 			// Now create the ContourDeployment to match the parametersRef.
@@ -209,7 +209,7 @@ var _ = Describe("Gateway provisioner", func() {
 					return false
 				}
 
-				return gatewayClassAccepted(gc)
+				return e2e.GatewayClassAccepted(gc)
 			}, time.Minute, time.Second)
 
 			// And now the Gateway should be accepted.
@@ -219,7 +219,7 @@ var _ = Describe("Gateway provisioner", func() {
 					return false
 				}
 
-				return gatewayAccepted(gw)
+				return e2e.GatewayAccepted(gw)
 			}, time.Minute, time.Second)
 
 			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
@@ -250,7 +250,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 
 			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
-				return gatewayProgrammed(gw) && gatewayHasAddress(gw)
+				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
 
@@ -276,7 +276,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok = f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
+			_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 			require.True(f.T(), ok)
 
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
@@ -294,100 +294,6 @@ var _ = Describe("Gateway provisioner", func() {
 		})
 	})
 })
-
-// gatewayClassAccepted returns true if the gateway has a .status.conditions
-// entry of Accepted: true".
-func gatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
-	if gatewayClass == nil {
-		return false
-	}
-
-	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
-}
-
-// gatewayClassNotAccepted returns true if the gateway has a .status.conditions
-// entry of Accepted: false".
-func gatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
-	if gatewayClass == nil {
-		return false
-	}
-
-	return conditionExists(
-		gatewayClass.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
-		metav1.ConditionFalse,
-	)
-}
-
-// gatewayAccepted returns true if the gateway has a .status.conditions
-// entry of "Accepted: true".
-func gatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
-	if gateway == nil {
-		return false
-	}
-
-	return conditionExists(
-		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionAccepted),
-		metav1.ConditionTrue,
-	)
-}
-
-// gatewayProgrammed returns true if the gateway has a .status.conditions
-// entry of "Programmed: true".
-func gatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
-	if gateway == nil {
-		return false
-	}
-
-	return conditionExists(
-		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionProgrammed),
-		metav1.ConditionTrue,
-	)
-}
-
-// gatewayHasAddress returns true if the gateway has a non-empty
-// .status.addresses entry.
-func gatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
-	if gateway == nil {
-		return false
-	}
-
-	return len(gateway.Status.Addresses) > 0 && gateway.Status.Addresses[0].Value != ""
-}
-
-// httpRouteAccepted returns true if the route has a .status.conditions
-// entry of "Accepted: true".
-func httpRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
-	if route == nil {
-		return false
-	}
-
-	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func conditionExists(conditions []metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) bool {
-	for _, cond := range conditions {
-		if cond.Type == conditionType && cond.Status == conditionStatus {
-			return true
-		}
-	}
-
-	return false
-}
 
 func contourDeploymentRuntimeSettings() *contour_api_v1alpha1.ContourConfigurationSpec {
 	if os.Getenv("IPV6_CLUSTER") != "true" {

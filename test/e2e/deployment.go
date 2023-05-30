@@ -43,7 +43,6 @@ import (
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -357,21 +356,7 @@ func (d *Deployment) EnsureContourDeployment() error {
 }
 
 func (d *Deployment) WaitForContourDeploymentUpdated() error {
-	// List pods with app label "contour" and check that pods are updated
-	// with expected container image and in ready state.
-	// We do this instead of checking Deployment status as it is possible
-	// for it not to have been updated yet and replicas not yet been shut
-	// down.
-
-	if len(d.ContourDeployment.Spec.Template.Spec.Containers) != 1 {
-		return errors.New("invalid Contour Deployment containers spec")
-	}
-	labelSelectAppContour := labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels)
-	updatedPods := func(ctx context.Context) (bool, error) {
-		updatedPods := d.getPodsUpdatedWithContourImage(ctx, labelSelectAppContour, d.EnvoyDaemonSet.Namespace)
-		return updatedPods == int(*d.ContourDeployment.Spec.Replicas), nil
-	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute, true, updatedPods)
+	return WaitForContourDeploymentUpdated(d.ContourDeployment, d.client, d.contourImage)
 }
 
 func (d *Deployment) EnsureEnvoyDaemonSet() error {
@@ -384,75 +369,9 @@ func (d *Deployment) EnsureEnvoyDeployment() error {
 
 func (d *Deployment) WaitForEnvoyUpdated() error {
 	if d.EnvoyDeploymentMode == DaemonsetMode {
-		return d.waitForEnvoyDaemonSetUpdated()
+		return WaitForEnvoyDaemonSetUpdated(d.EnvoyDaemonSet, d.client, d.contourImage)
 	}
-	return d.waitForEnvoyDeploymentUpdated()
-}
-
-func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
-	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDaemonSet.Spec.Selector.MatchLabels)
-	updatedPods := func(ctx context.Context) (bool, error) {
-		ds := &apps_v1.DaemonSet{}
-		if err := d.client.Get(ctx, types.NamespacedName{Name: d.EnvoyDaemonSet.Name, Namespace: d.EnvoyDaemonSet.Namespace}, ds); err != nil {
-			return false, err
-		}
-		updatedPods := int(ds.Status.DesiredNumberScheduled)
-		if len(ds.Spec.Template.Spec.Containers) > 1 {
-			updatedPods = d.getPodsUpdatedWithContourImage(ctx, labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
-		}
-		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
-			ds.Status.NumberReady > 0, nil
-	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
-}
-
-func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
-	labelSelectAppEnvoy := labels.SelectorFromSet(d.EnvoyDeployment.Spec.Selector.MatchLabels)
-	updatedPods := func(ctx context.Context) (bool, error) {
-		dp := new(apps_v1.Deployment)
-		if err := d.client.Get(ctx, client.ObjectKeyFromObject(d.EnvoyDeployment), dp); err != nil {
-			return false, err
-		}
-		updatedPods := int(dp.Status.UpdatedReplicas)
-		if len(dp.Spec.Template.Spec.Containers) > 1 {
-			updatedPods = d.getPodsUpdatedWithContourImage(ctx, labelSelectAppEnvoy, d.EnvoyDaemonSet.Namespace)
-		}
-		return updatedPods == int(*d.EnvoyDeployment.Spec.Replicas) &&
-			int(dp.Status.ReadyReplicas) == updatedPods &&
-			int(dp.Status.UnavailableReplicas) == 0, nil
-	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
-}
-
-func (d *Deployment) getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace string) int {
-	contourPodImage := d.ContourDeployment.Spec.Template.Spec.Containers[0].Image
-	pods := new(v1.PodList)
-	labelSelect := &client.ListOptions{
-		LabelSelector: labelSelector,
-		Namespace:     namespace,
-	}
-	if err := d.client.List(ctx, pods, labelSelect); err != nil {
-		return 0
-	}
-	updatedPods := 0
-	for _, pod := range pods.Items {
-		updated := false
-		for _, container := range pod.Spec.Containers {
-			if container.Image == contourPodImage {
-				updated = true
-			}
-		}
-		if !updated {
-			continue
-		}
-
-		for _, cond := range pod.Status.Conditions {
-			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
-				updatedPods++
-			}
-		}
-	}
-	return updatedPods
+	return WaitForEnvoyDeploymentUpdated(d.EnvoyDeployment, d.client, d.contourImage)
 }
 
 func (d *Deployment) EnsureRateLimitResources(namespace string, configContents string) error {
@@ -877,6 +796,10 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		if err := d.EnsureContourDeployment(); err != nil {
 			return err
 		}
+
+		if err := d.WaitForContourDeploymentUpdated(); err != nil {
+			return err
+		}
 	}
 
 	var envoyPodSpec *v1.PodSpec
@@ -904,11 +827,23 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		// node, so scale the deployment to 1.
 		d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
 
-		return d.EnsureEnvoyDeployment()
+		if err := d.EnsureEnvoyDeployment(); err != nil {
+			return err
+		}
+	} else {
+		// Otherwise, we're deploying Envoy as a DaemonSet.
+		if err := d.EnsureEnvoyDaemonSet(); err != nil {
+			return err
+		}
 	}
 
-	// Otherwise, we're deploying Envoy as a DaemonSet.
-	return d.EnsureEnvoyDaemonSet()
+	if startContourDeployment {
+		// Envoys will only be ready if Contour
+		// has started.
+		return d.WaitForEnvoyUpdated()
+	}
+
+	return nil
 }
 
 // DeleteResourcesForInclusterContour ensures deletion of all resources

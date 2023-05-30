@@ -1,1 +1,0 @@
-Upgrade algolia docsearch to v3 on the docs website

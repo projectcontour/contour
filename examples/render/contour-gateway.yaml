@@ -222,7 +222,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: contourconfigurations.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -474,9 +474,10 @@ spec:
                         type: array
                       accessLogLevel:
                         description: "AccessLogLevel sets the verbosity level of the
-                          access log. \n Values: `info` (default, meaning all requests
-                          are logged), `error` and `disabled`. \n Other values will
-                          produce an error."
+                          access log. \n Values: `info` (default, all requests are
+                          logged), `error` (all non-success requests, i.e. 300+ response
+                          code, are logged), `critical` (all 5xx requests are logged)
+                          and `disabled`. \n Other values will produce an error."
                         type: string
                     type: object
                   metrics:
@@ -1189,7 +1190,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: contourdeployments.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -1425,7 +1426,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                 type: object
@@ -2017,7 +2019,7 @@ spec:
                                 value between the SizeLimit specified here and the
                                 sum of memory limits of all containers in a pod. The
                                 default is nil which means that the limit is undefined.
-                                More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                           type: object
@@ -2244,7 +2246,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     selector:
@@ -3249,6 +3252,16 @@ spec:
                           addresses (NodePorts, ExternalIPs, and LoadBalancer IPs).
                           \n If unset, defaults to \"Local\"."
                         type: string
+                      ipFamilyPolicy:
+                        description: IPFamilyPolicy represents the dual-stack-ness
+                          requested or required by this Service. If there is no value
+                          provided, then this field will be set to SingleStack. Services
+                          can be "SingleStack" (a single IP family), "PreferDualStack"
+                          (two IP families on dual-stack configured clusters or a
+                          single IP family on single-stack clusters), or "RequireDualStack"
+                          (two IP families on dual-stack configured clusters, otherwise
+                          fail).
+                        type: string
                       serviceAnnotations:
                         additionalProperties:
                           type: string
@@ -3401,7 +3414,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   workloadType:
@@ -3644,9 +3658,11 @@ spec:
                             type: array
                           accessLogLevel:
                             description: "AccessLogLevel sets the verbosity level
-                              of the access log. \n Values: `info` (default, meaning
-                              all requests are logged), `error` and `disabled`. \n
-                              Other values will produce an error."
+                              of the access log. \n Values: `info` (default, all requests
+                              are logged), `error` (all non-success requests, i.e.
+                              300+ response code, are logged), `critical` (all 5xx
+                              requests are logged) and `disabled`. \n Other values
+                              will produce an error."
                             type: string
                         type: object
                       metrics:
@@ -4231,7 +4247,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: extensionservices.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -4652,7 +4668,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: httpproxies.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -4718,11 +4734,12 @@ spec:
                         they are merged using AND, with one exception: There can be
                         only one Prefix MatchCondition per Conditions slice. More
                         than one Prefix, or contradictory Conditions, will make the
-                        include invalid.'
+                        include invalid. Exact and Regex match conditions are not
+                        allowed on includes.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
-                          must be provided.
+                          rules for HTTPProxies. One of Prefix, Exact, Regex, Header
+                          or QueryParameter must be provided.
                         properties:
                           exact:
                             description: Exact defines a exact match for a request.
@@ -4767,6 +4784,10 @@ spec:
                                   not make the condition true if the named header
                                   is absent.
                                 type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the header value.
+                                type: string
                             required:
                             - name
                             type: object
@@ -4817,6 +4838,10 @@ spec:
                             required:
                             - name
                             type: object
+                          regex:
+                            description: Regex defines a regex match for a request.
+                              This field is not allowed in include match conditions.
+                            type: string
                         type: object
                       type: array
                     name:
@@ -4864,13 +4889,14 @@ spec:
                     conditions:
                       description: 'Conditions are a set of rules that are applied
                         to a Route. When applied, they are merged using AND, with
-                        one exception: There can be only one Prefix MatchCondition
-                        per Conditions slice. More than one Prefix, or contradictory
-                        Conditions, will make the route invalid.'
+                        one exception: There can be only one Prefix, Exact or Regex
+                        MatchCondition per Conditions slice. More than one of these
+                        condition types, or contradictory Conditions, will make the
+                        route invalid.'
                       items:
                         description: MatchCondition are a general holder for matching
-                          rules for HTTPProxies. One of Prefix, Exact, Header or QueryParameter
-                          must be provided.
+                          rules for HTTPProxies. One of Prefix, Exact, Regex, Header
+                          or QueryParameter must be provided.
                         properties:
                           exact:
                             description: Exact defines a exact match for a request.
@@ -4915,6 +4941,10 @@ spec:
                                   not make the condition true if the named header
                                   is absent.
                                 type: boolean
+                              regex:
+                                description: Regex specifies a regular expression
+                                  pattern that must match the header value.
+                                type: string
                             required:
                             - name
                             type: object
@@ -4965,6 +4995,10 @@ spec:
                             required:
                             - name
                             type: object
+                          regex:
+                            description: Regex defines a regex match for a request.
+                              This field is not allowed in include match conditions.
+                            type: string
                         type: object
                       type: array
                     cookieRewritePolicies:
@@ -5461,6 +5495,11 @@ spec:
                                                       true if the named header is
                                                       absent.
                                                     type: boolean
+                                                  regex:
+                                                    description: Regex specifies a
+                                                      regular expression pattern that
+                                                      must match the header value.
+                                                    type: string
                                                 required:
                                                 - name
                                                 type: object
@@ -6784,6 +6823,11 @@ spec:
                                                     the condition true if the named
                                                     header is absent.
                                                   type: boolean
+                                                regex:
+                                                  description: Regex specifies a regular
+                                                    expression pattern that must match
+                                                    the header value.
+                                                  type: string
                                               required:
                                               - name
                                               type: object
@@ -7272,7 +7316,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: tlscertificatedelegations.projectcontour.io
 spec:
   preserveUnknownFields: false

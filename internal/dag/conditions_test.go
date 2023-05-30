@@ -139,6 +139,40 @@ func TestPathMatchCondition(t *testing.T) {
 				}},
 			want: &ExactMatchCondition{Path: "/"},
 		},
+		"regex": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/.*",
+			}},
+			want: &RegexMatchCondition{Regex: "/.*"},
+		},
+		"empty regexp": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "",
+			}},
+			want: &PrefixMatchCondition{Prefix: "/"},
+		},
+		"regex /": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/",
+			}},
+			want: &RegexMatchCondition{Regex: "/"},
+		},
+		"regex-prefix match conditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/",
+			}, {
+				Regex: "/.*",
+			}},
+			want: &RegexMatchCondition{Regex: "/.*"},
+		},
+		"regex-prefix with trailing slash match conditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Prefix: "/api/",
+			}, {
+				Regex: "/v[0-9]+",
+			}},
+			want: &RegexMatchCondition{Regex: "/api/v[0-9]+"},
+		},
 		"header condition": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Header: new(contour_api_v1.HeaderMatchCondition),
@@ -678,6 +712,28 @@ func TestValidateHeaderMatchConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		"invalid 'regex' value specified": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:  "x-different-header",
+						Regex: "[",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"valid 'regex' value specified": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:  "x-different-header",
+						Regex: "foo.*",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for name, tc := range tests {
@@ -821,6 +877,55 @@ func TestValidateQueryParameterMatchConditions(t *testing.T) {
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			}
+		})
+	}
+}
+
+func TestRegexMatchConditionsValid(t *testing.T) {
+	tests := map[string]struct {
+		matchconditions []contour_api_v1.MatchCondition
+		want            bool
+	}{
+		"valid regex match condition": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/.*/api",
+			}},
+			want: true,
+		},
+		"two regex conditions": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/.*/api",
+			}, {
+				Regex: "/.*",
+			}},
+			want: false,
+		},
+		"Regex and Prefix conditions set": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/.*/api",
+			}, {
+				Prefix: "/v1",
+			}},
+			want: false,
+		},
+		"invalid regex, no slash": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "234",
+			}},
+			want: false,
+		},
+		"invalid regex, ": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Regex: "/[a-zA-Z+",
+			}},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := pathMatchConditionsValid(tc.matchconditions)
+			assert.Equal(t, tc.want, err == nil)
 		})
 	}
 }

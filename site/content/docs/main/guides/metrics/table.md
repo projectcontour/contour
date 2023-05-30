@@ -12,3 +12,9 @@
 | contour_httpproxy_orphaned | [GAUGE](https://prometheus.io/docs/concepts/metric_types/#gauge) | namespace | Total number of orphaned HTTPProxies which have no root delegating to them. |
 | contour_httpproxy_root | [GAUGE](https://prometheus.io/docs/concepts/metric_types/#gauge) | namespace | Total number of root HTTPProxies. Note there will only be a single root HTTPProxy per vhost. |
 | contour_httpproxy_valid | [GAUGE](https://prometheus.io/docs/concepts/metric_types/#gauge) | namespace, vhost | Total number of valid HTTPProxies. |
+| contour_status_update_conflict_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind | Number of status update conflicts encountered by object kind. |
+| contour_status_update_duration_seconds | [SUMMARY](https://prometheus.io/docs/concepts/metric_types/#summary) | error, kind | How long a status update takes to finish. |
+| contour_status_update_failed_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind | Number of status updates that failed by object kind. |
+| contour_status_update_noop_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind | Number of status updates that are no-ops by object kind. This is a subset of successful status updates. |
+| contour_status_update_success_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind | Number of status updates that succeeded by object kind. |
+| contour_status_update_total | [COUNTER](https://prometheus.io/docs/concepts/metric_types/#counter) | kind | Total number of status updates by object kind. |

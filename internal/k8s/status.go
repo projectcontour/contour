@@ -15,8 +15,10 @@ package k8s
 
 import (
 	"context"
+	"time"
 
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,25 +60,63 @@ func (m StatusMutatorFunc) Mutate(old client.Object) client.Object {
 	return m(old)
 }
 
+type StatusMetrics interface {
+	SetStatusUpdateTotal(kind string)
+	SetStatusUpdateSuccess(kind string)
+	SetStatusUpdateNoop(kind string)
+	SetStatusUpdateFailed(kind string)
+	SetStatusUpdateConflict(kind string)
+	SetStatusUpdateDuration(duration time.Duration, kind string, onError bool)
+}
+
 // StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
 type StatusUpdateHandler struct {
 	log           logrus.FieldLogger
 	client        client.Client
+	metrics       StatusMetrics
 	sendUpdates   chan struct{}
 	updateChannel chan StatusUpdate
 }
 
-func NewStatusUpdateHandler(log logrus.FieldLogger, client client.Client) *StatusUpdateHandler {
+func NewStatusUpdateHandler(log logrus.FieldLogger, client client.Client, metrics StatusMetrics) *StatusUpdateHandler {
 	return &StatusUpdateHandler{
 		log:           log,
 		client:        client,
+		metrics:       metrics,
 		sendUpdates:   make(chan struct{}),
 		updateChannel: make(chan StatusUpdate, 100),
 	}
 }
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
-	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	var statusUpdateErr error
+	objKind := KindOf(upd.Resource)
+	log := suh.log.WithField("name", upd.NamespacedName.Name).
+		WithField("namespace", upd.NamespacedName.Namespace).
+		WithField("kind", objKind)
+
+	startTime := time.Now()
+
+	suh.metrics.SetStatusUpdateTotal(objKind)
+
+	defer func() {
+		updateDuration := time.Since(startTime)
+		if statusUpdateErr != nil {
+			suh.metrics.SetStatusUpdateDuration(updateDuration, objKind, true)
+			suh.metrics.SetStatusUpdateFailed(objKind)
+		} else {
+			suh.metrics.SetStatusUpdateDuration(updateDuration, objKind, false)
+			suh.metrics.SetStatusUpdateSuccess(objKind)
+		}
+	}()
+
+	if statusUpdateErr = retry.OnError(retry.DefaultBackoff, func(applyErr error) bool {
+		if errors.IsConflict(applyErr) {
+			suh.metrics.SetStatusUpdateConflict(objKind)
+			return true
+		}
+		return false
+	}, func() error {
 		obj := upd.Resource
 
 		// Get the resource.
@@ -87,18 +127,14 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 		newObj := upd.Mutator.Mutate(obj)
 
 		if isStatusEqual(obj, newObj) {
-			suh.log.WithField("name", upd.NamespacedName.Name).
-				WithField("namespace", upd.NamespacedName.Namespace).
-				Debug("update was a no-op")
+			log.Debug("update was a no-op")
+			suh.metrics.SetStatusUpdateNoop(objKind)
 			return nil
 		}
 
 		return suh.client.Status().Update(context.Background(), newObj)
-	}); err != nil {
-		suh.log.WithError(err).
-			WithField("name", upd.NamespacedName.Name).
-			WithField("namespace", upd.NamespacedName.Namespace).
-			Error("unable to update status")
+	}); statusUpdateErr != nil {
+		log.WithError(statusUpdateErr).Error("unable to update status")
 	}
 }
 

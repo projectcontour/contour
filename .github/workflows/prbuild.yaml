@@ -11,7 +11,7 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.20.3
+  GO_VERSION: 1.20.4
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Codespell
-        uses: codespell-project/actions-codespell@v1.0
+        uses: codespell-project/actions-codespell@v2.0
         with:
           skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
           ignore_words_file: './.codespell.ignorewords'

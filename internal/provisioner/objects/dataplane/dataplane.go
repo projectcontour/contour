@@ -136,13 +136,31 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		ports = append(ports, p)
 	}
 
-	healthPort := 8002
+	var (
+		metricsPort = objects.EnvoyMetricsPort
+		healthPort  = objects.EnvoyHealthPort
+	)
+
 	if contour.Spec.RuntimeSettings != nil &&
-		contour.Spec.RuntimeSettings.Envoy != nil &&
-		contour.Spec.RuntimeSettings.Envoy.Health != nil &&
-		contour.Spec.RuntimeSettings.Envoy.Health.Port > 0 {
-		healthPort = contour.Spec.RuntimeSettings.Envoy.Health.Port
+		contour.Spec.RuntimeSettings.Envoy != nil {
+
+		if contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
+			contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
+			metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port)
+
+		}
+
+		if contour.Spec.RuntimeSettings.Envoy.Health != nil &&
+			contour.Spec.RuntimeSettings.Envoy.Health.Port > 0 {
+			healthPort = contour.Spec.RuntimeSettings.Envoy.Health.Port
+		}
 	}
+
+	ports = append(ports, corev1.ContainerPort{
+		Name:          "metrics",
+		ContainerPort: metricsPort,
+		Protocol:      corev1.ProtocolTCP,
+	})
 
 	containers := []corev1.Container{
 		{
@@ -511,12 +529,12 @@ func envoyPodAnnotations(contour *model.Contour) map[string]string {
 		annotations[k] = v
 	}
 
-	metricsPort := 8002
+	metricsPort := objects.EnvoyMetricsPort
 	if contour.Spec.RuntimeSettings != nil &&
 		contour.Spec.RuntimeSettings.Envoy != nil &&
 		contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
 		contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
-		metricsPort = contour.Spec.RuntimeSettings.Envoy.Metrics.Port
+		metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port)
 	}
 
 	annotations["prometheus.io/scrape"] = "true"

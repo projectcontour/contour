@@ -125,7 +125,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
 			} else {
 				for i := range ingressList.Items {
-					u.OnAdd(&ingressList.Items[i])
+					u.OnAdd(&ingressList.Items[i], false)
 				}
 			}
 
@@ -134,7 +134,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
 			} else {
 				for i := range proxyList.Items {
-					u.OnAdd(&proxyList.Items[i])
+					u.OnAdd(&proxyList.Items[i], false)
 				}
 			}
 
@@ -146,7 +146,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")
 				} else {
 					for i := range gatewayList.Items {
-						u.OnAdd(&gatewayList.Items[i])
+						u.OnAdd(&gatewayList.Items[i], false)
 					}
 				}
 			}

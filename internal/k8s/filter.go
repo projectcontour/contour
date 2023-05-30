@@ -53,9 +53,9 @@ func (e *namespaceFilter) allowed(obj interface{}) bool {
 
 }
 
-func (e *namespaceFilter) OnAdd(obj interface{}) {
+func (e *namespaceFilter) OnAdd(obj interface{}, isInInitialList bool) {
 	if e.allowed(obj) {
-		e.next.OnAdd(obj)
+		e.next.OnAdd(obj, isInInitialList)
 	}
 }
 

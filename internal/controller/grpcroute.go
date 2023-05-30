@@ -52,7 +52,7 @@ func RegisterGRPCRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.GRPCRoute{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &gatewayapi_v1alpha2.GRPCRoute{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *grpcRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -71,7 +71,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(grpcRoute)
+	r.eventHandler.OnAdd(grpcRoute, false)
 
 	return reconcile.Result{}, nil
 }

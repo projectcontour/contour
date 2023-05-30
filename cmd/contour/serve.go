@@ -47,7 +47,6 @@ import (
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -60,6 +59,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -216,33 +216,32 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		Scheme:                 scheme,
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
-		NewCache: ctrl_cache.BuilderWithOptions(ctrl_cache.Options{
-			// TransformByObject is a function that allows changing incoming objects before they are cached by the informer.
+		Cache: ctrl_cache.Options{
+			// ByObject is a function that allows changing incoming objects before they are cached by the informer.
 			// This is useful for saving memory by removing fields that are not needed by Contour.
-			TransformByObject: ctrl_cache.TransformByObject{
-				&corev1.Secret{}: func(obj interface{}) (interface{}, error) {
-					secret, ok := obj.(*corev1.Secret)
-					// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
-					if !ok {
-						return obj, nil
-					}
+			ByObject: map[client.Object]ctrl_cache.ByObject{
+				&corev1.Secret{}: {
+					Transform: func(obj interface{}) (interface{}, error) {
+						secret, ok := obj.(*corev1.Secret)
+						// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
+						if !ok {
+							return obj, nil
+						}
 
-					// Do not touch Secrets that might be needed.
-					if secret.Type == corev1.SecretTypeTLS || secret.Type == corev1.SecretTypeOpaque {
-						return obj, nil
-					}
+						// Do not touch Secrets that might be needed.
+						if secret.Type == corev1.SecretTypeTLS || secret.Type == corev1.SecretTypeOpaque {
+							return obj, nil
+						}
 
-					// Other types of Secrets will never be referred to, so we can remove all data.
-					// For example Secrets of type helm.sh/release.v1 can be quite large.
-					// Last-applied-configuration annotation might contain a copy of the complete data.
-					secret.Data = nil
-					secret.SetManagedFields(nil)
-					secret.SetAnnotations(nil)
+						// Other types of Secrets will never be referred to, so we can remove all data.
+						// For example Secrets of type helm.sh/release.v1 can be quite large.
+						// Last-applied-configuration annotation might contain a copy of the complete data.
+						secret.Data = map[string][]byte{}
+						secret.SetManagedFields(nil)
+						secret.SetAnnotations(nil)
 
-					// Returning error will avoid handlers from being called.
-					// This does not avoid caching.
-					return nil, fmt.Errorf("ignoring secret %s/%s of type %s", secret.Namespace, secret.Name, secret.Type)
-				},
+						return secret, nil
+					}},
 			},
 			// DefaultTransform is called for objects that do not have a TransformByObject function.
 			DefaultTransform: func(obj interface{}) (interface{}, error) {
@@ -255,7 +254,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 				o.SetManagedFields(nil)
 				return o, nil
 			},
-		}),
+		},
 	}
 	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")
@@ -275,10 +274,10 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		return nil, fmt.Errorf("unable to set up controller manager: %w", err)
 	}
 
-	// Set up Prometheus registry and register base metrics.
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	registry.MustRegister(collectors.NewGoCollector())
+	// Use the controller-runtime registry to get the benefit of the
+	// metrics collected by that library (which includes process and Go
+	// statistics).
+	registry := controller_runtime_metrics.Registry.(*prometheus.Registry)
 
 	return &Server{
 		log:        log,
@@ -449,7 +448,7 @@ func (s *Server) doServe() error {
 		fallbackCert = &types.NamespacedName{Name: contourConfiguration.HTTPProxy.FallbackCertificate.Name, Namespace: contourConfiguration.HTTPProxy.FallbackCertificate.Namespace}
 	}
 
-	sh := k8s.NewStatusUpdateHandler(s.log.WithField("context", "StatusUpdateHandler"), s.mgr.GetClient())
+	sh := k8s.NewStatusUpdateHandler(s.log.WithField("context", "StatusUpdateHandler"), s.mgr.GetClient(), contourMetrics)
 	if err := s.mgr.Add(sh); err != nil {
 		return err
 	}
@@ -638,36 +637,52 @@ func (s *Server) doServe() error {
 	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
-func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.TracingConfig) (*xdscache_v3.TracingConfig, error) {
-	if tracingConfig == nil {
-		return nil, nil
-	}
-
-	// ensure the specified ExtensionService exists
+func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
 	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
 	key := client.ObjectKey{
-		Namespace: tracingConfig.ExtensionService.Namespace,
-		Name:      tracingConfig.ExtensionService.Name,
+		Namespace: namespace,
+		Name:      name,
 	}
+
 	// Using GetAPIReader() here because the manager's caches won't be started yet,
 	// so reads from the manager's client (which uses the caches for reads) will fail.
 	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
-		return nil, fmt.Errorf("error getting tracing extension service %s: %v", key, err)
+		return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error getting extension service %s: %v", key, err)
 	}
-	// get the response timeout from the ExtensionService
+
 	var responseTimeout timeout.Setting
 	var err error
 
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing tracing extension service %s response timeout: %v", key, err)
+			return xdscache_v3.ExtensionServiceConfig{}, fmt.Errorf("error parsing extension service %s response timeout: %v", key, err)
 		}
 	}
 
 	var sni string
 	if extensionSvc.Spec.UpstreamValidation != nil {
 		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	}
+
+	extensionSvcConfig := xdscache_v3.ExtensionServiceConfig{
+		ExtensionService: key,
+		Timeout:          responseTimeout,
+		SNI:              sni,
+	}
+
+	return extensionSvcConfig, nil
+}
+
+func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.TracingConfig) (*xdscache_v3.TracingConfig, error) {
+	if tracingConfig == nil {
+		return nil, nil
+	}
+
+	// ensure the specified ExtensionService exists
+	extensionSvcConfig, err := s.getExtensionSvcConfig(tracingConfig.ExtensionService.Name, tracingConfig.ExtensionService.Namespace)
+	if err != nil {
+		return nil, err
 	}
 
 	var customTags []*xdscache_v3.CustomTag
@@ -696,13 +711,11 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 	}
 
 	return &xdscache_v3.TracingConfig{
-		ServiceName:      ref.Val(tracingConfig.ServiceName, "contour"),
-		ExtensionService: key,
-		SNI:              sni,
-		Timeout:          responseTimeout,
-		OverallSampling:  overallSampling,
-		MaxPathTagLength: ref.Val(tracingConfig.MaxPathTagLength, 256),
-		CustomTags:       customTags,
+		ServiceName:            ref.Val(tracingConfig.ServiceName, "contour"),
+		ExtensionServiceConfig: extensionSvcConfig,
+		OverallSampling:        overallSampling,
+		MaxPathTagLength:       ref.Val(tracingConfig.MaxPathTagLength, 256),
+		CustomTags:             customTags,
 	}, nil
 
 }
@@ -713,39 +726,14 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	}
 
 	// ensure the specified ExtensionService exists
-	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
-	key := client.ObjectKey{
-		Namespace: contourConfiguration.RateLimitService.ExtensionService.Namespace,
-		Name:      contourConfiguration.RateLimitService.ExtensionService.Name,
-	}
-
-	// Using GetAPIReader() here because the manager's caches won't be started yet,
-	// so reads from the manager's client (which uses the caches for reads) will fail.
-	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
-		return nil, fmt.Errorf("error getting rate limit extension service %s: %v", key, err)
-	}
-
-	// get the response timeout from the ExtensionService
-	var responseTimeout timeout.Setting
-	var err error
-
-	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
-		responseTimeout, err = timeout.Parse(tp.Response)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", key, err)
-		}
-	}
-
-	var sni string
-	if extensionSvc.Spec.UpstreamValidation != nil {
-		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	extensionSvcConfig, err := s.getExtensionSvcConfig(contourConfiguration.RateLimitService.ExtensionService.Name, contourConfiguration.RateLimitService.ExtensionService.Namespace)
+	if err != nil {
+		return nil, err
 	}
 
 	return &xdscache_v3.RateLimitConfig{
-		ExtensionService:            key,
-		SNI:                         sni,
+		ExtensionServiceConfig:      extensionSvcConfig,
 		Domain:                      contourConfiguration.RateLimitService.Domain,
-		Timeout:                     responseTimeout,
 		FailOpen:                    ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
 		EnableXRateLimitHeaders:     ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
 		EnableResourceExhaustedCode: ref.Val(contourConfiguration.RateLimitService.EnableResourceExhaustedCode, false),
@@ -758,33 +746,9 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	}
 
 	// ensure the specified ExtensionService exists
-	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
-
-	key := client.ObjectKey{
-		Namespace: contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Namespace,
-		Name:      contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Name,
-	}
-
-	// Using GetAPIReader() here because the manager's caches won't be started yet,
-	// so reads from the manager's client (which uses the caches for reads) will fail.
-	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
-		return nil, fmt.Errorf("error getting global external authorization extension service %s: %v", key, err)
-	}
-
-	// get the response timeout from the ExtensionService
-	var responseTimeout timeout.Setting
-	var err error
-
-	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
-		responseTimeout, err = timeout.Parse(tp.Response)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing global http ext auth extension service %s response timeout: %v", key, err)
-		}
-	}
-
-	var sni string
-	if extensionSvc.Spec.UpstreamValidation != nil {
-		sni = extensionSvc.Spec.UpstreamValidation.SubjectName
+	extensionSvcConfig, err := s.getExtensionSvcConfig(contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Name, contourConfiguration.GlobalExternalAuthorization.ExtensionServiceRef.Namespace)
+	if err != nil {
+		return nil, err
 	}
 
 	var context map[string]string
@@ -793,11 +757,9 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	}
 
 	globalExternalAuthConfig := &xdscache_v3.GlobalExternalAuthConfig{
-		ExtensionService: key,
-		SNI:              sni,
-		Timeout:          responseTimeout,
-		FailOpen:         contourConfiguration.GlobalExternalAuthorization.FailOpen,
-		Context:          context,
+		ExtensionServiceConfig: extensionSvcConfig,
+		FailOpen:               contourConfiguration.GlobalExternalAuthorization.FailOpen,
+		Context:                context,
 	}
 
 	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {

@@ -69,7 +69,7 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.Gateway{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.Gateway{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.forReconcilableGatewayClass),
 	); err != nil {
@@ -80,7 +80,7 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	// Gateways when a provisioner-controlled GatewayClass becomes
 	// "Accepted: true".
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1beta1.GatewayClass{}},
+		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.GatewayClass{}),
 		handler.EnqueueRequestsFromMapFunc(r.getGatewayClassGateways),
 		predicate.NewPredicateFuncs(r.isGatewayClassReconcilable),
 	); err != nil {
@@ -133,9 +133,9 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 	return accepted
 }
 
-func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) []reconcile.Request {
+func (r *gatewayReconciler) getGatewayClassGateways(ctx context.Context, gatewayClass client.Object) []reconcile.Request {
 	var gateways gatewayapi_v1beta1.GatewayList
-	if err := r.client.List(context.Background(), &gateways); err != nil {
+	if err := r.client.List(ctx, &gateways); err != nil {
 		r.log.Error(err, "error listing gateways")
 		return nil
 	}
@@ -329,6 +329,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 				if networkPublishing.ExternalTrafficPolicy != "" {
 					contourModel.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = networkPublishing.ExternalTrafficPolicy
+				}
+
+				if networkPublishing.IPFamilyPolicy != "" {
+					contourModel.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = networkPublishing.IPFamilyPolicy
 				}
 
 				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
