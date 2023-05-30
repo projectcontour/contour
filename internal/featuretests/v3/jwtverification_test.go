@@ -24,7 +24,6 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
@@ -37,7 +36,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,7 +43,7 @@ func TestJWTVerification(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &v1.Secret{
+	sec1 := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
@@ -56,7 +54,7 @@ func TestJWTVerification(t *testing.T) {
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(corev1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	// Valid HTTPProxy without JWT verification enabled
@@ -729,7 +727,7 @@ func TestJWTVerification(t *testing.T) {
 
 	rh.OnAdd(&corev1.Secret{
 		ObjectMeta: fixture.ObjectMeta("default/cacert"),
-		Type:       v1.SecretTypeOpaque,
+		Type:       corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
@@ -854,17 +852,17 @@ func TestJWTVerification(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-								ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-									ValidationContext: &envoy_v3_tls.CertificateValidationContext{
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContext{
+									ValidationContext: &envoy_tls_v3.CertificateValidationContext{
 										TrustedCa: &envoy_core_v3.DataSource{
 											Specifier: &envoy_core_v3.DataSource_InlineBytes{
 												InlineBytes: []byte(featuretests.CERTIFICATE),
 											},
 										},
-										MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+										MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
 											{
-												SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+												SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
 												Matcher: &matcher.StringMatcher{
 													MatchPattern: &matcher.StringMatcher_Exact{
 														Exact: "jwt.example.com",
@@ -1196,7 +1194,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &v1.Secret{
+	sec1 := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
@@ -1207,7 +1205,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(corev1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	// Valid HTTPProxy with an include without JWT verification enabled
