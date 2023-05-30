@@ -105,7 +105,7 @@ func TestSecretCacheQuery(t *testing.T) {
 
 func TestSecretVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs []interface{}
+		objs []any
 		want map[string]*envoy_tls_v3.Secret
 	}{
 		"nothing": {
@@ -113,14 +113,14 @@ func TestSecretVisit(t *testing.T) {
 			want: map[string]*envoy_tls_v3.Secret{},
 		},
 		"unassociated secrets": {
-			objs: []interface{}{
+			objs: []any{
 				tlssecret("default", "secret-a", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
 				tlssecret("default", "secret-b", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
 			},
 			want: map[string]*envoy_tls_v3.Secret{},
 		},
 		"simple ingress with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -164,7 +164,7 @@ func TestSecretVisit(t *testing.T) {
 			),
 		},
 		"multiple ingresses with shared secret": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -230,7 +230,7 @@ func TestSecretVisit(t *testing.T) {
 			),
 		},
 		"multiple ingresses with different secrets": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -298,7 +298,7 @@ func TestSecretVisit(t *testing.T) {
 			),
 		},
 		"simple httpproxy with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "backend",
@@ -340,7 +340,7 @@ func TestSecretVisit(t *testing.T) {
 			),
 		},
 		"multiple httpproxies with shared secret": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "backend",
@@ -402,7 +402,7 @@ func TestSecretVisit(t *testing.T) {
 			),
 		},
 		"multiple httpproxies with different secret": {
-			objs: []interface{}{
+			objs: []any{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "backend",
@@ -477,7 +477,7 @@ func TestSecretVisit(t *testing.T) {
 }
 
 // buildDAG produces a dag.DAG from the supplied objects.
-func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
+func buildDAG(t *testing.T, objs ...any) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
@@ -498,7 +498,7 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 }
 
 // buildDAGFallback produces a dag.DAG from the supplied objects with a fallback cert configured.
-func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
+func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...any) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),

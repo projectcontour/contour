@@ -61,7 +61,7 @@ func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
 // OnAdd updates the given Ingress/HTTPProxy/Gateway object with the
 // current load balancer address. Note that this method can be called
 // concurrently from an informer or from Contour itself.
-func (s *StatusAddressUpdater) OnAdd(obj interface{}, isInInitialList bool) {
+func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
 	// Hold the mutex to get a shallow copy. We don't need to
 	// deep copy, since all the references are read-only.
 	s.mu.Lock()
@@ -211,7 +211,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}, isInInitialList bool) {
 	}
 }
 
-func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj interface{}) {
+func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj any) {
 
 	// We only care about the new object, because we're only updating its status.
 	// So, we can get away with just passing this call to OnAdd.
@@ -219,7 +219,7 @@ func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj interface{}) {
 
 }
 
-func (s *StatusAddressUpdater) OnDelete(obj interface{}) {
+func (s *StatusAddressUpdater) OnDelete(obj any) {
 	// we don't need to update the status on resources that
 	// have been deleted.
 }
@@ -234,7 +234,7 @@ type ServiceStatusLoadBalancerWatcher struct {
 	Log         logrus.FieldLogger
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj interface{}, isInInitialList bool) {
+func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, isInInitialList bool) {
 	svc, ok := obj.(*v1.Service)
 	if !ok {
 		// not a service
@@ -250,7 +250,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj interface{}, isInInitialLis
 	s.notify(svc.Status.LoadBalancer)
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) {
+func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj any) {
 	svc, ok := newObj.(*v1.Service)
 	if !ok {
 		// not a service
@@ -266,7 +266,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) 
 	s.notify(svc.Status.LoadBalancer)
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj interface{}) {
+func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj any) {
 	svc, ok := obj.(*v1.Service)
 	if !ok {
 		// not a service

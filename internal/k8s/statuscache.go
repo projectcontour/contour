@@ -27,7 +27,7 @@ type StatusUpdateCacher struct {
 
 // IsCacheable returns whether this type of object can be stored in
 // the status cache.
-func (suc *StatusUpdateCacher) IsCacheable(obj interface{}) bool {
+func (suc *StatusUpdateCacher) IsCacheable(obj any) bool {
 	switch obj.(type) {
 	case *contour_api_v1.HTTPProxy:
 		return true
@@ -37,7 +37,7 @@ func (suc *StatusUpdateCacher) IsCacheable(obj interface{}) bool {
 }
 
 // OnDelete removes an object from the status cache.
-func (suc *StatusUpdateCacher) OnDelete(obj interface{}) {
+func (suc *StatusUpdateCacher) OnDelete(obj any) {
 	if suc.objectCache != nil {
 		switch o := obj.(type) {
 		case *contour_api_v1.HTTPProxy:
@@ -50,7 +50,7 @@ func (suc *StatusUpdateCacher) OnDelete(obj interface{}) {
 }
 
 // OnAdd adds an object to the status cache.
-func (suc *StatusUpdateCacher) OnAdd(obj interface{}) {
+func (suc *StatusUpdateCacher) OnAdd(obj any) {
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]client.Object)
 	}
@@ -65,7 +65,7 @@ func (suc *StatusUpdateCacher) OnAdd(obj interface{}) {
 }
 
 // Get allows retrieval of objects from the cache.
-func (suc *StatusUpdateCacher) Get(name, namespace string) interface{} {
+func (suc *StatusUpdateCacher) Get(name, namespace string) any {
 
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]client.Object)
@@ -96,7 +96,7 @@ func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bo
 
 }
 
-func (suc *StatusUpdateCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
+func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_api_v1.HTTPProxyStatus, error) {
 	switch o := obj.(type) {
 	case *contour_api_v1.HTTPProxy:
 		objectKey := suc.objKey(o.Name, o.Namespace)

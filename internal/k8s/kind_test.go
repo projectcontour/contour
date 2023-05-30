@@ -29,7 +29,7 @@ import (
 func TestKindOf(t *testing.T) {
 	cases := []struct {
 		Kind string
-		Obj  interface{}
+		Obj  any
 	}{
 		{"Secret", &v1.Secret{}},
 		{"Service", &v1.Service{}},
@@ -49,7 +49,7 @@ func TestKindOf(t *testing.T) {
 		{"GatewayClass", &gatewayapi_v1beta1.GatewayClass{}},
 		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
 		{"Foo", &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "test.projectcontour.io/v1",
 				"kind":       "Foo",
 			}},
@@ -64,7 +64,7 @@ func TestKindOf(t *testing.T) {
 func TestVersionOf(t *testing.T) {
 	cases := []struct {
 		Version string
-		Obj     interface{}
+		Obj     any
 	}{
 		{"v1", &v1.Secret{}},
 		{"v1", &v1.Service{}},
@@ -74,7 +74,7 @@ func TestVersionOf(t *testing.T) {
 		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
 		{"projectcontour.io/v1alpha1", &v1alpha1.ExtensionService{}},
 		{"test.projectcontour.io/v1", &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "test.projectcontour.io/v1",
 				"kind":       "Foo",
 			}},

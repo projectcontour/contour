@@ -221,7 +221,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 			// This is useful for saving memory by removing fields that are not needed by Contour.
 			ByObject: map[client.Object]ctrl_cache.ByObject{
 				&corev1.Secret{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
+					Transform: func(obj any) (any, error) {
 						secret, ok := obj.(*corev1.Secret)
 						// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
 						if !ok {
@@ -244,7 +244,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 					}},
 			},
 			// DefaultTransform is called for objects that do not have a TransformByObject function.
-			DefaultTransform: func(obj interface{}) (interface{}, error) {
+			DefaultTransform: func(obj any) (any, error) {
 				o, ok := obj.(client.Object)
 				// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
 				if !ok {

@@ -173,7 +173,7 @@ type RetryPolicy struct {
 
 type Route struct {
     Prefix          string
-    object          interface{}
+    object          any
     httpServices    map[servicemeta]*HTTPService
     HTTPSUpgrade    bool
     Websocket       bool

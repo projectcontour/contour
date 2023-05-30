@@ -35,22 +35,22 @@ type EventRecorder struct {
 	Counter *prometheus.CounterVec
 }
 
-func (e *EventRecorder) OnAdd(obj interface{}, isInInitialList bool) {
+func (e *EventRecorder) OnAdd(obj any, isInInitialList bool) {
 	e.recordOperation("add", obj)
 	e.Next.OnAdd(obj, isInInitialList)
 }
 
-func (e *EventRecorder) OnUpdate(oldObj, newObj interface{}) {
+func (e *EventRecorder) OnUpdate(oldObj, newObj any) {
 	e.recordOperation("update", newObj) // the api server guarantees that an object's kind cannot be updated
 	e.Next.OnUpdate(oldObj, newObj)
 }
 
-func (e *EventRecorder) OnDelete(obj interface{}) {
+func (e *EventRecorder) OnDelete(obj any) {
 	e.recordOperation("delete", obj)
 	e.Next.OnDelete(obj)
 }
 
-func (e *EventRecorder) recordOperation(op string, obj interface{}) {
+func (e *EventRecorder) recordOperation(op string, obj any) {
 	kind := k8s.KindOf(obj)
 	if kind == "" {
 		kind = "unknown"

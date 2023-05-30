@@ -160,7 +160,7 @@ func (d *Deployment) UnmarshalResources() error {
 	d.ContourDeployment = new(apps_v1.Deployment)
 	d.EnvoyDaemonSet = new(apps_v1.DaemonSet)
 	d.EnvoyDeployment = new(apps_v1.Deployment)
-	objects := []interface{}{
+	objects := []any{
 		d.Namespace,
 		d.ContourServiceAccount,
 		d.EnvoyServiceAccount,

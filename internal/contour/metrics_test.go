@@ -27,7 +27,7 @@ import (
 
 func TestHTTPProxyMetrics(t *testing.T) {
 	type testcase struct {
-		objs           []interface{}
+		objs           []any
 		wantIR         *metrics.RouteMetric
 		wantProxy      *metrics.RouteMetric
 		rootNamespaces []string
@@ -325,7 +325,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	run(t, "valid proxy", testcase{
-		objs:   []interface{}{proxy1, s3},
+		objs:   []any{proxy1, s3},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{},
@@ -343,7 +343,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "invalid port in service - proxy", testcase{
-		objs:   []interface{}{proxy2},
+		objs:   []any{proxy2},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -361,7 +361,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "root proxy outside of roots namespace", testcase{
-		objs:   []interface{}{proxy3},
+		objs:   []any{proxy3},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -380,7 +380,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "root proxy does not specify FQDN", testcase{
-		objs:   []interface{}{proxy13},
+		objs:   []any{proxy13},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -396,7 +396,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "self-edge produces a cycle - proxy", testcase{
-		objs:   []interface{}{proxy6},
+		objs:   []any{proxy6},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -414,7 +414,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "child delegates to parent, producing a cycle - proxy", testcase{
-		objs:   []interface{}{proxy7, proxy8},
+		objs:   []any{proxy7, proxy8},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -434,7 +434,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "proxy is an orphaned route", testcase{
-		objs:   []interface{}{proxy8},
+		objs:   []any{proxy8},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{},
@@ -450,7 +450,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "proxy delegates to multiple proxies, one is invalid", testcase{
-		objs:   []interface{}{proxy10, proxy11, proxy12, s1, s2},
+		objs:   []any{proxy10, proxy11, proxy12, s1, s2},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -471,7 +471,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "invalid parent orphans children - proxy", testcase{
-		objs:   []interface{}{proxy14, proxy11},
+		objs:   []any{proxy14, proxy11},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
@@ -489,7 +489,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	})
 
 	run(t, "multi-parent children is not orphaned when one of the parents is invalid - proxy", testcase{
-		objs:   []interface{}{proxy14, proxy11, proxy10, s2},
+		objs:   []any{proxy14, proxy11, proxy10, s2},
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{

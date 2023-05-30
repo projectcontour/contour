@@ -27,15 +27,15 @@ type countHandler struct {
 	deleted int
 }
 
-func (t *countHandler) OnAdd(_ interface{}, _ bool) {
+func (t *countHandler) OnAdd(_ any, _ bool) {
 	t.added++
 }
 
-func (t *countHandler) OnUpdate(_, _ interface{}) {
+func (t *countHandler) OnUpdate(_, _ any) {
 	t.updated++
 }
 
-func (t *countHandler) OnDelete(_ interface{}) {
+func (t *countHandler) OnDelete(_ any) {
 	t.deleted++
 }
 

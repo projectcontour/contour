@@ -401,7 +401,7 @@ func (s secretSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 // For returns a sort.Interface object that can be used to sort the
 // given value. It returns nil if there is no sorter for the type of
 // value.
-func For(v interface{}) sort.Interface {
+func For(v any) sort.Interface {
 	switch v := v.(type) {
 	case []*envoy_tls_v3.Secret:
 		return secretSorter(v)

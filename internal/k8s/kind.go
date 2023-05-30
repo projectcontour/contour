@@ -30,7 +30,7 @@ import (
 // The API machinery doesn't populate the metav1.TypeMeta field for
 // objects, so we have to use a type assertion to detect kinds that
 // we care about.
-func KindOf(obj interface{}) string {
+func KindOf(obj any) string {
 	object, ok := obj.(runtime.Object)
 	if !ok {
 		return ""
@@ -83,7 +83,7 @@ func KindOf(obj interface{}) string {
 }
 
 // VersionOf returns the GroupVersion string for the given Kubernetes object.
-func VersionOf(obj interface{}) string {
+func VersionOf(obj any) string {
 	// If err is not nil we have the GVK and we can use it. Otherwise we're going to use switch case method as failover
 	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
 	if err != nil {

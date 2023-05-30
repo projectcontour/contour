@@ -83,7 +83,7 @@ func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 	return osw
 }
 
-func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
+func (osw *ObjectStatusWriter) SetInvalid(format string, args ...any) {
 	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", string(status.ProxyStatusInvalid))
 }
 

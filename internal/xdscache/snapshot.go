@@ -114,7 +114,7 @@ func (s *SnapshotHandler) newSnapshotVersion() string {
 // asResources casts the given slice of values (that implement the envoy_types.Resource
 // interface) to a slice of envoy_types.Resource. If the length of the slice is 0, it
 // returns nil.
-func asResources(messages interface{}) []envoy_types.Resource {
+func asResources(messages any) []envoy_types.Resource {
 	v := reflect.ValueOf(messages)
 	if v.Len() == 0 {
 		return nil

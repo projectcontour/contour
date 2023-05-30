@@ -972,7 +972,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 }
 
 // Resolve route references for a route and do not program any routes.
-func (p *GatewayAPIProcessor) resolveRouteRefs(route interface{}, routeAccessor *status.RouteParentStatusUpdate) {
+func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.RouteParentStatusUpdate) {
 	switch route := route.(type) {
 	case *gatewayapi_v1beta1.HTTPRoute:
 		for _, r := range route.Spec.Rules {

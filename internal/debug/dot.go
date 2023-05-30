@@ -35,10 +35,10 @@ type DagBuilder interface {
 }
 
 type pair struct {
-	a, b interface{}
+	a, b any
 }
 
-type nodeCollection map[interface{}]bool
+type nodeCollection map[any]bool
 type edgeCollection map[pair]bool
 
 func (dw *dotWriter) writeDot(w io.Writer) {
@@ -53,7 +53,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 }
 
 func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
-	nodes := map[interface{}]bool{}
+	nodes := map[any]bool{}
 	edges := map[pair]bool{}
 
 	// collect nodes and edges
