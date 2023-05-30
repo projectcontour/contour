@@ -22,11 +22,11 @@ type Cache struct {
 
 // Get provides a mock function with given fields: ctx, key, obj, opts
 func (_m *Cache) Get(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) error {
-	_va := make([]any, len(opts))
+	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
 	}
-	var _ca []any
+	var _ca []interface{}
 	_ca = append(_ca, ctx, key, obj)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
@@ -109,11 +109,11 @@ func (_m *Cache) IndexField(ctx context.Context, obj client.Object, field string
 
 // List provides a mock function with given fields: ctx, list, opts
 func (_m *Cache) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	_va := make([]any, len(opts))
+	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
 	}
-	var _ca []any
+	var _ca []interface{}
 	_ca = append(_ca, ctx, list)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
