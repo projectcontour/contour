@@ -129,6 +129,15 @@ func checkContainerHasImage(t *testing.T, container *corev1.Container, image str
 	t.Errorf("container is missing image %q", image)
 }
 
+func checkContainerHaveResourceRequirements(t *testing.T, container *corev1.Container) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(container.Resources, defContainerResources) {
+		return
+	}
+	t.Errorf("container doesn't have resource requiremetns")
+}
+
 func checkDaemonSetHasNodeSelector(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
 	t.Helper()
 
@@ -309,8 +318,12 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkContainerHasReadinessPort(t, container, 8002)
 
 	container = checkDaemonSetHasContainer(t, ds, ShutdownContainerName, true)
+	checkContainerHaveResourceRequirements(t, container)
+
 	checkContainerHasImage(t, container, testContourImage)
 	container = checkDaemonSetHasContainer(t, ds, envoyInitContainerName, true)
+	checkContainerHaveResourceRequirements(t, container)
+
 	checkContainerHasImage(t, container, testContourImage)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
