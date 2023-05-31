@@ -15,10 +15,6 @@ linters:
   - gocritic
   - forbidigo
 
-# TODO(jpeach): enable these later:
-#  - gocyclo
-#  - gocognit
-
 linters-settings:
   misspell:
     ignore-words:
@@ -37,26 +33,13 @@ linters-settings:
       - http.DefaultTransport
 
 issues:
-  exclude:
-  # TODO(jpeach): exclude unparam warnings about functions that always receive
-  # the same arguments. We should clean those up some time.
-  - always receives
   exclude-rules:
+  - linters:
+    - unparam
+    text: "always receives"
   - path: zz_generated
     linters:
     - goimports
-  - linters:
-    - golint
-    text: "var `ingress_https` should be `ingressHTTPS`"
-  - linters:
-    - golint
-    text: "var `ingress_http` should be `ingressHTTP`"
-  - linters:
-    - golint
-    text: "returns unexported type"
-  - linters:
-    - golint
-    text: "don't use ALL_CAPS in Go names; use CamelCase"
   - path: test/e2e
     linters:
       - bodyclose
