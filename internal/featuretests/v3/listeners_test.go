@@ -20,7 +20,6 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -41,8 +40,8 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 	return []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(
 			conf,
-			v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-			v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+			contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+			contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
 		),
 		&xdscache_v3.SecretCache{},

@@ -136,18 +136,18 @@ func (s *contourServer) stream(st grpcStream) error {
 				resources = r.Query(req.ResourceNames)
 			}
 
-			any := make([]*anypb.Any, 0, len(resources))
+			anyResources := make([]*anypb.Any, 0, len(resources))
 			for _, r := range resources {
 				a, err := anypb.New(r)
 				if err != nil {
 					return done(log, err)
 				}
-				any = append(any, a)
+				anyResources = append(anyResources, a)
 			}
 
 			resp := &envoy_service_discovery_v3.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
-				Resources:   any,
+				Resources:   anyResources,
 				TypeUrl:     req.GetTypeUrl(),
 				Nonce:       strconv.Itoa(last),
 			}
