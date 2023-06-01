@@ -150,7 +150,7 @@ For example, to implement header hashing, the `headerName` field would be requir
 This option was not chosen as it would require all future configuration fields to fit into a `string` value, making the possibility for more complex data types more difficult to use and validate.
 Strongly typed structs also match better with other configuration patterns we have used in Contour.
 
-### Using `map[string]any` for `HashOptions` Type
+### Using `map[string]interface{}` for `HashOptions` Type
 This approach does have the benefit of not restricting hash options to string values if we choose to support a wide range of options in the future.
 This option was considered and not chosen because using `any` as the value type of the options map out of the box does not work with the deep copy infrastructure we have.
 We would likely have to implement a type alias to `any` and write some custom deep copy code to support this rather than rely on types that work with out of the box tooling.
