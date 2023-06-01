@@ -34,7 +34,7 @@ func main() {
 	// set GOMAXPROCS
 	_, err := maxprocs.Set(maxprocs.Logger(log.Printf))
 	if err != nil {
-		log.WithError(err).Fatal("failed to set GOMAXPROCS")
+		log.WithError(err).Error("failed to set GOMAXPROCS")
 	}
 
 	// NOTE: when add a new subcommand, we'll have to remember to add it to 'TestOptionFlagsAreSorted'
