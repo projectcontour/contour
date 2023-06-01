@@ -20,10 +20,7 @@ Review the linked steps to view the [xDS][10] resource data exchanged by Contour
 ### [Profiling Contour][7]
 Learn how to profile Contour by using [net/http/pprof][11] handlers. 
 
-### [Contour Operator][8]
-Follow the linked guide to learn how to troubleshoot issues with [Contour Operator][12].
-
-### [Envoy container stuck in unready/draining state][13]
+### [Envoy container stuck in unready/draining state][12]
 Read the linked document if you have Envoy containers stuck in an unready/draining state.
 
 [0]: {{< param github_url >}}/issues
@@ -34,9 +31,7 @@ Read the linked document if you have Envoy containers stuck in an unready/draini
 [5]: /docs/{{< param latest_version >}}/troubleshooting/contour-graph/
 [6]: /docs/{{< param latest_version >}}/troubleshooting/contour-xds-resources/
 [7]: /docs/{{< param latest_version >}}/troubleshooting/profiling-contour/
-[8]: /docs/{{< param latest_version >}}/troubleshooting/operator/
 [9]: https://en.wikipedia.org/wiki/Dot
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol
 [11]: https://golang.org/pkg/net/http/pprof/
-[12]: https://github.com/projectcontour/contour-operator
-[13]: /docs/{{< param latest_version >}}/troubleshooting/envoy-container-draining/
+[12]: /docs/{{< param latest_version >}}/troubleshooting/envoy-container-draining/
