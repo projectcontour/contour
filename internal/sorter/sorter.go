@@ -208,13 +208,42 @@ func (s queryParamMatchConditionSorter) Less(i, j int) bool {
 	}
 }
 
-// longestRouteByHeaderAndQueryParamConditions compares the HeaderMatchConditions
-// and QueryParamMatchConditions slices for lhs and rhs and returns true if lhs is
-// longer.
-func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
+// compareRoutesByMethodHeaderQueryParams compares any HTTP method match
+// (:method header which is then excluded from the rest of the header match
+// comparisons), HeaderMatchConditions, and QueryParamMatchConditions slices
+// for lhs and rhs and returns true if the conditions for the lhs Route mean
+// it should sort first.
+func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
+	// Find if method matches exist. Should only ever be one.
+	// If found, exclude from HeaderMatchConditions slices we will
+	// compare.
+	lhsMethodMatchFound := false
+	lhsHeaderMatchConditions := make([]dag.HeaderMatchCondition, 0, len(lhs.HeaderMatchConditions))
+	for _, h := range lhs.HeaderMatchConditions {
+		if h.Name == ":method" {
+			lhsMethodMatchFound = true
+		} else {
+			lhsHeaderMatchConditions = append(lhsHeaderMatchConditions, h)
+		}
+	}
+	rhsMethodMatchFound := false
+	rhsHeaderMatchConditions := make([]dag.HeaderMatchCondition, 0, len(rhs.HeaderMatchConditions))
+	for _, h := range rhs.HeaderMatchConditions {
+		if h.Name == ":method" {
+			rhsMethodMatchFound = true
+		} else {
+			rhsHeaderMatchConditions = append(rhsHeaderMatchConditions, h)
+		}
+	}
+
+	// Now check if only one of the routes had a method match.
+	if lhsMethodMatchFound != rhsMethodMatchFound {
+		return lhsMethodMatchFound
+	}
+
 	// One route has a longer HeaderMatchConditions slice.
-	if len(lhs.HeaderMatchConditions) != len(rhs.HeaderMatchConditions) {
-		return len(lhs.HeaderMatchConditions) > len(rhs.HeaderMatchConditions)
+	if len(lhsHeaderMatchConditions) != len(rhsHeaderMatchConditions) {
+		return len(lhsHeaderMatchConditions) > len(rhsHeaderMatchConditions)
 	}
 
 	// One route has a longer QueryParamMatchConditions slice.
@@ -231,9 +260,9 @@ func longestRouteByHeaderAndQueryParamConditions(lhs, rhs *dag.Route) bool {
 
 	// HeaderMatchConditions are equal length: compare item by item.
 	pair := make([]dag.HeaderMatchCondition, 2)
-	for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
-		pair[0] = lhs.HeaderMatchConditions[i]
-		pair[1] = rhs.HeaderMatchConditions[i]
+	for i := 0; i < len(lhsHeaderMatchConditions); i++ {
+		pair[0] = lhsHeaderMatchConditions[i]
+		pair[1] = rhsHeaderMatchConditions[i]
 
 		if headerMatchConditionSorter(pair).Less(0, 1) {
 			return true
@@ -276,7 +305,7 @@ func (s routeSorter) Less(i, j int) bool {
 				return false
 			default:
 				if a.PrefixMatchType == b.PrefixMatchType {
-					return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
+					return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
 				}
 				// Segment prefixes sort first as they are more specific.
 				return a.PrefixMatchType == dag.PrefixMatchSegment
@@ -293,7 +322,7 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
+				return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
 			}
 		case *dag.PrefixMatchCondition:
 			return true
@@ -309,7 +338,7 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaderAndQueryParamConditions(s[i], s[j])
+				return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
 			}
 		case *dag.PrefixMatchCondition:
 			return true
