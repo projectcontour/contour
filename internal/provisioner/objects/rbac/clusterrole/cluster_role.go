@@ -16,6 +16,7 @@ package clusterrole
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
@@ -55,6 +56,34 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 		update          = []string{"update"}
 	)
 
+	disabledFeaturesMap := make(map[string]struct{})
+	if contour.Spec.DisabledFeatures != "" {
+		disabledFeaturesList := strings.Split(contour.Spec.DisabledFeatures, ",")
+		for _, feature := range disabledFeaturesList {
+			disabledFeaturesMap[strings.ToLower(feature)] = struct{}{}
+		}
+	}
+
+	filterResources := func(resources ...string) []string {
+		if contour.Spec.DisabledFeatures == "" {
+			return resources
+		}
+
+		filteredResources := []string{}
+		for _, resource := range resources {
+			resourceCopy := strings.TrimSpace(resource)
+			// handle status resources by splitting and using the first part
+			if strings.Contains(resource, "/") {
+				parts := strings.Split(resourceCopy, "/")
+				resourceCopy = parts[0]
+			}
+			if _, disabled := disabledFeaturesMap[resourceCopy]; !disabled {
+				filteredResources = append(filteredResources, resource)
+			}
+		}
+		return filteredResources
+	}
+
 	policyRuleFor := func(apiGroup string, verbs []string, resources ...string) rbacv1.PolicyRule {
 		return rbacv1.PolicyRule{
 			Verbs:     verbs,
@@ -77,8 +106,8 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 
 			// Gateway API resources.
 			// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
-			policyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gatewayclasses", "gateways", "httproutes", "tlsroutes", "grpcroutes", "referencegrants"),
-			policyRuleFor(gatewayv1alpha2.GroupName, update, "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "tlsroutes/status"),
+			policyRuleFor(gatewayv1alpha2.GroupName, getListWatch, filterResources("gatewayclasses", "gateways", "httproutes", "tlsroutes", "grpcroutes", "referencegrants")...),
+			policyRuleFor(gatewayv1alpha2.GroupName, update, filterResources("gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "tlsroutes/status")...),
 
 			// Ingress resources.
 			policyRuleFor(networkingv1.GroupName, getListWatch, "ingresses"),
