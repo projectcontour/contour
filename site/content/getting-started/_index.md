@@ -197,7 +197,7 @@ Congratulations, you have installed Contour, deployed a backend application, cre
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
-- Explore the [Gateway API guide][14] (beta)
+- Explore the [Gateway API documentation][32] and [Gateway API guide][14] (beta)
 - Explore other [deployment options][1]
 
 Check out the following demo videos:
@@ -248,3 +248,4 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [29]: https://helm.sh/docs/intro/install/
 [30]: /docs/{{< param latest_version >}}/guides/kind/#kind-configuration-file
 [31]: https://gateway-api.sigs.k8s.io/
+[32]: /docs/{{< param latest_version >}}/config/gateway-api
