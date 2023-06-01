@@ -153,7 +153,8 @@ func TestDesiredDeployment(t *testing.T) {
 	}
 
 	annotations := map[string]string{
-		"key": "value",
+		"key":                  "value",
+		"prometheus.io/scrape": "false",
 	}
 	cntr.Spec.ContourResources = resQutoa
 
@@ -183,7 +184,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
 	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
-	checkPodHasAnnotations(t, &deploy.Spec.Template, annotations)
+	checkPodHasAnnotations(t, &deploy.Spec.Template, contourPodAnnotations(cntr))
 
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		switch port.Name {

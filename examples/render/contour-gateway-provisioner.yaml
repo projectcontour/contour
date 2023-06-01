@@ -1165,7 +1165,8 @@ spec:
                     additionalProperties:
                       type: string
                     description: PodAnnotations defines annotations to add to the
-                      Contour pods.
+                      Contour pods. the annotations for Prometheus will be appended
+                      or overwritten with predefined value.
                     type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
@@ -3152,7 +3153,8 @@ spec:
                     additionalProperties:
                       type: string
                     description: PodAnnotations defines annotations to add to the
-                      Envoy pods.
+                      Envoy pods. the annotations for Prometheus will be appended
+                      or overwritten with predefined value.
                     type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.

@@ -1263,7 +1263,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
-				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key")
+				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key", "prometheus.io/scrape", "prometheus.io/port")
 			},
 		},
 
@@ -1308,8 +1308,9 @@ func TestGatewayReconcile(t *testing.T) {
 						Name:      "contour-gateway-1",
 					},
 				}
+
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
-				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key")
+				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key", "prometheus.io/scrape", "prometheus.io/port")
 			},
 		},
 

@@ -306,24 +306,15 @@ func contourPodAnnotations(contour *model.Contour) map[string]string {
 		annotations[k] = v
 	}
 
-	metricsPort := metricsPort
+	port := metricsPort
 	if contour.Spec.RuntimeSettings != nil &&
 		contour.Spec.RuntimeSettings.Metrics != nil &&
 		contour.Spec.RuntimeSettings.Metrics.Port > 0 {
-		metricsPort = contour.Spec.RuntimeSettings.Metrics.Port
+		port = contour.Spec.RuntimeSettings.Metrics.Port
 	}
 
 	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = fmt.Sprint(metricsPort)
+	annotations["prometheus.io/port"] = fmt.Sprint(port)
 
 	return annotations
 }
-
-/*
-	Annotations: map[string]string{
-		"prometheus.io/scrape": "true",
-		"prometheus.io/port":   fmt.Sprintf("%d", metricsPort),
-	},
-*/
-
-//					Annotations: envoyPodAnnotations(contour),
