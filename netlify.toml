@@ -269,3 +269,18 @@ status = 302
   from = "/docs/v1.21.0/*"
   to = "/docs/1.21/:splat"
   status = 302
+
+[[redirects]]
+  from = "/docs/v1.20.2/*"
+  to = "/docs/1.20/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.20.1/*"
+  to = "/docs/1.20/:splat"
+  status = 302
+
+[[redirects]]
+  from = "/docs/v1.20.0/*"
+  to = "/docs/1.20/:splat"
+  status = 302
