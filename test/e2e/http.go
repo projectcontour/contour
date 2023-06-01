@@ -100,8 +100,7 @@ func httpClient(opts ...func(*http.Client)) *http.Client {
 	// across multiple calls to this method. This helps
 	// prevent requests from inadvertently being made to
 	// a draining Listener.
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.DisableKeepAlives = true
+	transport := makeDisableKeepAlivesTransport()
 
 	client := &http.Client{
 		Transport: transport,
@@ -256,7 +255,7 @@ func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
 		opt(req)
 	}
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport := makeDisableKeepAlivesTransport()
 	transport.TLSClientConfig = &tls.Config{
 		ServerName: opts.Host,
 		//nolint:gosec
@@ -332,4 +331,11 @@ func HasStatusCode(code int) func(*HTTPResponse) bool {
 	return func(res *HTTPResponse) bool {
 		return res != nil && res.StatusCode == code
 	}
+}
+
+func makeDisableKeepAlivesTransport() *http.Transport {
+	//nolint:forbidigo
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+	return transport
 }

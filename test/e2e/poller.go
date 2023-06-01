@@ -48,8 +48,7 @@ func StartAppPoller(address string, hostName string, expectedStatus int, errorWr
 	// the shutdown-manager to block waiting for the
 	// connections to drain. This lets the upgrade test
 	// be more efficient.
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.DisableKeepAlives = true
+	transport := makeDisableKeepAlivesTransport()
 
 	client := &http.Client{
 		Transport: transport,

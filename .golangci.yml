@@ -13,6 +13,7 @@ linters:
   - unparam
   - goheader
   - gocritic
+  - forbidigo
 
 # TODO(jpeach): enable these later:
 #  - gocyclo
@@ -30,6 +31,10 @@ linters-settings:
     check-exported: false
   goheader:
     template-path: ./hack/license-template.txt
+
+  forbidigo:
+    forbid:
+      - http.DefaultTransport
 
 issues:
   exclude:
