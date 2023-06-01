@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"net"
 	"net/http"
 	"time"
 
@@ -334,19 +333,9 @@ func HasStatusCode(code int) func(*HTTPResponse) bool {
 	}
 }
 
-// ref: Copy and modify defaults from https://golang.org/src/net/http/transport.go
 func makeDisableKeepAlivesTransport() *http.Transport {
-	return &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		DisableKeepAlives:     true,
-	}
+	//nolint:forbidigo
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true
+	return transport
 }
