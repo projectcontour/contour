@@ -416,7 +416,7 @@ func TestValidateListeners(t *testing.T) {
 			{
 				Name:     "http-3",
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
-				Port:     58559, // wraps around, does not hit a privileged port
+				Port:     58560, // wraps around, does not hit a privileged port
 			},
 		}
 
@@ -424,7 +424,7 @@ func TestValidateListeners(t *testing.T) {
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
 			{Name: "http-65535", Port: 65535, ContainerPort: 8000, Protocol: "http"},
 			{Name: "http-57536", Port: 57536, ContainerPort: 1024, Protocol: "http"},
-			{Name: "http-58559", Port: 58559, ContainerPort: 1024, Protocol: "http"},
+			{Name: "http-58560", Port: 58560, ContainerPort: 1025, Protocol: "http"},
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
@@ -439,7 +439,7 @@ func TestValidateListeners(t *testing.T) {
 			{
 				Name:     "http-2",
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
-				Port:     59024,
+				Port:     59023,
 			},
 		}
 
@@ -467,7 +467,7 @@ func TestValidateListeners(t *testing.T) {
 			{
 				Name:     "http-2",
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
-				Port:     57976,
+				Port:     57977,
 			},
 		}
 

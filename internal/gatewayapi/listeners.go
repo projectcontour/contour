@@ -114,7 +114,7 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				// Both of the below port ranges end up mapping to container ports 1024-2046, since
 				// we can't listen on ports 1-1023 in the Envoy container. If there are conflicting
 				// container ports, the Listener can't be accepted.
-				if listener.Port >= 57536 && listener.Port <= 58558 && otherListener.Port == listener.Port+1024 {
+				if listener.Port >= 57536 && listener.Port <= 58558 && otherListener.Port == listener.Port+1023 {
 					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 						Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
 						Status:  metav1.ConditionFalse,
@@ -122,7 +122,7 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 						Message: "Listener port conflicts with a previous Listener's port",
 					}
 					return true
-				} else if listener.Port >= 58559 && listener.Port <= 59581 && otherListener.Port == listener.Port-1024 {
+				} else if listener.Port >= 58559 && listener.Port <= 59581 && otherListener.Port == listener.Port-1023 {
 					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
 						Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
 						Status:  metav1.ConditionFalse,
