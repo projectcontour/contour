@@ -25,7 +25,6 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -551,10 +550,10 @@ func TestGlobalAuthorization(t *testing.T) {
 				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 			}))
 
-			rh.OnAdd(&v1alpha1.ExtensionService{
+			rh.OnAdd(&contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("auth/extension"),
-				Spec: v1alpha1.ExtensionServiceSpec{
-					Services: []v1alpha1.ExtensionServiceTarget{
+				Spec: contour_api_v1alpha1.ExtensionServiceSpec{
+					Services: []contour_api_v1alpha1.ExtensionServiceTarget{
 						{Name: "oidc-server", Port: 8081},
 					},
 					TimeoutPolicy: &contour_api_v1.TimeoutPolicy{

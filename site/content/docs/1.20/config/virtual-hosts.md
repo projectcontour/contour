@@ -29,7 +29,7 @@ spec:
             name: s1
             port:
               number: 80
-        pathType: Prefix              
+        pathType: Prefix
   - host: bar1.bar.com
     http:
       paths:
@@ -132,7 +132,7 @@ Proper RBAC rules should also be created to restrict what namespaces Contour has
 An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxy`.
 
 _**Note:** The restricted root namespace feature is only supported for HTTPProxy CRDs.
-`--root-namespaces` does not affect the operation of Ingress objects. In order to limit other resources, see the `--watch-namespaces` configuration flag._
+`--root-namespaces` does not affect the operation of Ingress objects._
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/root-rbac
 [2]: api/#projectcontour.io/v1.VirtualHost

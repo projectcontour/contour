@@ -91,6 +91,8 @@ spec:
 Inclusion can also happen across Namespaces by specifying a `namespace` in the `inclusion`.
 This is a particularly powerful paradigm for enabling multi-team Ingress management.
 
+If the `--watch-namespaces` configuration flag is used, it must define all namespaces that will be referenced by the inclusion.
+
 In this example, the root HTTPProxy has included configuration for paths matching `/blog` to the `blog` HTTPProxy object in the `marketing` namespace.
 
 ```yaml

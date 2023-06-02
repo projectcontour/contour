@@ -166,6 +166,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
+	serve.Flag("watch-namespaces", "Restrict contour to watch resources in these namespaces only.").PlaceHolder("<ns,ns>").StringVar(&ctx.watchNamespaces)
+
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
 
@@ -256,6 +258,12 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 			},
 		},
 	}
+
+	if watchedNamespaces := ctx.watchedNamespaces(); watchedNamespaces != nil {
+		log.WithField("namespaces", watchedNamespaces).Info("watching subset of namespaces")
+		options.Cache.Namespaces = watchedNamespaces
+	}
+
 	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")
 		options.LeaderElection = false
@@ -345,26 +353,47 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	// informerNamespaces is a set of namespaces that we should start informers for.
-	// If empty, informers will be started for all namespaces.
-	informerNamespaces := sets.NewString()
+	// Check that all the necessary namespaces are being watched
+	watchedNamespaces := sets.New(s.ctx.watchedNamespaces()...)
+	rootNamespaces := contourConfiguration.HTTPProxy.RootNamespaces
 
-	if rootNamespaces := contourConfiguration.HTTPProxy.RootNamespaces; len(rootNamespaces) > 0 {
+	if len(watchedNamespaces) > 0 {
+		if !watchedNamespaces.IsSuperset(sets.New(rootNamespaces...)) {
+			return fmt.Errorf("not all root namespaces are being watched")
+		}
+
+		if fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate; fallbackCert != nil {
+			if !watchedNamespaces.Has(fallbackCert.Namespace) {
+				return fmt.Errorf("the fallbackCertificate namespace (%s) must be watched", fallbackCert.Namespace)
+			}
+		}
+		if clientCert := contourConfiguration.Envoy.ClientCertificate; clientCert != nil {
+			if !watchedNamespaces.Has(clientCert.Namespace) {
+				return fmt.Errorf("the clientCertificate namespace (%s) must be watched", clientCert.Namespace)
+			}
+		}
+	}
+
+	// secretNamespaces is a set of namespaces that we should start secret informer for.
+	// If empty, secret informer will be started for all namespaces.
+	secretNamespaces := sets.New[string]()
+
+	if len(rootNamespaces) > 0 {
 		s.log.WithField("context", "root-namespaces").Infof("watching root namespaces %q", rootNamespaces)
-		informerNamespaces.Insert(rootNamespaces...)
+		secretNamespaces.Insert(rootNamespaces...)
 
-		// The fallback cert and client cert's namespaces only need to be added to informerNamespaces
-		// if we're processing specifici root namespaces, because otherwise, the informers will start
+		// The fallback cert and client cert's namespaces only need to be added to secretNamespaces
+		// if we're processing specific root namespaces, because otherwise, the informer will start
 		// for all namespaces so the below will automatically be included.
 
 		if fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate; fallbackCert != nil {
 			s.log.WithField("context", "fallback-certificate").Infof("watching fallback certificate namespace %q", fallbackCert.Namespace)
-			informerNamespaces.Insert(fallbackCert.Namespace)
+			secretNamespaces.Insert(fallbackCert.Namespace)
 		}
 
 		if clientCert := contourConfiguration.Envoy.ClientCertificate; clientCert != nil {
 			s.log.WithField("context", "envoy-client-certificate").Infof("watching client certificate namespace %q", clientCert.Namespace)
-			informerNamespaces.Insert(clientCert.Namespace)
+			secretNamespaces.Insert(clientCert.Namespace)
 		}
 	}
 
@@ -536,8 +565,8 @@ func (s *Server) doServe() error {
 	var handler cache.ResourceEventHandler = eventHandler
 
 	// If root namespaces are defined, filter for secrets in only those namespaces.
-	if len(informerNamespaces) > 0 {
-		handler = k8s.NewNamespaceFilter(informerNamespaces.List(), eventHandler)
+	if len(secretNamespaces) > 0 {
+		handler = k8s.NewNamespaceFilter(sets.List(secretNamespaces), eventHandler)
 	}
 
 	if err := informOnResource(&corev1.Secret{}, handler, s.mgr.GetCache()); err != nil {
