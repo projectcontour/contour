@@ -1086,7 +1086,6 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 
 		"If ContourDeployment.Spec.Contour.PodAnnotations is specified, the Contour pods' have annotations for prometheus & user-defined": {
-
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contourv1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1101,15 +1100,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				},
 			},
-			gateway: &gatewayv1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "gateway-1",
-					Name:      "gateway-1",
-				},
-				Spec: gatewayv1beta1.GatewaySpec{
-					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
-				},
-			},
+			gateway: makeGateway(),
 			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
