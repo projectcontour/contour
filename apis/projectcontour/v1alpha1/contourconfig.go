@@ -370,6 +370,7 @@ type EnvoyListenerConfig struct {
 	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
 	// for more information.
 	//
+	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
 
@@ -601,6 +602,7 @@ type ClusterParameters struct {
 	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
 	// for more information.
 	//
+	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
 }

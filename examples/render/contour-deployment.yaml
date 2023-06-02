@@ -313,6 +313,7 @@ spec:
                           If not specified, there is no limit. see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
                           for more information.
                         format: int32
+                        minimum: 1
                         type: integer
                     type: object
                   defaultHTTPVersions:
@@ -404,6 +405,7 @@ spec:
                           If not specified, there is no limit. see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
                           for more information.
                         format: int32
+                        minimum: 1
                         type: integer
                       serverHeaderTransformation:
                         description: "Defines the action to be applied to the Server
@@ -3506,6 +3508,7 @@ spec:
                               https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
                               for more information.
                             format: int32
+                            minimum: 1
                             type: integer
                         type: object
                       defaultHTTPVersions:
@@ -3601,6 +3604,7 @@ spec:
                               https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
                               for more information.
                             format: int32
+                            minimum: 1
                             type: integer
                           serverHeaderTransformation:
                             description: "Defines the action to be applied to the
