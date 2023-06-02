@@ -1,4 +1,4 @@
-## Support for Gateway Listeners on many ports
+## Support for Gateway Listeners on more than two ports
 
 Contour now supports Gateway Listeners with many different ports.
 Previously, Contour only allowed a single port for HTTP, and a single port for HTTPS/TLS.
