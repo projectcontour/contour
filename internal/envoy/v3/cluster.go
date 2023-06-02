@@ -336,12 +336,18 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 		}
 	}
 
-	if !idleConnectionTimeout.UseDefault() {
-		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: durationpb.New(idleConnectionTimeout.Duration())}
-	}
+	if !idleConnectionTimeout.UseDefault() || maxRequestsPerConnection != nil {
+		commonHTTPProtocolOptions := &envoy_core_v3.HttpProtocolOptions{}
 
-	if maxRequestsPerConnection != nil {
-		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{MaxRequestsPerConnection: wrapperspb.UInt32(*maxRequestsPerConnection)}
+		if !idleConnectionTimeout.UseDefault() {
+			commonHTTPProtocolOptions.IdleTimeout = durationpb.New(idleConnectionTimeout.Duration())
+		}
+
+		if maxRequestsPerConnection != nil {
+			commonHTTPProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*maxRequestsPerConnection)
+		}
+
+		options.CommonHttpProtocolOptions = commonHTTPProtocolOptions
 	}
 
 	return map[string]*anypb.Any{

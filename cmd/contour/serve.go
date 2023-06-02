@@ -516,7 +516,7 @@ func (s *Server) doServe() error {
 		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
-		maxRequestsPerConnection:           contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
+		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1125,6 +1125,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ResponseHeadersPolicy:       &responseHeadersPolicy,
 			ConnectTimeout:              dbc.connectTimeout,
 			GlobalExternalAuthorization: dbc.globalExternalAuthorizationService,
+			MaxRequestsPerConnection:    dbc.maxRequestsPerConnection,
 		},
 	}
 
