@@ -428,4 +428,60 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Empty(t, res.InvalidListenerConditions)
 	})
+
+	t.Run("Listeners with ports that map to the same container ports", func(t *testing.T) {
+		listeners := []gatewayapi_v1beta1.Listener{
+			{
+				Name:     "http-1",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     58000,
+			},
+			{
+				Name:     "http-2",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     59024,
+			},
+		}
+
+		res := ValidateListeners(listeners)
+		assert.ElementsMatch(t, res.Ports, []ListenerPort{
+			{Name: "http-58000", Port: 58000, ContainerPort: 1488, Protocol: "http"},
+		})
+		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
+			"http-2": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Status:  metav1.ConditionFalse,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+				Message: "Listener port conflicts with a previous Listener's port",
+			},
+		}, res.InvalidListenerConditions)
+	})
+
+	t.Run("Listeners with ports that map to the same container ports, reverse order", func(t *testing.T) {
+		listeners := []gatewayapi_v1beta1.Listener{
+			{
+				Name:     "http-1",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     59000,
+			},
+			{
+				Name:     "http-2",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     57976,
+			},
+		}
+
+		res := ValidateListeners(listeners)
+		assert.ElementsMatch(t, res.Ports, []ListenerPort{
+			{Name: "http-59000", Port: 59000, ContainerPort: 1465, Protocol: "http"},
+		})
+		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
+			"http-2": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Status:  metav1.ConditionFalse,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+				Message: "Listener port conflicts with a previous Listener's port",
+			},
+		}, res.InvalidListenerConditions)
+	})
 }
