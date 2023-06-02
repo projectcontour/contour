@@ -111,29 +111,21 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 			for j := 0; j < i; j++ {
 				otherListener := listeners[j]
 
-				// Both of the below port ranges end up mapping to container ports 1024-2046, since
-				// we can't listen on ports 1-1023 in the Envoy container. If there are conflicting
-				// container ports, the Listener can't be accepted.
-				if listener.Port >= 57536 && listener.Port <= 58558 && otherListener.Port == listener.Port+1023 {
-					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-						Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
-						Status:  metav1.ConditionFalse,
-						Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
-						Message: "Listener port conflicts with a previous Listener's port",
-					}
-					return true
-				} else if listener.Port >= 58559 && listener.Port <= 59581 && otherListener.Port == listener.Port-1023 {
-					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-						Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
-						Status:  metav1.ConditionFalse,
-						Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
-						Message: "Listener port conflicts with a previous Listener's port",
-					}
-					return true
-				}
-
-				// Listeners on other ports never conflict.
 				if listener.Port != otherListener.Port {
+					// Port ranges 57536-58558 and 58559-59581 both map to container ports
+					// 1024-2046, since we can't listen on ports 1-1023 in the Envoy container.
+					// If there are conflicting container ports, the listener can't be accepted.
+					if toContainerPort(listener.Port) == toContainerPort(otherListener.Port) {
+						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+							Message: "Listener port conflicts with a previous Listener's port",
+						}
+						return true
+					}
+
+					// Otherwise, listeners on different ports can't conflict.
 					continue
 				}
 
@@ -200,28 +192,33 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		}
 
 		if !found {
-			// Add 8000 to the Listener port, wrapping around if needed,
-			// and skipping over privileged ports 1-1023.
-			containerPort := listener.Port + 8000
-
-			if containerPort > 65535 {
-				containerPort -= 65535
-			}
-
-			if containerPort <= 1023 {
-				containerPort += 1023
-			}
-
 			result.Ports = append(result.Ports, ListenerPort{
 				Name:          envoyListenerName,
 				Port:          int32(listener.Port),
-				ContainerPort: int32(containerPort),
+				ContainerPort: toContainerPort(listener.Port),
 				Protocol:      protocol,
 			})
 		}
 	}
 
 	return result
+}
+
+func toContainerPort(listenerPort gatewayapi_v1beta1.PortNumber) int32 {
+	// Add 8000 to the Listener port, wrapping around if needed,
+	// and skipping over privileged ports 1-1023.
+
+	containerPort := listenerPort + 8000
+
+	if containerPort > 65535 {
+		containerPort -= 65535
+	}
+
+	if containerPort <= 1023 {
+		containerPort += 1023
+	}
+
+	return int32(containerPort)
 }
 
 // IsValidHostname validates that a given hostname is syntactically valid.
