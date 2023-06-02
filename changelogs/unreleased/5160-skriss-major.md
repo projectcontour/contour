@@ -47,5 +47,30 @@ spec:
         - name: tls-cert-2
 ```
 
-If you are using Contour's Gateway provisioner, ports for all valid Listeners will automatically be exposed via the Envoy service, and will update when any Listener changes are made.
+If you are using the Contour Gateway Provisioner, ports for all valid Listeners will automatically be exposed via the Envoy service, and will update when any Listener changes are made.
 If you are using static provisioning, you must keep the Service definition in sync with the Gateway spec manually.
+
+Note that if you are using the Contour Gateway Provisioner along with HTTPProxy or Ingress for routing, then your Gateway must have exactly one HTTP Listener and one HTTPS Listener.
+For this case, Contour supports a custom HTTPS Listener protocol value, to avoid having to specify TLS details in the Listener (since they're specified in the HTTPProxy or Ingress instead):
+
+```yaml
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: contour-with-httpproxy
+spec:
+  gatewayClassName: contour
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: projectcontour.io/https
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+```
