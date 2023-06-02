@@ -274,6 +274,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourParams.Deployment.Strategy != nil {
 				contourModel.Spec.ContourDeploymentStrategy = *contourParams.Deployment.Strategy
 			}
+
+			for k, v := range contourParams.PodAnnotations {
+				contourModel.Spec.ContourPodAnnotations[k] = v
+			}
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {

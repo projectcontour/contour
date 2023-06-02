@@ -258,7 +258,8 @@ func TestDesiredDaemonSet(t *testing.T) {
 		"key": "val",
 	}
 	cntr.Spec.EnvoyPodAnnotations = map[string]string{
-		"annotation": "value",
+		"annotation":           "value",
+		"prometheus.io/scrape": "false",
 	}
 
 	volTest := corev1.Volume{
