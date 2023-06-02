@@ -152,8 +152,8 @@ Strongly typed structs also match better with other configuration patterns we ha
 
 ### Using `map[string]interface{}` for `HashOptions` Type
 This approach does have the benefit of not restricting hash options to string values if we choose to support a wide range of options in the future.
-This option was considered and not chosen because using `any` as the value type of the options map out of the box does not work with the deep copy infrastructure we have.
-We would likely have to implement a type alias to `any` and write some custom deep copy code to support this rather than rely on types that work with out of the box tooling.
+This option was considered and not chosen because using `interface{}` as the value type of the options map out of the box does not work with the deep copy infrastructure we have.
+We would likely have to implement a type alias to `interface{}` and write some custom deep copy code to support this rather than rely on types that work with out of the box tooling.
 
 ### Individual Hash Policy Fields
 Looking through the various existing [Hash Policy configurations available](https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/config/route/v3/route_components.proto#config-route-v3-routeaction-hashpolicy), there are a limited set of fields we may even desire to expose to users per hash policy.
