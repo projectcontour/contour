@@ -31,10 +31,9 @@ The recommended installation is for Contour to run as a Deployment and Envoy to 
 The example Damonset places a single instance of Envoy per node in the cluster as well as attaches to `hostPorts` on each node.
 This model allows for simple scaling of Envoy instances as well as ensuring even distribution of instances across the cluster.
 
-The [example daemonset manifest][2] or [Contour Operator][12] will create an installation based on these recommendations.
+The [example daemonset manifest][2] or [Contour Gateway Provisioner][12] will create an installation based on these recommendations.
 
 _Note: If the size of the cluster is scaled down, connections can be lost since Kubernetes Damonsets do not follow proper `preStop` hooks._
-_Note: Contour Operator is alpha and therefore follows the Contour [deprecation policy][13]._
 
 ### Envoy as Deployment
 
@@ -223,6 +222,9 @@ Also see the [upgrade guides][15] on steps to roll out a new version of Contour.
 
 It's possible to run multiple instances of Contour within a single Kubernetes cluster.
 This can be useful for separating external vs. internal ingress, for having separate ingress controllers for different ingress classes, and more.
+Each Contour instance can also be configured via the `--watch-namespaces` flag to handle their own namespaces. This allows the Kubernetes RBAC objects
+to be restricted further.
+
 The recommended way to deploy multiple Contour instances is to put each instance in its own namespace.
 This avoids most naming conflicts that would otherwise occur, and provides better logical separation between the instances.
 However, it is also possible to deploy multiple instances in a single namespace if needed; this approach requires more modifications to the example manifests to function properly.
@@ -354,21 +356,12 @@ If the `kubernetes.io/ingress.class` annotation is present with a value other th
 
 ## Uninstall Contour
 
-To remove Contour from your cluster, delete the namespace:
+To remove Contour or the Contour Gateway Provisioner from your cluster, delete the namespace:
 
 ```bash
 $ kubectl delete ns projectcontour
 ```
-**Note**: The namespace may differ from above if [Contour Operator][12] was used to
-deploy Contour.
-
-## Uninstall Contour Operator
-
-To remove Contour Operator from your cluster, delete the operator's namespace:
-
-```bash
-$ kubectl delete ns contour-operator
-```
+**Note**: Your namespace may differ from above.
 
 [1]: #running-without-a-kubernetes-loadbalancer
 [2]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour.yaml
@@ -380,7 +373,7 @@ $ kubectl delete ns contour-operator
 [9]: config/fundamentals.md
 [10]: guides/deploy-aws-nlb.md
 [11]: redeploy-envoy.md
-[12]: https://github.com/projectcontour/contour-operator
+[12]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour-gateway-provisioner.yaml
 [13]: https://projectcontour.io/resources/deprecation-policy/
 [14]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour-deployment.yaml
 [15]: /resources/upgrading/

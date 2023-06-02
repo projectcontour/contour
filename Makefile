@@ -20,6 +20,9 @@ CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
 CONTOUR_E2E_IMAGE ?= ghcr.io/projectcontour/contour:main
 CONTOUR_E2E_PACKAGE_FOCUS ?= ./test/e2e
+# Optional variables
+# Run specific test specs (matched by regex)
+CONTOUR_E2E_TEST_FOCUS ?=
 
 TAG_LATEST ?= false
 
@@ -322,8 +325,8 @@ e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2
 .PHONY: run-e2e
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
-		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s -r $(CONTOUR_E2E_PACKAGE_FOCUS)
+	CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
+	go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s --focus '$(CONTOUR_E2E_TEST_FOCUS)' -r $(CONTOUR_E2E_PACKAGE_FOCUS)
 
 .PHONY: cleanup-kind
 cleanup-kind:

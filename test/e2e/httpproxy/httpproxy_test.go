@@ -458,6 +458,7 @@ descriptors:
 				"root-ns-crd-1",
 				"root-ns-crd-2",
 			}
+			nonRootNamespace := "nonroot-ns-crd"
 
 			BeforeEach(func() {
 				if !e2e.UsingContourConfigCRD() {
@@ -476,7 +477,7 @@ descriptors:
 				}
 			})
 
-			f.NamespacedTest("root-ns-crd", testRootNamespaces(rootNamespaces))
+			f.NamespacedTest(nonRootNamespace, testRootNamespaces(rootNamespaces))
 		})
 
 		Context("configured via CLI flag", func() {
@@ -484,6 +485,7 @@ descriptors:
 				"root-ns-cli-1",
 				"root-ns-cli-2",
 			}
+			nonRootNamespace := "nonroot-ns-cli"
 
 			BeforeEach(func() {
 				if e2e.UsingContourConfigCRD() {
@@ -504,7 +506,70 @@ descriptors:
 				}
 			})
 
-			f.NamespacedTest("root-ns-cli", testRootNamespaces(rootNamespaces))
+			f.NamespacedTest(nonRootNamespace, testRootNamespaces(rootNamespaces))
+		})
+	})
+
+	Context("using watch namespaces", func() {
+		Context("only", func() {
+			watchNamespaces := []string{
+				"watched-ns-1",
+				"watched-ns-2",
+			}
+			nonWatchedNamespace := "nonwatched-ns"
+
+			BeforeEach(func() {
+				if e2e.UsingContourConfigCRD() {
+					// Test only applies to contour configmap.
+					Skip("")
+				}
+				for _, ns := range watchNamespaces {
+					f.CreateNamespace(ns)
+				}
+				additionalContourArgs = []string{
+					"--watch-namespaces=" + strings.Join(watchNamespaces, ","),
+				}
+			})
+
+			AfterEach(func() {
+				for _, ns := range watchNamespaces {
+					f.DeleteNamespace(ns, false)
+				}
+			})
+
+			f.NamespacedTest(nonWatchedNamespace, testWatchNamespaces(watchNamespaces))
+		})
+
+		Context("with root namespaces", func() {
+			rootNamespaces := []string{
+				"root-ns-1",
+				"root-ns-2",
+			}
+			nonRootNamespace := "nonroot-ns"
+			watchNamespaces := append(rootNamespaces, nonRootNamespace)
+			nonWatchedNamespace := "nonwatched-nonroot-ns"
+
+			BeforeEach(func() {
+				if e2e.UsingContourConfigCRD() {
+					// Test only applies to contour configmap.
+					Skip("")
+				}
+				for _, ns := range watchNamespaces {
+					f.CreateNamespace(ns)
+				}
+				additionalContourArgs = []string{
+					"--watch-namespaces=" + strings.Join(watchNamespaces, ","),
+					"--root-namespaces=" + strings.Join(rootNamespaces, ","),
+				}
+			})
+
+			AfterEach(func() {
+				for _, ns := range watchNamespaces {
+					f.DeleteNamespace(ns, false)
+				}
+			})
+
+			f.NamespacedTest(nonWatchedNamespace, testWatchAndRootNamespaces(rootNamespaces, nonRootNamespace))
 		})
 	})
 

@@ -16,52 +16,47 @@ The `contour serve` command is the main command which is used to watch for Kuber
 There are a number of flags that can be passed to this command which further configures how Contour operates.
 Many of these flags are mirrored in the [Contour Configuration File](#configuration-file).
 
-| Flag Name                                                       | Description                                                                             |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `--config-path`                                                 | Path to base configuration                                                              |
-| `--contour-config-name`                                         | Name of the ContourConfiguration resource to use                                        |
-| `--incluster`                                                   | Use in cluster configuration                                                            |
-| `--kubeconfig=</path/to/file>`                                  | Path to kubeconfig (if not in running inside a cluster)                                 |
-| `--xds-address=<ipaddr>`                                        | xDS gRPC API address                                                                    |
-| `--xds-port=<port>`                                             | xDS gRPC API port                                                                       |
-| `--stats-address=<ipaddr>`                                      | Envoy /stats interface address                                                          |
-| `--stats-port=<port>`                                           | Envoy /stats interface port                                                             |
-| `--debug-http-address=<address>`                                | Address the debug http endpoint will bind to.                                           |
-| `--debug-http-port=<port>`                                      | Port the debug http endpoint will bind to                                               |
-| `--http-address=<ipaddr>`                                       | Address the metrics HTTP endpoint will bind to                                          |
-| `--http-port=<port>`                                            | Port the metrics HTTP endpoint will bind to.                                            |
-| `--health-address=<ipaddr>`                                     | Address the health HTTP endpoint will bind to                                           |
-| `--health-port=<port>`                                          | Port the health HTTP endpoint will bind to                                              |
-| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>`           | CA bundle file name for serving gRPC with TLS                                           |
-| `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>`        | Contour certificate file name for serving gRPC over TLS                                 |
-| `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`          | Contour key file name for serving gRPC over TLS                                         |
-| `--insecure`                                                    | Allow serving without TLS secured gRPC                                                  |
-| `--root-namespaces=<ns,ns>`                                     | Restrict contour to searching these namespaces for root ingress routes                  |
-| `--watch-namespaces=<ns,ns>`                                    | Restrict contour to searching these namespaces for all resources                        |
-| `--ingress-class-name=<name>`                                   | Contour IngressClass name (comma-separated list allowed)                                |
-| `--ingress-status-address=<address>`                            | Address to set in Ingress object status                                                 |
-| `--envoy-http-access-log=</path/to/file>`                       | Envoy HTTP access log                                                                   |
-| `--envoy-https-access-log=</path/to/file>`                      | Envoy HTTPS access log                                                                  |
-| `--envoy-service-http-address=<ipaddr>`                         | Kubernetes Service address for HTTP requests                                            |
-| `--envoy-service-https-address=<ipaddr>`                        | Kubernetes Service address for HTTPS requests                                           |
-| `--envoy-service-http-port=<port>`                              | Kubernetes Service port for HTTP requests                                               |
-| `--envoy-service-https-port=<port>`                             | Kubernetes Service port for HTTPS requests                                              |
-| `--envoy-service-name=<name>`                                   | Name of the Envoy service to inspect for Ingress status details.                        |
-| `--envoy-service-namespace=<namespace>`                         | Envoy Service Namespace                                                                 |
-| `--use-proxy-protocol`                                          | Use PROXY protocol for all listeners                                                    |
-| `--accesslog-format=<envoy\|json>`                              | Format for Envoy access logs                                                            |
-| `--disable-leader-election`                                     | Disable leader election mechanism                                                       |
-| `--disable-feature=<extensionservices\|tlsroutes\|grpcroutes>`  | Do not start an informer for the specified resources. Flag can be given multiple times. |
-| `--leader-election-lease-duration`                              | The duration of the leadership lease.                                                   |
-| `--leader-election-renew-deadline`                              | The duration leader will retry refreshing leadership before giving up.                  |
-| `--leader-election-retry-period`                                | The interval which Contour will attempt to acquire leadership lease.                    |
-| `--leader-election-resource-name`                               | The name of the resource (Lease) leader election will lease.                            |
-| `--leader-election-resource-namespace`                          | The namespace of the resource (Lease) leader election will lease.                       |
-| `-d, --debug`                                                   | Enable debug logging                                                                    |
-| `--kubernetes-debug=<log level>`                                | Enable Kubernetes client debug logging                                                  |
-| `--log-format=<text\|json>`                                     | Log output format for Contour. Either text (default) or json.                           |
-| `--kubernetes-client-qps=<qps>`                                 | QPS allowed for the Kubernetes client.                                                  |
-| `--kubernetes-client-burst=<burst>`                             | Burst allowed for the Kubernetes client.                                                |
+| Flag Name                                                | Description                                                            |
+| -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `--config-path`                                          | Path to base configuration                                             |
+| `--contour-config-name`                                  | Name of the ContourConfiguration resource to use                       |
+| `--incluster`                                            | Use in cluster configuration                                           |
+| `--kubeconfig=</path/to/file>`                           | Path to kubeconfig (if not in running inside a cluster)                |
+| `--xds-address=<ipaddr>`                                 | xDS gRPC API address                                                   |
+| `--xds-port=<port>`                                      | xDS gRPC API port                                                      |
+| `--stats-address=<ipaddr>`                               | Envoy /stats interface address                                         |
+| `--stats-port=<port>`                                    | Envoy /stats interface port                                            |
+| `--debug-http-address=<address>`                         | Address the debug http endpoint will bind to.                          |
+| `--debug-http-port=<port>`                               | Port the debug http endpoint will bind to                              |
+| `--http-address=<ipaddr>`                                | Address the metrics HTTP endpoint will bind to                         |
+| `--http-port=<port>`                                     | Port the metrics HTTP endpoint will bind to.                           |
+| `--health-address=<ipaddr>`                              | Address the health HTTP endpoint will bind to                          |
+| `--health-port=<port>`                                   | Port the health HTTP endpoint will bind to                             |
+| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>`    | CA bundle file name for serving gRPC with TLS                          |
+| `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>` | Contour certificate file name for serving gRPC over TLS                |
+| `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`   | Contour key file name for serving gRPC over TLS                        |
+| `--insecure`                                             | Allow serving without TLS secured gRPC                                 |
+| `--root-namespaces=<ns,ns>`                              | Restrict contour to searching these namespaces for root ingress routes |
+| `--ingress-class-name=<name>`                            | Contour IngressClass name                                              |
+| `--ingress-status-address=<address>`                     | Address to set in Ingress object status                                |
+| `--envoy-http-access-log=</path/to/file>`                | Envoy HTTP access log                                                  |
+| `--envoy-https-access-log=</path/to/file>`               | Envoy HTTPS access log                                                 |
+| `--envoy-service-http-address=<ipaddr>`                  | Kubernetes Service address for HTTP requests                           |
+| `--envoy-service-https-address=<ipaddr>`                 | Kubernetes Service address for HTTPS requests                          |
+| `--envoy-service-http-port=<port>`                       | Kubernetes Service port for HTTP requests                              |
+| `--envoy-service-https-port=<port>`                      | Kubernetes Service port for HTTPS requests                             |
+| `--envoy-service-name=<name>`                            | Name of the Envoy service to inspect for Ingress status details.       |
+| `--envoy-service-namespace=<namespace>`                  | Envoy Service Namespace                                                |
+| `--use-proxy-protocol`                                   | Use PROXY protocol for all listeners                                   |
+| `--accesslog-format=<envoy\|json>`                       | Format for Envoy access logs                                           |
+| `--disable-leader-election`                              | Disable leader election mechanism                                      |
+| `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
+| `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
+| `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
+| `--leader-election-resource-name`                        | The name of the resource (ConfigMap) leader election will lease.       |
+| `--leader-election-resource-namespace`                   | The namespace of the resource (ConfigMap) leader election will lease.  |
+| `-d, --debug`                                            | Enable debug logging                                                   |
+| `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
 
 ## Configuration File
 
@@ -73,15 +68,12 @@ In its absence, Contour will operate with reasonable defaults.
 Where Contour settings can also be specified with command-line flags, the command-line value takes precedence over the configuration file.
 
 | Field Name                | Type                   | Default                                                                                              | Description                                                                                                                                                                                                                                                                           |
-|---------------------------| ---------------------- |------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | accesslog-format          | string                 | `envoy`                                                                                              | This key sets the global [access log format][2] for Envoy. Valid options are `envoy` or `json`.                                                                                                                                                                                       |
 | accesslog-format-string   | string                 | None                                                                                                 | If present, this specifies custom access log format for Envoy. See [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage) for more information about the syntax. This field only has effect if `accesslog-format` is `envoy` |
-| accesslog-level           | string                 | `info`                                                                                               | This field specifies the verbosity level of the access log. Valid options are `info` (default, all requests are logged), `error` (all non-success, i.e. 300+ response code, requests are logged), `critical` (all server error, i.e. 500+ response code, requests are logged) and `disabled`. |
 | debug                     | boolean                | `false`                                                                                              | Enables debug logging.                                                                                                                                                                                                                                                                |
 | default-http-versions     | string array           | <code style="white-space:nowrap">HTTP/1.1</code> <br> <code style="white-space:nowrap">HTTP/2</code> | This array specifies the HTTP versions that Contour should program Envoy to serve. HTTP versions are specified as strings of the form "HTTP/x", where "x" represents the version number.                                                                                              |
-| disableAllowChunkedLength | boolean                | `false`                                                                                              | If this field is true, Contour will disable the RFC-compliant Envoy behavior to strip the `Content-Length` header if `Transfer-Encoding: chunked` is also set. This is an emergency off-switch to revert back to Envoy's default behavior in case of failures.
-| disableMergeSlashes       | boolean                | `false`                                                                                              | This field disables Envoy's non-standard merge_slashes path transformation behavior that strips duplicate slashes from request URL paths.
-| serverHeaderTransformation       | string                | `overwrite`                                                                                              | This field defines the action to be applied to the Server header on the response path. Values: `overwrite` (default), `append_if_absent`, `pass_through`
+| disableAllowChunkedLength | boolean                | `false`                                                                                              | If this field is true, Contour will disable the RFC-compliant Envoy behavior to strip the `Content-Length` header if `Transfer-Encoding: chunked` is also set. This is an emergency off-switch to revert back to Envoy's default behavior in case of failures.                        |
 | disablePermitInsecure     | boolean                | `false`                                                                                              | If this field is true, Contour will ignore `PermitInsecure` field in HTTPProxy documents.                                                                                                                                                                                             |
 | envoy-service-name        | string                 | `envoy`                                                                                              | This sets the service name that will be inspected for address details to be applied to Ingress objects.                                                                                                                                                                               |
 | envoy-service-namespace   | string                 | `projectcontour`                                                                                     | This sets the namespace of the service that will be inspected for address details to be applied to Ingress objects. If the `CONTOUR_NAMESPACE` environment variable is present, Contour will populate this field with its value.                                                      |
@@ -89,8 +81,6 @@ Where Contour settings can also be specified with command-line flags, the comman
 | incluster                 | boolean                | `false`                                                                                              | This field specifies that Contour is running in a Kubernetes cluster and should use the in-cluster client access configuration.                                                                                                                                                       |
 | json-fields               | string array           | [fields][5]                                                                                          | This is the list the field names to include in the JSON [access log format][2]. This field only has effect if `accesslog-format` is `json`.                                                                                                                                           |
 | kubeconfig                | string                 | `$HOME/.kube/config`                                                                                 | Path to a Kubernetes [kubeconfig file][3] for when Contour is executed outside a cluster.                                                                                                                                                                                             |
-| kubernetesClientQPS          | float32             |                                                                                                      | QPS allowed for the Kubernetes client.                                                                                                                                                                    |
-| kubernetesClientBurst        | int                    |                                                                                                      | Burst allowed for the Kubernetes client.                                                                                                                                                                    |
 | leaderelection            | leaderelection         |                                                                                                      | The [leader election configuration](#leader-election-configuration).                                                                                                                                                                                                                  |
 | policy                    | PolicyConfig           |                                                                                                      | The default [policy configuration](#policy-configuration).                                                                                                                                                                                                                            |
 | tls                       | TLS                    |                                                                                                      | The default [TLS configuration](#tls-configuration).                                                                                                                                                                                                                                  |
@@ -159,7 +149,6 @@ The timeout configuration block can be used to configure various timeouts for th
 | max-connection-duration          | string | none*   | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information.                                                                                           |
 | delayed-close-timeout            | string | `1s`*   | *Note: this is an advanced setting that should not normally need to be tuned.* <br /><br /> This field defines how long envoy will wait, once connection close processing has been initiated, for the downstream peer to close the connection before Envoy closes the socket associated with the connection. Setting this timeout to 'infinity' will disable it.  See [the Envoy documentation][13] for more information.                                        |
 | connection-shutdown-grace-period | string | `5s`*   | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information.                                     |
-| connect-timeout                  | string | `2s`    | This field defines how long the proxy will wait for the upstream connection to be established.
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -169,7 +158,7 @@ The cluster configuration block can be used to configure various parameters for 
 
 | Field Name        | Type   | Default | Description                                                                                                                                                             |
 | ----------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dns-lookup-family | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
+| dns-lookup-family | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4, `v6` |
 
 ### Network Configuration
 
@@ -200,17 +189,9 @@ The server configuration block can be used to configure various settings for the
 
 The gateway configuration block is used to configure which gateway-api Gateway Contour should configure:
 
-| Field Name     | Type           | Default | Description                                                                    |
-| -------------- | -------------- | ------- | ------------------------------------------------------------------------------ |
-| controllerName | string         |         | Gateway Class controller name (i.e. projectcontour.io/gateway-controller). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
-| gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayRef` must be set. |
-
-### Gateway Ref
-
-| Field Name | Type   | Default | Description                                                                                     |
-| ---------- | ------ | ------- | ----------------------------------------------------------------------------------------------- |
-| name       | string | `""`    | This field specifies the name of the specific Gateway to reconcile.                             |
-| namespace  | string | `""`    | This field specifies the namespace of the specific Gateway to reconcile.                        |
+| Field Name     | Type   | Default | Description                                                                    |
+| -------------- | ------ | ------- | ------------------------------------------------------------------------------ |
+| controllerName | string |         | Gateway Class controller name (i.e. projectcontour.io/projectcontour/contour). |
 
 ### Policy Configuration
 
@@ -242,13 +223,12 @@ Note: the values of entries in the `set` and `remove` fields can be overridden i
 
 The rate limit service configuration block is used to configure an optional global rate limit service:
 
-| Field Name                  | Type   | Default | Description                                                                                                                                                                                                                                                                                                            |
-|-----------------------------| ------ | ------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| extensionService            | string | <none>  | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.                                                                                                                                                                                                          |
-| domain                      | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.                                                                                                                                                              |
-| failOpen                    | bool   | false   | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.                                                                                                                             |
-| enableXRateLimitHeaders     | bool   | false   | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
-| enableResourceExhaustedCode | bool   | false   | This field defines whether to translate status code 429 to gRPC RESOURCE_EXHAUSTED instead of UNAVAILABLE.                                                                                                                                                                                                             |
+| Field Name              | Type   | Default | Description                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| extensionService        | string | <none>  | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.                                                                                                                                                                                                          |
+| domain                  | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.                                                                                                                                                              |
+| failOpen                | bool   | false   | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.                                                                                                                             |
+| enableXRateLimitHeaders | bool   | false   | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
 
 ### Metrics Configuration
 
@@ -292,7 +272,7 @@ data:
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:
-    #   controllerName: projectcontour.io/gateway-controller
+    #   controllerName: projectcontour.io/projectcontour/contour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
@@ -324,6 +304,10 @@ data:
       envoy-client-certificate:
     #   name: envoy-client-cert-secret-name
     #   namespace: projectcontour
+    # The following config shows the defaults for the leader election.
+    # leaderelection:
+    #   configmap-name: leader-elect
+    #   configmap-namespace: projectcontour
     ### Logging options
     # Default setting
     accesslog-format: envoy
@@ -331,7 +315,6 @@ data:
     # accesslog-format-string: "...\n"
     # To enable JSON logging in Envoy
     # accesslog-format: json
-    # accesslog-level: info
     # The default fields that will be logged are specified below.
     # To customise this list, just add or remove entries.
     # The canonical list is available at
@@ -374,7 +357,7 @@ data:
     # Envoy cluster settings.
     # cluster:
     #   configure the cluster dns lookup family
-    #   valid options are: auto (default), v4, v6, all
+    #   valid options are: auto (default), v4, v6
     #   dns-lookup-family: auto
     #
     # network:
@@ -397,15 +380,12 @@ data:
     #   service fails to respond with a valid rate limit decision within
     #   the timeout defined on the extension service.
     #   failOpen: false
-    #   Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
-    #   X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
-    #   Internet-Draft linked below), on responses to clients when the Rate
-    #   Limit Service is consulted for a request.
-    #   ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
+    # Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
+    # X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
+    # Internet-Draft linked below), on responses to clients when the Rate
+    # Limit Service is consulted for a request.
+    # ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
     #   enableXRateLimitHeaders: false
-    #   Defines whether to translate status code 429 to grpc code RESOURCE_EXHAUSTED
-    #   instead of the default UNAVAILABLE
-    #   enableResourceExhaustedCode: false
     #
     # Global Policy settings.
     # policy:
@@ -450,7 +430,7 @@ If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as
 1. The value for the `contour bootstrap --namespace` flag unless otherwise specified.
 1. The value for the `contour certgen --namespace` flag unless otherwise specified.
 1. The value for the `contour serve --envoy-service-namespace` flag unless otherwise specified.
-1. The value for the `contour serve --leader-election-resource-namespace` flag unless otherwise specified.
+1. The value for the `leaderelection.configmap-namespace` config file setting for `contour serve` unless otherwise specified.
 
 The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
 
@@ -462,7 +442,7 @@ This configuration file configures the Envoy container to connect to Contour and
 The next section outlines all the available flags that can be passed to the `contour bootstrap` command which are used to customize
 the configuration file to match the environment in which Envoy is deployed.
 
-### Bootstrap Flags
+### Flags
 
 There are flags that can be passed to `contour bootstrap` that help configure how Envoy
 connects to Contour:
@@ -479,13 +459,11 @@ connects to Contour:
 | <nobr>--envoy-key-file</nobr>          | ""                | Client key filename for Envoy secure xDS gRPC communication.                                                                                                                                                 |
 | <nobr>--namespace</nobr>               | projectcontour    | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file. |
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
-| <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
-| <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
-| <nobr>--overload-max-heap              | ""                | Defines the maximum heap size in bytes until Envoy overload manager stops accepting new connections. |
+| <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.                                                                                                   |
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml
-[2]: guides/structured-logs
+[2]: /guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
