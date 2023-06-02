@@ -228,7 +228,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				return
 			}
 
-			listener, err := p.dag.GetSingleListener("HTTPS")
+			listener, err := p.dag.GetSingleListener("https")
 			if err != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 				return
@@ -482,7 +482,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
 
-	listener, err := p.dag.GetSingleListener("HTTP")
+	listener, err := p.dag.GetSingleListener("http")
 	if err != nil {
 		validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 		return
@@ -522,7 +522,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		listener, err := p.dag.GetSingleListener("HTTPS")
+		listener, err := p.dag.GetSingleListener("https")
 		if err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 			return
@@ -1158,7 +1158,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 			})
 		}
 
-		listener, err := p.dag.GetSingleListener("HTTPS")
+		listener, err := p.dag.GetSingleListener("https")
 		if err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
 			return false

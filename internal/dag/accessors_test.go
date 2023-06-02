@@ -202,21 +202,21 @@ func TestGetSingleListener(t *testing.T) {
 		d := &DAG{
 			Listeners: map[string]*Listener{
 				"http": {
-					Protocol: "HTTP",
+					Protocol: "http",
 					Port:     80,
 				},
 				"https": {
-					Protocol: "HTTPS",
+					Protocol: "https",
 					Port:     443,
 				},
 			},
 		}
 
-		got, gotErr := d.GetSingleListener("HTTP")
+		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
 		assert.NoError(t, gotErr)
 
-		got, gotErr = d.GetSingleListener("HTTPS")
+		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https"], got)
 		assert.NoError(t, gotErr)
 	})
@@ -225,17 +225,17 @@ func TestGetSingleListener(t *testing.T) {
 		d := &DAG{
 			Listeners: map[string]*Listener{
 				"http": {
-					Protocol: "HTTP",
+					Protocol: "http",
 					Port:     80,
 				},
 			},
 		}
 
-		got, gotErr := d.GetSingleListener("HTTP")
+		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
 		assert.NoError(t, gotErr)
 
-		got, gotErr = d.GetSingleListener("HTTPS")
+		got, gotErr = d.GetSingleListener("https")
 		assert.Nil(t, got)
 		assert.EqualError(t, gotErr, "no HTTPS listener configured")
 	})
@@ -244,29 +244,29 @@ func TestGetSingleListener(t *testing.T) {
 		d := &DAG{
 			Listeners: map[string]*Listener{
 				"http-1": {
-					Protocol: "HTTP",
+					Protocol: "http",
 					Port:     80,
 				},
 				"http-2": {
-					Protocol: "HTTP",
+					Protocol: "http",
 					Port:     81,
 				},
 				"http-3": {
-					Protocol: "HTTP",
+					Protocol: "http",
 					Port:     82,
 				},
 				"https-1": {
-					Protocol: "HTTPS",
+					Protocol: "https",
 					Port:     443,
 				},
 			},
 		}
 
-		got, gotErr := d.GetSingleListener("HTTP")
+		got, gotErr := d.GetSingleListener("http")
 		assert.Nil(t, got)
 		assert.EqualError(t, gotErr, "more than one HTTP listener configured")
 
-		got, gotErr = d.GetSingleListener("HTTPS")
+		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https-1"], got)
 		assert.NoError(t, gotErr)
 	})

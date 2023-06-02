@@ -103,7 +103,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				listener, err := p.dag.GetSingleListener("HTTPS")
+				listener, err := p.dag.GetSingleListener("https")
 				if err != nil {
 					p.WithError(err).
 						WithField("name", ing.GetName()).
@@ -198,7 +198,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			listener, err := p.dag.GetSingleListener("HTTP")
+			listener, err := p.dag.GetSingleListener("http")
 			if err != nil {
 				p.WithError(err).
 					WithField("name", ing.GetName()).
@@ -211,7 +211,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			vhost.AddRoute(r)
 		}
 
-		listener, err := p.dag.GetSingleListener("HTTPS")
+		listener, err := p.dag.GetSingleListener("https")
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).

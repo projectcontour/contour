@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/xds"
@@ -129,14 +130,14 @@ func (d *DAG) GetSingleListener(protocol string) (*Listener, error) {
 		}
 
 		if res != nil {
-			return nil, fmt.Errorf("more than one %s listener configured", protocol)
+			return nil, fmt.Errorf("more than one %s listener configured", strings.ToUpper(protocol))
 		}
 
 		res = listener
 	}
 
 	if res == nil {
-		return nil, fmt.Errorf("no %s listener configured", protocol)
+		return nil, fmt.Errorf("no %s listener configured", strings.ToUpper(protocol))
 	}
 
 	return res, nil

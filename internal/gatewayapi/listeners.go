@@ -159,13 +159,13 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		}
 
 		// Add an entry in the Listener name map.
-		var prefix string
+		var protocol string
 		if listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType {
-			prefix = "http"
+			protocol = "http"
 		} else {
-			prefix = "https"
+			protocol = "https"
 		}
-		envoyListenerName := fmt.Sprintf("%s-%d", prefix, listener.Port)
+		envoyListenerName := fmt.Sprintf("%s-%d", protocol, listener.Port)
 
 		result.ListenerNames[string(listener.Name)] = envoyListenerName
 
@@ -189,16 +189,6 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 
 			if containerPort <= 1023 {
 				containerPort += 1023
-			}
-
-			// TODO port ranges 58559-59581 and 57536-58558 both map to 1024-2046,
-			// need to raise a condition if there's a conflict (Accepted: false [ListenerReasonPortUnavailable])
-
-			var protocol string
-			if listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType {
-				protocol = "HTTP"
-			} else {
-				protocol = "HTTPS"
 			}
 
 			result.Ports = append(result.Ports, ListenerPort{
