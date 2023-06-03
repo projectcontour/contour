@@ -27,10 +27,12 @@ linters-settings:
     check-exported: false
   goheader:
     template-path: ./hack/license-template.txt
-
   forbidigo:
     forbid:
       - http.DefaultTransport
+  revive:
+    rules:
+      - name: use-any
 
 issues:
   exclude-rules:
