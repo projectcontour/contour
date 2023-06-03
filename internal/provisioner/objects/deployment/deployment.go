@@ -210,11 +210,8 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 				ObjectMeta: metav1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
-					Annotations: map[string]string{
-						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   fmt.Sprintf("%d", metricsPort),
-					},
-					Labels: contourPodLabels(contour),
+					Annotations: contourPodAnnotations(contour),
+					Labels:      contourPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
 					// TODO [danehans]: Readdress anti-affinity when https://github.com/projectcontour/contour/issues/2997
@@ -300,4 +297,24 @@ func contourPodLabels(contour *model.Contour) map[string]string {
 		labels[k] = v
 	}
 	return labels
+}
+
+// contourPodAnnotations returns the annotations for contour's pods
+func contourPodAnnotations(contour *model.Contour) map[string]string {
+	annotations := map[string]string{}
+	for k, v := range contour.Spec.ContourPodAnnotations {
+		annotations[k] = v
+	}
+
+	port := metricsPort
+	if contour.Spec.RuntimeSettings != nil &&
+		contour.Spec.RuntimeSettings.Metrics != nil &&
+		contour.Spec.RuntimeSettings.Metrics.Port > 0 {
+		port = contour.Spec.RuntimeSettings.Metrics.Port
+	}
+
+	annotations["prometheus.io/scrape"] = "true"
+	annotations["prometheus.io/port"] = fmt.Sprint(port)
+
+	return annotations
 }

@@ -68,8 +68,9 @@ func Default(namespace, name string) *Contour {
 					MaxUnavailable: ref.To(intstr.FromString("25%")),
 				},
 			},
-			ResourceLabels:      map[string]string{},
-			EnvoyPodAnnotations: map[string]string{},
+			ResourceLabels:        map[string]string{},
+			EnvoyPodAnnotations:   map[string]string{},
+			ContourPodAnnotations: map[string]string{},
 		},
 	}
 }
@@ -207,7 +208,12 @@ type ContourSpec struct {
 	EnvoyExtraVolumeMounts []corev1.VolumeMount
 
 	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
+	// the annotations: "prometheus.io/scrape", "prometheus.io/port", "prometheus.io/path" will be overwritten with predefined value.
 	EnvoyPodAnnotations map[string]string
+
+	// ContourPodAnnotations holds the annotations that will be add to the contour's pod.
+	// the annotations: "prometheus.io/scrape", "prometheus.io/port" will be overwritten with predefined value.
+	ContourPodAnnotations map[string]string
 
 	// Compute Resources required by envoy container.
 	EnvoyResources corev1.ResourceRequirements

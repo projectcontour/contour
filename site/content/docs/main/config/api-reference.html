@@ -5970,6 +5970,20 @@ DeploymentSettings
 <p>Deployment describes the settings for running contour as a <code>Deployment</code>.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>podAnnotations</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodAnnotations defines annotations to add to the Contour pods.
+the annotations for Prometheus will be appended or overwritten with predefined value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
@@ -6753,7 +6767,8 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodAnnotations defines annotations to add to the Envoy pods.</p>
+<p>PodAnnotations defines annotations to add to the Envoy pods.
+the annotations for Prometheus will be appended or overwritten with predefined value.</p>
 </td>
 </tr>
 <tr>

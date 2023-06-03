@@ -114,6 +114,11 @@ type ContourSettings struct {
 	// Deployment describes the settings for running contour as a `Deployment`.
 	// +optional
 	Deployment *DeploymentSettings `json:"deployment,omitempty"`
+
+	// PodAnnotations defines annotations to add to the Contour pods.
+	// the annotations for Prometheus will be appended or overwritten with predefined value.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.
@@ -176,6 +181,7 @@ type EnvoySettings struct {
 	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 
 	// PodAnnotations defines annotations to add to the Envoy pods.
+	// the annotations for Prometheus will be appended or overwritten with predefined value.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 

@@ -1161,6 +1161,13 @@ spec:
                           type: object
                         type: array
                     type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: PodAnnotations defines annotations to add to the
+                      Contour pods. the annotations for Prometheus will be appended
+                      or overwritten with predefined value.
+                    type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
                       \n Replicas is the desired number of Contour replicas. If if
@@ -3146,7 +3153,8 @@ spec:
                     additionalProperties:
                       type: string
                     description: PodAnnotations defines annotations to add to the
-                      Envoy pods.
+                      Envoy pods. the annotations for Prometheus will be appended
+                      or overwritten with predefined value.
                     type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
