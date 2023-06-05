@@ -18,10 +18,13 @@ package gatewayapi
 import (
 	"testing"
 
+	"github.com/bombsimon/logrusr/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/conformance/tests"
@@ -30,6 +33,8 @@ import (
 )
 
 func TestGatewayConformance(t *testing.T) {
+	log.SetLogger(logrusr.New(logrus.StandardLogger(), logrusr.WithReportCaller()))
+
 	cfg, err := config.GetConfig()
 	require.NoError(t, err)
 
