@@ -161,7 +161,7 @@ func TestListenerVisit(t *testing.T) {
 	tests := map[string]struct {
 		ListenerConfig
 		fallbackCertificate *types.NamespacedName
-		objs                []interface{}
+		objs                []any
 		want                map[string]*envoy_listener_v3.Listener
 	}{
 		"nothing": {
@@ -169,7 +169,7 @@ func TestListenerVisit(t *testing.T) {
 			want: map[string]*envoy_listener_v3.Listener{},
 		},
 		"one http only ingress": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -201,7 +201,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"one http only httpproxy": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -244,7 +244,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"simple ingress with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -311,7 +311,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"multiple tls ingress with secrets should be sorted": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sortedsecond",
@@ -406,7 +406,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"simple ingress with missing secret": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -459,7 +459,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"simple httpproxy with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -524,7 +524,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"ingress with allow-http: false": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -541,7 +541,7 @@ func TestListenerVisit(t *testing.T) {
 			want: map[string]*envoy_listener_v3.Listener{},
 		},
 		"simple tls ingress with allow-http:false": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -609,7 +609,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				UseProxyProto: true,
 			},
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -684,7 +684,7 @@ func TestListenerVisit(t *testing.T) {
 				HTTPAccessLog:  "/tmp/http_access.log",
 				HTTPSAccessLog: "/tmp/https_access.log",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -760,7 +760,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: "1.3",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -830,7 +830,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: "1.3",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -903,7 +903,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: "1.3",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -975,7 +975,7 @@ func TestListenerVisit(t *testing.T) {
 					"ECDHE-RSA-AES256-GCM-SHA384",
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1049,7 +1049,7 @@ func TestListenerVisit(t *testing.T) {
 					Request: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1165,7 +1165,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1281,7 +1281,7 @@ func TestListenerVisit(t *testing.T) {
 					StreamIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1397,7 +1397,7 @@ func TestListenerVisit(t *testing.T) {
 					DelayedClose: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1513,7 +1513,7 @@ func TestListenerVisit(t *testing.T) {
 					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1629,7 +1629,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1740,7 +1740,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1829,7 +1829,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple2",
@@ -1952,7 +1952,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:      "",
 				Namespace: "",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2007,7 +2007,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:      "fallbackcert",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2082,7 +2082,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2138,7 +2138,7 @@ func TestListenerVisit(t *testing.T) {
 					StreamIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2194,7 +2194,7 @@ func TestListenerVisit(t *testing.T) {
 					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2250,7 +2250,7 @@ func TestListenerVisit(t *testing.T) {
 					DelayedClose: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2306,7 +2306,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2362,7 +2362,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2444,7 +2444,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				AllowChunkedLength: true,
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2498,7 +2498,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MergeSlashes: true,
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2553,7 +2553,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				ServerHeaderTransformation: v1alpha1.PassThroughServerHeader,
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2608,7 +2608,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				XffNumTrustedHops: 1,
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2664,7 +2664,7 @@ func TestListenerVisit(t *testing.T) {
 					StreamIdle: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2748,7 +2748,7 @@ func TestListenerVisit(t *testing.T) {
 					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2832,7 +2832,7 @@ func TestListenerVisit(t *testing.T) {
 					DelayedClose: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2916,7 +2916,7 @@ func TestListenerVisit(t *testing.T) {
 					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3007,7 +3007,7 @@ func TestListenerVisit(t *testing.T) {
 					EnableResourceExhaustedCode: true,
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3090,7 +3090,7 @@ func TestListenerVisit(t *testing.T) {
 					EnableResourceExhaustedCode: true,
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3229,7 +3229,7 @@ func TestListenerVisit(t *testing.T) {
 					EnableResourceExhaustedCode: true,
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",

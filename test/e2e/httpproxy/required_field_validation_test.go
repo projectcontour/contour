@@ -36,24 +36,24 @@ func testRequiredFieldValidation(namespace string) {
 		// a typed Go struct is serialized to JSON the field *is* included
 		// and therefore does not fail validation.
 		missingConditionHeaderName := &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
 				"kind":       "HTTPProxy",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name":      "missing-condition-header-name",
 					"namespace": namespace,
 				},
-				"spec": map[string]interface{}{
-					"routes": []map[string]interface{}{
+				"spec": map[string]any{
+					"routes": []map[string]any{
 						{
-							"conditions": []map[string]interface{}{
+							"conditions": []map[string]any{
 								{
-									"header": map[string]interface{}{
+									"header": map[string]any{
 										"present": true,
 									},
 								},
 							},
-							"services": []map[string]interface{}{
+							"services": []map[string]any{
 								{
 									"name": "foo",
 									"port": 80,
@@ -81,16 +81,16 @@ func testRequiredFieldValidation(namespace string) {
 		// a typed Go struct is serialized to JSON the field *is* included
 		// and therefore does not fail validation.
 		missingVirtualHostName := &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
 				"kind":       "HTTPProxy",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name":      "missing-virtualhost-name",
 					"namespace": namespace,
 				},
-				"spec": map[string]interface{}{
-					"virtualhost": map[string]interface{}{
-						"tls": map[string]interface{}{
+				"spec": map[string]any{
+					"virtualhost": map[string]any{
+						"tls": map[string]any{
 							"passthrough": true,
 						},
 					},
@@ -107,15 +107,15 @@ func testRequiredFieldValidation(namespace string) {
 		// a typed Go struct is serialized to JSON the field *is* included
 		// and therefore does not fail validation.
 		missingIncludesName := &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
 				"kind":       "HTTPProxy",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name":      "missing-includes-name",
 					"namespace": namespace,
 				},
-				"spec": map[string]interface{}{
-					"includes": []map[string]interface{}{
+				"spec": map[string]any{
+					"includes": []map[string]any{
 						{
 							"namespace": "foo",
 						},

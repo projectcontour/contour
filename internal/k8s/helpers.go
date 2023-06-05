@@ -32,7 +32,7 @@ import (
 
 // isStatusEqual checks that two objects of supported Kubernetes types
 // have equivalent Status structs.
-func isStatusEqual(objA, objB interface{}) bool {
+func isStatusEqual(objA, objB any) bool {
 	switch a := objA.(type) {
 	case *networking_v1.Ingress:
 		if b, ok := objB.(*networking_v1.Ingress); ok {

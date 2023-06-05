@@ -103,10 +103,10 @@ func (kc *KubernetesCache) init() {
 // Insert returns true if the cache accepted the object, or false if the value
 // is not interesting to the cache. If an object with a matching type, name,
 // and namespace exists, it will be overwritten.
-func (kc *KubernetesCache) Insert(obj interface{}) bool {
+func (kc *KubernetesCache) Insert(obj any) bool {
 	kc.initialize.Do(kc.init)
 
-	maybeInsert := func(obj interface{}) (bool, int) {
+	maybeInsert := func(obj any) (bool, int) {
 		switch obj := obj.(type) {
 		case *v1.Secret:
 			// Secret validation status is intentionally cleared, it needs
@@ -267,7 +267,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 
 // Remove removes obj from the KubernetesCache.
 // Remove returns a boolean indicating if the cache changed after the remove operation.
-func (kc *KubernetesCache) Remove(obj interface{}) bool {
+func (kc *KubernetesCache) Remove(obj any) bool {
 	kc.initialize.Do(kc.init)
 
 	switch obj := obj.(type) {
@@ -281,7 +281,7 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 	}
 }
 
-func (kc *KubernetesCache) remove(obj interface{}) (bool, int) {
+func (kc *KubernetesCache) remove(obj any) (bool, int) {
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := k8s.NamespacedNameOf(obj)

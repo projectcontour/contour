@@ -37,7 +37,7 @@ import (
 func TestDAGStatus(t *testing.T) {
 
 	type testcase struct {
-		objs                []interface{}
+		objs                []any
 		fallbackCertificate *types.NamespacedName
 		want                map[types.NamespacedName]contour_api_v1.DetailedCondition
 	}
@@ -102,7 +102,7 @@ func TestDAGStatus(t *testing.T) {
 
 	// Tests using common fixtures
 	run(t, "root proxy does not specify FQDN", testcase{
-		objs: []interface{}{proxyNoFQDN},
+		objs: []any{proxyNoFQDN},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().WithGeneration(proxyNoFQDN.Generation).
 				WithError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
@@ -133,7 +133,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "valid proxy", testcase{
-		objs: []interface{}{proxyValidHomeService, fixture.ServiceRootsHome},
+		objs: []any{proxyValidHomeService, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidHomeService.Generation).
@@ -216,7 +216,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy has multiple includes, one is invalid", testcase{
-		objs: []interface{}{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, fixture.ServiceRootsFoo2, fixture.ServiceRootsFoo3InvalidPort},
+		objs: []any{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, fixture.ServiceRootsFoo2, fixture.ServiceRootsFoo3InvalidPort},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyChildValidFoo2.Generation).
@@ -231,7 +231,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "multi-parent child is not orphaned when one of the parents is invalid", testcase{
-		objs: []interface{}{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, fixture.ServiceRootsKuard, fixture.ServiceRootsFoo2},
+		objs: []any{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, fixture.ServiceRootsKuard, fixture.ServiceRootsFoo2},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyNoFQDN.Generation).
@@ -331,7 +331,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy has exact match condition in include match conditions, should be invalid", testcase{
-		objs: []interface{}{proxyExactIncludeInvalid, proxyExactMatchValid, proxyExactIncludeChild1, proxyExactIncludeChild2, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
+		objs: []any{proxyExactIncludeInvalid, proxyExactMatchValid, proxyExactIncludeChild1, proxyExactIncludeChild2, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyExactIncludeChild1.Name, Namespace: proxyExactIncludeChild1.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyExactIncludeChild1.Generation).
@@ -388,7 +388,7 @@ func TestDAGStatus(t *testing.T) {
 
 	// issue 1399
 	run(t, "service shared across ingress and httpproxy tcpproxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.SecretRootsCert, fixture.ServiceRootsNginx, ingressSharedService, proxyTCPSharedService,
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
@@ -421,7 +421,7 @@ func TestDAGStatus(t *testing.T) {
 
 	// issue 1347
 	run(t, "tcpproxy with tls delegation failure", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.SecretProjectContourCert,
 			proxyDelegatedTCPTLS,
 		},
@@ -455,7 +455,7 @@ func TestDAGStatus(t *testing.T) {
 
 	// issue 1348
 	run(t, "routes with tls delegation failure", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.SecretProjectContourCert,
 			proxyDelegatedTLS,
 		},
@@ -518,7 +518,7 @@ func TestDAGStatus(t *testing.T) {
 
 	// issue 910
 	run(t, "non tls routes can be combined with tcp proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			serviceTLSPassthrough,
 			proxyPassthroughProxyNonSecure,
 		},
@@ -577,7 +577,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "two root httpproxies with different hostnames delegated to the same object are valid", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.ServiceRootsKuard, proxyMultipleIncludersSite1, proxyMultipleIncludersSite2, proxyMultiIncludeChild,
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
@@ -616,7 +616,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "invalid port in service", testcase{
-		objs: []interface{}{proxyInvalidNegativePortHomeService},
+		objs: []any{proxyInvalidNegativePortHomeService},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNegativePortHomeService.Name, Namespace: proxyInvalidNegativePortHomeService.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
@@ -647,7 +647,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "root proxy outside of roots namespace", testcase{
-		objs: []interface{}{proxyInvalidOutsideRootNamespace},
+		objs: []any{proxyInvalidOutsideRootNamespace},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidOutsideRootNamespace.Name, Namespace: proxyInvalidOutsideRootNamespace.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
@@ -682,7 +682,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy self-edge produces a cycle", testcase{
-		objs: []interface{}{proxyInvalidIncludeCycle, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidIncludeCycle, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidIncludeCycle.Generation).
@@ -727,7 +727,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy child delegates to itself, producing a cycle", testcase{
-		objs: []interface{}{proxyIncludesProxyWithIncludeCycle, proxyIncludedChildInvalidIncludeCycle},
+		objs: []any{proxyIncludesProxyWithIncludeCycle, proxyIncludedChildInvalidIncludeCycle},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyIncludesProxyWithIncludeCycle.Name, Namespace: proxyIncludesProxyWithIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludesProxyWithIncludeCycle.Generation).Valid(),
@@ -738,7 +738,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "proxy orphaned route", testcase{
-		objs: []interface{}{proxyIncludedChildInvalidIncludeCycle},
+		objs: []any{proxyIncludedChildInvalidIncludeCycle},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyIncludedChildInvalidIncludeCycle.Name, Namespace: proxyIncludedChildInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludedChildInvalidIncludeCycle.Generation).
@@ -780,7 +780,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy invalid parent orphans child", testcase{
-		objs: []interface{}{proxyNotRootIncludeRootProxy, proxyIncludedChildValid},
+		objs: []any{proxyNotRootIncludeRootProxy, proxyIncludedChildValid},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNotRootIncludeRootProxy.Name, Namespace: proxyNotRootIncludeRootProxy.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyNotRootIncludeRootProxy.Generation).
@@ -814,7 +814,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy valid single FQDN", testcase{
-		objs: []interface{}{singleNameFQDN, fixture.ServiceRootsHome},
+		objs: []any{singleNameFQDN, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: singleNameFQDN.Name, Namespace: singleNameFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(singleNameFQDN.Generation).
@@ -845,7 +845,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy missing service is invalid", testcase{
-		objs: []interface{}{proxyInvalidServiceInvalid},
+		objs: []any{proxyInvalidServiceInvalid},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidServiceInvalid.Name, Namespace: proxyInvalidServiceInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidServiceInvalid.Generation).
@@ -876,7 +876,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with service missing port is invalid", testcase{
-		objs: []interface{}{proxyInvalidServicePortInvalid, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidServicePortInvalid, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidServicePortInvalid.Name, Namespace: proxyInvalidServicePortInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidServiceInvalid.Generation).
@@ -942,7 +942,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "conflicting proxies due to fqdn reuse", testcase{
-		objs: []interface{}{proxyValidExampleCom, proxyValidReuseExampleCom},
+		objs: []any{proxyValidExampleCom, proxyValidReuseExampleCom},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidExampleCom.Generation).
@@ -954,7 +954,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "conflicting proxies due to fqdn reuse with uppercase/lowercase", testcase{
-		objs: []interface{}{proxyValidExampleCom, proxyValidReuseCaseExampleCom},
+		objs: []any{proxyValidExampleCom, proxyValidReuseCaseExampleCom},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidExampleCom.Generation).
@@ -1009,7 +1009,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "root proxy including another root", testcase{
-		objs: []interface{}{proxyRootIncludesRoot, proxyRootIncludedByRoot},
+		objs: []any{proxyRootIncludesRoot, proxyRootIncludedByRoot},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyRootIncludesRoot.Name, Namespace: proxyRootIncludesRoot.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludesRoot.Generation).
@@ -1058,7 +1058,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "root proxy including another root w/ different hostname", testcase{
-		objs: []interface{}{proxyIncludesRootDifferentFQDN, proxyRootIncludedByRootDiffFQDN, fixture.ServiceMarketingGreen},
+		objs: []any{proxyIncludesRootDifferentFQDN, proxyRootIncludedByRootDiffFQDN, fixture.ServiceMarketingGreen},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyIncludesRootDifferentFQDN.Name, Namespace: proxyIncludesRootDifferentFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludesRootDifferentFQDN.Generation).
@@ -1104,7 +1104,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy includes another", testcase{
-		objs: []interface{}{proxyValidIncludeBlogMarketing, proxyRootValidIncludesBlogMarketing, fixture.ServiceRootsKuard, fixture.ServiceMarketingGreen},
+		objs: []any{proxyValidIncludeBlogMarketing, proxyRootValidIncludesBlogMarketing, fixture.ServiceRootsKuard, fixture.ServiceMarketingGreen},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidIncludeBlogMarketing.Name, Namespace: proxyValidIncludeBlogMarketing.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidIncludeBlogMarketing.Generation).
@@ -1141,7 +1141,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with mirror", testcase{
-		objs: []interface{}{proxyValidWithMirror, fixture.ServiceRootsKuard},
+		objs: []any{proxyValidWithMirror, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidWithMirror.Name, Namespace: proxyValidWithMirror.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidWithMirror.Generation).
@@ -1176,7 +1176,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with two mirrors", testcase{
-		objs: []interface{}{proxyInvalidTwoMirrors, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidTwoMirrors, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoMirrors.Name, Namespace: proxyInvalidTwoMirrors.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoMirrors.Generation).
@@ -1216,7 +1216,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate route condition headers", testcase{
-		objs: []interface{}{proxyInvalidDuplicateMatchConditionHeaders, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidDuplicateMatchConditionHeaders, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateMatchConditionHeaders.Name, Namespace: proxyInvalidDuplicateMatchConditionHeaders.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidDuplicateMatchConditionHeaders.Generation).
@@ -1256,7 +1256,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate route condition query parameters", testcase{
-		objs: []interface{}{proxyInvalidDuplicateMatchConditionQueryParameters, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidDuplicateMatchConditionQueryParameters, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateMatchConditionQueryParameters.Name, Namespace: proxyInvalidDuplicateMatchConditionQueryParameters.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidDuplicateMatchConditionQueryParameters.Generation).
@@ -1315,7 +1315,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate include condition headers", testcase{
-		objs: []interface{}{proxyInvalidDuplicateIncludeCondtionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidDuplicateIncludeCondtionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateIncludeCondtionHeaders.Name,
 				Namespace: proxyInvalidDuplicateIncludeCondtionHeaders.Namespace}: fixture.NewValidCondition().
@@ -1358,7 +1358,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate valid route condition headers", testcase{
-		objs: []interface{}{proxyInvalidRouteConditionHeaders, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidRouteConditionHeaders, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidRouteConditionHeaders.Name, Namespace: proxyInvalidRouteConditionHeaders.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidRouteConditionHeaders.Generation).Valid(),
@@ -1391,7 +1391,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with two prefix conditions on route", testcase{
-		objs: []interface{}{proxyInvalidMultiplePrefixes, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidMultiplePrefixes, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
@@ -1444,7 +1444,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with two prefix conditions orphans include", testcase{
-		objs: []interface{}{proxyInvalidTwoPrefixesWithInclude, proxyValidChildTeamA, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidTwoPrefixesWithInclude, proxyValidChildTeamA, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoPrefixesWithInclude.Generation).
@@ -1479,7 +1479,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with prefix conditions on route that does not start with slash", testcase{
-		objs: []interface{}{proxyInvalidPrefixNoSlash, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidPrefixNoSlash, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidPrefixNoSlash.Name, Namespace: proxyInvalidPrefixNoSlash.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidPrefixNoSlash.Generation).
@@ -1515,7 +1515,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with include prefix that does not start with slash", testcase{
-		objs: []interface{}{proxyInvalidIncludePrefixNoSlash, proxyValidChildTeamA, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidIncludePrefixNoSlash, proxyValidChildTeamA, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidIncludePrefixNoSlash.Name, Namespace: proxyInvalidIncludePrefixNoSlash.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: prefix conditions must start with /, api was supplied"),
@@ -1550,7 +1550,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy cannot specify services and include", testcase{
-		objs: []interface{}{proxyInvalidTCPProxyIncludeAndService, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidTCPProxyIncludeAndService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTCPProxyIncludeAndService.Name, Namespace: proxyInvalidTCPProxyIncludeAndService.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyError, "NoServicesAndInclude", "cannot specify services and include in the same httpproxy"),
@@ -1574,7 +1574,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy empty", testcase{
-		objs: []interface{}{proxyTCPNoServiceOrInclusion, fixture.ServiceRootsKuard},
+		objs: []any{proxyTCPNoServiceOrInclusion, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPNoServiceOrInclusion.Name, Namespace: proxyTCPNoServiceOrInclusion.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyError, "NothingDefined", "either services or inclusion must be specified"),
@@ -1603,7 +1603,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy w/ missing include", testcase{
-		objs: []interface{}{proxyTCPIncludesFoo, fixture.ServiceRootsKuard},
+		objs: []any{proxyTCPIncludesFoo, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "IncludeNotFound", "include roots/foo not found"),
@@ -1632,7 +1632,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy includes another root", testcase{
-		objs: []interface{}{proxyTCPIncludesFoo, proxyValidTCPRoot, fixture.ServiceRootsKuard},
+		objs: []any{proxyTCPIncludesFoo, proxyValidTCPRoot, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
@@ -1656,7 +1656,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy includes valid child", testcase{
-		objs: []interface{}{proxyTCPIncludesFoo, proxyTCPValidChildFoo, fixture.ServiceRootsKuard},
+		objs: []any{proxyTCPIncludesFoo, proxyTCPValidChildFoo, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}:     fixture.NewValidCondition().Valid(),
 			{Name: proxyTCPValidChildFoo.Name, Namespace: proxyTCPValidChildFoo.Namespace}: fixture.NewValidCondition().Valid(),
@@ -1734,7 +1734,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate path conditions on an include", testcase{
-		objs: []interface{}{proxyInvalidConflictingIncludeConditionsSimple, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidConflictingIncludeConditionsSimple, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(), // Valid since there is a valid include preceding an invalid one.
@@ -1766,7 +1766,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "empty include conditions", testcase{
-		objs: []interface{}{proxyIncludeConditionsEmpty, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyIncludeConditionsEmpty, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(),
@@ -1807,7 +1807,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "multiple prefix / include conditions", testcase{
-		objs: []interface{}{proxyIncludeConditionsPrefixRoot, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyIncludeConditionsPrefixRoot, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(),
@@ -1860,7 +1860,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate path conditions on an include not consecutive", testcase{
-		objs: []interface{}{proxyInvalidConflictingIncludeConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidConflictingIncludeConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Valid(), // Valid since there is a valid include preceding an invalid one.
@@ -1922,7 +1922,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate header conditions on an include", testcase{
-		objs: []interface{}{proxyInvalidConflictHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidConflictHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
@@ -1993,7 +1993,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate header conditions on an include mismatched order", testcase{
-		objs: []interface{}{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
@@ -2071,7 +2071,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate header conditions on an include with same path", testcase{
-		objs: []interface{}{proxyInvalidDuplicateIncludeSamePathDiffHeaders, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidDuplicateIncludeSamePathDiffHeaders, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
@@ -2128,7 +2128,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate header+path conditions on an include", testcase{
-		objs: []interface{}{proxyInvalidDuplicateHeaderAndPathConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidDuplicateHeaderAndPathConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
@@ -2220,7 +2220,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate query param conditions on an include", testcase{
-		objs: []interface{}{proxyInvalidConflictQueryConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidConflictQueryConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidConflictQueryConditions.Name,
 				Namespace: proxyInvalidConflictQueryConditions.Namespace}: fixture.NewValidCondition().
@@ -2290,7 +2290,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate query param+header conditions on an include", testcase{
-		objs: []interface{}{proxyInvalidConflictQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyInvalidConflictQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidConflictQueryHeaderConditions.Name,
 				Namespace: proxyInvalidConflictQueryHeaderConditions.Namespace}: fixture.NewValidCondition().
@@ -2350,7 +2350,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "query param+header conditions on an include should not be duplicate", testcase{
-		objs: []interface{}{proxyValidQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
+		objs: []any{proxyValidQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
@@ -2380,7 +2380,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ missing include", testcase{
-		objs: []interface{}{proxyInvalidMissingInclude, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidMissingInclude, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMissingInclude.Name, Namespace: proxyInvalidMissingInclude.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", "include roots/child not found"),
@@ -2409,7 +2409,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ tcpproxy w/ missing service", testcase{
-		objs: []interface{}{proxyTCPInvalidMissingService},
+		objs: []any{proxyTCPInvalidMissingService},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidMissingService.Name, Namespace: proxyTCPInvalidMissingService.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference", `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`),
@@ -2438,7 +2438,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ tcpproxy w/ service missing port", testcase{
-		objs: []interface{}{proxyTCPInvalidPortNotMatched, fixture.ServiceRootsKuard},
+		objs: []any{proxyTCPInvalidPortNotMatched, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidPortNotMatched.Name, Namespace: proxyTCPInvalidPortNotMatched.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference", `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`),
@@ -2464,7 +2464,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ tcpproxy missing tls", testcase{
-		objs: []interface{}{proxyTCPInvalidMissingTLS},
+		objs: []any{proxyTCPInvalidMissingTLS},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidMissingTLS.Name, Namespace: proxyTCPInvalidMissingTLS.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTCPProxyError, "TLSMustBeConfigured", "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set"),
@@ -2498,7 +2498,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ tcpproxy missing service", testcase{
-		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyInvalidMissingServiceWithTCPProxy},
+		objs: []any{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyInvalidMissingServiceWithTCPProxy},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMissingServiceWithTCPProxy.Name, Namespace: proxyInvalidMissingServiceWithTCPProxy.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/missing" not found`),
@@ -2532,7 +2532,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy route unmatched service port", testcase{
-		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyRoutePortNotMatchedWithTCP},
+		objs: []any{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyRoutePortNotMatchedWithTCP},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyRoutePortNotMatchedWithTCP.Name, Namespace: proxyRoutePortNotMatchedWithTCP.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: port "9999" on service "roots/kuard" not matched`),
@@ -2597,7 +2597,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "valid HTTPProxy.TCPProxy - plural", testcase{
-		objs: []interface{}{proxyTCPValidIncludesChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
+		objs: []any{proxyTCPValidIncludesChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPValidIncludesChild.Name,
 				Namespace: proxyTCPValidIncludesChild.Namespace}: fixture.NewValidCondition().Valid(),
@@ -2607,7 +2607,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "valid HTTPProxy.TCPProxy", testcase{
-		objs: []interface{}{proxyTCPValidIncludeChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
+		objs: []any{proxyTCPValidIncludeChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPValidIncludeChild.Name,
 				Namespace: proxyTCPValidIncludeChild.Namespace}: fixture.NewValidCondition().Valid(),
@@ -2636,7 +2636,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "No routeAction specified is invalid", testcase{
-		objs: []interface{}{proxyInvalidNoServices, fixture.ServiceRootsKuard},
+		objs: []any{proxyInvalidNoServices, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNoServices.Name, Namespace: proxyInvalidNoServices.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid", "must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy"),
@@ -2673,7 +2673,7 @@ func TestDAGStatus(t *testing.T) {
 			Name:      "invalid",
 			Namespace: "invalid",
 		},
-		objs: []interface{}{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		objs: []any{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
@@ -2682,7 +2682,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "fallback certificate requested but cert not configured in contour", testcase{
-		objs: []interface{}{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		objs: []any{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
@@ -2716,7 +2716,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "clientValidation missing CA", testcase{
-		objs: []interface{}{fallbackCertificateWithClientValidationNoCA, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		objs: []any{fallbackCertificateWithClientValidationNoCA, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificateWithClientValidationNoCA.Name,
 				Namespace: fallbackCertificateWithClientValidationNoCA.Namespace}: fixture.NewValidCondition().
@@ -2753,7 +2753,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "fallback certificate requested and clientValidation also configured", testcase{
-		objs: []interface{}{fallbackCertificateWithClientValidation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		objs: []any{fallbackCertificateWithClientValidation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificateWithClientValidation.Name,
 				Namespace: fallbackCertificateWithClientValidation.Namespace}: fixture.NewValidCondition().
@@ -2781,7 +2781,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "passthrough and client auth are incompatible tlsPassthroughAndValidation", testcase{
-		objs: []interface{}{fixture.SecretRootsCert, tlsPassthroughAndValidation},
+		objs: []any{fixture.SecretRootsCert, tlsPassthroughAndValidation},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: tlsPassthroughAndValidation.Name, Namespace: tlsPassthroughAndValidation.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation"),
@@ -2806,7 +2806,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "tcpproxy with TLS passthrough and secret name both specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.SecretRootsCert,
 			tlsPassthroughAndSecretName,
 		},
@@ -2834,7 +2834,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "httpproxy w/ tcpproxy with neither TLS passthrough nor secret name specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			fixture.SecretRootsCert,
 			tlsNoPassthroughOrSecretName,
 		},
@@ -2857,7 +2857,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with no routes, includes, or tcpproxy is invalid", testcase{
-		objs: []interface{}{emptyProxy},
+		objs: []any{emptyProxy},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: emptyProxy.Name, Namespace: emptyProxy.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeSpecError, "NothingDefined", "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy"),
@@ -2891,7 +2891,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "responseHeadersPolicy, Host header invalid on Service", testcase{
-		objs: []interface{}{invalidResponseHeadersPolicyService, fixture.ServiceRootsKuard},
+		objs: []any{invalidResponseHeadersPolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: invalidResponseHeadersPolicyService.Name, Namespace: invalidResponseHeadersPolicyService.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
@@ -2925,7 +2925,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "responseHeadersPolicy, Host header invalid on Route", testcase{
-		objs: []interface{}{invalidResponseHeadersPolicyRoute, fixture.ServiceRootsKuard},
+		objs: []any{invalidResponseHeadersPolicyRoute, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: invalidResponseHeadersPolicyRoute.Name, Namespace: invalidResponseHeadersPolicyRoute.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "ResponseHeaderPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
@@ -2963,7 +2963,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "cookieRewritePolicies, duplicate cookie names on route", testcase{
-		objs: []interface{}{duplicateCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
+		objs: []any{duplicateCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: duplicateCookieRewritePolicyRoute.Name, Namespace: duplicateCookieRewritePolicyRoute.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `duplicate cookie rewrite rule for cookie "a-cookie" on route cookie rewrite rules`),
@@ -3001,7 +3001,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "cookieRewritePolicies, duplicate cookie names on service", testcase{
-		objs: []interface{}{duplicateCookieRewritePolicyService, fixture.ServiceRootsKuard},
+		objs: []any{duplicateCookieRewritePolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: duplicateCookieRewritePolicyService.Name, Namespace: duplicateCookieRewritePolicyService.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `duplicate cookie rewrite rule for cookie "a-cookie" on service cookie rewrite rules`),
@@ -3034,7 +3034,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "cookieRewritePolicies, empty cookie rewrite on route", testcase{
-		objs: []interface{}{emptyCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
+		objs: []any{emptyCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: emptyCookieRewritePolicyRoute.Name, Namespace: emptyCookieRewritePolicyRoute.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `no attributes rewritten for cookie "a-cookie" on route cookie rewrite rules`),
@@ -3067,7 +3067,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "cookieRewritePolicies, empty cookie rewrite on service", testcase{
-		objs: []interface{}{emptyCookieRewritePolicyService, fixture.ServiceRootsKuard},
+		objs: []any{emptyCookieRewritePolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: emptyCookieRewritePolicyService.Name, Namespace: emptyCookieRewritePolicyService.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `no attributes rewritten for cookie "a-cookie" on service cookie rewrite rules`),
@@ -3095,7 +3095,7 @@ func TestDAGStatus(t *testing.T) {
 		})
 
 	run(t, "fallback and client auth is invalid", testcase{
-		objs: []interface{}{fixture.SecretRootsCert, proxyAuthFallback},
+		objs: []any{fixture.SecretRootsCert, proxyAuthFallback},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyAuthFallback.Name, Namespace: proxyAuthFallback.Namespace}: fixture.NewValidCondition().WithGeneration(proxyAuthFallback.Generation).
 				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible"),
@@ -3119,7 +3119,7 @@ func TestDAGStatus(t *testing.T) {
 		})
 
 	run(t, "plain HTTP vhost and client auth is invalid", testcase{
-		objs: []interface{}{fixture.SecretRootsCert, proxyAuthHTTP},
+		objs: []any{fixture.SecretRootsCert, proxyAuthHTTP},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			k8s.NamespacedNameOf(proxyAuthHTTP): fixture.NewValidCondition().WithGeneration(proxyAuthHTTP.Generation).
 				WithError(contour_api_v1.ConditionTypeAuthError, "AuthNotPermitted", "Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS"),
@@ -3151,7 +3151,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with invalid response timeout value is invalid", testcase{
-		objs: []interface{}{invalidResponseTimeout, fixture.ServiceRootsKuard},
+		objs: []any{invalidResponseTimeout, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{
 				Name:      invalidResponseTimeout.Name,
@@ -3186,7 +3186,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with invalid idle timeout value is invalid", testcase{
-		objs: []interface{}{invalidIdleTimeout, fixture.ServiceRootsKuard},
+		objs: []any{invalidIdleTimeout, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{
 				Name:      invalidIdleTimeout.Name,
@@ -3224,7 +3224,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "TLS with passthrough and fallback cert enabled is invalid", testcase{
-		objs: []interface{}{tlsPassthroughAndFallback, fixture.ServiceRootsHome},
+		objs: []any{tlsPassthroughAndFallback, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: tlsPassthroughAndFallback.Name, Namespace: tlsPassthroughAndFallback.Namespace}: fixture.NewValidCondition().
 				WithGeneration(tlsPassthroughAndFallback.Generation).WithError(
@@ -3260,7 +3260,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "valid TLS passthrough", testcase{
-		objs: []interface{}{tlsPassthrough, fixture.ServiceRootsHome},
+		objs: []any{tlsPassthrough, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: tlsPassthrough.Name, Namespace: tlsPassthrough.Namespace}: fixture.NewValidCondition().
 				WithGeneration(tlsPassthrough.Generation).
@@ -3293,7 +3293,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 	run(t, "Selecting more than one routeAction is invalid", testcase{
-		objs: []interface{}{multipleRouteAction},
+		objs: []any{multipleRouteAction},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: multipleRouteAction.Name, Namespace: multipleRouteAction.Namespace}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeRouteError, "RouteActionCountNotValid",
@@ -3328,7 +3328,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy with invalid allow origin is invalid", testcase{
-		objs: []interface{}{invalidAllowOrigin, fixture.ServiceRootsKuard},
+		objs: []any{invalidAllowOrigin, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{
 				Name:      invalidAllowOrigin.Name,
@@ -3378,7 +3378,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification valid proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationValidProxy,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3429,7 +3429,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification duplicate provider names", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationDuplicateProviders,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3487,7 +3487,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification multiple default providers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationMultipleDefaults,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3537,7 +3537,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid remote JWKS URI", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRemoteJWKSURI,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3587,7 +3587,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid remote JWKS scheme", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRemoteJWKSScheme,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3638,7 +3638,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid remote JWKS timeout", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRemoteJWKSTimeout,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3689,7 +3689,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid remote JWKS cache duration", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRemoteJWKSCacheDuration,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3740,7 +3740,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid remote JWKS DNS lookup family", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRemoteJWKSDNSLookupFamily,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3783,7 +3783,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification no providers defined, route has provider ref", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationNoProvidersRouteHasRef,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3834,7 +3834,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification route references nonexistent provider", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationRouteReferencesNonexistentProvider,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -3882,7 +3882,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid TLS not configured", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidTLSNotConfigured,
 			fixture.ServiceRootsHome,
 		},
@@ -3932,7 +3932,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid TLS passthrough configured", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidTLSPassthroughConfigured,
 			fixture.ServiceRootsHome,
 		},
@@ -3982,7 +3982,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid TLS fallback configured", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidTLSFallbackConfigured,
 			fixture.ServiceRootsHome,
 		},
@@ -4035,7 +4035,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid route specifies both requires and disabled", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationInvalidRequireAndDisabledSpecified,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -4092,7 +4092,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid upstream validation specified for HTTP JWKS", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationUpstreamValidationForHTTPJWKS,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -4149,7 +4149,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid upstream validation CA cert does not exist", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationUpstreamValidationCACertDoesNotExist,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -4214,7 +4214,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid upstream validation CA cert invalid", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationUpstreamValidationCACertInvalid,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -4279,7 +4279,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "JWT verification invalid upstream validation CA cert not delegated", testcase{
-		objs: []interface{}{
+		objs: []any{
 			jwtVerificationUpstreamValidationCACertNotDelegated,
 			fixture.SecretRootsCert,
 			fixture.ServiceRootsHome,
@@ -4329,7 +4329,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "virtualhost ip-filter valid proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			ipFilterVirtualHostValidProxy,
 			fixture.ServiceRootsHome,
 		},
@@ -4370,7 +4370,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "virtualhost ip-filter invalid allow and deny proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			ipFilterVirtualHostAllowAndDenyInvalidProxy,
 			fixture.ServiceRootsHome,
 		},
@@ -4412,7 +4412,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "virtualhost ip-filter invalid filter rules proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			ipFilterVirtualHostFilterRulesInvalidProxy,
 			fixture.ServiceRootsHome,
 		},
@@ -4513,7 +4513,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "Slow start with invalid window syntax", testcase{
-		objs: []interface{}{
+		objs: []any{
 			proxyWithInvalidSlowStartWindow,
 			fixture.ServiceRootsHome,
 		},
@@ -4528,7 +4528,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Slow start with invalid aggression syntax", testcase{
-		objs: []interface{}{
+		objs: []any{
 			proxyWithInvalidSlowStartAggression,
 			fixture.ServiceRootsHome,
 		},
@@ -4543,7 +4543,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Slow start with load balancer strategy that does not support slow start", testcase{
-		objs: []interface{}{
+		objs: []any{
 			proxyWithInvalidSlowStartLBStrategy,
 			fixture.ServiceRootsHome,
 		},
@@ -4643,7 +4643,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "proxy has regex in the includes block, should be invalid", testcase{
-		objs: []interface{}{proxyRegexIncludeInvalid, proxyRegexIncludeValid, Subproxy1Regex, Subproxy2Regex, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
+		objs: []any{proxyRegexIncludeInvalid, proxyRegexIncludeValid, Subproxy1Regex, Subproxy2Regex, fixture.ServiceRootsFoo1, fixture.ServiceRootsFoo2},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: Subproxy1Regex.Name, Namespace: Subproxy1Regex.Namespace}: fixture.NewValidCondition().
 				WithGeneration(Subproxy1Regex.Generation).
@@ -4721,7 +4721,7 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind,
 
 func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	type testcase struct {
-		objs                    []interface{}
+		objs                    []any
 		gateway                 *gatewayapi_v1beta1.Gateway
 		wantRouteConditions     []*status.RouteStatusUpdate
 		wantGatewayStatusUpdate []*status.GatewayStatusUpdate
@@ -4879,7 +4879,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	}
 
 	run(t, "simple httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4915,7 +4915,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "simple httproute with backendref namespace matching route's explicitly specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4961,7 +4961,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "multiple httproutes", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5029,7 +5029,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "prefix path match not starting with '/' for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5075,7 +5075,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
 	})
 	run(t, "exact path match not starting with '/' for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5122,7 +5122,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "regular expression path match with invalid value for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5164,7 +5164,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "prefix path match with consecutive '/' characters for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5211,7 +5211,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "exact path match with consecutive '/' characters for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5258,7 +5258,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "invalid path match type for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5304,7 +5304,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "invalid header match type not supported for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5357,7 +5357,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "regular expression header match with invalid value for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5410,7 +5410,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "regular expression query param match with valid value for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5463,7 +5463,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "regular expression query param match with invalid value for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5516,7 +5516,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "query param match with invalid type for httproute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5569,7 +5569,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.backendRef.name not specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5615,7 +5615,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.backendRef.serviceName invalid on two matches", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
@@ -5664,7 +5664,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.backendRef.port not specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5710,7 +5710,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.backendRefs not specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5745,7 +5745,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.backendRef.namespace does not match route", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5821,7 +5821,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -5876,7 +5876,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -5961,7 +5961,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6017,7 +6017,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6118,7 +6118,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6219,7 +6219,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6320,7 +6320,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6421,7 +6421,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		objs: []interface{}{
+		objs: []any{
 			&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
@@ -6500,7 +6500,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	// END TLS CertificateRef + ReferenceGrant tests
 
 	run(t, "spec.rules.hostname: invalid wildcard", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -6542,7 +6542,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -6584,7 +6584,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -6624,7 +6624,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "two HTTP listeners, route's hostname intersects with one of them", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -6761,7 +6761,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "two HTTP listeners, route's hostname intersects with neither of them", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -6903,7 +6903,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTP listener, route's parent ref sectionname does not match", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7006,7 +7006,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTP listener, route's parent ref port does not match", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7109,7 +7109,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTP listener, route's parent ref section name and port both must match", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7276,7 +7276,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPRoute: backendrefs still validated when route not accepted", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7344,7 +7344,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "More than one RequestMirror filters in HTTPRoute.Spec.Rules.Filters", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			kuardService3,
@@ -7394,7 +7394,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestMirror filter due to unspecified backendRef.name", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -7442,7 +7442,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestMirror filter due to unspecified backendRef.port", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -7490,7 +7490,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestMirror filter due to invalid backendRef.name on two matches", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -7555,7 +7555,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestMirror filter due to unmatched backendRef.namespace", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -7607,7 +7607,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute backendref", testcase{
-		objs: []interface{}{
+		objs: []any{
 
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -7659,7 +7659,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPRouteFilterURLRewrite with custom HTTPPathModifierType is not supported", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7709,7 +7709,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7755,7 +7755,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid RequestHeaderModifier after forward due to invalid headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7808,7 +7808,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid ResponseHeaderModifier due to duplicated headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7854,7 +7854,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Invalid ResponseHeaderModifier on backend due to invalid headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7907,7 +7907,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "custom filter type is not supported", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7952,7 +7952,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "gateway.spec.addresses results in invalid gateway", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8018,7 +8018,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "invalid allowedroutes API group results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8084,7 +8084,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "invalid allowedroutes API kind results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8147,7 +8147,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "allowedroute of TLSRoute on a non-TLS listener results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8210,7 +8210,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "TLS certificate ref to a non-secret on an HTTPS listener results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8288,7 +8288,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "nonexistent TLS certificate ref on an HTTPS listener results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8362,7 +8362,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "invalid listener protocol results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8416,7 +8416,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPS listener without TLS defined results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8479,7 +8479,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "TLS listener without TLS defined results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8538,7 +8538,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "TLS Passthrough listener with a TLS certificate ref defined results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8603,7 +8603,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "TLS listener with TLS.Mode=Terminate results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8668,7 +8668,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPS listener with TLS.Mode=Passthrough results in a listener condition", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8734,7 +8734,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Listener with FromNamespaces=Selector, no selector specified", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8799,7 +8799,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Listener with FromNamespaces=Selector, invalid selector (can't specify values with Exists operator)", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8870,7 +8870,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "Listener with FromNamespaces=Selector, invalid selector (must specify MatchLabels and/or MatchExpressions)", testcase{
-		objs: []interface{}{},
+		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -8939,7 +8939,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	type testcase struct {
-		objs                    []interface{}
+		objs                    []any
 		gateway                 *gatewayapi_v1beta1.Gateway
 		wantRouteConditions     []*status.RouteStatusUpdate
 		wantGatewayStatusUpdate []*status.GatewayStatusUpdate
@@ -9069,7 +9069,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.backendRef.name not specified", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9117,7 +9117,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.backendRef.name invalid on two matches", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
@@ -9160,7 +9160,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.backendRef.port not specified", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9208,7 +9208,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.backendRefs not specified", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9249,7 +9249,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9292,7 +9292,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9335,7 +9335,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9376,7 +9376,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9423,7 +9423,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	run(t, "TLSRoute: backendrefs still validated when route not accepted", testcase{
 		gateway: gw,
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9471,7 +9471,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	type testcase struct {
-		objs                    []interface{}
+		objs                    []any
 		gateway                 *gatewayapi_v1beta1.Gateway
 		wantRouteConditions     []*status.RouteStatusUpdate
 		wantGatewayStatusUpdate []*status.GatewayStatusUpdate
@@ -9629,7 +9629,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	}
 
 	run(t, "simple grpcroute", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9667,7 +9667,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: regular expression method match type is not yet supported", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9711,7 +9711,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: method match must have Service configured", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9754,7 +9754,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: method match must have Method configured", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9797,7 +9797,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid header match type is not supported", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9852,7 +9852,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: regular expression header match has invalid value", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9907,7 +9907,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid RequestHeaderModifier due to duplicated headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -9956,7 +9956,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid ResponseHeaderModifier due to invalid headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -10006,7 +10006,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: more than one RequestMirror filters in GRPCRoute.Spec.Rules.Filters", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			kuardService3,
@@ -10059,7 +10059,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid RequestMirror filter due to unspecified backendRef.name", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			kuardService2,
 			&gatewayapi_v1alpha2.GRPCRoute{
@@ -10110,7 +10110,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: custom filter type is not supported", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -10157,7 +10157,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: at lease one backend need to be specified", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -10196,7 +10196,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: still validate backendrefs when not accepted", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -10248,7 +10248,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid RequestHeaderModifier on backend due to duplicated headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -10303,7 +10303,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 
 	run(t, "grpcroute: invalid ResponseHeaderModifier on backend due to invalid headers", testcase{
-		objs: []interface{}{
+		objs: []any{
 			kuardService,
 			&gatewayapi_v1alpha2.GRPCRoute{
 				ObjectMeta: metav1.ObjectMeta{

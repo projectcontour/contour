@@ -39,8 +39,8 @@ import (
 func TestKubernetesCacheInsert(t *testing.T) {
 	tests := map[string]struct {
 		cacheGateway *types.NamespacedName
-		pre          []interface{}
-		obj          interface{}
+		pre          []any
+		obj          any
 		want         bool
 	}{
 		"insert TLS secret not referenced": {
@@ -70,7 +70,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by ingress": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -94,7 +94,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret w/ wrong type referenced by ingress": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -117,7 +117,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by ingress via tls delegation": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -155,7 +155,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by ingress via wildcard tls delegation": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -194,7 +194,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by httpproxy": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -220,7 +220,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by httpproxy via tls delegation": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -260,7 +260,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret referenced by httpproxy via wildcard tls delegation": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -317,7 +317,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert certificate secret referenced by httpproxy": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "example-com",
@@ -661,7 +661,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert service referenced by ingress backend": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -685,7 +685,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert service in different namespace": {
-			pre: []interface{}{
+			pre: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
@@ -709,7 +709,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert service referenced by tlsRoute": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1alpha2.TLSRoute{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -737,7 +737,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert service referenced by tlsRoute w/ mismatch namespace": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1alpha2.TLSRoute{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -765,7 +765,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert service referenced by tlsRoute w/ mismatch name": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1alpha2.TLSRoute{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -793,7 +793,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert service referenced by httpproxy": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -817,7 +817,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert service referenced by httpproxy tcpproxy": {
-			pre: []interface{}{
+			pre: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -878,7 +878,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert gateway-api HTTPRoute, has reference to Gateway": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -911,7 +911,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert gateway-api TLSRoute, has reference to Gateway": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -944,7 +944,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert gateway-api GRPCRoute, has reference to Gateway": {
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -1012,7 +1012,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Namespace: "gateway-namespace",
 				Name:      "gateway-name",
 			},
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -1035,7 +1035,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Namespace: "gateway-namespace",
 				Name:      "gateway-name",
 			},
-			pre: []interface{}{
+			pre: []any{
 				&gatewayapi_v1beta1.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -1116,7 +1116,7 @@ func (r *fakeReader) List(ctx context.Context, list client.ObjectList, opts ...c
 }
 
 func TestKubernetesCacheRemove(t *testing.T) {
-	cache := func(objs ...interface{}) *KubernetesCache {
+	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		}
@@ -1128,7 +1128,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 
 	tests := map[string]struct {
 		cache *KubernetesCache
-		obj   interface{}
+		obj   any
 		want  bool
 	}{
 		"remove secret": {
@@ -1663,7 +1663,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 }
 
 func TestLookupService(t *testing.T) {
-	cache := func(objs ...interface{}) *KubernetesCache {
+	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		}
@@ -1761,7 +1761,7 @@ func TestLookupService(t *testing.T) {
 
 func TestServiceTriggersRebuild(t *testing.T) {
 
-	cache := func(objs ...interface{}) *KubernetesCache {
+	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		}
@@ -2068,7 +2068,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	cache := func(objs ...interface{}) *KubernetesCache {
+	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		}
@@ -2294,7 +2294,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 
 func TestRouteTriggersRebuild(t *testing.T) {
 
-	cache := func(objs ...interface{}) *KubernetesCache {
+	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		}

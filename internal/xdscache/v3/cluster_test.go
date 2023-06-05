@@ -159,7 +159,7 @@ func TestClusterCacheQuery(t *testing.T) {
 
 func TestClusterVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs []interface{}
+		objs []any
 		want map[string]*envoy_cluster_v3.Cluster
 	}{
 		"nothing": {
@@ -167,7 +167,7 @@ func TestClusterVisit(t *testing.T) {
 			want: map[string]*envoy_cluster_v3.Cluster{},
 		},
 		"single unnamed service": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -197,7 +197,7 @@ func TestClusterVisit(t *testing.T) {
 				}),
 		},
 		"single named service": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -233,7 +233,7 @@ func TestClusterVisit(t *testing.T) {
 				}),
 		},
 		"h2c upstream": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -284,7 +284,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"long namespace and service name": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "webserver-1-unimatrix-zero-one",
@@ -315,7 +315,7 @@ func TestClusterVisit(t *testing.T) {
 				}),
 		},
 		"two service ports": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -373,7 +373,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with simple path healthcheck": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -430,7 +430,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with custom healthcheck": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -492,7 +492,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with RoundRobin lb algorithm": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -536,7 +536,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with WeightedLeastRequest lb algorithm": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -581,7 +581,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with Random lb algorithm": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -626,7 +626,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with RequestHash lb algorithm and valid header hash option": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -680,7 +680,7 @@ func TestClusterVisit(t *testing.T) {
 		// Removed testcase - "httpproxy with differing lb algorithms"
 		// HTTPProxy has LB algorithm as a route-level construct, so it's not possible.
 		"httpproxy with unknown lb algorithm": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -724,7 +724,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"circuitbreaker annotations": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -776,7 +776,7 @@ func TestClusterVisit(t *testing.T) {
 			),
 		},
 		"projectcontour.io/num-retries annotation": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",

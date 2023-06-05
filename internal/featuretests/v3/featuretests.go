@@ -69,12 +69,12 @@ const (
 // ResourceEventHandlerWrapper wraps the ResourceEventHandler interface from client-go/tools/cache.
 // The OnAdd function has a boolean parameter that we do not need for testing.
 type ResourceEventHandlerWrapper interface {
-	OnAdd(obj interface{})
-	OnUpdate(oldObj, newObj interface{})
-	OnDelete(obj interface{})
+	OnAdd(obj any)
+	OnUpdate(oldObj, newObj any)
+	OnDelete(obj any)
 }
 
-func setup(t *testing.T, opts ...interface{}) (ResourceEventHandlerWrapper, *Contour, func()) {
+func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, func()) {
 	t.Parallel()
 
 	log := fixture.NewTestLogger(t)
@@ -222,7 +222,7 @@ type resourceEventHandler struct {
 	statusUpdateCacher *k8s.StatusUpdateCacher
 }
 
-func (r *resourceEventHandler) OnAdd(obj interface{}) {
+func (r *resourceEventHandler) OnAdd(obj any) {
 	if r.statusUpdateCacher.IsCacheable(obj) {
 		r.statusUpdateCacher.OnAdd(obj)
 	}
@@ -239,7 +239,7 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	}
 }
 
-func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (r *resourceEventHandler) OnUpdate(oldObj, newObj any) {
 	// Ensure that tests don't sample stale status.
 	if r.statusUpdateCacher.IsCacheable(oldObj) {
 		r.statusUpdateCacher.OnDelete(oldObj)
@@ -261,7 +261,7 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	}
 }
 
-func (r *resourceEventHandler) OnDelete(obj interface{}) {
+func (r *resourceEventHandler) OnDelete(obj any) {
 	// Delete this object from the status cache before we make
 	// the deletion visible.
 	if r.statusUpdateCacher.IsCacheable(obj) {
@@ -396,7 +396,7 @@ type Contour struct {
 
 // Status returns a StatusResult object that can be used to assert
 // on object status fields.
-func (c *Contour) Status(obj interface{}) *StatusResult {
+func (c *Contour) Status(obj any) *StatusResult {
 	s, err := c.statusUpdateCache.GetStatus(obj)
 
 	return &StatusResult{
@@ -407,7 +407,7 @@ func (c *Contour) Status(obj interface{}) *StatusResult {
 }
 
 // NoStatus asserts that the given object did not get any status set.
-func (c *Contour) NoStatus(obj interface{}) *Contour {
+func (c *Contour) NoStatus(obj any) *Contour {
 	if _, err := c.statusUpdateCache.GetStatus(obj); err == nil {
 		c.T.Errorf("found cached object status, wanted no status")
 	}

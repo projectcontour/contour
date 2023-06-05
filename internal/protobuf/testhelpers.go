@@ -24,7 +24,7 @@ import (
 // ExpectEqual will test that want == got for protobufs, call t.Error if it does not,
 // and return a bool to indicate the result. This mimics the behavior of the testify `assert`
 // functions.
-func ExpectEqual(t *testing.T, want, got interface{}) bool {
+func ExpectEqual(t *testing.T, want, got any) bool {
 	t.Helper()
 
 	diff := cmp.Diff(want, got, protocmp.Transform())
@@ -38,7 +38,7 @@ func ExpectEqual(t *testing.T, want, got interface{}) bool {
 
 // RequireEqual will test that want == got for protobufs, call t.fatal if it does not,
 // This mimics the behavior of the testify `require` functions.
-func RequireEqual(t *testing.T, want, got interface{}) {
+func RequireEqual(t *testing.T, want, got any) {
 	t.Helper()
 
 	diff := cmp.Diff(want, got, protocmp.Transform())

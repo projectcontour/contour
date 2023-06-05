@@ -527,7 +527,7 @@ func backend(name string, port intstr.IntOrString) *networking_v1.IngressBackend
 // we care about.
 // TODO(youngnick): This is a straight copy from internal/k8s/kind.go
 // Needs to be moved to a separate module somewhere.
-func kindOf(obj interface{}) string {
+func kindOf(obj any) string {
 	switch obj.(type) {
 	case *v1.Secret:
 		return "Secret"

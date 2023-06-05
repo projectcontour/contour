@@ -43,7 +43,7 @@ func NewNamespaceFilter(
 	return e
 }
 
-func (e *namespaceFilter) allowed(obj interface{}) bool {
+func (e *namespaceFilter) allowed(obj any) bool {
 	if obj, ok := obj.(metav1.Object); ok {
 		_, ok := e.index[obj.GetNamespace()]
 		return ok
@@ -53,19 +53,19 @@ func (e *namespaceFilter) allowed(obj interface{}) bool {
 
 }
 
-func (e *namespaceFilter) OnAdd(obj interface{}, isInInitialList bool) {
+func (e *namespaceFilter) OnAdd(obj any, isInInitialList bool) {
 	if e.allowed(obj) {
 		e.next.OnAdd(obj, isInInitialList)
 	}
 }
 
-func (e *namespaceFilter) OnUpdate(oldObj, newObj interface{}) {
+func (e *namespaceFilter) OnUpdate(oldObj, newObj any) {
 	if e.allowed(oldObj) {
 		e.next.OnUpdate(oldObj, newObj)
 	}
 }
 
-func (e *namespaceFilter) OnDelete(obj interface{}) {
+func (e *namespaceFilter) OnDelete(obj any) {
 	if e.allowed(obj) {
 		e.next.OnDelete(obj)
 	}

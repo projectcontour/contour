@@ -89,7 +89,7 @@ func (p *Provisioner) UnmarshalResources() error {
 	p.ProvisionerClusterRoleBinding = new(rbac_v1.ClusterRoleBinding)
 	p.Deployment = new(apps_v1.Deployment)
 
-	objects := []interface{}{
+	objects := []any{
 		p.Namespace,
 		p.ServiceAccount,
 		p.ProvisionerClusterRole,

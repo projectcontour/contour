@@ -45,7 +45,7 @@ func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 // AsMessages casts the given slice of values (that implement the proto.Message
 // interface) to a slice of proto.Message. If the length of the slice is 0, it
 // returns nil.
-func AsMessages(messages interface{}) []proto.Message {
+func AsMessages(messages any) []proto.Message {
 	v := reflect.ValueOf(messages)
 	if v.Len() == 0 {
 		return nil

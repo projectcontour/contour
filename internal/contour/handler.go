@@ -48,7 +48,7 @@ type EventHandler struct {
 
 	logrus.FieldLogger
 
-	update chan interface{}
+	update chan any
 
 	sequence chan int
 
@@ -65,32 +65,32 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		holdoffDelay:    config.HoldoffDelay,
 		holdoffMaxDelay: config.HoldoffMaxDelay,
 		statusUpdater:   config.StatusUpdater,
-		update:          make(chan interface{}),
+		update:          make(chan any),
 		sequence:        make(chan int, 1),
 	}
 }
 
 type opAdd struct {
-	obj interface{}
+	obj any
 }
 
 type opUpdate struct {
-	oldObj, newObj interface{}
+	oldObj, newObj any
 }
 
 type opDelete struct {
-	obj interface{}
+	obj any
 }
 
-func (e *EventHandler) OnAdd(obj interface{}, isInInitialList bool) {
+func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
 	e.update <- opAdd{obj: obj}
 }
 
-func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (e *EventHandler) OnUpdate(oldObj, newObj any) {
 	e.update <- opUpdate{oldObj: oldObj, newObj: newObj}
 }
 
-func (e *EventHandler) OnDelete(obj interface{}) {
+func (e *EventHandler) OnDelete(obj any) {
 	e.update <- opDelete{obj: obj}
 }
 
@@ -179,7 +179,7 @@ func (e *EventHandler) Start(ctx context.Context) error {
 // onUpdate processes the event received. onUpdate returns
 // true if the event changed the cache in a way that requires
 // notifying the Observer.
-func (e *EventHandler) onUpdate(op interface{}) bool {
+func (e *EventHandler) onUpdate(op any) bool {
 	switch op := op.(type) {
 	case opAdd:
 		return e.builder.Source.Insert(op.obj)

@@ -113,7 +113,7 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 // AddErrorf adds an error-level Subcondition to the DetailedCondition, using
 // fmt.Sprintf on the formatmsg and args params.
 // If a SubCondition with the given errorType exists, will overwrite the details.
-func (dc *DetailedCondition) AddErrorf(errorType, reason, formatmsg string, args ...interface{}) {
+func (dc *DetailedCondition) AddErrorf(errorType, reason, formatmsg string, args ...any) {
 	dc.AddError(errorType, reason, fmt.Sprintf(formatmsg, args...))
 }
 
@@ -148,7 +148,7 @@ func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
 // fmt.Sprintf on the formatmsg and args params.
 // If a SubCondition with the given errorType exists, will overwrite the details.
 // Note that adding warnings does not update the DetailedCondition Reason or Message.
-func (dc *DetailedCondition) AddWarningf(warnType, reason, formatmsg string, args ...interface{}) {
+func (dc *DetailedCondition) AddWarningf(warnType, reason, formatmsg string, args ...any) {
 	dc.AddWarning(warnType, reason, fmt.Sprintf(formatmsg, args...))
 }
 

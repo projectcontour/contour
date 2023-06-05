@@ -143,7 +143,7 @@ func TestRouteCacheQuery(t *testing.T) {
 
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs                []interface{}
+		objs                []any
 		fallbackCertificate *types.NamespacedName
 		want                map[string]*envoy_route_v3.RouteConfiguration
 	}{
@@ -154,7 +154,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"one http only ingress with service": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -190,7 +190,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"one http only ingress with regex match": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -235,7 +235,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"one http only httpproxy": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -279,7 +279,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"default backend ingress with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -327,7 +327,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"vhost ingress with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -398,7 +398,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"simple httpproxy with secret": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -471,7 +471,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"simple tls ingress with allow-http:false": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -538,7 +538,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"simple tls ingress with force-ssl-redirect": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -618,7 +618,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress with websocket annotation": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -685,7 +685,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress invalid timeout": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -724,7 +724,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress infinite timeout": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -763,7 +763,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress 90 second timeout": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -802,7 +802,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress different path matches": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -895,7 +895,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"vhost name exceeds 60 chars": { // projectcontour/contour#25
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-service-name",
@@ -947,7 +947,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress retry-on": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -986,7 +986,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"ingress retry-on, num-retries": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -1027,7 +1027,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 
 		"ingress num-retries disabled": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -1068,7 +1068,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 
 		"ingress retry-on, per-try-timeout": {
-			objs: []interface{}{
+			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
@@ -1109,7 +1109,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 
 		"httpproxy num-retries disabled": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1161,7 +1161,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 
 		"httpproxy no weights defined": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1235,7 +1235,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy one weight defined": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1310,7 +1310,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy all weights defined": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1386,7 +1386,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy w/ missing fqdn": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1421,7 +1421,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with pathPrefix": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1495,7 +1495,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with mirror policy": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1559,7 +1559,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with pathPrefix with tls": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1657,7 +1657,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with pathPrefix includes": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1772,7 +1772,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with corsPolicy": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1831,7 +1831,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with corsPolicy with tls": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1925,7 +1925,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header contains conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -1980,7 +1980,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header notcontains conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2039,7 +2039,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header exact match conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2098,7 +2098,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header exact not match conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2157,7 +2157,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header present conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2215,7 +2215,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 
 		"httpproxy with header regex conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2273,7 +2273,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with query parameter contains conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2328,7 +2328,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header prefix conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2386,7 +2386,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with header suffix conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2444,7 +2444,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with query parameter exact match conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2504,7 +2504,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with query parameter regex match conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2562,7 +2562,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with query parameter present conditions": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2619,7 +2619,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with route-level header manipulation": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2710,7 +2710,7 @@ func TestRouteVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -2839,7 +2839,7 @@ func TestRouteVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3025,7 +3025,7 @@ func TestRouteVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3227,7 +3227,7 @@ func TestRouteVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "badnamespace",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3305,7 +3305,7 @@ func TestRouteVisit(t *testing.T) {
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3412,7 +3412,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"direct response on configuration error": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3459,12 +3459,12 @@ func TestRouteVisit(t *testing.T) {
 
 func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 	tests := map[string]struct {
-		objs                []interface{}
+		objs                []any
 		fallbackCertificate *types.NamespacedName
 		want                map[string]*envoy_route_v3.RouteConfiguration
 	}{
 		"HTTP virtual host, authcontext override": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3533,7 +3533,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 			),
 		},
 		"HTTP virtual host, auth disabled for a route": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3593,7 +3593,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 			),
 		},
 		"HTTPs virtual host, authcontext override": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -4090,7 +4090,7 @@ func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string) *envoy_r
 }
 
 // buildDAGGlobalExtAuth produces a dag.DAG from the supplied objects with global external authorization configured.
-func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
+func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...any) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),

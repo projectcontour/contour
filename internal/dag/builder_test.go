@@ -496,7 +496,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs         []interface{}
+		objs         []any
 		gatewayclass *gatewayapi_v1beta1.GatewayClass
 		gateway      *gatewayapi_v1beta1.Gateway
 		want         []*Listener
@@ -504,7 +504,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -521,7 +521,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"gateway with addresses is unsupported": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPWithAddresses,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -529,7 +529,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"gateway without a gatewayclass": {
 			gateway: gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -538,7 +538,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway same namespace selector, route in gateway's namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSameNamespace,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -555,7 +555,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway same namespace selector, route in different namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSameNamespace,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -581,7 +581,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway From namespace selector": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPNamespaceSelector,
-			objs: []interface{}{
+			objs: []any{
 				&v1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "custom",
@@ -624,7 +624,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway From namespace selector, not matching": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPNamespaceSelector,
-			objs: []interface{}{
+			objs: []any{
 				&v1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "custom",
@@ -660,7 +660,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute does not include the gateway in its list of parent refs": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -691,7 +691,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects TLSRoutes in all namespaces": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardServiceCustomNs,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -729,7 +729,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is in the same namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughSameNamespace,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -767,7 +767,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is not in the same namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughSameNamespace,
-			objs: []interface{}{
+			objs: []any{
 				kuardServiceCustomNs,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -790,7 +790,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a matching namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughNamespaceSelector,
-			objs: []interface{}{
+			objs: []any{
 				kuardServiceCustomNs,
 				&v1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -834,7 +834,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a non-matching namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughNamespaceSelector,
-			objs: []interface{}{
+			objs: []any{
 				kuardServiceCustomNs,
 				&v1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -864,7 +864,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: Gateway selects non-TLSRoutes": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces, // selects HTTPRoutes, not TLSRoutes
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicTLSRoute,
 			},
@@ -874,7 +874,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute: TLSRoute allows Gateways from list, and gateway is not in the list": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -921,7 +921,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicTLSRoute,
 			},
@@ -953,7 +953,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				basicTLSRoute,
@@ -979,7 +979,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicTLSRoute,
 			},
@@ -1007,7 +1007,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicTLSRoute,
 			},
@@ -1016,7 +1016,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with invalid listener kind": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicTLSRoute,
 			},
@@ -1026,7 +1026,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"one gateway with two httproutes, different hostnames": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 				&gatewayapi_v1beta1.HTTPRoute{
@@ -1084,7 +1084,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -1115,7 +1115,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -1124,7 +1124,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic multiple routes, single hostname": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				blogService,
 				&gatewayapi_v1beta1.HTTPRoute{
@@ -1191,7 +1191,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"multiple hosts": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1231,7 +1231,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"no host defined": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1262,7 +1262,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"wildcard hostname": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1299,7 +1299,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"invalid hostnames - IP": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1325,7 +1325,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"invalid hostnames - with port": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1351,7 +1351,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"invalid hostnames - wildcard label by itself": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1379,7 +1379,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"missing service": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
@@ -1410,7 +1410,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"missing port": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
@@ -1448,7 +1448,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1487,7 +1487,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1540,7 +1540,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with valid ReferenceGrant (service-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1594,7 +1594,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong Kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1649,7 +1649,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1704,7 +1704,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong from namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1759,7 +1759,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong service name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1815,7 +1815,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route with exact path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1850,7 +1850,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route with regular expression path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1886,7 +1886,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route with multiple prefixes, single hostname": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1959,7 +1959,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				basicHTTPRoute,
@@ -1994,7 +1994,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				basicHTTPRoute,
@@ -2004,7 +2004,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway with TLS": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				basicHTTPRoute,
@@ -2028,7 +2028,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway with missing TLS certificate": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicHTTPRoute,
 			},
@@ -2037,7 +2037,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway with invalid TLS certificate": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlscert",
@@ -2054,7 +2054,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAndHTTPS,
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				basicHTTPRoute,
@@ -2110,7 +2110,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				blogService,
 				basicHTTPRoute,
@@ -2137,7 +2137,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				blogService,
 				basicHTTPRoute,
@@ -2149,7 +2149,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2189,7 +2189,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				basicHTTPRoute,
 				kuardService,
@@ -2199,7 +2199,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with valid ReferenceGrant (secret-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2240,7 +2240,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2266,7 +2266,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2292,7 +2292,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong From kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2318,7 +2318,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong To kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2344,7 +2344,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Gateway references TLS cert in different namespace, with invalid ReferenceGrant (wrong secret name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
+			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2374,7 +2374,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"No valid hostnames defined": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
@@ -2415,7 +2415,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{basicHTTPRoute},
+			objs: []any{basicHTTPRoute},
 			want: listeners(),
 		},
 		"Invalid listener protocol type (UDP)": {
@@ -2437,7 +2437,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{basicHTTPRoute},
+			objs: []any{basicHTTPRoute},
 			want: listeners(),
 		},
 		"Invalid listener protocol type (custom)": {
@@ -2459,13 +2459,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					}},
 				},
 			},
-			objs: []interface{}{basicHTTPRoute},
+			objs: []any{basicHTTPRoute},
 			want: listeners(),
 		},
 		"gateway with HTTP and HTTPS listeners, each route selects a different listener": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAndHTTPS,
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				blogService,
@@ -2537,7 +2537,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route with single header match and path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2583,7 +2583,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert two routes with single header match, path match and header match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2641,7 +2641,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert two routes with single header match without explicit path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2683,7 +2683,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert route with multiple header matches including multiple for the same key": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2731,7 +2731,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"route with HTTP method match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2777,7 +2777,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with single query param match without type specified and path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2828,7 +2828,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with single query param match with type specified and path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2880,7 +2880,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with multiple query param matches including multiple for the same key": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2949,7 +2949,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with multiple query param matches including multiple for the same key and mixed types": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3019,7 +3019,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with duplicate key param matches with mixed types, ignores the second type": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3077,7 +3077,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert single route with single query param match with regex type specified and path match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3129,7 +3129,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3205,7 +3205,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Route rule with response header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3281,7 +3281,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTP backend with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3354,7 +3354,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTP backend with response header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3427,7 +3427,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"Route rule with invalid request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3482,7 +3482,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTP backend with invalid request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3539,7 +3539,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTP backend with invalid response header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3596,7 +3596,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request redirect filter": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3646,7 +3646,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request redirect filter with multiple matches": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3708,7 +3708,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request redirect filter with ReplacePrefixMatch to another value": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3758,7 +3758,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request redirect filter with ReplacePrefixMatch to \"/\"": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3808,7 +3808,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request redirect filter with ReplaceFullPath": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3858,7 +3858,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request mirror filter": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				&gatewayapi_v1beta1.HTTPRoute{
@@ -3898,7 +3898,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with request mirror filter with multiple matches": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				&gatewayapi_v1beta1.HTTPRoute{
@@ -3943,7 +3943,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with URLRewrite filter with ReplacePrefixMatch to another value": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3992,7 +3992,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with URLRewrite filter with ReplacePrefixMatch to \"/\"": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4041,7 +4041,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with URLRewrite filter with ReplaceFullPath": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4090,7 +4090,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with URLRewrite filter with Hostname rewrite": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4134,7 +4134,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"HTTPRoute rule with RequestHeadersModifier and URLRewrite filter with Hostname rewrite": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4196,7 +4196,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -4261,7 +4261,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"one service weight zero w/weights for other forwardTos": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -4326,7 +4326,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"weight of zero for a single forwardTo results in 500": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -4367,7 +4367,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"basic TLSRoute": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4405,7 +4405,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, no ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4428,7 +4428,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4492,7 +4492,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with valid ReferenceGrant (service-specific)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4557,7 +4557,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong Kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4606,7 +4606,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (grant in wrong namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4655,7 +4655,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong from namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4704,7 +4704,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute references a backend in a different namespace, with invalid ReferenceGrant (wrong service name)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4754,7 +4754,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple SNIs": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4812,7 +4812,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple SNIs, one is invalid": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4862,7 +4862,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple SNIs, all are invalid": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4889,7 +4889,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute without any hostnames specified results in '*' match all": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -4926,7 +4926,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with missing forwardTo service": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
@@ -4948,7 +4948,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple weighted ForwardTos": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -4997,7 +4997,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple weighted ForwardTos and one zero weight": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -5046,7 +5046,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"TLSRoute with multiple unweighted ForwardTos all default to 1": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				kuardService3,
@@ -5095,7 +5095,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert gateway listener with host": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPWithHostname,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5127,7 +5127,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert gateway listener with host, httproute with host": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPWithWildcardHostname,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5162,7 +5162,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: insert basic single grpc route, single hostname": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				basicGRPCRoute,
 			},
@@ -5179,7 +5179,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRotue: insert basic single route, single hostname, gateway same namespace selector, route in different namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSameNamespace,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5207,7 +5207,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: route does not include the gateway in its list of parent refs": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5237,7 +5237,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: gateway with HTTP and HTTPS listeners, each route selects a different listener": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAndHTTPS,
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				kuardService,
 				blogService,
@@ -5312,7 +5312,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: insert basic single route with single method match and exact header match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5355,7 +5355,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: insert basic single route with single method match and regular expression header match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5398,7 +5398,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: insert basic single route with no method match and single header match": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5440,7 +5440,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: insert basic single route with no matches": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5477,7 +5477,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5556,7 +5556,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: Route rule with response header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5634,7 +5634,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: Route rule with invalid request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5691,7 +5691,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: HTTP backend with invalid response header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -5750,7 +5750,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: rule with request mirror filter": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				kuardService2,
 				&gatewayapi_v1alpha2.GRPCRoute{
@@ -5793,7 +5793,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"GRPCRoute: references a backend in a different namespace, with valid ReferenceGrant": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
@@ -9734,7 +9734,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs                         []interface{}
+		objs                         []any
 		disablePermitInsecure        bool
 		enableExternalNameSvc        bool
 		fallbackCertificateName      string
@@ -9742,13 +9742,13 @@ func TestDAGInsert(t *testing.T) {
 		want                         []*Listener
 	}{
 		"ingressv1: insert ingress w/ default backend w/o matching service": {
-			objs: []interface{}{
+			objs: []any{
 				i1V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ default backend": {
-			objs: []interface{}{
+			objs: []any{
 				i1V1,
 				s1,
 			},
@@ -9763,13 +9763,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ single unnamed backend w/o matching service": {
-			objs: []interface{}{
+			objs: []any{
 				i2V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ single unnamed backend": {
-			objs: []interface{}{
+			objs: []any{
 				i2V1,
 				s1,
 			},
@@ -9784,19 +9784,19 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress with missing spec.rule.http key": {
-			objs: []interface{}{
+			objs: []any{
 				i2aV1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ host name and single backend w/o matching service": {
-			objs: []interface{}{
+			objs: []any{
 				i3V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ host name and single backend": {
-			objs: []interface{}{
+			objs: []any{
 				i3V1,
 				s1,
 			},
@@ -9811,28 +9811,28 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert non matching service then ingress w/ default backend": {
-			objs: []interface{}{
+			objs: []any{
 				s2,
 				i1V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ default backend then matching service with wrong port": {
-			objs: []interface{}{
+			objs: []any{
 				i1V1,
 				s3,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert unnamed ingress w/ single backend then matching service with wrong port": {
-			objs: []interface{}{
+			objs: []any{
 				i2V1,
 				s3,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ default backend then matching service w/ named port": {
-			objs: []interface{}{
+			objs: []any{
 				i4V1,
 				s1,
 			},
@@ -9847,7 +9847,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service w/ named port then ingress w/ default backend": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				i4V1,
 			},
@@ -9862,7 +9862,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ single unnamed backend w/ named service port then service": {
-			objs: []interface{}{
+			objs: []any{
 				i5V1,
 				s1,
 			},
@@ -9877,7 +9877,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service then ingress w/ single unnamed backend w/ named service port": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				i5V1,
 			},
@@ -9892,20 +9892,20 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert secret": {
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert secret then ingress w/o tls": {
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				i1V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert service, secret then ingress w/o tls": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec1,
 				i1V1,
@@ -9921,14 +9921,14 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert secret then ingress w/ tls": {
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				i3V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert service, secret then ingress w/ tls": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec1,
 				i3V1,
@@ -9951,7 +9951,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service w/ secret with w/ blank ca.crt": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec3, // issue 1644
 				i3V1,
@@ -9974,14 +9974,14 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert invalid secret then ingress w/o tls": {
-			objs: []interface{}{
+			objs: []any{
 				secInvalid,
 				i1V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert service, invalid secret then ingress w/o tls": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				secInvalid,
 				i1V1,
@@ -9997,14 +9997,14 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert invalid secret then ingress w/ tls": {
-			objs: []interface{}{
+			objs: []any{
 				secInvalid,
 				i3V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert service, invalid secret then ingress w/ tls": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				secInvalid,
 				i3V1,
@@ -10020,13 +10020,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ two vhosts": {
-			objs: []interface{}{
+			objs: []any{
 				i6V1,
 			},
 			want: nil, // no matching service
 		},
 		"ingressv1: insert ingress w/ two vhosts then matching service": {
-			objs: []interface{}{
+			objs: []any{
 				i6V1,
 				s1,
 			},
@@ -10042,7 +10042,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service then ingress w/ two vhosts": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				i6V1,
 			},
@@ -10058,7 +10058,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ two vhosts then service then secret": {
-			objs: []interface{}{
+			objs: []any{
 				i6V1,
 				s1,
 				sec1,
@@ -10081,7 +10081,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service then secret then ingress w/ two vhosts": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec1,
 				i6V1,
@@ -10104,7 +10104,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ two paths then one service": {
-			objs: []interface{}{
+			objs: []any{
 				i7V1,
 				s1,
 			},
@@ -10121,7 +10121,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ two paths then services": {
-			objs: []interface{}{
+			objs: []any{
 				i7V1,
 				s2,
 				s1,
@@ -10140,7 +10140,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert two services then ingress w/ two ingress rules": {
-			objs: []interface{}{
+			objs: []any{
 				s1, s2, i8V1,
 			},
 			want: listeners(
@@ -10157,13 +10157,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ two paths httpAllowed: false": {
-			objs: []interface{}{
+			objs: []any{
 				i9V1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ two paths httpAllowed: false then tls and service": {
-			objs: []interface{}{
+			objs: []any{
 				i9V1,
 				sec1,
 				s1, s2,
@@ -10182,25 +10182,25 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert default ingress httpAllowed: false": {
-			objs: []interface{}{
+			objs: []any{
 				i1aV1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert default ingress httpAllowed: false then tls and service": {
-			objs: []interface{}{
+			objs: []any{
 				i1aV1, sec1, s1,
 			},
 			want: listeners(), // default ingress cannot be tls
 		},
 		"ingressv1: insert ingress w/ two vhosts httpAllowed: false": {
-			objs: []interface{}{
+			objs: []any{
 				i6aV1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ two vhosts httpAllowed: false then tls and service": {
-			objs: []interface{}{
+			objs: []any{
 				i6aV1, sec1, s1,
 			},
 			want: listeners(
@@ -10214,7 +10214,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ force-ssl-redirect: true": {
-			objs: []interface{}{
+			objs: []any{
 				i6bV1, sec1, s1,
 			},
 			want: listeners(
@@ -10235,7 +10235,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 
 		"ingressv1: insert ingress w/ force-ssl-redirect: true and allow-http: false": {
-			objs: []interface{}{
+			objs: []any{
 				i6cV1, sec1, s1,
 			},
 			want: listeners(
@@ -10255,7 +10255,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with tls version 1.2": {
-			objs: []interface{}{
+			objs: []any{
 				proxyMinTLS12, s1, sec1,
 			},
 			want: listeners(
@@ -10284,7 +10284,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with tls version 1.3": {
-			objs: []interface{}{
+			objs: []any{
 				proxyMinTLS13, s1, sec1,
 			},
 			want: listeners(
@@ -10313,7 +10313,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with invalid tls version": {
-			objs: []interface{}{
+			objs: []any{
 				proxyMinTLSInvalid, s1, sec1,
 			},
 			want: listeners(
@@ -10333,7 +10333,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy referencing two backends, one missing": {
-			objs: []interface{}{
+			objs: []any{
 				proxyMultipleBackends, s2,
 			},
 			want: listeners(
@@ -10347,7 +10347,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with a wildcard fqdn": {
-			objs: []interface{}{
+			objs: []any{
 				proxyWildcardFQDN, s1,
 			},
 			want: listeners(
@@ -10368,7 +10368,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy referencing two backends": {
-			objs: []interface{}{
+			objs: []any{
 				proxyMultipleBackends, s1, s2,
 			},
 			want: listeners(
@@ -10382,7 +10382,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ tls min proto annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i10aV1,
 				sec1,
 				s1,
@@ -10413,7 +10413,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ websocket route annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i11V1,
 				s1,
 			},
@@ -10431,7 +10431,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ invalid legacy timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12aV1,
 				s1,
 			},
@@ -10449,7 +10449,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ invalid timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12dV1,
 				s1,
 			},
@@ -10467,14 +10467,14 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ invalid timeoutpolicy": {
-			objs: []interface{}{
+			objs: []any{
 				proxyTimeoutPolicyInvalidResponse,
 				s1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress w/ valid legacy timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12bV1,
 				s1,
 			},
@@ -10495,7 +10495,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ valid timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12eV1,
 				s1,
 			},
@@ -10516,7 +10516,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ valid timeoutpolicy": {
-			objs: []interface{}{
+			objs: []any{
 				proxyTimeoutPolicyValidResponse,
 				s1,
 			},
@@ -10535,7 +10535,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ legacy infinite timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12cV1,
 				s1,
 			},
@@ -10556,7 +10556,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress w/ infinite timeout annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i12fV1,
 				s1,
 			},
@@ -10577,7 +10577,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ infinite timeoutpolicy": {
-			objs: []interface{}{
+			objs: []any{
 				proxyTimeoutPolicyInfiniteResponse,
 				s1,
 			},
@@ -10596,13 +10596,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with missing tls delegation should not present port 80": {
-			objs: []interface{}{
+			objs: []any{
 				s10, proxyDelegatedTLSSecret,
 			},
 			want: listeners(), // no listeners, ir19 is invalid
 		},
 		"insert httpproxy with retry annotations": {
-			objs: []interface{}{
+			objs: []any{
 				proxyRetryPolicyValidTimeout,
 				s1,
 			},
@@ -10625,7 +10625,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with invalid PerTryTimeout": {
-			objs: []interface{}{
+			objs: []any{
 				proxyRetryPolicyInvalidTimeout,
 				s1,
 			},
@@ -10648,7 +10648,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with zero retry count": {
-			objs: []interface{}{
+			objs: []any{
 				proxyRetryPolicyZeroRetries,
 				s1,
 			},
@@ -10671,7 +10671,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress with timeout policy": {
-			objs: []interface{}{
+			objs: []any{
 				i14V1,
 				s1,
 			},
@@ -10694,7 +10694,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress with regex route": {
-			objs: []interface{}{
+			objs: []any{
 				i15V1,
 				s1,
 			},
@@ -10712,14 +10712,14 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress with invalid regex route": {
-			objs: []interface{}{
+			objs: []any{
 				i15InvalidRegexV1,
 				s1,
 			},
 			want: listeners(),
 		},
 		"ingressv1: insert ingress with various path match types": {
-			objs: []interface{}{
+			objs: []any{
 				iPathMatchTypesV1,
 				s1,
 			},
@@ -10764,7 +10764,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress with wildcard hostnames": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				i16V1,
 			},
@@ -10790,7 +10790,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress overlay": {
-			objs: []interface{}{
+			objs: []any{
 				i13aV1, i13bV1, sec13, s13a, s13b,
 			},
 			want: listeners(
@@ -10816,7 +10816,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: h2c service annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i3aV1, s3a,
 			},
 			want: listeners(
@@ -10841,7 +10841,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: h2 service annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i3aV1, s3b,
 			},
 			want: listeners(
@@ -10866,7 +10866,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: tls service annotation": {
-			objs: []interface{}{
+			objs: []any{
 				i3aV1, s3c,
 			},
 			want: listeners(
@@ -10891,7 +10891,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert ingress then service w/ upstream annotations": {
-			objs: []interface{}{
+			objs: []any{
 				i1V1,
 				s1b,
 			},
@@ -10920,7 +10920,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with two routes to the same service": {
-			objs: []interface{}{
+			objs: []any{
 				proxyWeightsTwoRoutesDiffWeights, s1,
 			},
 			want: listeners(
@@ -10959,7 +10959,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with one routes to the same service with two different weights": {
-			objs: []interface{}{
+			objs: []any{
 				proxyWeightsOneRouteDiffWeights, s1,
 			},
 			want: listeners(
@@ -10999,7 +10999,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1, s1,
 			},
 			want: listeners(
@@ -11013,7 +11013,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/o condition": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1b, s1,
 			},
 			want: listeners(
@@ -11027,7 +11027,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy with invalid include": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
@@ -11063,7 +11063,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy with include references another root": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
@@ -11110,7 +11110,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/ conditions": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1c, s1,
 			},
 			want: listeners(
@@ -11134,7 +11134,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/ multiple routes with a Contains condition on the same header": {
-			objs: []interface{}{
+			objs: []any{
 				proxy2d, s1,
 			},
 			want: listeners(
@@ -11160,7 +11160,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/ multiple routes with condition on the same header, one Contains and one NotContains": {
-			objs: []interface{}{
+			objs: []any{
 				proxy2e, s1,
 			},
 			want: listeners(
@@ -11186,7 +11186,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/ included conditions": {
-			objs: []interface{}{
+			objs: []any{
 				proxy2a, proxy2b, s1,
 			},
 			want: listeners(
@@ -11220,7 +11220,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ healthcheck": {
-			objs: []interface{}{
+			objs: []any{
 				proxy2c, s1,
 			},
 			want: listeners(
@@ -11241,7 +11241,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with mirroring route": {
-			objs: []interface{}{
+			objs: []any{
 				proxy12, s1, s2,
 			},
 			want: listeners(
@@ -11257,13 +11257,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with two mirrors": {
-			objs: []interface{}{
+			objs: []any{
 				proxy13, s1, s2,
 			},
 			want: listeners(),
 		},
 		"insert httpproxy with websocket route and prefix rewrite": {
-			objs: []interface{}{
+			objs: []any{
 				proxy10, s1,
 			},
 			want: listeners(
@@ -11280,7 +11280,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with multiple upstreams prefix rewrite route and websockets along one path": {
-			objs: []interface{}{
+			objs: []any{
 				proxy10b, s1,
 			},
 			want: listeners(
@@ -11298,7 +11298,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 
 		"insert httpproxy with protocol and service": {
-			objs: []interface{}{
+			objs: []any{
 				proxy110, s1,
 			},
 			want: listeners(
@@ -11314,7 +11314,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 
 		"insert httpproxy without tls version": {
-			objs: []interface{}{
+			objs: []any{
 				proxy6, s1, sec1,
 			},
 			want: listeners(
@@ -11334,7 +11334,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy expecting upstream verification": {
-			objs: []interface{}{
+			objs: []any{
 				cert1, proxy17, s1a,
 			},
 			want: listeners(
@@ -11368,7 +11368,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with h2 expecting upstream verification": {
-			objs: []interface{}{
+			objs: []any{
 				cert1, proxy17h2, s1,
 			},
 			want: listeners(
@@ -11401,13 +11401,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy expecting upstream verification, no certificate": {
-			objs: []interface{}{
+			objs: []any{
 				proxy17, s1a,
 			},
 			want: listeners(), // no listeners, missing certificate
 		},
 		"insert httpproxy expecting upstream verification, no annotation on service": {
-			objs: []interface{}{
+			objs: []any{
 				cert1, proxy17, s1,
 			},
 			want: listeners(
@@ -11423,13 +11423,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy expecting upstream verification, CA secret in different namespace is not delegated": {
-			objs: []interface{}{
+			objs: []any{
 				cert2, proxy17UpstreamCACertDelegation, s1a,
 			},
 			want: listeners(),
 		},
 		"insert httpproxy expecting upstream verification, CA secret in different namespace is delegated": {
-			objs: []interface{}{
+			objs: []any{
 				cert2, s1a,
 				&contour_api_v1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
@@ -11476,7 +11476,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with downstream verification": {
-			objs: []interface{}{
+			objs: []any{
 				cert1, proxy18, s1, sec1,
 			},
 			want: listeners(
@@ -11507,7 +11507,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tcpproxy in tls termination mode w/ downstream verification": {
-			objs: []interface{}{
+			objs: []any{
 				cert1, proxy19, s1, sec1,
 			},
 			want: listeners(
@@ -11535,7 +11535,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination mode w/ skip cert verification": {
-			objs: []interface{}{
+			objs: []any{
 				proxy20, s1, sec1,
 			},
 			want: listeners(
@@ -11566,7 +11566,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination mode w/ skip cert verification and a ca": {
-			objs: []interface{}{
+			objs: []any{
 				proxy21, s1, sec1, cert1,
 			},
 			want: listeners(
@@ -11598,7 +11598,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination with client validation and CRL check": {
-			objs: []interface{}{
+			objs: []any{
 				proxy22, s1, sec1, cert1, crl,
 			},
 			want: listeners(
@@ -11630,7 +11630,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination with client validation and CRL check but only for leaf-certificate": {
-			objs: []interface{}{
+			objs: []any{
 				proxy23, s1, sec1, cert1, crl,
 			},
 			want: listeners(
@@ -11663,7 +11663,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination with client cert forwarding": {
-			objs: []interface{}{
+			objs: []any{
 				proxy25, s1, sec1, cert1, crl,
 			},
 			want: listeners(
@@ -11701,7 +11701,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tls termination with optional client validation": {
-			objs: []interface{}{
+			objs: []any{
 				proxy24, s1, sec1, cert1, crl,
 			},
 			want: listeners(
@@ -11733,25 +11733,25 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with downstream verification, missing ca certificate": {
-			objs: []interface{}{
+			objs: []any{
 				proxy18, s1, sec1,
 			},
 			want: listeners(),
 		},
 		"insert httpproxy with invalid tcpproxy": {
-			objs: []interface{}{proxy37, s1},
+			objs: []any{proxy37, s1},
 			want: listeners(),
 		},
 		"insert httpproxy with empty tcpproxy": {
-			objs: []interface{}{proxy37a, s1},
+			objs: []any{proxy37a, s1},
 			want: listeners(),
 		},
 		"insert httpproxy w/ tcpproxy w/ missing include": {
-			objs: []interface{}{proxy38, s1},
+			objs: []any{proxy38, s1},
 			want: listeners(),
 		},
 		"insert httpproxy w/ tcpproxy w/ includes another root": {
-			objs: []interface{}{proxy38, proxy39, s1},
+			objs: []any{proxy38, proxy39, s1},
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
@@ -11772,7 +11772,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/tcpproxy w/include": {
-			objs: []interface{}{proxy39broot, proxy39bchild, s1},
+			objs: []any{proxy39broot, proxy39bchild, s1},
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
@@ -11794,7 +11794,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		// Issue #2218
 		"insert httpproxy w/tcpproxy w/include plural": {
-			objs: []interface{}{proxy39brootplural, proxy39bchild, s1},
+			objs: []any{proxy39brootplural, proxy39bchild, s1},
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
@@ -11815,7 +11815,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy w/ tcpproxy w/ includes valid child": {
-			objs: []interface{}{proxy38, proxy40, s1},
+			objs: []any{proxy38, proxy40, s1},
 			want: listeners(
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
@@ -11836,11 +11836,11 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httproxy w/ route w/ no services": {
-			objs: []interface{}{proxy41, s1},
+			objs: []any{proxy41, s1},
 			want: listeners(), // expect empty, route is invalid so vhost is invalid
 		},
 		"insert httpproxy with pathPrefix include": {
-			objs: []interface{}{
+			objs: []any{
 				proxy100, proxy100a, s1, s4,
 			},
 			want: listeners(
@@ -11881,7 +11881,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with pathPrefix include, child adds to pathPrefix": {
-			objs: []interface{}{
+			objs: []any{
 				proxy100, proxy100b, s1, s4,
 			},
 			want: listeners(
@@ -11924,7 +11924,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with pathPrefix include, child adds to pathPrefix, delegates again": {
-			objs: []interface{}{
+			objs: []any{
 				proxy100, proxy100c, proxy100d, s1, s4, s11,
 			},
 			want: listeners(
@@ -11993,7 +11993,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with no namespace for include": {
-			objs: []interface{}{
+			objs: []any{
 				proxy101, proxy101a, s1, s2,
 			},
 			want: listeners(
@@ -12034,7 +12034,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with include, no prefix condition on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy104, proxy104a, s1, s2,
 			},
 			want: listeners(
@@ -12075,7 +12075,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with include, / on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy105, proxy105a, s1, s2,
 			},
 			want: listeners(
@@ -12116,7 +12116,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with include, full prefix on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy107, proxy107a, s1, s2,
 			},
 			want: listeners(
@@ -12157,11 +12157,11 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"invalid httpproxy with exact condition in include match conditions": {
-			objs: []interface{}{proxy113, s1},
+			objs: []any{proxy113, s1},
 			want: listeners(),
 		},
 		"httpproxy with include, exact and prefix on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy114, proxy114a, proxy114b, s1, s2,
 			},
 			want: listeners(
@@ -12202,7 +12202,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with include ending with /, / on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxy106, proxy106a, s1, s2,
 			},
 			want: listeners(
@@ -12243,13 +12243,13 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with multiple prefix conditions on route": {
-			objs: []interface{}{
+			objs: []any{
 				proxy102, s1,
 			},
 			want: listeners(),
 		},
 		"insert httpproxy with multiple prefix conditions on include": {
-			objs: []interface{}{
+			objs: []any{
 				proxy103, proxy103a, s1, s12,
 			},
 			want: listeners(
@@ -12264,7 +12264,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy duplicate conditions on include": {
-			objs: []interface{}{
+			objs: []any{
 				proxy108, proxy108a, proxy108b, s1, s12, s13,
 			},
 			want: listeners(
@@ -12289,7 +12289,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with tcp forward without TLS termination w/ passthrough": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1a, s1,
 			},
 			want: listeners(
@@ -12313,7 +12313,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		// issue 1952
 		"insert proxy with tcp forward without TLS termination w/ passthrough and 301 upgrade of port 80": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1d, s1,
 			},
 			want: listeners(
@@ -12345,7 +12345,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with tcp forward without TLS termination w/ passthrough without 301 upgrade of port 80": {
-			objs: []interface{}{
+			objs: []any{
 				proxy1e, s10,
 			},
 			want: listeners(
@@ -12390,7 +12390,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert httpproxy with route-level header manipulation": {
-			objs: []interface{}{
+			objs: []any{
 				proxy109, s1,
 			},
 			want: listeners(
@@ -12412,7 +12412,7 @@ func TestDAGInsert(t *testing.T) {
 
 		// issue 1399
 		"service shared across ingress and httpproxy tcpproxy": {
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				&networking_v1.Ingress{
@@ -12480,7 +12480,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		// issue 1954
 		"httpproxy tcpproxy + permitinsecure": {
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				&contour_api_v1.HTTPProxy{
@@ -12540,7 +12540,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		// issue 1954
 		"httpproxy tcpproxy + tlspassthrough + permitinsecure": {
-			objs: []interface{}{
+			objs: []any{
 				s9,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12597,7 +12597,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy request redirect policy": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12641,7 +12641,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy request redirect policy - no services": {
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "redirect",
@@ -12684,7 +12684,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy request redirect policy with multiple matches": {
-			objs: []interface{}{
+			objs: []any{
 				s1, s2,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12750,7 +12750,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy DirectResponse policy - code 200": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12790,7 +12790,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy DirectResponse policy - no body": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12828,7 +12828,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"HTTPProxy DirectResponse policy with multiple matches": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -12910,7 +12910,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: Ingress then HTTPProxy with identical details, except referencing s2a": {
-			objs: []interface{}{
+			objs: []any{
 				i17V1,
 				proxy1f,
 				s1,
@@ -12927,7 +12927,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service, secret, then ingress w/ tls and delegation annotation (missing delegation)": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec4,
 				i18V1,
@@ -12943,7 +12943,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"ingressv1: insert service, secret, delegation, then ingress w/ tls and delegation annotation": {
-			objs: []interface{}{
+			objs: []any{
 				s1,
 				sec4,
 				&contour_api_v1.TLSCertificateDelegation{
@@ -12978,7 +12978,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert ingress with externalName service": {
-			objs: []interface{}{
+			objs: []any{
 				ingressExternalNameService,
 				s14,
 			},
@@ -13008,7 +13008,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert ingress with externalName service, but externalName services disabled": {
-			objs: []interface{}{
+			objs: []any{
 				ingressExternalNameService,
 				s14,
 			},
@@ -13016,7 +13016,7 @@ func TestDAGInsert(t *testing.T) {
 			want:                  listeners(),
 		},
 		"insert proxy with externalName service": {
-			objs: []interface{}{
+			objs: []any{
 				proxyExternalNameService,
 				s14,
 			},
@@ -13047,7 +13047,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert tcp proxy with externalName service": {
-			objs: []interface{}{
+			objs: []any{
 				tcpProxyExternalNameService,
 				s14,
 				sec1,
@@ -13086,7 +13086,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with replace header policy - route - host header": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHostHeaderRoute,
 				s9,
 			},
@@ -13110,7 +13110,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with replace header policy - route - host header - externalName": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHostHeaderRoute,
 				s14,
 			},
@@ -13144,7 +13144,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with replace header policy - service - host header": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHostHeaderService,
 				s9,
 			},
@@ -13176,7 +13176,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with replace header policy - service - host header - externalName": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHostHeaderService,
 				s14,
 			},
@@ -13210,21 +13210,21 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with response header policy - route - host header": {
-			objs: []interface{}{
+			objs: []any{
 				proxy111,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with response header policy - service - host header": {
-			objs: []interface{}{
+			objs: []any{
 				proxy112,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with replace header policy - host header multiple": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHostHeaderMultiple,
 				s9,
 			},
@@ -13252,7 +13252,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with request headers policy - not host header": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceNonHostHeader,
 				s9,
 			},
@@ -13275,7 +13275,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with request headers policy - empty value": {
-			objs: []interface{}{
+			objs: []any{
 				proxyReplaceHeaderEmptyValue,
 				s9,
 			},
@@ -13298,7 +13298,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with cookie rewrite policies on route": {
-			objs: []interface{}{
+			objs: []any{
 				cookieRewritePoliciesRoute,
 				s9,
 			},
@@ -13330,7 +13330,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with cookie rewrite policies on service": {
-			objs: []interface{}{
+			objs: []any{
 				cookieRewritePoliciesService,
 				s9,
 			},
@@ -13365,35 +13365,35 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with duplicate cookie rewrite policies on route": {
-			objs: []interface{}{
+			objs: []any{
 				duplicateCookieRewritePoliciesRoute,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with duplicate cookie rewrite policies on service": {
-			objs: []interface{}{
+			objs: []any{
 				duplicateCookieRewritePoliciesService,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with empty cookie rewrite policy on route": {
-			objs: []interface{}{
+			objs: []any{
 				emptyCookieRewritePolicyRoute,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with empty cookie rewrite policy on service": {
-			objs: []interface{}{
+			objs: []any{
 				emptyCookieRewritePolicyService,
 				s9,
 			},
 			want: listeners(),
 		},
 		"insert proxy with cookie load balancing strategy": {
-			objs: []interface{}{
+			objs: []any{
 				proxyCookieLoadBalancer,
 				s9,
 			},
@@ -13422,7 +13422,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with load balancer hash source ip": {
-			objs: []interface{}{
+			objs: []any{
 				proxyLoadBalancerHashPolicySourceIP,
 				s9,
 			},
@@ -13453,7 +13453,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with load balancer request header hash policies": {
-			objs: []interface{}{
+			objs: []any{
 				proxyLoadBalancerHashPolicyHeader,
 				s9,
 			},
@@ -13486,7 +13486,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with load balancer request query parameter hash policies": {
-			objs: []interface{}{
+			objs: []any{
 				proxyLoadBalancerHashPolicyQueryParameter,
 				s9,
 			},
@@ -13519,7 +13519,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert proxy with all invalid request hash policies": {
-			objs: []interface{}{
+			objs: []any{
 				proxyLoadBalancerHashPolicyAllInvalid,
 				s9,
 			},
@@ -13541,7 +13541,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -13595,7 +13595,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - cert delegation not configured": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "root",
-			objs: []interface{}{
+			objs: []any{
 				sec4,
 				s9,
 				fallbackCertificateSecret,
@@ -13626,7 +13626,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - cert delegation configured all namespaces": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "root",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecretRootNamespace,
@@ -13692,7 +13692,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - cert delegation configured single namespaces": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "root",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecretRootNamespace,
@@ -13758,7 +13758,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - no tls secret": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -13788,7 +13788,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled along with ClientValidation": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -13821,7 +13821,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - another not enabled": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -13906,7 +13906,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate enabled - bad fallback cert": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "badnamespaces",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -13959,7 +13959,7 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with fallback certificate disabled - fallback cert specified": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
-			objs: []interface{}{
+			objs: []any{
 				sec1,
 				s9,
 				fallbackCertificateSecret,
@@ -14011,7 +14011,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with tcpproxy with multiple services, no explicit weights": {
-			objs: []interface{}{
+			objs: []any{
 				s1, s2, s9,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14053,7 +14053,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with tcpproxy with multiple weighted services": {
-			objs: []interface{}{
+			objs: []any{
 				s1, s2, s9,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14099,7 +14099,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"httpproxy with tcpproxy with multiple services, some weighted, some not": {
-			objs: []interface{}{
+			objs: []any{
 				s1, s2, s9,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14145,11 +14145,11 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"invalid httpproxy with regex in include block": {
-			objs: []interface{}{proxyInvalidRegexPath, s1},
+			objs: []any{proxyInvalidRegexPath, s1},
 			want: listeners(),
 		},
 		"valid httpproxy with include, prefix and regex on included proxy": {
-			objs: []interface{}{
+			objs: []any{
 				proxyRegexPath, child1, child2, s1, s2,
 			},
 			want: listeners(
@@ -14318,45 +14318,45 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 	tests := map[string]struct {
 		rootNamespaces []string
-		objs           []interface{}
+		objs           []any
 		want           int
 	}{
 		"nil root httpproxy namespaces": {
-			objs: []interface{}{proxy1, s2},
+			objs: []any{proxy1, s2},
 			want: 1,
 		},
 		"empty root httpproxy namespaces": {
-			objs: []interface{}{proxy1, s2},
+			objs: []any{proxy1, s2},
 			want: 1,
 		},
 		"single root namespace with root httpproxy": {
 			rootNamespaces: []string{"allowed1"},
-			objs:           []interface{}{proxy1, s2},
+			objs:           []any{proxy1, s2},
 			want:           1,
 		},
 		"multiple root namespaces, one with a root httpproxy": {
 			rootNamespaces: []string{"foo", "allowed1", "bar"},
-			objs:           []interface{}{proxy1, s2},
+			objs:           []any{proxy1, s2},
 			want:           1,
 		},
 		"multiple root namespaces, each with a root httpproxy": {
 			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
-			objs:           []interface{}{proxy1, proxy2, s2, s3},
+			objs:           []any{proxy1, proxy2, s2, s3},
 			want:           2,
 		},
 		"root httpproxy defined outside single root namespaces": {
 			rootNamespaces: []string{"foo"},
-			objs:           []interface{}{proxy1},
+			objs:           []any{proxy1},
 			want:           0,
 		},
 		"root httpproxy defined outside multiple root namespaces": {
 			rootNamespaces: []string{"foo", "bar"},
-			objs:           []interface{}{proxy1},
+			objs:           []any{proxy1},
 			want:           0,
 		},
 		"two root httpproxy, one inside root namespace, one outside": {
 			rootNamespaces: []string{"foo", "allowed2"},
-			objs:           []interface{}{proxy1, proxy2, s3},
+			objs:           []any{proxy1, proxy2, s3},
 			want:           1,
 		},
 	}
@@ -14411,7 +14411,7 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 
 func TestHTTPProxyConficts(t *testing.T) {
 	type testcase struct {
-		objs          []interface{}
+		objs          []any
 		wantListeners []*Listener
 		wantStatus    map[types.NamespacedName]contour_api_v1.DetailedCondition
 	}
@@ -14485,7 +14485,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	}
 
 	run(t, "root proxy with no route conditions refers to a missing service", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14520,7 +14520,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy with no route conditions refers to a missing include", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14545,7 +14545,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy with prefix route condition refers to a missing include", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14581,7 +14581,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy refers to two services, one is missing", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14625,7 +14625,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy refers to three services with weights, one is missing", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14682,7 +14682,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy with two includes, one refers to a missing child proxy", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14743,7 +14743,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy includes child proxy that refers to a missing service", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14791,7 +14791,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 
 	run(t, "root proxy includes two child proxies, one refers to a missing service", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "root-proxy",
@@ -14933,7 +14933,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		objs            []interface{}
+		objs            []any
 		want            []*Listener
 		ingressReqHp    *HeadersPolicy
 		ingressRespHp   *HeadersPolicy
@@ -14944,7 +14944,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		name: "empty is fine",
 	}, {
 		name: "ingressv1: insert ingress w/ single unnamed backend",
-		objs: []interface{}{
+		objs: []any{
 			i2V1,
 			s1,
 		},
@@ -14983,7 +14983,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		},
 	}, {
 		name: "insert httpproxy referencing two backends",
-		objs: []interface{}{
+		objs: []any{
 			proxyMultipleBackends, s1, s2,
 		},
 		want: listeners(
