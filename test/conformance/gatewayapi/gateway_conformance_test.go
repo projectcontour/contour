@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -41,11 +42,17 @@ func TestGatewayConformance(t *testing.T) {
 	client, err := client.New(cfg, client.Options{})
 	require.NoError(t, err)
 
+	clientset, err := kubernetes.NewForConfig(cfg)
+	require.NoError(t, err)
+
 	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
 	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
 
 	cSuite := suite.New(suite.Options{
-		Client:                     client,
+		Client: client,
+		// This clientset is needed in addition to the client only because
+		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
+		Clientset:                  clientset,
 		GatewayClassName:           *flags.GatewayClassName,
 		Debug:                      *flags.ShowDebug,
 		CleanupBaseResources:       *flags.CleanupBaseResources,
