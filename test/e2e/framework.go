@@ -26,12 +26,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bombsimon/logrusr/v2"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -43,6 +45,7 @@ import (
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -94,6 +97,8 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	// Deferring GinkgoRecover() provides better error messages in case of panic
 	// e.g. when CONTOUR_E2E_LOCAL_HOST environment variable is not set.
 	defer ginkgo.GinkgoRecover()
+
+	log.SetLogger(logrusr.New(logrus.StandardLogger(), logrusr.WithReportCaller()))
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
