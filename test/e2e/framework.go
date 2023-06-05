@@ -98,7 +98,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	// e.g. when CONTOUR_E2E_LOCAL_HOST environment variable is not set.
 	defer ginkgo.GinkgoRecover()
 
-	log.SetLogger(logrusr.New(logrus.StandardLogger(), logrusr.WithReportCaller()))
+	log.SetLogger(logrusr.New(logrus.StandardLogger()))
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))

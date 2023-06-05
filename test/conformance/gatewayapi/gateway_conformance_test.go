@@ -34,7 +34,7 @@ import (
 )
 
 func TestGatewayConformance(t *testing.T) {
-	log.SetLogger(logrusr.New(logrus.StandardLogger(), logrusr.WithReportCaller()))
+	log.SetLogger(logrusr.New(logrus.StandardLogger()))
 
 	cfg, err := config.GetConfig()
 	require.NoError(t, err)
