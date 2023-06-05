@@ -10359,7 +10359,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								PathMatchCondition: prefixString("/"),
 								HeaderMatchConditions: []HeaderMatchCondition{
-									{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
+									{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io(:[0-9]+)?", MatchType: "regex", Invert: false},
 								},
 								Clusters: clusters(service(s1)),
 							}),
@@ -10780,7 +10780,7 @@ func TestDAGInsert(t *testing.T) {
 								{
 									Name:      ":authority",
 									MatchType: HeaderMatchTypeRegex,
-									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
+									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?",
 								},
 							},
 							Clusters: clusters(service(s1)),
