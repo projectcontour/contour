@@ -942,7 +942,7 @@ func (d *Deployment) DumpContourLogs() error {
 func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	// Delete the object; if it already doesn't exist,
 	// then we're done.
-	err := d.client.Delete(context.Background(), obj)
+	err := d.client.Delete(context.Background(), obj, &client.DeleteOptions{PropagationPolicy: ref.To(metav1.DeletePropagationBackground)})
 	if api_errors.IsNotFound(err) {
 		return nil
 	}
