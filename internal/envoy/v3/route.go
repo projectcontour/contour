@@ -649,6 +649,9 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 		RequestHeadersToAdd: headers(
 			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 		),
+		// We can ignore any port number supplied in the Host/:authority header
+		// when selecting a virtualhost.
+		IgnorePortInHostMatching: true,
 	}
 }
 
