@@ -93,7 +93,7 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo\\.com",
+												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo\\.com(:[0-9]+)?",
 											},
 										},
 									},
@@ -154,7 +154,7 @@ func TestHTTPProxyWildcardFQDN(t *testing.T) {
 								StringMatch: &matcher.StringMatcher{
 									MatchPattern: &matcher.StringMatcher_SafeRegex{
 										SafeRegex: &matcher.RegexMatcher{
-											Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io",
+											Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io(:[0-9]+)?",
 										},
 									},
 								},
@@ -259,7 +259,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com",
+												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com(:[0-9]+)?",
 											},
 										},
 									},
@@ -287,7 +287,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 									StringMatch: &matcher.StringMatcher{
 										MatchPattern: &matcher.StringMatcher_SafeRegex{
 											SafeRegex: &matcher.RegexMatcher{
-												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com",
+												Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.foo-tls\\.com(:[0-9]+)?",
 											},
 										},
 									},

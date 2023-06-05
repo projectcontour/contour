@@ -1070,6 +1070,7 @@ func TestRouteConfiguration(t *testing.T) {
 					},
 					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
+				IgnorePortInHostMatching: true,
 			},
 		},
 		"one virtualhost": {
@@ -1089,6 +1090,7 @@ func TestRouteConfiguration(t *testing.T) {
 					},
 					AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 				}},
+				IgnorePortInHostMatching: true,
 			},
 		},
 	}
