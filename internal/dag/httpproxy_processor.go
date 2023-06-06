@@ -431,7 +431,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				// Get the DNS lookup family if specified, otherwise
-				// default to to the Contour-wide setting.
+				// default to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
 				case "auto", "v4", "v6", "all":

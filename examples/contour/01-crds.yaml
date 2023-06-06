@@ -743,6 +743,11 @@ spec:
                                                 does not make the condition true if
                                                 the named header is absent.
                                               type: boolean
+                                            regex:
+                                              description: Regex specifies a regular
+                                                expression pattern that must match
+                                                the header value.
+                                              type: string
                                           required:
                                           - name
                                           type: object
@@ -4093,6 +4098,11 @@ spec:
                                                     the condition true if the named
                                                     header is absent.
                                                   type: boolean
+                                                regex:
+                                                  description: Regex specifies a regular
+                                                    expression pattern that must match
+                                                    the header value.
+                                                  type: string
                                               required:
                                               - name
                                               type: object
