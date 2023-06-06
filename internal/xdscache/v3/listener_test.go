@@ -3406,7 +3406,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MaxRequestsPerConnection: ref.To(uint32(1)),
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -3460,7 +3460,7 @@ func TestListenerVisit(t *testing.T) {
 			ListenerConfig: ListenerConfig{
 				MaxRequestsPerConnection: ref.To(uint32(1)),
 			},
-			objs: []interface{}{
+			objs: []any{
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
