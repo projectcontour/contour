@@ -195,7 +195,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_3",
 				}),
 			},
 		})
@@ -209,7 +209,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_3",
 				}),
 			},
 		})
@@ -223,7 +223,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_3",
 				}),
 			},
 		})
@@ -272,7 +272,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_1",
+					"X-Default-Header": "test_value_4",
 				}),
 			},
 		})
@@ -286,7 +286,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_1",
+					"X-Default-Header": "test_value_4",
 				}),
 			},
 		})
@@ -308,6 +308,9 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
 					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo",
+					},
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							DefaultGlobalRateLimitPolicyDisabled: true,
@@ -335,7 +338,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_5",
 				}),
 			},
 		})
@@ -349,7 +352,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_5",
 				}),
 			},
 		})
@@ -371,6 +374,9 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
 					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo",
+					},
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Descriptors: []contourv1.RateLimitDescriptor{
@@ -408,7 +414,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_6",
 				}),
 			},
 		})
@@ -422,7 +428,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_6",
 				}),
 			},
 		})
@@ -436,7 +442,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_2",
+					"X-Default-Header": "test_value_6",
 				}),
 			},
 		})
