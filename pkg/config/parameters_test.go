@@ -506,6 +506,26 @@ func TestListenerValidation(t *testing.T) {
 		ConnectionBalancer: "invalid",
 	}
 	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerConnection: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerConnection: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+}
+
+func TestClusterParametersValidation(t *testing.T) {
+	var l *ClusterParameters
+	l = &ClusterParameters{
+		MaxRequestsPerConnection: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ClusterParameters{
+		MaxRequestsPerConnection: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
 }
 
 func TestTracingConfigValidation(t *testing.T) {

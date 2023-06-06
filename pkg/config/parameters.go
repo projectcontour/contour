@@ -423,6 +423,17 @@ type ClusterParameters struct {
 	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
 }
 
+func (p *ClusterParameters) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
+		return fmt.Errorf("invalid max connections per request value %q set on cluster, minimum value is 1", *p.MaxRequestsPerConnection)
+	}
+	return nil
+}
+
 // NetworkParameters hold various configurable network values.
 type NetworkParameters struct {
 	// XffNumTrustedHops defines the number of additional ingress proxy hops from the
@@ -461,6 +472,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.ConnectionBalancer != "" && p.ConnectionBalancer != "exact" {
 		return fmt.Errorf("invalid listener connection balancer value %q, only 'exact' connection balancing is supported for now", p.ConnectionBalancer)
+	}
+
+	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
+		return fmt.Errorf("invalid max connections per request value %q set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
 	return nil
 }
@@ -874,6 +889,10 @@ func (p *Parameters) Validate() error {
 	}
 
 	if err := p.Tracing.Validate(); err != nil {
+		return err
+	}
+
+	if err := p.Cluster.Validate(); err != nil {
 		return err
 	}
 

@@ -1350,12 +1350,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							MaxRequestsPerConnection: wrapperspb.UInt32(1),
 						},
-						AccessLog:        FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
-						UseRemoteAddress: wrapperspb.Bool(true),
-						NormalizePath:    wrapperspb.Bool(true),
-						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
-							StripAnyHostPort: true,
-						},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo),
+						UseRemoteAddress:          wrapperspb.Bool(true),
+						NormalizePath:             wrapperspb.Bool(true),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
 					}),
