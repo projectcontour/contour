@@ -60,11 +60,6 @@ func TestGatewayConformance(t *testing.T) {
 		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SkipTests: []string{
-			// Test adds multiple HTTP Listeners to the Gateway with
-			// distinct ports. This is not supported in Contour until
-			// multi-Listener support is added.
-			// See: https://github.com/projectcontour/contour/issues/4960
-			tests.GatewayObservedGenerationBump.ShortName,
 			// Checks for the original request port in the returned Location
 			// header which Envoy is stripping.
 			// See: https://github.com/envoyproxy/envoy/issues/17318
