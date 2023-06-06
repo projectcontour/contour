@@ -98,7 +98,7 @@ func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1beta
 	for name, val := range namesAndValues {
 		matches = append(matches, gatewayapi_v1beta1.HTTPQueryParamMatch{
 			Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
-			Name:  name,
+			Name:  gatewayapi_v1beta1.HTTPHeaderName(name),
 			Value: val,
 		})
 	}

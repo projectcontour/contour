@@ -5501,8 +5501,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
 									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 										Set: []gatewayapi_v1alpha2.HTTPHeader{
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
 										Add: []gatewayapi_v1alpha2.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
@@ -5516,8 +5516,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
 									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 										Set: []gatewayapi_v1alpha2.HTTPHeader{
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
 										Add: []gatewayapi_v1alpha2.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
@@ -5580,8 +5580,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
 									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 										Set: []gatewayapi_v1alpha2.HTTPHeader{
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
 										Add: []gatewayapi_v1alpha2.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
@@ -5594,8 +5594,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
 									ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 										Set: []gatewayapi_v1alpha2.HTTPHeader{
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "ignored"},
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
 										Add: []gatewayapi_v1alpha2.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
@@ -5658,8 +5658,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
 									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 										Set: []gatewayapi_v1alpha2.HTTPHeader{
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-											{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+											{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
 										Add: []gatewayapi_v1alpha2.HTTPHeader{
 											{Name: "!invalid-header-add", Value: "foo-bar"},
@@ -5720,8 +5720,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 											Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
 											ResponseHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
 												Set: []gatewayapi_v1alpha2.HTTPHeader{
-													{Name: gatewayapi_v1alpha2.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
-													{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "bar.com"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+													{Name: gatewayapi_v1beta1.HTTPHeaderName("Host"), Value: "bar.com"},
 												},
 												Add: []gatewayapi_v1alpha2.HTTPHeader{
 													{Name: "!invalid-header-add", Value: "foo-bar"},

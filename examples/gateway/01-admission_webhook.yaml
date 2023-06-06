@@ -3,22 +3,22 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: gateway-api-admission
 webhooks:
-  - name: validate.gateway.networking.k8s.io
-    matchPolicy: Equivalent
-    rules:
-      - operations: [ "CREATE" , "UPDATE" ]
-        apiGroups: [ "gateway.networking.k8s.io" ]
-        apiVersions: [ "v1alpha2", "v1beta1" ]
-        resources: [ "gateways", "gatewayclasses", "httproutes" ]
-    failurePolicy: Fail
-    sideEffects: None
-    admissionReviewVersions:
-      - v1
-    clientConfig:
-      service:
-        name: gateway-api-admission-server
-        namespace: gateway-system
-        path: "/validate"
+- name: validate.gateway.networking.k8s.io
+  matchPolicy: Equivalent
+  rules:
+  - operations: [ "CREATE" , "UPDATE" ]
+    apiGroups: [ "gateway.networking.k8s.io" ]
+    apiVersions: [ "v1alpha2", "v1beta1" ]
+    resources: [ "gateways", "gatewayclasses", "httproutes" ]
+  failurePolicy: Fail
+  sideEffects: None
+  admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: gateway-api-admission-server
+      namespace: gateway-system
+      path: "/validate"
 ---
 apiVersion: v1
 kind: Service
@@ -30,9 +30,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - name: https-webhook
-      port: 443
-      targetPort: 8443
+  - name: https-webhook
+    port: 443
+    targetPort: 8443
   selector:
     name: gateway-api-admission-server
 ---
@@ -55,32 +55,32 @@ spec:
         name: gateway-api-admission-server
     spec:
       containers:
-        - name: webhook
-          image: gcr.io/k8s-staging-gateway-api/admission-server:v0.6.2
-          imagePullPolicy: Always
-          args:
-            - -logtostderr
-            - --tlsCertFile=/etc/certs/cert
-            - --tlsKeyFile=/etc/certs/key
-            - -v=10
-            - 2>&1
-          ports:
-            - containerPort: 8443
-              name: webhook
-          resources:
-            limits:
-              memory: 50Mi
-              cpu: 100m
-            requests:
-              memory: 50Mi
-              cpu: 100m
-          volumeMounts:
-            - name: webhook-certs
-              mountPath: /etc/certs
-              readOnly: true
-          securityContext:
-            readOnlyRootFilesystem: true
-      volumes:
+      - name: webhook
+        image: registry.k8s.io/gateway-api/admission-server:v0.7.1
+        imagePullPolicy: Always
+        args:
+        - -logtostderr
+        - --tlsCertFile=/etc/certs/cert
+        - --tlsKeyFile=/etc/certs/key
+        - -v=10
+        - 2>&1
+        ports:
+        - containerPort: 8443
+          name: webhook
+        resources:
+          limits:
+            memory: 50Mi
+            cpu: 100m
+          requests:
+            memory: 50Mi
+            cpu: 100m
+        volumeMounts:
         - name: webhook-certs
-          secret:
-            secretName: gateway-api-admission
+          mountPath: /etc/certs
+          readOnly: true
+        securityContext:
+          readOnlyRootFilesystem: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: gateway-api-admission

@@ -18,9 +18,14 @@ package gatewayapi
 import (
 	"testing"
 
+	"github.com/bombsimon/logrusr/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/conformance/tests"
@@ -29,17 +34,25 @@ import (
 )
 
 func TestGatewayConformance(t *testing.T) {
+	log.SetLogger(logrusr.New(logrus.StandardLogger()))
+
 	cfg, err := config.GetConfig()
 	require.NoError(t, err)
 
 	client, err := client.New(cfg, client.Options{})
 	require.NoError(t, err)
 
+	clientset, err := kubernetes.NewForConfig(cfg)
+	require.NoError(t, err)
+
 	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
 	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
 
 	cSuite := suite.New(suite.Options{
-		Client:                     client,
+		Client: client,
+		// This clientset is needed in addition to the client only because
+		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
+		Clientset:                  clientset,
 		GatewayClassName:           *flags.GatewayClassName,
 		Debug:                      *flags.ShowDebug,
 		CleanupBaseResources:       *flags.CleanupBaseResources,
@@ -47,14 +60,19 @@ func TestGatewayConformance(t *testing.T) {
 		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SkipTests: []string{
-			// These are skipped because the tests check for the
-			// original request port in the returned Location
+			// Test adds multiple HTTP Listeners to the Gateway with
+			// distinct ports. This is not supported in Contour until
+			// multi-Listener support is added.
+			// See: https://github.com/projectcontour/contour/issues/4960
+			tests.GatewayObservedGenerationBump.ShortName,
+			// Checks for the original request port in the returned Location
 			// header which Envoy is stripping.
 			// See: https://github.com/envoyproxy/envoy/issues/17318
-			"HTTPRouteRedirectHostAndStatus",
-			"HTTPRouteRedirectPath",
-			"HTTPRouteRedirectScheme",
+			tests.HTTPRouteRedirectPortAndScheme.ShortName,
 		},
+		ExemptFeatures: sets.New(
+			suite.SupportMesh,
+		),
 	})
 	cSuite.Setup(t)
 	cSuite.Run(t, tests.ConformanceTests)
