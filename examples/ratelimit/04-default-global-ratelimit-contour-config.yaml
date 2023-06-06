@@ -9,3 +9,9 @@ data:
       extensionService: projectcontour/ratelimit
       domain: contour
       failOpen: false
+      defaultGlobalRateLimitPolicy:
+        descriptors:
+          - entries:
+            - requestHeader:
+                headerName: X-Custom-Header
+                descriptorKey: CustomHeader
