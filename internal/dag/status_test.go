@@ -4661,7 +4661,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPProxy cannot attach to a Gateway with >1 HTTP Listener", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
@@ -4745,7 +4745,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	run(t, "HTTPProxy cannot attach to a Gateway with no HTTP Listener", testcase{
-		objs: []interface{}{
+		objs: []any{
 			&gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",

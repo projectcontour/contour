@@ -14161,7 +14161,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 
 	tests := map[string]struct {
 		gateway *gatewayapi_v1beta1.Gateway
-		objs    []interface{}
+		objs    []any
 		want    []*Listener
 	}{
 		"HTTPProxy attached to HTTP-only Gateway": {
@@ -14186,7 +14186,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14256,7 +14256,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14322,7 +14322,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14395,7 +14395,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&contour_api_v1.HTTPProxy{
@@ -14475,7 +14475,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&contour_api_v1.HTTPProxy{
@@ -14545,7 +14545,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&contour_api_v1.HTTPProxy{
@@ -14603,7 +14603,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14669,7 +14669,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14731,7 +14731,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
@@ -14800,7 +14800,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
@@ -14879,7 +14879,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
@@ -14948,7 +14948,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					},
 				},
 			},
-			objs: []interface{}{
+			objs: []any{
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
