@@ -360,7 +360,7 @@ run-ingress-conformance:
 	./test/scripts/run-ingress-conformance.sh
 
 .PHONY: gateway-conformance
-gateway-conformance: | setup-kind-cluster load-contour-image-kind run-gateway-conformance cleanup-kind ## Setup a kind cluster and run Gateway API conformance tests in it.
+gateway-conformance: | setup-kind-cluster run-gateway-conformance cleanup-kind ## Setup a kind cluster and run Gateway API conformance tests in it.
 
 .PHONY: run-gatway-conformance
 run-gateway-conformance: ## Run Gateway API conformance tests against the current cluster.
