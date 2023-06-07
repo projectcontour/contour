@@ -373,6 +373,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
+github.com/sunjayBhatia/gateway-api v0.0.0-20230606183458-b428df383861 h1:s0a2VSqD+q/7qLM9JbozHCqSwlbKd6qyO6dDEJwLauw=
+github.com/sunjayBhatia/gateway-api v0.0.0-20230606183458-b428df383861/go.mod h1:Xv0+ZMxX0lu1nSSDIIPEfbVztgNZ+3cfiYrJsa2Ooso=
 github.com/tsaarni/certyaml v0.9.2 h1:LoRTuajwjJ1CHAJiMv5cpOtwQ05207Oqe6cT9D7WDaQ=
 github.com/tsaarni/certyaml v0.9.2/go.mod h1:s+ErAC1wZ32r1ihSULvR7HXedKKN5HZasdb8Cj8gT9E=
 github.com/tsaarni/x500dn v1.0.0 h1:LvaWTkqRpse4VHBhB5uwf3wytokK4vF9IOyNAEyiA+U=
@@ -822,8 +824,6 @@ sigs.k8s.io/controller-runtime v0.15.0 h1:ML+5Adt3qZnMSYxZ7gAverBLNPSMQEibtzAgp0
 sigs.k8s.io/controller-runtime v0.15.0/go.mod h1:7ngYvp1MLT+9GeZ+6lH3LOlcHkp/+tzA/fmHa4iq9kk=
 sigs.k8s.io/controller-tools v0.12.0 h1:TY6CGE6+6hzO7hhJFte65ud3cFmmZW947jajXkuDfBw=
 sigs.k8s.io/controller-tools v0.12.0/go.mod h1:rXlpTfFHZMpZA8aGq9ejArgZiieHd+fkk/fTatY8A2M=
-sigs.k8s.io/gateway-api v0.7.1 h1:Tts2jeepVkPA5rVG/iO+S43s9n7Vp7jCDhZDQYtPigQ=
-sigs.k8s.io/gateway-api v0.7.1/go.mod h1:Xv0+ZMxX0lu1nSSDIIPEfbVztgNZ+3cfiYrJsa2Ooso=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
 sigs.k8s.io/kustomize/kyaml v0.14.2 h1:9WSwztbzwGszG1bZTziQUmVMrJccnyrLb5ZMKpJGvXw=
