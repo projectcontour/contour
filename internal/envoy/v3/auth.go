@@ -14,6 +14,8 @@
 package v3
 
 import (
+	"strings"
+
 	envoy_api_v3_core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -80,15 +82,19 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, c
 	}
 
 	if len(subjectName) > 0 {
-		vc.ValidationContext.MatchTypedSubjectAltNames = []*envoy_v3_tls.SubjectAltNameMatcher{
-			{
-				SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
-				Matcher: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Exact{
-						Exact: subjectName,
+		subjectNames := strings.Split(subjectName, ",")
+		for _, sn := range subjectNames {
+			vc.ValidationContext.MatchTypedSubjectAltNames = append(
+				vc.ValidationContext.MatchTypedSubjectAltNames,
+				&envoy_v3_tls.SubjectAltNameMatcher{
+					SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+					Matcher: &matcher.StringMatcher{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: sn,
+						},
 					},
 				},
-			},
+			)
 		}
 	}
 

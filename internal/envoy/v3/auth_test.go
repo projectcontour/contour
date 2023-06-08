@@ -108,6 +108,43 @@ func TestUpstreamTLSContext(t *testing.T) {
 				Sni:              "projectcontour.local",
 			},
 		},
+		"multiple subjectnames": {
+			validation: &dag.PeerValidationContext{
+				CACertificate: secret,
+				SubjectName:   "www.example.com,www.example2.com",
+			},
+			want: &envoy_v3_tls.UpstreamTlsContext{
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
+						ValidationContext: &envoy_v3_tls.CertificateValidationContext{
+							TrustedCa: &envoy_api_v3_core.DataSource{
+								Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+									InlineBytes: []byte("ca"),
+								},
+							},
+							MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+								{
+									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+									Matcher: &matcher.StringMatcher{
+										MatchPattern: &matcher.StringMatcher_Exact{
+											Exact: "www.example.com",
+										},
+									},
+								},
+								{
+									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+									Matcher: &matcher.StringMatcher{
+										MatchPattern: &matcher.StringMatcher_Exact{
+											Exact: "www.example2.com",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
