@@ -430,7 +430,7 @@ descriptors:
 					BeforeEach(func() {
 						contourConfig.RateLimitService = config.RateLimitService{
 							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
-							Domain:           "contour",
+							Domain:           "contour-default-global-rate-limit",
 							FailOpen:         false,
 							DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
 								Descriptors: []contour_api_v1.RateLimitDescriptor{
@@ -452,7 +452,7 @@ descriptors:
 								Name:      f.Deployment.RateLimitExtensionService.Name,
 								Namespace: namespace,
 							},
-							Domain:                  "contour",
+							Domain:                  "contour-default-global-rate-limit",
 							FailOpen:                ref.To(false),
 							EnableXRateLimitHeaders: ref.To(false),
 						}
@@ -460,17 +460,17 @@ descriptors:
 							f.Deployment.EnsureRateLimitResources(
 								namespace,
 								`
-domain: contour
-descriptors:
-  - key: generic_key
-    value: foo
-    rate_limit:
-      unit: hour
-      requests_per_unit: 2
-  - key: defaultHeader
-    rate_limit:
-      unit: hour
-      requests_per_unit: 1`))
+	domain: contour-default-global-rate-limit
+	descriptors:
+	 - key: generic_key
+	   value: foo
+	   rate_limit:
+	     unit: hour
+	     requests_per_unit: 2
+	 - key: defaultHeader
+	   rate_limit:
+	     unit: hour
+	     requests_per_unit: 1`))
 					})
 
 					body(namespace)
