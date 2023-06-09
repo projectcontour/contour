@@ -572,6 +572,10 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 				return true
 			}
 		}
+		cv := tls.ClientValidation
+		if cv != nil && proxy.Namespace == secret.Namespace && cv.CertificateRevocationList == secret.Name {
+			return true
+		}
 	}
 
 	// Secrets referred by the configuration file shall also trigger rebuild.
