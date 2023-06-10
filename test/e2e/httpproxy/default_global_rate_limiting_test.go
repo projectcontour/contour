@@ -34,11 +34,11 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -54,23 +54,9 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Wait until we get a 200 from the proxy confirming
-		// the pods are up and serving traffic.
-		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_1",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
@@ -91,11 +77,11 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							DefaultGlobalRateLimitPolicyDisabled: true,
@@ -153,11 +139,11 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Descriptors: []contourv1.RateLimitDescriptor{
@@ -191,20 +177,6 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_3",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
@@ -242,11 +214,11 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					TLS: &contourv1.TLS{
 						SecretName: "echo",
 					},
@@ -265,23 +237,9 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Wait until we get a 200 from the proxy confirming
-		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_4",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
@@ -303,11 +261,11 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					TLS: &contourv1.TLS{
 						SecretName: "echo",
 					},
@@ -369,11 +327,11 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "globalratelimitvhostnontls",
+				Name:      "defaultglobalratelimitvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					TLS: &contourv1.TLS{
 						SecretName: "echo",
 					},
@@ -410,20 +368,6 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_6",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){

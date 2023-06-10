@@ -455,22 +455,36 @@ descriptors:
 							Domain:                  "contour-default-global-rate-limit",
 							FailOpen:                ref.To(false),
 							EnableXRateLimitHeaders: ref.To(false),
+							DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_api_v1.RateLimitDescriptor{
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{
+												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+													HeaderName:    "X-Default-Header",
+													DescriptorKey: "defaultHeader",
+												},
+											},
+										},
+									},
+								},
+							},
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(
 								namespace,
 								`
-	domain: contour-default-global-rate-limit
-	descriptors:
-	 - key: generic_key
-	   value: foo
-	   rate_limit:
-	     unit: hour
-	     requests_per_unit: 2
-	 - key: defaultHeader
-	   rate_limit:
-	     unit: hour
-	     requests_per_unit: 1`))
+domain: contour-default-global-rate-limit
+descriptors:
+  - key: generic_key
+    value: foo
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: defaultHeader
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1`))
 					})
 
 					body(namespace)
