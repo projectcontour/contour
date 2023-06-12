@@ -71,6 +71,7 @@ var (
 					Port:     443,
 					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
@@ -117,10 +118,6 @@ func TestGateway_TLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
-			Labels: map[string]string{
-				"app":  "contour",
-				"type": "controller",
-			},
 		},
 		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
 			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
@@ -143,7 +140,7 @@ func TestGateway_TLS(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			envoy_v3.RouteConfiguration("https/test.projectcontour.io",
+			envoy_v3.RouteConfiguration("http-80",
 				envoy_v3.VirtualHost("test.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routeSegmentPrefix("/blog"),
@@ -154,7 +151,7 @@ func TestGateway_TLS(t *testing.T) {
 					},
 				),
 			),
-			envoy_v3.RouteConfiguration("ingress_http",
+			envoy_v3.RouteConfiguration("https-443/test.projectcontour.io",
 				envoy_v3.VirtualHost("test.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routeSegmentPrefix("/blog"),
@@ -169,18 +166,18 @@ func TestGateway_TLS(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "https-443").Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
+				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("test.projectcontour.io", sec1,
-						httpsFilterFor("test.projectcontour.io"),
+						httpsFilterForGateway("https-443", "test.projectcontour.io"),
 						nil, "h2", "http/1.1"),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),

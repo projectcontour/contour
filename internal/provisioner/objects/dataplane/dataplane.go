@@ -126,16 +126,6 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
-	var ports []corev1.ContainerPort
-	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
-		p := corev1.ContainerPort{
-			Name:          port.Name,
-			ContainerPort: port.ContainerPort,
-			Protocol:      corev1.ProtocolTCP,
-		}
-		ports = append(ports, p)
-	}
-
 	var (
 		metricsPort = objects.EnvoyMetricsPort
 		healthPort  = objects.EnvoyHealthPort
@@ -156,11 +146,11 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		}
 	}
 
-	ports = append(ports, corev1.ContainerPort{
+	ports := []corev1.ContainerPort{{
 		Name:          "metrics",
 		ContainerPort: metricsPort,
 		Protocol:      corev1.ProtocolTCP,
-	})
+	}}
 
 	containers := []corev1.Container{
 		{

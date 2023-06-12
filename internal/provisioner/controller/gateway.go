@@ -208,23 +208,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Validate listener ports and hostnames to get
 	// the ports to program.
-	validateListenersResult := gatewayapi.ValidateListeners(gateway.Spec.Listeners)
-
-	if validateListenersResult.InsecurePort > 0 {
-		port := model.Port{
-			Name:          "http",
-			ServicePort:   int32(validateListenersResult.InsecurePort),
-			ContainerPort: 8080,
-		}
-		contourModel.Spec.NetworkPublishing.Envoy.Ports = append(contourModel.Spec.NetworkPublishing.Envoy.Ports, port)
-	}
-	if validateListenersResult.SecurePort > 0 {
-		port := model.Port{
-			Name:          "https",
-			ServicePort:   int32(validateListenersResult.SecurePort),
-			ContainerPort: 8443,
-		}
-		contourModel.Spec.NetworkPublishing.Envoy.Ports = append(contourModel.Spec.NetworkPublishing.Envoy.Ports, port)
+	for _, listenerPort := range gatewayapi.ValidateListeners(gateway.Spec.Listeners).Ports {
+		contourModel.Spec.NetworkPublishing.Envoy.Ports = append(contourModel.Spec.NetworkPublishing.Envoy.Ports, model.Port{
+			Name:          listenerPort.Name,
+			ServicePort:   listenerPort.Port,
+			ContainerPort: listenerPort.ContainerPort,
+		})
 	}
 
 	gatewayClassParams, err := r.getGatewayClassParams(ctx, gatewayClass)
@@ -311,18 +300,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 				if networkPublishing.Type == contour_api_v1alpha1.NodePortServicePublishingType {
 					// when the NetworkPublishingType is 'NodePortServicePublishingType',
-					// the gateway.Spec.Listeners' port will be used to set 'NodePort' NOT 'ServicePort'
-					// in this scenario, the service port values will be reassigned with 80/443.
+					// the gateway.Spec.Listeners' port will be used to set 'NodePort' in addition to 'ServicePort'
 					for i := range contourModel.Spec.NetworkPublishing.Envoy.Ports {
 						port := &contourModel.Spec.NetworkPublishing.Envoy.Ports[i]
-						switch port.Name {
-						case "http":
-							port.NodePort = port.ServicePort
-							port.ServicePort = 80
-						case "https":
-							port.NodePort = port.ServicePort
-							port.ServicePort = 443
-						}
+						port.NodePort = port.ServicePort
 					}
 				}
 

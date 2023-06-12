@@ -211,7 +211,7 @@ func (p *GatewayAPIProcessor) processRoute(
 				routeHostnames = route.Spec.Hostnames
 			}
 
-			hosts, errs := p.computeHosts(routeHostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
+			hosts, errs := p.computeHosts(routeHostnames, string(ref.Val(listener.listener.Hostname, "")))
 			for _, err := range errs {
 				// The Gateway API spec does not indicate what to do if syntactically
 				// invalid hostnames make it through, we're using our best judgment here.
@@ -341,6 +341,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 
 type listenerInfo struct {
 	listener          gatewayapi_v1beta1.Listener
+	dagListenerName   string
 	allowedKinds      []gatewayapi_v1beta1.Kind
 	namespaceSelector labels.Selector
 	tlsSecret         *Secret
@@ -543,6 +544,7 @@ func (p *GatewayAPIProcessor) computeListener(
 
 	return true, &listenerInfo{
 		listener:          listener,
+		dagListenerName:   validateListenersResult.ListenerNames[string(listener.Name)],
 		allowedKinds:      listenerRouteKinds,
 		tlsSecret:         listenerSecret,
 		namespaceSelector: selector,
@@ -956,7 +958,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 		}
 
 		for host := range hosts {
-			secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+			secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 
 			if listener.tlsSecret != nil {
 				secure.Secret = listener.tlsSecret
@@ -1286,11 +1288,11 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
+					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
 				}
 
@@ -1416,11 +1418,11 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
+					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
 				}
 

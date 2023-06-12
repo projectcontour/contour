@@ -477,19 +477,18 @@ func TestGatewayReconcile(t *testing.T) {
 				{
 					Name:     "listener-1",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     82,
+					Port:     80,
 				},
 				{
 					Name:     "listener-2",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     82,
+					Port:     80,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
-				// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 				{
 					Name:     "listener-3",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     80,
+					Port:     81,
 				},
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
@@ -500,19 +499,18 @@ func TestGatewayReconcile(t *testing.T) {
 				{
 					Name:     "listener-5",
 					Protocol: gatewayv1beta1.HTTPSProtocolType,
-					Port:     8443,
+					Port:     443,
 				},
 				{
 					Name:     "listener-6",
 					Protocol: gatewayv1beta1.TLSProtocolType,
-					Port:     8443,
+					Port:     443,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
-				// listener-7's port will be ignored because it's different than the previous HTTPS/TLS listeners'
 				{
 					Name:     "listener-7",
 					Protocol: gatewayv1beta1.HTTPSProtocolType,
-					Port:     8444,
+					Port:     8443,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.baz")),
 				},
 			}),
@@ -528,18 +526,30 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(envoyService), envoyService))
 
-				require.Len(t, envoyService.Spec.Ports, 2)
+				require.Len(t, envoyService.Spec.Ports, 4)
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
-					Name:       "http",
+					Name:       "http-80",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       82,
+					Port:       80,
 					TargetPort: intstr.IntOrString{IntVal: 8080},
 				})
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
-					Name:       "https",
+					Name:       "http-81",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       81,
+					TargetPort: intstr.IntOrString{IntVal: 8081},
+				})
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "https-443",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       443,
+					TargetPort: intstr.IntOrString{IntVal: 8443},
+				})
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "https-8443",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       8443,
-					TargetPort: intstr.IntOrString{IntVal: 8443},
+					TargetPort: intstr.IntOrString{IntVal: 16443},
 				})
 			},
 		},
@@ -549,19 +559,18 @@ func TestGatewayReconcile(t *testing.T) {
 				{
 					Name:     "listener-1",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     82,
+					Port:     80,
 				},
 				{
 					Name:     "listener-2",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     82,
+					Port:     80,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
-				// listener-3's port will be ignored because it's different than the previous HTTP listeners'
 				{
 					Name:     "listener-3",
 					Protocol: gatewayv1beta1.HTTPProtocolType,
-					Port:     80,
+					Port:     8080,
 				},
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
@@ -581,12 +590,18 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(envoyService), envoyService))
 
-				require.Len(t, envoyService.Spec.Ports, 1)
+				require.Len(t, envoyService.Spec.Ports, 2)
 				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
-					Name:       "http",
+					Name:       "http-80",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       82,
+					Port:       80,
 					TargetPort: intstr.IntOrString{IntVal: 8080},
+				})
+				assert.Contains(t, envoyService.Spec.Ports, corev1.ServicePort{
+					Name:       "http-8080",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8080,
+					TargetPort: intstr.IntOrString{IntVal: 16080},
 				})
 			},
 		},
@@ -940,9 +955,9 @@ func TestGatewayReconcile(t *testing.T) {
 
 				assert.Len(t, svc.Spec.Ports, 2)
 				assert.Equal(t, int32(30000), svc.Spec.Ports[0].NodePort)
-				assert.Equal(t, int32(80), svc.Spec.Ports[0].Port)
+				assert.Equal(t, int32(30000), svc.Spec.Ports[0].Port)
 				assert.Equal(t, int32(30001), svc.Spec.Ports[1].NodePort)
-				assert.Equal(t, int32(443), svc.Spec.Ports[1].Port)
+				assert.Equal(t, int32(30001), svc.Spec.Ports[1].Port)
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {
