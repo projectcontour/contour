@@ -91,6 +91,7 @@ func externalNameCluster(name, servicename, statName, externalName string, port 
 				envoy_v3.SocketAddress(externalName, port),
 			),
 		},
+		PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 	})
 }
 
@@ -169,6 +170,7 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 			EdsConfig:   envoy_v3.ConfigSource("contour"),
 			ServiceName: servicename,
 		},
+		PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 	})
 }
 

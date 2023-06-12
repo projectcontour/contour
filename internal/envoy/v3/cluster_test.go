@@ -38,6 +38,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func testClusterDefaults() *envoy_cluster_v3.Cluster {
+	return &envoy_cluster_v3.Cluster{
+		ConnectTimeout:                durationpb.New(2 * time.Second),
+		CommonLbConfig:                ClusterCommonLBConfig(),
+		LbPolicy:                      lbPolicy(dag.LoadBalancerPolicyRoundRobin),
+		PerConnectionBufferLimitBytes: protobuf.UInt32OrNil(32768), // 32KB
+	}
+}
+
 func TestCluster(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -647,7 +656,7 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
-			want := clusterDefaults()
+			want := testClusterDefaults()
 
 			proto.Merge(want, tc.want)
 
@@ -832,7 +841,7 @@ func TestDNSNameCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := DNSNameCluster(tc.cluster)
-			want := clusterDefaults()
+			want := testClusterDefaults()
 
 			proto.Merge(want, tc.want)
 

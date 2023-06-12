@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"testing"
 	"time"
 
@@ -209,6 +210,7 @@ func TestJWTVerification(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
@@ -694,6 +696,7 @@ func TestJWTVerification(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
@@ -848,6 +851,7 @@ func TestJWTVerification(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
@@ -1012,6 +1016,7 @@ func TestJWTVerification(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
@@ -1158,6 +1163,7 @@ func TestJWTVerification(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
@@ -1379,6 +1385,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						},
 					},
 				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				TransportSocket: &envoy_core_v3.TransportSocket{
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{

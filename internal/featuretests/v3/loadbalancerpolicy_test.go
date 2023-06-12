@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"testing"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -63,7 +64,8 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 		),
 		TypeUrl: clusterType,
@@ -115,7 +117,8 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 			DefaultCluster(&envoy_cluster_v3.Cluster{
 				Name:                 s1.Namespace + "/" + s1.Name + "/8080/e4f81994fe",
@@ -125,7 +128,8 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 		),
 		TypeUrl: clusterType,
@@ -200,7 +204,8 @@ func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 		),
 		TypeUrl: clusterType,
@@ -270,7 +275,8 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 		),
 		TypeUrl: clusterType,
@@ -343,7 +349,8 @@ func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy:                      envoy_cluster_v3.Cluster_RING_HASH,
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 			}),
 		),
 		TypeUrl: clusterType,

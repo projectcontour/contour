@@ -34,9 +34,10 @@ import (
 
 func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
-		ConnectTimeout: durationpb.New(2 * time.Second),
-		CommonLbConfig: ClusterCommonLBConfig(),
-		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
+		ConnectTimeout:                durationpb.New(2 * time.Second),
+		CommonLbConfig:                ClusterCommonLBConfig(),
+		LbPolicy:                      lbPolicy(dag.LoadBalancerPolicyRoundRobin),
+		PerConnectionBufferLimitBytes: protobuf.UInt32OrNil(32768), // 32KB
 	}
 }
 
