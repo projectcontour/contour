@@ -313,6 +313,37 @@ func TestSortRoutesPathMatch(t *testing.T) {
 	shuffleAndCheckSort(t, want)
 }
 
+func TestSortRoutesMethod(t *testing.T) {
+	want := []*dag.Route{
+		{
+			// Comes first since it also has header matches.
+			PathMatchCondition: matchExact("/something"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("X-Other-Header-1", "foo"),
+				exactHeader(":method", "POST"),
+				exactHeader("X-Other-Header-3", "baz"),
+			},
+		},
+		{
+			// Comes next since it has a method match which
+			// has higher precedence over multiple header matches.
+			PathMatchCondition: matchExact("/something"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader(":method", "POST"),
+			},
+		},
+		{
+			PathMatchCondition: matchExact("/something"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("X-Other-Header-1", "foo"),
+				exactHeader("X-Other-Header-2", "bar"),
+			},
+		},
+	}
+	shuffleAndCheckSort(t, want)
+
+}
+
 func TestSortRoutesLongestHeaders(t *testing.T) {
 	want := []*dag.Route{
 		{
