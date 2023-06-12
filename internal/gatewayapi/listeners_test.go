@@ -385,14 +385,32 @@ func TestValidateListeners(t *testing.T) {
 				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
 				Port:     7777,
 			},
+
+			{
+				Name:     "http-2",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     9999,
+			},
+			{
+				Name:     "projectcontour-io-https",
+				Protocol: ContourHTTPSProtocolType,
+				Port:     9999,
+			},
 		}
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
 			{Name: "http-7777", Port: 7777, ContainerPort: 15777, Protocol: "http"},
+			{Name: "http-9999", Port: 9999, ContainerPort: 17999, Protocol: "http"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"https": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
+			"projectcontour-io-https": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
@@ -413,14 +431,32 @@ func TestValidateListeners(t *testing.T) {
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 				Port:     7777,
 			},
+
+			{
+				Name:     "projectcontour-io-https",
+				Protocol: ContourHTTPSProtocolType,
+				Port:     9999,
+			},
+			{
+				Name:     "http-2",
+				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Port:     9999,
+			},
 		}
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
 			{Name: "https-7777", Port: 7777, ContainerPort: 15777, Protocol: "https"},
+			{Name: "https-9999", Port: 9999, ContainerPort: 17999, Protocol: "https"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"http": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
+			"http-2": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
