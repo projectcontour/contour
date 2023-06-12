@@ -122,7 +122,7 @@ jobs:
         # in the name of the GitHub Actions job, and we don't want to
         # have to update branch protection rules every time we change
         # a Kubernetes version number.
-        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2"]
+        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2", "kubernetes:n-3"]
         # run tests using the configuration crd as well as without
         config_type: ["ConfigmapConfiguration", "ContourConfiguration"]
         # include defines an additional variable (the specific node
@@ -134,6 +134,8 @@ jobs:
             node_image: "docker.io/kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f"
           - kubernetes_version: "kubernetes:n-2"
             node_image: "docker.io/kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f"
+          - kubernetes_version: "kubernetes:n-3"
+            node_image: "docker.io/kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd"
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
@@ -187,7 +189,7 @@ jobs:
         # in the name of the GitHub Actions job, and we don't want to
         # have to update branch protection rules every time we change
         # a Kubernetes version number.
-        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2"]
+        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2", "kubernetes:n-3"]
         # include defines an additional variable (the specific node
         # image to use) for each kubernetes_version value.
         include:
@@ -197,6 +199,8 @@ jobs:
             node_image: "docker.io/kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f"
           - kubernetes_version: "kubernetes:n-2"
             node_image: "docker.io/kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f"
+          - kubernetes_version: "kubernetes:n-3"
+            node_image: "docker.io/kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd"
     steps:
       - uses: actions/checkout@v3
         with:
