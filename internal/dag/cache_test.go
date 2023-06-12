@@ -967,6 +967,39 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert gateway-api TCPRoute, no reference to Gateway": {
+			obj: &gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert gateway-api TCPRoute, has reference to Gateway": {
+			pre: []any{
+				&gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
 		"insert gateway-api ReferenceGrant": {
 			obj: &gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1532,6 +1565,61 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
+		"remove gateway-api TCPRoute with no parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "Gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TCPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tcproute",
+						Namespace: "default",
+					},
+				}),
+			obj: &gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"remove gateway-api TCPRoute with parentRef": {
+			cache: cache(&gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				}},
+				&gatewayapi_v1alpha2.TCPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tcproute",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+								gatewayapi.GatewayParentRef("default", "gateway"),
+							},
+						},
+					},
+				},
+			),
+			obj: &gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayParentRef("default", "gateway"),
+						},
+					},
+				},
+			},
+			want: true,
+		},
 		"remove gateway-api ReferenceGrant": {
 			cache: cache(&gatewayapi_v1beta1.ReferenceGrant{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1893,6 +1981,25 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	tcpRoute := func(namespace, name string) *gatewayapi_v1alpha2.TCPRoute {
+		return &gatewayapi_v1alpha2.TCPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					},
+				},
+				Rules: []gatewayapi_v1alpha2.TCPRouteRule{{
+					BackendRefs: gatewayapi.TLSRouteBackendRef(name, 80, nil),
+				}},
+			},
+		}
+	}
+
 	tests := map[string]struct {
 		cache *KubernetesCache
 		svc   *v1.Service
@@ -1999,10 +2106,34 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			svc:  service("default", "service-1"),
 			want: false,
 		},
-		"tlsroute does use same name as service": {
+		"tlsroute does not use same name as service": {
 			cache: cache(
 				service("default", "service-1"),
 				tlsRoute("default", "service"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tcproute exists in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tcpRoute("default", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: true,
+		},
+		"tcproute does not exist in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tcpRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"tcproute does not use same name as service": {
+			cache: cache(
+				service("default", "service-1"),
+				tcpRoute("default", "service"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,

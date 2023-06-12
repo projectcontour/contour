@@ -115,6 +115,10 @@ func (b *Builder) Build() *DAG {
 
 			listeners[listener.Name] = listener
 		}
+
+		if listener.TCPProxy != nil {
+			listeners[listener.Name] = listener
+		}
 	}
 
 	dag.Listeners = listeners

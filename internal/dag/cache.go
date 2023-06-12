@@ -71,6 +71,7 @@ type KubernetesCache struct {
 	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
 	grpcroutes                map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute
+	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
@@ -96,6 +97,7 @@ func (kc *KubernetesCache) init() {
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -216,6 +218,10 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 		case *gatewayapi_v1alpha2.GRPCRoute:
 			kc.grpcroutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.grpcroutes)
+
+		case *gatewayapi_v1alpha2.TCPRoute:
+			kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
+			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tcproutes)
 
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
@@ -363,6 +369,11 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.grpcroutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.grpcroutes)
 
+	case *gatewayapi_v1alpha2.TCPRoute:
+		m := k8s.NamespacedNameOf(obj)
+		delete(kc.tcproutes, m)
+		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tcproutes)
+
 	case *gatewayapi_v1beta1.ReferenceGrant:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.referencegrants[m]
@@ -439,6 +450,16 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	}
 
 	for _, route := range kc.tlsroutes {
+		for _, rule := range route.Spec.Rules {
+			for _, backend := range rule.BackendRefs {
+				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, route := range kc.tcproutes {
 		for _, rule := range route.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
 				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {

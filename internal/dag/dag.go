@@ -885,11 +885,15 @@ type Listener struct {
 
 	vhostsByName  map[string]*VirtualHost
 	svhostsByName map[string]*SecureVirtualHost
+
+	// TCPProxy configures an L4 TCP proxy for this Listener.
+	// This cannot be used with VirtualHosts/SecureVirtualHosts
+	// on a given Listener.
+	TCPProxy *TCPProxy
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
-
 	// Clusters is the, possibly weighted, set
 	// of upstream services to forward decrypted traffic.
 	Clusters []*Cluster

@@ -45,6 +45,7 @@ func TestKindOf(t *testing.T) {
 		{"GRPCRoute", &gatewayapi_v1alpha2.GRPCRoute{}},
 		{"HTTPRoute", &gatewayapi_v1beta1.HTTPRoute{}},
 		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},
+		{"TCPRoute", &gatewayapi_v1alpha2.TCPRoute{}},
 		{"Gateway", &gatewayapi_v1beta1.Gateway{}},
 		{"GatewayClass", &gatewayapi_v1beta1.GatewayClass{}},
 		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
