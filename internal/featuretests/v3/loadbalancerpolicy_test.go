@@ -14,8 +14,9 @@
 package v3
 
 import (
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	"testing"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
