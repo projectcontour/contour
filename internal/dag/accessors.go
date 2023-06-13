@@ -241,6 +241,14 @@ func (d *DAG) GetServiceClusters() []*ServiceCluster {
 	var res []*ServiceCluster
 
 	for _, cluster := range d.GetClusters() {
+		// We do not use EDS with clusters configured for ExternalName
+		// Services, so skip over returning these. We do not want to
+		// return extra endpoint resources in a snapshot that Envoy
+		// does not request. Especially with ADS, this is discouraged.
+		if len(cluster.Upstream.ExternalName) > 0 {
+			continue
+		}
+
 		// A Service has only one WeightedService entry. Fake up a
 		// ServiceCluster so that the visitor can pretend to not
 		// know this.
