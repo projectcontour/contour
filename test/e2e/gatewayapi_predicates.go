@@ -17,6 +17,7 @@ package e2e
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -89,6 +90,22 @@ func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
 // HTTPRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
 func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// TCPRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	if route == nil {
 		return false
 	}
