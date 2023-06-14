@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -80,6 +81,7 @@ func testGatewayMultipleQueryParamMatch(namespace string, gateway types.Namespac
 				Path:      path,
 				Condition: e2e.HasStatusCode(200),
 			})
+			require.NotNil(t, res)
 			if !assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode) {
 				continue
 			}

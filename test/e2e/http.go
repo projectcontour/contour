@@ -291,6 +291,7 @@ func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), conditio
 	if err := wait.PollUntilContextTimeout(context.Background(), h.RetryInterval, h.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		r, err := makeRequest()
 		if err != nil {
+			h.t.Logf("request error: %s", err)
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
