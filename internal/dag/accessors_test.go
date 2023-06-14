@@ -271,3 +271,27 @@ func TestGetSingleListener(t *testing.T) {
 		assert.NoError(t, gotErr)
 	})
 }
+
+func TestGetServiceClusters(t *testing.T) {
+	d := &DAG{
+		Listeners: map[string]*Listener{
+			"http-1": {
+				VirtualHosts: []*VirtualHost{
+					{
+						Routes: map[string]*Route{
+							"foo": {
+								Clusters: []*Cluster{
+									{Upstream: &Service{ExternalName: "bar.com"}},
+									{Upstream: &Service{}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// We should only get one cluster since the other is for an ExternalName
+	// service.
+	assert.Len(t, d.GetServiceClusters(), 1)
+}
