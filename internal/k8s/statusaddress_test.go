@@ -180,7 +180,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 func TestStatusAddressUpdater(t *testing.T) {
 	const objName = "someobjfoo"
 
-	log := logrus.New()
+	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 	emptyLBStatus := v1.LoadBalancerStatus{}
 
