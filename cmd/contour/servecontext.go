@@ -525,6 +525,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				DisableMergeSlashes:        &ctx.Config.DisableMergeSlashes,
 				ServerHeaderTransformation: serverHeaderTransformation,
 				ConnectionBalancer:         ctx.Config.Listener.ConnectionBalancer,
+				MaxRequestsPerConnection:   ctx.Config.Listener.MaxRequestsPerConnection,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,
@@ -559,7 +560,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,
 			Cluster: &contour_api_v1alpha1.ClusterParameters{
-				DNSLookupFamily: dnsLookupFamily,
+				DNSLookupFamily:          dnsLookupFamily,
+				MaxRequestsPerConnection: ctx.Config.Cluster.MaxRequestsPerConnection,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,

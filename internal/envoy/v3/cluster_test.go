@@ -25,6 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/stretchr/testify/assert"
@@ -639,6 +640,68 @@ func TestCluster(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+		},
+		"cluster with max requests per connection set": {
+			cluster: &dag.Cluster{
+				Upstream:                 service(s1),
+				MaxRequestsPerConnection: ref.To(uint32(1)),
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				TypedExtensionProtocolOptions: map[string]*anypb.Any{
+					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+								MaxRequestsPerConnection: wrapperspb.UInt32(1),
+							},
+							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+								},
+							},
+						},
+					),
+				},
+			},
+		},
+		"cluster with max requests per connection and idle timeout set": {
+			cluster: &dag.Cluster{
+				Upstream:                 service(s1),
+				MaxRequestsPerConnection: ref.To(uint32(1)),
+				TimeoutPolicy: dag.ClusterTimeoutPolicy{
+					IdleConnectionTimeout: timeout.DurationSetting(time.Second * 60),
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/47b66db27a",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				TypedExtensionProtocolOptions: map[string]*anypb.Any{
+					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+								MaxRequestsPerConnection: wrapperspb.UInt32(1),
+								IdleTimeout:              durationpb.New(60 * time.Second),
+							},
+							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+								},
+							},
+						},
+					),
 				},
 			},
 		},

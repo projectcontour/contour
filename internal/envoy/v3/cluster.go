@@ -29,6 +29,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -112,7 +113,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		cluster.ConnectTimeout = durationpb.New(c.TimeoutPolicy.ConnectTimeout)
 	}
 
-	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout)
+	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout, c.MaxRequestsPerConnection)
 
 	if c.SlowStartConfig != nil {
 		switch cluster.LbPolicy {
@@ -182,7 +183,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	if ext.ClusterTimeoutPolicy.ConnectTimeout > time.Duration(0) {
 		cluster.ConnectTimeout = durationpb.New(ext.ClusterTimeoutPolicy.ConnectTimeout)
 	}
-	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout)
+	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout, nil)
 
 	return cluster
 }
@@ -305,9 +306,9 @@ func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily
 	return envoy_cluster_v3.Cluster_AUTO
 }
 
-func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting) map[string]*anypb.Any {
+func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout timeout.Setting, maxRequestsPerConnection *uint32) map[string]*anypb.Any {
 	// Keep Envoy defaults by not setting protocol options at all if not necessary.
-	if explicitHTTPVersion == HTTPVersionAuto && idleConnectionTimeout.UseDefault() {
+	if explicitHTTPVersion == HTTPVersionAuto && idleConnectionTimeout.UseDefault() && maxRequestsPerConnection == nil {
 		return nil
 	}
 
@@ -335,8 +336,18 @@ func protocolOptions(explicitHTTPVersion HTTPVersionType, idleConnectionTimeout 
 		}
 	}
 
-	if !idleConnectionTimeout.UseDefault() {
-		options.CommonHttpProtocolOptions = &envoy_core_v3.HttpProtocolOptions{IdleTimeout: durationpb.New(idleConnectionTimeout.Duration())}
+	if !idleConnectionTimeout.UseDefault() || maxRequestsPerConnection != nil {
+		commonHTTPProtocolOptions := &envoy_core_v3.HttpProtocolOptions{}
+
+		if !idleConnectionTimeout.UseDefault() {
+			commonHTTPProtocolOptions.IdleTimeout = durationpb.New(idleConnectionTimeout.Duration())
+		}
+
+		if maxRequestsPerConnection != nil {
+			commonHTTPProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*maxRequestsPerConnection)
+		}
+
+		options.CommonHttpProtocolOptions = commonHTTPProtocolOptions
 	}
 
 	return map[string]*anypb.Any{

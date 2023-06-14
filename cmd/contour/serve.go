@@ -420,6 +420,7 @@ func (s *Server) doServe() error {
 		ServerHeaderTransformation:   contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
 		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
+		MaxRequestsPerConnection:     contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
@@ -515,6 +516,7 @@ func (s *Server) doServe() error {
 		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
+		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1037,6 +1039,7 @@ type dagBuilderConfig struct {
 	httpsAddress                       string
 	httpsPort                          int
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
+	maxRequestsPerConnection           *uint32
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1122,6 +1125,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ResponseHeadersPolicy:       &responseHeadersPolicy,
 			ConnectTimeout:              dbc.connectTimeout,
 			GlobalExternalAuthorization: dbc.globalExternalAuthorizationService,
+			MaxRequestsPerConnection:    dbc.maxRequestsPerConnection,
 		},
 	}
 

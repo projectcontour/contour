@@ -989,6 +989,9 @@ type Cluster struct {
 	TimeoutPolicy ClusterTimeoutPolicy
 
 	SlowStartConfig *SlowStartConfig
+
+	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
+	MaxRequestsPerConnection *uint32
 }
 
 // WeightedService represents the load balancing weight of a
