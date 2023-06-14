@@ -305,76 +305,47 @@ func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) error {
 	return f.Client.Create(context.TODO(), proxy)
 }
 
-// CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
-// and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
-	require.NoError(f.t, f.Client.Create(context.TODO(), proxy))
+func createAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+	require.NoError(t, client.Create(context.Background(), obj))
 
-	res := &contourv1.HTTPProxy{}
+	key := types.NamespacedName{
+		Namespace: obj.GetNamespace(),
+		Name:      obj.GetName(),
+	}
 
-	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(proxy), res); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
+		if err := client.Get(ctx, key, obj); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
 			return false, nil
 		}
 
-		return condition(res), nil
+		return condition(obj), nil
 	}); err != nil {
 		// return the last response for logging/debugging purposes
-		return res, false
+		return obj, false
 	}
 
-	return res, true
+	return obj, true
+}
+
+// CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
+	return createAndWaitFor(f.t, f.Client, proxy, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1beta1.HTTPRoute, condition func(*gatewayapi_v1beta1.HTTPRoute) bool) (*gatewayapi_v1beta1.HTTPRoute, bool) {
-	require.NoError(f.t, f.Client.Create(context.TODO(), route))
-
-	res := &gatewayapi_v1beta1.HTTPRoute{}
-
-	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(route), res); err != nil {
-			// if there was an error, we want to keep
-			// retrying, so just return false, not an
-			// error.
-			return false, nil
-		}
-
-		return condition(res), nil
-	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return res, false
-	}
-
-	return res, true
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateTLSRouteAndWaitFor creates the provided TLSRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute, condition func(*gatewayapi_v1alpha2.TLSRoute) bool) (*gatewayapi_v1alpha2.TLSRoute, bool) {
-	require.NoError(f.t, f.Client.Create(context.TODO(), route))
-
-	res := &gatewayapi_v1alpha2.TLSRoute{}
-
-	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(route), res); err != nil {
-			// if there was an error, we want to keep
-			// retrying, so just return false, not an
-			// error.
-			return false, nil
-		}
-
-		return condition(res), nil
-	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return res, false
-	}
-
-	return res, true
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateNamespace creates a namespace with the given name in the
@@ -422,49 +393,13 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 // CreateGatewayAndWaitFor creates a gateway in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1beta1.Gateway, condition func(*gatewayapi_v1beta1.Gateway) bool) (*gatewayapi_v1beta1.Gateway, bool) {
-	require.NoError(f.t, f.Client.Create(context.TODO(), gateway))
-
-	res := &gatewayapi_v1beta1.Gateway{}
-
-	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(gateway), res); err != nil {
-			// if there was an error, we want to keep
-			// retrying, so just return false, not an
-			// error.
-			return false, nil
-		}
-
-		return condition(res), nil
-	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return res, false
-	}
-
-	return res, true
+	return createAndWaitFor(f.t, f.Client, gateway, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1beta1.GatewayClass, condition func(*gatewayapi_v1beta1.GatewayClass) bool) (*gatewayapi_v1beta1.GatewayClass, bool) {
-	require.NoError(f.t, f.Client.Create(context.TODO(), gatewayClass))
-
-	res := &gatewayapi_v1beta1.GatewayClass{}
-
-	if err := wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.Client.Get(ctx, client.ObjectKeyFromObject(gatewayClass), res); err != nil {
-			// if there was an error, we want to keep
-			// retrying, so just return false, not an
-			// error.
-			return false, nil
-		}
-
-		return condition(res), nil
-	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return res, false
-	}
-
-	return res, true
+	return createAndWaitFor(f.t, f.Client, gatewayClass, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // DeleteGateway deletes the provided gateway in the Kubernetes API
