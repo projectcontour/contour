@@ -351,6 +351,18 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	}
 
 	for _, listener := range root.Listeners {
+		if listener.TCPProxy != nil {
+			listeners[listener.Name] = envoy_v3.Listener(
+				listener.Name,
+				listener.Address,
+				listener.Port,
+				nil,
+				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
+			)
+
+			continue
+		}
+
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
 		if len(listener.VirtualHosts) > 0 {

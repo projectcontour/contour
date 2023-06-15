@@ -113,10 +113,11 @@ func IsObjectEqual(old, new client.Object) (bool, error) {
 
 	case *gatewayapi_v1beta1.GatewayClass,
 		*gatewayapi_v1beta1.Gateway,
+		*gatewayapi_v1beta1.ReferenceGrant,
 		*gatewayapi_v1beta1.HTTPRoute,
 		*gatewayapi_v1alpha2.TLSRoute,
-		*gatewayapi_v1beta1.ReferenceGrant,
-		*gatewayapi_v1alpha2.GRPCRoute:
+		*gatewayapi_v1alpha2.GRPCRoute,
+		*gatewayapi_v1alpha2.TCPRoute:
 		return isGenerationEqual(old, new), nil
 
 	// Slow path: compare the content of the objects.

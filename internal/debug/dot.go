@@ -127,6 +127,20 @@ func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
 				nodes[vhost.Secret] = true
 			}
 		}
+
+		if listener.TCPProxy != nil {
+			edges[pair{listener, listener.TCPProxy}] = true
+			nodes[listener.TCPProxy] = true
+			for _, cluster := range listener.TCPProxy.Clusters {
+				edges[pair{listener.TCPProxy, cluster}] = true
+				nodes[cluster] = true
+
+				if service := cluster.Upstream; service != nil {
+					edges[pair{cluster, service}] = true
+					nodes[service] = true
+				}
+			}
+		}
 	}
 
 	return nodes, edges

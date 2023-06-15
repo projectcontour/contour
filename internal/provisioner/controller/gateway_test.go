@@ -493,7 +493,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
 					Name:     "listener-4",
-					Protocol: gatewayv1beta1.TCPProtocolType,
+					Protocol: gatewayv1beta1.UDPProtocolType,
 					Port:     82,
 				},
 				{
@@ -575,7 +575,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
 					Name:     "listener-4",
-					Protocol: gatewayv1beta1.TCPProtocolType,
+					Protocol: gatewayv1beta1.UDPProtocolType,
 					Port:     82,
 				},
 			}),

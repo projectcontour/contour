@@ -126,7 +126,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
-	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes")
+	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes,tcproutes>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes", "tcproutes")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
@@ -983,6 +983,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		features := map[string]struct{}{
 			"tlsroutes":  {},
 			"grpcroutes": {},
+			"tcproutes":  {},
 		}
 		for _, f := range s.ctx.disabledFeatures {
 			delete(features, f)
@@ -1004,6 +1005,13 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		if _, enabled := features["grpcroutes"]; enabled {
 			if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
 				s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+			}
+		}
+
+		// Create and register the TCPRoute controller with the manager.
+		if _, enabled := features["tcproutes"]; enabled {
+			if err := controller.RegisterTCPRouteController(s.log.WithField("context", "tcproute-controller"), mgr, eventHandler); err != nil {
+				s.log.WithError(err).Fatal("failed to create tcproute-controller")
 			}
 		}
 

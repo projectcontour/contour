@@ -396,12 +396,24 @@ func TestValidateListeners(t *testing.T) {
 				Protocol: ContourHTTPSProtocolType,
 				Port:     9999,
 			},
+
+			{
+				Name:     "tcp-1",
+				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Port:     11111,
+			},
+			{
+				Name:     "tls-1",
+				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Port:     11111,
+			},
 		}
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
 			{Name: "http-7777", Port: 7777, ContainerPort: 15777, Protocol: "http"},
 			{Name: "http-9999", Port: 9999, ContainerPort: 17999, Protocol: "http"},
+			{Name: "tcp-11111", Port: 11111, ContainerPort: 19111, Protocol: "tcp"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"https": {
@@ -411,6 +423,12 @@ func TestValidateListeners(t *testing.T) {
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 			"projectcontour-io-https": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
+			"tls-1": {
 				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
@@ -442,12 +460,24 @@ func TestValidateListeners(t *testing.T) {
 				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
 				Port:     9999,
 			},
+
+			{
+				Name:     "tls-1",
+				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Port:     11111,
+			},
+			{
+				Name:     "tcp-1",
+				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Port:     11111,
+			},
 		}
 
 		res := ValidateListeners(listeners)
 		assert.ElementsMatch(t, res.Ports, []ListenerPort{
 			{Name: "https-7777", Port: 7777, ContainerPort: 15777, Protocol: "https"},
 			{Name: "https-9999", Port: 9999, ContainerPort: 17999, Protocol: "https"},
+			{Name: "https-11111", Port: 11111, ContainerPort: 19111, Protocol: "https"},
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"http": {
@@ -462,7 +492,37 @@ func TestValidateListeners(t *testing.T) {
 				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
+			"tcp-1": {
+				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Message: "All Listener protocols for a given port must be compatible",
+			},
 		}, res.InvalidListenerConditions)
+	})
+
+	t.Run("Three TCP listeners on different ports", func(t *testing.T) {
+		listeners := []gatewayapi_v1beta1.Listener{
+			{
+				Name:     "tcp-1",
+				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Port:     10000,
+			},
+			{
+				Name:     "tcp-2",
+				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Port:     10001,
+			},
+			{
+				Name:     "tcp-3",
+				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Port:     10002,
+			},
+		}
+		res := ValidateListeners(listeners)
+		assert.Len(t, res.InvalidListenerConditions, 0)
+		assert.Len(t, res.Ports, 3)
+		assert.Len(t, res.ListenerNames, 3)
 	})
 
 	t.Run("Listeners with various edge-case port numbers", func(t *testing.T) {

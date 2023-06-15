@@ -194,6 +194,10 @@ func (d *DAG) GetClusters() []*Cluster {
 	var res []*Cluster
 
 	for _, listener := range d.Listeners {
+		if listener.TCPProxy != nil {
+			res = append(res, listener.TCPProxy.Clusters...)
+		}
+
 		for _, vhost := range listener.VirtualHosts {
 			for _, route := range vhost.Routes {
 				res = append(res, route.Clusters...)

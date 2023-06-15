@@ -54,6 +54,8 @@ func KindOf(obj any) string {
 			return "GRPCRoute"
 		case *gatewayapi_v1alpha2.TLSRoute:
 			return "TLSRoute"
+		case *gatewayapi_v1alpha2.TCPRoute:
+			return "TCPRoute"
 		case *gatewayapi_v1beta1.Gateway:
 			return "Gateway"
 		case *gatewayapi_v1beta1.GatewayClass:

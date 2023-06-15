@@ -8299,7 +8299,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
-							Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\" or \"TLSRoute\" or \"GRPCRoute\"",
+							Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\", \"TLSRoute\", \"GRPCRoute\" or \"TCPRoute\"",
 						},
 					},
 				},
@@ -8568,7 +8568,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
 							Status:  metav1.ConditionFalse,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
-							Message: "Listener protocol \"invalid\" is unsupported, must be one of HTTP, HTTPS, TLS or projectcontour.io/https",
+							Message: "Listener protocol \"invalid\" is unsupported, must be one of HTTP, HTTPS, TLS, TCP or projectcontour.io/https",
 						},
 					},
 				},
@@ -10520,6 +10520,321 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 	})
 }
 
+func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
+	type testcase struct {
+		objs                    []any
+		gateway                 *gatewayapi_v1beta1.Gateway
+		wantRouteConditions     []*status.RouteStatusUpdate
+		wantGatewayStatusUpdate []*status.GatewayStatusUpdate
+	}
+
+	run := func(t *testing.T, desc string, tc testcase) {
+		t.Helper()
+		t.Run(desc, func(t *testing.T) {
+			t.Helper()
+			builder := Builder{
+				Source: KubernetesCache{
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    fixture.NewTestLogger(t),
+					gatewayclass: &gatewayapi_v1beta1.GatewayClass{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-gc",
+						},
+						Spec: gatewayapi_v1beta1.GatewayClassSpec{
+							ControllerName: "projectcontour.io/contour",
+						},
+						Status: gatewayapi_v1beta1.GatewayClassStatus{
+							Conditions: []metav1.Condition{
+								{
+									Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+									Status: metav1.ConditionTrue,
+								},
+							},
+						},
+					},
+					gateway: tc.gateway,
+				},
+				Processors: []Processor{
+					&ListenerProcessor{},
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{},
+					&GatewayAPIProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+				},
+			}
+
+			// Set a default gateway if not defined by a test
+			if tc.gateway == nil {
+				builder.Source.gateway = &gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
+							Name:     "tcp",
+							Port:     10000,
+							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						}},
+					},
+				}
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+			gotRouteUpdates := dag.StatusCache.GetRouteUpdates()
+			gotGatewayUpdates := dag.StatusCache.GetGatewayUpdates()
+
+			ops := []cmp.Option{
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
+				cmpopts.IgnoreFields(status.RouteStatusUpdate{}, "GatewayRef"),
+				cmpopts.IgnoreFields(status.RouteStatusUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.RouteStatusUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.RouteStatusUpdate{}, "Resource"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "TransitionTime"),
+				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
+					return i.Message < j.Message
+				}),
+				cmpopts.SortSlices(func(i, j *status.RouteStatusUpdate) bool {
+					return i.FullName.String() < j.FullName.String()
+				}),
+			}
+
+			// Since we're using a single static GatewayClass,
+			// set the expected controller string here for all
+			// test cases.
+			for _, u := range tc.wantRouteConditions {
+				u.GatewayController = builder.Source.gatewayclass.Spec.ControllerName
+
+				for _, rps := range u.RouteParentStatuses {
+					rps.ControllerName = builder.Source.gatewayclass.Spec.ControllerName
+				}
+			}
+
+			if diff := cmp.Diff(tc.wantRouteConditions, gotRouteUpdates, ops...); diff != "" {
+				t.Fatalf("expected route status: %v, got %v", tc.wantRouteConditions, diff)
+			}
+
+			if diff := cmp.Diff(tc.wantGatewayStatusUpdate, gotGatewayUpdates, ops...); diff != "" {
+				t.Fatalf("expected gateway status: %v, got %v", tc.wantGatewayStatusUpdate, diff)
+			}
+		})
+	}
+
+	kuardService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	kuardService2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	run(t, "allowedroute of TCPRoute on a non-TCP listener results in a listener condition", testcase{
+		objs: []any{},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{{
+					Name:     "http",
+					Port:     80,
+					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{Kind: "TCPRoute"},
+						},
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"http": {
+					Name:           "http",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+							Status:  metav1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonAccepted),
+							Message: "Listener accepted",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
+							Message: "TCPRoutes are incompatible with listener protocol \"HTTP\"",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "TCPRoute with more than one rule", testcase{
+		objs: []any{
+			kuardService,
+			kuardService2,
+			&gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
+						{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, ref.To(int32(1))),
+						},
+						{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard2", 8080, ref.To(int32(1))),
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  metav1.ConditionFalse,
+							Reason:  "InvalidRouteRules",
+							Message: "TCPRoute must have only a single rule defined",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", "TCPRoute", 0),
+	})
+	run(t, "TCPRoute with rule with no backends", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
+						{},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified."),
+						routeAcceptedTCPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", "TCPRoute", 0),
+	})
+	run(t, "TCPRoute with rule with ref to nonexistent backend", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
+						{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("nonexistent", 8080, ref.To(int32(1))),
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, `service "nonexistent" is invalid: service "default/nonexistent" not found`),
+						routeAcceptedTCPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", "TCPRoute", 0),
+	})
+}
+
 func gatewayAcceptedCondition() metav1.Condition {
 	return metav1.Condition{
 		Type:    string(gatewayapi_v1beta1.GatewayConditionAccepted),
@@ -10553,5 +10868,14 @@ func routeAcceptedGRPCRouteCondition() metav1.Condition {
 		Status:  contour_api_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
 		Message: "Accepted GRPCRoute",
+	}
+}
+
+func routeAcceptedTCPRouteCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+		Status:  contour_api_v1.ConditionTrue,
+		Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+		Message: "Accepted TCPRoute",
 	}
 }

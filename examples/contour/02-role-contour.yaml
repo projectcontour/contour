@@ -26,6 +26,7 @@ rules:
   - grpcroutes
   - httproutes
   - referencegrants
+  - tcproutes
   - tlsroutes
   verbs:
   - get
@@ -38,6 +39,7 @@ rules:
   - gateways/status
   - grpcroutes/status
   - httproutes/status
+  - tcproutes/status
   - tlsroutes/status
   verbs:
   - update
