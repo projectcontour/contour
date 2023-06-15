@@ -362,8 +362,24 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
 				nil,
-				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
+
+			tcpProxyFilter := envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog())
+
+			if listener.TCPProxy.Secret == nil {
+				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChain(tcpProxyFilter))
+			} else {
+				listeners[listener.Name].ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.TLSInspector())
+
+				downstreamTLS := envoy_v3.DownstreamTLSContext(
+					listener.TCPProxy.Secret,
+					cfg.minTLSVersion(),
+					cfg.CipherSuites,
+					nil,
+				)
+
+				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS("*", downstreamTLS, envoy_v3.Filters(tcpProxyFilter)))
+			}
 
 			continue
 		}

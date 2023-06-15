@@ -903,6 +903,11 @@ type Listener struct {
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
+	// Secret is the TLS secret to use. This should only
+	// be specified if this is a Listener-level TCPProxy;
+	// otherwise, specify the Secret on the SecureVirtualHost.
+	Secret *Secret
+
 	// Clusters is the, possibly weighted, set
 	// of upstream services to forward decrypted traffic.
 	Clusters []*Cluster

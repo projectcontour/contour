@@ -590,7 +590,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 		case gatewayapi_v1beta1.HTTPSProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.TLSProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindTLSRoute}
+			return []gatewayapi_v1beta1.Kind{KindTLSRoute, KindTCPRoute}
 		case gatewayapi_v1beta1.TCPProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindTCPRoute}
 		}
@@ -629,7 +629,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			)
 			continue
 		}
-		if routeKind.Kind == KindTCPRoute && listener.Protocol != gatewayapi_v1beta1.TCPProtocolType {
+		if routeKind.Kind == KindTCPRoute && listener.Protocol != gatewayapi_v1beta1.TCPProtocolType && listener.Protocol != gatewayapi_v1beta1.TLSProtocolType {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
@@ -1654,6 +1654,10 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 			"At least one Spec.Rules.BackendRef must have a non-zero weight.",
 		)
 		return false
+	}
+
+	if listener.tlsSecret != nil {
+		proxy.Secret = listener.tlsSecret
 	}
 
 	p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
