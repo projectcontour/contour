@@ -9890,6 +9890,107 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
 	})
+
+	run(t, "TLS Listener with invalid TLS mode", testcase{
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeType("invalid-mode")),
+					},
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls", 443),
+						},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls", 443),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNoMatchingParent),
+							Message: "No listeners match this parent ref",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1beta1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+				gatewayapi_v1beta1.GatewayConditionProgrammed: {
+					Type:    string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1beta1.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+				"tls": {
+					Name: "tls",
+					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "TLSRoute",
+						},
+						{
+							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+							Kind:  "TCPRoute",
+						},
+					},
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+							Status:  metav1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonAccepted),
+							Message: "Listener accepted",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: `Listener.TLS.Mode must be "Terminate" or "Passthrough".`,
+						},
+					},
+				},
+			},
+		}},
+	})
 }
 
 func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
