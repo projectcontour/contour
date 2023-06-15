@@ -4,8 +4,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly KUBECTL_VERS="v1.27.0"
-readonly KIND_VERS="v0.18.0"
+readonly KUBECTL_VERS="v1.27.3"
+readonly KIND_VERS="v0.20.0"
 readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
