@@ -9002,7 +9002,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "TLS listener with TLS.Mode=Terminate results in a listener condition", testcase{
+	run(t, "TLS listener with TLS.Mode=Terminate without a certificate ref results in a listener condition", testcase{
 		objs: []any{},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
@@ -9021,9 +9021,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-							gatewayapi.CertificateRef("tlscert", "projectcontour"),
-						},
 					},
 				}},
 			},
@@ -9052,8 +9049,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
 							Status:  metav1.ConditionFalse,
-							Reason:  "Invalid",
-							Message: "Listener.TLS.Mode must be \"Passthrough\" when protocol is \"TLS\".",
+							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
+							Message: "Listener.TLS.CertificateRefs must contain exactly one entry",
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),

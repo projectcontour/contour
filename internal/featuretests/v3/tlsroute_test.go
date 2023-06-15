@@ -16,6 +16,7 @@ package v3
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,7 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func TestTLSRoute(t *testing.T) {
+func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
@@ -237,4 +238,136 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnDelete(route2)
 	rh.OnDelete(route3)
 	rh.OnDelete(route4)
+}
+
+func TestTLSRoute_TLSTermination(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+
+	rh.OnAdd(sec1)
+
+	rh.OnAdd(gc)
+
+	gateway := &gatewayapi_v1beta1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1beta1.Listener{
+				{
+					Name:     "tls",
+					Port:     5000,
+					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+							gatewayapi.CertificateRef("tlscert", ""),
+						},
+					},
+					Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	rh.OnAdd(gateway)
+
+	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test1.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, ref.To(int32(1))),
+			}},
+		},
+	})
+
+	c.Request(listenerType, "https-5000").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "https-5000",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("test1.projectcontour.io", sec1, tcpproxy("https-5000", "default/svc1/80/da39a3ee5e"), nil),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
+
+	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic-2",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test2.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc2", 80, ref.To(int32(1))),
+			}},
+		},
+	})
+
+	c.Request(listenerType, "https-5000").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "https-5000",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("test1.projectcontour.io", sec1, tcpproxy("https-5000", "default/svc1/80/da39a3ee5e"), nil),
+					filterchaintls("test2.projectcontour.io", sec1, tcpproxy("https-5000", "default/svc2/80/da39a3ee5e"), nil),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
 }
