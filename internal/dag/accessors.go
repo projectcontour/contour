@@ -301,10 +301,6 @@ func (d *DAG) GetSecrets() []*Secret {
 				res = append(res, svh.FallbackCertificate)
 			}
 		}
-
-		if l.TCPProxy != nil && l.TCPProxy.Secret != nil {
-			res = append(res, l.TCPProxy.Secret)
-		}
 	}
 
 	for _, c := range d.GetClusters() {

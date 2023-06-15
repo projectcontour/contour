@@ -1657,10 +1657,12 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 	}
 
 	if listener.tlsSecret != nil {
-		proxy.Secret = listener.tlsSecret
+		secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, "*")
+		secure.Secret = listener.tlsSecret
+		secure.TCPProxy = &proxy
+	} else {
+		p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
 	}
-
-	p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
 
 	return true
 }

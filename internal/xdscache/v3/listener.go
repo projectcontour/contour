@@ -355,6 +355,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	}
 
 	for _, listener := range root.Listeners {
+		// A Listener-level TCPProxy proxies all traffic for
+		// the Listener port, i.e. no filter chain match.
 		if listener.TCPProxy != nil {
 			listeners[listener.Name] = envoy_v3.Listener(
 				listener.Name,
@@ -362,28 +364,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
 				nil,
+				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
-
-			tcpProxyFilter := envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog())
-
-			if listener.TCPProxy.Secret == nil {
-				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChain(tcpProxyFilter))
-			} else {
-				listeners[listener.Name].ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.TLSInspector())
-
-				downstreamTLS := envoy_v3.DownstreamTLSContext(
-					listener.TCPProxy.Secret,
-					cfg.minTLSVersion(),
-					cfg.CipherSuites,
-					nil,
-				)
-
-				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS("*", downstreamTLS, envoy_v3.Filters(tcpProxyFilter)))
-			}
 
 			continue
 		}
-
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
 		// Note: Ensure the filter chain order matches with the filter chain
