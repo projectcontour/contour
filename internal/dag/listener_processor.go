@@ -36,10 +36,14 @@ func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
 		dag.HasDynamicListeners = true
 
 		for _, port := range gatewayapi.ValidateListeners(cache.gateway.Spec.Listeners).Ports {
+			address := p.HTTPAddress
+			if port.Protocol == "https" {
+				address = p.HTTPSAddress
+			}
 			dag.Listeners[port.Name] = &Listener{
 				Name:          port.Name,
 				Protocol:      port.Protocol,
-				Address:       "0.0.0.0",
+				Address:       address,
 				Port:          int(port.ContainerPort),
 				vhostsByName:  map[string]*VirtualHost{},
 				svhostsByName: map[string]*SecureVirtualHost{},

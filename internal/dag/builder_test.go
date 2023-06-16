@@ -5775,7 +5775,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					FieldLogger:  fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
-					&ListenerProcessor{},
+					&ListenerProcessor{
+						HTTPAddress:  "0.0.0.0",
+						HTTPSAddress: "0.0.0.0",
+					},
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -15005,7 +15008,10 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 					FieldLogger:  fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
-					&ListenerProcessor{},
+					&ListenerProcessor{
+						HTTPAddress:  "0.0.0.0",
+						HTTPSAddress: "0.0.0.0",
+					},
 					&IngressProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
