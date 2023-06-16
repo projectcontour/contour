@@ -22,6 +22,7 @@ import (
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -33,8 +34,7 @@ import (
 )
 
 func TestXDSHandlerStream(t *testing.T) {
-	log := logrus.New()
-	log.SetOutput(io.Discard)
+	log := fixture.NewDiscardLogger()
 	tests := map[string]struct {
 		xh     contourServer
 		stream grpcStream

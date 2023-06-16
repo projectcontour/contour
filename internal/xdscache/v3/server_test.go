@@ -15,7 +15,6 @@ package v3
 
 import (
 	"context"
-	"io"
 	"net"
 	"testing"
 	"time"
@@ -34,7 +33,6 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -198,8 +196,7 @@ func TestGRPC(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.SetOutput(io.Discard)
+	log := fixture.NewDiscardLogger()
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
