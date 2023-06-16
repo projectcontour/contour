@@ -39,6 +39,7 @@ func testIngressClass(namespace, class string) {
 				Name:      name,
 			},
 			Spec: networkingv1.IngressSpec{
+				IngressClassName: ref.To(class),
 				Rules: []networkingv1.IngressRule{
 					{
 						Host: name + ".projectcontour.io",
@@ -63,9 +64,6 @@ func testIngressClass(namespace, class string) {
 					},
 				},
 			},
-		}
-		i.Annotations = map[string]string{
-			"kubernetes.io/ingress.class": class,
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), i))
 
