@@ -25,12 +25,17 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
@@ -1313,6 +1318,220 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 		Resources: resources(t,
 			httpListener,
 			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
+func TestGatewayListenersSetAddress(t *testing.T) {
+	rh, c, done := setup(t, func(builder *dag.Builder) {
+		for _, processor := range builder.Processors {
+			if listenerProcessor, ok := processor.(*dag.ListenerProcessor); ok {
+				listenerProcessor.HTTPAddress = "127.0.0.100"
+				listenerProcessor.HTTPSAddress = "127.0.0.200"
+			}
+		}
+	})
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+	tlssecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+	rh.OnAdd(tlssecret)
+
+	rh.OnAdd(gc)
+
+	rh.OnAdd(&gatewayapi_v1beta1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1beta1.Listener{
+				{
+					Name:     "http",
+					Port:     80,
+					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				},
+				{
+					Name:     "https",
+					Port:     443,
+					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+							gatewayapi.CertificateRef("tlscert", ""),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				},
+				{
+					Name:     "tls",
+					Port:     8443,
+					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+					},
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				},
+				{
+					Name:     "tcp",
+					Port:     27017,
+					Protocol: gatewayapi_v1beta1.TCPProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						},
+					},
+				},
+			},
+		},
+	})
+
+	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 0),
+					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https", 0),
+				},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
+			}},
+		},
+	})
+
+	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+		ObjectMeta: fixture.ObjectMeta("basic"),
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tls", 0),
+				},
+			},
+			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, nil),
+			}},
+		},
+	})
+
+	rh.OnAdd(&gatewayapi_v1alpha2.TCPRoute{
+		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
+		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tcp", 0),
+				},
+			},
+			Rules: []gatewayapi_v1alpha2.TCPRouteRule{{
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, nil),
+			}},
+		},
+	})
+
+	// Address should come from listener HTTP address.
+	c.Request(listenerType, "http-80").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "http-80",
+				Address: envoy_v3.SocketAddress("127.0.0.100", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManager("http-80", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
+
+	// Address should come from listener HTTPS address.
+	c.Request(listenerType, "https-443").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "https-443",
+				Address: envoy_v3.SocketAddress("127.0.0.200", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("test.projectcontour.io", tlssecret,
+						httpsFilterForGateway("https-443", "test.projectcontour.io"),
+						nil, "h2", "http/1.1"),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
+
+	// Address should come from listener HTTPS address.
+	c.Request(listenerType, "https-8443").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "https-8443",
+				Address: envoy_v3.SocketAddress("127.0.0.200", 16443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcp.projectcontour.io"},
+					},
+					Filters: envoy_v3.Filters(
+						tcpproxy("https-8443", "default/svc1/80/da39a3ee5e"),
+					),
+				}},
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
+
+	// Address should come from listener HTTP address.
+	c.Request(listenerType, "tcp-27017").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "tcp-27017",
+				Address: envoy_v3.SocketAddress("127.0.0.100", 35017),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxy("tcp-27017", "default/svc1/80/da39a3ee5e"),
+					),
+				}},
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
 		),
 		TypeUrl: listenerType,
 	})
