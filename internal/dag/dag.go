@@ -998,7 +998,7 @@ type Cluster struct {
 	MaxRequestsPerConnection *uint32
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
-	PerConnectionBufferLimitBytes uint32
+	PerConnectionBufferLimitBytes *uint32
 }
 
 // WeightedService represents the load balancing weight of a

@@ -102,7 +102,7 @@ type HTTPProxyProcessor struct {
 	MaxRequestsPerConnection *uint32
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
-	PerConnectionBufferLimitBytes uint32
+	PerConnectionBufferLimitBytes *uint32
 }
 
 // Run translates HTTPProxies into DAG objects and

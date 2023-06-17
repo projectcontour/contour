@@ -51,7 +51,10 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
 	cluster.HealthChecks = edshealthcheck(c)
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
-	cluster.PerConnectionBufferLimitBytes = protobuf.UInt32OrNil(c.PerConnectionBufferLimitBytes)
+
+	if c.PerConnectionBufferLimitBytes != nil {
+		cluster.PerConnectionBufferLimitBytes = protobuf.UInt32OrNil(*c.PerConnectionBufferLimitBytes)
+	}
 
 	switch len(service.ExternalName) {
 	case 0:
