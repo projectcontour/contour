@@ -214,7 +214,7 @@ lint-yamllint:
 # argument (the help text) either doesn't start with a capital letter
 # or doesn't end with a period. "xDS" and "gRPC" are exceptions to
 # the first rule.
-.PHONY: check-flags
+.PHONY: lint-flags
 lint-flags:
 	@if git --no-pager grep --extended-regexp '[.]Flag\("[^"]+", "([^A-Zxg][^"]+|[^"]+[^.])"' cmd/contour; then \
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
@@ -362,7 +362,7 @@ run-ingress-conformance:
 .PHONY: gateway-conformance
 gateway-conformance: | setup-kind-cluster load-contour-image-kind run-gateway-conformance cleanup-kind ## Setup a kind cluster and run Gateway API conformance tests in it.
 
-.PHONY: run-gatway-conformance
+.PHONY: run-gateway-conformance
 run-gateway-conformance: ## Run Gateway API conformance tests against the current cluster.
 	GATEWAY_API_VERSION=$(GATEWAY_API_VERSION) ./test/scripts/run-gateway-conformance.sh
 
