@@ -108,7 +108,7 @@ This command creates:
 - Envoy DaemonSet / Service
 - Contour ConfigMap
 
-Update the Contour config map to enable Gateway API processing by specifying a gateway controller name, and restart Contour to pick up the config change:
+Update the Contour configmap to enable Gateway API processing by specifying a gateway controller name, and restart Contour to pick up the config change:
 
 ```shell
 kubectl apply -f - <<EOF
