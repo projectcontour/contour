@@ -17339,7 +17339,7 @@ metadata:
   labels:
     name: gateway-api-admission-server
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       name: gateway-api-admission-server
@@ -17375,6 +17375,12 @@ spec:
           readOnly: true
         securityContext:
           readOnlyRootFilesystem: true
+        livenessProbe:
+          tcpSocket:
+            port: 8443
+        readinessProbe:
+          tcpSocket:
+            port: 8443
       volumes:
       - name: webhook-certs
         secret:
