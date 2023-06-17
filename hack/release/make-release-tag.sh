@@ -47,10 +47,12 @@ for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deplo
 done
 
 # Update the certgen job name to the new version.
+# Dot in the version is replaced with a dash to make it a valid pod name.
 for example in examples/contour/02-job-certgen.yaml ; do
     run::sed \
-        "-es|contour-certgen-main|contour-certgen-$NEWVERS|" \
-        "-es|contour-certgen-$OLDVERS|contour-certgen-$NEWVERS|" \
+        "-es|contour-certgen-main|contour-certgen-${NEWVERS//./-}|" \
+        "-es|contour-certgen-$OLDVERS|contour-certgen-${NEWVERS//./-}|" \
+        "-es|contour-certgen-${OLDVERS//./-}|contour-certgen-${NEWVERS//./-}|" \
         "$example"
 done
 
