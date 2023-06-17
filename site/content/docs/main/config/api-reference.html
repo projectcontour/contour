@@ -5418,16 +5418,16 @@ names in an Envoy cluster config.</p>
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;all&#34;</p></td>
-<td><p>AllClusterDNSFamily DNS lookups will attempt both v4 and v6 queries.</p>
+<td><p>DNS lookups will attempt both v4 and v6 queries.</p>
 </td>
 </tr><tr><td><p>&#34;auto&#34;</p></td>
-<td><p>AutoClusterDNSFamily DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
+<td><p>DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
 </td>
 </tr><tr><td><p>&#34;v4&#34;</p></td>
-<td><p>IPv4ClusterDNSFamily DNS lookups will only attempt v4 queries.</p>
+<td><p>DNS lookups will only attempt v4 queries.</p>
 </td>
 </tr><tr><td><p>&#34;v6&#34;</p></td>
-<td><p>IPv6ClusterDNSFamily DNS lookups will only attempt v6 queries.</p>
+<td><p>DNS lookups will only attempt v6 queries.</p>
 </td>
 </tr></tbody>
 </table>
@@ -8099,7 +8099,7 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
 </p>
 <p>
-<p>ServerHeaderTransformationType defines the action to be applied to the Server header on the response path</p>
+<p>ServerHeaderTransformation defines the action to be applied to the Server header on the response path</p>
 </p>
 <table>
 <thead>
@@ -8109,15 +8109,15 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;append_if_absent&#34;</p></td>
-<td><p>AppendIfAbsentServerHeader If no Server header is present, set it to &ldquo;envoy&rdquo;.
+<td><p>If no Server header is present, set it to &ldquo;envoy&rdquo;.
 If a Server header is present, pass it through.</p>
 </td>
 </tr><tr><td><p>&#34;overwrite&#34;</p></td>
-<td><p>OverwriteServerHeader Overwrite any Server header with &ldquo;envoy&rdquo;.
+<td><p>Overwrite any Server header with &ldquo;envoy&rdquo;.
 This is the default value.</p>
 </td>
 </tr><tr><td><p>&#34;pass_through&#34;</p></td>
-<td><p>PassThroughServerHeader Pass through the value of the Server header, and do not append a header
+<td><p>Pass through the value of the Server header, and do not append a header
 if none is present.</p>
 </td>
 </tr></tbody>

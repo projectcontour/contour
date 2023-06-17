@@ -550,27 +550,27 @@ type TimeoutParameters struct {
 type ClusterDNSFamilyType string
 
 const (
-	// AutoClusterDNSFamily DNS lookups will do a v6 lookup first, followed by a v4 if that fails.
+	// DNS lookups will do a v6 lookup first, followed by a v4 if that fails.
 	AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
-	// IPv4ClusterDNSFamily DNS lookups will only attempt v4 queries.
+	// DNS lookups will only attempt v4 queries.
 	IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
-	// IPv6ClusterDNSFamily DNS lookups will only attempt v6 queries.
+	// DNS lookups will only attempt v6 queries.
 	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
-	// AllClusterDNSFamily DNS lookups will attempt both v4 and v6 queries.
+	// DNS lookups will attempt both v4 and v6 queries.
 	AllClusterDNSFamily ClusterDNSFamilyType = "all"
 )
 
-// ServerHeaderTransformationType defines the action to be applied to the Server header on the response path
+// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
 type ServerHeaderTransformationType string
 
 const (
-	// OverwriteServerHeader Overwrite any Server header with "envoy".
+	// Overwrite any Server header with "envoy".
 	// This is the default value.
 	OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
-	// AppendIfAbsentServerHeader If no Server header is present, set it to "envoy".
+	// If no Server header is present, set it to "envoy".
 	// If a Server header is present, pass it through.
 	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
-	// PassThroughServerHeader Pass through the value of the Server header, and do not append a header
+	// Pass through the value of the Server header, and do not append a header
 	// if none is present.
 	PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 )
