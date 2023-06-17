@@ -100,6 +100,9 @@ type HTTPProxyProcessor struct {
 
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
+
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
+	PerConnectionBufferLimitBytes uint32
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -971,21 +974,22 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			c := &Cluster{
-				Upstream:                 s,
-				LoadBalancerPolicy:       lbPolicy,
-				Weight:                   uint32(service.Weight),
-				HTTPHealthCheckPolicy:    healthPolicy,
-				UpstreamValidation:       uv,
-				RequestHeadersPolicy:     reqHP,
-				ResponseHeadersPolicy:    respHP,
-				CookieRewritePolicies:    cookieRP,
-				Protocol:                 protocol,
-				SNI:                      determineSNI(r.RequestHeadersPolicy, reqHP, s),
-				DNSLookupFamily:          string(p.DNSLookupFamily),
-				ClientCertificate:        clientCertSecret,
-				TimeoutPolicy:            ctp,
-				SlowStartConfig:          slowStart,
-				MaxRequestsPerConnection: p.MaxRequestsPerConnection,
+				Upstream:                      s,
+				LoadBalancerPolicy:            lbPolicy,
+				Weight:                        uint32(service.Weight),
+				HTTPHealthCheckPolicy:         healthPolicy,
+				UpstreamValidation:            uv,
+				RequestHeadersPolicy:          reqHP,
+				ResponseHeadersPolicy:         respHP,
+				CookieRewritePolicies:         cookieRP,
+				Protocol:                      protocol,
+				SNI:                           determineSNI(r.RequestHeadersPolicy, reqHP, s),
+				DNSLookupFamily:               string(p.DNSLookupFamily),
+				ClientCertificate:             clientCertSecret,
+				TimeoutPolicy:                 ctp,
+				SlowStartConfig:               slowStart,
+				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",

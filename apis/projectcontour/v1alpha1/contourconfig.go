@@ -550,27 +550,27 @@ type TimeoutParameters struct {
 type ClusterDNSFamilyType string
 
 const (
-	// DNS lookups will do a v6 lookup first, followed by a v4 if that fails.
+	// AutoClusterDNSFamily DNS lookups will do a v6 lookup first, followed by a v4 if that fails.
 	AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
-	// DNS lookups will only attempt v4 queries.
+	// IPv4ClusterDNSFamily DNS lookups will only attempt v4 queries.
 	IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
-	// DNS lookups will only attempt v6 queries.
+	// IPv6ClusterDNSFamily DNS lookups will only attempt v6 queries.
 	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
-	// DNS lookups will attempt both v4 and v6 queries.
+	// AllClusterDNSFamily DNS lookups will attempt both v4 and v6 queries.
 	AllClusterDNSFamily ClusterDNSFamilyType = "all"
 )
 
-// ServerHeaderTransformation defines the action to be applied to the Server header on the response path
+// ServerHeaderTransformationType defines the action to be applied to the Server header on the response path
 type ServerHeaderTransformationType string
 
 const (
-	// Overwrite any Server header with "envoy".
+	// OverwriteServerHeader Overwrite any Server header with "envoy".
 	// This is the default value.
 	OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
-	// If no Server header is present, set it to "envoy".
+	// AppendIfAbsentServerHeader If no Server header is present, set it to "envoy".
 	// If a Server header is present, pass it through.
 	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
-	// Pass through the value of the Server header, and do not append a header
+	// PassThroughServerHeader Pass through the value of the Server header, and do not append a header
 	// if none is present.
 	PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
 )
@@ -605,6 +605,15 @@ type ClusterParameters struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
+
+	// Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
+	// If unspecified, an implementation defined default is applied (1MiB).
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

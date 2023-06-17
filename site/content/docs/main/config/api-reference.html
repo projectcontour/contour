@@ -5418,16 +5418,16 @@ names in an Envoy cluster config.</p>
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;all&#34;</p></td>
-<td><p>DNS lookups will attempt both v4 and v6 queries.</p>
+<td><p>AllClusterDNSFamily DNS lookups will attempt both v4 and v6 queries.</p>
 </td>
 </tr><tr><td><p>&#34;auto&#34;</p></td>
-<td><p>DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
+<td><p>AutoClusterDNSFamily DNS lookups will do a v6 lookup first, followed by a v4 if that fails.</p>
 </td>
 </tr><tr><td><p>&#34;v4&#34;</p></td>
-<td><p>DNS lookups will only attempt v4 queries.</p>
+<td><p>IPv4ClusterDNSFamily DNS lookups will only attempt v4 queries.</p>
 </td>
 </tr><tr><td><p>&#34;v6&#34;</p></td>
-<td><p>DNS lookups will only attempt v6 queries.</p>
+<td><p>IPv6ClusterDNSFamily DNS lookups will only attempt v6 queries.</p>
 </td>
 </tr></tbody>
 </table>
@@ -5489,6 +5489,22 @@ uint32
 <em>(Optional)</em>
 <p>Defines the maximum requests for upstream connections. If not specified, there is no limit.
 see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions</a>
+for more information.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>per-connection-buffer-limit-bytes</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
+If unspecified, an implementation defined default is applied (1MiB).
+see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes</a>
 for more information.</p>
 </td>
 </tr>
@@ -8083,7 +8099,7 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
 </p>
 <p>
-<p>ServerHeaderTransformation defines the action to be applied to the Server header on the response path</p>
+<p>ServerHeaderTransformationType defines the action to be applied to the Server header on the response path</p>
 </p>
 <table>
 <thead>
@@ -8093,15 +8109,15 @@ grpc code RESOURCE_EXHAUSTED. When disabled it&rsquo;s translated to UNAVAILABLE
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;append_if_absent&#34;</p></td>
-<td><p>If no Server header is present, set it to &ldquo;envoy&rdquo;.
+<td><p>AppendIfAbsentServerHeader If no Server header is present, set it to &ldquo;envoy&rdquo;.
 If a Server header is present, pass it through.</p>
 </td>
 </tr><tr><td><p>&#34;overwrite&#34;</p></td>
-<td><p>Overwrite any Server header with &ldquo;envoy&rdquo;.
+<td><p>OverwriteServerHeader Overwrite any Server header with &ldquo;envoy&rdquo;.
 This is the default value.</p>
 </td>
 </tr><tr><td><p>&#34;pass_through&#34;</p></td>
-<td><p>Pass through the value of the Server header, and do not append a header
+<td><p>PassThroughServerHeader Pass through the value of the Server header, and do not append a header
 if none is present.</p>
 </td>
 </tr></tbody>

@@ -643,6 +643,22 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
+		"cluster with per connection buffer limit bytes set": {
+			cluster: &dag.Cluster{
+				Upstream:                      service(s1),
+				PerConnectionBufferLimitBytes: 32768,
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+			},
+		},
 		"cluster with max requests per connection set": {
 			cluster: &dag.Cluster{
 				Upstream:                 service(s1),
