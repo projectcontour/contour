@@ -146,6 +146,7 @@ var _ = Describe("When upgrading", func() {
 
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
+			fmt.Println("CREATING GETEWAY CLASS >>>>>>>>>>>")
 			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: gatewayClassName,
@@ -154,12 +155,25 @@ var _ = Describe("When upgrading", func() {
 					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
 				},
 			}, e2e.GatewayClassAccepted)
+			fmt.Println("CREATING GETEWAY CLASS <<<<<<<<<<<")
 
 			require.True(f.T(), ok)
 			require.NotNil(f.T(), gc)
 		})
 
 		AfterEach(func() {
+			fmt.Println("AFTER EACH >>>>>>>>>>>>>>>>")
+			cmd := exec.Command("kubectl", "-n", "gateway-system", "describe", "pod", "-l", "name=gateway-api-admission-server")
+			ses, _ := gexec.Start(cmd, os.Stdout, os.Stdout)
+			ses.Wait()
+			cmd = exec.Command("kubectl", "-n", "gateway-system", "describe", "service", "gateway-api-admission-server")
+			ses, _ = gexec.Start(cmd, os.Stdout, os.Stdout)
+			ses.Wait()
+			cmd = exec.Command("kubectl", "-n", "gateway-system", "logs", "deployments/gateway-api-admission-server")
+			ses, _ = gexec.Start(cmd, os.Stdout, os.Stdout)
+			ses.Wait()
+			fmt.Println("AFTER EACH <<<<<<<<<<<<<<<<")
+
 			require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
 			gc := &gatewayapi_v1beta1.GatewayClass{

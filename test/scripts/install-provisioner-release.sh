@@ -31,6 +31,12 @@ if [ -z "$VERS" ] ; then
         exit 1
 fi
 
+echo "BEFORE >>>>>>>>>>>>>>>>>>>>>>>"
+${KUBECTL} -n gateway-system describe pod -l name=gateway-api-admission-server
+${KUBECTL} -n gateway-system describe service gateway-api-admission-server
+${KUBECTL} -n gateway-system logs deployments/gateway-api-admission-server
+echo "BEFORE <<<<<<<<<<<<<<<<<<<<<<<"
+
 # Install the Contour version.
 ${KUBECTL} apply -f "https://projectcontour.io/quickstart/$VERS/contour-gateway-provisioner.yaml"
 
@@ -38,3 +44,9 @@ ${KUBECTL} apply -f "https://projectcontour.io/quickstart/$VERS/contour-gateway-
 ${KUBECTL} rollout status --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server
 
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available
+
+echo "AFTER >>>>>>>>>>>>>>>>>>>>>>>>>"
+${KUBECTL} -n gateway-system describe pod -l name=gateway-api-admission-server
+${KUBECTL} -n gateway-system describe service gateway-api-admission-server
+${KUBECTL} -n gateway-system logs deployments/gateway-api-admission-server
+echo "AFTER <<<<<<<<<<<<<<<<<<<<<<<<<"

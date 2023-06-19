@@ -256,7 +256,7 @@ generate-crd-yaml:
 generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
 	@GATEWAY_API_VERSION=$(GATEWAY_API_VERSION) ./hack/generate-gateway-yaml.sh
-	
+
 
 .PHONY: generate-api-docs
 generate-api-docs:
@@ -306,7 +306,7 @@ setup-kind-cluster: ## Make a kind cluster for testing
 install-contour-working: | setup-kind-cluster ## Install the local working directory version of Contour into a kind cluster
 	./test/scripts/install-contour-working.sh
 
-.PHONY: install-contour-release 
+.PHONY: install-contour-release
 install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
@@ -350,7 +350,7 @@ upgrade: | setup-kind-cluster load-contour-image-kind run-upgrade cleanup-kind #
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -v ./test/e2e/upgrade
+		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -vv ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance
 check-ingress-conformance: | install-contour-working run-ingress-conformance cleanup-kind ## Run Ingress controller conformance
