@@ -196,3 +196,102 @@ func TestBuilderLookupService(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSingleListener(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		d := &DAG{
+			Listeners: map[string]*Listener{
+				"http": {
+					Protocol: "http",
+					Port:     80,
+				},
+				"https": {
+					Protocol: "https",
+					Port:     443,
+				},
+			},
+		}
+
+		got, gotErr := d.GetSingleListener("http")
+		assert.Equal(t, d.Listeners["http"], got)
+		assert.NoError(t, gotErr)
+
+		got, gotErr = d.GetSingleListener("https")
+		assert.Equal(t, d.Listeners["https"], got)
+		assert.NoError(t, gotErr)
+	})
+
+	t.Run("one HTTP listener, no HTTPS listener", func(t *testing.T) {
+		d := &DAG{
+			Listeners: map[string]*Listener{
+				"http": {
+					Protocol: "http",
+					Port:     80,
+				},
+			},
+		}
+
+		got, gotErr := d.GetSingleListener("http")
+		assert.Equal(t, d.Listeners["http"], got)
+		assert.NoError(t, gotErr)
+
+		got, gotErr = d.GetSingleListener("https")
+		assert.Nil(t, got)
+		assert.EqualError(t, gotErr, "no HTTPS listener configured")
+	})
+
+	t.Run("many HTTP listeners, one HTTPS listener", func(t *testing.T) {
+		d := &DAG{
+			Listeners: map[string]*Listener{
+				"http-1": {
+					Protocol: "http",
+					Port:     80,
+				},
+				"http-2": {
+					Protocol: "http",
+					Port:     81,
+				},
+				"http-3": {
+					Protocol: "http",
+					Port:     82,
+				},
+				"https-1": {
+					Protocol: "https",
+					Port:     443,
+				},
+			},
+		}
+
+		got, gotErr := d.GetSingleListener("http")
+		assert.Nil(t, got)
+		assert.EqualError(t, gotErr, "more than one HTTP listener configured")
+
+		got, gotErr = d.GetSingleListener("https")
+		assert.Equal(t, d.Listeners["https-1"], got)
+		assert.NoError(t, gotErr)
+	})
+}
+
+func TestGetServiceClusters(t *testing.T) {
+	d := &DAG{
+		Listeners: map[string]*Listener{
+			"http-1": {
+				VirtualHosts: []*VirtualHost{
+					{
+						Routes: map[string]*Route{
+							"foo": {
+								Clusters: []*Cluster{
+									{Upstream: &Service{ExternalName: "bar.com"}},
+									{Upstream: &Service{}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// We should only get one cluster since the other is for an ExternalName
+	// service.
+	assert.Len(t, d.GetServiceClusters(), 1)
+}

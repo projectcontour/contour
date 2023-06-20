@@ -39,6 +39,7 @@ const (
 	KindHTTPRoute = "HTTPRoute"
 	KindTLSRoute  = "TLSRoute"
 	KindGRPCRoute = "GRPCRoute"
+	KindTCPRoute  = "TCPRoute"
 	KindGateway   = "Gateway"
 )
 
@@ -146,7 +147,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// Process GRPCRoutes.
 	for _, grpcRoute := range p.source.grpcroutes {
 		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.GRPCRoute{})
+	}
 
+	// Process TCPRoutes.
+	for _, tcpRoute := range p.source.tcproutes {
+		p.processRoute(KindTCPRoute, tcpRoute, tcpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.TCPRoute{})
 	}
 
 	for listenerName, attachedRoutes := range listenerAttachedRoutes {
@@ -200,30 +205,36 @@ func (p *GatewayAPIProcessor) processRoute(
 		hostCount := 0
 
 		for _, listener := range allowedListeners {
-			var routeHostnames []gatewayapi_v1beta1.Hostname
+			var hosts sets.Set[string]
+			var errs []error
 
-			switch route := route.(type) {
-			case *gatewayapi_v1beta1.HTTPRoute:
-				routeHostnames = route.Spec.Hostnames
-			case *gatewayapi_v1alpha2.TLSRoute:
-				routeHostnames = route.Spec.Hostnames
-			case *gatewayapi_v1alpha2.GRPCRoute:
-				routeHostnames = route.Spec.Hostnames
-			}
+			// TCPRoutes don't have hostnames.
+			if routeKind != KindTCPRoute {
+				var routeHostnames []gatewayapi_v1beta1.Hostname
 
-			hosts, errs := p.computeHosts(routeHostnames, gatewayapi.HostnameDeref(listener.listener.Hostname))
-			for _, err := range errs {
-				// The Gateway API spec does not indicate what to do if syntactically
-				// invalid hostnames make it through, we're using our best judgment here.
-				// Theoretically these should be prevented by the combination of kubebuilder
-				// and admission webhook validations.
-				routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-			}
+				switch route := route.(type) {
+				case *gatewayapi_v1beta1.HTTPRoute:
+					routeHostnames = route.Spec.Hostnames
+				case *gatewayapi_v1alpha2.TLSRoute:
+					routeHostnames = route.Spec.Hostnames
+				case *gatewayapi_v1alpha2.GRPCRoute:
+					routeHostnames = route.Spec.Hostnames
+				}
 
-			// If there were no intersections between the listener hostname and the
-			// route hostnames, the route is not programmed for this listener.
-			if len(hosts) == 0 {
-				continue
+				hosts, errs = p.computeHosts(routeHostnames, string(ref.Val(listener.listener.Hostname, "")))
+				for _, err := range errs {
+					// The Gateway API spec does not indicate what to do if syntactically
+					// invalid hostnames make it through, we're using our best judgment here.
+					// Theoretically these should be prevented by the combination of kubebuilder
+					// and admission webhook validations.
+					routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+				}
+
+				// If there were no intersections between the listener hostname and the
+				// route hostnames, the route is not programmed for this listener.
+				if len(hosts) == 0 {
+					continue
+				}
 			}
 
 			var attached bool
@@ -235,6 +246,8 @@ func (p *GatewayAPIProcessor) processRoute(
 				attached = p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1alpha2.GRPCRoute:
 				attached = p.computeGRPCRouteForListener(route, routeParentStatus, listener, hosts)
+			case *gatewayapi_v1alpha2.TCPRoute:
+				attached = p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
 
 			if attached {
@@ -244,7 +257,7 @@ func (p *GatewayAPIProcessor) processRoute(
 			hostCount += hosts.Len()
 		}
 
-		if hostCount == 0 && !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
+		if routeKind != KindTCPRoute && hostCount == 0 && !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
 			routeParentStatus.AddCondition(
 				gatewayapi_v1beta1.RouteConditionAccepted,
 				metav1.ConditionFalse,
@@ -341,6 +354,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 
 type listenerInfo struct {
 	listener          gatewayapi_v1beta1.Listener
+	dagListenerName   string
 	allowedKinds      []gatewayapi_v1beta1.Kind
 	namespaceSelector labels.Selector
 	tlsSecret         *Secret
@@ -543,6 +557,7 @@ func (p *GatewayAPIProcessor) computeListener(
 
 	return true, &listenerInfo{
 		listener:          listener,
+		dagListenerName:   validateListenersResult.ListenerNames[string(listener.Name)],
 		allowedKinds:      listenerRouteKinds,
 		tlsSecret:         listenerSecret,
 		namespaceSelector: selector,
@@ -562,6 +577,8 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.TLSProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindTLSRoute}
+		case gatewayapi_v1beta1.TCPProtocolType:
+			return []gatewayapi_v1beta1.Kind{KindTCPRoute}
 		}
 	}
 
@@ -578,13 +595,13 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			)
 			continue
 		}
-		if routeKind.Kind != KindHTTPRoute && routeKind.Kind != KindTLSRoute && routeKind.Kind != KindGRPCRoute {
+		if routeKind.Kind != KindHTTPRoute && routeKind.Kind != KindTLSRoute && routeKind.Kind != KindGRPCRoute && routeKind.Kind != KindTCPRoute {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
-				fmt.Sprintf("Kind %q is not supported, kind must be %q or %q or %q", routeKind.Kind, KindHTTPRoute, KindTLSRoute, KindGRPCRoute),
+				fmt.Sprintf("Kind %q is not supported, kind must be %q, %q, %q or %q", routeKind.Kind, KindHTTPRoute, KindTLSRoute, KindGRPCRoute, KindTCPRoute),
 			)
 			continue
 		}
@@ -595,6 +612,16 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 				metav1.ConditionFalse,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
 				fmt.Sprintf("TLSRoutes are incompatible with listener protocol %q", listener.Protocol),
+			)
+			continue
+		}
+		if routeKind.Kind == KindTCPRoute && listener.Protocol != gatewayapi_v1beta1.TCPProtocolType {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
+				metav1.ConditionFalse,
+				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
+				fmt.Sprintf("TCPRoutes are incompatible with listener protocol %q", listener.Protocol),
 			)
 			continue
 		}
@@ -956,7 +983,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 		}
 
 		for host := range hosts {
-			secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+			secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 
 			if listener.tlsSecret != nil {
 				secure.Secret = listener.tlsSecret
@@ -1286,11 +1313,11 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
+					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
 				}
 
@@ -1416,11 +1443,11 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			for _, route := range routes {
 				switch {
 				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
+					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
 				}
 
@@ -1495,6 +1522,88 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 	}
 
 	return headerMatchConditions, nil
+}
+
+func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alpha2.TCPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) bool {
+	if len(route.Spec.Rules) != 1 {
+		routeAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionAccepted,
+			metav1.ConditionFalse,
+			"InvalidRouteRules",
+			"TCPRoute must have only a single rule defined",
+		)
+
+		return false
+	}
+
+	rule := route.Spec.Rules[0]
+
+	if len(rule.BackendRefs) == 0 {
+		routeAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionResolvedRefs,
+			metav1.ConditionFalse,
+			status.ReasonDegraded,
+			"At least one Spec.Rules.BackendRef must be specified.",
+		)
+		return false
+	}
+
+	var proxy TCPProxy
+	var totalWeight uint32
+
+	for _, backendRef := range rule.BackendRefs {
+		service, cond := p.validateBackendRef(backendRef, KindTCPRoute, route.Namespace)
+		if cond != nil {
+			routeAccessor.AddCondition(
+				gatewayapi_v1beta1.RouteConditionType(cond.Type),
+				cond.Status,
+				gatewayapi_v1beta1.RouteConditionReason(cond.Reason),
+				cond.Message,
+			)
+			continue
+		}
+
+		// Route defaults to a weight of "1" unless otherwise specified.
+		routeWeight := uint32(1)
+		if backendRef.Weight != nil {
+			routeWeight = uint32(*backendRef.Weight)
+		}
+
+		// Keep track of all the weights for this set of backendRefs. This will be
+		// used later to understand if all the weights are set to zero.
+		totalWeight += routeWeight
+
+		// https://github.com/projectcontour/contour/issues/3593
+		service.Weighted.Weight = routeWeight
+		proxy.Clusters = append(proxy.Clusters, &Cluster{
+			Upstream:      service,
+			SNI:           service.ExternalName,
+			Weight:        routeWeight,
+			TimeoutPolicy: ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+		})
+	}
+
+	// No clusters added: they were all invalid, so reject
+	// the route (it already has a relevant condition set).
+	if len(proxy.Clusters) == 0 {
+		return false
+	}
+
+	// If we have valid clusters but they all have a zero
+	// weight, reject the route.
+	if totalWeight == 0 {
+		routeAccessor.AddCondition(
+			status.ConditionValidBackendRefs,
+			metav1.ConditionFalse,
+			status.ReasonAllBackendRefsHaveZeroWeights,
+			"At least one Spec.Rules.BackendRef must have a non-zero weight.",
+		)
+		return false
+	}
+
+	p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
+
+	return true
 }
 
 // validateBackendRef verifies that the specified BackendRef is valid.

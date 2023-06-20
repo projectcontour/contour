@@ -414,6 +414,24 @@ type ClusterParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
 	// for more information.
 	DNSLookupFamily ClusterDNSFamilyType `yaml:"dns-lookup-family"`
+
+	// Defines the maximum requests for upstream connections. If not specified, there is no limit.
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+	// for more information.
+	//
+	// +optional
+	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
+}
+
+func (p *ClusterParameters) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
+		return fmt.Errorf("invalid max connections per request value %q set on cluster, minimum value is 1", *p.MaxRequestsPerConnection)
+	}
+	return nil
 }
 
 // NetworkParameters hold various configurable network values.
@@ -437,6 +455,13 @@ type ListenerParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
 	ConnectionBalancer string `yaml:"connection-balancer"`
+
+	// Defines the maximum requests for downstream connections. If not specified, there is no limit.
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+	// for more information.
+	//
+	// +optional
+	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -446,6 +471,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.ConnectionBalancer != "" && p.ConnectionBalancer != "exact" {
 		return fmt.Errorf("invalid listener connection balancer value %q, only 'exact' connection balancing is supported for now", p.ConnectionBalancer)
+	}
+
+	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
+		return fmt.Errorf("invalid max connections per request value %q set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
 	return nil
 }
@@ -863,6 +892,10 @@ func (p *Parameters) Validate() error {
 	}
 
 	if err := p.Tracing.Validate(); err != nil {
+		return err
+	}
+
+	if err := p.Cluster.Validate(); err != nil {
 		return err
 	}
 

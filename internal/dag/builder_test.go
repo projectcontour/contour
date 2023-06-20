@@ -275,7 +275,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -297,7 +297,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -319,7 +319,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1beta1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
 			Listeners: []gatewayapi_v1beta1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1beta1.TLSProtocolType,
 				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
@@ -510,8 +510,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -544,8 +543,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -613,8 +611,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
 					),
@@ -711,8 +708,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -749,8 +745,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -816,8 +811,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -1050,8 +1044,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("another.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1159,8 +1152,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost(
 							"test.projectcontour.io",
@@ -1217,8 +1209,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 						virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
@@ -1251,8 +1242,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -1285,8 +1275,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("*.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -1398,8 +1387,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1437,8 +1425,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 					),
@@ -1477,8 +1464,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name: "http-80",
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1532,8 +1518,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1586,8 +1571,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
@@ -1639,8 +1623,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name: "http-80",
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1694,8 +1677,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name: "http-80",
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1749,8 +1731,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name: "http-80",
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1805,8 +1786,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
+				Name: "http-80",
 				VirtualHosts: virtualhosts(
 					virtualhost("*", directResponseRoute("/", http.StatusInternalServerError)),
 				),
@@ -1838,8 +1818,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -1873,8 +1852,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							regexrouteHTTPRoute("/bl+og", service(kuardService))),
@@ -1924,8 +1902,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -1966,8 +1943,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name:     "http-443",
+					Protocol: "http",
+					Address:  "0.0.0.0",
+					Port:     8443,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
@@ -2011,8 +1990,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2061,8 +2039,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2074,8 +2051,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2172,8 +2148,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2223,8 +2198,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2513,8 +2487,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -2526,8 +2499,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
@@ -2566,8 +2538,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2620,8 +2591,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/blog"),
@@ -2666,8 +2636,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2713,8 +2682,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2760,8 +2728,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2811,8 +2778,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2863,8 +2829,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2930,8 +2895,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -2999,7 +2963,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -3059,7 +3023,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -3112,7 +3076,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
+					Name: "http-80",
 					Port: 8080,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
@@ -3181,8 +3145,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3257,8 +3220,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3340,8 +3302,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3413,8 +3374,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3463,8 +3423,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3525,8 +3484,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3582,8 +3540,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3627,8 +3584,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3680,8 +3636,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
@@ -3740,8 +3695,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3790,8 +3744,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3840,8 +3793,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -3888,8 +3840,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
 				},
@@ -3931,8 +3882,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
 						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
@@ -3975,8 +3925,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4024,8 +3973,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4073,8 +4021,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4119,8 +4066,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition:   prefixSegment("/prefix"),
@@ -4176,8 +4122,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixSegment("/prefix"),
@@ -4222,8 +4167,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4287,8 +4231,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixrouteHTTPRoute("/",
 							&Service{
@@ -4348,8 +4291,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("*", directResponseRouteService("/", http.StatusInternalServerError, &Service{
 							Weighted: WeightedService{
@@ -4387,8 +4329,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4474,8 +4415,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4539,8 +4479,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4778,8 +4717,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4836,8 +4774,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4908,8 +4845,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -4974,8 +4910,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5023,8 +4958,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5072,8 +5006,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5115,8 +5048,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("gateway.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -5150,8 +5082,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("http.projectcontour.io",
 							exactrouteHTTPRoute("/blog", service(kuardService))),
@@ -5168,8 +5099,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
@@ -5288,8 +5218,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 8443,
+					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
@@ -5301,8 +5230,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c"))),
 					),
@@ -5338,8 +5266,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5381,8 +5308,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5423,8 +5349,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
@@ -5463,8 +5388,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
@@ -5532,8 +5456,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5610,8 +5533,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5672,8 +5594,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5736,8 +5657,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: exact("/io.projectcontour/Login"),
@@ -5782,8 +5702,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 8080,
+					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
 				},
@@ -5840,8 +5759,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			},
 			want: listeners(&Listener{
-				Name:         HTTP_LISTENER_NAME,
-				Port:         8080,
+				Name:         "http-80",
 				VirtualHosts: virtualhosts(virtualhost("*", exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")))),
 			}),
 		},
@@ -5857,7 +5775,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					FieldLogger:  fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
-					&ListenerProcessor{},
+					&ListenerProcessor{
+						HTTPAddress:  "0.0.0.0",
+						HTTPSAddress: "0.0.0.0",
+					},
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
@@ -14217,6 +14138,906 @@ func TestDAGInsert(t *testing.T) {
 	}
 }
 
+func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
+	kuardService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+	}
+
+	tests := map[string]struct {
+		gateway *gatewayapi_v1beta1.Gateway
+		objs    []any
+		want    []*Listener
+	}{
+		"HTTPProxy attached to HTTP-only Gateway": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"HTTPProxy attached to Gateway with multiple HTTP listeners": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "http-2",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     81,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		"HTTPProxy attached to Gateway with HTTP and HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+							TLS: &contour_api_v1.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", routeUpgrade("/", service(kuardService))),
+					),
+				},
+				&Listener{
+					Name: "https-443",
+					SecureVirtualHosts: []*SecureVirtualHost{
+						securevirtualhost("kuard.projectcontour.io", sec1, routeUpgrade("/", service(kuardService))),
+					},
+				},
+			),
+		},
+		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi.ContourHTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+							TLS: &contour_api_v1.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", routeUpgrade("/", service(kuardService))),
+					),
+				},
+				&Listener{
+					Name: "https-443",
+					SecureVirtualHosts: []*SecureVirtualHost{
+						securevirtualhost("kuard.projectcontour.io", sec1, routeUpgrade("/", service(kuardService))),
+					},
+				},
+			),
+		},
+		"HTTPProxy with TLS attached to Gateway with no HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-proxy",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "kuard.projectcontour.io",
+							TLS: &contour_api_v1.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{
+									{
+										Prefix: "/",
+									},
+								},
+								Services: []contour_api_v1.Service{
+									{
+										Name: "kuard",
+										Port: 8080,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+
+		"Ingress attached to HTTP-only Gateway": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"Ingress attached to Gateway with multiple HTTP listeners": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "http-2",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     81,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		"Ingress attached to Gateway with HTTP and HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"kuard.projectcontour.io"},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+				&Listener{
+					Name: "https-443",
+					SecureVirtualHosts: []*SecureVirtualHost{
+						securevirtualhost("kuard.projectcontour.io", sec1, prefixroute("/", service(kuardService))),
+					},
+				},
+			),
+		},
+		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi.ContourHTTPSProtocolType,
+							Port:     443,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"kuard.projectcontour.io"},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+				&Listener{
+					Name: "https-443",
+					SecureVirtualHosts: []*SecureVirtualHost{
+						securevirtualhost("kuard.projectcontour.io", sec1, prefixroute("/", service(kuardService))),
+					},
+				},
+			),
+		},
+		"Ingress with TLS (with HTTP not allowed) attached to Gateway with no HTTPS listener": {
+			gateway: &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour-gc",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+								},
+							},
+						},
+					},
+				},
+			},
+			objs: []any{
+				kuardService,
+				sec1,
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "projectcontour",
+						Name:      "kuard-ingress",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.allow-http": "false",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{
+							{
+								Host: "kuard.projectcontour.io",
+								IngressRuleValue: networking_v1.IngressRuleValue{
+									HTTP: &networking_v1.HTTPIngressRuleValue{
+										Paths: []networking_v1.HTTPIngressPath{
+											{
+												Backend: *backendv1("kuard", intstr.FromInt(8080)),
+											},
+										},
+									},
+								},
+							},
+						},
+						TLS: []networking_v1.IngressTLS{
+							{
+								SecretName: sec1.Name,
+								Hosts:      []string{"kuard.projectcontour.io"},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gc := &gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour-gc",
+				},
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-controller",
+				},
+			}
+
+			builder := Builder{
+				Source: KubernetesCache{
+					gatewayclass: gc,
+					gateway:      tc.gateway,
+					FieldLogger:  fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&ListenerProcessor{
+						HTTPAddress:  "0.0.0.0",
+						HTTPSAddress: "0.0.0.0",
+					},
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{},
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+
+			got := make(map[int]*Listener)
+			for _, l := range dag.Listeners {
+				got[l.Port] = l
+			}
+
+			want := make(map[int]*Listener)
+			for _, v := range tc.want {
+				want[v.Port] = v
+			}
+			assert.Equal(t, want, got)
+		})
+	}
+}
+
 func backendv1(name string, port intstr.IntOrString) *networking_v1.IngressBackend {
 
 	var v1port networking_v1.ServiceBackendPort
@@ -15373,9 +16194,19 @@ func listeners(ls ...*Listener) []*Listener {
 		switch listener.Name {
 		case HTTP_LISTENER_NAME:
 			listener.RouteConfigName = "ingress_http"
+			listener.Protocol = "http"
 		case HTTPS_LISTENER_NAME:
 			listener.RouteConfigName = "https"
 			listener.FallbackCertRouteConfigName = "ingress_fallbackcert"
+			listener.Protocol = "https"
+		case "http-80":
+			listener.Protocol = "http"
+			listener.Address = "0.0.0.0"
+			listener.Port = 8080
+		case "https-443":
+			listener.Protocol = "https"
+			listener.Address = "0.0.0.0"
+			listener.Port = 8443
 		}
 	}
 

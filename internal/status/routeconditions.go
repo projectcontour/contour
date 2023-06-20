@@ -191,6 +191,20 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 
 		return route
 
+	case *gatewayapi_v1alpha2.TCPRoute:
+		route := o.DeepCopy()
+
+		// Get all the RouteParentStatuses that are for other Gateways.
+		for _, rps := range o.Status.Parents {
+			if !gatewayapi.IsRefToGateway(rps.ParentRef, r.GatewayRef) {
+				newRouteParentStatuses = append(newRouteParentStatuses, rps)
+			}
+		}
+
+		route.Status.Parents = newRouteParentStatuses
+
+		return route
+
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator", obj, r.FullName.Namespace, r.FullName.Name))
 	}

@@ -52,7 +52,7 @@ EOF
 GO_MOD_GATEWAY_API_VERSION=$(grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $2}')
 
 if [ "$GATEWAY_API_VERSION" = "$GO_MOD_GATEWAY_API_VERSION" ]; then
-  go test -timeout=20m -tags conformance ./test/conformance/gatewayapi --gateway-class=contour
+  go test -timeout=40m -tags conformance ./test/conformance/gatewayapi --gateway-class=contour
 else 
   cd $(mktemp -d)
   git clone https://github.com/kubernetes-sigs/gateway-api
@@ -62,5 +62,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   # Can implement with the -skip flag available with go 1.20
   # or if Gateway API supports skipping tests via custom flag.
-  go test -timeout=20m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh
+  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh
 fi

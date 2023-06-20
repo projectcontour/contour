@@ -449,6 +449,16 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 		Get()
 }
 
+func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		RouteConfigName(path.Join(listener, vhost)).
+		MetricsPrefix(listener).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		Get()
+}
+
 // httpsFilterWithXfccFor does the same as httpsFilterFor but enable
 // client certs details forwarding
 func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_listener_v3.Filter {

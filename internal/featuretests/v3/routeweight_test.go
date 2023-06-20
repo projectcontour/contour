@@ -25,6 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -397,14 +398,14 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	rh.OnAdd(route1)
 
-	assertRDS(t, c, "1", virtualhosts(
-		envoy_v3.VirtualHost("test.projectcontour.io",
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, envoy_v3.RouteConfiguration("http-80", envoy_v3.VirtualHost("test.projectcontour.io",
 			&envoy_route_v3.Route{
 				Match:  routeSegmentPrefix("/blog"),
 				Action: routecluster("default/svc1/80/da39a3ee5e"),
 			},
-		),
-	), nil)
+		))),
+	})
 
 	// HTTPRoute with multiple weights.
 	route2 := &gatewayapi_v1beta1.HTTPRoute{
@@ -432,16 +433,18 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	}
 
 	rh.OnUpdate(route1, route2)
-	assertRDS(t, c, "2", virtualhosts(
-		envoy_v3.VirtualHost("test.projectcontour.io",
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, envoy_v3.RouteConfiguration("http-80", envoy_v3.VirtualHost("test.projectcontour.io",
 			&envoy_route_v3.Route{
 				Match: routeSegmentPrefix("/blog"),
 				Action: routeWeightedCluster(
 					weightedCluster{"default/svc1/80/da39a3ee5e", 60},
-					weightedCluster{"default/svc2/80/da39a3ee5e", 90}),
+					weightedCluster{"default/svc2/80/da39a3ee5e", 90},
+				),
 			},
-		),
-	), nil)
+		))),
+	})
 }
 
 func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
@@ -515,11 +518,11 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
+				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
-						tcpproxy("ingress_https", "default/svc1/443/da39a3ee5e"),
+						tcpproxy("https-443", "default/svc1/443/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"test.projectcontour.io"},
@@ -535,13 +538,8 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	// check that there is no route config
+	require.Empty(t, c.Request(routeType).Resources)
 
 	// TLSRoute with multiple weighted services.
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
@@ -570,12 +568,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "ingress_https",
+				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxyWeighted(
-							"ingress_https",
+							"https-443",
 							clusterWeight{name: "default/svc1/443/da39a3ee5e", weight: 1},
 							clusterWeight{name: "default/svc2/443/da39a3ee5e", weight: 7},
 						),
@@ -594,11 +592,6 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// check that ingress_http is empty
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+	// check that there is no route config
+	require.Empty(t, c.Request(routeType).Resources)
 }

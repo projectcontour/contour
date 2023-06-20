@@ -353,6 +353,36 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
 	})
+
+	Describe("Gateway with TCP listener", func() {
+		testWithTCPGateway := func(body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
+			gatewayClass := getGatewayClass()
+			gw := &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tcp",
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(gatewayClass.Name),
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "tcp",
+							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return testWithGateway(gw, gatewayClass, body)
+		}
+
+		f.NamespacedTest("gateway-tcproute", testWithTCPGateway(testTCPRoute))
+	})
 })
 
 func getRandomNumber() int64 {

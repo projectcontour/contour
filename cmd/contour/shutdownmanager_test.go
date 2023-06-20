@@ -177,6 +177,12 @@ func TestParseOpenConnections(t *testing.T) {
 		wantError:       nil,
 	})
 
+	run(t, "many listeners", testcase{
+		stats:           strings.NewReader(VALIDMANYLISTENERS),
+		wantConnections: 16,
+		wantError:       nil,
+	})
+
 	run(t, "missing values", testcase{
 		stats:           strings.NewReader(MISSING_STATS),
 		wantConnections: -1,
@@ -218,6 +224,10 @@ envoy_server_days_until_first_cert_expiring{} 82
 envoy_server_hot_restart_epoch{} 0
 # TYPE envoy_http_downstream_cx_active gauge
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="envoy-admin"} 7
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats"} 77
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="health"} 777
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats-health"} 7777
 `
 	VALIDHTTPS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
@@ -244,7 +254,11 @@ envoy_server_days_until_first_cert_expiring{} 82
 # TYPE envoy_server_hot_restart_epoch gauge
 envoy_server_hot_restart_epoch{} 0
 # TYPE envoy_http_downstream_cx_active gauge
-envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_https"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="envoy-admin"} 7
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats"} 77
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="health"} 777
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats-health"} 7777
 `
 	VALIDBOTH = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
@@ -273,6 +287,45 @@ envoy_server_hot_restart_epoch{} 0
 # TYPE envoy_http_downstream_cx_active gauge
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_https"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="envoy-admin"} 7
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats"} 77
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="health"} 777
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats-health"} 7777
+`
+
+	VALIDMANYLISTENERS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_version{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+# TYPE envoy_http_downstream_cx_ssl_active gauge
+envoy_http_downstream_cx_ssl_active{envoy_http_conn_manager_prefix="admin"} 0
+# TYPE envoy_server_total_connections gauge
+envoy_server_total_connections{} 1
+# TYPE envoy_runtime_num_layers gauge
+envoy_runtime_num_layers{} 2
+# TYPE envoy_server_parent_connections gauge
+envoy_server_parent_connections{} 0
+# TYPE envoy_server_stats_recent_lookups gauge
+envoy_server_stats_recent_lookups{} 0
+# TYPE envoy_cluster_manager_warming_clusters gauge
+envoy_cluster_manager_warming_clusters{} 0
+# TYPE envoy_server_days_until_first_cert_expiring gauge
+envoy_server_days_until_first_cert_expiring{} 82
+# TYPE envoy_server_hot_restart_epoch gauge
+envoy_server_hot_restart_epoch{} 0
+# TYPE envoy_http_downstream_cx_active gauge
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="http-80"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="http-81"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="https-443"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="https-444"} 4
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="envoy-admin"} 7
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats"} 77
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="health"} 777
+envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="stats-health"} 7777
 `
 
 	MISSING_STATS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0

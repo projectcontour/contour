@@ -121,6 +121,11 @@ type ListenerConfig struct {
 	// If no configuration is specified, Envoy will not attempt to balance active connections between worker threads
 	// If specified, the listener will use the exact connection balancer.
 	ConnectionBalancer string
+
+	// MaxRequestsPerConnection defines the max number of requests per connection before which the connection is closed.
+	// if not specified there is no limit set.
+	MaxRequestsPerConnection *uint32
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -346,6 +351,18 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	}
 
 	for _, listener := range root.Listeners {
+		if listener.TCPProxy != nil {
+			listeners[listener.Name] = envoy_v3.Listener(
+				listener.Name,
+				listener.Address,
+				listener.Port,
+				nil,
+				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
+			)
+
+			continue
+		}
+
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
 		if len(listener.VirtualHosts) > 0 {
@@ -365,6 +382,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				MergeSlashes(cfg.MergeSlashes).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
+				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
@@ -436,6 +454,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
+					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -500,6 +519,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
+					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					Get()
 
 				// Default filter chain

@@ -855,6 +855,10 @@ type Listener struct {
 	// Name is the unique name of the listener.
 	Name string
 
+	// Protocol is the listener protocol. Must be
+	// "http" or "https".
+	Protocol string
+
 	// Address is the TCP address to listen on.
 	// If blank 0.0.0.0, or ::/0 for IPv6, is assumed.
 	Address string
@@ -881,11 +885,15 @@ type Listener struct {
 
 	vhostsByName  map[string]*VirtualHost
 	svhostsByName map[string]*SecureVirtualHost
+
+	// TCPProxy configures an L4 TCP proxy for this Listener.
+	// This cannot be used with VirtualHosts/SecureVirtualHosts
+	// on a given Listener.
+	TCPProxy *TCPProxy
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
-
 	// Clusters is the, possibly weighted, set
 	// of upstream services to forward decrypted traffic.
 	Clusters []*Cluster
@@ -985,6 +993,9 @@ type Cluster struct {
 	TimeoutPolicy ClusterTimeoutPolicy
 
 	SlowStartConfig *SlowStartConfig
+
+	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
+	MaxRequestsPerConnection *uint32
 }
 
 // WeightedService represents the load balancing weight of a

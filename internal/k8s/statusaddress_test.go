@@ -180,7 +180,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 func TestStatusAddressUpdater(t *testing.T) {
 	const objName = "someobjfoo"
 
-	log := logrus.New()
+	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 	emptyLBStatus := v1.LoadBalancerStatus{}
 
@@ -351,7 +351,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 
 //go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Cache --srcpkg=sigs.k8s.io/controller-runtime/pkg/cache  --disable-version-string
 func TestStatusAddressUpdater_Gateway(t *testing.T) {
-	log := logrus.New()
+	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 
 	ipLBStatus := v1.LoadBalancerStatus{

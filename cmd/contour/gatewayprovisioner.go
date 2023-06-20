@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/novln/docker-parser/distribution/reference"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
-	"github.com/projectcontour/contour/internal/provisioner/parse"
 	"github.com/projectcontour/contour/pkg/config"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -102,7 +102,7 @@ func runGatewayProvisioner(config *gatewayProvisionerConfig) {
 
 	for _, image := range []string{config.contourImage, config.envoyImage} {
 		// Parse will not handle short digests.
-		if err := parse.Image(image); err != nil {
+		if _, err := reference.Parse(image); err != nil {
 			setupLog.Error(err, "invalid image reference", "value", image)
 			os.Exit(1)
 		}

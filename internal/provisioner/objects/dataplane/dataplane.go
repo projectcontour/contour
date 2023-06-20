@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +60,19 @@ const (
 	// xdsResourceVersion is the version of the Envoy xdS resource types.
 	xdsResourceVersion = "v3"
 )
+
+// the default resource requirements for container: envoy-initconfig & shutdown-manager, the default value is come from:
+// ref: https://projectcontour.io/docs/1.25/deploy-options/#setting-resource-requests-and-limits
+var defContainerResources = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("25m"),
+		corev1.ResourceMemory: resource.MustParse("50Mi"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("50m"),
+		corev1.ResourceMemory: resource.MustParse("100Mi"),
+	},
+}
 
 // EnsureDataPlane ensures an Envoy data plane (daemonset or deployment) exists for the given contour.
 func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
@@ -126,16 +140,6 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 }
 
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
-	var ports []corev1.ContainerPort
-	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
-		p := corev1.ContainerPort{
-			Name:          port.Name,
-			ContainerPort: port.ContainerPort,
-			Protocol:      corev1.ProtocolTCP,
-		}
-		ports = append(ports, p)
-	}
-
 	var (
 		metricsPort = objects.EnvoyMetricsPort
 		healthPort  = objects.EnvoyHealthPort
@@ -156,11 +160,11 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		}
 	}
 
-	ports = append(ports, corev1.ContainerPort{
+	ports := []corev1.ContainerPort{{
 		Name:          "metrics",
 		ContainerPort: metricsPort,
 		Protocol:      corev1.ProtocolTCP,
-	})
+	}}
 
 	containers := []corev1.Container{
 		{
@@ -189,6 +193,8 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 					MountPath: filepath.Join("/", envoyAdminVolMntDir),
 				},
 			},
+
+			Resources: defContainerResources,
 		},
 		{
 			Name:            EnvoyContainerName,
@@ -314,6 +320,8 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 			},
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
+
+			Resources: defContainerResources,
 		},
 	}
 

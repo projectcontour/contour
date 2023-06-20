@@ -98,6 +98,9 @@ type HTTPProxyProcessor struct {
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
 
+	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
+	MaxRequestsPerConnection *uint32
+
 	// RateLimitService defines Envoy's Global RateLimit Service configuration.
 	RateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 }
@@ -231,7 +234,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				return
 			}
 
-			svhost := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+			listener, err := p.dag.GetSingleListener("https")
+			if err != nil {
+				validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
+				return
+			}
+
+			svhost := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 			svhost.Secret = sec
 			// default to a minimum TLS version of 1.2 if it's not specified
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, "1.2")
@@ -478,7 +487,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
-	insecure := p.dag.EnsureVirtualHost(HTTP_LISTENER_NAME, host)
+
+	listener, err := p.dag.GetSingleListener("http")
+	if err != nil {
+		validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
+		return
+	}
+
+	insecure := p.dag.EnsureVirtualHost(listener.Name, host)
+
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeCORSError, "PolicyDidNotParse",
@@ -505,7 +522,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+		listener, err := p.dag.GetSingleListener("https")
+		if err != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
+			return
+		}
+
+		secure := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 		secure.CORSPolicy = cp
 
 		secure.RateLimitPolicy = computeVirtualHostRateLimitPolicy(proxy, p.RateLimitService, validCond)
@@ -939,20 +962,21 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			c := &Cluster{
-				Upstream:              s,
-				LoadBalancerPolicy:    lbPolicy,
-				Weight:                uint32(service.Weight),
-				HTTPHealthCheckPolicy: healthPolicy,
-				UpstreamValidation:    uv,
-				RequestHeadersPolicy:  reqHP,
-				ResponseHeadersPolicy: respHP,
-				CookieRewritePolicies: cookieRP,
-				Protocol:              protocol,
-				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
-				DNSLookupFamily:       string(p.DNSLookupFamily),
-				ClientCertificate:     clientCertSecret,
-				TimeoutPolicy:         ctp,
-				SlowStartConfig:       slowStart,
+				Upstream:                 s,
+				LoadBalancerPolicy:       lbPolicy,
+				Weight:                   uint32(service.Weight),
+				HTTPHealthCheckPolicy:    healthPolicy,
+				UpstreamValidation:       uv,
+				RequestHeadersPolicy:     reqHP,
+				ResponseHeadersPolicy:    respHP,
+				CookieRewritePolicies:    cookieRP,
+				Protocol:                 protocol,
+				SNI:                      determineSNI(r.RequestHeadersPolicy, reqHP, s),
+				DNSLookupFamily:          string(p.DNSLookupFamily),
+				ClientCertificate:        clientCertSecret,
+				TimeoutPolicy:            ctp,
+				SlowStartConfig:          slowStart,
+				MaxRequestsPerConnection: p.MaxRequestsPerConnection,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -1128,7 +1152,14 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
-		secure := p.dag.EnsureSecureVirtualHost(HTTPS_LISTENER_NAME, host)
+
+		listener, err := p.dag.GetSingleListener("https")
+		if err != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeListenerError, "ErrorIdentifyingListener", err.Error())
+			return false
+		}
+
+		secure := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 		secure.TCPProxy = &proxy
 
 		return true
