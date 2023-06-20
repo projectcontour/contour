@@ -1948,6 +1948,20 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	grpcRoute := func(namespace, name string) *gatewayapi_v1alpha2.GRPCRoute {
+		return &gatewayapi_v1alpha2.GRPCRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+				Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+					BackendRefs: gatewayapi.GRPCRouteBackendRef(name, 80, 1),
+				}},
+			},
+		}
+	}
+
 	httpRoute := func(namespace, name string) *gatewayapi_v1beta1.HTTPRoute {
 		return &gatewayapi_v1beta1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
@@ -2070,6 +2084,30 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			cache: cache(
 				service("default", "service-1"),
 				tcpProxy("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"grpcroute exists in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				grpcRoute("default", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: true,
+		},
+		"grpcroute does not exist in same namespace as service": {
+			cache: cache(
+				service("default", "service-1"),
+				grpcRoute("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"grpcroute does not use same name as service": {
+			cache: cache(
+				service("default", "service-1"),
+				grpcRoute("default", "service"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,
