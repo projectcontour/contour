@@ -1365,40 +1365,15 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 	return true
 }
 
-func computeVirtualHostLocalRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, validCond *contour_api_v1.DetailedCondition) *LocalRateLimitPolicy {
-	lrp, err := localRateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy.Local)
-	if err != nil {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-			"Spec.VirtualHost.RateLimitPolicy.Local is invalid: %s", err)
-		return nil
-	}
-	return lrp
-}
-
-func computeVirtualHostGlobalRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, validCond *contour_api_v1.DetailedCondition) *GlobalRateLimitPolicy {
-	grp, err := globalRateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy.Global)
-	if err != nil {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-			"Spec.VirtualHost.RateLimitPolicy.Global is invalid: %s", err)
-		return nil
-	}
-	return grp
-}
-
 func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig, validCond *contour_api_v1.DetailedCondition) *RateLimitPolicy {
-	rlp := &RateLimitPolicy{}
-	var err error
-
-	// Set the virtualHost's local rate limit policy if it exists.
-	if proxy.Spec.VirtualHost.RateLimitPolicy != nil && proxy.Spec.VirtualHost.RateLimitPolicy.Local != nil {
-		rlp.Local = computeVirtualHostLocalRateLimitPolicy(proxy, validCond)
+	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
+			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		return nil
 	}
 
-	// Set the virtualHost's global rate limit policy if it exists and return
-	// because we don't want to check the default global rate limit policy in that case.
-	if proxy.Spec.VirtualHost.RateLimitPolicy != nil && proxy.Spec.VirtualHost.RateLimitPolicy.Global != nil &&
-		len(proxy.Spec.VirtualHost.RateLimitPolicy.Global.Descriptors) > 0 {
-		rlp.Global = computeVirtualHostGlobalRateLimitPolicy(proxy, validCond)
+	if rlp.Global != nil {
 		return rlp
 	}
 
@@ -1407,7 +1382,7 @@ func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rateLimi
 	isOptedOut := proxy.Spec.VirtualHost.RateLimitPolicy != nil && proxy.Spec.VirtualHost.RateLimitPolicy.Global != nil &&
 		proxy.Spec.VirtualHost.RateLimitPolicy.Global.DefaultGlobalRateLimitPolicyDisabled
 
-	if rateLimitService != nil && rateLimitService.DefaultGlobalRateLimitPolicy != nil && !isOptedOut {
+	if rateLimitService != nil && !isOptedOut {
 		rlp.Global, err = globalRateLimitPolicy(rateLimitService.DefaultGlobalRateLimitPolicy)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
