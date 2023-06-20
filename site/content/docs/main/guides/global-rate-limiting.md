@@ -331,8 +331,9 @@ spec:
 
 ## Default Global rate limit policy
 
-Contour supports defining a default global rate limit policy in the `rateLimitService` configuration 
-which is applied to all virtual hosts unless the host is opted-out explicitly. This is useful for a single-tenant
+Contour supports defining a default global rate limit policy in the `rateLimitService` configuration
+which is applied to all virtual hosts unless the host is opted-out by 
+explicitly setting `defaultGlobalRateLimitPolicyDisabled` to `true`. This is useful for a single-tenant
 setup use-case. This means you don't have to edit all HTTPProxy objects with the same rate limit policies, instead you can
 define the policies in the `rateLimitService` configuration like this:
 ```yaml
@@ -376,6 +377,26 @@ spec:
 ```
 
 Also, the default global rate limit policy is not applied in case the virtual host defines its own global rate limit policy.
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      global:
+        descriptors:
+          - entries:
+              - remoteAddress: {}
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: ingress-conformance-echo
+      port: 80
+```
 
 ## Make requests
 
