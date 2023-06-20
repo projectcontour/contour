@@ -41,8 +41,8 @@ $ kubectl get pods -n projectcontour -o wide
 ```
 
 You should see the following:
-- 2 Contour pods with each status **Running** and 1/1 **Ready**  
-- 1+ Envoy pod(s), with each the status **Running** and 2/2 **Ready**  
+- 2 Contour pods each with status **Running** and 1/1 **Ready**  
+- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**  
 
 ### Option 2: Helm
 This option requires [Helm to be installed locally][29].
@@ -141,9 +141,9 @@ $ kubectl -n projectcontour get pods
 ```
 
 You should see the following:
-- 2 Contour pods with each status **Running** and 1/1 **Ready**  
-- 1+ Envoy pod(s), each with the status **Running** and 1/1 **Ready**  
- 
+- 2 Contour pods each with status **Running** and 1/1 **Ready**  
+- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**  
+
 ## Test it out!
 
 Congratulations, you have installed Contour and Envoy! Let's install a web application workload and get some traffic flowing to the backend.
