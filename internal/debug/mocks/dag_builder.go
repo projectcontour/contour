@@ -29,13 +29,12 @@ func (_m *DagBuilder) Build() *dag.DAG {
 	return r0
 }
 
-type mockConstructorTestingTNewDagBuilder interface {
+// NewDagBuilder creates a new instance of DagBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDagBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDagBuilder creates a new instance of DagBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDagBuilder(t mockConstructorTestingTNewDagBuilder) *DagBuilder {
+}) *DagBuilder {
 	mock := &DagBuilder{}
 	mock.Mock.Test(t)
 

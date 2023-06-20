@@ -310,13 +310,12 @@ func (_m *Manager) Start(ctx context.Context) error {
 	return r0
 }
 
-type mockConstructorTestingTNewManager interface {
+// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewManager(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewManager(t mockConstructorTestingTNewManager) *Manager {
+}) *Manager {
 	mock := &Manager{}
 	mock.Mock.Test(t)
 

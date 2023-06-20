@@ -43,13 +43,12 @@ func (_m *StatusMetrics) SetStatusUpdateTotal(kind string) {
 	_m.Called(kind)
 }
 
-type mockConstructorTestingTNewStatusMetrics interface {
+// NewStatusMetrics creates a new instance of StatusMetrics. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStatusMetrics(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStatusMetrics creates a new instance of StatusMetrics. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStatusMetrics(t mockConstructorTestingTNewStatusMetrics) *StatusMetrics {
+}) *StatusMetrics {
 	mock := &StatusMetrics{}
 	mock.Mock.Test(t)
 
