@@ -195,7 +195,7 @@ This change should be a no-op for most users, however be sure to re-apply the re
 
 Adds a `Path` & `Prefix` field to the `HTTPProxy.Spec.Route.RequestRedirectPolicy` which allows
 for redirects to also specify the path or prefix to redirect to. When specified, an
-HTTP 302 response will be sent to the requestor with the new path or prefix specified.
+HTTP 302 response will be sent to the requester with the new path or prefix specified.
 
 _Note: Only one of path or prefix can be specified on a single route._
 
