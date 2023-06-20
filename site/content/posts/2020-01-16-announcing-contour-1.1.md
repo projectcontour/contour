@@ -24,7 +24,7 @@ The header request policy has the following configuration:
 The following example takes requests from `headers.projectcontour.io/` and applies the following logic:
 
 * Adds the header `X-Foo: bar` to any request before it is proxied to the Kubernetes service named `s1` and removes the header `X-Baz`
-* After the request is processed by service `s1`, the response back to the requestor will have the header `X-Service-Name: s1` added and will remove the header `X-Internal-Secret`
+* After the request is processed by service `s1`, the response back to the requester will have the header `X-Service-Name: s1` added and will remove the header `X-Internal-Secret`
 
 ```yaml
 apiVersion: projectcontour.io/v1
