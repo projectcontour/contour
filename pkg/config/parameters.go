@@ -421,7 +421,7 @@ type ClusterParameters struct {
 	// +optional
 	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
 
-	// Defines the soft limit on size of the listener’s new connection read and write buffers
+	// Defines the soft limit on size of the cluster’s new connection read and write buffers
 	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes
 	// for more information.
 	//
