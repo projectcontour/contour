@@ -438,6 +438,7 @@ type PathRewritePolicy struct {
 // MirrorPolicy defines the mirroring policy for a route.
 type MirrorPolicy struct {
 	Cluster *Cluster
+	Weight  int64
 }
 
 // HeadersPolicy defines how headers are managed during forwarding
