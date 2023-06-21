@@ -34,7 +34,7 @@ import (
 const (
 	// klog automatic flush interval is 5s but we can wait for less time to pass
 	// since we proactively call klog.Flush().
-	klogFlushWaitTime     = time.Millisecond * 30
+	klogFlushWaitTime     = time.Millisecond * 100
 	klogFlushWaitInterval = time.Millisecond * 1
 )
 
