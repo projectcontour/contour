@@ -568,6 +568,11 @@ func (in *EnvoyListenerConfig) DeepCopyInto(out *EnvoyListenerConfig) {
 		*out = new(uint32)
 		**out = **in
 	}
+	if in.PerConnectionBufferLimitBytes != nil {
+		in, out := &in.PerConnectionBufferLimitBytes, &out.PerConnectionBufferLimitBytes
+		*out = new(uint32)
+		**out = **in
+	}
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
 		*out = new(EnvoyTLS)

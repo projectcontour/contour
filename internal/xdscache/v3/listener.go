@@ -126,6 +126,10 @@ type ListenerConfig struct {
 	// if not specified there is no limit set.
 	MaxRequestsPerConnection *uint32
 
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers
+	// If unspecified, an implementation defined default is applied (1MiB).
+	PerConnectionBufferLimitBytes *uint32
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -383,6 +387,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+				PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).

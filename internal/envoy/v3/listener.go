@@ -168,6 +168,7 @@ type httpConnectionManagerBuilder struct {
 	tracingConfig                 *http.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
 	enableWebsockets              bool
+	perConnectionBufferLimitBytes *uint32
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -276,6 +277,12 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
 func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerConnection *uint32) *httpConnectionManagerBuilder {
 	b.maxRequestsPerConnection = maxRequestsPerConnection
+	return b
+}
+
+// PerConnectionBufferLimitBytes the soft limit on size of the listener’s new connection read and write buffers
+func (b *httpConnectionManagerBuilder) PerConnectionBufferLimitBytes(perConnectionBufferLimitBytes *uint32) *httpConnectionManagerBuilder {
+	b.perConnectionBufferLimitBytes = perConnectionBufferLimitBytes
 	return b
 }
 

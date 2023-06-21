@@ -217,6 +217,15 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      per-connection-buffer-limit-bytes:
+                        description: Defines the soft limit on size of the listener’s
+                          new connection read and write buffers in bytes. If unspecified,
+                          an implementation defined default is applied (1MiB). see
+                          https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+                          for more information.
+                        format: int32
+                        minimum: 1
+                        type: integer
                       serverHeaderTransformation:
                         description: "Defines the action to be applied to the Server
                           header on the response path. When configured as overwrite,
@@ -3421,6 +3430,15 @@ spec:
                             description: Defines the maximum requests for downstream
                               connections. If not specified, there is no limit. see
                               https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
+                              for more information.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          per-connection-buffer-limit-bytes:
+                            description: Defines the soft limit on size of the listener’s
+                              new connection read and write buffers in bytes. If unspecified,
+                              an implementation defined default is applied (1MiB).
+                              see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
                               for more information.
                             format: int32
                             minimum: 1
