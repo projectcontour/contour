@@ -26,6 +26,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
+readonly SKIP_GATEWAY_API_INSTALL=${SKIP_GATEWAY_API_INSTALL:-"false"}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
@@ -131,12 +132,14 @@ ${KUBECTL} apply -f https://github.com/cert-manager/cert-manager/releases/downlo
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 
-# Install Gateway API CRDs and webhook.
-${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
-${KUBECTL} apply -f "${REPO}/examples/gateway/00-namespace.yaml"
-${KUBECTL} apply -f "${REPO}/examples/gateway/01-admission_webhook.yaml"
-${KUBECTL} apply -f "${REPO}/examples/gateway/02-certificate_config.yaml"
-${KUBECTL} wait --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server --for=condition=Available
+if [[ "${SKIP_GATEWAY_API_INSTALL}" != "true" ]]; then
+  # Install Gateway API CRDs and webhook.
+  ${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
+  ${KUBECTL} apply -f "${REPO}/examples/gateway/00-namespace.yaml"
+  ${KUBECTL} apply -f "${REPO}/examples/gateway/01-admission_webhook.yaml"
+  ${KUBECTL} apply -f "${REPO}/examples/gateway/02-certificate_config.yaml"
+  ${KUBECTL} wait --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server --for=condition=Available
+fi
 
 # Install Contour CRDs.
 ${KUBECTL} apply -f "${REPO}/examples/contour/01-crds.yaml"

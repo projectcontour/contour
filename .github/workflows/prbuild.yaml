@@ -231,6 +231,7 @@ jobs:
           NODEIMAGE: ${{ matrix.node_image }}
           MULTINODE_CLUSTER: "true"
           LOAD_PREBUILT_IMAGE: "true"
+          SKIP_GATEWAY_API_INSTALL: "true"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
