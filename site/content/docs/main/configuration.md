@@ -171,7 +171,7 @@ The cluster configuration block can be used to configure various parameters for 
 |-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | dns-lookup-family                 | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
 | max-requests-per-connection       | int    | none*   | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                         |
-| per-connection-buffer-limit-bytes | int    | none*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                              |
+| per-connection-buffer-limit-bytes | int    | none*   | This field specifies the soft limit on size of the cluster’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                               |
 
 ### Network Configuration
 
@@ -382,7 +382,7 @@ data:
     #   If not specified, there is no limit.
     #   Setting this parameter to 1 will effectively disable keep alive
     #   max-requests-per-connection: 0
-    #   the soft limit on size of the listener’s new connection read and write buffers
+    #   the soft limit on size of the cluster’s new connection read and write buffers
     #   per-connection-buffer-limit-bytes: 32768
     #
     # network:
