@@ -77,6 +77,22 @@ func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	)
 }
 
+// ListenerAccepted returns true if the gateway has status for the named
+// listener with a condition of "Accepted: true".
+func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v1beta1.SectionName) bool {
+	for _, listenerStatus := range gateway.Status.Listeners {
+		if listenerStatus.Name == listener {
+			return conditionExists(
+				listenerStatus.Conditions,
+				string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				metav1.ConditionTrue,
+			)
+		}
+	}
+
+	return false
+}
+
 // GatewayHasAddress returns true if the gateway has a non-empty
 // .status.addresses entry.
 func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
