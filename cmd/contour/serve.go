@@ -1142,9 +1142,11 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
 	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			FieldLogger:                   s.log.WithField("context", "GatewayAPIProcessor"),
+			ConnectTimeout:                dbc.connectTimeout,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		})
 	}
 
