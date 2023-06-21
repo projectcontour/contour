@@ -3842,7 +3842,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100))),
 				},
 			),
 		},
@@ -3884,8 +3884,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
-						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100),
+						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2), 100),
 					)),
 				},
 			),
@@ -5704,7 +5704,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c"), 100))),
 				},
 			),
 		},
@@ -11171,7 +11171,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							withMirror(prefixroute("/", service(s1)), service(s2)),
+							withMirror(prefixroute("/", service(s1)), service(s2), 100),
 						),
 					),
 				},
@@ -16223,11 +16223,12 @@ func prefixSegment(prefix string) MatchCondition {
 func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
-func withMirror(r *Route, mirror *Service) *Route {
+func withMirror(r *Route, mirror *Service, weight int64) *Route {
 	r.MirrorPolicy = &MirrorPolicy{
 		Cluster: &Cluster{
 			Upstream: mirror,
 		},
+		Weight: weight,
 	}
 	return r
 }
