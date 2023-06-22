@@ -111,6 +111,11 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
+				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					Global: &contour_api_v1.GlobalRateLimitPolicy{
+						DefaultGlobalRateLimitPolicyDisabled: true,
+					},
+				},
 			},
 			Routes: []contour_api_v1.Route{
 				{
@@ -287,6 +292,11 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
+				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					Global: &contour_api_v1.GlobalRateLimitPolicy{
+						DefaultGlobalRateLimitPolicyDisabled: true,
+					},
+				},
 			},
 			Routes: []contour_api_v1.Route{
 				{
@@ -496,6 +506,113 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 	}
 }
 
+func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
+	p := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Services: []contour_api_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						Global: &contour_api_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_api_v1.RateLimitDescriptor{
+								{
+									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										{
+											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+										},
+										{
+											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if tls.enabled {
+		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+			SecretName:                "tls-cert",
+			EnableFallbackCertificate: tls.fallbackEnabled,
+		}
+	}
+
+	rh.OnAdd(p)
+	c.Status(p).IsValid()
+
+	route := &envoy_route_v3.Route{
+		Match: routePrefix("/"),
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+				{
+					Actions: []*envoy_route_v3.RateLimit_Action{
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							},
+						},
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							},
+						},
+					},
+				},
+			}
+		}),
+	}
+
+	vhost := envoy_v3.VirtualHost("foo.com", route)
+	vhost.RateLimits = []*envoy_route_v3.RateLimit{
+		{
+			Actions: []*envoy_route_v3.RateLimit_Action{
+				{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							DescriptorKey:   "generic-key-vhost",
+							DescriptorValue: "generic-key-vhost",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	switch tls.enabled {
+	case true:
+		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
+		})
+		if tls.fallbackEnabled {
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+				TypeUrl:   routeType,
+				Resources: resources(t, envoy_v3.RouteConfiguration("ingress_fallbackcert", vhost)),
+			})
+		}
+	default:
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
+		})
+	}
+}
+
 func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -505,6 +622,11 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
+				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					Global: &contour_api_v1.GlobalRateLimitPolicy{
+						DefaultGlobalRateLimitPolicyDisabled: true,
+					},
+				},
 			},
 			Routes: []contour_api_v1.Route{
 				{
@@ -626,6 +748,9 @@ func TestGlobalRateLimiting(t *testing.T) {
 		"VirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, tlsDisabled)
 		},
+		"VirtualHostDefaultGlobalRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+			defaultGlobalRateLimitVhostRateLimitDefined(t, rh, c, tlsDisabled)
+		},
 
 		// test cases for secure/TLS vhosts
 		"TLSNoRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
@@ -640,6 +765,9 @@ func TestGlobalRateLimiting(t *testing.T) {
 		"TLSVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, tlsEnabled)
 		},
+		"TLSVirtualHostDefaultGlobalRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+			defaultGlobalRateLimitVhostRateLimitDefined(t, rh, c, tlsEnabled)
+		},
 
 		// test cases for secure/TLS vhosts with fallback cert enabled
 		"FallbackNoRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
@@ -653,6 +781,9 @@ func TestGlobalRateLimiting(t *testing.T) {
 		},
 		"FallbackVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, fallbackEnabled)
+		},
+		"FallbackVirtualHostDefaultGlobalRateLimitDefined": func(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+			defaultGlobalRateLimitVhostRateLimitDefined(t, rh, c, fallbackEnabled)
 		},
 
 		"MultipleDescriptorsAndEntriesDefined": globalRateLimitMultipleDescriptorsAndEntries,
@@ -676,6 +807,28 @@ func TestGlobalRateLimiting(t *testing.T) {
 							httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
 								Name:      "fallback-cert",
 								Namespace: "default",
+							}
+
+							httpProxyProcessor.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+								ExtensionService: contour_api_v1alpha1.NamespacedName{
+									Name:      "extension",
+									Namespace: "ratelimit",
+								},
+								Domain: "contour",
+								DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "generic-key-vhost",
+														Value: "generic-key-vhost",
+													},
+												},
+											},
+										},
+									},
+								},
 							}
 						}
 					}
