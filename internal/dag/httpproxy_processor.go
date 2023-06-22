@@ -993,8 +993,9 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 			if service.Mirror {
-				// Default value if weight is omitted is 0. Setting this to 100 to retain backward-compat behavior.
-				// Edge case is a user intentionally/explicitly setting the Weight to 0 (ie. disabling the mirror).
+				// The default value if Weight is omitted is 0. To retain backwards compatibility omitted weights
+				// will be treated as 100% mirroring. This means that explicit 0 weights will also result in 100%
+				// mirroring. The Mirror field must be set to false or removed to disable the mirror.
 				if service.Weight == 0 {
 					r.MirrorPolicy = &MirrorPolicy{
 						Cluster: c,

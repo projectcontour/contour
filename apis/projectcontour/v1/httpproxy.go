@@ -978,6 +978,9 @@ type Service struct {
 	// +optional
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
+	// If Mirror is true, then fractional mirroring is enabled by setting the Weight field. Omitting
+	// the Weight field or setting it to 0 will result in 100% mirroring. Setting it to an integer
+	// less than or equal to 100 will result in corresponding percentage of traffic being mirrored.
 	Mirror bool `json:"mirror,omitempty"`
 	// The policy for managing request headers during proxying.
 	// +optional

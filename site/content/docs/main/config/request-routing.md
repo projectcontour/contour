@@ -257,6 +257,7 @@ The mirror traffic is considered _read only_, any response by the mirror will be
 
 This service can be useful for recording traffic for later replay or for smoke testing new deployments.
 
+Without specifying an integer `weight` for the service, 100% of traffic will be mirrored. A non-zero integer weight <=100 directs the corresponding percentage of traffic to the mirror service.
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
