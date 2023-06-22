@@ -13,7 +13,7 @@ Before submitting a pull request, make sure you read about our Contribution Work
 
 Some notable call outs from our Contribution Workflow:
 - All PR's must have a `Fixes #NNN` or `Updates #NNN` line in the pull request description.
-- All PR's must add a `release-note/category` label, where category is one of `major`, `minor`, `small`, `docs`, `infra`, or `not-required`.
+- All PR's must add a `release-note/category` label, where category is one of `major`, `minor`, `small`, `docs`, `infra`,`deprecation`, or `none-required`.
 - Contour operates according to the talk, then code rule.
 - If you plan to submit a pull request for anything more than a typo or small bug fix, first you should raise an issue to discuss your proposal, before submitting any code.
 - We generally won't merge a PR without an associated issue.
