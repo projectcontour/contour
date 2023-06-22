@@ -17,6 +17,7 @@ package provisioner
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"testing"
@@ -32,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -291,6 +293,199 @@ var _ = Describe("Gateway provisioner", func() {
 			body := f.GetEchoResponseBody(res.Body)
 			assert.Equal(f.T(), namespace, body.Namespace)
 			assert.Equal(f.T(), "echo", body.Service)
+		})
+	})
+	f.NamespacedTest("gateway-with-many-listeners", func(namespace string) {
+		Specify("A gateway with many Listeners for different protocols can be provisioned and routes correctly", func() {
+			f.Certs.CreateSelfSignedCert(namespace, "https-1-cert", "https-1-cert", "https-1.provisioner.projectcontour.io")
+			f.Certs.CreateSelfSignedCert(namespace, "https-2-cert", "https-2-cert", "https-2.provisioner.projectcontour.io")
+
+			gateway := &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "many-listeners",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: "contour",
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http-1",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     80,
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("http-1.provisioner.projectcontour.io")),
+						},
+						{
+							Name:     "http-2",
+							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Port:     81,
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("http-2.provisioner.projectcontour.io")),
+						},
+						{
+							Name:     "https-1",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     443,
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-1.provisioner.projectcontour.io")),
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+									{Name: "https-1-cert"},
+								},
+							},
+						},
+						{
+							Name:     "https-2",
+							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Port:     444,
+							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-2.provisioner.projectcontour.io")),
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+									{Name: "https-2-cert"},
+								},
+							},
+						},
+						{
+							Name:     "tcp-1",
+							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Port:     7777,
+						},
+						{
+							Name:     "tcp-2",
+							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Port:     8888,
+						},
+					},
+				},
+			}
+
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
+				if !(e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)) {
+					return false
+				}
+
+				for _, listener := range gw.Spec.Listeners {
+					if !e2e.ListenerAccepted(gw, listener.Name) {
+						return false
+					}
+				}
+
+				return true
+			})
+			require.True(f.T(), ok)
+
+			f.Fixtures.Echo.Deploy(namespace, "echo")
+
+			// This HTTPRoute will attach to all of the HTTP and HTTPS Listeners.
+			httpRoute := &gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "httproute-1",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{
+							gatewayapi.GatewayParentRef("", gateway.Name),
+						},
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
+						},
+					},
+				},
+			}
+			_, ok = f.CreateHTTPRouteAndWaitFor(httpRoute, e2e.HTTPRouteAccepted)
+			require.True(f.T(), ok)
+
+			for _, tc := range []struct {
+				name   string
+				scheme string
+				port   string
+			}{
+				{name: "http-1", scheme: "http", port: "80"},
+				{name: "http-2", scheme: "http", port: "81"},
+				{name: "https-1", scheme: "https", port: "443"},
+				{name: "https-2", scheme: "https", port: "444"},
+			} {
+				var res *e2e.HTTPResponse
+				var ok bool
+
+				switch tc.scheme {
+				case "http":
+					res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+						OverrideURL: fmt.Sprintf("%s://%s", tc.scheme, net.JoinHostPort(gateway.Status.Addresses[0].Value, tc.port)),
+						Host:        fmt.Sprintf("%s.provisioner.projectcontour.io", tc.name),
+						Condition:   e2e.HasStatusCode(200),
+					})
+				case "https":
+					res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+						OverrideURL: fmt.Sprintf("%s://%s", tc.scheme, net.JoinHostPort(gateway.Status.Addresses[0].Value, tc.port)),
+						Host:        fmt.Sprintf("%s.provisioner.projectcontour.io", tc.name),
+						Condition:   e2e.HasStatusCode(200),
+					})
+				default:
+					f.T().Fatal("invalid scheme")
+				}
+
+				require.NotNil(f.T(), res)
+				require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
+
+				body := f.GetEchoResponseBody(res.Body)
+				assert.Equal(f.T(), namespace, body.Namespace)
+				assert.Equal(f.T(), "echo", body.Service)
+			}
+
+			// This TCPRoute will attach to both TCP Listeners.
+			tcpRoute := &gatewayapi_v1alpha2.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "tcproute-1",
+				},
+				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							{
+								Namespace: ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
+								Name:      gatewayapi_v1beta1.ObjectName(gateway.Name),
+							},
+						},
+					},
+					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
+						{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ref.To(int32(1))),
+						},
+					},
+				},
+			}
+			_, ok = f.CreateTCPRouteAndWaitFor(tcpRoute, e2e.TCPRouteAccepted)
+			require.True(f.T(), ok)
+
+			for _, tc := range []struct {
+				name string
+				port string
+			}{
+				{name: "tcp-1", port: "7777"},
+				{name: "tcp-2", port: "8888"},
+			} {
+				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+					OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, tc.port),
+					Host:        fmt.Sprintf("%s.provisioner.projectcontour.io", tc.name),
+					Condition:   e2e.HasStatusCode(200),
+				})
+				require.NotNil(f.T(), res)
+				require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
+
+				body := f.GetEchoResponseBody(res.Body)
+				assert.Equal(f.T(), namespace, body.Namespace)
+				assert.Equal(f.T(), "echo", body.Service)
+
+				// Envoy is expected to add the "server: envoy" and
+				// "x-envoy-upstream-service-time" HTTP headers when
+				// proxying HTTP; this ensures we are proxying TCP only.
+				assert.Equal(f.T(), "", res.Headers.Get("server"))
+				assert.Equal(f.T(), "", res.Headers.Get("x-envoy-upstream-service-time"))
+			}
 		})
 	})
 })
