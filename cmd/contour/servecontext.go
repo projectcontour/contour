@@ -618,12 +618,4 @@ func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_api_v
 			CAFile:   src.CABundle,
 		}
 	}
-
-	if src.HasTLS() {
-		dst.TLS = &contour_api_v1alpha1.MetricsTLS{
-			CertFile: src.ServerCert,
-			KeyFile:  src.ServerKey,
-			CAFile:   src.CABundle,
-		}
-	}
 }
