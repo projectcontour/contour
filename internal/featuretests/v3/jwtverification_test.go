@@ -175,10 +175,8 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
@@ -660,10 +658,8 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
@@ -814,10 +810,8 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
@@ -978,10 +972,8 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
@@ -1124,10 +1116,8 @@ func TestJWTVerification(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},
@@ -1345,10 +1335,8 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
-				ClusterDiscoveryType: &envoy_cluster_v3.Cluster_Type{
-					Type: envoy_cluster_v3.Cluster_STRICT_DNS,
-				},
+				Name:                 "dnsname/https/jwt.example.com",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type_v3.Percent{Value: 0},
 				},

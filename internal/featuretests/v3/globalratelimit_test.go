@@ -65,7 +65,7 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 
 	// replace the default filter chains with an HCM that includes the global
 	// rate limit filter.
-	hcm := envoy_v3.HTTPConnectionManagerBuilder().
+	hcm := c.cg.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).

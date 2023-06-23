@@ -79,6 +79,12 @@ func TestProtoNamesForVersions(t *testing.T) {
 }
 
 func TestListener(t *testing.T) {
+	filter := &envoy_listener_v3.Filter{
+		Name: wellknown.HTTPConnectionManager,
+		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{}),
+		},
+	}
 	tests := map[string]struct {
 		name, address string
 		port          int
@@ -91,13 +97,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_listener_v3.Filter{
-				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+				filter,
 			},
 			want: &envoy_listener_v3.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+					filter,
 				),
 				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
@@ -110,7 +116,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_listener_v3.Filter{
-				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+				filter,
 			},
 			want: &envoy_listener_v3.Listener{
 				Name:    "http-proxy",
@@ -119,7 +125,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+					filter,
 				),
 				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
@@ -421,12 +427,14 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
+	cg := NewConfigGenerator()
+
 	tests := map[string]struct {
 		got  *envoy_tls_v3.DownstreamTlsContext
 		want *envoy_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, nil, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, nil, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -436,7 +444,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContext, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContext, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -448,7 +456,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -460,7 +468,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -472,7 +480,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -484,7 +492,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"optional client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -496,7 +504,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -508,7 +516,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check but only for leaf-certificate": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
+			cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -1362,7 +1370,8 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := HTTPConnectionManagerBuilder().
+			cg := NewConfigGenerator()
+			got := cg.HTTPConnectionManagerBuilder().
 				RouteConfigName(tc.routename).
 				MetricsPrefix(tc.routename).
 				AccessLoggers(tc.accesslogger).
@@ -1621,11 +1630,12 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
+	cg := NewConfigGenerator()
 
-	assert.Error(t, HTTPConnectionManagerBuilder().Validate(),
+	assert.Error(t, cg.HTTPConnectionManagerBuilder().Validate(),
 		"ConnectionManager with no filters should not pass validation")
 
-	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+	assert.Error(t, cg.HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: &anypb.Any{
@@ -1635,10 +1645,10 @@ func TestBuilderValidation(t *testing.T) {
 	}).Validate(),
 		"ConnectionManager with only non-router filter should not pass validation")
 
-	assert.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
+	assert.NoError(t, cg.HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
 		"ConnectionManager with default filters failed validation")
 
-	badBuilder := HTTPConnectionManagerBuilder().DefaultFilters()
+	badBuilder := cg.HTTPConnectionManagerBuilder().DefaultFilters()
 	badBuilder.filters = append(badBuilder.filters, &http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
@@ -1651,6 +1661,7 @@ func TestBuilderValidation(t *testing.T) {
 }
 
 func TestAddFilter(t *testing.T) {
+	cg := NewConfigGenerator()
 
 	tests := map[string]struct {
 		builder *httpConnectionManagerBuilder
@@ -1658,12 +1669,12 @@ func TestAddFilter(t *testing.T) {
 		want    []*http.HttpFilter
 	}{
 		"Nil add to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: cg.HTTPConnectionManagerBuilder(),
 			add:     nil,
 			want:    nil,
 		},
 		"Add a single router filter to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: cg.HTTPConnectionManagerBuilder(),
 			add: &http.HttpFilter{
 				Name: "router",
 				ConfigType: &http.HttpFilter_TypedConfig{
@@ -1680,7 +1691,7 @@ func TestAddFilter(t *testing.T) {
 			},
 		},
 		"Add a single non-router filter to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: cg.HTTPConnectionManagerBuilder(),
 			add: &http.HttpFilter{
 				Name: "grpcweb",
 				ConfigType: &http.HttpFilter_TypedConfig{
@@ -1697,7 +1708,7 @@ func TestAddFilter(t *testing.T) {
 			},
 		},
 		"Add a filter to a builder with a router": {
-			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+			builder: cg.HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 				Name: "router",
 				ConfigType: &http.HttpFilter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
@@ -1725,7 +1736,7 @@ func TestAddFilter(t *testing.T) {
 			},
 		},
 		"Add to the default filters": {
-			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
+			builder: cg.HTTPConnectionManagerBuilder().DefaultFilters(),
 			add: FilterExternalAuthz(&dag.ExternalAuthorization{
 				AuthorizationService: &dag.ExtensionCluster{
 					Name: "test",
@@ -1823,7 +1834,7 @@ func TestAddFilter(t *testing.T) {
 			},
 		},
 		"Add to the default filters with AuthorizationServerBufferSettings": {
-			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
+			builder: cg.HTTPConnectionManagerBuilder().DefaultFilters(),
 			add: FilterExternalAuthz(&dag.ExternalAuthorization{
 				AuthorizationService: &dag.ExtensionCluster{
 					Name: "test",
@@ -1959,7 +1970,7 @@ func TestAddFilter(t *testing.T) {
 	}
 
 	assert.Panics(t, func() {
-		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(&http.HttpFilter{
+		cg.HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(&http.HttpFilter{
 			Name: "router",
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),

@@ -67,7 +67,7 @@ func globalExternalAuthorizationFilterExists(t *testing.T, rh ResourceEventHandl
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
@@ -105,7 +105,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -179,7 +179,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -243,7 +243,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
@@ -317,7 +317,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -438,7 +438,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
-	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM(c))
 
 	httpsListener := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -582,8 +582,8 @@ func TestGlobalAuthorization(t *testing.T) {
 }
 
 // getGlobalExtAuthHCM returns a HTTP Connection Manager with Global External Authorization configured.
-func getGlobalExtAuthHCM() *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+func getGlobalExtAuthHCM(c *Contour) *envoy_listener_v3.Filter {
+	return c.cg.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).

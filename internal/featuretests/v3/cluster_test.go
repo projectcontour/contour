@@ -415,7 +415,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				AltStatName:          "default_kuard_8080",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   c.cg.ConfigSource(),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
@@ -448,7 +448,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				AltStatName:          "default_kuard_8080",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   c.cg.ConfigSource(),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
@@ -560,7 +560,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   c.cg.ConfigSource(),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_cluster_v3.Cluster_RANDOM,
@@ -570,7 +570,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   c.cg.ConfigSource(),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_cluster_v3.Cluster_LEAST_REQUEST,

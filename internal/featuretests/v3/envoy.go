@@ -32,6 +32,7 @@ import (
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
@@ -54,7 +55,11 @@ func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Clu
 	defaults := &envoy_cluster_v3.Cluster{
 		ConnectTimeout: durationpb.New(2 * time.Second),
 		LbPolicy:       envoy_cluster_v3.Cluster_ROUND_ROBIN,
-		CommonLbConfig: envoy_v3.ClusterCommonLBConfig(),
+		CommonLbConfig: &envoy_cluster_v3.Cluster_CommonLbConfig{
+			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+				Value: 0,
+			},
+		},
 	}
 
 	for _, c := range clusters {
@@ -169,7 +174,7 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 		AltStatName:          statName,
 		EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-			EdsConfig:   envoy_v3.ConfigSource("contour"),
+			EdsConfig:   envoy_v3.NewConfigGenerator().ConfigSource(),
 			ServiceName: servicename,
 		},
 	})
@@ -182,7 +187,7 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 	}
 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.UpstreamTLSContext(
+		envoy_v3.NewConfigGenerator().UpstreamTLSContext(
 			&dag.PeerValidationContext{
 				CACertificate: &dag.Secret{Object: &v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -208,7 +213,7 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 	}
 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.UpstreamTLSContext(
+		envoy_v3.NewConfigGenerator().UpstreamTLSContext(
 			nil,
 			sni,
 			secret,
@@ -417,7 +422,7 @@ func appendFilterChains(chains ...*envoy_listener_v3.FilterChain) []*envoy_liste
 func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLS(
 		domain,
-		envoy_v3.DownstreamTLSContext(
+		envoy_v3.NewConfigGenerator().DownstreamTLSContext(
 			&dag.Secret{Object: secret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
 			nil,
@@ -429,15 +434,16 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 
 // filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
 func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
+	cg := envoy_v3.NewConfigGenerator()
 	return envoy_v3.FilterChainTLSFallback(
-		envoy_v3.DownstreamTLSContext(
+		cg.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
 			nil,
 			peerValidationContext,
 			alpn...),
 		envoy_v3.Filters(
-			envoy_v3.HTTPConnectionManagerBuilder().
+			cg.HTTPConnectionManagerBuilder().
 				DefaultFilters().
 				RouteConfigName(xdscache_v3.ENVOY_FALLBACK_ROUTECONFIG).
 				MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
@@ -448,7 +454,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 }
 
 func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
@@ -458,7 +464,7 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 }
 
 func httpFilterForGateway() *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		DefaultFilters().
 		RouteConfigName("http-80").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
@@ -467,7 +473,7 @@ func httpFilterForGateway() *envoy_listener_v3.Filter {
 }
 
 func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join(listener, vhost)).
@@ -480,7 +486,7 @@ func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
 // httpsFilterWithXfccFor does the same as httpsFilterFor but enable
 // client certs details forwarding
 func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
@@ -497,7 +503,7 @@ func authzFilterFor(
 	vhost string,
 	authz *envoy_config_filter_http_ext_authz_v3.ExtAuthz,
 ) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
@@ -516,7 +522,7 @@ func jwtAuthnFilterFor(
 	vhost string,
 	jwt *envoy_jwt_v3.JwtAuthentication,
 ) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
+	return envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
@@ -578,7 +584,7 @@ func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_liste
 
 func statsListener() *envoy_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
-	listeners := envoy_v3.StatsListeners(
+	listeners := envoy_v3.NewConfigGenerator().StatsListeners(
 		contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 		contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
 	return listeners[0]
@@ -593,7 +599,12 @@ func defaultHTTPListener() *envoy_listener_v3.Listener {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+			envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
+				RouteConfigName("ingress_http").
+				MetricsPrefix("ingress_http").
+				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+				DefaultFilters().
+				Get(),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}

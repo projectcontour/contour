@@ -201,7 +201,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh.OnAdd(ext)
 
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.UpstreamTLSContext(
+		envoy_v3.NewConfigGenerator().UpstreamTLSContext(
 			&dag.PeerValidationContext{
 				CACertificate: &dag.Secret{Object: &v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{

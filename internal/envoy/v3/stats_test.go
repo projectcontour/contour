@@ -69,7 +69,8 @@ func TestStatsListeners(t *testing.T) {
 		t.Helper()
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
-			got := StatsListeners(tc.metrics, tc.health)
+			cg := NewConfigGenerator()
+			got := cg.StatsListeners(tc.metrics, tc.health)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -158,7 +159,7 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: defaultConfigSource,
 							}},
 						},
 					},
@@ -247,12 +248,12 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: defaultConfigSource,
 							}},
 							ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 								ValidationContextSdsSecretConfig: &envoy_tls_v3.SdsSecretConfig{
 									Name:      "metrics-ca-certificate",
-									SdsConfig: ConfigSource("contour"),
+									SdsConfig: defaultConfigSource,
 								},
 							},
 						},

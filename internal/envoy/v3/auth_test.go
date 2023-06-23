@@ -112,7 +112,8 @@ func TestUpstreamTLSContext(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.alpnProtocols...)
+			cg := NewConfigGenerator()
+			got := cg.UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.alpnProtocols...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

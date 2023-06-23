@@ -13,6 +13,11 @@
 
 package v3
 
+import (
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	"github.com/projectcontour/contour/internal/timeout"
+)
+
 const defaultXDSServerClusterName = "contour"
 
 // ConfigGenerator holds common configuration that can be applied across
@@ -28,5 +33,21 @@ type ConfigGenerator struct {
 func NewConfigGenerator() *ConfigGenerator {
 	return &ConfigGenerator{
 		xdsServerClusterName: defaultXDSServerClusterName,
+	}
+}
+
+// ConfigSource returns a *envoy_core_v3.ConfigSource for cluster.
+func (g *ConfigGenerator) ConfigSource() *envoy_core_v3.ConfigSource {
+	return &envoy_core_v3.ConfigSource{
+		ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+		ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+				ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+				TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+				GrpcServices: []*envoy_core_v3.GrpcService{
+					grpcService(g.xdsServerClusterName, "", timeout.DefaultSetting()),
+				},
+			},
+		},
 	}
 }

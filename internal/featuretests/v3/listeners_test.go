@@ -48,6 +48,7 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 			contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
+			envoy_v3.NewConfigGenerator(),
 		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
@@ -405,7 +406,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoy_v3.NewConfigGenerator().DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
@@ -486,7 +487,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoy_v3.NewConfigGenerator().DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
 					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
@@ -902,7 +903,12 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+		envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
+			RouteConfigName("ingress_http").
+			MetricsPrefix("ingress_http").
+			AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+			DefaultFilters().
+			Get(),
 	)
 
 	httpsListener := &envoy_listener_v3.Listener{
@@ -913,7 +919,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
-				envoy_v3.HTTPConnectionManagerBuilder().
+				envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 					AddFilter(envoy_v3.FilterMisdirectedRequests("kuard.example.com")).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
@@ -1076,7 +1082,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				c.cg.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
 					nil,
@@ -1132,7 +1138,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				c.cg.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
@@ -1251,7 +1257,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	// verify that the xff-num-trusted-hops have been set to 1.
 	httpListener := defaultHTTPListener()
 
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(c.cg.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
@@ -1305,7 +1311,7 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	// verify that the server-header-transformation has been set to append_if_absent.
 	httpListener := defaultHTTPListener()
 
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(c.cg.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).

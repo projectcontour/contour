@@ -113,7 +113,7 @@ func TestTracing(t *testing.T) {
 	rh.OnAdd(p)
 
 	httpListener := defaultHTTPListener()
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.NewConfigGenerator().HTTPConnectionManagerBuilder().
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).

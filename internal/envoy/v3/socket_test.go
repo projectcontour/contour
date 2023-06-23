@@ -25,27 +25,16 @@ import (
 )
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
-	tests := map[string]struct {
-		ctxt *envoy_tls_v3.UpstreamTlsContext
-		want *envoy_core_v3.TransportSocket
-	}{
-		"h2": {
-			ctxt: UpstreamTLSContext(nil, "", nil, "h2"),
-			want: &envoy_core_v3.TransportSocket{
-				Name: "envoy.transport_sockets.tls",
-				ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(UpstreamTLSContext(nil, "", nil, "h2")),
-				},
-			},
+	cg := NewConfigGenerator()
+	context := cg.UpstreamTLSContext(nil, "", nil, "h2")
+	want := &envoy_core_v3.TransportSocket{
+		Name: "envoy.transport_sockets.tls",
+		ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(context),
 		},
 	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSTransportSocket(tc.ctxt)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
+	got := UpstreamTLSTransportSocket(context)
+	protobuf.ExpectEqual(t, want, got)
 }
 
 func TestDownstreamTLSTransportSocket(t *testing.T) {
@@ -61,25 +50,14 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 			},
 		},
 	}
-	tests := map[string]struct {
-		ctxt *envoy_tls_v3.DownstreamTlsContext
-		want *envoy_core_v3.TransportSocket
-	}{
-		"default/tls": {
-			ctxt: DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, nil, nil, "client-subject-name", "h2", "http/1.1"),
-			want: &envoy_core_v3.TransportSocket{
-				Name: "envoy.transport_sockets.tls",
-				ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, nil, nil, "client-subject-name", "h2", "http/1.1")),
-				},
-			},
+	cg := NewConfigGenerator()
+	context := cg.DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, nil, nil, "client-subject-name", "h2", "http/1.1")
+	want := &envoy_core_v3.TransportSocket{
+		Name: "envoy.transport_sockets.tls",
+		ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(context),
 		},
 	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := DownstreamTLSTransportSocket(tc.ctxt)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
+	got := DownstreamTLSTransportSocket(context)
+	protobuf.ExpectEqual(t, want, got)
 }

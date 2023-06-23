@@ -36,6 +36,7 @@ import (
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -89,16 +90,18 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 	}
 
+	cg := envoy_v3.NewConfigGenerator()
 	resources := []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(
 			conf,
 			v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			0,
+			cg,
 		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
-		&xdscache_v3.ClusterCache{},
+		xdscache_v3.NewClusterCache(cg),
 		et,
 	}
 
@@ -197,6 +200,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 			T:                 t,
 			ClientConn:        cc,
 			statusUpdateCache: statusUpdateCacher,
+			cg:                cg,
 		}, func() {
 			// close client connection
 			cc.Close()
@@ -392,6 +396,7 @@ type Contour struct {
 	*testing.T
 
 	statusUpdateCache *k8s.StatusUpdateCacher
+	cg                *envoy_v3.ConfigGenerator
 }
 
 // Status returns a StatusResult object that can be used to assert

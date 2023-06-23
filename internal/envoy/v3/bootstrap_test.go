@@ -2056,7 +2056,8 @@ func TestBootstrap(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			steps, gotError := bootstrap(&tc.config)
+			cg := NewConfigGenerator()
+			steps, gotError := cg.bootstrap(&tc.config)
 			assert.Equal(t, gotError != nil, tc.wantedError)
 
 			gotConfigs := map[string]proto.Message{}
