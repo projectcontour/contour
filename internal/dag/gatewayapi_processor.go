@@ -1217,6 +1217,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					Cluster: &Cluster{
 						Upstream: mirrorService,
 					},
+					Weight: 100,
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterURLRewrite:
 				if filter.URLRewrite == nil || pathRewritePolicy != nil {
@@ -1408,6 +1409,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					Cluster: &Cluster{
 						Upstream: mirrorService,
 					},
+					Weight: 100,
 				}
 			default:
 				routeAccessor.AddCondition(
