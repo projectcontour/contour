@@ -605,6 +605,15 @@ type ClusterParameters struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
+
+	// Defines the soft limit on size of the cluster’s new connection read and write buffers in bytes.
+	// If unspecified, an implementation defined default is applied (1MiB).
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

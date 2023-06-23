@@ -52,6 +52,10 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	cluster.HealthChecks = edshealthcheck(c)
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
 
+	if c.PerConnectionBufferLimitBytes != nil {
+		cluster.PerConnectionBufferLimitBytes = protobuf.UInt32OrNil(*c.PerConnectionBufferLimitBytes)
+	}
+
 	switch len(service.ExternalName) {
 	case 0:
 		// external name not set, cluster will be discovered via EDS

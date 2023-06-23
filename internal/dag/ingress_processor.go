@@ -53,6 +53,12 @@ type IngressProcessor struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
+	MaxRequestsPerConnection *uint32
+
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
+	PerConnectionBufferLimitBytes *uint32
 }
 
 // Run translates Ingresses into DAG objects and
@@ -258,12 +264,14 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
 		RetryPolicy:   ingressRetryPolicy(ingress, log),
 		Clusters: []*Cluster{{
-			Upstream:              service,
-			Protocol:              service.Protocol,
-			ClientCertificate:     clientCertSecret,
-			RequestHeadersPolicy:  reqHP,
-			ResponseHeadersPolicy: respHP,
-			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			Upstream:                      service,
+			Protocol:                      service.Protocol,
+			ClientCertificate:             clientCertSecret,
+			RequestHeadersPolicy:          reqHP,
+			ResponseHeadersPolicy:         respHP,
+			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		}},
 	}
 

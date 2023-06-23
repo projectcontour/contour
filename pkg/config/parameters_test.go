@@ -130,6 +130,7 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
 	assert.NoError(t, AllClusterDNSFamily.Validate())
 }
+
 func TestValidateServerHeaderTranformationType(t *testing.T) {
 	assert.Error(t, ServerHeaderTransformationType("").Validate())
 	assert.Error(t, ServerHeaderTransformationType("foo").Validate())
@@ -524,6 +525,14 @@ func TestClusterParametersValidation(t *testing.T) {
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
 		MaxRequestsPerConnection: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ClusterParameters{
+		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ClusterParameters{
+		PerConnectionBufferLimitBytes: ref.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 }

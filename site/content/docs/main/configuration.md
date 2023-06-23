@@ -167,9 +167,13 @@ _This is Envoy's default setting value and is not explicitly configured by Conto
 
 The cluster configuration block can be used to configure various parameters for Envoy clusters.
 
-| Field Name        | Type   | Default | Description                                                                                                                                                             |
-| ----------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dns-lookup-family | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
+| Field Name                        | Type   | Default | Description                                                                                                                                                                     |
+|-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| dns-lookup-family                 | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
+| max-requests-per-connection       | int    | none    | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                         |
+| per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the cluster’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                               |
+
+_This is Envoy's default setting value and is not explicitly configured by Contour._
 
 ### Network Configuration
 
@@ -376,6 +380,12 @@ data:
     #   configure the cluster dns lookup family
     #   valid options are: auto (default), v4, v6, all
     #   dns-lookup-family: auto
+    #   the maximum requests for upstream connections.
+    #   If not specified, there is no limit.
+    #   Setting this parameter to 1 will effectively disable keep alive
+    #   max-requests-per-connection: 0
+    #   the soft limit on size of the cluster’s new connection read and write buffers
+    #   per-connection-buffer-limit-bytes: 32768
     #
     # network:
     #   Configure the number of additional ingress proxy hops from the

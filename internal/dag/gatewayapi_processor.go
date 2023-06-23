@@ -58,6 +58,12 @@ type GatewayAPIProcessor struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
+	MaxRequestsPerConnection *uint32
+
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
+	PerConnectionBufferLimitBytes *uint32
 }
 
 // matchConditions holds match rules.
@@ -962,10 +968,12 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 			// https://github.com/projectcontour/contour/issues/3593
 			service.Weighted.Weight = routeWeight
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:      service,
-				SNI:           service.ExternalName,
-				Weight:        routeWeight,
-				TimeoutPolicy: ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+				Upstream:                      service,
+				SNI:                           service.ExternalName,
+				Weight:                        routeWeight,
+				TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			})
 		}
 
@@ -1578,10 +1586,12 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
 		proxy.Clusters = append(proxy.Clusters, &Cluster{
-			Upstream:      service,
-			SNI:           service.ExternalName,
-			Weight:        routeWeight,
-			TimeoutPolicy: ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			Upstream:                      service,
+			SNI:                           service.ExternalName,
+			Weight:                        routeWeight,
+			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		})
 	}
 
@@ -1880,12 +1890,14 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
 		clusters = append(clusters, &Cluster{
-			Upstream:              service,
-			Weight:                routeWeight,
-			Protocol:              service.Protocol,
-			RequestHeadersPolicy:  clusterRequestHeaderPolicy,
-			ResponseHeadersPolicy: clusterResponseHeaderPolicy,
-			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			Upstream:                      service,
+			Weight:                        routeWeight,
+			Protocol:                      service.Protocol,
+			RequestHeadersPolicy:          clusterRequestHeaderPolicy,
+			ResponseHeadersPolicy:         clusterResponseHeaderPolicy,
+			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		})
 	}
 	return clusters, totalWeight, true
@@ -1964,12 +1976,14 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
 		clusters = append(clusters, &Cluster{
-			Upstream:              service,
-			Weight:                routeWeight,
-			Protocol:              service.Protocol,
-			RequestHeadersPolicy:  clusterRequestHeaderPolicy,
-			ResponseHeadersPolicy: clusterResponseHeaderPolicy,
-			TimeoutPolicy:         ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			Upstream:                      service,
+			Weight:                        routeWeight,
+			Protocol:                      service.Protocol,
+			RequestHeadersPolicy:          clusterRequestHeaderPolicy,
+			ResponseHeadersPolicy:         clusterResponseHeaderPolicy,
+			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		})
 	}
 	return clusters, totalWeight, true

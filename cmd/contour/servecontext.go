@@ -560,8 +560,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,
 			Cluster: &contour_api_v1alpha1.ClusterParameters{
-				DNSLookupFamily:          dnsLookupFamily,
-				MaxRequestsPerConnection: ctx.Config.Cluster.MaxRequestsPerConnection,
+				DNSLookupFamily:               dnsLookupFamily,
+				MaxRequestsPerConnection:      ctx.Config.Cluster.MaxRequestsPerConnection,
+				PerConnectionBufferLimitBytes: ctx.Config.Cluster.PerConnectionBufferLimitBytes,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,

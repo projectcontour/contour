@@ -517,6 +517,7 @@ func (s *Server) doServe() error {
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
+		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1048,6 +1049,7 @@ type dagBuilderConfig struct {
 	httpsPort                          int
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 	maxRequestsPerConnection           *uint32
+	perConnectionBufferLimitBytes      *uint32
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1109,12 +1111,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			HTTPSPort:    dbc.httpsPort,
 		},
 		&dag.IngressProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               s.log.WithField("context", "IngressProcessor"),
-			ClientCertificate:         dbc.clientCert,
-			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
-			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			FieldLogger:                   s.log.WithField("context", "IngressProcessor"),
+			ClientCertificate:             dbc.clientCert,
+			RequestHeadersPolicy:          &requestHeadersPolicyIngress,
+			ResponseHeadersPolicy:         &responseHeadersPolicyIngress,
+			ConnectTimeout:                dbc.connectTimeout,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1124,24 +1128,27 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:    dbc.connectTimeout,
 		},
 		&dag.HTTPProxyProcessor{
-			EnableExternalNameService:   dbc.enableExternalNameService,
-			DisablePermitInsecure:       dbc.disablePermitInsecure,
-			FallbackCertificate:         dbc.fallbackCert,
-			DNSLookupFamily:             dbc.dnsLookupFamily,
-			ClientCertificate:           dbc.clientCert,
-			RequestHeadersPolicy:        &requestHeadersPolicy,
-			ResponseHeadersPolicy:       &responseHeadersPolicy,
-			ConnectTimeout:              dbc.connectTimeout,
-			GlobalExternalAuthorization: dbc.globalExternalAuthorizationService,
-			MaxRequestsPerConnection:    dbc.maxRequestsPerConnection,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			DisablePermitInsecure:         dbc.disablePermitInsecure,
+			FallbackCertificate:           dbc.fallbackCert,
+			DNSLookupFamily:               dbc.dnsLookupFamily,
+			ClientCertificate:             dbc.clientCert,
+			RequestHeadersPolicy:          &requestHeadersPolicy,
+			ResponseHeadersPolicy:         &responseHeadersPolicy,
+			ConnectTimeout:                dbc.connectTimeout,
+			GlobalExternalAuthorization:   dbc.globalExternalAuthorizationService,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 	}
 
 	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			FieldLogger:                   s.log.WithField("context", "GatewayAPIProcessor"),
+			ConnectTimeout:                dbc.connectTimeout,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		})
 	}
 

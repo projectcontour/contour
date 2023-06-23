@@ -5497,6 +5497,22 @@ see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/p
 for more information.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>per-connection-buffer-limit-bytes</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the soft limit on size of the cluster’s new connection read and write buffers in bytes.
+If unspecified, an implementation defined default is applied (1MiB).
+see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes</a>
+for more information.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
