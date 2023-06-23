@@ -5850,13 +5850,15 @@ spec:
                             minimum: 1
                             type: integer
                           mirror:
-                            description: If Mirror is true the Service will receive
+                            description: 'If Mirror is true the Service will receive
                               a read only mirror of the traffic for this route. If
-                              Mirror is true, then fractional mirroring is enabled
-                              by setting the Weight field. Omitting the Weight field
-                              or setting it to 0 will result in 100% mirroring. Setting
-                              it to an integer less than or equal to 100 will result
-                              in corresponding percentage of traffic being mirrored.
+                              Mirror is true, then fractional mirroring can be enabled
+                              by optionally setting the Weight field. Legal values
+                              for Weight are 1-100. Omitting the Weight field will
+                              result in 100% mirroring. NOTE: Setting Weight explicitly
+                              to 0 will unexpectedly result in 100% traffic mirroring.
+                              This occurs since we cannot distinguish omitted fields
+                              from those explicitly set to their default values'
                             type: boolean
                           name:
                             description: Name is the name of Kubernetes service to
@@ -6242,13 +6244,15 @@ spec:
                           minimum: 1
                           type: integer
                         mirror:
-                          description: If Mirror is true the Service will receive
+                          description: 'If Mirror is true the Service will receive
                             a read only mirror of the traffic for this route. If Mirror
-                            is true, then fractional mirroring is enabled by setting
-                            the Weight field. Omitting the Weight field or setting
-                            it to 0 will result in 100% mirroring. Setting it to an
-                            integer less than or equal to 100 will result in corresponding
-                            percentage of traffic being mirrored.
+                            is true, then fractional mirroring can be enabled by optionally
+                            setting the Weight field. Legal values for Weight are
+                            1-100. Omitting the Weight field will result in 100% mirroring.
+                            NOTE: Setting Weight explicitly to 0 will unexpectedly
+                            result in 100% traffic mirroring. This occurs since we
+                            cannot distinguish omitted fields from those explicitly
+                            set to their default values'
                           type: boolean
                         name:
                           description: Name is the name of Kubernetes service to proxy
