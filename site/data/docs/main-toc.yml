@@ -113,8 +113,6 @@ toc:
         url: /troubleshooting/contour-xds-resources
       - page: Profiling Contour
         url: /troubleshooting/profiling-contour
-      - page: Contour Operator
-        url: /troubleshooting/operator
       - page: Envoy Container Stuck in Unready State
         url: /troubleshooting/envoy-container-draining
   - title: Resources
