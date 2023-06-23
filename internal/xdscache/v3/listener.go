@@ -461,6 +461,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+					PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
@@ -527,6 +528,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+					PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 

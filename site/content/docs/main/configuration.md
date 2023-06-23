@@ -191,8 +191,10 @@ The listener configuration block can be used to configure various parameters for
 | Field Name                        | Type   | Default | Description                                                                                                                                                                                                                                                   |
 |-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connection-balancer               | string | `""`    | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
-| max-requests-per-connection       | int    | none*   | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                                                                                                       |
-| per-connection-buffer-limit-bytes | int    | none*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
+| max-requests-per-connection       | int    | none    | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                                                                                                       |
+| per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
+
+_This is Envoy's default setting value and is not explicitly configured by Contour._
 
 ### Server Configuration
 
