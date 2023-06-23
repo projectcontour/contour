@@ -41,12 +41,13 @@ func (p *ListenerProcessor) Run(dag *DAG, cache *KubernetesCache) {
 				address = p.HTTPSAddress
 			}
 			dag.Listeners[port.Name] = &Listener{
-				Name:          port.Name,
-				Protocol:      port.Protocol,
-				Address:       address,
-				Port:          int(port.ContainerPort),
-				vhostsByName:  map[string]*VirtualHost{},
-				svhostsByName: map[string]*SecureVirtualHost{},
+				Name:             port.Name,
+				Protocol:         port.Protocol,
+				Address:          address,
+				Port:             int(port.ContainerPort),
+				EnableWebsockets: true,
+				vhostsByName:     map[string]*VirtualHost{},
+				svhostsByName:    map[string]*SecureVirtualHost{},
 			}
 		}
 	} else {

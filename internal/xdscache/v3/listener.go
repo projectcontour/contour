@@ -386,6 +386,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
+				EnableWebsockets(listener.EnableWebsockets).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -455,6 +456,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -520,6 +522,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
 				// Default filter chain

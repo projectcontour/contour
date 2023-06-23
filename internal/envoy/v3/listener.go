@@ -167,6 +167,12 @@ type httpConnectionManagerBuilder struct {
 	numTrustedHops                uint32
 	tracingConfig                 *http.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
+	enableWebsockets              bool
+}
+
+func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
+	b.enableWebsockets = enable
+	return b
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -525,6 +531,14 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// if maxConnectionsPerRequest is defined, set it.
 	if b.maxRequestsPerConnection != nil {
 		cm.CommonHttpProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*b.maxRequestsPerConnection)
+	}
+
+	if b.enableWebsockets {
+		cm.UpgradeConfigs = append(cm.UpgradeConfigs,
+			&http.HttpConnectionManager_UpgradeConfig{
+				UpgradeType: "websocket",
+			},
+		)
 	}
 
 	return &envoy_listener_v3.Filter{

@@ -23,3 +23,5 @@ spec:
     - name: chat-app
       port: 80
 ```
+
+If you are using Gateway API, websockets are enabled by default at the Listener level.
