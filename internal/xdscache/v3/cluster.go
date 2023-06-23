@@ -33,6 +33,13 @@ type ClusterCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_cluster_v3.Cluster
 	contour.Cond
+	cg *envoy_v3.ConfigGenerator
+}
+
+func NewClusterCache(cg *envoy_v3.ConfigGenerator) *ClusterCache {
+	return &ClusterCache{
+		cg: cg,
+	}
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -82,20 +89,20 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 	for _, cluster := range root.GetClusters() {
 		name := envoy.Clustername(cluster)
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.Cluster(cluster)
+			clusters[name] = c.cg.Cluster(cluster)
 		}
 	}
 
 	for name, ec := range root.GetExtensionClusters() {
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.ExtensionCluster(ec)
+			clusters[name] = c.cg.ExtensionCluster(ec)
 		}
 	}
 
 	for _, cluster := range root.GetDNSNameClusters() {
 		name := envoy.DNSNameClusterName(cluster)
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.DNSNameCluster(cluster)
+			clusters[name] = c.cg.DNSNameCluster(cluster)
 		}
 	}
 

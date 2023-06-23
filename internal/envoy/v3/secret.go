@@ -40,3 +40,10 @@ func Secret(s *dag.Secret) *envoy_tls_v3.Secret {
 		},
 	}
 }
+
+func (g *ConfigGenerator) sdsSecretConfig(secretName string) *envoy_tls_v3.SdsSecretConfig {
+	return &envoy_tls_v3.SdsSecretConfig{
+		Name:      secretName,
+		SdsConfig: g.ConfigSource(),
+	}
+}

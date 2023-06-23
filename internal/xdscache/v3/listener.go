@@ -257,6 +257,7 @@ type ListenerCache struct {
 	mu           sync.Mutex
 	values       map[string]*envoy_listener_v3.Listener
 	staticValues map[string]*envoy_listener_v3.Listener
+	cg           *envoy_v3.ConfigGenerator
 
 	Config ListenerConfig
 	contour.Cond
@@ -268,13 +269,15 @@ func NewListenerCache(
 	metricsConfig contour_api_v1alpha1.MetricsConfig,
 	healthConfig contour_api_v1alpha1.HealthConfig,
 	adminPort int,
+	cg *envoy_v3.ConfigGenerator,
 ) *ListenerCache {
 	listenerCache := &ListenerCache{
 		Config:       listenerConfig,
+		cg:           cg,
 		staticValues: map[string]*envoy_listener_v3.Listener{},
 	}
 
-	for _, l := range envoy_v3.StatsListeners(metricsConfig, healthConfig) {
+	for _, l := range listenerCache.cg.StatsListeners(metricsConfig, healthConfig) {
 		listenerCache.staticValues[l.Name] = l
 	}
 
@@ -366,7 +369,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
 		if len(listener.VirtualHosts) > 0 {
-			cm := envoy_v3.HTTPConnectionManagerBuilder().
+			cm := c.cg.HTTPConnectionManagerBuilder().
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
 				RouteConfigName(httpRouteConfigName(listener)).
@@ -433,7 +436,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// metrics prefix to keep compatibility with previous
 				// Contour versions since the metrics prefix will be
 				// coded into monitoring dashboards.
-				cm := envoy_v3.HTTPConnectionManagerBuilder().
+				cm := c.cg.HTTPConnectionManagerBuilder().
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
@@ -477,7 +480,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Choose the higher of the configured or requested TLS version.
 				vers := max(cfg.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
 
-				downstreamTLS = envoy_v3.DownstreamTLSContext(
+				downstreamTLS = c.cg.DownstreamTLSContext(
 					vh.Secret,
 					vers,
 					cfg.CipherSuites,
@@ -495,7 +498,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[listener.Name].FilterChains) {
 				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 				// the value defined in the Contour Configuration file if defined.
-				downstreamTLS = envoy_v3.DownstreamTLSContext(
+				downstreamTLS = c.cg.DownstreamTLSContext(
 					vh.FallbackCertificate,
 					cfg.minTLSVersion(),
 					cfg.CipherSuites,
@@ -503,7 +506,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					alpnProtos...,
 				)
 
-				cm := envoy_v3.HTTPConnectionManagerBuilder().
+				cm := c.cg.HTTPConnectionManagerBuilder().
 					DefaultFilters().
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).

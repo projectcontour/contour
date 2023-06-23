@@ -441,11 +441,12 @@ func (s *Server) doServe() error {
 	// due to their high update rate and their orthogonal nature.
 	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 
+	configGen := envoy_v3.NewConfigGenerator()
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
+		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort, configGen),
 		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
-		&xdscache_v3.ClusterCache{},
+		xdscache_v3.NewClusterCache(configGen),
 		endpointHandler,
 		&xdscache_v3.RuntimeCache{},
 	}

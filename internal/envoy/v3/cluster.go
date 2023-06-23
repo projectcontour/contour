@@ -36,13 +36,13 @@ import (
 func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
 		ConnectTimeout: durationpb.New(2 * time.Second),
-		CommonLbConfig: ClusterCommonLBConfig(),
+		CommonLbConfig: clusterCommonLBConfig(),
 		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
 	}
 }
 
 // Cluster creates new envoy_cluster_v3.Cluster from dag.Cluster.
-func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
+func (g *ConfigGenerator) Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	service := c.Upstream
 	cluster := clusterDefaults()
 
@@ -60,7 +60,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	case 0:
 		// external name not set, cluster will be discovered via EDS
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS)
-		cluster.EdsClusterConfig = edsconfig("contour", service)
+		cluster.EdsClusterConfig = g.edsconfig("contour", service)
 	default:
 		// external name set, use hard coded DNS name
 		// external name set to LOGICAL_DNS when user selects the ALL loookup family
@@ -93,7 +93,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	switch c.Protocol {
 	case "tls":
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			g.UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
@@ -102,7 +102,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	case "h2":
 		httpVersion = HTTPVersion2
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			g.UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
@@ -142,7 +142,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 }
 
 // ExtensionCluster builds a envoy_cluster_v3.Cluster struct for the given extension service.
-func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
+func (g *ConfigGenerator) ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	cluster := clusterDefaults()
 
 	// The Envoy cluster name has already been set.
@@ -162,7 +162,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	// Cluster will be discovered via EDS.
 	cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS)
 	cluster.EdsClusterConfig = &envoy_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig:   ConfigSource("contour"),
+		EdsConfig:   g.ConfigSource(),
 		ServiceName: ext.Upstream.ClusterName,
 	}
 
@@ -173,7 +173,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	case "h2":
 		http2Version = HTTPVersion2
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			g.UpstreamTLSContext(
 				ext.UpstreamValidation,
 				ext.SNI,
 				ext.ClientCertificate,
@@ -193,7 +193,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 }
 
 // DNSNameCluster builds a envoy_cluster_v3.Cluster for the given *dag.DNSNameCluster.
-func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
+func (g *ConfigGenerator) DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 	cluster := clusterDefaults()
 
 	cluster.Name = envoy.DNSNameClusterName(c)
@@ -207,7 +207,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	var transportSocket *envoy_core_v3.TransportSocket
 	if c.Scheme == "https" {
-		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
+		transportSocket = UpstreamTLSTransportSocket(g.UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
 	}
 
 	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))
@@ -216,9 +216,9 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 	return cluster
 }
 
-func edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
+func (g *ConfigGenerator) edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
 	return &envoy_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig: ConfigSource(cluster),
+		EdsConfig: g.ConfigSource(),
 		ServiceName: xds.ClusterLoadAssignmentName(
 			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
 			service.Weighted.ServicePort.Name,
@@ -255,8 +255,8 @@ func edshealthcheck(c *dag.Cluster) []*envoy_core_v3.HealthCheck {
 	}
 }
 
-// ClusterCommonLBConfig creates a *envoy_cluster_v3.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
-func ClusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
+// clusterCommonLBConfig creates a *envoy_cluster_v3.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
+func clusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
 	return &envoy_cluster_v3.Cluster_CommonLbConfig{
 		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 			Value: 0,
@@ -265,7 +265,7 @@ func ClusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
 }
 
 // ConfigSource returns a *envoy_core_v3.ConfigSource for cluster.
-func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
+func (g *ConfigGenerator) ConfigSource() *envoy_core_v3.ConfigSource {
 	return &envoy_core_v3.ConfigSource{
 		ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 		ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
@@ -273,7 +273,7 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 				ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
 				TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 				GrpcServices: []*envoy_core_v3.GrpcService{
-					GrpcService(cluster, "", timeout.DefaultSetting()),
+					grpcService(g.xdsServerClusterName, "", timeout.DefaultSetting()),
 				},
 			},
 		},
@@ -293,7 +293,7 @@ func ClusterDiscoveryTypeForAddress(address string, t envoy_cluster_v3.Cluster_D
 	if net.ParseIP(address) != nil {
 		clusterType = envoy_cluster_v3.Cluster_STATIC
 	}
-	return &envoy_cluster_v3.Cluster_Type{Type: clusterType}
+	return ClusterDiscoveryType(clusterType)
 }
 
 // parseDNSLookupFamily parses the dnsLookupFamily string into a envoy_cluster_v3.Cluster_DnsLookupFamily
