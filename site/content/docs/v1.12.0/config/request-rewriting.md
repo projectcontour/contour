@@ -23,9 +23,9 @@ spec:
   - services:
     - name: s1
       port: 80
-    pathRewritePolicy:
-      replacePrefix:
-      - replacement: /new/prefix
+      pathRewritePolicy:
+        replacePrefix:
+        - replacement: /new/prefix
 ```
 
 The `replacePrefix` field accepts an array of possible replacements.
@@ -48,14 +48,14 @@ spec:
   - services:
     - name: s1
       port: 80
-    conditions:
-    - prefix: /v1/api
-    pathRewritePolicy:
-      replacePrefix:
+      conditions:
       - prefix: /v1/api
-        replacement: /app/api/v1
-      - prefix: /
-        replacement: /app
+      pathRewritePolicy:
+        replacePrefix:
+        - prefix: /v1/api
+          replacement: /app/api/v1
+        - prefix: /
+          replacement: /app
 ```
 
 ## Header Rewriting
