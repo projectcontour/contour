@@ -890,6 +890,10 @@ type Listener struct {
 	// This cannot be used with VirtualHosts/SecureVirtualHosts
 	// on a given Listener.
 	TCPProxy *TCPProxy
+
+	// EnableWebsockets defines whether to enable the websocket
+	// upgrade.
+	EnableWebsockets bool
 }
 
 // TCPProxy represents a cluster of TCP endpoints.

@@ -1951,6 +1951,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
 						)),
+					EnableWebsockets: true,
 				},
 			),
 		},
@@ -16203,10 +16204,12 @@ func listeners(ls ...*Listener) []*Listener {
 			listener.Protocol = "http"
 			listener.Address = "0.0.0.0"
 			listener.Port = 8080
+			listener.EnableWebsockets = true
 		case "https-443":
 			listener.Protocol = "https"
 			listener.Address = "0.0.0.0"
 			listener.Port = 8443
+			listener.EnableWebsockets = true
 		}
 	}
 
