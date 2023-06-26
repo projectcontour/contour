@@ -116,6 +116,15 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      per-connection-buffer-limit-bytes:
+                        description: Defines the soft limit on size of the cluster’s
+                          new connection read and write buffers in bytes. If unspecified,
+                          an implementation defined default is applied (1MiB). see
+                          https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes
+                          for more information.
+                        format: int32
+                        minimum: 1
+                        type: integer
                     type: object
                   defaultHTTPVersions:
                     description: "DefaultHTTPVersions defines the default set of HTTPS
@@ -3466,6 +3475,15 @@ spec:
                             format: int32
                             minimum: 1
                             type: integer
+                          per-connection-buffer-limit-bytes:
+                            description: Defines the soft limit on size of the cluster’s
+                              new connection read and write buffers in bytes. If unspecified,
+                              an implementation defined default is applied (1MiB).
+                              see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes
+                              for more information.
+                            format: int32
+                            minimum: 1
+                            type: integer
                         type: object
                       defaultHTTPVersions:
                         description: "DefaultHTTPVersions defines the default set
@@ -5973,8 +5991,15 @@ spec:
                             minimum: 1
                             type: integer
                           mirror:
-                            description: If Mirror is true the Service will receive
-                              a read only mirror of the traffic for this route.
+                            description: 'If Mirror is true the Service will receive
+                              a read only mirror of the traffic for this route. If
+                              Mirror is true, then fractional mirroring can be enabled
+                              by optionally setting the Weight field. Legal values
+                              for Weight are 1-100. Omitting the Weight field will
+                              result in 100% mirroring. NOTE: Setting Weight explicitly
+                              to 0 will unexpectedly result in 100% traffic mirroring.
+                              This occurs since we cannot distinguish omitted fields
+                              from those explicitly set to their default values'
                             type: boolean
                           name:
                             description: Name is the name of Kubernetes service to
@@ -6360,8 +6385,15 @@ spec:
                           minimum: 1
                           type: integer
                         mirror:
-                          description: If Mirror is true the Service will receive
-                            a read only mirror of the traffic for this route.
+                          description: 'If Mirror is true the Service will receive
+                            a read only mirror of the traffic for this route. If Mirror
+                            is true, then fractional mirroring can be enabled by optionally
+                            setting the Weight field. Legal values for Weight are
+                            1-100. Omitting the Weight field will result in 100% mirroring.
+                            NOTE: Setting Weight explicitly to 0 will unexpectedly
+                            result in 100% traffic mirroring. This occurs since we
+                            cannot distinguish omitted fields from those explicitly
+                            set to their default values'
                           type: boolean
                         name:
                           description: Name is the name of Kubernetes service to proxy

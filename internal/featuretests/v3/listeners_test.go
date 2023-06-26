@@ -1466,11 +1466,9 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_listener_v3.Listener{
-				Name:    "http-80",
-				Address: envoy_v3.SocketAddress("127.0.0.100", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("http-80", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
-				),
+				Name:          "http-80",
+				Address:       envoy_v3.SocketAddress("127.0.0.100", 8080),
+				FilterChains:  envoy_v3.FilterChains(httpFilterForGateway()),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 		),

@@ -1951,6 +1951,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
 						)),
+					EnableWebsockets: true,
 				},
 			),
 		},
@@ -3842,7 +3843,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)))),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100))),
 				},
 			),
 		},
@@ -3884,8 +3885,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2)),
-						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2)),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100),
+						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2), 100),
 					)),
 				},
 			),
@@ -5704,7 +5705,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c")))),
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c"), 100))),
 				},
 			),
 		},
@@ -11171,7 +11172,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							withMirror(prefixroute("/", service(s1)), service(s2)),
+							withMirror(prefixroute("/", service(s1)), service(s2), 100),
 						),
 					),
 				},
@@ -16203,10 +16204,12 @@ func listeners(ls ...*Listener) []*Listener {
 			listener.Protocol = "http"
 			listener.Address = "0.0.0.0"
 			listener.Port = 8080
+			listener.EnableWebsockets = true
 		case "https-443":
 			listener.Protocol = "https"
 			listener.Address = "0.0.0.0"
 			listener.Port = 8443
+			listener.EnableWebsockets = true
 		}
 	}
 
@@ -16223,11 +16226,12 @@ func prefixSegment(prefix string) MatchCondition {
 func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
-func withMirror(r *Route, mirror *Service) *Route {
+func withMirror(r *Route, mirror *Service, weight int64) *Route {
 	r.MirrorPolicy = &MirrorPolicy{
 		Cluster: &Cluster{
 			Upstream: mirror,
 		},
+		Weight: weight,
 	}
 	return r
 }

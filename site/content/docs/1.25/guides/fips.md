@@ -101,23 +101,28 @@ Note that if you do build with FIPS mode outside of the build container, you can
 We can first compile the Envoy binary by running the following in a `bash` shell from the Envoy source directory:
 
 ```bash
-BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envoy-output-dir> ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release.server_only'
+BAZEL_BUILD_EXTRA_OPTIONS="--define boringssl=fips" ENVOY_DOCKER_BUILD_DIR=<envoy-output-dir> ./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.release //test/exe:envoy_static_test'
 ```
 
-Replace `<envoy-output-dir>` with a directory you would like the build output to be placed on your host computer.
-Once that build completes, you should have a file named `envoy_binary.tar.gz` in your specified output directory.
+*This command mimics the Envoy release CI process with the target `bazel.release` but differs in only running a single test for brevity. You may omit the `//test/exe:envoy_static_test` test entirely to run the full suite of Envoy tests.*
 
-If you would like to build an image with Envoy according to your own specifications, you can unpack the resulting tar archive and you will find a stripped Envoy binary in the `build_release_stripped` directory and a unstripped Envoy with debug info in the `build_release` directory.
+Replace `<envoy-output-dir>` with a directory you would like the build output to be placed on your host computer.
+
+Once that build completes, you should have a file named `release.tar.zst` in your specified output directory.
+This file is a [Zstandard](https://github.com/facebook/zstd) compressed archive containing the compiled Envoy release and debug binaries.
+If you would like to build an image with Envoy according to your own specifications, you can unpack the resulting archive and you will find a stripped Envoy binary in the root and an unstripped Envoy binary with debug info in the `dbg` directory.
 
 To build an image matching the canonical Envoy upstream release image ([`envoyproxy/envoy`][13]), run the following:
+
+*Note: You will need a recent version of Docker/BuildKit that supports Zstandard decompression.*
 
 ```bash
 # Make ./linux/amd64 directories.
 mkdir -p ./linux/amd64
-# Untar tar archive from build step.
-tar xzf <envoy-output-dir>/envoy_binary.tar.gz -C ./linux/amd64
+# Copy Zstandard archive from build step.
+cp -a <envoy-output-dir>/envoy/x64/bin/release.tar.zst ./linux/amd64/release.tar.zst
 # Run the Docker image build.
-docker build -f ./ci/Dockerfile-envoy .
+docker build -f ./ci/Dockerfile-envoy --target envoy .
 ```
 
 Once you have an image built, you can tag it as needed, push the image to a registry, and use it in an Envoy deployment.

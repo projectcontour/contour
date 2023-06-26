@@ -518,6 +518,7 @@ func (s *Server) doServe() error {
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
+		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1049,6 +1050,7 @@ type dagBuilderConfig struct {
 	httpsPort                          int
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 	maxRequestsPerConnection           *uint32
+	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
@@ -1111,12 +1113,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			HTTPSPort:    dbc.httpsPort,
 		},
 		&dag.IngressProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               s.log.WithField("context", "IngressProcessor"),
-			ClientCertificate:         dbc.clientCert,
-			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
-			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			FieldLogger:                   s.log.WithField("context", "IngressProcessor"),
+			ClientCertificate:             dbc.clientCert,
+			RequestHeadersPolicy:          &requestHeadersPolicyIngress,
+			ResponseHeadersPolicy:         &responseHeadersPolicyIngress,
+			ConnectTimeout:                dbc.connectTimeout,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1137,14 +1141,17 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalExternalAuthorization: dbc.globalExternalAuthorizationService,
 			MaxRequestsPerConnection:    dbc.maxRequestsPerConnection,
 			RateLimitService:            dbc.globalRateLimitService,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 	}
 
 	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
-			ConnectTimeout:            dbc.connectTimeout,
+			EnableExternalNameService:     dbc.enableExternalNameService,
+			FieldLogger:                   s.log.WithField("context", "GatewayAPIProcessor"),
+			ConnectTimeout:                dbc.connectTimeout,
+			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		})
 	}
 

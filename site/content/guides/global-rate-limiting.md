@@ -185,7 +185,7 @@ spec:
     response: 100ms  
 ```
 
-Update the Contour config map to have the following RLS configuration:
+Update the Contour configmap to have the following RLS configuration:
 
 ```yaml
 apiVersion: v1

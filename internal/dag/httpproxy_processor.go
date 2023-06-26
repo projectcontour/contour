@@ -101,6 +101,9 @@ type HTTPProxyProcessor struct {
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
 
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
+	PerConnectionBufferLimitBytes *uint32
+
 	// RateLimitService defines Envoy's Global RateLimit Service configuration.
 	RateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 }
@@ -962,21 +965,22 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			c := &Cluster{
-				Upstream:                 s,
-				LoadBalancerPolicy:       lbPolicy,
-				Weight:                   uint32(service.Weight),
-				HTTPHealthCheckPolicy:    healthPolicy,
-				UpstreamValidation:       uv,
-				RequestHeadersPolicy:     reqHP,
-				ResponseHeadersPolicy:    respHP,
-				CookieRewritePolicies:    cookieRP,
-				Protocol:                 protocol,
-				SNI:                      determineSNI(r.RequestHeadersPolicy, reqHP, s),
-				DNSLookupFamily:          string(p.DNSLookupFamily),
-				ClientCertificate:        clientCertSecret,
-				TimeoutPolicy:            ctp,
-				SlowStartConfig:          slowStart,
-				MaxRequestsPerConnection: p.MaxRequestsPerConnection,
+				Upstream:                      s,
+				LoadBalancerPolicy:            lbPolicy,
+				Weight:                        uint32(service.Weight),
+				HTTPHealthCheckPolicy:         healthPolicy,
+				UpstreamValidation:            uv,
+				RequestHeadersPolicy:          reqHP,
+				ResponseHeadersPolicy:         respHP,
+				CookieRewritePolicies:         cookieRP,
+				Protocol:                      protocol,
+				SNI:                           determineSNI(r.RequestHeadersPolicy, reqHP, s),
+				DNSLookupFamily:               string(p.DNSLookupFamily),
+				ClientCertificate:             clientCertSecret,
+				TimeoutPolicy:                 ctp,
+				SlowStartConfig:               slowStart,
+				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
+				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -984,8 +988,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 			if service.Mirror {
-				r.MirrorPolicy = &MirrorPolicy{
-					Cluster: c,
+				// Legal Weight values are 1-100. The default value of a float64 if Weight is omitted
+				// is 0. To retain backwards compatibility omitted weights will be treated as 100% mirroring.
+				// EDGE CASE: This means that explicitly setting Weight to 0 will also result in 100%
+				// mirroring. The Mirror field must be set to false or removed to disable the mirror.
+				if service.Weight == 0 {
+					r.MirrorPolicy = &MirrorPolicy{
+						Cluster: c,
+						Weight:  100,
+					}
+				} else {
+					r.MirrorPolicy = &MirrorPolicy{
+						Cluster: c,
+						Weight:  service.Weight,
+					}
 				}
 			} else {
 				r.Clusters = append(r.Clusters, c)

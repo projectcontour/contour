@@ -19,6 +19,8 @@ import (
 	"path"
 	"time"
 
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
@@ -273,10 +275,15 @@ func withIdleTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *
 	return route
 }
 
-func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string) *envoy_route_v3.Route_Route {
+func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string, weight int64) *envoy_route_v3.Route_Route {
 	route.Route.RequestMirrorPolicies = []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
-	}}
+		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+			DefaultValue: &envoy_type_v3.FractionalPercent{
+				Numerator:   uint32(weight),
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		}}}
 	return route
 }
 
@@ -449,6 +456,15 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 		Get()
 }
 
+func httpFilterForGateway() *envoy_listener_v3.Filter {
+	return envoy_v3.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		RouteConfigName("http-80").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		EnableWebsockets(true).
+		Get()
+}
+
 func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
@@ -456,6 +472,7 @@ func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
 		RouteConfigName(path.Join(listener, vhost)).
 		MetricsPrefix(listener).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		EnableWebsockets(true).
 		Get()
 }
 

@@ -421,6 +421,13 @@ type ClusterParameters struct {
 	//
 	// +optional
 	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
+
+	// Defines the soft limit on size of the cluster’s new connection read and write buffers
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
 }
 
 func (p *ClusterParameters) Validate() error {
@@ -430,6 +437,10 @@ func (p *ClusterParameters) Validate() error {
 
 	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
 		return fmt.Errorf("invalid max connections per request value %q set on cluster, minimum value is 1", *p.MaxRequestsPerConnection)
+	}
+
+	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
+		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on cluster, minimum value is 1", *p.PerConnectionBufferLimitBytes)
 	}
 	return nil
 }

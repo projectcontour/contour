@@ -1,0 +1,1 @@
+Gateway API: enable websockets upgrade by default.

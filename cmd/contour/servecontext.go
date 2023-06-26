@@ -561,8 +561,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,
 			Cluster: &contour_api_v1alpha1.ClusterParameters{
-				DNSLookupFamily:          dnsLookupFamily,
-				MaxRequestsPerConnection: ctx.Config.Cluster.MaxRequestsPerConnection,
+				DNSLookupFamily:               dnsLookupFamily,
+				MaxRequestsPerConnection:      ctx.Config.Cluster.MaxRequestsPerConnection,
+				PerConnectionBufferLimitBytes: ctx.Config.Cluster.PerConnectionBufferLimitBytes,
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,
@@ -610,14 +611,6 @@ func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_api_v
 
 	if src.Port > 0 {
 		dst.Port = src.Port
-	}
-
-	if src.HasTLS() {
-		dst.TLS = &contour_api_v1alpha1.MetricsTLS{
-			CertFile: src.ServerCert,
-			KeyFile:  src.ServerKey,
-			CAFile:   src.CABundle,
-		}
 	}
 
 	if src.HasTLS() {

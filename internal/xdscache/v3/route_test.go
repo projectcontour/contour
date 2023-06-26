@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
@@ -4085,6 +4087,12 @@ func routeConfigurations(rcs ...*envoy_route_v3.RouteConfiguration) map[string]*
 func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string) *envoy_route_v3.Route_Route {
 	route.Route.RequestMirrorPolicies = []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
+		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+			DefaultValue: &envoy_type_v3.FractionalPercent{
+				Numerator:   100,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
 	}}
 	return route
 }

@@ -1,0 +1,1 @@
+HTTPProxy: support fractional mirroring to a service by specifying `mirror: true` and a `weight` of 1-100. See the [traffic mirroring docs](https://projectcontour.io/docs/1.26/config/request-routing/#traffic-mirroring) for more information.

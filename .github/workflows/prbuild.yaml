@@ -11,7 +11,7 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.20.4
+  GO_VERSION: 1.20.5
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -231,6 +231,7 @@ jobs:
           NODEIMAGE: ${{ matrix.node_image }}
           MULTINODE_CLUSTER: "true"
           LOAD_PREBUILT_IMAGE: "true"
+          SKIP_GATEWAY_API_INSTALL: "true"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade

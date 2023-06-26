@@ -438,6 +438,7 @@ type PathRewritePolicy struct {
 // MirrorPolicy defines the mirroring policy for a route.
 type MirrorPolicy struct {
 	Cluster *Cluster
+	Weight  int64
 }
 
 // HeadersPolicy defines how headers are managed during forwarding
@@ -890,6 +891,10 @@ type Listener struct {
 	// This cannot be used with VirtualHosts/SecureVirtualHosts
 	// on a given Listener.
 	TCPProxy *TCPProxy
+
+	// EnableWebsockets defines whether to enable the websocket
+	// upgrade.
+	EnableWebsockets bool
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
@@ -996,6 +1001,9 @@ type Cluster struct {
 
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
+
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
+	PerConnectionBufferLimitBytes *uint32
 }
 
 // WeightedService represents the load balancing weight of a

@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -699,6 +701,7 @@ func TestRouteRoute(t *testing.T) {
 							},
 						},
 					},
+					Weight: 100,
 				},
 			},
 			want: &envoy_route_v3.Route_Route{
@@ -708,7 +711,12 @@ func TestRouteRoute(t *testing.T) {
 					},
 					RequestMirrorPolicies: []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
 						Cluster: "default/kuard/8080/da39a3ee5e",
-					}},
+						RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+							DefaultValue: &envoy_type_v3.FractionalPercent{
+								Numerator:   100,
+								Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+							},
+						}}},
 				},
 			},
 		},

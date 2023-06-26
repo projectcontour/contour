@@ -257,6 +257,7 @@ The mirror traffic is considered _read only_, any response by the mirror will be
 
 This service can be useful for recording traffic for later replay or for smoke testing new deployments.
 
+`weight` can be optionally set (in the space of integers 1-100) to mirror the corresponding percent of traffic (ie. `weight: 5` mirrors 5% of traffic). Omitting the `weight` field results in 100% traffic mirroring. There is unexpected behavior if `weight` is explicitly set to 0, 100% traffic will be mirrored. This occurs because we cannot distinguish undefined variables from explicitly setting them to default values, and omission of a `weight` must mirror full traffic.
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
