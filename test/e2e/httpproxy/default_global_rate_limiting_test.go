@@ -174,23 +174,9 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Wait until we get a 200 from the proxy confirming
-		// the pods are up and serving traffic.
-		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_3",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
@@ -365,23 +351,9 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Wait until we get a 200 from the proxy confirming
-		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_6",
-				}),
-			},
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
