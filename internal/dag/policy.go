@@ -457,10 +457,31 @@ func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duratio
 		}, nil
 }
 
-func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {
+func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) (*HTTPHealthCheckPolicy, error) {
 	if hc == nil {
-		return nil
+		return nil, nil
 	}
+
+	var expectedStatuses []HTTPStatusRange
+
+	for _, statusRange := range hc.ExpectedStatuses {
+		// Note, the status range follow half-open semantics to match
+		// Envoy, so start is inclusive, and end is exclusive, hence
+		// why the difference in allowed values for each.
+
+		if statusRange.Start < 100 || statusRange.Start > 599 {
+			return nil, fmt.Errorf("invalid expected status range: start must be in the range [100, 599]")
+		}
+		if statusRange.End < 101 || statusRange.End > 600 {
+			return nil, fmt.Errorf("invalid expected status range: end must be in the range [101, 600]")
+		}
+
+		expectedStatuses = append(expectedStatuses, HTTPStatusRange{
+			Start: statusRange.Start,
+			End:   statusRange.End,
+		})
+	}
+
 	return &HTTPHealthCheckPolicy{
 		Path:               hc.Path,
 		Host:               hc.Host,
@@ -468,7 +489,8 @@ func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) *HTTPHealth
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
 		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount),
 		HealthyThreshold:   uint32(hc.HealthyThresholdCount),
-	}
+		ExpectedStatuses:   expectedStatuses,
+	}, nil
 }
 
 func tcpHealthCheckPolicy(hc *contour_api_v1.TCPHealthCheckPolicy) *TCPHealthCheckPolicy {

@@ -1021,6 +1021,23 @@ type HTTPHealthCheckPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=0
 	HealthyThresholdCount int64 `json:"healthyThresholdCount"`
+	// The ranges of HTTP response statuses considered healthy. Follow half-open
+	// semantics, i.e. for each range the start is inclusive and the end is exclusive.
+	// Must be within the range [100,600). If not specified, only a 200 response status
+	// is considered healthy.
+	// +optional
+	ExpectedStatuses []HTTPStatusRange `json:"expectedStatuses,omitempty"`
+}
+
+type HTTPStatusRange struct {
+	// The start (inclusive) of a range of HTTP status codes.
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=599
+	Start int64 `json:"start"`
+	// The end (exclusive) of a range of HTTP status codes.
+	// +kubebuilder:validation:Minimum=101
+	// +kubebuilder:validation:Maximum=600
+	End int64 `json:"end"`
 }
 
 // TCPHealthCheckPolicy defines health checks on the upstream service.
