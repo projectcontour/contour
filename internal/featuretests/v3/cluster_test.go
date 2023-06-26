@@ -608,6 +608,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 
 	rh.OnAdd(proxy1)
 
+	c.Status(proxy1).IsValid()
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", nil),
@@ -639,6 +640,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 
+	c.Status(proxy2).IsValid()
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", []*envoy_type_v3.Int64Range{
@@ -673,6 +675,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 
 	rh.OnUpdate(proxy2, proxy3)
 	c.Status(proxy3).HasError(contour_api_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: end must be in the range [101, 600]")
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{})
 
 	// proxy4 has an invalid expected status range (start is too small).
 	proxy4 := fixture.NewProxy("default/simple").WithSpec(contour_api_v1.HTTPProxySpec{
@@ -698,6 +701,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 
 	rh.OnUpdate(proxy3, proxy4)
 	c.Status(proxy4).HasError(contour_api_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be in the range [100, 599]")
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{})
 }
 
 // Test processing a service that exists but is not referenced
