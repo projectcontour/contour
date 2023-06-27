@@ -2668,16 +2668,44 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	run(t, "invalid fallback certificate passed to contour", testcase{
+	fallbackCertDelegation := &contour_api_v1.TLSCertificateDelegation{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "non-existing",
+			Name:      "fallback-cert-delegation",
+		},
+		Spec: contour_api_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_api_v1.CertificateDelegation{
+				{
+					SecretName:       "non-existing",
+					TargetNamespaces: []string{"roots"},
+				},
+			},
+		},
+	}
+
+	run(t, "non-existing fallback certificate passed to contour", testcase{
 		fallbackCertificate: &types.NamespacedName{
-			Name:      "invalid",
-			Namespace: "invalid",
+			Name:      "non-existing",
+			Namespace: "non-existing",
+		},
+		objs: []any{fallbackCertificate, fallbackCertDelegation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid", `Spec.Virtualhost.TLS Secret "non-existing/non-existing" fallback certificate is invalid: Secret not found`),
+		},
+	})
+
+	run(t, "fallback certificate reference without certificate delegation passed to contour", testcase{
+		fallbackCertificate: &types.NamespacedName{
+			Name:      "not-delegated",
+			Namespace: "not-delegated",
 		},
 		objs: []any{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid", `Spec.Virtualhost.TLS Secret "invalid/invalid" fallback certificate is invalid: Secret not found`),
+				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotDelegated", `Spec.VirtualHost.TLS Secret "not-delegated/not-delegated" is not configured for certificate delegation`),
 		},
 	})
 

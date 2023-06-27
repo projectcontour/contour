@@ -406,10 +406,12 @@ type RemoteJWKS struct {
 // TLS describes tls properties. The SNI names that will be matched on
 // are described in the HTTPProxy's Spec.VirtualHost.Fqdn field.
 type TLS struct {
-	// SecretName is the name of a TLS secret in the current namespace.
+	// SecretName is the name of a TLS secret.
 	// Either SecretName or Passthrough must be specified, but not both.
 	// If specified, the named secret must contain a matching certificate
 	// for the virtual host's FQDN.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	SecretName string `json:"secretName,omitempty"`
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate. Valid options are `1.2` (default) and `1.3`. Any other value
@@ -1265,6 +1267,8 @@ type DownstreamValidation struct {
 	// The client certificate must validate against the certificates in the bundle.
 	// If specified and SkipClientCertValidation is true, client certificates will
 	// be required on requests.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret,omitempty"`
@@ -1290,6 +1294,8 @@ type DownstreamValidation struct {
 	// This field will be used to verify that a client certificate has not been revoked.
 	// CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert is true.
 	// Large CRL lists are not supported since individual secrets are limited to 1MiB in size.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CertificateRevocationList string `json:"crlSecret,omitempty"`

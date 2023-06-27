@@ -1022,7 +1022,9 @@ string
 The secret must contain key named ca.crt.
 The client certificate must validate against the certificates in the bundle.
 If specified and SkipClientCertValidation is true, client certificates will
-be required on requests.</p>
+be required on requests.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>
@@ -1075,7 +1077,9 @@ string
 The secret must contain key named crl.pem.
 This field will be used to verify that a client certificate has not been revoked.
 CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert is true.
-Large CRL lists are not supported since individual secrets are limited to 1MiB in size.</p>
+Large CRL lists are not supported since individual secrets are limited to 1MiB in size.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>
@@ -4304,10 +4308,12 @@ string
 </em>
 </td>
 <td>
-<p>SecretName is the name of a TLS secret in the current namespace.
+<p>SecretName is the name of a TLS secret.
 Either SecretName or Passthrough must be specified, but not both.
 If specified, the named secret must contain a matching certificate
-for the virtual host&rsquo;s FQDN.</p>
+for the virtual host&rsquo;s FQDN.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>

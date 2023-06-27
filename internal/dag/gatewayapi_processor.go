@@ -704,7 +704,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 		meta = types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}
 	}
 
-	listenerSecret, err := p.source.LookupTLSSecret(meta)
+	listenerSecret, err := p.source.LookupTLSSecretInsecure(meta)
 	if err != nil {
 		gwAccessor.AddListenerCondition(
 			listenerName,

@@ -86,22 +86,21 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := p.source.LookupTLSSecret(secretName)
+			sec, err := p.source.LookupTLSSecret(secretName, ing.GetNamespace())
 			if err != nil {
-				p.WithError(err).
-					WithField("name", ing.GetName()).
-					WithField("namespace", ing.GetNamespace()).
-					WithField("secret", secretName).
-					Error("unresolved secret reference")
-				continue
-			}
-
-			if !p.source.DelegationPermitted(secretName, ing.GetNamespace()) {
-				p.WithError(err).
-					WithField("name", ing.GetName()).
-					WithField("namespace", ing.GetNamespace()).
-					WithField("secret", secretName).
-					Error("certificate delegation not permitted")
+				if _, ok := err.(DelegationNotPermittedError); ok {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("secret", secretName).
+						Error("certificate delegation not permitted")
+				} else {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("secret", secretName).
+						Error("unresolved secret reference")
+				}
 				continue
 			}
 
@@ -150,7 +149,8 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	var clientCertSecret *Secret
 	var err error
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = p.source.LookupTLSSecret(*p.ClientCertificate)
+		// Since the client certificate is configured by admin, explicit delegation is not required.
+		clientCertSecret, err = p.source.LookupTLSSecretInsecure(*p.ClientCertificate)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).
