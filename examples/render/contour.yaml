@@ -4476,7 +4476,10 @@ spec:
                   caSecret:
                     description: Name or namespaced name of the Kubernetes secret
                       used to validate the certificate presented by the backend. The
-                      secret must contain key named ca.crt.
+                      secret must contain key named ca.crt. The name can be optionally
+                      prefixed with namespace "namespace/name". When cross-namespace
+                      reference is used, TLSCertificateDelegation resource must exist
+                      in the namespace to grant access to the secret.
                     type: string
                   subjectName:
                     description: Key which is expected to be present in the 'subjectAltName'
@@ -6015,7 +6018,11 @@ spec:
                                 description: Name or namespaced name of the Kubernetes
                                   secret used to validate the certificate presented
                                   by the backend. The secret must contain key named
-                                  ca.crt.
+                                  ca.crt. The name can be optionally prefixed with
+                                  namespace "namespace/name". When cross-namespace
+                                  reference is used, TLSCertificateDelegation resource
+                                  must exist in the namespace to grant access to the
+                                  secret.
                                 type: string
                               subjectName:
                                 description: Key which is expected to be present in
@@ -6407,7 +6414,10 @@ spec:
                               description: Name or namespaced name of the Kubernetes
                                 secret used to validate the certificate presented
                                 by the backend. The secret must contain key named
-                                ca.crt.
+                                ca.crt. The name can be optionally prefixed with namespace
+                                "namespace/name". When cross-namespace reference is
+                                used, TLSCertificateDelegation resource must exist
+                                in the namespace to grant access to the secret.
                               type: string
                             subjectName:
                               description: Key which is expected to be present in
@@ -6725,7 +6735,11 @@ spec:
                                   description: Name or namespaced name of the Kubernetes
                                     secret used to validate the certificate presented
                                     by the backend. The secret must contain key named
-                                    ca.crt.
+                                    ca.crt. The name can be optionally prefixed with
+                                    namespace "namespace/name". When cross-namespace
+                                    reference is used, TLSCertificateDelegation resource
+                                    must exist in the namespace to grant access to
+                                    the secret.
                                   type: string
                                 subjectName:
                                   description: Key which is expected to be present

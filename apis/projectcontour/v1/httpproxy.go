@@ -1255,6 +1255,8 @@ type HeaderValue struct {
 type UpstreamValidation struct {
 	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 	// The secret must contain key named ca.crt.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
 	SubjectName string `json:"subjectName"`
