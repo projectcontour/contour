@@ -84,85 +84,71 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 
 // buildRoute converts a DAG route to an Envoy route.
 func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
+	route := &envoy_route_v3.Route{
+		Match: RouteMatch(dagRoute),
+	}
+
 	switch {
 	case dagRoute.HTTPSUpgrade && !secure:
 		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
 		// to a SecureVirtualHost that requires upgrade, this logic can move to
 		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
 		// redirect routes to *both* the insecure and secure vhosts.
-		return &envoy_route_v3.Route{
-			Match:  RouteMatch(dagRoute),
-			Action: UpgradeHTTPS(),
-		}
+		route.Action = UpgradeHTTPS()
 	case dagRoute.DirectResponse != nil:
-		return &envoy_route_v3.Route{
-			Match:  RouteMatch(dagRoute),
-			Action: routeDirectResponse(dagRoute.DirectResponse),
-		}
+		route.Action = routeDirectResponse(dagRoute.DirectResponse)
 	case dagRoute.Redirect != nil:
 		// TODO request/response headers?
-		return &envoy_route_v3.Route{
-			Match:  RouteMatch(dagRoute),
-			Action: routeRedirect(dagRoute.Redirect),
-		}
+		route.Action = routeRedirect(dagRoute.Redirect)
 	default:
-		rt := &envoy_route_v3.Route{
-			Match:  RouteMatch(dagRoute),
-			Action: routeRoute(dagRoute),
-		}
+		route.Action = routeRoute(dagRoute)
 
 		if dagRoute.RequestHeadersPolicy != nil {
-			rt.RequestHeadersToAdd = append(headerValueList(dagRoute.RequestHeadersPolicy.Set, false), headerValueList(dagRoute.RequestHeadersPolicy.Add, true)...)
-			rt.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
+			route.RequestHeadersToAdd = append(headerValueList(dagRoute.RequestHeadersPolicy.Set, false), headerValueList(dagRoute.RequestHeadersPolicy.Add, true)...)
+			route.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
 		}
 		if dagRoute.ResponseHeadersPolicy != nil {
-			rt.ResponseHeadersToAdd = append(headerValueList(dagRoute.ResponseHeadersPolicy.Set, false), headerValueList(dagRoute.ResponseHeadersPolicy.Add, true)...)
-			rt.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
+			route.ResponseHeadersToAdd = append(headerValueList(dagRoute.ResponseHeadersPolicy.Set, false), headerValueList(dagRoute.ResponseHeadersPolicy.Add, true)...)
+			route.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
 		}
+
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+
+		// Apply per-route local rate limit policy.
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+			route.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
 		// Apply per-route authorization policy modifications.
 		if dagRoute.AuthDisabled {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
 		} else if len(dagRoute.AuthContext) > 0 {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		// If JWT verification is enabled, add per-route filter
 		// config referencing a requirement in the main filter
 		// config.
 		if len(dagRoute.JWTProvider) > 0 {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+			route.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
 				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
 			})
 		}
 
 		// If IP filtering is enabled, add per-route filtering
 		if len(dagRoute.IPFilterRules) > 0 {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*anypb.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+			route.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
 				ipFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules),
 			)
 		}
 
-		return rt
+		// Remove empty map if no per-filter config was added.
+		if len(route.TypedPerFilterConfig) == 0 {
+			route.TypedPerFilterConfig = nil
+		}
 	}
+
+	return route
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
