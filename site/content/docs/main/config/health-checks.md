@@ -48,7 +48,11 @@ Health check configuration parameters:
 
 ### Non-default expected statuses
 
-To consider status codes other than 200 healthy, specify `expectedStatuses` like the following:
+By default, only responses with a 200 status code will be considered healthy.
+The set of response codes considered healthy can be customized by specifying ranges in `expectedStatuses`.
+Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. 
+Statuses must be between 100 (inclusive) and 600 (exclusive).
+For example:
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -68,18 +72,20 @@ spec:
       timeoutSeconds: 2
       unhealthyThresholdCount: 3
       healthyThresholdCount: 5
-      # Status codes 200-299, and 500-599 will be considered healthy.
+      # Status codes 200 and 250-299 will be considered healthy.
       expectedStatuses:
       - start: 200
+        end: 201
+      - start: 250
         end: 300
-      - start: 500
-        end: 600
     services:
       - name: s1-health
         port: 80
       - name: s2-health
         port: 80
 ```
+
+Note that if `expectedStatuses` is specified, `200` must be explicitly included in one of the specified ranges if it is desired as a healthy status code.
 
 ## TCP Proxy Health Checking
 
