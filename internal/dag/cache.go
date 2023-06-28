@@ -85,6 +85,15 @@ type KubernetesCache struct {
 	logrus.FieldLogger
 }
 
+// DelegationNotPermittedError is returned by KubernetesCache's Secret accessor methods when delegation is not set up.
+type DelegationNotPermittedError struct {
+	error
+}
+
+func NewDelegationNotPermittedError(err error) DelegationNotPermittedError {
+	return DelegationNotPermittedError{err}
+}
+
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
@@ -611,27 +620,24 @@ func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.
 	return false
 }
 
-func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName) (*Secret, error) {
-	sec, ok := kc.secrets[name]
-	if !ok {
-		return nil, fmt.Errorf("Secret not found")
+// LookupTLSSecret returns Secret with TLS certificate and private key from cache.
+// If name (referred Secret) is in different namespace than targetNamespace (the referring object),
+// then delegation check is performed.
+func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
+	if !kc.delegationPermitted(name, targetNamespace) {
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
 	}
-
-	// Compute and store the validation result if not
-	// already stored.
-	if sec.ValidTLSSecret == nil {
-		sec.ValidTLSSecret = &SecretValidationStatus{
-			Error: validTLSSecret(sec.Object),
-		}
-	}
-
-	if err := sec.ValidTLSSecret.Error; err != nil {
-		return nil, err
-	}
-	return sec, nil
+	return kc.LookupTLSSecretInsecure(name)
 }
 
-func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName) (*Secret, error) {
+// LookupCASecret returns Secret with CA certificate from cache.
+// If name (referred Secret) is in different namespace than targetNamespace (the referring object),
+// then delegation check is performed.
+func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
+	if !kc.delegationPermitted(name, targetNamespace) {
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
+	}
+
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
@@ -651,7 +657,14 @@ func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName) (*Secret, e
 	return sec, nil
 }
 
-func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName) (*Secret, error) {
+// LookupCRLSecret returns Secret with CRL from the cache.
+// If name (referred Secret) is in different namespace than targetNamespace (the referring object),
+// then delegation check is performed.
+func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
+	if !kc.delegationPermitted(name, targetNamespace) {
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
+	}
+
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
@@ -671,16 +684,22 @@ func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName) (*Secret, 
 	return sec, nil
 }
 
-func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName) (*PeerValidationContext, error) {
+// LookupUpstreamValidation constructs PeerValidationContext with CA certificate from the cache.
+// If name (referred Secret) is in different namespace than targetNamespace (the referring object),
+// then delegation check is performed.
+func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName, targetNamespace string) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
 	}
 
-	cacert, err := kc.LookupCASecret(caCertificate)
+	cacert, err := kc.LookupCASecret(caCertificate, targetNamespace)
 	if err != nil {
-		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
+		if _, ok := err.(DelegationNotPermittedError); ok {
+			return nil, err
+		} else {
+			return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
+		}
 	}
 
 	if uv.SubjectName == "" {
@@ -694,9 +713,31 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 	}, nil
 }
 
-// DelegationPermitted returns true if the referenced secret has been delegated
+// LookupTLSSecretInsecure returns Secret with TLS certificate and private key from cache.
+// No delegation check is performed.
+func (kc *KubernetesCache) LookupTLSSecretInsecure(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidTLSSecret == nil {
+		sec.ValidTLSSecret = &SecretValidationStatus{
+			Error: validTLSSecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidTLSSecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
+}
+
+// delegationPermitted returns true if the referenced secret has been delegated
 // to the namespace where the ingress object is located.
-func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targetNamespace string) bool {
+func (kc *KubernetesCache) delegationPermitted(secret types.NamespacedName, targetNamespace string) bool {
 	contains := func(haystack []string, needle string) bool {
 		if len(haystack) == 1 && haystack[0] == "*" {
 			return true

@@ -221,16 +221,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupTLSSecret(secretName)
+			sec, err := p.source.LookupTLSSecret(secretName, proxy.Namespace)
 			if err != nil {
-				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
-					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
-				return
-			}
-
-			if !p.source.DelegationPermitted(secretName, proxy.Namespace) {
-				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted",
-					"Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				if _, ok := err.(DelegationNotPermittedError); ok {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted",
+						"Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				} else {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
+						"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
+				}
 				return
 			}
 
@@ -271,16 +270,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupTLSSecret(*p.FallbackCertificate)
+				sec, err = p.source.LookupTLSSecret(*p.FallbackCertificate, proxy.Namespace)
 				if err != nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
-						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
-					return
-				}
-
-				if !p.source.DelegationPermitted(*p.FallbackCertificate, proxy.Namespace) {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotDelegated",
-						"Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
+					if _, ok := err.(DelegationNotPermittedError); ok {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotDelegated",
+							"Spec.VirtualHost.TLS Secret %q is not configured for certificate delegation", p.FallbackCertificate)
+					} else {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
+							"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
+					}
 					return
 				}
 
@@ -304,11 +302,16 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				if tls.ClientValidation.CACertificate != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-					cacert, err := p.source.LookupCASecret(secretName)
+					cacert, err := p.source.LookupCASecret(secretName, proxy.Namespace)
 					if err != nil {
-						// PeerValidationContext is requested, but cert is missing or not configured.
-						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
-							"Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret %q: %s", secretName, err)
+						if _, ok := err.(DelegationNotPermittedError); ok {
+							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted",
+								"Spec.VirtualHost.TLS CA Secret %q is invalid: %s", tls.ClientValidation.CACertificate, err)
+						} else {
+							// PeerValidationContext is requested, but cert is missing or not configured.
+							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
+								"Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret %q: %s", secretName, err)
+						}
 						return
 					}
 					dv.CACertificate = cacert
@@ -318,11 +321,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 				if tls.ClientValidation.CertificateRevocationList != "" {
 					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace))
-					crl, err := p.source.LookupCRLSecret(secretName)
+					crl, err := p.source.LookupCRLSecret(secretName, proxy.Namespace)
 					if err != nil {
-						// CRL is missing or not configured.
-						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
-							"Spec.VirtualHost.TLS client validation is invalid: invalid CRL Secret %q: %s", secretName, err)
+						if _, ok := err.(DelegationNotPermittedError); ok {
+							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted",
+								"Spec.VirtualHost.TLS CRL Secret %q is invalid: %s", tls.ClientValidation.CertificateRevocationList, err)
+						} else {
+							// CRL is missing or not configured.
+							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
+								"Spec.VirtualHost.TLS client validation is invalid: invalid CRL Secret %q: %s", secretName, err)
+						}
+						return
 					}
 					dv.CRL = crl
 					dv.OnlyVerifyLeafCertCrl = tls.ClientValidation.OnlyVerifyLeafCertCrl
@@ -374,22 +383,16 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 						return
 					}
 
-					// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
-					// is not the proxy's namespace, check if the referenced secret is permitted to be
-					// delegated to the proxy's namespace.
-					// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
 					caCertNamespacedName := k8s.NamespacedNameFrom(jwtProvider.RemoteJWKS.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-
-					if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
-						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCACertificateNotDelegated",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
-						return
-					}
-
-					uv, err = p.source.LookupUpstreamValidation(jwtProvider.RemoteJWKS.UpstreamValidation, caCertNamespacedName)
+					uv, err = p.source.LookupUpstreamValidation(jwtProvider.RemoteJWKS.UpstreamValidation, caCertNamespacedName, proxy.Namespace)
 					if err != nil {
-						validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: %s", err)
+						if _, ok := err.(DelegationNotPermittedError); ok {
+							validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCACertificateNotDelegated",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+						} else {
+							validCond.AddErrorf(contour_api_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: %s", err)
+						}
 						return
 					}
 				}
@@ -908,21 +911,17 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var uv *PeerValidationContext
 			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
-				// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
-				// is not the proxy's namespace, check if the referenced secret is permitted to be
-				// delegated to the proxy's namespace.
-				// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
 				caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-				if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
-						"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
-					return nil
-				}
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName)
+				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName, proxy.Namespace)
 				if err != nil {
-					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
-						"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
+					if _, ok := err.(DelegationNotPermittedError); ok {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+							"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+					} else {
+						validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
+							"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
+					}
 					return nil
 				}
 			}
@@ -952,7 +951,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupTLSSecret(*p.ClientCertificate)
+				// Since the client certificate is configured by admin, explicit delegation is not required.
+				clientCertSecret, err = p.source.LookupTLSSecretInsecure(*p.ClientCertificate)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
