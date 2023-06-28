@@ -4848,6 +4848,217 @@ func TestDAGStatus(t *testing.T) {
 				),
 		},
 	})
+
+	clientValidationWithDelegatedCA := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: "ssl-cert",
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate: "delegated/delegated",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "ClientValidation with CA but missing delegation", testcase{
+		objs: []any{
+			fixture.SecretRootsCert,
+			clientValidationWithDelegatedCA,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CA Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
+		},
+	})
+
+	run(t, "ClientValidation with delegated CA but missing secret", testcase{
+		objs: []any{
+			fixture.SecretRootsCert,
+			clientValidationWithDelegatedCA,
+			&contour_api_v1.TLSCertificateDelegation{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "delegated",
+					Name:      "ca-cert-delegation",
+				},
+				Spec: contour_api_v1.TLSCertificateDelegationSpec{
+					Delegations: []contour_api_v1.CertificateDelegation{
+						{
+							SecretName:       "delegated",
+							TargetNamespaces: []string{"roots"},
+						},
+					},
+				},
+			},
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", `Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret "delegated/delegated": Secret not found`),
+		},
+	})
+
+	clientValidationWithDelegatedCRL := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: "ssl-cert",
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:             "ca-cert",
+						CertificateRevocationList: "delegated/delegated",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	caCertSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "ca-cert",
+		},
+		Type: v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"ca.crt": []byte(fixture.CERTIFICATE),
+		},
+	}
+
+	run(t, "ClientValidation with CRL but missing delegation", testcase{
+		objs: []any{
+			fixture.SecretRootsCert,
+			caCertSecret,
+			clientValidationWithDelegatedCRL,
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CRL Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
+		},
+	})
+
+	run(t, "ClientValidation with delegated CRL but missing secret", testcase{
+		objs: []any{
+			fixture.SecretRootsCert,
+			caCertSecret,
+			clientValidationWithDelegatedCRL,
+			&contour_api_v1.TLSCertificateDelegation{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "delegated",
+					Name:      "crl-cert-delegation",
+				},
+				Spec: contour_api_v1.TLSCertificateDelegationSpec{
+					Delegations: []contour_api_v1.CertificateDelegation{
+						{
+							SecretName:       "delegated",
+							TargetNamespaces: []string{"roots"},
+						},
+					},
+				},
+			},
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", `Spec.VirtualHost.TLS client validation is invalid: invalid CRL Secret "delegated/delegated": Secret not found`),
+		},
+	})
+
+	clientValidationWithDelegatedCAandCRL := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: "ssl-cert",
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						CACertificate:             "delegated/delegated",
+						CertificateRevocationList: "delegated/delegated",
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	caCertCRLSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "delegated",
+			Name:      "delegated",
+		},
+		Type: v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			CACertificateKey: []byte(fixture.CERTIFICATE),
+			CRLKey:           []byte(fixture.CRL),
+		},
+	}
+
+	run(t, "ClientValidation with delegated CA and CRL", testcase{
+		objs: []any{
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+			clientValidationWithDelegatedCAandCRL,
+			caCertCRLSecret,
+			&contour_api_v1.TLSCertificateDelegation{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "delegated",
+					Name:      "ca-crl-cert-delegation",
+				},
+				Spec: contour_api_v1.TLSCertificateDelegationSpec{
+					Delegations: []contour_api_v1.CertificateDelegation{
+						{
+							SecretName:       "delegated",
+							TargetNamespaces: []string{"roots"},
+						},
+					},
+				},
+			},
+		},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			k8s.NamespacedNameOf(clientValidationWithDelegatedCAandCRL): fixture.NewValidCondition().Valid(),
+		},
+	})
+
 }
 
 func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1beta1.Kind, attachedRoutes int) []*status.GatewayStatusUpdate {

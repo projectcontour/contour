@@ -325,7 +325,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					if err != nil {
 						if _, ok := err.(DelegationNotPermittedError); ok {
 							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted",
-								"Spec.VirtualHost.TLS CRL Secret %q is invalid: %s", tls.ClientValidation.CACertificate, err)
+								"Spec.VirtualHost.TLS CRL Secret %q is invalid: %s", tls.ClientValidation.CertificateRevocationList, err)
 						} else {
 							// CRL is missing or not configured.
 							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
