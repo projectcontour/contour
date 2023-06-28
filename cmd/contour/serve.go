@@ -1140,7 +1140,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			GlobalExternalAuthorization:   dbc.globalExternalAuthorizationService,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
-			RateLimitService:              dbc.globalRateLimitService,
+			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 	}

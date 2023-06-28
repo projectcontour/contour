@@ -809,7 +809,7 @@ func TestGlobalRateLimiting(t *testing.T) {
 								Namespace: "default",
 							}
 
-							httpProxyProcessor.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+							httpProxyProcessor.GlobalRateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
 								ExtensionService: contour_api_v1alpha1.NamespacedName{
 									Name:      "extension",
 									Namespace: "ratelimit",

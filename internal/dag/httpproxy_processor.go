@@ -104,8 +104,8 @@ type HTTPProxyProcessor struct {
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
 
-	// RateLimitService defines Envoy's Global RateLimit Service configuration.
-	RateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
+	// GlobalRateLimitService defines Envoy's Global RateLimit Service configuration.
+	GlobalRateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -507,7 +507,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 	insecure.CORSPolicy = cp
 
-	insecure.RateLimitPolicy = computeVirtualHostRateLimitPolicy(proxy, p.RateLimitService, validCond)
+	insecure.RateLimitPolicy = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
 
 	if p.GlobalExternalAuthorization != nil && !proxy.Spec.VirtualHost.DisableAuthorization() {
 		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
@@ -534,7 +534,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		secure := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 		secure.CORSPolicy = cp
 
-		secure.RateLimitPolicy = computeVirtualHostRateLimitPolicy(proxy, p.RateLimitService, validCond)
+		secure.RateLimitPolicy = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
 
 		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
 		if err != nil {
