@@ -869,7 +869,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					}
 				}
 			}
+		}
 
+		healthPolicy, err := httpHealthCheckPolicy(route.HealthCheckPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
+			return nil
 		}
 
 		for _, service := range route.Services {
@@ -880,7 +885,6 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			var healthPort int
-			healthPolicy := httpHealthCheckPolicy(route.HealthCheckPolicy)
 			if healthPolicy != nil && service.HealthPort > 0 {
 				healthPort = service.HealthPort
 			} else {

@@ -32,8 +32,6 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 		host = hc.Host
 	}
 
-	// TODO(dfc) why do we need to specify our own default, what is the default
-	// that envoy applies if these fields are left nil?
 	return &envoy_core_v3.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, envoy.HCTimeout),
 		Interval:           durationOrDefault(hc.Interval, envoy.HCInterval),
@@ -41,12 +39,30 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
 		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
-				Path:            hc.Path,
-				Host:            host,
-				CodecClientType: codecClientType(cluster),
+				Path:             hc.Path,
+				Host:             host,
+				CodecClientType:  codecClientType(cluster),
+				ExpectedStatuses: expectedStatuses(hc.ExpectedStatuses),
 			},
 		},
 	}
+}
+
+func expectedStatuses(statusRanges []dag.HTTPStatusRange) []*typev3.Int64Range {
+	if len(statusRanges) == 0 {
+		return nil
+	}
+
+	var res []*typev3.Int64Range
+
+	for _, statusRange := range statusRanges {
+		res = append(res, &typev3.Int64Range{
+			Start: statusRange.Start,
+			End:   statusRange.End,
+		})
+	}
+
+	return res
 }
 
 // tcpHealthCheck returns a *envoy_core_v3.HealthCheck value for TCPProxies

@@ -5135,6 +5135,33 @@ spec:
                     healthCheckPolicy:
                       description: The health check policy for this route.
                       properties:
+                        expectedStatuses:
+                          description: The ranges of HTTP response statuses considered
+                            healthy. Follow half-open semantics, i.e. for each range
+                            the start is inclusive and the end is exclusive. Must
+                            be within the range [100,600). If not specified, only
+                            a 200 response status is considered healthy.
+                          items:
+                            properties:
+                              end:
+                                description: The end (exclusive) of a range of HTTP
+                                  status codes.
+                                format: int64
+                                maximum: 600
+                                minimum: 101
+                                type: integer
+                              start:
+                                description: The start (inclusive) of a range of HTTP
+                                  status codes.
+                                format: int64
+                                maximum: 599
+                                minimum: 100
+                                type: integer
+                            required:
+                            - end
+                            - start
+                            type: object
+                          type: array
                         healthyThresholdCount:
                           description: The number of healthy health checks required
                             before a host is marked healthy

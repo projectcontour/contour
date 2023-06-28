@@ -1394,6 +1394,24 @@ int64
 <p>The number of healthy health checks required before a host is marked healthy</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>expectedStatuses</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPStatusRange">
+[]HTTPStatusRange
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The ranges of HTTP response statuses considered healthy. Follow half-open
+semantics, i.e. for each range the start is inclusive and the end is exclusive.
+Must be within the range [100,600). If not specified, only a 200 response status
+is considered healthy.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy
@@ -1758,6 +1776,48 @@ string
 <p>Prefix defines the value to swap the matched prefix or path with.
 The prefix must start with a leading slash.</p>
 <p>Note: Only one of Path or Prefix can be defined.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPStatusRange">HTTPStatusRange
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>start</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<p>The start (inclusive) of a range of HTTP status codes.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>end</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<p>The end (exclusive) of a range of HTTP status codes.</p>
 </td>
 </tr>
 </tbody>

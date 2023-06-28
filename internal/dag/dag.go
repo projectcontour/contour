@@ -1146,6 +1146,12 @@ type HTTPHealthCheckPolicy struct {
 	Timeout            time.Duration
 	UnhealthyThreshold uint32
 	HealthyThreshold   uint32
+	ExpectedStatuses   []HTTPStatusRange
+}
+
+type HTTPStatusRange struct {
+	Start int64
+	End   int64
 }
 
 // TCPHealthCheckPolicy tcp health check policy

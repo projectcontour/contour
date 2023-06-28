@@ -354,8 +354,8 @@ func (s *StatusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 // HasError asserts that there is an error on the Valid Condition in the proxy
 // that matches the given values.
 func (s *StatusResult) HasError(condType string, reason, message string) *Contour {
-	assert.Equal(s.T, s.Have.CurrentStatus, string(status.ProxyStatusInvalid))
-	assert.Equal(s.T, s.Have.Description, `At least one error present, see Errors for details`)
+	assert.Equal(s.T, string(status.ProxyStatusInvalid), s.Have.CurrentStatus)
+	assert.Equal(s.T, "At least one error present, see Errors for details", s.Have.Description)
 	validCond := s.Have.GetConditionFor(contour_api_v1.ValidConditionType)
 	assert.NotNil(s.T, validCond)
 
