@@ -287,14 +287,8 @@ func pemBundle(cert ...string) string {
 	return data
 }
 func makeTLSSecret(data map[string][]byte) *v1.Secret {
-	return &v1.Secret{
-		Type: v1.SecretTypeTLS,
-		Data: data,
-	}
+	return &v1.Secret{Type: v1.SecretTypeTLS, Data: data}
 }
 func makeOpaqueSecret(data map[string][]byte) *v1.Secret {
-	return &v1.Secret{
-		Type: v1.SecretTypeOpaque,
-		Data: data,
-	}
+	return &v1.Secret{Type: v1.SecretTypeOpaque, Data: data}
 }
