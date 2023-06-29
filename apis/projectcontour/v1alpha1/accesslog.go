@@ -52,17 +52,20 @@ const DefaultAccessLogType = EnvoyAccessLog
 // jsonFields is the canonical translation table for JSON fields to Envoy log template formats,
 // used for specifying fields for Envoy to log when JSON logging is enabled.
 var jsonFields = map[string]string{
-	"@timestamp":            "%START_TIME%",
-	"ts":                    "%START_TIME%",
-	"authority":             "%REQ(:AUTHORITY)%",
-	"method":                "%REQ(:METHOD)%",
-	"path":                  "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
-	"request_id":            "%REQ(X-REQUEST-ID)%",
-	"uber_trace_id":         "%REQ(UBER-TRACE-ID)%",
-	"upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
-	"user_agent":            "%REQ(USER-AGENT)%",
-	"x_forwarded_for":       "%REQ(X-FORWARDED-FOR)%",
-	"x_trace_id":            "%REQ(X-TRACE-ID)%",
+	"@timestamp":               "%START_TIME%",
+	"ts":                       "%START_TIME%",
+	"authority":                "%REQ(:AUTHORITY)%",
+	"method":                   "%REQ(:METHOD)%",
+	"path":                     "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+	"request_id":               "%REQ(X-REQUEST-ID)%",
+	"uber_trace_id":            "%REQ(UBER-TRACE-ID)%",
+	"upstream_service_time":    "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+	"user_agent":               "%REQ(USER-AGENT)%",
+	"x_forwarded_for":          "%REQ(X-FORWARDED-FOR)%",
+	"x_trace_id":               "%REQ(X-TRACE-ID)%",
+	"contour_config_kind":      "%METADATA(ROUTE:envoy.access_loggers.file:kind)%",
+	"contour_config_namespace": "%METADATA(ROUTE:envoy.access_loggers.file:namespace)%",
+	"contour_config_name":      "%METADATA(ROUTE:envoy.access_loggers.file:name)%",
 }
 
 // envoySimpleOperators is the list of known supported Envoy log template keywords that do not

@@ -1309,14 +1309,35 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 		var routes []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
+			routes = p.redirectRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				redirect,
+				priority,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		} else {
 			// Get clusters from rule backendRefs
 			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 			if !ok {
 				continue
 			}
-			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
+			routes = p.clusterRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				mirrorPolicy,
+				clusters,
+				totalWeight,
+				priority,
+				pathRewritePolicy,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1448,7 +1469,19 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 		if !ok {
 			continue
 		}
-		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+		routes = p.clusterRoutes(
+			matchconditions,
+			requestHeaderPolicy,
+			responseHeaderPolicy,
+			mirrorPolicy,
+			clusters,
+			totalWeight,
+			priority,
+			nil,
+			KindGRPCRoute,
+			route.Namespace,
+			route.Name,
+		)
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
@@ -1992,8 +2025,19 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
-	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	mirrorPolicy *MirrorPolicy,
+	clusters []*Cluster,
+	totalWeight uint32,
+	priority uint8,
+	pathRewritePolicy *PathRewritePolicy,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 
 	var routes []*Route
 
@@ -2016,6 +2060,9 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
+			Kind:                      kind,
+			Namespace:                 namespace,
+			Name:                      name,
 		})
 	}
 
@@ -2048,7 +2095,16 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *Redirect, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) redirectRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	redirect *Redirect,
+	priority uint8,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,
@@ -2067,6 +2123,9 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
 			ResponseHeadersPolicy: responseHeaderPolicy,
+			Kind:                  kind,
+			Namespace:             namespace,
+			Name:                  name,
 		})
 	}
 

@@ -89,8 +89,6 @@ toc:
         url: /guides/grpc
       - page: Health Checking
         url: /guides/health-checking
-      - page: How to enable structured JSON logging
-        url: /guides/structured-logs/
       - page: Creating a Contour-compatible kind cluster
         url: /guides/kind
       - page: Collecting Metrics with Prometheus

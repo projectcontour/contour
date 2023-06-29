@@ -601,13 +601,16 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
-func addStatusBadGatewayRoute(routes []*Route, conds []contour_api_v1.MatchCondition) []*Route {
+func addStatusBadGatewayRoute(routes []*Route, conds []contour_api_v1.MatchCondition, proxy *contour_api_v1.HTTPProxy) []*Route {
 	if len(conds) > 0 {
 		routes = append(routes, &Route{
 			PathMatchCondition:        mergePathMatchConditions(conds),
 			HeaderMatchConditions:     mergeHeaderMatchConditions(conds),
 			QueryParamMatchConditions: mergeQueryParamMatchConditions(conds),
 			DirectResponse:            directResponse(http.StatusBadGateway, ""),
+			Kind:                      "HTTPProxy",
+			Namespace:                 proxy.Namespace,
+			Name:                      proxy.Name,
 		})
 	}
 	return routes
@@ -684,7 +687,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				"include %s/%s not found", namespace, include.Name)
 
 			// Set 502 response when include was not found but include condition was valid.
-			routes = addStatusBadGatewayRoute(routes, include.Conditions)
+			routes = addStatusBadGatewayRoute(routes, include.Conditions, proxy)
 			continue
 		}
 
@@ -692,7 +695,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot",
 				"root httpproxy cannot include another root httpproxy")
 			// Set 502 response if include references another root
-			routes = addStatusBadGatewayRoute(routes, include.Conditions)
+			routes = addStatusBadGatewayRoute(routes, include.Conditions, proxy)
 			continue
 		}
 
@@ -802,6 +805,9 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    internalRedirectPolicy,
+			Kind:                      "HTTPProxy",
+			Namespace:                 proxy.Namespace,
+			Name:                      proxy.Name,
 		}
 
 		// If the enclosing root proxy enabled authorization,

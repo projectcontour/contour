@@ -273,6 +273,9 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		}},
+		Kind:      "Ingress",
+		Namespace: ingress.Namespace,
+		Name:      ingress.Name,
 	}
 
 	switch pathType {

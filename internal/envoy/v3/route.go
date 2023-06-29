@@ -41,6 +41,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -86,6 +87,17 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
 	route := &envoy_route_v3.Route{
 		Match: RouteMatch(dagRoute),
+		Metadata: &envoy_core_v3.Metadata{
+			FilterMetadata: map[string]*structpb.Struct{
+				"envoy.access_loggers.file": {
+					Fields: map[string]*structpb.Value{
+						"kind":      structpb.NewStringValue(dagRoute.Kind),
+						"namespace": structpb.NewStringValue(dagRoute.Namespace),
+						"name":      structpb.NewStringValue(dagRoute.Name),
+					},
+				},
+			},
+		},
 	}
 
 	switch {

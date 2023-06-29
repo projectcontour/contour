@@ -12,9 +12,11 @@ By default, HTTP and HTTPS access logs are written to `/dev/stdout` by the Envoy
 The detailed description of each field can be found in [Envoy access logging documentation][7].
 
 
-## Customizing Access Log Destination and Formats
+## Customizing Access Log Destination
 
 You can change the destination file where the access log is written by using Contour [command line parameters][1] `--envoy-http-access-log` and `--envoy-https-access-log`.
+
+## Customizing Access Log Format
 
 The access log can take two different formats, both can be customized
 
@@ -48,7 +50,7 @@ The list of available fields are discoverable in the following objects:
 - [envoySimpleOperators][3] are the names of simple envoy operators that don't require arguments, they are case-insensitive when configured.
 - [envoyComplexOperators][4] are the names of complex envoy operators that require arguments.
 
-The default list of fields is available at [DefaultFields][5].
+The default list of fields is available at [DefaultAccessLogJSONFields][5].
 
 #### Enabling the Feature
 
@@ -105,6 +107,20 @@ json-fields:
   - "x_forwarded_for"
 ```
 
+### Logging the route source
+
+Contour can log the kind, namespace and name of the Kubernetes resource that generated the route for a given access log entry. 
+
+For text-based access logging, the following command operators can be used:
+- `%METADATA(ROUTE:envoy.access_loggers.file:kind)%`
+- `%METADATA(ROUTE:envoy.access_loggers.file:namespace)%`
+- `%METADATA(ROUTE:envoy.access_loggers.file:name)%`
+
+For JSON access logging, the following fields can be added (these are Contour-specific aliases to the above command operators):
+- `contour_config_kind`
+- `contour_config_namespace`
+- `contour_config_name`
+
 ## Using Access Log Formatter Extensions
 
 Envoy allows implementing custom access log command operators as extensions.
@@ -113,14 +129,16 @@ Following extensions are supported by Contour:
 | Command operator | Description |
 |------------------|-------------|
 | [REQ_WITHOUT_QUERY][8] | Works the same way as REQ except that it will remove the query string. It is used to avoid logging any sensitive information into the access log. |
+| [METADATA][9] | Prints all types of metadata. |
 
 
 
 [1]: ../configuration#serve-flags
-[2]: https://github.com/search?q=jsonFields+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
-[3]: https://github.com/search?q=envoySimpleOperators+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
-[4]: https://github.com/search?q=envoyComplexOperators+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
-[5]: https://github.com/search?q=DefaultFields+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
+[2]: https://github.com/search?q=%22var+jsonFields%22+repo%3Aprojectcontour%2Fcontour+path%3Aapis&type=code
+[3]: https://github.com/search?q=%22var+envoySimpleOperators%22+repo%3Aprojectcontour%2Fcontour+path%3Aapis&type=code
+[4]: https://github.com/search?q=%22var+envoyComplexOperators%22+repo%3Aprojectcontour%2Fcontour+path%3Aapis&type=code
+[5]: https://github.com/search?q=%22var+DefaultAccessLogJSONFields%22+repo%3Aprojectcontour%2Fcontour+path%3Aapis&type=code
 [6]: {{< param github_url >}}/tree/{{< param latest_version >}}/examples/contour/01-contour-config.yaml
 [7]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/formatter/req_without_query/v3/req_without_query.proto
+[9]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/formatter/metadata/v3/metadata.proto
