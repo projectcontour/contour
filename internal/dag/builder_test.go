@@ -5777,9 +5777,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 	}
 }
 
-func unused(...any) {
-
-}
 func TestDAGInsert(t *testing.T) {
 	// The DAG is insensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
