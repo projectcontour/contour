@@ -152,8 +152,27 @@ func (e *EnvoyConfig) Validate() error {
 
 // Validate ensures EnvoyTLS configuration is valid.
 func (e *EnvoyTLS) Validate() error {
-	if e.MinimumProtocolVersion != "" && e.MinimumProtocolVersion != "1.2" && e.MinimumProtocolVersion != "1.3" {
-		return fmt.Errorf("invalid TLS minimum protocol version %q", e.MinimumProtocolVersion)
+	parseVersion := func(version, str string, defVal float64) (float64, error) {
+		if version == "" {
+			return defVal, nil
+		}
+		if version != "1.2" && version != "1.3" {
+			return 0.0, fmt.Errorf("invalid TLS %s protocol version %q", version, str)
+		}
+		return strconv.ParseFloat(version, 32)
+	}
+
+	minVer, err := parseVersion(e.MinimumProtocolVersion, "minimum", 1.2)
+	if err != nil {
+		return err
+	}
+
+	maxVer, err := parseVersion(e.MaximumProtocolVersion, "maximum", 1.3)
+	if err != nil {
+		return err
+	}
+	if maxVer < minVer {
+		return fmt.Errorf("the minimum TLS protocol version is greater than the maximum TLS protocol version")
 	}
 
 	var invalidCipherSuites []string

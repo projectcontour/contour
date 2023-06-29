@@ -391,10 +391,12 @@ tls:
 
 	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, "1.3", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.2", conf.TLS.MaximumProtocolVersion)
 		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
 	}, `
 tls:
   minimum-protocol-version: 1.3
+  maximum-protocol-version: 1.2
   cipher-suites:
   - ECDHE-RSA-AES256-GCM-SHA384
 `)

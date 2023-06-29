@@ -303,6 +303,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -329,6 +330,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -408,6 +410,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -460,6 +463,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -489,6 +493,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
+					envoy_tls_v3.TlsParameters_TLSv1_3,
 					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
 					nil,
 					"h2", "http/1.1"),
@@ -1022,9 +1027,10 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	})
 }
 
-func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
+func TestHTTPProxyTLSVersion(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
 		conf.MinimumTLSVersion = "1.2"
+		conf.MaximumTLSVersion = "1.3"
 	})
 
 	defer done()
@@ -1052,6 +1058,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -1079,6 +1086,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
+					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -1107,6 +1115,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.2",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -1134,6 +1143,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				"kuard.example.com",
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
+					envoy_tls_v3.TlsParameters_TLSv1_3,
 					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,

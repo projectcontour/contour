@@ -118,6 +118,15 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Envoy.Listener.TLS.MinimumProtocolVersion = "1.3"
 		require.NoError(t, c.Validate())
 
+		c.Envoy.Listener.TLS.MaximumProtocolVersion = "invalid"
+		require.Error(t, c.Validate())
+
+		c.Envoy.Listener.TLS.MaximumProtocolVersion = "1.2"
+		require.Error(t, c.Validate())
+
+		c.Envoy.Listener.TLS.MaximumProtocolVersion = "1.3"
+		require.NoError(t, c.Validate())
+
 		c.Envoy.Listener.TLS.CipherSuites = []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",

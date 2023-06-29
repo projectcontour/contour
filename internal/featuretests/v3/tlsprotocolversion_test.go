@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestTLSMinimumProtocolVersion(t *testing.T) {
+func TestTLSProtocolVersion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
@@ -90,6 +90,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	i2 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
 			"projectcontour.io/tls-minimum-protocol-version": "1.3",
+			"projectcontour.io/tls-maximum-protocol-version": "1.3",
 		}),
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
@@ -122,6 +123,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: sec1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -148,6 +150,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             sec1.Namespace + "/" + sec1.Name,
 					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{

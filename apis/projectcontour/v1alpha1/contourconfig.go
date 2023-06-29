@@ -399,6 +399,15 @@ type EnvoyTLS struct {
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
 
+	// MaximumProtocolVersion is the maximum TLS version this vhost should
+	// negotiate.
+	//
+	// Values: `1.2`, `1.3`(default).
+	//
+	// Other values will produce an error.
+	// +optional
+	MaximumProtocolVersion string `json:"maximumProtocolVersion,omitempty"`
+
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
 	// set that Envoy supports by default. This parameter should only be used

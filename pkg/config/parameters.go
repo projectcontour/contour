@@ -183,6 +183,7 @@ func (n NamespacedName) Validate() error {
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
 	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.

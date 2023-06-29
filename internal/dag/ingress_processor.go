@@ -126,7 +126,9 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 				svhost := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 				svhost.Secret = sec
 				// default to a minimum TLS version of 1.2 if it's not specified
-				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
+				svhost.MinTLSVersion = annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
+				// default to a maximum TLS version of 1.3 if it's not specified
+				svhost.MaxTLSVersion = annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-maximum-protocol-version"), "1.3")
 			}
 		}
 	}
