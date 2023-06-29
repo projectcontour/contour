@@ -2264,6 +2264,27 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	httpProxyWithClientValidation := func(namespace, name, crlSecretName string) *contour_api_v1.HTTPProxy {
+		return &contour_api_v1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "",
+					TLS: &contour_api_v1.TLS{
+						SecretName: "tlscert",
+						ClientValidation: &contour_api_v1.DownstreamValidation{
+							CACertificate:             "ca",
+							CertificateRevocationList: crlSecretName,
+						},
+					},
+				},
+			},
+		}
+	}
+
 	tests := map[string]struct {
 		cache  *KubernetesCache
 		secret *v1.Secret
@@ -2451,6 +2472,31 @@ func TestSecretTriggersRebuild(t *testing.T) {
 			),
 			secret: secret("projectcontour", "tlscert"),
 			want:   true,
+		},
+		"HTTPProxy with client validation and CRL triggers rebuild": {
+			cache:  cache(httpProxyWithClientValidation("user", "proxy", "crl")),
+			secret: secret("user", "crl"),
+			want:   true,
+		},
+		"HTTPProxy with client validation and CRL delegated for specific namespaces, triggers rebuild": {
+			cache: cache(
+				tlsCertificateDelegation("default", "crl", "thatnamespace", "thisnamespace"),
+				httpProxyWithClientValidation("thisnamespace", "proxy", "default/crl")),
+			secret: secret("default", "crl"),
+			want:   true,
+		},
+		"HTTPProxy with client validation and CRL delegated to any namespace, triggers rebuild": {
+			cache: cache(
+				tlsCertificateDelegation("default", "crl", "*"),
+				httpProxyWithClientValidation("user", "proxy", "default/crl")),
+			secret: secret("default", "crl"),
+			want:   true,
+		},
+		"HTTPProxy with client validation with CRL, not delegated, does not trigger rebuild": {
+			cache: cache(
+				httpProxyWithClientValidation("user", "proxy", "default/crl")),
+			secret: secret("default", "crl"),
+			want:   false,
 		},
 	}
 
