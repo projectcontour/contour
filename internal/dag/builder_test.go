@@ -42,12 +42,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -57,12 +52,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -72,12 +62,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -87,12 +72,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "custom",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -102,12 +82,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8080)},
 		},
 	}
 
@@ -6619,12 +6594,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8888),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8888)},
 		},
 	}
 
@@ -6665,12 +6635,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -6680,12 +6645,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "nginx-ingress",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8009,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8009, 8080)},
 		},
 	}
 
@@ -7019,12 +6979,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7038,12 +6993,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7060,12 +7010,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7076,12 +7021,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7093,12 +7033,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7109,12 +7044,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       9999,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 9999, 8080)},
 		},
 	}
 
@@ -7124,12 +7054,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7152,17 +7077,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(443),
-			}, {
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 443), makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
@@ -7172,11 +7087,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "it",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "blog",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("blog", "TCP", 8080)},
 		},
 	}
 
@@ -7186,12 +7097,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "teama",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7201,12 +7107,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "teamb",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -14143,12 +14044,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 	sec1 := &v1.Secret{
@@ -15113,11 +15009,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed1",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
@@ -15127,11 +15019,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed2",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
@@ -15279,12 +15167,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15294,12 +15177,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15725,12 +15603,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15741,12 +15614,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 

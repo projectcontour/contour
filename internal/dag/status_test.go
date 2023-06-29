@@ -472,17 +472,7 @@ func TestDAGStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(443),
-			}, {
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 443), makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
@@ -4727,12 +4717,7 @@ func TestDAGStatus(t *testing.T) {
 					Namespace: "roots",
 				},
 				Spec: v1.ServiceSpec{
-					Ports: []v1.ServicePort{{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       8080,
-						TargetPort: intstr.FromInt(8080),
-					}},
+					Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 				},
 			},
 			&contour_api_v1.HTTPProxy{
@@ -4804,12 +4789,7 @@ func TestDAGStatus(t *testing.T) {
 					Namespace: "roots",
 				},
 				Spec: v1.ServiceSpec{
-					Ports: []v1.ServicePort{{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       8080,
-						TargetPort: intstr.FromInt(8080),
-					}},
+					Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 				},
 			},
 			&contour_api_v1.HTTPProxy{
@@ -5253,12 +5233,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -5268,12 +5243,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -5283,12 +5253,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -9481,12 +9446,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -10113,12 +10073,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -10128,12 +10083,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -10143,12 +10093,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -11003,12 +10948,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -11018,12 +10958,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
