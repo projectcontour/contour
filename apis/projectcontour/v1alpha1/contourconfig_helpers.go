@@ -147,6 +147,11 @@ func (e *EnvoyConfig) Validate() error {
 		return e.Listener.TLS.Validate()
 	}
 
+	// StatPrefix
+	if e.StatPrefix != nil && *e.StatPrefix == "" {
+		return fmt.Errorf("statPrefix cannot be empty, fill or don't pass")
+	}
+
 	return nil
 }
 

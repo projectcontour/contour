@@ -557,6 +557,9 @@ spec:
                     - name
                     - namespace
                     type: object
+                  statPrefix:
+                    description: StatPrefix will be set on envoy route config
+                    type: string
                   timeouts:
                     description: Timeouts holds various configurable timeouts that
                       can be set in the config file.
@@ -3770,6 +3773,9 @@ spec:
                         - name
                         - namespace
                         type: object
+                      statPrefix:
+                        description: StatPrefix will be set on envoy route config
+                        type: string
                       timeouts:
                         description: Timeouts holds various configurable timeouts
                           that can be set in the config file.

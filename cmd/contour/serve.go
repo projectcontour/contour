@@ -518,6 +518,7 @@ func (s *Server) doServe() error {
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		statPrefix:                         contourConfiguration.Envoy.StatPrefix,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1050,6 +1051,7 @@ type dagBuilderConfig struct {
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
+	statPrefix                         *string
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1139,6 +1141,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalExternalAuthorization:   dbc.globalExternalAuthorizationService,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			StatPrefix:                    dbc.statPrefix,
 		},
 	}
 

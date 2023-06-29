@@ -103,6 +103,9 @@ type HTTPProxyProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// StatPrefix defines the stat_prefix to be set on envoy route config
+	StatPrefix *string
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -804,6 +807,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    internalRedirectPolicy,
+			StatPrefix:                p.StatPrefix,
 		}
 
 		// If the enclosing root proxy enabled authorization,

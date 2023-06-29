@@ -362,6 +362,8 @@ type Route struct {
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
+
+	StatPrefix *string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.

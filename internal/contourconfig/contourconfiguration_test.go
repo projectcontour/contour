@@ -123,6 +123,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				XffNumTrustedHops: ref.To(uint32(77)),
 				EnvoyAdminPort:    ref.To(9997),
 			},
+			StatPrefix: ref.To("a_prefix"),
 		},
 		Gateway: &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: "gatewaycontroller",
