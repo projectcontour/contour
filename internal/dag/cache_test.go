@@ -123,7 +123,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "www",
 						Namespace: "extra",
 						Annotations: map[string]string{
-							"projectcontour.io/tls-delegation-namespace": "default",
+							"projectcontour.io/tls-cert-namespace": "default",
 						},
 					},
 					Spec: networking_v1.IngressSpec{
@@ -164,7 +164,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "www",
 						Namespace: "extra",
 						Annotations: map[string]string{
-							"projectcontour.io/tls-delegation-namespace": "default",
+							"projectcontour.io/tls-cert-namespace": "default",
 						},
 					},
 					Spec: networking_v1.IngressSpec{

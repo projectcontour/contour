@@ -520,7 +520,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
 
 	for _, ingress := range kc.ingresses {
 		for _, tls := range ingress.Spec.TLS {
-			if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ingress),  k8s.DefaultNamespace(ingress.Namespace)) {
+			if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ingress), k8s.DefaultNamespace(ingress.Namespace)) {
 				return true
 			}
 		}
