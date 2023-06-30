@@ -499,8 +499,10 @@ func isRefToService(ref gatewayapi_v1beta1.BackendObjectReference, service *v1.S
 }
 
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
-// or HTTPProxy object, or by the configuration file. If the secret is not in the same namespace
-// it must be mentioned by a TLSCertificateDelegation.
+// or HTTPProxy object, or by the configuration file.
+// If the secret is not in the same namespace the function ignores TLSCertificateDelegation.
+// As a result, it may trigger rebuild even if the reference is invalid, which should be rare and not worth the added complexity.
+// Permission is checked when the secret is actually accessed.
 func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
 	if _, isCA := secretObj.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
@@ -516,50 +518,9 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
 		Name:      secretObj.Name,
 	}
 
-	delegatedForAnyNamespace := false // True if this secret has been delegated to any namespace.
-	delegations := []string{}         // List of namespaces that this secret has been delegated to.
-
-	// Collect all delegations for this secret.
-	for _, d := range kc.tlscertificatedelegations {
-		for _, cd := range d.Spec.Delegations {
-			if secretObj.Namespace == d.Namespace && secretObj.Name == cd.SecretName {
-				for _, namespace := range cd.TargetNamespaces {
-					if namespace == "*" {
-						// No need to check other delegations since any namespace is allowed.
-						delegatedForAnyNamespace = true
-						break
-					}
-					delegations = append(delegations, namespace)
-				}
-			}
-		}
-	}
-
-	// Compare returns true if the changedSecret is the same as the referredSecret and delegation is permitted.
-	compare := func(changedSecret, referredSecret types.NamespacedName, namespaceOfReferrer string) bool {
-		// If the secret is in the same namespace as the referring object, then compare the names.
-		if changedSecret.Namespace == namespaceOfReferrer && changedSecret == referredSecret {
-			return true
-		}
-
-		// If the secret is delegated to any namespace, then compare the names.
-		if delegatedForAnyNamespace && changedSecret == referredSecret {
-			return true
-		}
-
-		// If the secret is delegated to the namespace of the referring object, then compare the names.
-		for _, namespace := range delegations {
-			if namespace == namespaceOfReferrer && changedSecret == referredSecret {
-				return true
-			}
-		}
-
-		return false
-	}
-
 	for _, ingress := range kc.ingresses {
 		for _, tls := range ingress.Spec.TLS {
-			if compare(secret, k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ingress.Namespace)), ingress.Namespace) {
+			if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ingress)) {
 				return true
 			}
 		}
@@ -577,12 +538,12 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
 			continue
 		}
 
-		if compare(secret, k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace)), proxy.Namespace) {
+		if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace)) {
 			return true
 		}
 
 		cv := tls.ClientValidation
-		if cv != nil && compare(secret, k8s.NamespacedNameFrom(cv.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace)), proxy.Namespace) {
+		if cv != nil && secret == k8s.NamespacedNameFrom(cv.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace)) {
 			return true
 		}
 	}

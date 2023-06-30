@@ -122,10 +122,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
+						Annotations: map[string]string{
+							"projectcontour.io/tls-delegation-namespace": "default",
+						},
 					},
 					Spec: networking_v1.IngressSpec{
 						TLS: []networking_v1.IngressTLS{{
-							SecretName: "default/secret",
+							SecretName: "secret",
 						}},
 					},
 				},
@@ -160,10 +163,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
+						Annotations: map[string]string{
+							"projectcontour.io/tls-delegation-namespace": "default",
+						},
 					},
 					Spec: networking_v1.IngressSpec{
 						TLS: []networking_v1.IngressTLS{{
-							SecretName: "default/secret",
+							SecretName: "secret",
 						}},
 					},
 				},
@@ -2223,18 +2229,25 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	ingress := func(namespace, name, secretName string) *networking_v1.Ingress {
-		return &networking_v1.Ingress{
+	ingress := func(namespace, name, secretName string, secretNamespace string) *networking_v1.Ingress {
+		i := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
+
 			Spec: networking_v1.IngressSpec{
 				TLS: []networking_v1.IngressTLS{{
 					SecretName: secretName,
 				}},
 			},
 		}
+		if secretNamespace != "" {
+			i.ObjectMeta.Annotations = map[string]string{
+				"projectcontour.io/tls-cert-namespace": secretNamespace,
+			}
+		}
+		return i
 	}
 
 	cache := func(objs ...any) *KubernetesCache {
@@ -2302,23 +2315,15 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"ingress secret triggers rebuild": {
 			cache: cache(
-				ingress("default", "secret", "secret"),
+				ingress("default", "secret", "secret", ""),
 			),
 			secret: secret("default", "secret"),
 			want:   true,
 		},
-		"ingress with delegated secret (specific namespace) triggers rebuild": {
+		"ingress with cross-namespace secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "tlscert", "user"),
-				ingress("user", "ingress", "default/tlscert"),
-			),
-			secret: secret("default", "tlscert"),
-			want:   true,
-		},
-		"ingress with delegated secret ('*' namespace) triggers rebuild": {
-			cache: cache(
-				tlsCertificateDelegation("default", "tlscert", "*"),
-				ingress("user", "ingress", "default/tlscert"),
+				ingress("user", "ingress", "tlscert", "default"),
 			),
 			secret: secret("default", "tlscert"),
 			want:   true,
@@ -2360,17 +2365,9 @@ func TestSecretTriggersRebuild(t *testing.T) {
 			secret: secret("default", "tlscert"),
 			want:   true,
 		},
-		"httpproxy with delegated secret (specific namespace) triggers rebuild": {
+		"httpproxy with cross-namespace secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "tlscert", "user"),
-				httpProxy("user", "ingress", "default/tlscert"),
-			),
-			secret: secret("default", "tlscert"),
-			want:   true,
-		},
-		"httpproxy with delegated secret ('*' namespace) triggers rebuild": {
-			cache: cache(
-				tlsCertificateDelegation("default", "tlscert", "*"),
 				httpProxy("user", "ingress", "default/tlscert"),
 			),
 			secret: secret("default", "tlscert"),
@@ -2478,25 +2475,12 @@ func TestSecretTriggersRebuild(t *testing.T) {
 			secret: secret("user", "crl"),
 			want:   true,
 		},
-		"HTTPProxy with client validation and CRL delegated for specific namespaces, triggers rebuild": {
+		"HTTPProxy with cross-namespace CRL secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "crl", "thatnamespace", "thisnamespace"),
 				httpProxyWithClientValidation("thisnamespace", "proxy", "default/crl")),
 			secret: secret("default", "crl"),
 			want:   true,
-		},
-		"HTTPProxy with client validation and CRL delegated to any namespace, triggers rebuild": {
-			cache: cache(
-				tlsCertificateDelegation("default", "crl", "*"),
-				httpProxyWithClientValidation("user", "proxy", "default/crl")),
-			secret: secret("default", "crl"),
-			want:   true,
-		},
-		"HTTPProxy with client validation with CRL, not delegated, does not trigger rebuild": {
-			cache: cache(
-				httpProxyWithClientValidation("user", "proxy", "default/crl")),
-			secret: secret("default", "crl"),
-			want:   false,
 		},
 	}
 
