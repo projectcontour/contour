@@ -25,14 +25,16 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // defaultMaxRequestBytes specifies default value maxRequestBytes for AuthorizationServer
@@ -104,8 +106,8 @@ type HTTPProxyProcessor struct {
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
 
-	// StatPrefix defines the stat_prefix to be set on envoy route config
-	StatPrefix *string
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -807,7 +809,10 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    internalRedirectPolicy,
-			StatPrefix:                p.StatPrefix,
+		}
+
+		if p.EnableStatPrefix {
+			r.StatPrefix = ref.To(fmt.Sprintf("%s_%s_%s", proxy.Namespace, proxy.Kind, proxy.Name))
 		}
 
 		// If the enclosing root proxy enabled authorization,

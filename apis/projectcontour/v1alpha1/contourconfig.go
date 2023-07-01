@@ -302,9 +302,9 @@ type EnvoyConfig struct {
 	// +optional
 	Network *NetworkParameters `json:"network,omitempty"`
 
-	// StatPrefix will be set on envoy route config
+	// Set StatPrefix on envoy routes
 	// +optional
-	StatPrefix *string `json:"statPrefix"`
+	EnableStatPrefix *bool `json:"enableStatPrefix"`
 }
 
 // DebugConfig contains Contour specific troubleshooting options.

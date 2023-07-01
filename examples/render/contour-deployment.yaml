@@ -336,6 +336,9 @@ spec:
                         version.
                       type: string
                     type: array
+                  enableStatPrefix:
+                    description: Set StatPrefix on envoy routes
+                    type: boolean
                   health:
                     description: "Health defines the endpoint Envoy uses to serve
                       health checks. \n Contour's default is { address: \"0.0.0.0\",
@@ -557,9 +560,6 @@ spec:
                     - name
                     - namespace
                     type: object
-                  statPrefix:
-                    description: StatPrefix will be set on envoy route config
-                    type: string
                   timeouts:
                     description: Timeouts holds various configurable timeouts that
                       can be set in the config file.
@@ -3544,6 +3544,9 @@ spec:
                             HTTP version.
                           type: string
                         type: array
+                      enableStatPrefix:
+                        description: Set StatPrefix on envoy routes
+                        type: boolean
                       health:
                         description: "Health defines the endpoint Envoy uses to serve
                           health checks. \n Contour's default is { address: \"0.0.0.0\",
@@ -3773,9 +3776,6 @@ spec:
                         - name
                         - namespace
                         type: object
-                      statPrefix:
-                        description: StatPrefix will be set on envoy route config
-                        type: string
                       timeouts:
                         description: Timeouts holds various configurable timeouts
                           that can be set in the config file.

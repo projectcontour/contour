@@ -64,6 +64,9 @@ type GatewayAPIProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 }
 
 // matchConditions holds match rules.
@@ -1309,14 +1312,14 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 		var routes []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
+			routes = p.redirectRoutes(route, matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
 		} else {
 			// Get clusters from rule backendRefs
 			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 			if !ok {
 				continue
 			}
-			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
+			routes = p.clusterRoutes(route, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1448,7 +1451,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 		if !ok {
 			continue
 		}
-		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+		routes = p.clusterRoutes(route, matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
@@ -1992,7 +1995,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
+func (p *GatewayAPIProcessor) clusterRoutes(httpRoute client.Object, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
 	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
 
 	var routes []*Route
@@ -2006,7 +2009,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 		// the prefix entirely.
 		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		r := &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
 			HeaderMatchConditions:     mc.headers,
@@ -2016,7 +2019,18 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
-		})
+		}
+
+		if p.EnableStatPrefix {
+			r.StatPrefix = ref.To(fmt.Sprintf(
+				"%s_%s_%s",
+				httpRoute.GetNamespace(),
+				httpRoute.GetObjectKind().GroupVersionKind().Kind,
+				httpRoute.GetName(),
+			))
+		}
+
+		routes = append(routes, r)
 	}
 
 	for _, route := range routes {
@@ -2048,7 +2062,7 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *Redirect, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) redirectRoutes(httpRoute client.Object, matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *Redirect, priority uint8) []*Route {
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,
@@ -2060,14 +2074,25 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 		// the prefix entirely.
 		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		r := &Route{
 			Priority:              priority,
 			Redirect:              redirect,
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
 			ResponseHeadersPolicy: responseHeaderPolicy,
-		})
+		}
+
+		if p.EnableStatPrefix {
+			r.StatPrefix = ref.To(fmt.Sprintf(
+				"%s_%s_%s",
+				httpRoute.GetNamespace(),
+				httpRoute.GetObjectKind().GroupVersionKind().Kind,
+				httpRoute.GetName(),
+			))
+		}
+
+		routes = append(routes, r)
 	}
 
 	return routes

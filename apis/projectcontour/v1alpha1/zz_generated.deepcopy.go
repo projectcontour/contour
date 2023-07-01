@@ -518,9 +518,9 @@ func (in *EnvoyConfig) DeepCopyInto(out *EnvoyConfig) {
 		*out = new(NetworkParameters)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.StatPrefix != nil {
-		in, out := &in.StatPrefix, &out.StatPrefix
-		*out = new(string)
+	if in.EnableStatPrefix != nil {
+		in, out := &in.EnableStatPrefix, &out.EnableStatPrefix
+		*out = new(bool)
 		**out = **in
 	}
 }
