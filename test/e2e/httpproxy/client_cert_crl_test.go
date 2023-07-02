@@ -324,6 +324,140 @@ func testClientCertRevocation(namespace string) {
 		}
 	})
 
+	Specify("CRL can be rotated", func() {
+		t := f.T()
+
+		rootCA := certyaml.Certificate{
+			Subject: "CN=root-ca",
+		}
+		server := certyaml.Certificate{
+			Subject: "CN=server",
+			Issuer:  &rootCA,
+		}
+		client := certyaml.Certificate{
+			Subject: "CN=client",
+			Issuer:  &rootCA,
+		}
+		crlEmpty := certyaml.CRL{
+			Issuer: &rootCA,
+		}
+		crlRevokedClient := certyaml.CRL{
+			Revoked: []*certyaml.Certificate{&client},
+		}
+
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+
+		// Create Secret for server credentials.
+		require.NoError(t, f.Client.Create(context.TODO(),
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "server-cert",
+					Namespace: namespace,
+				},
+				Type: corev1.SecretTypeTLS,
+				Data: map[string][]byte{
+					corev1.TLSCertKey:       certPEMBytes(t, &server),
+					corev1.TLSPrivateKeyKey: keyPEMBytes(t, &server),
+				},
+			},
+		))
+
+		// Create Secret for CA to validate client certificates.
+		require.NoError(t, f.Client.Create(context.TODO(),
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: certPEMBytes(t, &rootCA),
+				},
+			},
+		))
+
+		// Create HTTPProxy with client validation and CRL check.
+		proxyWithCRLCheck := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "crl-rotate",
+				Namespace: namespace,
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "crl-rotate.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "server-cert",
+						ClientValidation: &contourv1.DownstreamValidation{
+							CACertificate:             "ca",
+							CertificateRevocationList: "crl",
+						},
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		// HTTPProxy should be invalid since CertificateRevocationList refers to non-existent Secret.
+		f.CreateHTTPProxyAndWaitFor(proxyWithCRLCheck, e2e.HTTPProxyInvalid)
+
+		// Create Secret with CRL where client certificate is revoked.
+		require.NoError(t, f.Client.Create(context.TODO(),
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "crl",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					dag.CRLKey: crlPEMBytes(t, &crlRevokedClient),
+				},
+			},
+		))
+
+		opts := &e2e.HTTPSRequestOpts{
+			Host:          "crl-rotate.projectcontour.io",
+			TLSConfigOpts: []func(*tls.Config){optUseClientCert(tlsCertificate(t, &client))},
+		}
+
+		// TLS connection will fail since client certificate is revoked.
+		assert.Eventually(t, func() bool {
+			_, err := f.HTTP.SecureRequest(opts)
+			if err == nil {
+				return false
+			}
+			t.Logf("Received error %s", err.Error())
+
+			return strings.Contains(err.Error(), "tls: revoked certificate")
+		}, f.RetryTimeout, f.RetryInterval)
+
+		// Update Secret with CRL where client certificate is not revoked.
+		require.NoError(t, f.Client.Update(context.TODO(),
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "crl",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					dag.CRLKey: crlPEMBytes(t, &crlEmpty),
+				},
+			},
+		))
+
+		// HTTP request will succeed.
+		opts.Condition = e2e.HasStatusCode(200)
+		res, ok := f.HTTP.SecureRequestUntil(opts)
+
+		require.NotNil(t, res, "expected 200 response code, request was never successful")
+		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+	})
 }
 
 func tlsCertificate(t GinkgoTInterface, c *certyaml.Certificate) *tls.Certificate {

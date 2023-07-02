@@ -1,0 +1,1 @@
+DAG rebuild fixes: Update of CRL Secret did not trigger reload when it was not co-located in the same Secret with CA certificate, update of TLS Secret did not trigger reload when using `Ingress.spec.tls.secretName` with certificate delegation and `projectcontour.io/tls-cert-namespace` annotation.
