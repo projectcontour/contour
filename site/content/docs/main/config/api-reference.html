@@ -6088,6 +6088,21 @@ map[string]string
 the annotations for Prometheus will be appended or overwritten with predefined value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>podLabels</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodLabels defines labels to add to the Contour pods.
+If there is a label with the same key as in <code>ContourDeploymentSpec.ResourceLabels</code>,
+the one here has a higher priority.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
@@ -6888,6 +6903,21 @@ map[string]string
 <em>(Optional)</em>
 <p>PodAnnotations defines annotations to add to the Envoy pods.
 the annotations for Prometheus will be appended or overwritten with predefined value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>podLabels</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodLabels defines labels to add to the Envoy pods.
+If there is a label with the same key as in <code>ContourDeploymentSpec.ResourceLabels</code>,
+the one here has a higher priority.</p>
 </td>
 </tr>
 <tr>

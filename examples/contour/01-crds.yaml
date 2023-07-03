@@ -1177,6 +1177,13 @@ spec:
                       Contour pods. the annotations for Prometheus will be appended
                       or overwritten with predefined value.
                     type: object
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: PodLabels defines labels to add to the Contour pods.
+                      If there is a label with the same key as in `ContourDeploymentSpec.ResourceLabels`,
+                      the one here has a higher priority.
+                    type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
                       \n Replicas is the desired number of Contour replicas. If if
@@ -3164,6 +3171,13 @@ spec:
                     description: PodAnnotations defines annotations to add to the
                       Envoy pods. the annotations for Prometheus will be appended
                       or overwritten with predefined value.
+                    type: object
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: PodLabels defines labels to add to the Envoy pods.
+                      If there is a label with the same key as in `ContourDeploymentSpec.ResourceLabels`,
+                      the one here has a higher priority.
                     type: object
                   replicas:
                     description: "Deprecated: Use `DeploymentSettings.Replicas` instead.
