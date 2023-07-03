@@ -834,9 +834,9 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
-			if !r.HasPathPrefix() {
+			if !r.HasPathPrefix() || !r.HasPathExact() || !r.HasPathRegex() {
 				validCond.AddError(contour_api_v1.ConditionTypePrefixReplaceError, "MustHavePrefix",
-					"cannot specify prefix replacements without a prefix condition")
+					"cannot specify prefix replacements without a prefix or exact or regex condition")
 				return nil
 			}
 
@@ -849,7 +849,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// condition. Even if the CRD user didn't specify a
 			// prefix condition, mergePathConditions() guarantees
 			// a prefix of '/'.
-			routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
+			routingPrefix := "/"
+			if r.HasPathPrefix() {
+				routingPrefix = r.PathMatchCondition.(*PrefixMatchCondition).Prefix
+			} else if r.HasPathExact() {
+				routingPrefix = r.PathMatchCondition.(*ExactMatchCondition).Path
+			}
 
 			// First, try to apply an exact prefix match.
 			for _, prefix := range route.GetPrefixReplacements() {
