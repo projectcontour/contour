@@ -107,6 +107,15 @@ func checkDaemonSetHasPodAnnotations(t *testing.T, ds *appsv1.DaemonSet, expecte
 	t.Errorf("daemonset has unexpected %q pod annotations", ds.Spec.Template.Annotations)
 }
 
+func checkDaemonSetHasPodLabels(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+	t.Helper()
+
+	if apiequality.Semantic.DeepEqual(ds.Spec.Template.ObjectMeta.Labels, expected) {
+		return
+	}
+	t.Errorf("daemonset has unexpected %q pod labels", ds.Spec.Template.Labels)
+}
+
 func checkContainerHasPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
 	t.Helper()
 
@@ -271,6 +280,10 @@ func TestDesiredDaemonSet(t *testing.T) {
 		"prometheus.io/scrape": "false",
 	}
 
+	cntr.Spec.EnvoyPodLabels = map[string]string{
+		"sidecar.istio.io/inject": "false",
+	}
+
 	volTest := corev1.Volume{
 		Name: "vol-test-mount",
 	}
@@ -337,6 +350,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSecurityContext(t, ds)
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
+	checkDaemonSetHasPodLabels(t, ds, envoyPodLabels(cntr))
 	checkDaemonSetHasMetricsPort(t, ds, objects.EnvoyMetricsPort)
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)

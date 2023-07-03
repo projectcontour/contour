@@ -119,6 +119,12 @@ type ContourSettings struct {
 	// the annotations for Prometheus will be appended or overwritten with predefined value.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// PodLabels defines labels to add to the Contour pods.
+	// If there is a label with the same key as in `ContourDeploymentSpec.ResourceLabels`,
+	// the one here has a higher priority.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.
@@ -184,6 +190,12 @@ type EnvoySettings struct {
 	// the annotations for Prometheus will be appended or overwritten with predefined value.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// PodLabels defines labels to add to the Envoy pods.
+	// If there is a label with the same key as in `ContourDeploymentSpec.ResourceLabels`,
+	// the one here has a higher priority.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 
 	// Compute Resources required by envoy container.
 	// Cannot be updated.

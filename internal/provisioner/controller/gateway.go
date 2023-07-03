@@ -267,6 +267,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			for k, v := range contourParams.PodAnnotations {
 				contourModel.Spec.ContourPodAnnotations[k] = v
 			}
+			for k, v := range contourParams.PodLabels {
+				contourModel.Spec.ContourPodLabels[k] = v
+			}
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
@@ -337,6 +340,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Pod Annotations
 			for k, v := range envoyParams.PodAnnotations {
 				contourModel.Spec.EnvoyPodAnnotations[k] = v
+			}
+
+			// Pod Labels
+			for k, v := range envoyParams.PodLabels {
+				contourModel.Spec.EnvoyPodLabels[k] = v
 			}
 
 			contourModel.Spec.EnvoyResources = envoyParams.Resources

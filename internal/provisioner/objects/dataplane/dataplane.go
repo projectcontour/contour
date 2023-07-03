@@ -524,9 +524,16 @@ func EnvoyPodSelector(contour *model.Contour) *metav1.LabelSelector {
 // envoyPodLabels returns the labels for envoy's pods
 func envoyPodLabels(contour *model.Contour) map[string]string {
 	labels := EnvoyPodSelector(contour).MatchLabels
-	for k, v := range contour.AppLabels() {
+	for k, v := range model.CommonLabels(contour) {
 		labels[k] = v
 	}
+	for k, v := range contour.Spec.EnvoyPodLabels {
+		labels[k] = v
+	}
+	for k, v := range contour.AppPredefinedLabels() {
+		labels[k] = v
+	}
+
 	return labels
 }
 
