@@ -4580,7 +4580,10 @@ spec:
                   caSecret:
                     description: Name or namespaced name of the Kubernetes secret
                       used to validate the certificate presented by the backend. The
-                      secret must contain key named ca.crt.
+                      secret must contain key named ca.crt. The name can be optionally
+                      prefixed with namespace "namespace/name". When cross-namespace
+                      reference is used, TLSCertificateDelegation resource must exist
+                      in the namespace to grant access to the secret.
                     type: string
                   subjectName:
                     description: Key which is expected to be present in the 'subjectAltName'
@@ -5233,6 +5236,33 @@ spec:
                     healthCheckPolicy:
                       description: The health check policy for this route.
                       properties:
+                        expectedStatuses:
+                          description: The ranges of HTTP response statuses considered
+                            healthy. Follow half-open semantics, i.e. for each range
+                            the start is inclusive and the end is exclusive. Must
+                            be within the range [100,600). If not specified, only
+                            a 200 response status is considered healthy.
+                          items:
+                            properties:
+                              end:
+                                description: The end (exclusive) of a range of HTTP
+                                  status codes.
+                                format: int64
+                                maximum: 600
+                                minimum: 101
+                                type: integer
+                              start:
+                                description: The start (inclusive) of a range of HTTP
+                                  status codes.
+                                format: int64
+                                maximum: 599
+                                minimum: 100
+                                type: integer
+                            required:
+                            - end
+                            - start
+                            type: object
+                          type: array
                         healthyThresholdCount:
                           description: The number of healthy health checks required
                             before a host is marked healthy
@@ -6124,7 +6154,11 @@ spec:
                                 description: Name or namespaced name of the Kubernetes
                                   secret used to validate the certificate presented
                                   by the backend. The secret must contain key named
-                                  ca.crt.
+                                  ca.crt. The name can be optionally prefixed with
+                                  namespace "namespace/name". When cross-namespace
+                                  reference is used, TLSCertificateDelegation resource
+                                  must exist in the namespace to grant access to the
+                                  secret.
                                 type: string
                               subjectName:
                                 description: Key which is expected to be present in
@@ -6516,7 +6550,10 @@ spec:
                               description: Name or namespaced name of the Kubernetes
                                 secret used to validate the certificate presented
                                 by the backend. The secret must contain key named
-                                ca.crt.
+                                ca.crt. The name can be optionally prefixed with namespace
+                                "namespace/name". When cross-namespace reference is
+                                used, TLSCertificateDelegation resource must exist
+                                in the namespace to grant access to the secret.
                               type: string
                             subjectName:
                               description: Key which is expected to be present in
@@ -6834,7 +6871,11 @@ spec:
                                   description: Name or namespaced name of the Kubernetes
                                     secret used to validate the certificate presented
                                     by the backend. The secret must contain key named
-                                    ca.crt.
+                                    ca.crt. The name can be optionally prefixed with
+                                    namespace "namespace/name". When cross-namespace
+                                    reference is used, TLSCertificateDelegation resource
+                                    must exist in the namespace to grant access to
+                                    the secret.
                                   type: string
                                 subjectName:
                                   description: Key which is expected to be present
@@ -7102,6 +7143,10 @@ spec:
                               named ca.crt. The client certificate must validate against
                               the certificates in the bundle. If specified and SkipClientCertValidation
                               is true, client certificates will be required on requests.
+                              The name can be optionally prefixed with namespace "namespace/name".
+                              When cross-namespace reference is used, TLSCertificateDelegation
+                              resource must exist in the namespace to grant access
+                              to the secret.
                             minLength: 1
                             type: string
                           crlOnlyVerifyLeafCert:
@@ -7116,7 +7161,11 @@ spec:
                               to verify that a client certificate has not been revoked.
                               CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert
                               is true. Large CRL lists are not supported since individual
-                              secrets are limited to 1MiB in size.
+                              secrets are limited to 1MiB in size. The name can be
+                              optionally prefixed with namespace "namespace/name".
+                              When cross-namespace reference is used, TLSCertificateDelegation
+                              resource must exist in the namespace to grant access
+                              to the secret.
                             minLength: 1
                             type: string
                           forwardClientCertificate:
@@ -7181,11 +7230,13 @@ spec:
                           not both.
                         type: boolean
                       secretName:
-                        description: SecretName is the name of a TLS secret in the
-                          current namespace. Either SecretName or Passthrough must
-                          be specified, but not both. If specified, the named secret
-                          must contain a matching certificate for the virtual host's
-                          FQDN.
+                        description: SecretName is the name of a TLS secret. Either
+                          SecretName or Passthrough must be specified, but not both.
+                          If specified, the named secret must contain a matching certificate
+                          for the virtual host's FQDN. The name can be optionally
+                          prefixed with namespace "namespace/name". When cross-namespace
+                          reference is used, TLSCertificateDelegation resource must
+                          exist in the namespace to grant access to the secret.
                         type: string
                     type: object
                 required:

@@ -64,7 +64,7 @@ func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Clu
 	return defaults
 }
 
-func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *envoy_cluster_v3.Cluster {
+func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, expectedStatuses []*envoy_type_v3.Int64Range) *envoy_cluster_v3.Cluster {
 	c := cluster(name, servicename, statName)
 	c.HealthChecks = []*envoy_core_v3.HealthCheck{{
 		Timeout:            durationpb.New(2 * time.Second),
@@ -73,12 +73,13 @@ func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string,
 		HealthyThreshold:   wrapperspb.UInt32(2),
 		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
-				Host: "contour-envoy-healthcheck",
-				Path: healthCheckPath,
+				Host:             "contour-envoy-healthcheck",
+				Path:             healthCheckPath,
+				ExpectedStatuses: expectedStatuses,
 			},
 		},
 	}}
-	c.IgnoreHealthOnHostRemoval = drainConnOnHostRemoval
+	c.IgnoreHealthOnHostRemoval = true
 	return c
 }
 

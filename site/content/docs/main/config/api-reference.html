@@ -1022,7 +1022,9 @@ string
 The secret must contain key named ca.crt.
 The client certificate must validate against the certificates in the bundle.
 If specified and SkipClientCertValidation is true, client certificates will
-be required on requests.</p>
+be required on requests.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>
@@ -1075,7 +1077,9 @@ string
 The secret must contain key named crl.pem.
 This field will be used to verify that a client certificate has not been revoked.
 CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert is true.
-Large CRL lists are not supported since individual secrets are limited to 1MiB in size.</p>
+Large CRL lists are not supported since individual secrets are limited to 1MiB in size.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>
@@ -1408,6 +1412,24 @@ int64
 <td>
 <em>(Optional)</em>
 <p>The number of healthy health checks required before a host is marked healthy</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>expectedStatuses</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPStatusRange">
+[]HTTPStatusRange
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The ranges of HTTP response statuses considered healthy. Follow half-open
+semantics, i.e. for each range the start is inclusive and the end is exclusive.
+Must be within the range [100,600). If not specified, only a 200 response status
+is considered healthy.</p>
 </td>
 </tr>
 </tbody>
@@ -1774,6 +1796,48 @@ string
 <p>Prefix defines the value to swap the matched prefix or path with.
 The prefix must start with a leading slash.</p>
 <p>Note: Only one of Path or Prefix can be defined.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPStatusRange">HTTPStatusRange
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>start</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<p>The start (inclusive) of a range of HTTP status codes.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>end</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<p>The end (exclusive) of a range of HTTP status codes.</p>
 </td>
 </tr>
 </tbody>
@@ -4320,10 +4384,12 @@ string
 </em>
 </td>
 <td>
-<p>SecretName is the name of a TLS secret in the current namespace.
+<p>SecretName is the name of a TLS secret.
 Either SecretName or Passthrough must be specified, but not both.
 If specified, the named secret must contain a matching certificate
-for the virtual host&rsquo;s FQDN.</p>
+for the virtual host&rsquo;s FQDN.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>
@@ -4570,7 +4636,9 @@ string
 </td>
 <td>
 <p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
-The secret must contain key named ca.crt.</p>
+The secret must contain key named ca.crt.
+The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
 </td>
 </tr>
 <tr>

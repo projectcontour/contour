@@ -92,7 +92,8 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 	var clientCertSecret *Secret
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = cache.LookupTLSSecret(*p.ClientCertificate)
+		// Since the client certificate is configured by admin, explicit delegation is not required.
+		clientCertSecret, err = cache.LookupTLSSecretInsecure(*p.ClientCertificate)
 		if err != nil {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 				"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
@@ -147,26 +148,28 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// delegated to the ExtensionService's namespace.
 		// By default, a non-namespaced CACertificate is expected to reside in the ExtensionService's namespace.
 		caCertNamespacedName := k8s.NamespacedNameFrom(v.CACertificate, k8s.DefaultNamespace(ext.Namespace))
-		if !cache.DelegationPermitted(caCertNamespacedName, ext.Namespace) {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
-				"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+		uv, err := cache.LookupUpstreamValidation(v, caCertNamespacedName, ext.Namespace)
+		if err != nil {
+			if _, ok := err.(DelegationNotPermittedError); ok {
+				validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+					"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+			} else {
+				validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
+					"TLS upstream validation policy error: %s", err.Error())
+			}
 			return nil
 		}
-		if uv, err := cache.LookupUpstreamValidation(v, caCertNamespacedName); err != nil {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
-				"TLS upstream validation policy error: %s", err.Error())
-		} else {
-			extension.UpstreamValidation = uv
 
-			// Default the SNI server name to the name
-			// we need to validate. It is a bit onerous
-			// to also have to provide a CA bundle here,
-			// but maybe we can make that optional in the
-			// future.
-			//
-			// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
-			extension.SNI = uv.SubjectName
-		}
+		extension.UpstreamValidation = uv
+
+		// Default the SNI server name to the name
+		// we need to validate. It is a bit onerous
+		// to also have to provide a CA bundle here,
+		// but maybe we can make that optional in the
+		// future.
+		//
+		// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
+		extension.SNI = uv.SubjectName
 
 		if extension.Protocol != "h2" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "InconsistentProtocol",

@@ -6,7 +6,7 @@ Active health checking can be configured on a per route basis.
 Contour supports HTTP health checking and can be configured with various settings to tune the behavior.
 
 During HTTP health checking Envoy will send an HTTP request to the upstream Endpoints.
-It expects a 200 response if the host is healthy.
+It expects a 200 response by default if the host is healthy (see `expectedStatuses` below for configuring the "healthy" status codes).
 The upstream host can return 503 if it wants to immediately notify Envoy to no longer forward traffic to it.
 It is important to note that these are health checks which Envoy implements and are separate from any other system such as those that exist in Kubernetes.
 
@@ -44,6 +44,48 @@ Health check configuration parameters:
 - `timeoutSeconds`: The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
 - `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
 - `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
+- `expectedStatuses`: An optional list of HTTP status ranges that are considered healthy. Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. Statuses must be between 100 (inclusive) and 600 (exclusive).
+
+### Non-default expected statuses
+
+By default, only responses with a 200 status code will be considered healthy.
+The set of response codes considered healthy can be customized by specifying ranges in `expectedStatuses`.
+Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. 
+Statuses must be between 100 (inclusive) and 600 (exclusive).
+For example:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+      # Status codes 200 and 250-299 will be considered healthy.
+      expectedStatuses:
+      - start: 200
+        end: 201
+      - start: 250
+        end: 300
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
+```
+
+Note that if `expectedStatuses` is specified, `200` must be explicitly included in one of the specified ranges if it is desired as a healthy status code.
 
 ## TCP Proxy Health Checking
 

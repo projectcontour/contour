@@ -704,7 +704,9 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 		meta = types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}
 	}
 
-	listenerSecret, err := p.source.LookupTLSSecret(meta)
+	// Use LookupTLSSecretInsecure instead of LookupTLSSecret since Gateway API uses its own mechanism (ReferenceGrant, not TLSCertificateDelegation)
+	// to control access to secrets across namespaces.
+	listenerSecret, err := p.source.LookupTLSSecretInsecure(meta)
 	if err != nil {
 		gwAccessor.AddListenerCondition(
 			listenerName,

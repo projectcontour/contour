@@ -406,10 +406,12 @@ type RemoteJWKS struct {
 // TLS describes tls properties. The SNI names that will be matched on
 // are described in the HTTPProxy's Spec.VirtualHost.Fqdn field.
 type TLS struct {
-	// SecretName is the name of a TLS secret in the current namespace.
+	// SecretName is the name of a TLS secret.
 	// Either SecretName or Passthrough must be specified, but not both.
 	// If specified, the named secret must contain a matching certificate
 	// for the virtual host's FQDN.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	SecretName string `json:"secretName,omitempty"`
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate. Valid options are `1.2` (default) and `1.3`. Any other value
@@ -1026,6 +1028,23 @@ type HTTPHealthCheckPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=0
 	HealthyThresholdCount int64 `json:"healthyThresholdCount"`
+	// The ranges of HTTP response statuses considered healthy. Follow half-open
+	// semantics, i.e. for each range the start is inclusive and the end is exclusive.
+	// Must be within the range [100,600). If not specified, only a 200 response status
+	// is considered healthy.
+	// +optional
+	ExpectedStatuses []HTTPStatusRange `json:"expectedStatuses,omitempty"`
+}
+
+type HTTPStatusRange struct {
+	// The start (inclusive) of a range of HTTP status codes.
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=599
+	Start int64 `json:"start"`
+	// The end (exclusive) of a range of HTTP status codes.
+	// +kubebuilder:validation:Minimum=101
+	// +kubebuilder:validation:Maximum=600
+	End int64 `json:"end"`
 }
 
 // TCPHealthCheckPolicy defines health checks on the upstream service.
@@ -1258,6 +1277,8 @@ type HeaderValue struct {
 type UpstreamValidation struct {
 	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 	// The secret must contain key named ca.crt.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
 	SubjectName string `json:"subjectName"`
@@ -1270,6 +1291,8 @@ type DownstreamValidation struct {
 	// The client certificate must validate against the certificates in the bundle.
 	// If specified and SkipClientCertValidation is true, client certificates will
 	// be required on requests.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret,omitempty"`
@@ -1295,6 +1318,8 @@ type DownstreamValidation struct {
 	// This field will be used to verify that a client certificate has not been revoked.
 	// CRLs must be available from all CAs, unless crlOnlyVerifyLeafCert is true.
 	// Large CRL lists are not supported since individual secrets are limited to 1MiB in size.
+	// The name can be optionally prefixed with namespace "namespace/name".
+	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CertificateRevocationList string `json:"crlSecret,omitempty"`
