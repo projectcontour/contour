@@ -178,7 +178,7 @@ func TestDesiredDeployment(t *testing.T) {
 		"prometheus.io/scrape": "false",
 	}
 	cntr.Spec.ContourPodLabels = map[string]string{
-		"key1": "overwrited",
+		"key1": "overwritten",
 	}
 
 	// Use non-default container ports to test that --envoy-service-http(s)-port
