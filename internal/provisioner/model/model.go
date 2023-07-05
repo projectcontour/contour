@@ -71,6 +71,8 @@ func Default(namespace, name string) *Contour {
 			ResourceLabels:        map[string]string{},
 			EnvoyPodAnnotations:   map[string]string{},
 			ContourPodAnnotations: map[string]string{},
+			EnvoyPodLabels:        map[string]string{},
+			ContourPodLabels:      map[string]string{},
 		},
 	}
 }
