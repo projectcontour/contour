@@ -1,0 +1,1 @@
+Add Kubernetes labels configurability to ContourDeployment resource. to enable customize pod labels for pod/contour & pod/envoy
