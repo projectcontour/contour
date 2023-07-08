@@ -80,11 +80,12 @@ func TestProtoNamesForVersions(t *testing.T) {
 
 func TestListener(t *testing.T) {
 	tests := map[string]struct {
-		name, address string
-		port          int
-		lf            []*envoy_listener_v3.ListenerFilter
-		f             []*envoy_listener_v3.Filter
-		want          *envoy_listener_v3.Listener
+		name, address                 string
+		port                          int
+		perConnectionBufferLimitBytes *uint32
+		lf                            []*envoy_listener_v3.ListenerFilter
+		f                             []*envoy_listener_v3.Filter
+		want                          *envoy_listener_v3.Listener
 	}{
 		"insecure listener": {
 			name:    "http",
@@ -158,11 +159,47 @@ func TestListener(t *testing.T) {
 				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
+		"listener w/ connection buffer limits": {
+			name:                          "http",
+			address:                       "0.0.0.0",
+			port:                          9000,
+			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			f: []*envoy_listener_v3.Filter{
+				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+			},
+			want: &envoy_listener_v3.Listener{
+				Name:                          "http",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				FilterChains: FilterChains(
+					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
+			},
+		},
+		"secure listener w/ connection buffer limits": {
+			name:                          "https",
+			address:                       "0.0.0.0",
+			port:                          9000,
+			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			lf: ListenerFilters(
+				TLSInspector(),
+			),
+			want: &envoy_listener_v3.Listener{
+				Name:                          "https",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				ListenerFilters: ListenerFilters(
+					TLSInspector(),
+				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
+			got := Listener(tc.name, tc.address, tc.port, tc.perConnectionBufferLimitBytes, tc.lf, tc.f...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

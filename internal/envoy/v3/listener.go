@@ -130,13 +130,18 @@ func ProxyProtocol() *envoy_listener_v3.ListenerFilter {
 }
 
 // Listener returns a new envoy_listener_v3.Listener for the supplied address, port, and filters.
-func Listener(name, address string, port int, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
+func Listener(name, address string, port int, perConnectionBufferLimitBytes *uint32, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
 	l := &envoy_listener_v3.Listener{
 		Name:            name,
 		Address:         SocketAddress(address, port),
 		ListenerFilters: lf,
 		SocketOptions:   TCPKeepaliveSocketOptions(),
 	}
+
+	if perConnectionBufferLimitBytes != nil {
+		l.PerConnectionBufferLimitBytes = wrapperspb.UInt32(*perConnectionBufferLimitBytes)
+	}
+
 	if len(filters) > 0 {
 		l.FilterChains = append(
 			l.FilterChains,
@@ -277,12 +282,6 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
 func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerConnection *uint32) *httpConnectionManagerBuilder {
 	b.maxRequestsPerConnection = maxRequestsPerConnection
-	return b
-}
-
-// PerConnectionBufferLimitBytes the soft limit on size of the listener’s new connection read and write buffers
-func (b *httpConnectionManagerBuilder) PerConnectionBufferLimitBytes(perConnectionBufferLimitBytes *uint32) *httpConnectionManagerBuilder {
-	b.perConnectionBufferLimitBytes = perConnectionBufferLimitBytes
 	return b
 }
 

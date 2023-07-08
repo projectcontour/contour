@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"path"
 	"testing"
 	"time"
@@ -3578,15 +3579,15 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
-				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				Name:                          ENVOY_HTTP_LISTENER,
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8080),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
-						PerConnectionBufferLimitBytes(ref.To(uint32(32768))).
 						Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
@@ -3640,20 +3641,21 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
-				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				Name:                          ENVOY_HTTP_LISTENER,
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8080),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
-					PerConnectionBufferLimitBytes(ref.To(uint32(32768))).
 					Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
-				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				Name:                          ENVOY_HTTPS_LISTENER,
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
@@ -3665,7 +3667,6 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
-						PerConnectionBufferLimitBytes(ref.To(uint32(32768))).
 						Get()),
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(

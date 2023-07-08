@@ -360,6 +360,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				nil,
 				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
@@ -387,7 +388,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
-				PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
@@ -398,6 +398,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				proxyProtocol(cfg.UseProxyProto),
 				cm,
 			)
@@ -411,6 +412,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				secureProxyProtocol(cfg.UseProxyProto),
 			)
 		}
@@ -461,7 +463,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
-					PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
@@ -528,7 +529,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
-					PerConnectionBufferLimitBytes(cfg.PerConnectionBufferLimitBytes).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
