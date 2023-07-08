@@ -14,10 +14,11 @@
 package v3
 
 import (
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	"path"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"

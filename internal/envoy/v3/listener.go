@@ -173,7 +173,6 @@ type httpConnectionManagerBuilder struct {
 	tracingConfig                 *http.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
 	enableWebsockets              bool
-	perConnectionBufferLimitBytes *uint32
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
