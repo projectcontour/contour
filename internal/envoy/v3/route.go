@@ -91,9 +91,9 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 			FilterMetadata: map[string]*structpb.Struct{
 				"envoy.access_loggers.file": {
 					Fields: map[string]*structpb.Value{
-						"kind":      structpb.NewStringValue(dagRoute.Kind),
-						"namespace": structpb.NewStringValue(dagRoute.Namespace),
-						"name":      structpb.NewStringValue(dagRoute.Name),
+						"io.projectcontour.kind":      structpb.NewStringValue(dagRoute.Kind),
+						"io.projectcontour.namespace": structpb.NewStringValue(dagRoute.Namespace),
+						"io.projectcontour.name":      structpb.NewStringValue(dagRoute.Name),
 					},
 				},
 			},

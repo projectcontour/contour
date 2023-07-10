@@ -112,9 +112,9 @@ json-fields:
 Contour can log the kind, namespace and name of the Kubernetes resource that generated the route for a given access log entry. 
 
 For text-based access logging, the following command operators can be used:
-- `%METADATA(ROUTE:envoy.access_loggers.file:kind)%`
-- `%METADATA(ROUTE:envoy.access_loggers.file:namespace)%`
-- `%METADATA(ROUTE:envoy.access_loggers.file:name)%`
+- `%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.kind)%`
+- `%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.namespace)%`
+- `%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.name)%`
 
 For JSON access logging, the following fields can be added (these are Contour-specific aliases to the above command operators):
 - `contour_config_kind`

@@ -63,9 +63,9 @@ var jsonFields = map[string]string{
 	"user_agent":               "%REQ(USER-AGENT)%",
 	"x_forwarded_for":          "%REQ(X-FORWARDED-FOR)%",
 	"x_trace_id":               "%REQ(X-TRACE-ID)%",
-	"contour_config_kind":      "%METADATA(ROUTE:envoy.access_loggers.file:kind)%",
-	"contour_config_namespace": "%METADATA(ROUTE:envoy.access_loggers.file:namespace)%",
-	"contour_config_name":      "%METADATA(ROUTE:envoy.access_loggers.file:name)%",
+	"contour_config_kind":      "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.kind)%",
+	"contour_config_namespace": "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.namespace)%",
+	"contour_config_name":      "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.name)%",
 }
 
 // envoySimpleOperators is the list of known supported Envoy log template keywords that do not
