@@ -60,7 +60,7 @@ func (g *ConfigGenerator) Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 	case 0:
 		// external name not set, cluster will be discovered via EDS
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS)
-		cluster.EdsClusterConfig = g.edsconfig("contour", service)
+		cluster.EdsClusterConfig = g.edsconfig(service)
 	default:
 		// external name set, use hard coded DNS name
 		// external name set to LOGICAL_DNS when user selects the ALL loookup family
@@ -216,7 +216,7 @@ func (g *ConfigGenerator) DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v
 	return cluster
 }
 
-func (g *ConfigGenerator) edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
+func (g *ConfigGenerator) edsconfig(service *dag.Service) *envoy_cluster_v3.Cluster_EdsClusterConfig {
 	return &envoy_cluster_v3.Cluster_EdsClusterConfig{
 		EdsConfig: g.ConfigSource(),
 		ServiceName: xds.ClusterLoadAssignmentName(
