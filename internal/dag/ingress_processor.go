@@ -59,6 +59,12 @@ type IngressProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // Run translates Ingresses into DAG objects and
@@ -273,9 +279,12 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		}},
-		Kind:      "Ingress",
-		Namespace: ingress.Namespace,
-		Name:      ingress.Name,
+	}
+
+	if p.SetSourceMetadataOnRoutes {
+		r.Kind = "Ingress"
+		r.Namespace = ingress.Namespace
+		r.Name = ingress.Name
 	}
 
 	switch pathType {

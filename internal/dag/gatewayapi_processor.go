@@ -64,6 +64,12 @@ type GatewayAPIProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // matchConditions holds match rules.
@@ -2050,7 +2056,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 		// the prefix entirely.
 		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
 			HeaderMatchConditions:     mc.headers,
@@ -2060,10 +2066,15 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
-			Kind:                      kind,
-			Namespace:                 namespace,
-			Name:                      name,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	for _, route := range routes {
@@ -2116,17 +2127,22 @@ func (p *GatewayAPIProcessor) redirectRoutes(
 		// the prefix entirely.
 		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Priority:              priority,
 			Redirect:              redirect,
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
 			ResponseHeadersPolicy: responseHeaderPolicy,
-			Kind:                  kind,
-			Namespace:             namespace,
-			Name:                  name,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	return routes

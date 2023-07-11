@@ -83,21 +83,36 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	return evh
 }
 
+func getRouteMetadata(dagRoute *dag.Route) *envoy_core_v3.Metadata {
+	metadataFields := map[string]*structpb.Value{}
+	if len(dagRoute.Kind) > 0 {
+		metadataFields["io.projectcontour.kind"] = structpb.NewStringValue(dagRoute.Kind)
+	}
+	if len(dagRoute.Namespace) > 0 {
+		metadataFields["io.projectcontour.namespace"] = structpb.NewStringValue(dagRoute.Namespace)
+	}
+	if len(dagRoute.Name) > 0 {
+		metadataFields["io.projectcontour.name"] = structpb.NewStringValue(dagRoute.Name)
+	}
+
+	if len(metadataFields) == 0 {
+		return nil
+	}
+
+	return &envoy_core_v3.Metadata{
+		FilterMetadata: map[string]*structpb.Struct{
+			"envoy.access_loggers.file": {
+				Fields: metadataFields,
+			},
+		},
+	}
+}
+
 // buildRoute converts a DAG route to an Envoy route.
 func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
 	route := &envoy_route_v3.Route{
-		Match: RouteMatch(dagRoute),
-		Metadata: &envoy_core_v3.Metadata{
-			FilterMetadata: map[string]*structpb.Struct{
-				"envoy.access_loggers.file": {
-					Fields: map[string]*structpb.Value{
-						"io.projectcontour.kind":      structpb.NewStringValue(dagRoute.Kind),
-						"io.projectcontour.namespace": structpb.NewStringValue(dagRoute.Namespace),
-						"io.projectcontour.name":      structpb.NewStringValue(dagRoute.Name),
-					},
-				},
-			},
-		},
+		Match:    RouteMatch(dagRoute),
+		Metadata: getRouteMetadata(dagRoute),
 	}
 
 	switch {
