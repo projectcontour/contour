@@ -84,7 +84,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
-							DefaultGlobalRateLimitPolicyDisabled: true,
+							Disabled: true,
 						},
 					},
 				},
@@ -257,7 +257,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 					},
 					RateLimitPolicy: &contourv1.RateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
-							DefaultGlobalRateLimitPolicyDisabled: true,
+							Disabled: true,
 						},
 					},
 				},

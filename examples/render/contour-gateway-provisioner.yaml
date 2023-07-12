@@ -653,11 +653,6 @@ spec:
                       global rate limit policy for every HTTPProxy. HTTPProxy can
                       overwrite this configuration.
                     properties:
-                      defaultGlobalRateLimitPolicyDisabled:
-                        description: DefaultGlobalRateLimitPolicyDisabled configures
-                          the HTTPProxy to not use the default global rate limit policy
-                          defined by the Contour configuration.
-                        type: boolean
                       descriptors:
                         description: Descriptors defines the list of descriptors that
                           will be generated and sent to the rate limit service. Each
@@ -802,6 +797,11 @@ spec:
                           type: object
                         minItems: 1
                         type: array
+                      disabled:
+                        description: Disabled configures the HTTPProxy to not use
+                          the default global rate limit policy defined by the Contour
+                          configuration.
+                        type: boolean
                     type: object
                   domain:
                     description: Domain is passed to the Rate Limit Service.
@@ -4026,11 +4026,6 @@ spec:
                           default global rate limit policy for every HTTPProxy. HTTPProxy
                           can overwrite this configuration.
                         properties:
-                          defaultGlobalRateLimitPolicyDisabled:
-                            description: DefaultGlobalRateLimitPolicyDisabled configures
-                              the HTTPProxy to not use the default global rate limit
-                              policy defined by the Contour configuration.
-                            type: boolean
                           descriptors:
                             description: Descriptors defines the list of descriptors
                               that will be generated and sent to the rate limit service.
@@ -4182,6 +4177,11 @@ spec:
                               type: object
                             minItems: 1
                             type: array
+                          disabled:
+                            description: Disabled configures the HTTPProxy to not
+                              use the default global rate limit policy defined by
+                              the Contour configuration.
+                            type: boolean
                         type: object
                       domain:
                         description: Domain is passed to the Rate Limit Service.
@@ -5553,11 +5553,6 @@ spec:
                             an external rate limit service (RLS) for a rate limit
                             decision on each request.
                           properties:
-                            defaultGlobalRateLimitPolicyDisabled:
-                              description: DefaultGlobalRateLimitPolicyDisabled configures
-                                the HTTPProxy to not use the default global rate limit
-                                policy defined by the Contour configuration.
-                              type: boolean
                             descriptors:
                               description: Descriptors defines the list of descriptors
                                 that will be generated and sent to the rate limit
@@ -5714,6 +5709,11 @@ spec:
                                 type: object
                               minItems: 1
                               type: array
+                            disabled:
+                              description: Disabled configures the HTTPProxy to not
+                                use the default global rate limit policy defined by
+                                the Contour configuration.
+                              type: boolean
                           type: object
                         local:
                           description: Local defines local rate limiting parameters,
@@ -6916,11 +6916,6 @@ spec:
                           external rate limit service (RLS) for a rate limit decision
                           on each request.
                         properties:
-                          defaultGlobalRateLimitPolicyDisabled:
-                            description: DefaultGlobalRateLimitPolicyDisabled configures
-                              the HTTPProxy to not use the default global rate limit
-                              policy defined by the Contour configuration.
-                            type: boolean
                           descriptors:
                             description: Descriptors defines the list of descriptors
                               that will be generated and sent to the rate limit service.
@@ -7072,6 +7067,11 @@ spec:
                               type: object
                             minItems: 1
                             type: array
+                          disabled:
+                            description: Disabled configures the HTTPProxy to not
+                              use the default global rate limit policy defined by
+                              the Contour configuration.
+                            type: boolean
                         type: object
                       local:
                         description: Local defines local rate limiting parameters,

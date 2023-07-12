@@ -1091,7 +1091,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					VirtualHost: &contour_api_v1.VirtualHost{
 						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
 							Global: &contour_api_v1.GlobalRateLimitPolicy{
-								DefaultGlobalRateLimitPolicyDisabled: true,
+								Disabled: true,
 							},
 						},
 					},

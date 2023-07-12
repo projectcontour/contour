@@ -113,7 +113,7 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 				Fqdn: "foo.com",
 				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
-						DefaultGlobalRateLimitPolicyDisabled: true,
+						Disabled: true,
 					},
 				},
 			},
@@ -294,7 +294,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 				Fqdn: "foo.com",
 				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
-						DefaultGlobalRateLimitPolicyDisabled: true,
+						Disabled: true,
 					},
 				},
 			},
@@ -624,7 +624,7 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 				Fqdn: "foo.com",
 				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
-						DefaultGlobalRateLimitPolicyDisabled: true,
+						Disabled: true,
 					},
 				},
 			},

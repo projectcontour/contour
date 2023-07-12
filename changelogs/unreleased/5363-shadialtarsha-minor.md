@@ -2,7 +2,7 @@
 
 This Change adds the ability to define a default global rate limit policy in the Contour configuration 
 to be used as a global rate limit policy by all HTTPProxy objects.
-HTTPProxy object can decide to opt out and disable this feature using `defaultGlobalRateLimitPolicyDisabled` config.
+HTTPProxy object can decide to opt out and disable this feature using `disabled` config.
 
 ### Sample Configurations
 #### contour.yaml

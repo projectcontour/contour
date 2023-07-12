@@ -1402,7 +1402,7 @@ func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rls *con
 	// if HTTPProxy is not opted out explicitly, or it defines its own global rate limit policy.
 	optedOut := proxy.Spec.VirtualHost.RateLimitPolicy != nil &&
 		proxy.Spec.VirtualHost.RateLimitPolicy.Global != nil &&
-		proxy.Spec.VirtualHost.RateLimitPolicy.Global.DefaultGlobalRateLimitPolicyDisabled
+		proxy.Spec.VirtualHost.RateLimitPolicy.Global.Disabled
 
 	// Attach the default global rate limit policy if the rate limit service defines one.
 	if rls != nil && rls.DefaultGlobalRateLimitPolicy != nil && !optedOut {

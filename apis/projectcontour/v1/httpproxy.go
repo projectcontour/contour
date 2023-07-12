@@ -817,10 +817,10 @@ type LocalRateLimitPolicy struct {
 
 // GlobalRateLimitPolicy defines global rate limiting parameters.
 type GlobalRateLimitPolicy struct {
-	// DefaultGlobalRateLimitPolicyDisabled configures the HTTPProxy to not use
+	// Disabled configures the HTTPProxy to not use
 	// the default global rate limit policy defined by the Contour configuration.
 	// +optional
-	DefaultGlobalRateLimitPolicyDisabled bool `json:"defaultGlobalRateLimitPolicyDisabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// Descriptors defines the list of descriptors that will
 	// be generated and sent to the rate limit service. Each

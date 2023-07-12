@@ -333,7 +333,7 @@ spec:
 
 Contour supports defining a default global rate limit policy in the `rateLimitService` configuration
 which is applied to all virtual hosts unless the host is opted-out by 
-explicitly setting `defaultGlobalRateLimitPolicyDisabled` to `true`. This is useful for a single-tenant
+explicitly setting `disabled` to `true`. This is useful for a single-tenant
 setup use-case. This means you don't have to edit all HTTPProxy objects with the same rate limit policies, instead you can
 define the policies in the `rateLimitService` configuration like this:
 ```yaml
@@ -356,7 +356,7 @@ data:
                 descriptorKey: CustomHeader
 ```
 
-Virtual host can opt out by setting `defaultGlobalRateLimitPolicyDisabled` to `true`.
+Virtual host can opt out by setting `disabled` to `true`.
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -367,7 +367,7 @@ spec:
     fqdn: local.projectcontour.io
     rateLimitPolicy:
       global:
-        defaultGlobalRateLimitPolicyDisabled: true
+        disabled: true
   routes:
   - conditions:
     - prefix: /
