@@ -484,6 +484,10 @@ descriptors:
   - key: defaultHeader
     rate_limit:
       unit: hour
+      requests_per_unit: 1
+  - key: customHeader
+    rate_limit:
+      unit: hour
       requests_per_unit: 1`))
 					})
 

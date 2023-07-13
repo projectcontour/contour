@@ -54,8 +54,8 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Wait until we get a 429 from the proxy confirming
+		// that we've exceeded the rate limit.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
@@ -116,8 +116,8 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Make another request against the proxy to confirm a 200 response
+		// which indicates that HTTPProxy has disabled the default global rate limiting.
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
@@ -174,16 +174,11 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Make another request against the proxy, confirm a 429 response
+		// Make requests against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_3",
-				}),
-			},
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
@@ -223,14 +218,14 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Wait until we get a 429 from the proxy confirming
+		// that we've exceeded the rate limit.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_4",
+					"X-Default-Header": "test_value_3",
 				}),
 			},
 		})
@@ -282,21 +277,21 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_5",
+					"X-Default-Header": "test_value_4",
 				}),
 			},
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Make another request against the proxy to confirm a 200 response
+		// which indicates that HTTPProxy has disabled the default global rate limiting.
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_5",
+					"X-Default-Header": "test_value_4",
 				}),
 			},
 		})
@@ -327,8 +322,9 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 								{
 									Entries: []contourv1.RateLimitDescriptorEntry{
 										{
-											GenericKey: &contourv1.GenericKeyDescriptor{
-												Value: "foo",
+											RequestHeader: &contourv1.RequestHeaderDescriptor{
+												HeaderName:    "X-HTTPProxy-Descriptor",
+												DescriptorKey: "customHeader",
 											},
 										},
 									},
@@ -351,14 +347,14 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		}
 		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		// Make another request against the proxy, confirm a 429 response
+		// Make requests against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_6",
+					"X-HTTPProxy-Descriptor": "test_value",
 				}),
 			},
 		})
