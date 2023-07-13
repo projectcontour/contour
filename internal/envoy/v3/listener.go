@@ -130,13 +130,18 @@ func ProxyProtocol() *envoy_listener_v3.ListenerFilter {
 }
 
 // Listener returns a new envoy_listener_v3.Listener for the supplied address, port, and filters.
-func Listener(name, address string, port int, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
+func Listener(name, address string, port int, perConnectionBufferLimitBytes *uint32, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
 	l := &envoy_listener_v3.Listener{
 		Name:            name,
 		Address:         SocketAddress(address, port),
 		ListenerFilters: lf,
 		SocketOptions:   TCPKeepaliveSocketOptions(),
 	}
+
+	if perConnectionBufferLimitBytes != nil {
+		l.PerConnectionBufferLimitBytes = wrapperspb.UInt32(*perConnectionBufferLimitBytes)
+	}
+
 	if len(filters) > 0 {
 		l.FilterChains = append(
 			l.FilterChains,

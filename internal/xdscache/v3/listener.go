@@ -126,6 +126,10 @@ type ListenerConfig struct {
 	// if not specified there is no limit set.
 	MaxRequestsPerConnection *uint32
 
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers
+	// If unspecified, an implementation defined default is applied (1MiB).
+	PerConnectionBufferLimitBytes *uint32
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -356,6 +360,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				nil,
 				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
@@ -393,6 +398,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				proxyProtocol(cfg.UseProxyProto),
 				cm,
 			)
@@ -406,6 +412,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
 				secureProxyProtocol(cfg.UseProxyProto),
 			)
 		}
