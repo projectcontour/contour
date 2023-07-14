@@ -608,7 +608,7 @@ func localRateLimitPolicy(in *contour_api_v1.LocalRateLimitPolicy) (*LocalRateLi
 }
 
 func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRateLimitPolicy, error) {
-	if in == nil {
+	if in == nil || in.Disabled {
 		return nil, nil
 	}
 

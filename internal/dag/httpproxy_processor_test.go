@@ -997,6 +997,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 		wantValidCond          *contour_api_v1.DetailedCondition
 		httpproxy              *contour_api_v1.HTTPProxy
 		want                   *RateLimitPolicy
+		isValidCond            bool
 		wantConditionErrs      []contour_api_v1.SubCondition
 	}{
 		"no rate limit policy is set anywhere": {
@@ -1013,7 +1014,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					VirtualHost: &contour_api_v1.VirtualHost{},
 				},
 			},
-			want: nil,
+			want:        nil,
+			isValidCond: true,
 		},
 		"default global rate limit Policy is not set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1062,6 +1064,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
+			isValidCond: true,
 		},
 		"default global rate limit policy is set but HTTPProxy is opted out": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1097,7 +1100,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want:        nil,
+			isValidCond: true,
 		},
 		"default global rate limit policy is set but HTTPProxy defines its own global RateLimit policy": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1160,6 +1164,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
+			isValidCond: true,
 		},
 		"default rate limit policy is set": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1205,6 +1210,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
+			isValidCond: true,
 		},
 		"default rate limit policy is set and HTTPProxy's local rate limit should not change": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1262,8 +1268,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					FillInterval:  time.Second,
 				},
 			},
+			isValidCond: true,
 		},
-
 		"default rate limit policy is set but it is invalid": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
@@ -1300,7 +1306,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want:        nil,
+			isValidCond: false,
 			wantConditionErrs: []contour_api_v1.SubCondition{
 				{
 					Type:    "VirtualHostError",
@@ -1310,7 +1317,6 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
-
 		"global rate limit policy on HTTPProxy is invalid": {
 			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
@@ -1357,7 +1363,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want:        nil,
+			isValidCond: false,
 			wantConditionErrs: []contour_api_v1.SubCondition{
 				{
 					Type:    "VirtualHostError",
@@ -1372,7 +1379,8 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			validCond := &contour_api_v1.DetailedCondition{}
-			got := computeVirtualHostRateLimitPolicy(tc.httpproxy, tc.rateLimitServiceConfig, validCond)
+			got, isValid := computeVirtualHostRateLimitPolicy(tc.httpproxy, tc.rateLimitServiceConfig, validCond)
+			require.Equal(t, tc.isValidCond, isValid)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantConditionErrs, validCond.Errors)
 		})
