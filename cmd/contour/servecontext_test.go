@@ -629,6 +629,20 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    true,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,
+					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_api_v1.RateLimitDescriptor{
+							{
+								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									{
+										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+											Key:   "foo",
+											Value: "bar",
+										},
+									},
+								},
+							},
+						},
+					},
 				}
 				return ctx
 			},
@@ -642,6 +656,20 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    ref.To(true),
 					EnableXRateLimitHeaders:     ref.To(true),
 					EnableResourceExhaustedCode: ref.To(true),
+					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_api_v1.RateLimitDescriptor{
+							{
+								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									{
+										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+											Key:   "foo",
+											Value: "bar",
+										},
+									},
+								},
+							},
+						},
+					},
 				}
 				return cfg
 			},

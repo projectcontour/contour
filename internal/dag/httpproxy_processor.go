@@ -103,6 +103,9 @@ type HTTPProxyProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// GlobalRateLimitService defines Envoy's Global RateLimit Service configuration.
+	GlobalRateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -443,7 +446,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				// Get the DNS lookup family if specified, otherwise
-				// default to to the Contour-wide setting.
+				// default to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
 				case "auto", "v4", "v6", "all":
@@ -507,13 +510,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 	insecure.CORSPolicy = cp
 
-	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
-	if err != nil {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+	var isValidRLP bool
+	insecure.RateLimitPolicy, isValidRLP = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
+	if !isValidRLP {
 		return
 	}
-	insecure.RateLimitPolicy = rlp
 
 	if p.GlobalExternalAuthorization != nil && !proxy.Spec.VirtualHost.DisableAuthorization() {
 		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
@@ -540,13 +541,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		secure := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 		secure.CORSPolicy = cp
 
-		rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
-		if err != nil {
-			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-				"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		secure.RateLimitPolicy, isValidRLP = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
+		if !isValidRLP {
 			return
 		}
-		secure.RateLimitPolicy = rlp
 
 		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
 		if err != nil {
@@ -1360,18 +1358,18 @@ func validateExternalAuthExtensionService(ref contour_api_v1.ExtensionServiceRef
 }
 
 func determineExternalAuthTimeout(responseTimeout string, validCond *contour_api_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
-	timeout, err := timeout.Parse(responseTimeout)
+	tout, err := timeout.Parse(responseTimeout)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
 			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 		return false, nil
 	}
 
-	if timeout.UseDefault() {
+	if tout.UseDefault() {
 		return true, &ext.RouteTimeoutPolicy.ResponseTimeout
 	}
 
-	return true, &timeout
+	return true, &tout
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
@@ -1394,11 +1392,46 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 	return true
 }
 
+func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rls *contour_api_v1alpha1.RateLimitServiceConfig, validCond *contour_api_v1.DetailedCondition) (*RateLimitPolicy, bool) {
+	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
+			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		return nil, false
+	}
+
+	// If HTTPProxy defines its own Global RateLimit Policy, no need to check the default rate limit policy.
+	if rlp != nil && rlp.Global != nil {
+		return rlp, true
+	}
+
+	// Set the global rateLimit policy from the default global rateLimit policy
+	// if HTTPProxy is not opted out explicitly, or it defines its own global rate limit policy.
+	optedOut := proxy.Spec.VirtualHost.RateLimitPolicy != nil &&
+		proxy.Spec.VirtualHost.RateLimitPolicy.Global != nil &&
+		proxy.Spec.VirtualHost.RateLimitPolicy.Global.Disabled
+
+	// Attach the default global rate limit policy if the rate limit service defines one.
+	if rls != nil && rls.DefaultGlobalRateLimitPolicy != nil && !optedOut {
+		if rlp == nil {
+			rlp = &RateLimitPolicy{}
+		}
+		rlp.Global, err = globalRateLimitPolicy(rls.DefaultGlobalRateLimitPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
+				"Default Global RateLimit Policy is invalid: %s", err)
+			return nil, false
+		}
+	}
+
+	return rlp, true
+}
+
 func (p *HTTPProxyProcessor) GlobalAuthorizationConfigured() bool {
 	return p.GlobalExternalAuthorization != nil
 }
 
-// AuthorizationContext returns the authorization policy context (if present).
+// GlobalAuthorizationContext returns the authorization policy context (if present).
 func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 	if p.GlobalAuthorizationConfigured() && p.GlobalExternalAuthorization.AuthPolicy != nil {
 		return p.GlobalExternalAuthorization.AuthPolicy.Context

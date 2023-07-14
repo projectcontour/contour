@@ -19,6 +19,7 @@ import (
 	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
@@ -986,6 +987,402 @@ func TestToIPFilterRule(t *testing.T) {
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantAllow, gotAllow)
 			require.Equal(t, tc.wantConditionErrs, cond.Errors)
+		})
+	}
+}
+
+func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
+	tests := map[string]struct {
+		rateLimitServiceConfig *contour_api_v1alpha1.RateLimitServiceConfig
+		wantValidCond          *contour_api_v1.DetailedCondition
+		httpproxy              *contour_api_v1.HTTPProxy
+		want                   *RateLimitPolicy
+		isValidCond            bool
+		wantConditionErrs      []contour_api_v1.SubCondition
+	}{
+		"no rate limit policy is set anywhere": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{},
+				},
+			},
+			want:        nil,
+			isValidCond: true,
+		},
+		"default global rate limit Policy is not set": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Global: &contour_api_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_api_v1.RateLimitDescriptor{
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{
+												GenericKey: &contour_api_v1.GenericKeyDescriptor{
+													Key:   "foo",
+													Value: "bar",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPolicy{
+				Global: &GlobalRateLimitPolicy{
+					Descriptors: []*RateLimitDescriptor{
+						{
+							Entries: []RateLimitDescriptorEntry{
+								{
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "foo",
+										Value: "bar",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			isValidCond: true,
+		},
+		"default global rate limit policy is set but HTTPProxy is opted out": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Global: &contour_api_v1.GlobalRateLimitPolicy{
+								Disabled: true,
+							},
+						},
+					},
+				},
+			},
+			want:        nil,
+			isValidCond: true,
+		},
+		"default global rate limit policy is set but HTTPProxy defines its own global RateLimit policy": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Global: &contour_api_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_api_v1.RateLimitDescriptor{
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{
+												GenericKey: &contour_api_v1.GenericKeyDescriptor{
+													Key:   "foo",
+													Value: "bar",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPolicy{
+				Global: &GlobalRateLimitPolicy{
+					Descriptors: []*RateLimitDescriptor{
+						{
+							Entries: []RateLimitDescriptorEntry{
+								{
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "foo",
+										Value: "bar",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			isValidCond: true,
+		},
+		"default rate limit policy is set": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{},
+				},
+			},
+			want: &RateLimitPolicy{
+				Global: &GlobalRateLimitPolicy{
+					Descriptors: []*RateLimitDescriptor{
+						{
+							Entries: []RateLimitDescriptorEntry{
+								{
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			isValidCond: true,
+		},
+		"default rate limit policy is set and HTTPProxy's local rate limit should not change": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Local: &contour_api_v1.LocalRateLimitPolicy{
+								Requests: 10,
+								Unit:     "second",
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPolicy{
+				Global: &GlobalRateLimitPolicy{
+					Descriptors: []*RateLimitDescriptor{
+						{
+							Entries: []RateLimitDescriptorEntry{
+								{
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+				Local: &LocalRateLimitPolicy{
+					MaxTokens:     10,
+					TokensPerFill: 10,
+					FillInterval:  time.Second,
+				},
+			},
+			isValidCond: true,
+		},
+		"default rate limit policy is set but it is invalid": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{
+				Condition: v1.Condition{
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+			},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Local: &contour_api_v1.LocalRateLimitPolicy{
+								Requests: 10,
+								Unit:     "second",
+							},
+						},
+					},
+				},
+			},
+			want:        nil,
+			isValidCond: false,
+			wantConditionErrs: []contour_api_v1.SubCondition{
+				{
+					Type:    "VirtualHostError",
+					Status:  "True",
+					Reason:  "RateLimitPolicyNotValid",
+					Message: "Default Global RateLimit Policy is invalid: rate limit descriptor entry must have exactly one field set",
+				},
+			},
+		},
+		"global rate limit policy on HTTPProxy is invalid": {
+			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+				Domain:   "test-domain",
+				FailOpen: ref.To(true),
+				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										Key:   "A general policy key",
+										Value: "A general policy value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValidCond: &contour_api_v1.DetailedCondition{
+				Condition: v1.Condition{
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
+				},
+			},
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+							Global: &contour_api_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_api_v1.RateLimitDescriptor{
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:        nil,
+			isValidCond: false,
+			wantConditionErrs: []contour_api_v1.SubCondition{
+				{
+					Type:    "VirtualHostError",
+					Status:  "True",
+					Reason:  "RateLimitPolicyNotValid",
+					Message: "Spec.VirtualHost.RateLimitPolicy is invalid: rate limit descriptor entry must have exactly one field set",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			validCond := &contour_api_v1.DetailedCondition{}
+			got, isValid := computeVirtualHostRateLimitPolicy(tc.httpproxy, tc.rateLimitServiceConfig, validCond)
+			require.Equal(t, tc.isValidCond, isValid)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantConditionErrs, validCond.Errors)
 		})
 	}
 }

@@ -517,6 +517,7 @@ func (s *Server) doServe() error {
 		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
+		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
 	})
@@ -1051,6 +1052,7 @@ type dagBuilderConfig struct {
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
+	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1139,6 +1141,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			GlobalExternalAuthorization:   dbc.globalExternalAuthorizationService,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 		},
 	}
