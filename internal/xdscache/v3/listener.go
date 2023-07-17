@@ -389,8 +389,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
-				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
+				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
 				Get()
 
