@@ -63,7 +63,7 @@ func TestGatewayConformance(t *testing.T) {
 			// Checks for the original request port in the returned Location
 			// header which Envoy is stripping.
 			// See: https://github.com/envoyproxy/envoy/issues/17318
-			tests.HTTPRouteRedirectPortAndScheme.ShortName,
+			"TestConformance/HTTPRouteRedirectPortAndScheme/http-listener-on-8080/0_request_to_'/scheme-nil-and-port-nil'_should_receive_a_302",
 		},
 		ExemptFeatures: sets.New(
 			suite.SupportMesh,
