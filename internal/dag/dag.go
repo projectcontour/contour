@@ -271,7 +271,6 @@ type InternalRedirectPolicy struct {
 
 // Route defines the properties of a route to a Cluster.
 type Route struct {
-
 	// PathMatchCondition specifies a MatchCondition to match on the request path.
 	// Must not be nil.
 	PathMatchCondition MatchCondition
@@ -362,6 +361,11 @@ type Route struct {
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
+
+	// Metadata fields that can be used for access logging.
+	Kind      string
+	Namespace string
+	Name      string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.

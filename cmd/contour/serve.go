@@ -1122,6 +1122,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1143,6 +1144,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		},
 	}
 
@@ -1153,6 +1155,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		})
 	}
 

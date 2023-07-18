@@ -64,6 +64,12 @@ type GatewayAPIProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // matchConditions holds match rules.
@@ -1309,14 +1315,35 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 		var routes []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
+			routes = p.redirectRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				redirect,
+				priority,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		} else {
 			// Get clusters from rule backendRefs
 			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 			if !ok {
 				continue
 			}
-			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
+			routes = p.clusterRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				mirrorPolicy,
+				clusters,
+				totalWeight,
+				priority,
+				pathRewritePolicy,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1448,7 +1475,19 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 		if !ok {
 			continue
 		}
-		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+		routes = p.clusterRoutes(
+			matchconditions,
+			requestHeaderPolicy,
+			responseHeaderPolicy,
+			mirrorPolicy,
+			clusters,
+			totalWeight,
+			priority,
+			nil,
+			KindGRPCRoute,
+			route.Namespace,
+			route.Name,
+		)
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
@@ -1992,8 +2031,19 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
-	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	mirrorPolicy *MirrorPolicy,
+	clusters []*Cluster,
+	totalWeight uint32,
+	priority uint8,
+	pathRewritePolicy *PathRewritePolicy,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 
 	var routes []*Route
 
@@ -2006,7 +2056,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 		// the prefix entirely.
 		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
 			HeaderMatchConditions:     mc.headers,
@@ -2016,7 +2066,15 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	for _, route := range routes {
@@ -2048,7 +2106,16 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *Redirect, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) redirectRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	redirect *Redirect,
+	priority uint8,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,
@@ -2060,14 +2127,22 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 		// the prefix entirely.
 		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Priority:              priority,
 			Redirect:              redirect,
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
 			ResponseHeadersPolicy: responseHeaderPolicy,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	return routes
