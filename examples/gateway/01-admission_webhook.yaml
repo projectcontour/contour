@@ -57,7 +57,7 @@ spec:
       containers:
       - name: webhook
         image: registry.k8s.io/gateway-api/admission-server:v0.7.1
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         args:
         - -logtostderr
         - --tlsCertFile=/etc/certs/cert
@@ -79,7 +79,16 @@ spec:
           mountPath: /etc/certs
           readOnly: true
         securityContext:
+          allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: webhook-certs
         secret:

@@ -8760,7 +8760,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -8972,11 +8972,32 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              routabilities:
+                description: "Routabilities specifies a list of supported routabilities
+                  offered by the GatewayClass. The first entry in this list will be
+                  the default routability used when Gateways of this class are created.
+                  \n Implementations MAY provide a pre-defined set of GatewayClasses
+                  that limit the routability choices of a Gateway. \n Implementations
+                  MUST populate this list with the GatewayRoutability values that
+                  are supported by this GatewayClass. \n <gateway:experimental>"
+                items:
+                  description: "GatewayRoutability represents the routability of a
+                    Gateway \n The pre-defined values listed in this package can be
+                    compared semantically. `Public` has a larger scope than `Private`,
+                    while `Private` has a larger scope than `Cluster`. \n Implementations
+                    can define custom routability values by specifying a vendor prefix
+                    followed by a slash '/' and a custom name ie. `dev.example.com/my-routability`."
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                  type: string
+                maxItems: 8
+                type: array
             type: object
         required:
         - spec
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
@@ -9172,6 +9193,27 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              routabilities:
+                description: "Routabilities specifies a list of supported routabilities
+                  offered by the GatewayClass. The first entry in this list will be
+                  the default routability used when Gateways of this class are created.
+                  \n Implementations MAY provide a pre-defined set of GatewayClasses
+                  that limit the routability choices of a Gateway. \n Implementations
+                  MUST populate this list with the GatewayRoutability values that
+                  are supported by this GatewayClass. \n <gateway:experimental>"
+                items:
+                  description: "GatewayRoutability represents the routability of a
+                    Gateway \n The pre-defined values listed in this package can be
+                    compared semantically. `Public` has a larger scope than `Private`,
+                    while `Private` has a larger scope than `Cluster`. \n Implementations
+                    can define custom routability values by specifying a vendor prefix
+                    followed by a slash '/' and a custom name ie. `dev.example.com/my-routability`."
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                  type: string
+                maxItems: 8
+                type: array
             type: object
         required:
         - spec
@@ -9192,7 +9234,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -9292,11 +9334,38 @@ spec:
                 maxLength: 253
                 minLength: 1
                 type: string
+              infrastructure:
+                description: "Infrastructure defines infrastructure level attributes
+                  about this Gateway instance. \n <gateway:experimental>"
+                properties:
+                  routability:
+                    description: "Routability allows the Gateway to specify the accessibility
+                      of its addresses. Setting this property will override the default
+                      value defined by the GatewayClass. \n If the desired Gateway
+                      routability is incompatible with the GatewayClass implementations
+                      MUST set the condition `Accepted` to `False` with `Reason` set
+                      to `UnsupportedRoutability`. \n The default value of routability
+                      is implementation specific and MUST remain consistent for Gateways
+                      with the same gatewayClassName \n Implementations MUST clearly
+                      document if they support updates to this field. The default
+                      expectation should be that changes to this field are not supported
+                      unless an implementation specifies otherwise. \n If a Gateway
+                      is mutated but does not support the desired routability it MUST
+                      set the `Accepted` and `Programmed` conditions to `False` with
+                      `Reason` set to `UnsupportedRoutability`."
+                    maxLength: 253
+                    minLength: 1
+                    pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                    type: string
+                type: object
               listeners:
                 description: "Listeners associated with this Gateway. Listeners define
                   logical endpoints that are bound on this Gateway's addresses. At
                   least one Listener MUST be specified. \n Each listener in a Gateway
                   must have a unique combination of Hostname, Port, and Protocol.
+                  Below combinations are considered Core and MUST be supported: \n
+                  1. Port: 80, Protocol: HTTP 2. Port: 443, Protocol: HTTPS \n Port
+                  and protocol combinations not in this list are considered Extended.
                   \n An implementation MAY group Listeners by Port and then collapse
                   each group of Listeners into a single Listener if the implementation
                   determines that the Listeners in the group are \"compatible\". An
@@ -9390,7 +9459,7 @@ spec:
                             from:
                               default: Same
                               description: "From indicates where Routes will be selected
-                                for this Gateway. Possible values are: * All: Routes
+                                for this Gateway. Possible values are: \n * All: Routes
                                 in all namespaces may be used by this Gateway. * Selector:
                                 Routes in namespaces selected by the selector may
                                 be used by this Gateway. * Same: Only Routes in the
@@ -9652,14 +9721,29 @@ spec:
             description: Status defines the current state of Gateway.
             properties:
               addresses:
-                description: Addresses lists the IP addresses that have actually been
-                  bound to the Gateway. These addresses may differ from the addresses
+                description: "Addresses lists the IP addresses that have actually
+                  been bound to the Gateway. These addresses may differ from the addresses
                   in the Spec, e.g. if the Gateway automatically assigns an address
-                  from a reserved pool.
+                  from a reserved pool. \n Implementations that support GatewayRoutability
+                  MUST include an address that has the same routable semantics as
+                  defined in the Gateway spec. \n Implementations MAY add additional
+                  addresses in status, but they MUST be semantically less than the
+                  scope of the requested scope. For example if a user requests a `Private`
+                  routable Gateway then an additional address MAY have a routability
+                  of `Cluster` but MUST NOT include `Public`."
                 items:
-                  description: GatewayAddress describes an address that can be bound
+                  description: GatewayStatusAddress describes an address that is bound
                     to a Gateway.
                   properties:
+                    routability:
+                      description: "Routability specifies the routable bounds of this
+                        address Predefined values are: 'Private', 'Public', Cluster
+                        Other values MUST have a vendor prefix. \n Implementations
+                        that support Routability MUST populate this field \n <gateway:experimental>"
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                      type: string
                     type:
                       default: IPAddress
                       description: Type of the address.
@@ -9911,7 +9995,7 @@ spec:
         required:
         - spec
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
@@ -9995,11 +10079,38 @@ spec:
                 maxLength: 253
                 minLength: 1
                 type: string
+              infrastructure:
+                description: "Infrastructure defines infrastructure level attributes
+                  about this Gateway instance. \n <gateway:experimental>"
+                properties:
+                  routability:
+                    description: "Routability allows the Gateway to specify the accessibility
+                      of its addresses. Setting this property will override the default
+                      value defined by the GatewayClass. \n If the desired Gateway
+                      routability is incompatible with the GatewayClass implementations
+                      MUST set the condition `Accepted` to `False` with `Reason` set
+                      to `UnsupportedRoutability`. \n The default value of routability
+                      is implementation specific and MUST remain consistent for Gateways
+                      with the same gatewayClassName \n Implementations MUST clearly
+                      document if they support updates to this field. The default
+                      expectation should be that changes to this field are not supported
+                      unless an implementation specifies otherwise. \n If a Gateway
+                      is mutated but does not support the desired routability it MUST
+                      set the `Accepted` and `Programmed` conditions to `False` with
+                      `Reason` set to `UnsupportedRoutability`."
+                    maxLength: 253
+                    minLength: 1
+                    pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                    type: string
+                type: object
               listeners:
                 description: "Listeners associated with this Gateway. Listeners define
                   logical endpoints that are bound on this Gateway's addresses. At
                   least one Listener MUST be specified. \n Each listener in a Gateway
                   must have a unique combination of Hostname, Port, and Protocol.
+                  Below combinations are considered Core and MUST be supported: \n
+                  1. Port: 80, Protocol: HTTP 2. Port: 443, Protocol: HTTPS \n Port
+                  and protocol combinations not in this list are considered Extended.
                   \n An implementation MAY group Listeners by Port and then collapse
                   each group of Listeners into a single Listener if the implementation
                   determines that the Listeners in the group are \"compatible\". An
@@ -10093,7 +10204,7 @@ spec:
                             from:
                               default: Same
                               description: "From indicates where Routes will be selected
-                                for this Gateway. Possible values are: * All: Routes
+                                for this Gateway. Possible values are: \n * All: Routes
                                 in all namespaces may be used by this Gateway. * Selector:
                                 Routes in namespaces selected by the selector may
                                 be used by this Gateway. * Same: Only Routes in the
@@ -10355,14 +10466,29 @@ spec:
             description: Status defines the current state of Gateway.
             properties:
               addresses:
-                description: Addresses lists the IP addresses that have actually been
-                  bound to the Gateway. These addresses may differ from the addresses
+                description: "Addresses lists the IP addresses that have actually
+                  been bound to the Gateway. These addresses may differ from the addresses
                   in the Spec, e.g. if the Gateway automatically assigns an address
-                  from a reserved pool.
+                  from a reserved pool. \n Implementations that support GatewayRoutability
+                  MUST include an address that has the same routable semantics as
+                  defined in the Gateway spec. \n Implementations MAY add additional
+                  addresses in status, but they MUST be semantically less than the
+                  scope of the requested scope. For example if a user requests a `Private`
+                  routable Gateway then an additional address MAY have a routability
+                  of `Cluster` but MUST NOT include `Public`."
                 items:
-                  description: GatewayAddress describes an address that can be bound
+                  description: GatewayStatusAddress describes an address that is bound
                     to a Gateway.
                   properties:
+                    routability:
+                      description: "Routability specifies the routable bounds of this
+                        address Predefined values are: 'Private', 'Public', Cluster
+                        Other values MUST have a vendor prefix. \n Implementations
+                        that support Routability MUST populate this field \n <gateway:experimental>"
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
+                      type: string
                     type:
                       default: IPAddress
                       description: Type of the address.
@@ -10630,7 +10756,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -10754,28 +10880,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -10791,8 +10933,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -10812,7 +10956,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -10827,18 +10979,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -11391,7 +11547,12 @@ spec:
                         are encouraged to support extended filters. - Implementation-specific
                         custom filters have no API guarantees across implementations.
                         \n Specifying a core filter multiple times has unspecified
-                        or implementation-specific conformance. Support: Core"
+                        or implementation-specific conformance. \n If an implementation
+                        can not support a combinations of filters, they must clearly
+                        document that limitation. In cases where incompatible or unsupported
+                        filters are specified and cause the `Accepted` condition to
+                        be set to status `False`, implementations may use the `IncompatibleFilters`
+                        reason to specify this configuration error. \n Support: Core"
                       items:
                         description: GRPCRouteFilter defines processing steps that
                           must be completed during the request or response lifecycle.
@@ -12022,9 +12183,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -12044,7 +12207,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -12060,8 +12232,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -12130,7 +12306,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -12182,12 +12358,14 @@ spec:
                 description: "Hostnames defines a set of hostname that should match
                   against the HTTP Host header to select a HTTPRoute used to process
                   the request. Implementations MUST ignore any port value specified
-                  in the HTTP Host header while performing a match. \n Valid values
-                  for Hostnames are determined by RFC 1123 definition of a hostname
-                  with 2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                  may be prefixed with a wildcard label (`*.`). The wildcard label
-                  must appear by itself as the first label. \n If a hostname is specified
-                  by both the Listener and HTTPRoute, there must be at least one intersecting
+                  in the HTTP Host header while performing a match and (absent of
+                  any applicable header modification configuration) MUST forward this
+                  header unmodified to the backend. \n Valid values for Hostnames
+                  are determined by RFC 1123 definition of a hostname with 2 notable
+                  exceptions: \n 1. IPs are not allowed. 2. A hostname may be prefixed
+                  with a wildcard label (`*.`). The wildcard label must appear by
+                  itself as the first label. \n If a hostname is specified by both
+                  the Listener and HTTPRoute, there must be at least one intersecting
                   hostname for the HTTPRoute to be attached to the Listener. For example:
                   \n * A Listener with `test.example.com` as the hostname matches
                   HTTPRoutes that have either not specified any hostnames, or have
@@ -12239,28 +12417,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -12276,8 +12470,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -12297,7 +12493,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -12312,18 +12516,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -12677,8 +12885,9 @@ spec:
                                             the value with which to replace the prefix
                                             match of a request during a rewrite or
                                             redirect. For example, a request to \"/foo/bar\"
-                                            with a prefix match of \"/foo\" would
-                                            be modified to \"/bar\". \n Note that
+                                            with a prefix match of \"/foo\" and a
+                                            ReplacePrefixMatch of \"/xyz\" would be
+                                            modified to \"/xyz/bar\". \n Note that
                                             this matches the behavior of the PathPrefix
                                             match type. This matches full path elements.
                                             A path element refers to the list of labels
@@ -12686,7 +12895,29 @@ spec:
                                             When specified, a trailing `/` is ignored.
                                             For example, the paths `/abc`, `/abc/`,
                                             and `/abc/def` would all match the prefix
-                                            `/abc`, but the path `/abcd` would not."
+                                            `/abc`, but the path `/abcd` would not.
+                                            \n ReplacePrefixMatch is only compatible
+                                            with a `PathPrefix` HTTPRouteMatch. Using
+                                            any other HTTPRouteMatch type on the same
+                                            HTTPRouteRule will result in the implementation
+                                            setting the Accepted Condition for the
+                                            Route to `status: False`. \n Request Path
+                                            | Prefix Match | Replace Prefix | Modified
+                                            Path -------------|--------------|----------------|----------
+                                            /foo/bar     | /foo         | /xyz           |
+                                            /xyz/bar /foo/bar     | /foo         |
+                                            /xyz/          | /xyz/bar /foo/bar     |
+                                            /foo/        | /xyz           | /xyz/bar
+                                            /foo/bar     | /foo/        | /xyz/          |
+                                            /xyz/bar /foo         | /foo         |
+                                            /xyz           | /xyz /foo/        | /foo
+                                            \        | /xyz           | /xyz/ /foo/bar
+                                            \    | /foo         | <empty string> |
+                                            /bar /foo/        | /foo         | <empty
+                                            string> | / /foo         | /foo         |
+                                            <empty string> | / /foo/        | /foo
+                                            \        | /              | / /foo         |
+                                            /foo         | /              | /"
                                           maxLength: 1024
                                           type: string
                                         type:
@@ -12942,8 +13173,9 @@ spec:
                                             the value with which to replace the prefix
                                             match of a request during a rewrite or
                                             redirect. For example, a request to \"/foo/bar\"
-                                            with a prefix match of \"/foo\" would
-                                            be modified to \"/bar\". \n Note that
+                                            with a prefix match of \"/foo\" and a
+                                            ReplacePrefixMatch of \"/xyz\" would be
+                                            modified to \"/xyz/bar\". \n Note that
                                             this matches the behavior of the PathPrefix
                                             match type. This matches full path elements.
                                             A path element refers to the list of labels
@@ -12951,7 +13183,29 @@ spec:
                                             When specified, a trailing `/` is ignored.
                                             For example, the paths `/abc`, `/abc/`,
                                             and `/abc/def` would all match the prefix
-                                            `/abc`, but the path `/abcd` would not."
+                                            `/abc`, but the path `/abcd` would not.
+                                            \n ReplacePrefixMatch is only compatible
+                                            with a `PathPrefix` HTTPRouteMatch. Using
+                                            any other HTTPRouteMatch type on the same
+                                            HTTPRouteRule will result in the implementation
+                                            setting the Accepted Condition for the
+                                            Route to `status: False`. \n Request Path
+                                            | Prefix Match | Replace Prefix | Modified
+                                            Path -------------|--------------|----------------|----------
+                                            /foo/bar     | /foo         | /xyz           |
+                                            /xyz/bar /foo/bar     | /foo         |
+                                            /xyz/          | /xyz/bar /foo/bar     |
+                                            /foo/        | /xyz           | /xyz/bar
+                                            /foo/bar     | /foo/        | /xyz/          |
+                                            /xyz/bar /foo         | /foo         |
+                                            /xyz           | /xyz /foo/        | /foo
+                                            \        | /xyz           | /xyz/ /foo/bar
+                                            \    | /foo         | <empty string> |
+                                            /bar /foo/        | /foo         | <empty
+                                            string> | / /foo         | /foo         |
+                                            <empty string> | / /foo/        | /foo
+                                            \        | /              | / /foo         |
+                                            /foo         | /              | /"
                                           maxLength: 1024
                                           type: string
                                         type:
@@ -13070,9 +13324,10 @@ spec:
                         with each other except for the URLRewrite and RequestRedirect
                         filters, which may not be combined. If an implementation can
                         not support other combinations of filters, they must clearly
-                        document that limitation. In all cases where incompatible
-                        or unsupported filters are specified, implementations MUST
-                        add a warning condition to status. \n Support: Core"
+                        document that limitation. In cases where incompatible or unsupported
+                        filters are specified and cause the `Accepted` condition to
+                        be set to status `False`, implementations may use the `IncompatibleFilters`
+                        reason to specify this configuration error. \n Support: Core"
                       items:
                         description: HTTPRouteFilter defines processing steps that
                           must be completed during the request or response lifecycle.
@@ -13335,7 +13590,8 @@ spec:
                                       value with which to replace the prefix match
                                       of a request during a rewrite or redirect. For
                                       example, a request to \"/foo/bar\" with a prefix
-                                      match of \"/foo\" would be modified to \"/bar\".
+                                      match of \"/foo\" and a ReplacePrefixMatch of
+                                      \"/xyz\" would be modified to \"/xyz/bar\".
                                       \n Note that this matches the behavior of the
                                       PathPrefix match type. This matches full path
                                       elements. A path element refers to the list
@@ -13343,7 +13599,26 @@ spec:
                                       When specified, a trailing `/` is ignored. For
                                       example, the paths `/abc`, `/abc/`, and `/abc/def`
                                       would all match the prefix `/abc`, but the path
-                                      `/abcd` would not."
+                                      `/abcd` would not. \n ReplacePrefixMatch is
+                                      only compatible with a `PathPrefix` HTTPRouteMatch.
+                                      Using any other HTTPRouteMatch type on the same
+                                      HTTPRouteRule will result in the implementation
+                                      setting the Accepted Condition for the Route
+                                      to `status: False`. \n Request Path | Prefix
+                                      Match | Replace Prefix | Modified Path -------------|--------------|----------------|----------
+                                      /foo/bar     | /foo         | /xyz           |
+                                      /xyz/bar /foo/bar     | /foo         | /xyz/
+                                      \         | /xyz/bar /foo/bar     | /foo/        |
+                                      /xyz           | /xyz/bar /foo/bar     | /foo/
+                                      \       | /xyz/          | /xyz/bar /foo         |
+                                      /foo         | /xyz           | /xyz /foo/        |
+                                      /foo         | /xyz           | /xyz/ /foo/bar
+                                      \    | /foo         | <empty string> | /bar
+                                      /foo/        | /foo         | <empty string>
+                                      | / /foo         | /foo         | <empty string>
+                                      | / /foo/        | /foo         | /              |
+                                      / /foo         | /foo         | /              |
+                                      /"
                                     maxLength: 1024
                                     type: string
                                   type:
@@ -13582,7 +13857,8 @@ spec:
                                       value with which to replace the prefix match
                                       of a request during a rewrite or redirect. For
                                       example, a request to \"/foo/bar\" with a prefix
-                                      match of \"/foo\" would be modified to \"/bar\".
+                                      match of \"/foo\" and a ReplacePrefixMatch of
+                                      \"/xyz\" would be modified to \"/xyz/bar\".
                                       \n Note that this matches the behavior of the
                                       PathPrefix match type. This matches full path
                                       elements. A path element refers to the list
@@ -13590,7 +13866,26 @@ spec:
                                       When specified, a trailing `/` is ignored. For
                                       example, the paths `/abc`, `/abc/`, and `/abc/def`
                                       would all match the prefix `/abc`, but the path
-                                      `/abcd` would not."
+                                      `/abcd` would not. \n ReplacePrefixMatch is
+                                      only compatible with a `PathPrefix` HTTPRouteMatch.
+                                      Using any other HTTPRouteMatch type on the same
+                                      HTTPRouteRule will result in the implementation
+                                      setting the Accepted Condition for the Route
+                                      to `status: False`. \n Request Path | Prefix
+                                      Match | Replace Prefix | Modified Path -------------|--------------|----------------|----------
+                                      /foo/bar     | /foo         | /xyz           |
+                                      /xyz/bar /foo/bar     | /foo         | /xyz/
+                                      \         | /xyz/bar /foo/bar     | /foo/        |
+                                      /xyz           | /xyz/bar /foo/bar     | /foo/
+                                      \       | /xyz/          | /xyz/bar /foo         |
+                                      /foo         | /xyz           | /xyz /foo/        |
+                                      /foo         | /xyz           | /xyz/ /foo/bar
+                                      \    | /foo         | <empty string> | /bar
+                                      /foo/        | /foo         | <empty string>
+                                      | / /foo         | /foo         | <empty string>
+                                      | / /foo/        | /foo         | /              |
+                                      / /foo         | /foo         | /              |
+                                      /"
                                     maxLength: 1024
                                     type: string
                                   type:
@@ -13972,9 +14267,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -13994,7 +14291,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -14010,8 +14316,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -14066,7 +14376,7 @@ spec:
         required:
         - spec
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
@@ -14104,12 +14414,14 @@ spec:
                 description: "Hostnames defines a set of hostname that should match
                   against the HTTP Host header to select a HTTPRoute used to process
                   the request. Implementations MUST ignore any port value specified
-                  in the HTTP Host header while performing a match. \n Valid values
-                  for Hostnames are determined by RFC 1123 definition of a hostname
-                  with 2 notable exceptions: \n 1. IPs are not allowed. 2. A hostname
-                  may be prefixed with a wildcard label (`*.`). The wildcard label
-                  must appear by itself as the first label. \n If a hostname is specified
-                  by both the Listener and HTTPRoute, there must be at least one intersecting
+                  in the HTTP Host header while performing a match and (absent of
+                  any applicable header modification configuration) MUST forward this
+                  header unmodified to the backend. \n Valid values for Hostnames
+                  are determined by RFC 1123 definition of a hostname with 2 notable
+                  exceptions: \n 1. IPs are not allowed. 2. A hostname may be prefixed
+                  with a wildcard label (`*.`). The wildcard label must appear by
+                  itself as the first label. \n If a hostname is specified by both
+                  the Listener and HTTPRoute, there must be at least one intersecting
                   hostname for the HTTPRoute to be attached to the Listener. For example:
                   \n * A Listener with `test.example.com` as the hostname matches
                   HTTPRoutes that have either not specified any hostnames, or have
@@ -14161,28 +14473,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -14198,8 +14526,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -14219,7 +14549,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -14234,18 +14572,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -14599,8 +14941,9 @@ spec:
                                             the value with which to replace the prefix
                                             match of a request during a rewrite or
                                             redirect. For example, a request to \"/foo/bar\"
-                                            with a prefix match of \"/foo\" would
-                                            be modified to \"/bar\". \n Note that
+                                            with a prefix match of \"/foo\" and a
+                                            ReplacePrefixMatch of \"/xyz\" would be
+                                            modified to \"/xyz/bar\". \n Note that
                                             this matches the behavior of the PathPrefix
                                             match type. This matches full path elements.
                                             A path element refers to the list of labels
@@ -14608,7 +14951,29 @@ spec:
                                             When specified, a trailing `/` is ignored.
                                             For example, the paths `/abc`, `/abc/`,
                                             and `/abc/def` would all match the prefix
-                                            `/abc`, but the path `/abcd` would not."
+                                            `/abc`, but the path `/abcd` would not.
+                                            \n ReplacePrefixMatch is only compatible
+                                            with a `PathPrefix` HTTPRouteMatch. Using
+                                            any other HTTPRouteMatch type on the same
+                                            HTTPRouteRule will result in the implementation
+                                            setting the Accepted Condition for the
+                                            Route to `status: False`. \n Request Path
+                                            | Prefix Match | Replace Prefix | Modified
+                                            Path -------------|--------------|----------------|----------
+                                            /foo/bar     | /foo         | /xyz           |
+                                            /xyz/bar /foo/bar     | /foo         |
+                                            /xyz/          | /xyz/bar /foo/bar     |
+                                            /foo/        | /xyz           | /xyz/bar
+                                            /foo/bar     | /foo/        | /xyz/          |
+                                            /xyz/bar /foo         | /foo         |
+                                            /xyz           | /xyz /foo/        | /foo
+                                            \        | /xyz           | /xyz/ /foo/bar
+                                            \    | /foo         | <empty string> |
+                                            /bar /foo/        | /foo         | <empty
+                                            string> | / /foo         | /foo         |
+                                            <empty string> | / /foo/        | /foo
+                                            \        | /              | / /foo         |
+                                            /foo         | /              | /"
                                           maxLength: 1024
                                           type: string
                                         type:
@@ -14864,8 +15229,9 @@ spec:
                                             the value with which to replace the prefix
                                             match of a request during a rewrite or
                                             redirect. For example, a request to \"/foo/bar\"
-                                            with a prefix match of \"/foo\" would
-                                            be modified to \"/bar\". \n Note that
+                                            with a prefix match of \"/foo\" and a
+                                            ReplacePrefixMatch of \"/xyz\" would be
+                                            modified to \"/xyz/bar\". \n Note that
                                             this matches the behavior of the PathPrefix
                                             match type. This matches full path elements.
                                             A path element refers to the list of labels
@@ -14873,7 +15239,29 @@ spec:
                                             When specified, a trailing `/` is ignored.
                                             For example, the paths `/abc`, `/abc/`,
                                             and `/abc/def` would all match the prefix
-                                            `/abc`, but the path `/abcd` would not."
+                                            `/abc`, but the path `/abcd` would not.
+                                            \n ReplacePrefixMatch is only compatible
+                                            with a `PathPrefix` HTTPRouteMatch. Using
+                                            any other HTTPRouteMatch type on the same
+                                            HTTPRouteRule will result in the implementation
+                                            setting the Accepted Condition for the
+                                            Route to `status: False`. \n Request Path
+                                            | Prefix Match | Replace Prefix | Modified
+                                            Path -------------|--------------|----------------|----------
+                                            /foo/bar     | /foo         | /xyz           |
+                                            /xyz/bar /foo/bar     | /foo         |
+                                            /xyz/          | /xyz/bar /foo/bar     |
+                                            /foo/        | /xyz           | /xyz/bar
+                                            /foo/bar     | /foo/        | /xyz/          |
+                                            /xyz/bar /foo         | /foo         |
+                                            /xyz           | /xyz /foo/        | /foo
+                                            \        | /xyz           | /xyz/ /foo/bar
+                                            \    | /foo         | <empty string> |
+                                            /bar /foo/        | /foo         | <empty
+                                            string> | / /foo         | /foo         |
+                                            <empty string> | / /foo/        | /foo
+                                            \        | /              | / /foo         |
+                                            /foo         | /              | /"
                                           maxLength: 1024
                                           type: string
                                         type:
@@ -14992,9 +15380,10 @@ spec:
                         with each other except for the URLRewrite and RequestRedirect
                         filters, which may not be combined. If an implementation can
                         not support other combinations of filters, they must clearly
-                        document that limitation. In all cases where incompatible
-                        or unsupported filters are specified, implementations MUST
-                        add a warning condition to status. \n Support: Core"
+                        document that limitation. In cases where incompatible or unsupported
+                        filters are specified and cause the `Accepted` condition to
+                        be set to status `False`, implementations may use the `IncompatibleFilters`
+                        reason to specify this configuration error. \n Support: Core"
                       items:
                         description: HTTPRouteFilter defines processing steps that
                           must be completed during the request or response lifecycle.
@@ -15257,7 +15646,8 @@ spec:
                                       value with which to replace the prefix match
                                       of a request during a rewrite or redirect. For
                                       example, a request to \"/foo/bar\" with a prefix
-                                      match of \"/foo\" would be modified to \"/bar\".
+                                      match of \"/foo\" and a ReplacePrefixMatch of
+                                      \"/xyz\" would be modified to \"/xyz/bar\".
                                       \n Note that this matches the behavior of the
                                       PathPrefix match type. This matches full path
                                       elements. A path element refers to the list
@@ -15265,7 +15655,26 @@ spec:
                                       When specified, a trailing `/` is ignored. For
                                       example, the paths `/abc`, `/abc/`, and `/abc/def`
                                       would all match the prefix `/abc`, but the path
-                                      `/abcd` would not."
+                                      `/abcd` would not. \n ReplacePrefixMatch is
+                                      only compatible with a `PathPrefix` HTTPRouteMatch.
+                                      Using any other HTTPRouteMatch type on the same
+                                      HTTPRouteRule will result in the implementation
+                                      setting the Accepted Condition for the Route
+                                      to `status: False`. \n Request Path | Prefix
+                                      Match | Replace Prefix | Modified Path -------------|--------------|----------------|----------
+                                      /foo/bar     | /foo         | /xyz           |
+                                      /xyz/bar /foo/bar     | /foo         | /xyz/
+                                      \         | /xyz/bar /foo/bar     | /foo/        |
+                                      /xyz           | /xyz/bar /foo/bar     | /foo/
+                                      \       | /xyz/          | /xyz/bar /foo         |
+                                      /foo         | /xyz           | /xyz /foo/        |
+                                      /foo         | /xyz           | /xyz/ /foo/bar
+                                      \    | /foo         | <empty string> | /bar
+                                      /foo/        | /foo         | <empty string>
+                                      | / /foo         | /foo         | <empty string>
+                                      | / /foo/        | /foo         | /              |
+                                      / /foo         | /foo         | /              |
+                                      /"
                                     maxLength: 1024
                                     type: string
                                   type:
@@ -15504,7 +15913,8 @@ spec:
                                       value with which to replace the prefix match
                                       of a request during a rewrite or redirect. For
                                       example, a request to \"/foo/bar\" with a prefix
-                                      match of \"/foo\" would be modified to \"/bar\".
+                                      match of \"/foo\" and a ReplacePrefixMatch of
+                                      \"/xyz\" would be modified to \"/xyz/bar\".
                                       \n Note that this matches the behavior of the
                                       PathPrefix match type. This matches full path
                                       elements. A path element refers to the list
@@ -15512,7 +15922,26 @@ spec:
                                       When specified, a trailing `/` is ignored. For
                                       example, the paths `/abc`, `/abc/`, and `/abc/def`
                                       would all match the prefix `/abc`, but the path
-                                      `/abcd` would not."
+                                      `/abcd` would not. \n ReplacePrefixMatch is
+                                      only compatible with a `PathPrefix` HTTPRouteMatch.
+                                      Using any other HTTPRouteMatch type on the same
+                                      HTTPRouteRule will result in the implementation
+                                      setting the Accepted Condition for the Route
+                                      to `status: False`. \n Request Path | Prefix
+                                      Match | Replace Prefix | Modified Path -------------|--------------|----------------|----------
+                                      /foo/bar     | /foo         | /xyz           |
+                                      /xyz/bar /foo/bar     | /foo         | /xyz/
+                                      \         | /xyz/bar /foo/bar     | /foo/        |
+                                      /xyz           | /xyz/bar /foo/bar     | /foo/
+                                      \       | /xyz/          | /xyz/bar /foo         |
+                                      /foo         | /xyz           | /xyz /foo/        |
+                                      /foo         | /xyz           | /xyz/ /foo/bar
+                                      \    | /foo         | <empty string> | /bar
+                                      /foo/        | /foo         | <empty string>
+                                      | / /foo         | /foo         | <empty string>
+                                      | / /foo/        | /foo         | /              |
+                                      / /foo         | /foo         | /              |
+                                      /"
                                     maxLength: 1024
                                     type: string
                                   type:
@@ -15894,9 +16323,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -15916,7 +16347,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -15932,8 +16372,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -16004,7 +16448,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -16025,6 +16469,9 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: The v1alpha2 version of ReferenceGrant has been deprecated
+      and will be removed in a future release of the API. Please upgrade to v1beta1.
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -16033,13 +16480,17 @@ spec:
           namespace as the policy. \n Each ReferenceGrant can be used to represent
           a unique trust relationship. Additional Reference Grants can be used to
           add to the set of trusted sources of inbound references for the namespace
-          they are defined within. \n All cross-namespace references in Gateway API
-          (with the exception of cross-namespace Gateway-route attachment) require
-          a ReferenceGrant. \n ReferenceGrant is a form of runtime verification allowing
-          users to assert which cross-namespace object references are permitted. Implementations
-          that support ReferenceGrant MUST NOT permit cross-namespace references which
-          have no grant, and MUST respond to the removal of a grant by revoking the
-          access that the grant allowed. \n Support: Core"
+          they are defined within. \n A ReferenceGrant is required for all cross-namespace
+          references in Gateway API (with the exception of cross-namespace Route-Gateway
+          attachment, which is governed by the AllowedRoutes configuration on the
+          Gateway, and cross-namespace Service ParentRefs on a \"consumer\" mesh Route,
+          which defines routing rules applicable only to workloads in the Route namespace).
+          ReferenceGrants allowing a reference from a Route to a Service are only
+          applicable to BackendRefs. \n ReferenceGrant is a form of runtime verification
+          allowing users to assert which cross-namespace object references are permitted.
+          Implementations that support ReferenceGrant MUST NOT permit cross-namespace
+          references which have no grant, and MUST respond to the removal of a grant
+          by revoking the access that the grant allowed. \n Support: Core"
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -16144,7 +16595,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources: {}
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -16269,7 +16720,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
     subresources: {}
 status:
   acceptedNames:
@@ -16283,7 +16734,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -16329,28 +16780,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -16366,8 +16833,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -16387,7 +16856,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -16402,18 +16879,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -16700,9 +17181,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -16722,7 +17205,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -16738,8 +17230,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -16810,7 +17306,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -16902,28 +17398,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -16939,8 +17451,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -16960,7 +17474,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -16975,18 +17497,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -17276,9 +17802,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -17298,7 +17826,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -17314,8 +17851,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -17386,7 +17927,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1
+    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -17432,28 +17973,44 @@ spec:
                   that a Route wants to be attached to. Note that the referenced parent
                   resource needs to allow this for the attachment to be complete.
                   For Gateways, that means the Gateway needs to allow attachment from
-                  Routes of this kind and namespace. \n The only kind of parent resource
-                  with \"Core\" support is Gateway. This API may be extended in the
-                  future to support additional kinds of parent resources such as one
-                  of the route kinds. \n It is invalid to reference an identical parent
-                  more than once. It is valid to reference multiple distinct sections
-                  within the same parent resource, such as 2 Listeners within a Gateway.
-                  \n It is possible to separately reference multiple distinct objects
-                  that may be collapsed by an implementation. For example, some implementations
-                  may choose to merge compatible Gateway Listeners together. If that
-                  is the case, the list of routes attached to those resources should
-                  also be merged. \n Note that for ParentRefs that cross namespace
-                  boundaries, there are specific rules. Cross-namespace references
-                  are only valid if they are explicitly allowed by something in the
-                  namespace they are referring to. For example, Gateway has the AllowedRoutes
-                  field, and ReferenceGrant provides a generic way to enable any other
-                  kind of cross-namespace reference."
+                  Routes of this kind and namespace. For Services, that means the
+                  Service must either be in the same namespace for a \"producer\"
+                  route, or the mesh implementation must support and allow \"consumer\"
+                  routes for the referenced Service. ReferenceGrant is not applicable
+                  for governing ParentRefs to Services - it is not possible to create
+                  a \"producer\" route for a Service in a different namespace from
+                  the Route. \n There are two kinds of parent resources with \"Core\"
+                  support: \n * Gateway (Gateway conformance profile) * Service (Mesh
+                  conformance profile) \n This API may be extended in the future to
+                  support additional kinds of parent resources. \n It is invalid to
+                  reference an identical parent more than once. It is valid to reference
+                  multiple distinct sections within the same parent resource, such
+                  as two separate Listeners on the same Gateway or two separate ports
+                  on the same Service. \n It is possible to separately reference multiple
+                  distinct objects that may be collapsed by an implementation. For
+                  example, some implementations may choose to merge compatible Gateway
+                  Listeners together. If that is the case, the list of routes attached
+                  to those resources should also be merged. \n Note that for ParentRefs
+                  that cross namespace boundaries, there are specific rules. Cross-namespace
+                  references are only valid if they are explicitly allowed by something
+                  in the namespace they are referring to. For example, Gateway has
+                  the AllowedRoutes field, and ReferenceGrant provides a generic way
+                  to enable other kinds of cross-namespace reference. \n ParentRefs
+                  from a Route to a Service in the same namespace are \"producer\"
+                  routes, which apply default routing rules to inbound connections
+                  from any namespace to the Service. \n ParentRefs from a Route to
+                  a Service in a different namespace are \"consumer\" routes, and
+                  these routing rules are only applied to outbound connections originating
+                  from the same namespace as the Route, for which the intended destination
+                  of the connections are a Service targeted as a ParentRef of the
+                  Route."
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
-                    a route). The only kind of parent resource with \"Core\" support
-                    is Gateway. This API may be extended in the future to support
-                    additional kinds of parent resources, such as HTTPRoute. \n The
+                    a route). There are two kinds of parent resources with \"Core\"
+                    support: \n * Gateway (Gateway conformance profile) * Service
+                    (Mesh conformance profile) \n This API may be extended in the
+                    future to support additional kinds of parent resources. \n The
                     API object must be valid in the cluster; the Group and Kind must
                     be registered in the cluster for this reference to be valid."
                   properties:
@@ -17469,8 +18026,10 @@ spec:
                       type: string
                     kind:
                       default: Gateway
-                      description: "Kind is kind of the referent. \n Support: Core
-                        (Gateway) \n Support: Implementation-specific (Other Resources)"
+                      description: "Kind is kind of the referent. \n There are two
+                        kinds of parent resources with \"Core\" support: \n * Gateway
+                        (Gateway conformance profile) * Service (Mesh conformance
+                        profile) \n Support for other resources is Implementation-Specific."
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -17490,7 +18049,15 @@ spec:
                         the namespace they are referring to. For example: Gateway
                         has the AllowedRoutes field, and ReferenceGrant provides a
                         generic way to enable any other kind of cross-namespace reference.
-                        \n Support: Core"
+                        \n ParentRefs from a Route to a Service in the same namespace
+                        are \"producer\" routes, which apply default routing rules
+                        to inbound connections from any namespace to the Service.
+                        \n ParentRefs from a Route to a Service in a different namespace
+                        are \"consumer\" routes, and these routing rules are only
+                        applied to outbound connections originating from the same
+                        namespace as the Route, for which the intended destination
+                        of the connections are a Service targeted as a ParentRef of
+                        the Route. \n Support: Core"
                       maxLength: 63
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -17505,18 +18072,22 @@ spec:
                         a Route must apply to a specific port as opposed to a listener(s)
                         whose port(s) may be changed. When both Port and SectionName
                         are specified, the name and port of the selected listener
-                        must match both specified values. \n Implementations MAY choose
-                        to support other parent resources. Implementations supporting
-                        other types of parent resources MUST clearly document how/if
-                        Port is interpreted. \n For the purpose of status, an attachment
-                        is considered successful as long as the parent resource accepts
-                        it partially. For example, Gateway listeners can restrict
-                        which Routes can attach to them by Route kind, namespace,
-                        or hostname. If 1 of 2 Gateway listeners accept attachment
-                        from the referencing Route, the Route MUST be considered successfully
-                        attached. If no Gateway listeners accept attachment from this
-                        Route, the Route MUST be considered detached from the Gateway.
-                        \n Support: Extended \n <gateway:experimental>"
+                        must match both specified values. \n When the parent resource
+                        is a Service, this targets a specific port in the Service
+                        spec. When both Port (experimental) and SectionName are specified,
+                        the name and port of the selected port must match both specified
+                        values. \n Implementations MAY choose to support other parent
+                        resources. Implementations supporting other types of parent
+                        resources MUST clearly document how/if Port is interpreted.
+                        \n For the purpose of status, an attachment is considered
+                        successful as long as the parent resource accepts it partially.
+                        For example, Gateway listeners can restrict which Routes can
+                        attach to them by Route kind, namespace, or hostname. If 1
+                        of 2 Gateway listeners accept attachment from the referencing
+                        Route, the Route MUST be considered successfully attached.
+                        If no Gateway listeners accept attachment from this Route,
+                        the Route MUST be considered detached from the Gateway. \n
+                        Support: Extended \n <gateway:experimental>"
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -17803,9 +18374,11 @@ spec:
                           type: string
                         kind:
                           default: Gateway
-                          description: "Kind is kind of the referent. \n Support:
-                            Core (Gateway) \n Support: Implementation-specific (Other
-                            Resources)"
+                          description: "Kind is kind of the referent. \n There are
+                            two kinds of parent resources with \"Core\" support: \n
+                            * Gateway (Gateway conformance profile) * Service (Mesh
+                            conformance profile) \n Support for other resources is
+                            Implementation-Specific."
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
@@ -17825,7 +18398,16 @@ spec:
                             in the namespace they are referring to. For example: Gateway
                             has the AllowedRoutes field, and ReferenceGrant provides
                             a generic way to enable any other kind of cross-namespace
-                            reference. \n Support: Core"
+                            reference. \n ParentRefs from a Route to a Service in
+                            the same namespace are \"producer\" routes, which apply
+                            default routing rules to inbound connections from any
+                            namespace to the Service. \n ParentRefs from a Route to
+                            a Service in a different namespace are \"consumer\" routes,
+                            and these routing rules are only applied to outbound connections
+                            originating from the same namespace as the Route, for
+                            which the intended destination of the connections are
+                            a Service targeted as a ParentRef of the Route. \n Support:
+                            Core"
                           maxLength: 63
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -17841,8 +18423,12 @@ spec:
                             a specific port as opposed to a listener(s) whose port(s)
                             may be changed. When both Port and SectionName are specified,
                             the name and port of the selected listener must match
-                            both specified values. \n Implementations MAY choose to
-                            support other parent resources. Implementations supporting
+                            both specified values. \n When the parent resource is
+                            a Service, this targets a specific port in the Service
+                            spec. When both Port (experimental) and SectionName are
+                            specified, the name and port of the selected port must
+                            match both specified values. \n Implementations MAY choose
+                            to support other parent resources. Implementations supporting
                             other types of parent resources MUST clearly document
                             how/if Port is interpreted. \n For the purpose of status,
                             an attachment is considered successful as long as the
@@ -17913,6 +18499,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: gateway-system
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -17974,7 +18564,7 @@ spec:
       containers:
       - name: webhook
         image: registry.k8s.io/gateway-api/admission-server:v0.7.1
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         args:
         - -logtostderr
         - --tlsCertFile=/etc/certs/cert
@@ -17996,7 +18586,16 @@ spec:
           mountPath: /etc/certs
           readOnly: true
         securityContext:
+          allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: webhook-certs
         secret:
@@ -18105,11 +18704,23 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+            type: RuntimeDefault
       restartPolicy: OnFailure
       serviceAccountName: gateway-api-admission
       securityContext:
         runAsNonRoot: true
         runAsUser: 2000
+        runAsGroup: 2000
 ---
 apiVersion: batch/v1
 kind: Job
@@ -18142,11 +18753,23 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+            type: RuntimeDefault
       restartPolicy: OnFailure
       serviceAccountName: gateway-api-admission
       securityContext:
         runAsNonRoot: true
         runAsUser: 2000
+        runAsGroup: 2000
 
 ---
 kind: GatewayClass

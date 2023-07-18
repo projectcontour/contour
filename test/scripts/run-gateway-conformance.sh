@@ -62,5 +62,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   # Can implement with the -skip flag available with go 1.20
   # or if Gateway API supports skipping tests via custom flag.
-  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh
+  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh -skip-tests=HTTPRouteRedirectPortAndScheme
 fi
