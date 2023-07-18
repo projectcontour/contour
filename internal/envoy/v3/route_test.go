@@ -2007,6 +2007,170 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 		},
+		"header present match": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:      "x-header-foo",
+					MatchType: dag.HeaderMatchTypePresent,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name: "x-header-foo",
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_PresentMatch{
+						PresentMatch: true,
+					},
+				}},
+			},
+		},
+		"header not present match": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:      "x-header-foo",
+					MatchType: dag.HeaderMatchTypePresent,
+					Invert:    true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:        "x-header-foo",
+					InvertMatch: true,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_PresentMatch{
+						PresentMatch: true,
+					},
+				}},
+			},
+		},
+		"header exact": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:      "x-header-foo",
+					MatchType: dag.HeaderMatchTypeExact,
+					Value:     "bar",
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name: "x-header-foo",
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
+							IgnoreCase:   false,
+						},
+					},
+				}},
+			},
+		},
+		"header exact -- ignore case": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:       "x-header-foo",
+					MatchType:  dag.HeaderMatchTypeExact,
+					Value:      "bar",
+					IgnoreCase: true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name: "x-header-foo",
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
+							IgnoreCase:   true,
+						},
+					},
+				}},
+			},
+		},
+		"header not exact": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:      "x-header-foo",
+					MatchType: dag.HeaderMatchTypeExact,
+					Value:     "bar",
+					Invert:    true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:        "x-header-foo",
+					InvertMatch: true,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
+							IgnoreCase:   false,
+						},
+					},
+				}},
+			},
+		},
+		"header not exact -- ignore case": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:       "x-header-foo",
+					MatchType:  dag.HeaderMatchTypeExact,
+					Value:      "bar",
+					Invert:     true,
+					IgnoreCase: true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:        "x-header-foo",
+					InvertMatch: true,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
+							IgnoreCase:   true,
+						},
+					},
+				}},
+			},
+		},
+		"header contains": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:       "x-header-foo",
+					MatchType:  dag.HeaderMatchTypeContains,
+					Value:      "bar",
+					IgnoreCase: false,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name: "x-header-foo",
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*bar.*"),
+							},
+						},
+					},
+				}},
+			},
+		},
+		"header contains -- ignore case": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:       "x-header-foo",
+					MatchType:  dag.HeaderMatchTypeContains,
+					Value:      "bar",
+					IgnoreCase: true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name: "x-header-foo",
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch("(?i).*bar.*"),
+							},
+						},
+					},
+				}},
+			},
+		},
 		"header regex match": {
 			route: &dag.Route{
 				HeaderMatchConditions: []dag.HeaderMatchCondition{{

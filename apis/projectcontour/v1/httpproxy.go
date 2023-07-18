@@ -118,6 +118,11 @@ type HeaderMatchCondition struct {
 	// +optional
 	NotContains string `json:"notcontains,omitempty"`
 
+	// IgnoreCase specifies that string matching should be case insensitive.
+	// Note that this has no effect on the Regex parameter.
+	// +optional
+	IgnoreCase bool `json:"ignoreCase,omitempty"`
+
 	// Exact specifies a string that the header value must be equal to.
 	// +optional
 	Exact string `json:"exact,omitempty"`

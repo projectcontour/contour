@@ -36,9 +36,13 @@ func testHeaderConditionMatch(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-present")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notpresent")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
+		// f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
+		// f.Fixtures.Echo.Deploy(namespace, "echo-header-exact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
+		// f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-regex")
 
 		// This HTTPProxy tests everything except the "notpresent" match type,
@@ -81,6 +85,23 @@ func testHeaderConditionMatch(namespace string) {
 								Header: &contourv1.HeaderMatchCondition{
 									Name:     "Target-Contains",
 									Contains: "ContainsValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-contains-insensitive",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:       "Target-Contains",
+									Contains:   "cOnTainSvalue",
+									IgnoreCase: true,
 								},
 							},
 						},
@@ -179,6 +200,11 @@ func testHeaderConditionMatch(namespace string) {
 				headers:        map[string]string{"Target-Contains": "xxx ContainsValue xxx"},
 				expectResponse: 200,
 				expectService:  "echo-header-contains",
+			},
+			{
+				headers:        map[string]string{"Target-Contains": "cOnTainSvalue"},
+				expectResponse: 200,
+				expectService:  "echo-header-contains-insensitive",
 			},
 			{
 				headers:        map[string]string{"Target-NotContains": "ContainsValue"},
