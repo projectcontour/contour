@@ -90,7 +90,7 @@ func testHeaderConditionMatch(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
-								Name: "echo-header-contains-insensitive",
+								Name: "echo-header-contains-case-insensitive",
 								Port: 80,
 							},
 						},
@@ -220,7 +220,7 @@ func testHeaderConditionMatch(namespace string) {
 			{
 				headers:        map[string]string{"Target-Contains": "cOnTainSvalue"},
 				expectResponse: 200,
-				expectService:  "echo-header-contains-insensitive",
+				expectService:  "echo-header-contains-case-insensitive",
 			},
 			{
 				headers:        map[string]string{"Target-NotContains": "ContainsValue"},
