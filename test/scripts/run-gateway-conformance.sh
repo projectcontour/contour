@@ -52,15 +52,22 @@ EOF
 GO_MOD_GATEWAY_API_VERSION=$(grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $2}')
 
 if [ "$GATEWAY_API_VERSION" = "$GO_MOD_GATEWAY_API_VERSION" ]; then
-  go test -timeout=40m -tags conformance ./test/conformance/gatewayapi --gateway-class=contour
+  # Skipped test checks for the original request port in the returned Location
+  # header which Envoy is stripping.
+  # See: https://github.com/envoyproxy/envoy/issues/17318
+  # Skip here instead of in the suite options since it's a subtest.
+  go test -timeout=40m -tags conformance ./test/conformance/gatewayapi --gateway-class=contour \
+    -skip TestGatewayConformance/HTTPRouteRedirectPortAndScheme/http-listener-on-8080/0_request_to_\'\/scheme-nil-and-port-nil\'_should_receive_a_302
 else 
   cd $(mktemp -d)
   git clone https://github.com/kubernetes-sigs/gateway-api
   cd gateway-api
   git checkout "${GATEWAY_API_VERSION}"
-  # TODO: Keep the list of skipped features in sync with
-  # test/conformance/gatewayapi/gateway_conformance_test.go.
-  # Can implement with the -skip flag available with go 1.20
-  # or if Gateway API supports skipping tests via custom flag.
-  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh
+  # TODO: Keep the list of skipped tests/features in sync with
+  # test/conformance/gatewayapi/gateway_conformance_test.go and
+  # the above `go test` invocation. Note that when running this
+  # way the top-level test is called "TestConformance", not
+  # "TestGatewayConformance".
+  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh \
+    -skip TestConformance/HTTPRouteRedirectPortAndScheme/http-listener-on-8080/0_request_to_\'\/scheme-nil-and-port-nil\'_should_receive_a_302
 fi
