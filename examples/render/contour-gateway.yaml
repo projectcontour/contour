@@ -957,6 +957,12 @@ spec:
                                                 that the header value must be equal
                                                 to.
                                               type: string
+                                            ignoreCase:
+                                              description: IgnoreCase specifies that
+                                                string matching should be case insensitive.
+                                                Note that this has no effect on the
+                                                Regex parameter.
+                                              type: boolean
                                             name:
                                               description: Name is the name of the
                                                 header to match against. Name is required.
@@ -4343,6 +4349,12 @@ spec:
                                                     that the header value must be
                                                     equal to.
                                                   type: string
+                                                ignoreCase:
+                                                  description: IgnoreCase specifies
+                                                    that string matching should be
+                                                    case insensitive. Note that this
+                                                    has no effect on the Regex parameter.
+                                                  type: boolean
                                                 name:
                                                   description: Name is the name of
                                                     the header to match against. Name
@@ -5145,6 +5157,11 @@ spec:
                                 description: Exact specifies a string that the header
                                   value must be equal to.
                                 type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
                               name:
                                 description: Name is the name of the header to match
                                   against. Name is required. Header names are case
@@ -5302,6 +5319,11 @@ spec:
                                 description: Exact specifies a string that the header
                                   value must be equal to.
                                 type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
                               name:
                                 description: Name is the name of the header to match
                                   against. Name is required. Header names are case
@@ -5873,6 +5895,13 @@ spec:
                                                       string that the header value
                                                       must be equal to.
                                                     type: string
+                                                  ignoreCase:
+                                                    description: IgnoreCase specifies
+                                                      that string matching should
+                                                      be case insensitive. Note that
+                                                      this has no effect on the Regex
+                                                      parameter.
+                                                    type: boolean
                                                   name:
                                                     description: Name is the name
                                                       of the header to match against.
@@ -7233,6 +7262,12 @@ spec:
                                                     that the header value must be
                                                     equal to.
                                                   type: string
+                                                ignoreCase:
+                                                  description: IgnoreCase specifies
+                                                    that string matching should be
+                                                    case insensitive. Note that this
+                                                    has no effect on the Regex parameter.
+                                                  type: boolean
                                                 name:
                                                   description: Name is the name of
                                                     the header to match against. Name

@@ -38,11 +38,9 @@ func testHeaderConditionMatch(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
-		// f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
-		// f.Fixtures.Echo.Deploy(namespace, "echo-header-exact-case-insensitive")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
-		// f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-regex")
 
 		// This HTTPProxy tests everything except the "notpresent" match type,
@@ -141,6 +139,24 @@ func testHeaderConditionMatch(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
+
+								Name: "echo-header-exact-case-insensitive",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:  "Target-Exact",
+									Exact: "exactvalue",
+									IgnoreCase: true
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
 								Name: "echo-header-notexact",
 								Port: 80,
 							},
@@ -231,6 +247,11 @@ func testHeaderConditionMatch(namespace string) {
 				headers:        map[string]string{"Target-Exact": "ExactValue"},
 				expectResponse: 200,
 				expectService:  "echo-header-exact",
+			},
+			{
+				headers:        map[string]string{"Target-Exact": "eXacTValue"},
+				expectResponse: 200,
+				expectService:  "echo-header-exact-case-insensitive",
 			},
 			{
 				headers:        map[string]string{"Target-NotExact": "random"},
