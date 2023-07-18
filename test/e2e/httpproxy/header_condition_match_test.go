@@ -147,9 +147,9 @@ func testHeaderConditionMatch(namespace string) {
 						Conditions: []contourv1.MatchCondition{
 							{
 								Header: &contourv1.HeaderMatchCondition{
-									Name:  "Target-Exact",
-									Exact: "exactvalue",
-									IgnoreCase: true
+									Name:       "Target-Exact",
+									Exact:      "exactvalue",
+									IgnoreCase: true,
 								},
 							},
 						},
