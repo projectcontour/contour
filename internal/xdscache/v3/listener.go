@@ -370,6 +370,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
+		// Note: Ensure the filter chain order matches with the filter chain
+		// order for the HTTPS virtualhosts.
 		if len(listener.VirtualHosts) > 0 {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
@@ -388,9 +390,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
-				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				EnableWebsockets(listener.EnableWebsockets).
 				Get()
 
