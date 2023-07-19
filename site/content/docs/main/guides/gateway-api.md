@@ -147,7 +147,7 @@ The above creates:
 - A `Gateway` resource named `contour` in the `projectcontour` namespace, using the `contour` GatewayClass
 - Contour and Envoy resources in the `projectcontour` namespace to implement the `Gateway`, i.e. a Contour deployment, an Envoy daemonset, an Envoy service, etc.
 
-See the next section ([Testing the Gateway API](#testing-the-gateway-api)) for how to deploy an application and route traffic to it using Gateway API!
+See the next section ([Testing the Gateway API](#test-routing)) for how to deploy an application and route traffic to it using Gateway API!
 
 ## Configure an HTTPRoute
 
