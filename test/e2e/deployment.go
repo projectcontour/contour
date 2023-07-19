@@ -488,15 +488,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 
-	bootstrapCmdCompletionTimeout := 2 * time.Second
-
-	select {
-	case <-session.Exited:
-	case <-time.After(bootstrapCmdCompletionTimeout):
-		session.Kill()
-		return fmt.Errorf("Timeout waiting for bootstrap cmd %s", bootstrapCmd.String())
-	}
-
+	session.Wait("2s")
 	bootstrapContents, err := io.ReadAll(bFile)
 	if err != nil {
 		return err
