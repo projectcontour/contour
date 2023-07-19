@@ -15,7 +15,8 @@ The reader is suggested to familiarize themselves with the basics of Gateway API
 In Contour's Gateway API implementation, a Gateway corresponds 1:1 with a single deployment of Contour + Envoy.
 In other words, each Gateway has its own control plane (Contour) and data plane (Envoy).
 
-See the [Gateway API guide][12] for a step-by-step tutorial on getting Contour installed with Gateway API and using it to route traffic to a service.
+The remainder of this document delves into more detail regarding configuration options when using Contour with Gateway API.
+If you are looking for a way to get started with Gateway API and Contour, see the [Gateway API guide][12], a step-by-step tutorial on getting Contour installed with Gateway API and using it to route traffic to a service.
 
 ## Enabling Gateway API in Contour
 
@@ -93,7 +94,7 @@ Check the Gateway status to ensure that Listeners have been properly provisioned
 
 Gateway API defines multiple route types.
 Each route type is appropriate for a different type of traffic being proxied to a backend service.
-Contour implements `HTTPRoute`, `TLSRoute`, and `GRPCRoute`.
+Contour implements `HTTPRoute`, `TLSRoute`, `GRPCRoute` and `TCPRoute`.
 The details of each of these route types are covered in extensive detail on the Gateway API website; the [route resources overview][11] is a good place to start learning about them.
 
 ### Routing with HTTPProxy or Ingress
