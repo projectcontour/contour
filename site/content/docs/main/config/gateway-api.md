@@ -86,6 +86,9 @@ To get from the Gateway Listener port to the port that Envoy will be configured 
 - if the result is greater than 65535, subtract 65535
 - if the result is less than or equal to 1023, add 1023.
 
+Note that, in rare corner cases, it's possible to have port conflicts.
+Check the Gateway status to ensure that Listeners have been properly provisioned.
+
 ## Routing
 
 Gateway API defines multiple route types.
