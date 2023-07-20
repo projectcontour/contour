@@ -740,7 +740,8 @@ spec:
                                             how to conditionally match against HTTP
                                             headers. The Name field is required, but
                                             only one of the remaining fields should
-                                            be be provided.
+                                            be be provided. Note that the IgnoreCase
+                                            parameter has no effect on Regex matching.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -4132,7 +4133,9 @@ spec:
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
                                                 but only one of the remaining fields
-                                                should be be provided.
+                                                should be be provided. Note that the
+                                                IgnoreCase parameter has no effect
+                                                on Regex matching.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -5679,6 +5682,8 @@ spec:
                                                   against HTTP headers. The Name field
                                                   is required, but only one of the
                                                   remaining fields should be be provided.
+                                                  Note that the IgnoreCase parameter
+                                                  has no effect on Regex matching.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -7045,7 +7050,9 @@ spec:
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
                                                 but only one of the remaining fields
-                                                should be be provided.
+                                                should be be provided. Note that the
+                                                IgnoreCase parameter has no effect
+                                                on Regex matching.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
