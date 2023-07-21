@@ -921,7 +921,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLS Listener with TLS.Mode=Terminate is invalid": {
+		"TLS Listener with TLS.Mode=Terminate is invalid if certificateRef is not specified": {
 			gatewayclass: validClass,
 			gateway: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -935,9 +935,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.TLSProtocolType,
 						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 							Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
-							},
 						},
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{

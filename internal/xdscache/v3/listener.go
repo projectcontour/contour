@@ -355,6 +355,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	}
 
 	for _, listener := range root.Listeners {
+		// A Listener-level TCPProxy proxies all traffic for
+		// the Listener port, i.e. no filter chain match.
 		if listener.TCPProxy != nil {
 			listeners[listener.Name] = envoy_v3.Listener(
 				listener.Name,
@@ -367,7 +369,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 			continue
 		}
-
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
 		// Note: Ensure the filter chain order matches with the filter chain
