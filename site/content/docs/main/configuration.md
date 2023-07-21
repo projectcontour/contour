@@ -188,9 +188,13 @@ The network configuration block can be used to configure various parameters netw
 
 The listener configuration block can be used to configure various parameters for Envoy listener.
 
-| Field Name          | Type   | Default | Description                                                                                                                                                                                                                                                   |
-| ------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| connection-balancer | string | `""`    | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
+| Field Name                        | Type   | Default | Description                                                                                                                                                                                                                                                   |
+|-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| connection-balancer               | string | `""`    | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
+| max-requests-per-connection       | int    | none    | This field specifies the maximum requests for downstream connections. If not specified, there is no limit                                                                                                                                                     |
+| per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
+
+_This is Envoy's default setting value and is not explicitly configured by Contour._
 
 ### Server Configuration
 
@@ -495,7 +499,7 @@ connects to Contour:
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml
-[2]: guides/structured-logs
+[2]: config/access-logging
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields

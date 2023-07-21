@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -472,6 +473,13 @@ type ListenerParameters struct {
 	//
 	// +optional
 	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
+
+	// Defines the soft limit on size of the listener’s new connection read and write buffers
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -486,6 +494,11 @@ func (p *ListenerParameters) Validate() error {
 	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
 		return fmt.Errorf("invalid max connections per request value %q set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
+
+	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
+		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+	}
+
 	return nil
 }
 
@@ -736,6 +749,10 @@ type RateLimitService struct {
 	// EnableResourceExhaustedCode enables translating error code 429 to
 	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
 	EnableResourceExhaustedCode bool `yaml:"enableResourceExhaustedCode,omitempty"`
+
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for all HTTPProxy
+	// HTTPProxy can overwrite this configuration.
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both

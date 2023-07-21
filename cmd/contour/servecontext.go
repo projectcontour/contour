@@ -414,10 +414,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				Name:      nsedName.Name,
 				Namespace: nsedName.Namespace,
 			},
-			Domain:                      ctx.Config.RateLimitService.Domain,
-			FailOpen:                    ref.To(ctx.Config.RateLimitService.FailOpen),
-			EnableXRateLimitHeaders:     ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
-			EnableResourceExhaustedCode: ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
+			Domain:                       ctx.Config.RateLimitService.Domain,
+			FailOpen:                     ref.To(ctx.Config.RateLimitService.FailOpen),
+			EnableXRateLimitHeaders:      ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
+			EnableResourceExhaustedCode:  ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
+			DefaultGlobalRateLimitPolicy: ctx.Config.RateLimitService.DefaultGlobalRateLimitPolicy,
 		}
 	}
 
@@ -520,12 +521,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              &ctx.useProxyProto,
-				DisableAllowChunkedLength:  &ctx.Config.DisableAllowChunkedLength,
-				DisableMergeSlashes:        &ctx.Config.DisableMergeSlashes,
-				ServerHeaderTransformation: serverHeaderTransformation,
-				ConnectionBalancer:         ctx.Config.Listener.ConnectionBalancer,
-				MaxRequestsPerConnection:   ctx.Config.Listener.MaxRequestsPerConnection,
+				UseProxyProto:                 &ctx.useProxyProto,
+				DisableAllowChunkedLength:     &ctx.Config.DisableAllowChunkedLength,
+				DisableMergeSlashes:           &ctx.Config.DisableMergeSlashes,
+				ServerHeaderTransformation:    serverHeaderTransformation,
+				ConnectionBalancer:            ctx.Config.Listener.ConnectionBalancer,
+				PerConnectionBufferLimitBytes: ctx.Config.Listener.PerConnectionBufferLimitBytes,
+				MaxRequestsPerConnection:      ctx.Config.Listener.MaxRequestsPerConnection,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,

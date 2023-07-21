@@ -291,7 +291,7 @@ $ curl -k http://local.projectcontour.io/test/$((RANDOM))
 
 ## Add global rate limit policies
 
-Now that we have a working application exposed by a `HTTPProxy` resource, we can add add global rate limiting to it.
+Now that we have a working application exposed by a `HTTPProxy` resource, we can add global rate limiting to it.
 
 Edit the `HTTPProxy` that we created in the previous step to add rate limit policies to both routes:
 
@@ -327,6 +327,75 @@ spec:
           - entries:
               - genericKey:
                   value: foo
+```
+
+## Default Global rate limit policy
+
+Contour supports defining a default global rate limit policy in the `rateLimitService` configuration
+which is applied to all virtual hosts unless the host is opted-out by 
+explicitly setting `disabled` to `true`. This is useful for a single-tenant
+setup use-case. This means you don't have to edit all HTTPProxy objects with the same rate limit policies, instead you can
+define the policies in the `rateLimitService` configuration like this:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    rateLimitService:
+      extensionService: projectcontour/ratelimit
+      domain: contour
+      failOpen: false
+      defaultGlobalRateLimitPolicy:
+        descriptors:
+          - entries:
+            - requestHeader:
+                headerName: X-Custom-Header
+                descriptorKey: CustomHeader
+```
+
+Virtual host can opt out by setting `disabled` to `true`.
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      global:
+        disabled: true
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: ingress-conformance-echo
+      port: 80
+```
+
+Also, the default global rate limit policy is not applied in case the virtual host defines its own global rate limit policy.
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      global:
+        descriptors:
+          - entries:
+              - remoteAddress: {}
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: ingress-conformance-echo
+      port: 80
 ```
 
 ## Make requests

@@ -575,6 +575,11 @@ func (in *EnvoyListenerConfig) DeepCopyInto(out *EnvoyListenerConfig) {
 		*out = new(uint32)
 		**out = **in
 	}
+	if in.PerConnectionBufferLimitBytes != nil {
+		in, out := &in.PerConnectionBufferLimitBytes, &out.PerConnectionBufferLimitBytes
+		*out = new(uint32)
+		**out = **in
+	}
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
 		*out = new(EnvoyTLS)
@@ -1118,6 +1123,11 @@ func (in *RateLimitServiceConfig) DeepCopyInto(out *RateLimitServiceConfig) {
 		in, out := &in.EnableResourceExhaustedCode, &out.EnableResourceExhaustedCode
 		*out = new(bool)
 		**out = **in
+	}
+	if in.DefaultGlobalRateLimitPolicy != nil {
+		in, out := &in.DefaultGlobalRateLimitPolicy, &out.DefaultGlobalRateLimitPolicy
+		*out = new(v1.GlobalRateLimitPolicy)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

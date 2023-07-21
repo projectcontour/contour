@@ -817,12 +817,17 @@ type LocalRateLimitPolicy struct {
 
 // GlobalRateLimitPolicy defines global rate limiting parameters.
 type GlobalRateLimitPolicy struct {
+	// Disabled configures the HTTPProxy to not use
+	// the default global rate limit policy defined by the Contour configuration.
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
 	// Descriptors defines the list of descriptors that will
 	// be generated and sent to the rate limit service. Each
 	// descriptor contains 1+ key-value pair entries.
-	// +required
+	// +optional
 	// +kubebuilder:validation:MinItems=1
-	Descriptors []RateLimitDescriptor `json:"descriptors,omitempty"`
+	Descriptors []RateLimitDescriptor `json:"descriptors,omitempty" yaml:"descriptors,omitempty"`
 }
 
 // RateLimitDescriptor defines a list of key-value pair generators.
@@ -830,7 +835,7 @@ type RateLimitDescriptor struct {
 	// Entries is the list of key-value pair generators.
 	// +required
 	// +kubebuilder:validation:MinItems=1
-	Entries []RateLimitDescriptorEntry `json:"entries,omitempty"`
+	Entries []RateLimitDescriptorEntry `json:"entries,omitempty" yaml:"entries,omitempty"`
 }
 
 // RateLimitDescriptorEntry is a key-value pair generator. Exactly
@@ -838,24 +843,24 @@ type RateLimitDescriptor struct {
 type RateLimitDescriptorEntry struct {
 	// GenericKey defines a descriptor entry with a static key and value.
 	// +optional
-	GenericKey *GenericKeyDescriptor `json:"genericKey,omitempty"`
+	GenericKey *GenericKeyDescriptor `json:"genericKey,omitempty" yaml:"genericKey,omitempty"`
 
 	// RequestHeader defines a descriptor entry that's populated only if
 	// a given header is present on the request. The descriptor key is static,
 	// and the descriptor value is equal to the value of the header.
 	// +optional
-	RequestHeader *RequestHeaderDescriptor `json:"requestHeader,omitempty"`
+	RequestHeader *RequestHeaderDescriptor `json:"requestHeader,omitempty" yaml:"requestHeader,omitempty"`
 
 	// RequestHeaderValueMatch defines a descriptor entry that's populated
 	// if the request's headers match a set of 1+ match criteria. The
 	// descriptor key is "header_match", and the descriptor value is static.
 	// +optional
-	RequestHeaderValueMatch *RequestHeaderValueMatchDescriptor `json:"requestHeaderValueMatch,omitempty"`
+	RequestHeaderValueMatch *RequestHeaderValueMatchDescriptor `json:"requestHeaderValueMatch,omitempty" yaml:"requestHeaderValueMatch,omitempty"`
 
 	// RemoteAddress defines a descriptor entry with a key of "remote_address"
 	// and a value equal to the client's IP address (from x-forwarded-for).
 	// +optional
-	RemoteAddress *RemoteAddressDescriptor `json:"remoteAddress,omitempty"`
+	RemoteAddress *RemoteAddressDescriptor `json:"remoteAddress,omitempty" yaml:"remoteAddress,omitempty"`
 }
 
 // GenericKeyDescriptor defines a descriptor entry with a static key and
@@ -864,12 +869,12 @@ type GenericKeyDescriptor struct {
 	// Key defines the key of the descriptor entry. If not set, the
 	// key is set to "generic_key".
 	// +optional
-	Key string `json:"key,omitempty"`
+	Key string `json:"key,omitempty" yaml:"key,omitempty"`
 
 	// Value defines the value of the descriptor entry.
 	// +required
 	// +kubebuilder:validation:MinLength=1
-	Value string `json:"value,omitempty"`
+	Value string `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // RequestHeaderDescriptor defines a descriptor entry that's populated only
@@ -879,12 +884,12 @@ type RequestHeaderDescriptor struct {
 	// HeaderName defines the name of the header to look for on the request.
 	// +required
 	// +kubebuilder:validation:MinLength=1
-	HeaderName string `json:"headerName,omitempty"`
+	HeaderName string `json:"headerName,omitempty" yaml:"headerName,omitempty"`
 
 	// DescriptorKey defines the key to use on the descriptor entry.
 	// +required
 	// +kubebuilder:validation:MinLength=1
-	DescriptorKey string `json:"descriptorKey,omitempty"`
+	DescriptorKey string `json:"descriptorKey,omitempty" yaml:"descriptorKey,omitempty"`
 }
 
 // RequestHeaderValueMatchDescriptor defines a descriptor entry that's populated
@@ -894,19 +899,19 @@ type RequestHeaderValueMatchDescriptor struct {
 	// Headers is a list of 1+ match criteria to apply against the request
 	// to determine whether to populate the descriptor entry or not.
 	// +kubebuilder:validation:MinItems=1
-	Headers []HeaderMatchCondition `json:"headers,omitempty"`
+	Headers []HeaderMatchCondition `json:"headers,omitempty" yaml:"headers,omitempty"`
 
 	// ExpectMatch defines whether the request must positively match the match
 	// criteria in order to generate a descriptor entry (i.e. true), or not
 	// match the match criteria in order to generate a descriptor entry (i.e. false).
 	// The default is true.
 	// +kubebuilder:default=true
-	ExpectMatch bool `json:"expectMatch,omitempty"`
+	ExpectMatch bool `json:"expectMatch,omitempty" yaml:"expectMatch,omitempty"`
 
 	// Value defines the value of the descriptor entry.
 	// +required
 	// +kubebuilder:validation:MinLength=1
-	Value string `json:"value,omitempty"`
+	Value string `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // RemoteAddressDescriptor defines a descriptor entry with a key of

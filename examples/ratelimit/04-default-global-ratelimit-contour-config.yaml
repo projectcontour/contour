@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    rateLimitService:
+      extensionService: projectcontour/ratelimit
+      domain: contour
+      failOpen: false
+      defaultGlobalRateLimitPolicy:
+        descriptors:
+          - entries:
+            - requestHeader:
+                headerName: X-Custom-Header
+                descriptorKey: CustomHeader

@@ -1,0 +1,1 @@
+Contour can now include the kind, namespace and name of the relevant HTTPProxy/Ingress/HTTPRoute in Envoy's access logs. See the [access logging docs](https://projectcontour.io/docs/1.26/config/access-logging/#logging-the-route-source) for more information.

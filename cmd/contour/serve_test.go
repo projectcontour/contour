@@ -34,6 +34,12 @@ func TestGetDAGBuilder(t *testing.T) {
 		// that so it's OK to keep them in the "common" assertions for now.
 		assert.Len(t, builder.Processors, 4)
 		assert.IsType(t, &dag.ListenerProcessor{}, builder.Processors[0])
+
+		ingressProcessor := mustGetIngressProcessor(t, builder)
+		assert.True(t, ingressProcessor.SetSourceMetadataOnRoutes)
+
+		httpProxyProcessor := mustGetHTTPProxyProcessor(t, builder)
+		assert.True(t, httpProxyProcessor.SetSourceMetadataOnRoutes)
 	}
 
 	t.Run("all default options", func(t *testing.T) {
@@ -80,7 +86,6 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("request and response headers policy specified", func(t *testing.T) {
-
 		policy := &contour_api_v1alpha1.PolicyConfig{
 			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
 				Set: map[string]string{
@@ -119,7 +124,6 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
-
 		policy := &contour_api_v1alpha1.PolicyConfig{
 			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
 				Set: map[string]string{

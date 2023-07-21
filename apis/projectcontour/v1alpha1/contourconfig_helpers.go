@@ -241,10 +241,16 @@ func (e *EnvoyLogging) AccessLogFormatterExtensions() []string {
 		if contains(e.AccessLogFormatString, "REQ_WITHOUT_QUERY") {
 			extensionsMap["envoy.formatter.req_without_query"] = true
 		}
+		if contains(e.AccessLogFormatString, "METADATA") {
+			extensionsMap["envoy.formatter.metadata"] = true
+		}
 	case JSONAccessLog:
 		for _, f := range e.AccessLogJSONFields.AsFieldMap() {
 			if contains(f, "REQ_WITHOUT_QUERY") {
 				extensionsMap["envoy.formatter.req_without_query"] = true
+			}
+			if contains(f, "METADATA") {
+				extensionsMap["envoy.formatter.metadata"] = true
 			}
 		}
 	}

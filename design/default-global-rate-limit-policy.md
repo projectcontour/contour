@@ -1,6 +1,6 @@
 # Default Global RateLimit Policy
 
-Status: Reviewing
+Status: Accepted
 
 ## Abstract
 Define a default global rate limit policy in the Contour configuration to be used as a global rate limit policy by all HTTPProxy objects.
@@ -20,7 +20,7 @@ Currently, the global `rateLimitPolicy` for `VirtualHost` is set per HTTPProxy. 
 
 A new field, `DefaultGlobalRateLimitPolicy` (optional), will be added to `RateLimitServiceConfig` which is part of `ContourConfigurationSpec`. This field will define rate limit descriptors that will be added to every `VirtualHost`.
 
-HTTPProxy has to opt-out **explicitly** to not use the default global rate limit policy using `rateLimitPolicy.GlobalRateLimitPolicy.defaultGlobalRateLimitPolicyDisabled` flag and still can have its own global `rateLimitPolicy` which overrides the default one.
+HTTPProxy has to opt-out **explicitly** to not use the default global rate limit policy using `rateLimitPolicy.GlobalRateLimitPolicy.disabled` flag and still can have its own global `rateLimitPolicy` which overrides the default one.
 
 ### Sample Configurations
 #### contour.yaml
@@ -110,7 +110,7 @@ spec:
     fqdn: local.projectcontour.io
     rateLimitPolicy:
       global:
-        defaultGlobalRateLimitPolicyDisabled: true
+        disabled: true
       local:
         requests: 100
         unit: hour
@@ -139,15 +139,15 @@ type RateLimitService struct {
 ```
 
 ### HTTPProxy Configuration Changes
-A new field `DefaultGlobalRateLimitPolicyDisabled`, will be added to HTTPProxy `RateLimitPolicy.GlobalRateLimitPolicy`. `GlobalRateLimitPolicy` is part of Contour API v1 definition for HTTPProxy's global `rateLimitPolicy`
+A new field `Disabled`, will be added to HTTPProxy `RateLimitPolicy.GlobalRateLimitPolicy`. `GlobalRateLimitPolicy` is part of Contour API v1 definition for HTTPProxy's global `rateLimitPolicy`
 ```go
 // GlobalRateLimitPolicy defines global rate limiting parameters.
 type GlobalRateLimitPolicy struct {
-  // DefaultGlobalRateLimitPolicyDisabled configures the HTTPProxy to not use
+  // Disabled configures the HTTPProxy to not use
 	// the default global rate limit policy defined by the Contour configuration
 	// as a global rate limit policy for its defined virtual hosts entries.
 	// +optional
-	DefaultGlobalRateLimitPolicyDisabled bool `json:"defaultGlobalRateLimitPolicyDisabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// Descriptors defines the list of descriptors that will
 	// be generated and sent to the rate limit service. Each

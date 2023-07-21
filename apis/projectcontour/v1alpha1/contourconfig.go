@@ -374,6 +374,15 @@ type EnvoyListenerConfig struct {
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
 
+	// Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
+	// If unspecified, an implementation defined default is applied (1MiB).
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
+
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
@@ -685,6 +694,12 @@ type RateLimitServiceConfig struct {
 	//
 	// +optional
 	EnableResourceExhaustedCode *bool `json:"enableResourceExhaustedCode,omitempty"`
+
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for every HTTPProxy.
+	// HTTPProxy can overwrite this configuration.
+	//
+	// +optional
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `json:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // TracingConfig defines properties for exporting trace data to OpenTelemetry.
