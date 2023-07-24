@@ -945,9 +945,9 @@ spec:
                                             how to conditionally match against HTTP
                                             headers. The Name field is required, only
                                             one of Present, NotPresent, Contains,
-                                            NotContains, IgnoreCase Exact, NotExact
-                                            and Regex can be set. IgnoreCase has no
-                                            effect for Regex.
+                                            NotContains, Exact, NotExact and Regex
+                                            can be set. IgnoreCase has no effect for
+                                            Regex.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -4339,9 +4339,9 @@ spec:
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
-                                                NotContains, IgnoreCase Exact, NotExact
-                                                and Regex can be set. IgnoreCase has
-                                                no effect for Regex.
+                                                NotContains, Exact, NotExact and Regex
+                                                can be set. IgnoreCase has no effect
+                                                for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -5888,9 +5888,9 @@ spec:
                                                   against HTTP headers. The Name field
                                                   is required, only one of Present,
                                                   NotPresent, Contains, NotContains,
-                                                  IgnoreCase Exact, NotExact and Regex
-                                                  can be set. IgnoreCase has no effect
-                                                  for Regex.
+                                                  Exact, NotExact and Regex can be
+                                                  set. IgnoreCase has no effect for
+                                                  Regex.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -7257,9 +7257,9 @@ spec:
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
-                                                NotContains, IgnoreCase Exact, NotExact
-                                                and Regex can be set. IgnoreCase has
-                                                no effect for Regex.
+                                                NotContains, Exact, NotExact and Regex
+                                                can be set. IgnoreCase has no effect
+                                                for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies

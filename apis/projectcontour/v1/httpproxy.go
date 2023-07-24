@@ -89,7 +89,7 @@ type MatchCondition struct {
 
 // HeaderMatchCondition specifies how to conditionally match against HTTP
 // headers. The Name field is required, only one of Present, NotPresent,
-// Contains, NotContains, IgnoreCase Exact, NotExact and Regex can be set.
+// Contains, NotContains, Exact, NotExact and Regex can be set.
 // IgnoreCase has no effect for Regex.
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
