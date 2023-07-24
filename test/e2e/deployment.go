@@ -487,8 +487,8 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	if err != nil {
 		return err
 	}
-	session.Wait()
 
+	session.Wait("2s")
 	bootstrapContents, err := io.ReadAll(bFile)
 	if err != nil {
 		return err

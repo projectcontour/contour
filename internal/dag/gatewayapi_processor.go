@@ -64,6 +64,12 @@ type GatewayAPIProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // matchConditions holds match rules.
@@ -538,25 +544,27 @@ func (p *GatewayAPIProcessor) computeListener(
 	case gatewayapi_v1beta1.TLSProtocolType:
 		// The TLS protocol is used for TCP traffic encrypted with TLS.
 		// Gateway API allows TLS to be either terminated at the proxy
-		// or passed through to the backend, but the former requires using
-		// TCPRoute to route traffic since the underlying protocol is TCP
-		// not HTTP, which Contour doesn't support. Therefore, we only
-		// support "Passthrough" with the TLS protocol, which requires
-		// the use of TLSRoute to route to backends since the traffic is
-		// still encrypted.
-
+		// or passed through to the backend.
 		if listener.TLS == nil {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
 			return false, nil
 		}
 
-		if listener.TLS.Mode == nil || *listener.TLS.Mode != gatewayapi_v1beta1.TLSModePassthrough {
-			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1beta1.TLSModePassthrough, listener.Protocol))
-			return false, nil
-		}
-
-		if len(listener.TLS.CertificateRefs) != 0 {
-			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1beta1.TLSModePassthrough))
+		switch {
+		case listener.TLS.Mode == nil || *listener.TLS.Mode == gatewayapi_v1beta1.TLSModeTerminate:
+			// Resolve the TLS secret.
+			if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
+				// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
+				// routes to be bound to this listener since it can't serve TLS traffic.
+				return false, nil
+			}
+		case *listener.TLS.Mode == gatewayapi_v1beta1.TLSModePassthrough:
+			if len(listener.TLS.CertificateRefs) != 0 {
+				addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1beta1.TLSModePassthrough))
+				return false, nil
+			}
+		default:
+			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q or %q.", gatewayapi_v1beta1.TLSModeTerminate, gatewayapi_v1beta1.TLSModePassthrough))
 			return false, nil
 		}
 	}
@@ -582,7 +590,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 		case gatewayapi_v1beta1.HTTPSProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1beta1.TLSProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindTLSRoute}
+			return []gatewayapi_v1beta1.Kind{KindTLSRoute, KindTCPRoute}
 		case gatewayapi_v1beta1.TCPProtocolType:
 			return []gatewayapi_v1beta1.Kind{KindTCPRoute}
 		}
@@ -621,7 +629,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			)
 			continue
 		}
-		if routeKind.Kind == KindTCPRoute && listener.Protocol != gatewayapi_v1beta1.TCPProtocolType {
+		if routeKind.Kind == KindTCPRoute && listener.Protocol != gatewayapi_v1beta1.TCPProtocolType && listener.Protocol != gatewayapi_v1beta1.TLSProtocolType {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
@@ -1309,14 +1317,35 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 		var routes []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, redirect, priority)
+			routes = p.redirectRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				redirect,
+				priority,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		} else {
 			// Get clusters from rule backendRefs
 			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
 			if !ok {
 				continue
 			}
-			routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, pathRewritePolicy)
+			routes = p.clusterRoutes(
+				matchconditions,
+				requestHeaderPolicy,
+				responseHeaderPolicy,
+				mirrorPolicy,
+				clusters,
+				totalWeight,
+				priority,
+				pathRewritePolicy,
+				KindHTTPRoute,
+				route.Namespace,
+				route.Name,
+			)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1448,7 +1477,19 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 		if !ok {
 			continue
 		}
-		routes = p.clusterRoutes(matchconditions, requestHeaderPolicy, responseHeaderPolicy, mirrorPolicy, clusters, totalWeight, priority, nil)
+		routes = p.clusterRoutes(
+			matchconditions,
+			requestHeaderPolicy,
+			responseHeaderPolicy,
+			mirrorPolicy,
+			clusters,
+			totalWeight,
+			priority,
+			nil,
+			KindGRPCRoute,
+			route.Namespace,
+			route.Name,
+		)
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
@@ -1615,7 +1656,13 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 		return false
 	}
 
-	p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
+	if listener.tlsSecret != nil {
+		secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, "*")
+		secure.Secret = listener.tlsSecret
+		secure.TCPProxy = &proxy
+	} else {
+		p.dag.Listeners[listener.dagListenerName].TCPProxy = &proxy
+	}
 
 	return true
 }
@@ -1992,8 +2039,19 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 }
 
 // clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and backendRefs.
-func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy,
-	mirrorPolicy *MirrorPolicy, clusters []*Cluster, totalWeight uint32, priority uint8, pathRewritePolicy *PathRewritePolicy) []*Route {
+func (p *GatewayAPIProcessor) clusterRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	mirrorPolicy *MirrorPolicy,
+	clusters []*Cluster,
+	totalWeight uint32,
+	priority uint8,
+	pathRewritePolicy *PathRewritePolicy,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 
 	var routes []*Route
 
@@ -2006,7 +2064,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 		// the prefix entirely.
 		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
 			HeaderMatchConditions:     mc.headers,
@@ -2016,7 +2074,15 @@ func (p *GatewayAPIProcessor) clusterRoutes(matchConditions []*matchConditions, 
 			MirrorPolicy:              mirrorPolicy,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	for _, route := range routes {
@@ -2048,7 +2114,16 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.
-func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, requestHeaderPolicy *HeadersPolicy, responseHeaderPolicy *HeadersPolicy, redirect *Redirect, priority uint8) []*Route {
+func (p *GatewayAPIProcessor) redirectRoutes(
+	matchConditions []*matchConditions,
+	requestHeaderPolicy *HeadersPolicy,
+	responseHeaderPolicy *HeadersPolicy,
+	redirect *Redirect,
+	priority uint8,
+	kind string,
+	namespace string,
+	name string,
+) []*Route {
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,
@@ -2060,14 +2135,22 @@ func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions,
 		// the prefix entirely.
 		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
 
-		routes = append(routes, &Route{
+		route := &Route{
 			Priority:              priority,
 			Redirect:              redirect,
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
 			ResponseHeadersPolicy: responseHeaderPolicy,
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = kind
+			route.Namespace = namespace
+			route.Name = name
+		}
+
+		routes = append(routes, route)
 	}
 
 	return routes
