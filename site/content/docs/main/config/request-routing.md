@@ -105,7 +105,7 @@ Regex conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
-For `header` conditions there is one required field, `name`, and six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact`.
+For `header` conditions there is one required field, `name`, six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact` and a modifier `ignoreCase` which can be used together with all of the operator fields except `regex`, `notpresent` and `present`.
 
 - `present` is a boolean and checks that the header is present. The value will not be checked.
 

@@ -1885,8 +1885,9 @@ request, no hash will be produced.</p>
 </p>
 <p>
 <p>HeaderMatchCondition specifies how to conditionally match against HTTP
-headers. The Name field is required, but only one of the remaining
-fields should be be provided.</p>
+headers. The Name field is required, only one of Present, NotPresent,
+Contains, NotContains, Exact, NotExact and Regex can be set.
+IgnoreCase has no effect for Regex.</p>
 </p>
 <table>
 <thead>
@@ -1966,6 +1967,20 @@ string
 <em>(Optional)</em>
 <p>NotContains specifies a substring that must not be present
 in the header value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ignoreCase</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IgnoreCase specifies that string matching should be case insensitive.
+Note that this has no effect on the Regex parameter.</p>
 </td>
 </tr>
 <tr>

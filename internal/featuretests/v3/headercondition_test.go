@@ -58,7 +58,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerContainsMatchCondition("x-header", "abc"),
+					headerContainsMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -67,7 +67,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerContainsMatchCondition("x-header", "abc"),
+					headerContainsMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -121,7 +121,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerNotContainsMatchCondition("x-header", "123"),
+					headerNotContainsMatchCondition("x-header", "123", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -130,7 +130,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerNotContainsMatchCondition("x-header", "abc"),
+					headerNotContainsMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -184,7 +184,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerExactMatchCondition("x-header", "abc"),
+					headerExactMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -193,7 +193,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerExactMatchCondition("x-header", "123"),
+					headerExactMatchCondition("x-header", "123", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -247,7 +247,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerNotExactMatchCondition("x-header", "abc"),
+					headerNotExactMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -256,7 +256,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerNotExactMatchCondition("x-header", "123"),
+					headerNotExactMatchCondition("x-header", "123", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -369,7 +369,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "abc"),
+						headerContainsMatchCondition("x-header", "abc", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc1",
@@ -379,7 +379,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "def"),
+						headerContainsMatchCondition("x-header", "def", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc2",
@@ -428,7 +428,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "abc"),
+						headerContainsMatchCondition("x-header", "abc", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc1",
@@ -438,7 +438,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerNotContainsMatchCondition("x-header", "abc"),
+						headerNotContainsMatchCondition("x-header", "abc", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc2",

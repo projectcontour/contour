@@ -88,8 +88,9 @@ type MatchCondition struct {
 }
 
 // HeaderMatchCondition specifies how to conditionally match against HTTP
-// headers. The Name field is required, but only one of the remaining
-// fields should be be provided.
+// headers. The Name field is required, only one of Present, NotPresent,
+// Contains, NotContains, Exact, NotExact and Regex can be set.
+// IgnoreCase has no effect for Regex.
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
@@ -117,6 +118,11 @@ type HeaderMatchCondition struct {
 	// in the header value.
 	// +optional
 	NotContains string `json:"notcontains,omitempty"`
+
+	// IgnoreCase specifies that string matching should be case insensitive.
+	// Note that this has no effect on the Regex parameter.
+	// +optional
+	IgnoreCase bool `json:"ignoreCase,omitempty"`
 
 	// Exact specifies a string that the header value must be equal to.
 	// +optional

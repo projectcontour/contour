@@ -36,8 +36,10 @@ func testHeaderConditionMatch(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-present")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notpresent")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-regex")
 
@@ -88,6 +90,23 @@ func testHeaderConditionMatch(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
+								Name: "echo-header-contains-case-insensitive",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:       "Target-Contains",
+									Contains:   "cOnTainSvalue",
+									IgnoreCase: true,
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
 								Name: "echo-header-notcontains",
 								Port: 80,
 							},
@@ -113,6 +132,24 @@ func testHeaderConditionMatch(namespace string) {
 								Header: &contourv1.HeaderMatchCondition{
 									Name:  "Target-Exact",
 									Exact: "ExactValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+
+								Name: "echo-header-exact-case-insensitive",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:       "Target-Exact",
+									Exact:      "exactvalue",
+									IgnoreCase: true,
 								},
 							},
 						},
@@ -181,6 +218,11 @@ func testHeaderConditionMatch(namespace string) {
 				expectService:  "echo-header-contains",
 			},
 			{
+				headers:        map[string]string{"Target-Contains": "cOnTainSvalue"},
+				expectResponse: 200,
+				expectService:  "echo-header-contains-case-insensitive",
+			},
+			{
 				headers:        map[string]string{"Target-NotContains": "ContainsValue"},
 				expectResponse: 404,
 			},
@@ -205,6 +247,11 @@ func testHeaderConditionMatch(namespace string) {
 				headers:        map[string]string{"Target-Exact": "ExactValue"},
 				expectResponse: 200,
 				expectService:  "echo-header-exact",
+			},
+			{
+				headers:        map[string]string{"Target-Exact": "eXacTValue"},
+				expectResponse: 200,
+				expectService:  "echo-header-exact-case-insensitive",
 			},
 			{
 				headers:        map[string]string{"Target-NotExact": "random"},

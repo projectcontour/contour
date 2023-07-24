@@ -1716,6 +1716,9 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
 			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
 		}
+		if includeHeaderConds[i].IgnoreCase != includeHeaderConds[j].IgnoreCase {
+			return includeHeaderConds[i].IgnoreCase
+		}
 		if includeHeaderConds[i].Invert != includeHeaderConds[j].Invert {
 			return includeHeaderConds[i].Invert
 		}

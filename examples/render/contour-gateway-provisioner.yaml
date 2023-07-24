@@ -738,9 +738,11 @@ spec:
                                         items:
                                           description: HeaderMatchCondition specifies
                                             how to conditionally match against HTTP
-                                            headers. The Name field is required, but
-                                            only one of the remaining fields should
-                                            be be provided.
+                                            headers. The Name field is required, only
+                                            one of Present, NotPresent, Contains,
+                                            NotContains, Exact, NotExact and Regex
+                                            can be set. IgnoreCase has no effect for
+                                            Regex.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -752,6 +754,12 @@ spec:
                                                 that the header value must be equal
                                                 to.
                                               type: string
+                                            ignoreCase:
+                                              description: IgnoreCase specifies that
+                                                string matching should be case insensitive.
+                                                Note that this has no effect on the
+                                                Regex parameter.
+                                              type: boolean
                                             name:
                                               description: Name is the name of the
                                                 header to match against. Name is required.
@@ -4125,8 +4133,10 @@ spec:
                                               description: HeaderMatchCondition specifies
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
-                                                but only one of the remaining fields
-                                                should be be provided.
+                                                only one of Present, NotPresent, Contains,
+                                                NotContains, Exact, NotExact and Regex
+                                                can be set. IgnoreCase has no effect
+                                                for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -4138,6 +4148,12 @@ spec:
                                                     that the header value must be
                                                     equal to.
                                                   type: string
+                                                ignoreCase:
+                                                  description: IgnoreCase specifies
+                                                    that string matching should be
+                                                    case insensitive. Note that this
+                                                    has no effect on the Regex parameter.
+                                                  type: boolean
                                                 name:
                                                   description: Name is the name of
                                                     the header to match against. Name
@@ -4940,6 +4956,11 @@ spec:
                                 description: Exact specifies a string that the header
                                   value must be equal to.
                                 type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
                               name:
                                 description: Name is the name of the header to match
                                   against. Name is required. Header names are case
@@ -5097,6 +5118,11 @@ spec:
                                 description: Exact specifies a string that the header
                                   value must be equal to.
                                 type: string
+                              ignoreCase:
+                                description: IgnoreCase specifies that string matching
+                                  should be case insensitive. Note that this has no
+                                  effect on the Regex parameter.
+                                type: boolean
                               name:
                                 description: Name is the name of the header to match
                                   against. Name is required. Header names are case
@@ -5655,8 +5681,11 @@ spec:
                                                 description: HeaderMatchCondition
                                                   specifies how to conditionally match
                                                   against HTTP headers. The Name field
-                                                  is required, but only one of the
-                                                  remaining fields should be be provided.
+                                                  is required, only one of Present,
+                                                  NotPresent, Contains, NotContains,
+                                                  Exact, NotExact and Regex can be
+                                                  set. IgnoreCase has no effect for
+                                                  Regex.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -5668,6 +5697,13 @@ spec:
                                                       string that the header value
                                                       must be equal to.
                                                     type: string
+                                                  ignoreCase:
+                                                    description: IgnoreCase specifies
+                                                      that string matching should
+                                                      be case insensitive. Note that
+                                                      this has no effect on the Regex
+                                                      parameter.
+                                                    type: boolean
                                                   name:
                                                     description: Name is the name
                                                       of the header to match against.
@@ -7015,8 +7051,10 @@ spec:
                                               description: HeaderMatchCondition specifies
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
-                                                but only one of the remaining fields
-                                                should be be provided.
+                                                only one of Present, NotPresent, Contains,
+                                                NotContains, Exact, NotExact and Regex
+                                                can be set. IgnoreCase has no effect
+                                                for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -7028,6 +7066,12 @@ spec:
                                                     that the header value must be
                                                     equal to.
                                                   type: string
+                                                ignoreCase:
+                                                  description: IgnoreCase specifies
+                                                    that string matching should be
+                                                    case insensitive. Note that this
+                                                    has no effect on the Regex parameter.
+                                                  type: boolean
                                                 name:
                                                   description: Name is the name of
                                                     the header to match against. Name
