@@ -138,6 +138,10 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		}
 	}
 
+	if c.OutlierDetectionPolicy != nil {
+		cluster.OutlierDetection = outlierDetection(c.OutlierDetectionPolicy)
+	}
+
 	return cluster
 }
 
@@ -371,4 +375,49 @@ func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_cluster_v3.Clu
 			Value: float64(slowStartConfig.MinWeightPercent),
 		},
 	}
+}
+
+func outlierDetection(policy *dag.OutlierDetectionPolicy) *envoy_cluster_v3.OutlierDetection {
+	out := &envoy_cluster_v3.OutlierDetection{
+		EnforcingConsecutive_5Xx:           protobuf.UInt32Zero(),
+		EnforcingSuccessRate:               protobuf.UInt32Zero(),
+		EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),
+	}
+	if policy.ConsecutiveServerErrors > 0 {
+		out.Consecutive_5Xx = protobuf.UInt32OrNil(policy.ConsecutiveServerErrors)
+		out.EnforcingConsecutive_5Xx = protobuf.UInt32OrNil(100)
+	}
+
+	if policy.Interval > 0 {
+		out.Interval = durationpb.New(policy.Interval)
+	}
+
+	if policy.BaseEjectionTime > 0 {
+		out.BaseEjectionTime = durationpb.New(policy.BaseEjectionTime)
+	}
+
+	if policy.MaxEjectionTime > 0 {
+		out.MaxEjectionTime = durationpb.New(policy.MaxEjectionTime)
+	}
+
+	if policy.MaxEjectionPercent > 0 {
+		out.MaxEjectionPercent = protobuf.UInt32OrNil(policy.MaxEjectionPercent)
+	}
+
+	if policy.SplitExternalLocalOriginErrors {
+		out.SplitExternalLocalOriginErrors = true
+		if policy.ConsecutiveLocalOriginFailure > 0 {
+			out.ConsecutiveLocalOriginFailure = protobuf.UInt32OrNil(policy.ConsecutiveLocalOriginFailure)
+		} else {
+			// Default to 5 if not specified
+			out.ConsecutiveLocalOriginFailure = protobuf.UInt32OrNil(5)
+		}
+		out.EnforcingLocalOriginSuccessRate = protobuf.UInt32Zero()
+	}
+
+	if policy.MaxEjectionTimeJitter > 0 {
+		out.MaxEjectionTimeJitter = durationpb.New(policy.MaxEjectionTimeJitter)
+	}
+
+	return out
 }

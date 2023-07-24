@@ -721,6 +721,110 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
+		"outlier detection only server error": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					ConsecutiveServerErrors: 5,
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/9edb41b67b",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+					Consecutive_5Xx:                    wrapperspb.UInt32(5),
+					EnforcingSuccessRate:               wrapperspb.UInt32(0),
+					EnforcingConsecutiveGatewayFailure: wrapperspb.UInt32(0),
+					EnforcingConsecutive_5Xx:           wrapperspb.UInt32(100),
+				},
+			},
+		},
+		"outlier detection split local origin error": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					ConsecutiveServerErrors:        5,
+					SplitExternalLocalOriginErrors: true,
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/3bebc12a28",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+					Consecutive_5Xx:                    wrapperspb.UInt32(5),
+					EnforcingSuccessRate:               wrapperspb.UInt32(0),
+					EnforcingConsecutiveGatewayFailure: wrapperspb.UInt32(0),
+					EnforcingConsecutive_5Xx:           wrapperspb.UInt32(100),
+					SplitExternalLocalOriginErrors:     true,
+					ConsecutiveLocalOriginFailure:      wrapperspb.UInt32(5),
+					EnforcingLocalOriginSuccessRate:    wrapperspb.UInt32(0),
+				},
+			},
+		},
+		"outlier detection split local origin error and consecutive local origin failure": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					ConsecutiveServerErrors:        5,
+					SplitExternalLocalOriginErrors: true,
+					ConsecutiveLocalOriginFailure:  10,
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/880ee463fa",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+					Consecutive_5Xx:                    wrapperspb.UInt32(5),
+					EnforcingSuccessRate:               wrapperspb.UInt32(0),
+					EnforcingConsecutiveGatewayFailure: wrapperspb.UInt32(0),
+					EnforcingConsecutive_5Xx:           wrapperspb.UInt32(100),
+					SplitExternalLocalOriginErrors:     true,
+					ConsecutiveLocalOriginFailure:      wrapperspb.UInt32(10),
+					EnforcingLocalOriginSuccessRate:    wrapperspb.UInt32(0),
+				},
+			},
+		},
+		"outlier detection only local origin error": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					SplitExternalLocalOriginErrors: true,
+					ConsecutiveLocalOriginFailure:  10,
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/011e0937a7",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+					EnforcingSuccessRate:               wrapperspb.UInt32(0),
+					EnforcingConsecutiveGatewayFailure: wrapperspb.UInt32(0),
+					EnforcingConsecutive_5Xx:           wrapperspb.UInt32(0),
+					SplitExternalLocalOriginErrors:     true,
+					ConsecutiveLocalOriginFailure:      wrapperspb.UInt32(10),
+					EnforcingLocalOriginSuccessRate:    wrapperspb.UInt32(0),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

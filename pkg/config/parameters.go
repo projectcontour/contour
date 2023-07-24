@@ -675,6 +675,10 @@ type Parameters struct {
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
+	// GlobalOutlierDetection defines the configuration for outlier detection on all services.
+	// If defined, this will be used as the default for all services.
+	GlobalOutlierDetection *contour_api_v1.OutlierDetection `yaml:"outlierDetection,omitempty"`
+
 	// FeatureFlags defines toggle to enable new contour features.
 	// available toggles are
 	// useEndpointSlices - configures contour to fetch endpoint data

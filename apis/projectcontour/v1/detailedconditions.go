@@ -158,6 +158,10 @@ const (
 	// with an HTTPProxy resource which is not part of a delegation chain.
 	ConditionTypeOrphanedError = "Orphaned"
 
+	// ConditionTypeOutlierDetectionError describes an error condition with
+	// an HTTPProxy Outlier Detection issue.
+	ConditionTypeOutlierDetectionError = "OutlierDetectionError"
+
 	// ConditionTypePrefixReplaceError describes an error condition with
 	// an HTTPProxy path prefix replacement issue.
 	ConditionTypePrefixReplaceError = "PrefixReplaceError"

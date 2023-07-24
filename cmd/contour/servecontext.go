@@ -590,6 +590,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
 		Tracing:                     tracingConfig,
+		GlobalOutlierDetection:      ctx.Config.GlobalOutlierDetection,
 		FeatureFlags:                ctx.Config.FeatureFlags,
 	}
 

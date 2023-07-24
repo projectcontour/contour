@@ -1040,6 +1040,9 @@ type Cluster struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// OutlierDetection defines how to detect unhealthy hosts in the cluster, and evict them.
+	OutlierDetectionPolicy *OutlierDetectionPolicy
 }
 
 // WeightedService represents the load balancing weight of a
@@ -1259,4 +1262,16 @@ type SlowStartConfig struct {
 
 func (s *SlowStartConfig) String() string {
 	return fmt.Sprintf("%s%f%d", s.Window.String(), s.Aggression, s.MinWeightPercent)
+}
+
+// OutlierDetectionPolicy holds configuration for outlier detection.
+type OutlierDetectionPolicy struct {
+	ConsecutiveServerErrors        uint32
+	Interval                       time.Duration
+	BaseEjectionTime               time.Duration
+	MaxEjectionTime                time.Duration
+	SplitExternalLocalOriginErrors bool
+	ConsecutiveLocalOriginFailure  uint32
+	MaxEjectionPercent             uint32
+	MaxEjectionTimeJitter          time.Duration
 }

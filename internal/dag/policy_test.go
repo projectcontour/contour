@@ -21,6 +21,7 @@ import (
 	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -1267,6 +1268,159 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
+		})
+	}
+}
+
+func TestMergeOutlierDetectionPolicy(t *testing.T) {
+	tests := map[string]struct {
+		globalPolicy  *contour_api_v1.OutlierDetection
+		servicePolicy *contour_api_v1.OutlierDetection
+		want          *contour_api_v1.OutlierDetection
+	}{
+		"globalPolicy is nil and servicePolicy is nil": {
+			globalPolicy:  nil,
+			servicePolicy: nil,
+			want:          nil,
+		},
+		"globalPolicy is nil and servicePolicy is not nil and servicePolicy is enabled": {
+			globalPolicy:  nil,
+			servicePolicy: &contour_api_v1.OutlierDetection{},
+			want:          &contour_api_v1.OutlierDetection{},
+		},
+		"globalPolicy is nil and servicePolicy is not nil and servicePolicy is disabled": {
+			globalPolicy: nil,
+			servicePolicy: &contour_api_v1.OutlierDetection{
+				Disabled: true,
+			},
+			want: nil,
+		},
+		"globalPolicy is not nil and globalPolicy is enabled and servicePolicy is nil": {
+			globalPolicy:  &contour_api_v1.OutlierDetection{},
+			servicePolicy: nil,
+			want:          &contour_api_v1.OutlierDetection{},
+		},
+		"globalPolicy is not nil and globalPolicy is disabled and servicePolicy is nil": {
+			globalPolicy: &contour_api_v1.OutlierDetection{
+				Disabled: true,
+			},
+			servicePolicy: nil,
+			want:          nil,
+		},
+		"globalPolicy is not nil and globalPolicy is enabled and servicePolicy is not nil and servicePolicy is enabled": {
+			globalPolicy: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(5)),
+			},
+			servicePolicy: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(10)),
+			},
+			want: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(10)),
+			},
+		},
+		"globalPolicy is not nil and globalPolicy is enabled and servicePolicy is not nil and servicePolicy is disabled": {
+			globalPolicy: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(5)),
+			},
+			servicePolicy: &contour_api_v1.OutlierDetection{
+				Disabled: true,
+			},
+			want: nil,
+		},
+		"globalPolicy is not nil and globalPolicy is disabled and servicePolicy is not nil and servicePolicy is enabled": {
+			globalPolicy: &contour_api_v1.OutlierDetection{
+				Disabled: true,
+			},
+			servicePolicy: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(10)),
+			},
+			want: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(10)),
+			},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := mergeOutlierDetectionPolicy(test.globalPolicy, test.servicePolicy)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func TestOutlierDetectionPolicy(t *testing.T) {
+	tests := map[string]struct {
+		in      *contour_api_v1.OutlierDetection
+		want    *OutlierDetectionPolicy
+		wantErr bool
+	}{
+		"nil": {
+			in:   nil,
+			want: nil,
+		},
+		"empty": {
+			in:   &contour_api_v1.OutlierDetection{},
+			want: &OutlierDetectionPolicy{},
+		},
+		"consecutive server errors": {
+			in: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors: ref.To(uint32(5)),
+			},
+			want: &OutlierDetectionPolicy{
+				ConsecutiveServerErrors: 5,
+			},
+		},
+		"interval no unit": {
+			in: &contour_api_v1.OutlierDetection{
+				Interval: ref.To("10"),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		"interval bad unit": {
+			in: &contour_api_v1.OutlierDetection{
+				Interval: ref.To("10f"),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		"interval good": {
+			in: &contour_api_v1.OutlierDetection{
+				Interval: ref.To("10s"),
+			},
+			want: &OutlierDetectionPolicy{
+				Interval: 10 * time.Second,
+			},
+		},
+		"normal": {
+			in: &contour_api_v1.OutlierDetection{
+				ConsecutiveServerErrors:        ref.To(uint32(5)),
+				Interval:                       ref.To("10s"),
+				BaseEjectionTime:               ref.To("30s"),
+				MaxEjectionTime:                ref.To("300s"),
+				SplitExternalLocalOriginErrors: true,
+				ConsecutiveLocalOriginFailure:  ref.To(uint32(3)),
+				MaxEjectionPercent:             ref.To(uint32(50)),
+			},
+			want: &OutlierDetectionPolicy{
+				ConsecutiveServerErrors:        5,
+				Interval:                       10 * time.Second,
+				BaseEjectionTime:               30 * time.Second,
+				MaxEjectionTime:                300 * time.Second,
+				SplitExternalLocalOriginErrors: true,
+				ConsecutiveLocalOriginFailure:  3,
+				MaxEjectionPercent:             50,
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := outlierDetectionPolicy(nil, tc.in)
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.Equal(t, tc.want, got)
+				assert.NoError(t, gotErr)
+			}
 		})
 	}
 }

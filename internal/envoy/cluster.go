@@ -46,6 +46,33 @@ func Clustername(cluster *dag.Cluster) string {
 		}
 		buf += hc.Path
 	}
+	if od := cluster.OutlierDetectionPolicy; od != nil {
+		if od.ConsecutiveServerErrors > 0 {
+			buf += strconv.Itoa(int(od.ConsecutiveServerErrors))
+		}
+		if od.Interval > 0 {
+			buf += od.Interval.String()
+		}
+		if od.BaseEjectionTime > 0 {
+			buf += od.BaseEjectionTime.String()
+		}
+		if od.MaxEjectionTime > 0 {
+			buf += od.MaxEjectionTime.String()
+		}
+		if od.MaxEjectionPercent > 0 {
+			buf += strconv.Itoa(int(od.MaxEjectionPercent))
+		}
+		buf += strconv.FormatBool(od.SplitExternalLocalOriginErrors)
+		if od.SplitExternalLocalOriginErrors {
+			buf += strconv.Itoa(int(od.ConsecutiveLocalOriginFailure))
+		}
+		if od.MaxEjectionPercent > 0 {
+			buf += strconv.Itoa(int(od.MaxEjectionPercent))
+		}
+		if od.MaxEjectionTimeJitter > 0 {
+			buf += od.MaxEjectionTimeJitter.String()
+		}
+	}
 	if uv := cluster.UpstreamValidation; uv != nil {
 		buf += uv.CACertificate.Object.ObjectMeta.Name
 		buf += uv.SubjectName

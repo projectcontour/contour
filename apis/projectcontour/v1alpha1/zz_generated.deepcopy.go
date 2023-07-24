@@ -199,6 +199,11 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		*out = new(TracingConfig)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.GlobalOutlierDetection != nil {
+		in, out := &in.GlobalOutlierDetection, &out.GlobalOutlierDetection
+		*out = new(v1.OutlierDetection)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.FeatureFlags != nil {
 		in, out := &in.FeatureFlags, &out.FeatureFlags
 		*out = make(FeatureFlags, len(*in))

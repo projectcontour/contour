@@ -1036,6 +1036,78 @@ type Service struct {
 	// Slow start will gradually increase amount of traffic to a newly added endpoint.
 	// +optional
 	SlowStartPolicy *SlowStartPolicy `json:"slowStartPolicy,omitempty"`
+	// The policy for managing outlier detection on a service.
+	// If not specified, the global OutlierDetection policy will be used.
+	// +optional
+	OutlierDetection *OutlierDetection `json:"outlierDetection,omitempty"`
+}
+
+// OutlierDetection defines the configuration for outlier detection on a service.
+type OutlierDetection struct {
+	// Disabled configures the Service to not use
+	// the default global OutlierDetection policy defined by the Contour configuration.
+	// Defaults to false.
+	// +optional
+	Disabled bool `json:"disabled,omitempty" yaml:"disabled,omitempty"`
+
+	// ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+	// When the backend host encounters consecutive
+	// errors greater than or equal to ConsecutiveServerErrors, it will be
+	// ejected from the load balancing pool.
+	// for HTTP services, a 5xx counts as an error and for TCP services
+	// connection failures and connection timeouts count as an error.
+	// It can be disabled by setting the value to 0.
+	// Defaults to 5.
+	// +optional
+	ConsecutiveServerErrors *uint32 `json:"consecutiveServerErrors,omitempty" yaml:"consecutiveServerErrors,omitempty"`
+
+	// Interval is the interval at which host status is evaluated.
+	// Defaults to 10s.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$`
+	Interval *string `json:"interval,omitempty" yaml:"interval,omitempty"`
+
+	// BaseEjectionTime is the base time that a host is ejected for.
+	// A host will remain ejected for a period of time equal to the
+	// product of the ejection base duration and the number of times the host has been ejected.
+	// Defaults to 30s.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$`
+	BaseEjectionTime *string `json:"baseEjectionTime,omitempty" yaml:"baseEjectionTime,omitempty"`
+
+	// MaxEjectionTime is the maximum time a host will be ejected for.
+	// After this amount of time, a host will be returned to normal operation.
+	// If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+	// Defaults to 300s.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$`
+	MaxEjectionTime *string `json:"maxEjectionTime,omitempty" yaml:"maxEjectionTime,omitempty"`
+
+	// SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
+	// Defaults to false.
+	// +optional
+	// +kubebuilder:default=false
+	SplitExternalLocalOriginErrors bool `json:"splitExternalLocalOriginErrors" yaml:"splitExternalLocalOriginErrors,omitempty"`
+
+	// ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+	// Parameters take effect only when SplitExternalLocalOriginErrors is true.
+	// Defaults to 5.
+	// +optional
+	ConsecutiveLocalOriginFailure *uint32 `json:"consecutiveLocalOriginFailure,omitempty" yaml:"consecutiveLocalOriginFailure,omitempty"`
+
+	// MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+	// But will eject at least one host regardless of the value here.
+	// Defaults to 10%.
+	// +optional
+	// +kubebuilder:validation:Maximum=100
+	MaxEjectionPercent *uint32 `json:"maxEjectionPercent,omitempty" yaml:"maxEjectionPercent,omitempty"`
+
+	// MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
+	// in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+	// Defaults to 0s.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$`
+	MaxEjectionTimeJitter *string `json:"maxEjectionTimeJitter,omitempty" yaml:"maxEjectionTimeJitter,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
