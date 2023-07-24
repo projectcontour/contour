@@ -1885,9 +1885,9 @@ request, no hash will be produced.</p>
 </p>
 <p>
 <p>HeaderMatchCondition specifies how to conditionally match against HTTP
-headers. The Name field is required, but only one of the remaining
-fields should be be provided.
-Note that the IgnoreCase parameter has no effect on Regex matching.</p>
+headers. The Name field is required, only one of Present, NotPresent,
+Contains, NotContains, IgnoreCase Exact, NotExact and Regex can be set.
+IgnoreCase has no effect for Regex.</p>
 </p>
 <table>
 <thead>

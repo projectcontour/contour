@@ -937,10 +937,11 @@ spec:
                                         items:
                                           description: HeaderMatchCondition specifies
                                             how to conditionally match against HTTP
-                                            headers. The Name field is required, but
-                                            only one of the remaining fields should
-                                            be be provided. Note that the IgnoreCase
-                                            parameter has no effect on Regex matching.
+                                            headers. The Name field is required, only
+                                            one of Present, NotPresent, Contains,
+                                            NotContains, IgnoreCase Exact, NotExact
+                                            and Regex can be set. IgnoreCase has no
+                                            effect for Regex.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -4331,10 +4332,10 @@ spec:
                                               description: HeaderMatchCondition specifies
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
-                                                but only one of the remaining fields
-                                                should be be provided. Note that the
-                                                IgnoreCase parameter has no effect
-                                                on Regex matching.
+                                                only one of Present, NotPresent, Contains,
+                                                NotContains, IgnoreCase Exact, NotExact
+                                                and Regex can be set. IgnoreCase has
+                                                no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -5879,10 +5880,11 @@ spec:
                                                 description: HeaderMatchCondition
                                                   specifies how to conditionally match
                                                   against HTTP headers. The Name field
-                                                  is required, but only one of the
-                                                  remaining fields should be be provided.
-                                                  Note that the IgnoreCase parameter
-                                                  has no effect on Regex matching.
+                                                  is required, only one of Present,
+                                                  NotPresent, Contains, NotContains,
+                                                  IgnoreCase Exact, NotExact and Regex
+                                                  can be set. IgnoreCase has no effect
+                                                  for Regex.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -7248,10 +7250,10 @@ spec:
                                               description: HeaderMatchCondition specifies
                                                 how to conditionally match against
                                                 HTTP headers. The Name field is required,
-                                                but only one of the remaining fields
-                                                should be be provided. Note that the
-                                                IgnoreCase parameter has no effect
-                                                on Regex matching.
+                                                only one of Present, NotPresent, Contains,
+                                                NotContains, IgnoreCase Exact, NotExact
+                                                and Regex can be set. IgnoreCase has
+                                                no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
