@@ -1029,7 +1029,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Global: &contour_api_v1.GlobalRateLimitPolicy{
 								Descriptors: []contour_api_v1.RateLimitDescriptor{
 									{
@@ -1092,7 +1092,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Global: &contour_api_v1.GlobalRateLimitPolicy{
 								Disabled: true,
 							},
@@ -1129,7 +1129,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Global: &contour_api_v1.GlobalRateLimitPolicy{
 								Descriptors: []contour_api_v1.RateLimitDescriptor{
 									{
@@ -1238,7 +1238,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Local: &contour_api_v1.LocalRateLimitPolicy{
 								Requests: 10,
 								Unit:     "second",
@@ -1297,7 +1297,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Local: &contour_api_v1.LocalRateLimitPolicy{
 								Requests: 10,
 								Unit:     "second",
@@ -1349,7 +1349,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 				},
 				Spec: contour_api_v1.HTTPProxySpec{
 					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 							Global: &contour_api_v1.GlobalRateLimitPolicy{
 								Descriptors: []contour_api_v1.RateLimitDescriptor{
 									{

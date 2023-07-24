@@ -112,7 +112,7 @@ func vhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Local: &contour_api_v1.LocalRateLimitPolicy{
 						Requests: 100,
 						Unit:     "minute",
@@ -191,7 +191,7 @@ func routeRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests: 100,
 							Unit:     "minute",
@@ -211,7 +211,7 @@ func routeRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests: 5,
 							Unit:     "second",
@@ -295,7 +295,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Local: &contour_api_v1.LocalRateLimitPolicy{
 						Requests: 100,
 						Unit:     "minute",
@@ -316,7 +316,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests: 100,
 							Unit:     "minute",
@@ -336,7 +336,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests: 5,
 							Unit:     "second",
@@ -456,7 +456,7 @@ func customResponseCode(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests:           100,
 							Unit:               "minute",
@@ -529,7 +529,7 @@ func customResponseHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Local: &contour_api_v1.LocalRateLimitPolicy{
 							Requests: 100,
 							Unit:     "minute",

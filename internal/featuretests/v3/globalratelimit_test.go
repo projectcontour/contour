@@ -111,7 +111,7 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
@@ -188,7 +188,6 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 			),
 		})
 	}
-
 }
 
 func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
@@ -200,7 +199,7 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
 						Descriptors: []contour_api_v1.RateLimitDescriptor{
 							{
@@ -292,7 +291,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
@@ -306,7 +305,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Global: &contour_api_v1.GlobalRateLimitPolicy{
 							Descriptors: []contour_api_v1.RateLimitDescriptor{
 								{
@@ -390,7 +389,7 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
 						Descriptors: []contour_api_v1.RateLimitDescriptor{
 							{
@@ -415,7 +414,7 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Global: &contour_api_v1.GlobalRateLimitPolicy{
 							Descriptors: []contour_api_v1.RateLimitDescriptor{
 								{
@@ -524,7 +523,7 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Global: &contour_api_v1.GlobalRateLimitPolicy{
 							Descriptors: []contour_api_v1.RateLimitDescriptor{
 								{
@@ -622,7 +621,7 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+				RateLimitPolicy: &contour_api_v1.VhostRateLimitPolicy{
 					Global: &contour_api_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
@@ -636,7 +635,7 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+					RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
 						Global: &contour_api_v1.GlobalRateLimitPolicy{
 							Descriptors: []contour_api_v1.RateLimitDescriptor{
 								// first descriptor

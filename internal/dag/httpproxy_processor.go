@@ -791,10 +791,17 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		rlp, err := rateLimitPolicy(route.RateLimitPolicy)
+		rlp, err := routeRateLimitPolicy(route.RateLimitPolicy)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
 				"route.rateLimitPolicy is invalid: %s", err)
+			return nil
+		}
+
+		vrl, err := rateLimitPerRoute(route.RateLimitPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPerRouteNotValid",
+				"route.rateLimitPerRoute is invalid: %s", err)
 			return nil
 		}
 
@@ -807,7 +814,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy)
+		irp := internalRedirectPolicy(route.InternalRedirectPolicy)
 
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
@@ -823,10 +830,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			ResponseHeadersPolicy:     respHP,
 			CookieRewritePolicies:     cookieRP,
 			RateLimitPolicy:           rlp,
+			RateLimitPerRoute:         vrl,
 			RequestHashPolicies:       requestHashPolicies,
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
-			InternalRedirectPolicy:    internalRedirectPolicy,
+			InternalRedirectPolicy:    irp,
 		}
 
 		if p.SetSourceMetadataOnRoutes {
@@ -1424,7 +1432,7 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 }
 
 func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rls *contour_api_v1alpha1.RateLimitServiceConfig, validCond *contour_api_v1.DetailedCondition) (*RateLimitPolicy, bool) {
-	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	rlp, err := vhostRateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
 			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
@@ -1966,5 +1974,27 @@ func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfi
 		Window:           window,
 		Aggression:       aggression,
 		MinWeightPercent: slowStart.MinimumWeightPercent,
+	}, nil
+}
+
+func rateLimitPerRoute(in *contour_api_v1.RouteRateLimitPolicy) (*RateLimitPerRoute, error) {
+	if in == nil || in.VhRateLimits == "" {
+		return nil, nil
+	}
+
+	vrl := VhRateLimitsOverride
+	switch in.VhRateLimits {
+	case "Override":
+		vrl = VhRateLimitsOverride
+	case "Include":
+		vrl = VhRateLimitsInclude
+	case "Ignore":
+		vrl = VhRateLimitsIgnore
+	default:
+		return nil, fmt.Errorf("error parsing rateLimitPerRoute config, %s is not supported", in)
+	}
+
+	return &RateLimitPerRoute{
+		VhRateLimits: vrl,
 	}, nil
 }

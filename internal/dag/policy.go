@@ -538,20 +538,32 @@ func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (st
 	return "", nil
 }
 
-func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, error) {
+func vhostRateLimitPolicy(in *contour_api_v1.VhostRateLimitPolicy) (*RateLimitPolicy, error) {
 	if in == nil || (in.Local == nil && (in.Global == nil || len(in.Global.Descriptors) == 0)) {
 		return nil, nil
 	}
 
+	return rateLimitPolicy(in.Local, in.Global)
+}
+
+func routeRateLimitPolicy(in *contour_api_v1.RouteRateLimitPolicy) (*RateLimitPolicy, error) {
+	if in == nil || (in.Local == nil && (in.Global == nil || len(in.Global.Descriptors) == 0)) {
+		return nil, nil
+	}
+
+	return rateLimitPolicy(in.Local, in.Global)
+}
+
+func rateLimitPolicy(lrl *contour_api_v1.LocalRateLimitPolicy, grl *contour_api_v1.GlobalRateLimitPolicy) (*RateLimitPolicy, error) {
 	rp := &RateLimitPolicy{}
 
-	local, err := localRateLimitPolicy(in.Local)
+	local, err := localRateLimitPolicy(lrl)
 	if err != nil {
 		return nil, err
 	}
 	rp.Local = local
 
-	global, err := globalRateLimitPolicy(in.Global)
+	global, err := globalRateLimitPolicy(grl)
 	if err != nil {
 		return nil, err
 	}

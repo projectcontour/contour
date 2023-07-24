@@ -335,6 +335,9 @@ type Route struct {
 	// RateLimitPolicy defines if/how requests for the route are rate limited.
 	RateLimitPolicy *RateLimitPolicy
 
+	// RateLimitPerRoute defines how the route should handle rate limits defined by the virtual host.
+	RateLimitPerRoute *RateLimitPerRoute
+
 	// RequestHashPolicies is a list of policies for configuring hashes on
 	// request attributes.
 	RequestHashPolicies []RequestHashPolicy
@@ -569,6 +572,24 @@ type HeaderValueMatchDescriptorEntry struct {
 	Headers     []HeaderMatchCondition
 	ExpectMatch bool
 	Value       string
+}
+
+type VhRateLimitsType int
+
+const (
+	// VhRateLimitsOverride (Default) will use the virtual host rate limits unless the route has a rate limit policy.
+	VhRateLimitsOverride VhRateLimitsType = iota
+
+	// VhRateLimitsInclude will use the virtual host rate limits even if the route has a rate limit policy.
+	VhRateLimitsInclude
+
+	// VhRateLimitsIgnore will ignore the virtual host rate limits even if the route does not have a rate limit policy.
+	VhRateLimitsIgnore
+)
+
+// RateLimitPerRoute configures how the route should handle the rate limits defined by the virtual host.
+type RateLimitPerRoute struct {
+	VhRateLimits VhRateLimitsType
 }
 
 // RemoteAddressDescriptorEntry configures a descriptor entry

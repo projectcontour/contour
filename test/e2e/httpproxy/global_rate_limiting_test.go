@@ -71,7 +71,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			}
 
 			// Add a global rate limit policy on the virtual host.
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
 				Global: &contourv1.GlobalRateLimitPolicy{
 					Descriptors: []contourv1.RateLimitDescriptor{
 						{
@@ -167,7 +167,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
 				Global: &contourv1.GlobalRateLimitPolicy{
 					Descriptors: []contourv1.RateLimitDescriptor{
 						{
@@ -265,7 +265,7 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
 				Global: &contourv1.GlobalRateLimitPolicy{
 					Descriptors: []contourv1.RateLimitDescriptor{
 						{
@@ -365,7 +365,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
 				Global: &contourv1.GlobalRateLimitPolicy{
 					Descriptors: []contourv1.RateLimitDescriptor{
 						{

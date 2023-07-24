@@ -1226,7 +1226,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>, 
+<a href="#projectcontour.io/v1.RouteRateLimitPolicy">RouteRateLimitPolicy</a>, 
+<a href="#projectcontour.io/v1.VhostRateLimitPolicy">VhostRateLimitPolicy</a>, 
 <a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>
 <p>
@@ -2496,7 +2497,8 @@ strategy will fall back to the default <code>RoundRobin</code>.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>)
+<a href="#projectcontour.io/v1.RouteRateLimitPolicy">RouteRateLimitPolicy</a>, 
+<a href="#projectcontour.io/v1.VhostRateLimitPolicy">VhostRateLimitPolicy</a>)
 </p>
 <p>
 <p>LocalRateLimitPolicy defines local rate limiting parameters.</p>
@@ -2994,60 +2996,6 @@ RemoteAddressDescriptor
 <em>(Optional)</em>
 <p>RemoteAddress defines a descriptor entry with a key of &ldquo;remote_address&rdquo;
 and a value equal to the client&rsquo;s IP address (from x-forwarded-for).</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
-<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
-</p>
-<p>
-<p>RateLimitPolicy defines rate limiting parameters.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>local</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.LocalRateLimitPolicy">
-LocalRateLimitPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Local defines local rate limiting parameters, i.e. parameters
-for rate limiting that occurs within each Envoy pod as requests
-are handled.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>global</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
-GlobalRateLimitPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Global defines global rate limiting parameters, i.e. parameters
-defining descriptors that are sent to an external rate limit
-service (RLS) for a rate limit decision on each request.</p>
 </td>
 </tr>
 </tbody>
@@ -3745,8 +3693,8 @@ policies are specified in does not matter.</p>
 <code>rateLimitPolicy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">
-RateLimitPolicy
+<a href="#projectcontour.io/v1.RouteRateLimitPolicy">
+RouteRateLimitPolicy
 </a>
 </em>
 </td>
@@ -3847,6 +3795,74 @@ The rules defined here override any rules set on the root HTTPProxy.</p>
 requests should be denied. All other requests will be allowed.
 Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here override any rules set on the root HTTPProxy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RouteRateLimitPolicy">RouteRateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>RouteRateLimitPolicy defines rate limiting parameters on the route-level.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>global</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
+GlobalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Global defines global rate limiting parameters, i.e. parameters
+defining descriptors that are sent to an external rate limit
+service (RLS) for a rate limit decision on each request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>vhRateLimits</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VhRateLimits defines how the route should handle rate limits defined by the virtual host.
+Default value is Override, which means use the virtual host rate limits unless the route has a rate limit policy.
+Allowed values are: Override, Include, or ignore.</p>
 </td>
 </tr>
 </tbody>
@@ -4703,6 +4719,59 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.VhostRateLimitPolicy">VhostRateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>VhostRateLimitPolicy defines rate limiting parameters on the virtual host level.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>global</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
+GlobalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Global defines global rate limiting parameters, i.e. parameters
+defining descriptors that are sent to an external rate limit
+service (RLS) for a rate limit decision on each request.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.VirtualHost">VirtualHost
 </h3>
 <p>
@@ -4792,8 +4861,8 @@ CORSPolicy
 <code>rateLimitPolicy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">
-RateLimitPolicy
+<a href="#projectcontour.io/v1.VhostRateLimitPolicy">
+VhostRateLimitPolicy
 </a>
 </em>
 </td>

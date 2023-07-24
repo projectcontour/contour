@@ -82,7 +82,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
 					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
-					RateLimitPolicy: &contourv1.RateLimitPolicy{
+					RateLimitPolicy: &contourv1.VhostRateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Disabled: true,
 						},
@@ -144,7 +144,7 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
 					Fqdn: "defaultglobalratelimitvhostnontls.projectcontour.io",
-					RateLimitPolicy: &contourv1.RateLimitPolicy{
+					RateLimitPolicy: &contourv1.VhostRateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Descriptors: []contourv1.RateLimitDescriptor{
 								{
@@ -250,7 +250,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 					TLS: &contourv1.TLS{
 						SecretName: "echo",
 					},
-					RateLimitPolicy: &contourv1.RateLimitPolicy{
+					RateLimitPolicy: &contourv1.VhostRateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Disabled: true,
 						},
@@ -316,7 +316,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 					TLS: &contourv1.TLS{
 						SecretName: "echo",
 					},
-					RateLimitPolicy: &contourv1.RateLimitPolicy{
+					RateLimitPolicy: &contourv1.VhostRateLimitPolicy{
 						Global: &contourv1.GlobalRateLimitPolicy{
 							Descriptors: []contourv1.RateLimitDescriptor{
 								{
