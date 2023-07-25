@@ -16,6 +16,7 @@
 package httpproxy
 
 import (
+	"context"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,6 +24,8 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
@@ -350,6 +353,106 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		// Make requests against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(429),
+			RequestOpts: []func(*http.Request){
+				e2e.OptSetHeaders(map[string]string{
+					"X-HTTPProxy-Descriptor": "test_value",
+				}),
+			},
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
+	})
+}
+
+func testDefaultGlobalRateLimitingWithVhRateLimits(namespace string) {
+	Specify("default global rate limit policy is applied vhost rate limits is override", func() {
+		t := f.T()
+
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "defaultglobalratelimitvhratelimits",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "defaultglobalratelimitvhratelimits.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+
+		// Wait until we get a 429 from the proxy confirming
+		// that we've exceeded the rate limit.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(429),
+			RequestOpts: []func(*http.Request){
+				e2e.OptSetHeaders(map[string]string{
+					"X-Default-Header": "test_value_1",
+				}),
+			},
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
+
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			// Add a global rate limit policy on the route.
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
+				Global: &contourv1.GlobalRateLimitPolicy{
+					Descriptors: []contourv1.RateLimitDescriptor{
+						{
+							Entries: []contourv1.RateLimitDescriptorEntry{
+								{
+									RequestHeader: &contourv1.RequestHeaderDescriptor{
+										HeaderName:    "X-HTTPProxy-Descriptor",
+										DescriptorKey: "customHeader",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// After adding rate limits on the route level, make another request
+		// to confirm a 200 response since we override the policy by default on the route level,
+		// and the new limit allows 1 request per hour.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+			RequestOpts: []func(*http.Request){
+				e2e.OptSetHeaders(map[string]string{
+					"X-Default-Header": "test_value_1",
+				}),
+			},
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		// Make requests against the proxy, confirm a 429 response
+		// is now gotten since we've exceeded the rate limit.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 			RequestOpts: []func(*http.Request){

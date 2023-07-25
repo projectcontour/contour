@@ -498,6 +498,7 @@ descriptors:
 
 		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-non-tls", withRateLimitService(testDefaultGlobalRateLimitingVirtualHostNonTLS))
 		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-tls", withRateLimitService(testDefaultGlobalRateLimitingVirtualHostTLS))
+		f.NamespacedTest("httpproxy-default-global-rate-limiting-vh-rate-limits", withRateLimitService(testDefaultGlobalRateLimitingWithVhRateLimits))
 	})
 
 	Context("vh rate limits", func() {
@@ -534,16 +535,6 @@ descriptors:
     value: routelimit
     rate_limit:
       unit: hour
-      requests_per_unit: 1
-  - key: generic_key
-    value: tlsvhostlimit
-    rate_limit:
-      unit: hour
-      requests_per_unit: 1
-  - key: route_limit_key
-    value: tlsroutelimit
-    rate_limit:
-      unit: hour
       requests_per_unit: 1`))
 					})
 
@@ -552,9 +543,9 @@ descriptors:
 			}
 		}
 
-		f.NamespacedTest("httpproxy-global-vh-rate-limits-vhost-non-tls", withRateLimitService(testGlobalWithVhostRateLimitsWithNonTLSVirtualHost))
+		f.NamespacedTest("httpproxy-global-rate-limit-with-vh-rate-limits-option", withRateLimitService(testGlobalWithVhostRateLimits))
 
-		f.NamespacedTest("httpproxy-global-vh-rate-limits-vhost-tls", withRateLimitService(testGlobalWithVhostRateLimitsWithTLSVirtualHost))
+		f.NamespacedTest("httpproxy-local-rate-limit-with-vh-rate-limits-option", withRateLimitService(testLocalWithVhostRateLimits))
 	})
 
 	Context("cookie-rewriting", func() {

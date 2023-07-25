@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testGlobalWithVhostRateLimitsWithNonTLSVirtualHost(namespace string) {
+func testGlobalWithVhostRateLimits(namespace string) {
 	Specify("vhost_rate_limits is set to the default override mode (implicitly)", func() {
 		t := f.T()
 
@@ -538,24 +538,20 @@ func testGlobalWithVhostRateLimitsWithNonTLSVirtualHost(namespace string) {
 	})
 }
 
-func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
-	Specify("vhost_rate_limits option is set to the default override mode (implicitly)", func() {
+func testLocalWithVhostRateLimits(namespace string) {
+	Specify("vhost_rate_limits is set to the default override mode (implicitly)", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "vhratelimitsvhosttls.projectcontour.io")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "vhratelimitsvhosttls",
+				Name:      "vhratelimitsvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "vhratelimitsvhosttls.projectcontour.io",
-					TLS: &contourv1.TLS{
-						SecretName: "echo",
-					},
+					Fqdn: "vhratelimitsvhostnontls.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -578,7 +574,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -591,20 +587,11 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the virtual host.
+			// Add a local rate limit policy on the virtual host.
 			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "tlsvhostlimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -613,7 +600,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make a request against the proxy, confirm a 200 response
 		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -623,7 +610,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -636,21 +623,11 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the route.
+			// Add a local rate limit policy on the route.
 			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Key:   "route_limit_key",
-										Value: "tlsroutelimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -660,7 +637,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		// After adding rate limits on the route level, make another request
 		// to confirm a 200 response since we override the policy by default on the route level,
 		// and the new limit allows 1 request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -669,7 +646,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request to confirm that route level rate limits got exceeded.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -678,23 +655,19 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 
-	Specify("vhost_rate_limits option is set to the default override mode (explicitly)", func() {
+	Specify("vhost_rate_limits is set to the default override mode (explicitly)", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "vhratelimitsvhosttls.projectcontour.io")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "vhratelimitsvhosttls",
+				Name:      "vhratelimitsvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "vhratelimitsvhosttls.projectcontour.io",
-					TLS: &contourv1.TLS{
-						SecretName: "echo",
-					},
+					Fqdn: "vhratelimitsvhostnontls.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -717,7 +690,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -730,20 +703,11 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the virtual host.
+			// Add a local rate limit policy on the virtual host.
 			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "tlsvhostlimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -752,7 +716,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make a request against the proxy, confirm a 200 response
 		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -762,7 +726,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -775,22 +739,12 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the route.
+			// Add a local rate limit policy on the route.
 			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
 				VhRateLimits: "Override",
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Key:   "route_limit_key",
-										Value: "tlsroutelimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -800,7 +754,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		// After adding rate limits on the route level, make another request
 		// to confirm a 200 response since we override the policy by default on the route level,
 		// and the new limit allows 1 request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -809,7 +763,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request to confirm that route level rate limits got exceeded.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -818,23 +772,19 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 
-	Specify("vhost_rate_limits option is set to include mode", func() {
+	Specify("vhost_rate_limits is set to include mode", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "vhratelimitsvhosttls.projectcontour.io")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "vhratelimitsvhosttls",
+				Name:      "vhratelimitsvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "vhratelimitsvhosttls.projectcontour.io",
-					TLS: &contourv1.TLS{
-						SecretName: "echo",
-					},
+					Fqdn: "vhratelimitsvhostnontls.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -857,7 +807,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -870,20 +820,11 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the virtual host.
+			// Add a global local limit policy on the virtual host.
 			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "tlsvhostlimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -892,7 +833,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make a request against the proxy, confirm a 200 response
 		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -902,7 +843,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -915,22 +856,12 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the route.
+			// Add a local rate limit policy on the route.
 			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
 				VhRateLimits: "Include",
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Key:   "route_limit_key",
-										Value: "tlsroutelimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -939,7 +870,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// After adding rate limits on the route level that allows one request per hour
 		// but vhost_rate_limits is in include mode, make another request to confirm a 429 response.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -948,23 +879,19 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 
-	Specify("vhost_rate_limits option is set to ignore mode", func() {
+	Specify("vhost_rate_limits is set to ignore mode", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "vhratelimitsvhosttls.projectcontour.io")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "vhratelimitsvhosttls",
+				Name:      "vhratelimitsvhostnontls",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "vhratelimitsvhosttls.projectcontour.io",
-					TLS: &contourv1.TLS{
-						SecretName: "echo",
-					},
+					Fqdn: "vhratelimitsvhostnontls.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -987,7 +914,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
-		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -1000,20 +927,11 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the virtual host.
+			// Add a local rate limit policy on the virtual host.
 			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
-						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "tlsvhostlimit",
-									},
-								},
-							},
-						},
-					},
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
 				},
 			}
 
@@ -1022,7 +940,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make a request against the proxy, confirm a 200 response
 		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
@@ -1032,7 +950,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// Make another request against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(429),
@@ -1045,7 +963,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 				return err
 			}
 
-			// Add a global rate limit policy on the route.
+			// Add a local rate limit policy on the route.
 			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
 				VhRateLimits: "Ignore",
 			}
@@ -1055,7 +973,7 @@ func testGlobalWithVhostRateLimitsWithTLSVirtualHost(namespace string) {
 
 		// We set vh_rate_limits to ignore, which means the route should ignore any rate limit policy
 		// set by the virtual host. Make another request to confirm 200.
-		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
 			Condition: e2e.HasStatusCode(200),
