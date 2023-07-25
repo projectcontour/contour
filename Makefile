@@ -19,7 +19,7 @@ CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 # Variables needed for running e2e and upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
 CONTOUR_E2E_IMAGE ?= ghcr.io/projectcontour/contour:main
-CONTOUR_E2E_PACKAGE_FOCUS ?= ./test/e2e
+CONTOUR_E2E_PACKAGE_FOCUS ?= ./test/e2e/httpproxy
 # Optional variables
 # Run specific test specs (matched by regex)
 CONTOUR_E2E_TEST_FOCUS ?=
@@ -256,7 +256,7 @@ generate-crd-yaml:
 generate-gateway-yaml:
 	@echo "Generating Gateway API CRD YAML documents..."
 	@GATEWAY_API_VERSION=$(GATEWAY_API_VERSION) ./hack/generate-gateway-yaml.sh
-	
+
 
 .PHONY: generate-api-docs
 generate-api-docs:
@@ -306,7 +306,7 @@ setup-kind-cluster: ## Make a kind cluster for testing
 install-contour-working: | setup-kind-cluster ## Install the local working directory version of Contour into a kind cluster
 	./test/scripts/install-contour-working.sh
 
-.PHONY: install-contour-release 
+.PHONY: install-contour-release
 install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 

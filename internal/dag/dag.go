@@ -140,11 +140,12 @@ const (
 
 // HeaderMatchCondition matches request headers by MatchType
 type HeaderMatchCondition struct {
-	Name       string
-	Value      string
-	MatchType  string
-	Invert     bool
-	IgnoreCase bool
+	Name                       string
+	Value                      string
+	MatchType                  string
+	Invert                     bool
+	IgnoreCase                 bool
+	TreatMissingHeadersAsEmpty bool
 }
 
 func (hc *HeaderMatchCondition) String() string {
@@ -152,6 +153,7 @@ func (hc *HeaderMatchCondition) String() string {
 		"name=" + hc.Name,
 		"value=" + hc.Value,
 		"matchtype=", hc.MatchType,
+		"TreatMissingHeadersAsEmpty=", strconv.FormatBool(hc.TreatMissingHeadersAsEmpty),
 		"invert=", strconv.FormatBool(hc.Invert),
 		"ignorecase=", strconv.FormatBool(hc.IgnoreCase),
 	}, "&")

@@ -2024,6 +2024,22 @@ string
 value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>treatMissingHeadersAsEmpty</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TreatMissingHeadersAsEmpty specifies if the header match rule specified header
+does not exist, this header value will be treated as empty. Defaults to false.
+Unlike the underlying Envoy implementation this is <strong>only</strong> supported for
+negative matches (e.g. NotContains, NotExact).</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
