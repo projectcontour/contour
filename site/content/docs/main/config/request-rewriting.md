@@ -87,7 +87,7 @@ spec:
       - Some-Other-Header
 ```
 
-Manipulating headers is also supported per-Service or per-Route.  Headers can be set or
+Manipulating headers is also supported per-Service, per-Route, and per-VirtualHost.  Headers can be set or
 removed from the request or response as follows:
 
 per-Service:
@@ -148,8 +148,38 @@ spec:
       - X-Internal-Secret
 ```
 
-In these examples we are setting the header `X-Foo` with value `baz` on requests
-and stripping `X-Baz`.  We are then setting `X-Service-Name` on the response with
+
+per-VirtualHost:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: header-manipulation
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: headers.bar.com
+    requestHeadersPolicy:
+      set:
+      - name: X-Foo
+        value: bar
+      remove:
+      - X-Bar
+    responseHeadersPolicy:
+      set:
+      - name: X-Service-Name
+        value: s1
+      remove:
+      - X-Internal-Secret
+  routes:
+  - services:
+    - name: s1
+      port: 80
+```
+
+In these examples we are setting the header `X-Foo` with value `bar` on requests
+and stripping `X-Bar`.  We are then setting `X-Service-Name` on the response with
 value `s1`, and removing `X-Internal-Secret`.
 
 ### Dynamic Header Values

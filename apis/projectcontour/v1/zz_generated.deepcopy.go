@@ -1481,6 +1481,16 @@ func (in *VirtualHost) DeepCopyInto(out *VirtualHost) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.RequestHeadersPolicy != nil {
+		in, out := &in.RequestHeadersPolicy, &out.RequestHeadersPolicy
+		*out = new(HeadersPolicy)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ResponseHeadersPolicy != nil {
+		in, out := &in.ResponseHeadersPolicy, &out.ResponseHeadersPolicy
+		*out = new(HeadersPolicy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.IPAllowFilterPolicy != nil {
 		in, out := &in.IPAllowFilterPolicy, &out.IPAllowFilterPolicy
 		*out = make([]IPFilterPolicy, len(*in))

@@ -536,6 +536,25 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		return
 	}
 	insecure.CORSPolicy = cp
+	dynamicHeaders := map[string]string{
+		"CONTOUR_NAMESPACE": proxy.Namespace,
+	}
+
+	requestHeadersPolicy, err := headersPolicyRoute(proxy.Spec.VirtualHost.RequestHeadersPolicy, false, dynamicHeaders)
+	if err != nil {
+		validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "RequestHeadersPolicyInvalid",
+			"%s on response headers", err)
+		return
+	}
+	responseHeadersPolicy, err := headersPolicyRoute(proxy.Spec.VirtualHost.ResponseHeadersPolicy, false, dynamicHeaders)
+	if err != nil {
+		validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "ResponseHeaderPolicyInvalid",
+			"%s on response headers", err)
+		return
+	}
+
+	insecure.RequestHeadersPolicy = requestHeadersPolicy
+	insecure.ResponseHeadersPolicy = responseHeadersPolicy
 
 	var isValidRLP bool
 	insecure.RateLimitPolicy, isValidRLP = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
@@ -579,6 +598,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
 			return
 		}
+
+		secure.RequestHeadersPolicy = requestHeadersPolicy
+		secure.ResponseHeadersPolicy = responseHeadersPolicy
 
 		addRoutes(secure, routes)
 

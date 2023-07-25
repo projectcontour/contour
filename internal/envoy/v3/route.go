@@ -70,6 +70,15 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
 	}
 
+	if vh.RequestHeadersPolicy != nil {
+		evh.RequestHeadersToAdd = append(headerValueList(vh.RequestHeadersPolicy.Set, false), headerValueList(vh.RequestHeadersPolicy.Add, true)...)
+		evh.RequestHeadersToRemove = vh.RequestHeadersPolicy.Remove
+	}
+	if vh.ResponseHeadersPolicy != nil {
+		evh.ResponseHeadersToAdd = append(headerValueList(vh.ResponseHeadersPolicy.Set, false), headerValueList(vh.ResponseHeadersPolicy.Add, true)...)
+		evh.ResponseHeadersToRemove = vh.ResponseHeadersPolicy.Remove
+	}
+
 	if len(vh.IPFilterRules) > 0 {
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
