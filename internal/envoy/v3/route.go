@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -825,23 +824,11 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_rout
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
 func containsMatch(s string, ignoreCase bool) *envoy_route_v3.HeaderMatcher_StringMatch {
-	// convert the substring s into a regular expression that matches s.
-	// note that Envoy expects the expression to match the entire string, not just the substring
-	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
-	var regex string
-	if ignoreCase {
-		regex = fmt.Sprintf("(?i).*%s.*", regexp.QuoteMeta(s))
-	} else {
-		regex = fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
-	}
-
-	// This could also be implemented with contains envoy Matcher but the problem
-	// would be that it will be a breaking change for contour due to the way the
-	// envoy handles empty strings.
 	return &envoy_route_v3.HeaderMatcher_StringMatch{
 		StringMatch: &matcher.StringMatcher{
-			MatchPattern: &matcher.StringMatcher_SafeRegex{
-				SafeRegex: SafeRegexMatch(regex),
+			IgnoreCase: ignoreCase,
+			MatchPattern: &matcher.StringMatcher_Contains{
+				Contains: s,
 			},
 		},
 	}
