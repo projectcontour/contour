@@ -727,8 +727,10 @@ spec:
                                             headers. The Name field is required, only
                                             one of Present, NotPresent, Contains,
                                             NotContains, Exact, NotExact and Regex
-                                            can be set. IgnoreCase has no effect for
-                                            Regex.
+                                            can be set. For negative matching rules
+                                            only (e.g. NotContains or NotExact) you
+                                            can set TreatMissingHeadersAsEmpty. IgnoreCase
+                                            has no effect for Regex.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -4131,8 +4133,10 @@ spec:
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
                                                 NotContains, Exact, NotExact and Regex
-                                                can be set. IgnoreCase has no effect
-                                                for Regex.
+                                                can be set. For negative matching
+                                                rules only (e.g. NotContains or NotExact)
+                                                you can set TreatMissingHeadersAsEmpty.
+                                                IgnoreCase has no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -5707,8 +5711,10 @@ spec:
                                                   is required, only one of Present,
                                                   NotPresent, Contains, NotContains,
                                                   Exact, NotExact and Regex can be
-                                                  set. IgnoreCase has no effect for
-                                                  Regex.
+                                                  set. For negative matching rules
+                                                  only (e.g. NotContains or NotExact)
+                                                  you can set TreatMissingHeadersAsEmpty.
+                                                  IgnoreCase has no effect for Regex.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -7087,8 +7093,10 @@ spec:
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
                                                 NotContains, Exact, NotExact and Regex
-                                                can be set. IgnoreCase has no effect
-                                                for Regex.
+                                                can be set. For negative matching
+                                                rules only (e.g. NotContains or NotExact)
+                                                you can set TreatMissingHeadersAsEmpty.
+                                                IgnoreCase has no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
