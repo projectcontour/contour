@@ -1872,8 +1872,8 @@ func TestRouteMatch(t *testing.T) {
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch(".*11-22-33-44.*"),
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "11-22-33-44",
 							},
 						},
 					},
@@ -1895,8 +1895,8 @@ func TestRouteMatch(t *testing.T) {
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "11.22.33.44",
 							},
 						},
 					},
@@ -1918,8 +1918,8 @@ func TestRouteMatch(t *testing.T) {
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "11.[22].*33.44",
 							},
 						},
 					},
@@ -2141,8 +2141,8 @@ func TestRouteMatch(t *testing.T) {
 					Name: "x-header-foo",
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch(".*bar.*"),
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "bar",
 							},
 						},
 					},
@@ -2163,8 +2163,9 @@ func TestRouteMatch(t *testing.T) {
 					Name: "x-header-foo",
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch("(?i).*bar.*"),
+							IgnoreCase: true,
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "bar",
 							},
 						},
 					},
