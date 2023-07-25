@@ -816,7 +816,7 @@ type RouteRateLimitPolicy struct {
 
 	// VhRateLimits defines how the route should handle rate limits defined by the virtual host.
 	// Default value is Override, which means use the virtual host rate limits unless the route has a rate limit policy.
-	// Allowed values are: Override, Include, or ignore.
+	// Allowed values are: Override, Include, or Ignore.
 	// +optional
 	VhRateLimits string `json:"vhRateLimits,omitempty"`
 }

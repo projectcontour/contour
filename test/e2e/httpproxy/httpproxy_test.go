@@ -500,6 +500,63 @@ descriptors:
 		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-tls", withRateLimitService(testDefaultGlobalRateLimitingVirtualHostTLS))
 	})
 
+	Context("vh rate limits", func() {
+		withRateLimitService := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			return func(namespace string) {
+				Context("with rate limit service", func() {
+					BeforeEach(func() {
+						contourConfig.RateLimitService = config.RateLimitService{
+							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
+							Domain:           "contour",
+							FailOpen:         false,
+						}
+						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+							ExtensionService: contour_api_v1alpha1.NamespacedName{
+								Name:      f.Deployment.RateLimitExtensionService.Name,
+								Namespace: namespace,
+							},
+							Domain:                  "contour",
+							FailOpen:                ref.To(false),
+							EnableXRateLimitHeaders: ref.To(false),
+						}
+						require.NoError(f.T(),
+							f.Deployment.EnsureRateLimitResources(
+								namespace,
+								`
+domain: contour
+descriptors:
+  - key: generic_key
+    value: vhostlimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: route_limit_key
+    value: routelimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: generic_key
+    value: tlsvhostlimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: route_limit_key
+    value: tlsroutelimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1`))
+					})
+
+					body(namespace)
+				})
+			}
+		}
+
+		f.NamespacedTest("httpproxy-global-vh-rate-limits-vhost-non-tls", withRateLimitService(testGlobalWithVhostRateLimitsWithNonTLSVirtualHost))
+
+		f.NamespacedTest("httpproxy-global-vh-rate-limits-vhost-tls", withRateLimitService(testGlobalWithVhostRateLimitsWithTLSVirtualHost))
+	})
+
 	Context("cookie-rewriting", func() {
 		f.NamespacedTest("app-cookie-rewrite", testAppCookieRewrite)
 
