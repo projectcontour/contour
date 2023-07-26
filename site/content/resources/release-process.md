@@ -89,7 +89,7 @@ git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR
 git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
 
-### Update Dependabot configuraion
+### Update Dependabot configuration
 
 Update the `.github/dependabot.yml` file to update the target branches for Dependabot scanning.
 The latest minor (N) and two previous minors should be scanned (N-1 and N-2).
