@@ -7,6 +7,7 @@ We are delighted to present version v1.25.1 of Contour, our layer 7 HTTP reverse
 # All Changes
 - Update to Envoy v1.26.4. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.26.4/version_history/v1.26/v1.26.4) for more information about the content of the release.
 - Update to Go v1.20.6. See the [Go release notes](https://go.dev/doc/devel/release#go1.20.minor) for more information.
+- Failure to automatically set GOMAXPROCS using the [automaxprocs](https://github.com/uber-go/automaxprocs) library is no longer fatal. Contour will now simply log the error and continue with the automatic GOMAXPROCS detection ignored.
 
 
 # Installing and Upgrading
