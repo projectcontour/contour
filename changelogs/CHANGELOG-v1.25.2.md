@@ -5,7 +5,7 @@ We are delighted to present version v1.25.2 of Contour, our layer 7 HTTP reverse
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 
 # All Changes
-- Bumps [client-go](https://github.com/kubernetes/client-go) to v1.26.7. This ensures better compatibility with Kubernetes v1.27 clusters. See [this upstream issue](https://github.com/kubernetes/kubernetes/issues/118361) for more context on why this change is required.
+- Bumps [client-go](https://github.com/kubernetes/client-go) to v1.26.7. This ensures better compatibility with Kubernetes v1.27 clusters. See [this upstream issue](https://github.com/kubernetes/kubernetes/issues/118361) for more context on why this change is required. Many thanks to @chrism417 for bringing this to our attention.
 
 
 # Installing and Upgrading
