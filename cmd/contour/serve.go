@@ -235,13 +235,11 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 					// Other types of Secrets will never be referred to, so we can remove all data.
 					// For example Secrets of type helm.sh/release.v1 can be quite large.
 					// Last-applied-configuration annotation might contain a copy of the complete data.
-					secret.Data = nil
+					secret.Data = map[string][]byte{}
 					secret.SetManagedFields(nil)
 					secret.SetAnnotations(nil)
 
-					// Returning error will avoid handlers from being called.
-					// This does not avoid caching.
-					return nil, fmt.Errorf("ignoring secret %s/%s of type %s", secret.Namespace, secret.Name, secret.Type)
+					return secret, nil
 				},
 			},
 			// DefaultTransform is called for objects that do not have a TransformByObject function.
