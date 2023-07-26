@@ -7,7 +7,7 @@ versions:
   - version: main
     supported: "false"
     dependencies:
-      envoy: "1.26.2"
+      envoy: "1.27.0"
       kubernetes:
         - "1.27"
         - "1.26"
