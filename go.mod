@@ -8,7 +8,7 @@ require (
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.8.2+incompatible
-	github.com/envoyproxy/go-control-plane v0.10.3-0.20221018195204-799a7af9e5b9
+	github.com/envoyproxy/go-control-plane v0.10.3
 	github.com/go-logr/logr v1.2.3
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v48 v48.2.0
