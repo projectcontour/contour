@@ -3,7 +3,9 @@
 
 version: 2
 updates:
-- package-ecosystem: "gomod"
+# main branch targets
+- target-branch: main
+  package-ecosystem: "gomod"
   directory: "/"
   schedule:
     interval: "weekly"
@@ -12,7 +14,8 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
-- package-ecosystem: "github-actions"
+- target-branch: main
+  package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
@@ -22,3 +25,98 @@ updates:
   reviewers:
   - projectcontour/maintainers
   
+# release branch N targets
+- target-branch: release-1.25
+  package-ecosystem: "gomod"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/dependency
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
+- target-branch: release-1.25
+  package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/tooling
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
+
+# release branch N-1 targets
+- target-branch: release-1.24
+  package-ecosystem: "gomod"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/dependency
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
+- target-branch: release-1.24
+  package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/tooling
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
+
+# release branch N-2 targets
+- target-branch: release-1.23
+  package-ecosystem: "gomod"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/dependency
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
+- target-branch: release-1.23
+  package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  ignore:
+  - dependency-name: "*"
+    update-types:
+    - "version-update:semver-major"
+    - "version-update:semver-minor"
+  labels:
+  - area/tooling
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
