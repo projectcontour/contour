@@ -738,7 +738,7 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 			Name:        h.Name,
 			InvertMatch: h.Invert,
 			// We only want to turn on TreatMissingHeaderAsEmpty on invert matches
-			TreatMissingHeaderAsEmpty: h.Invert && h.TreatMissingHeadersAsEmpty,
+			TreatMissingHeaderAsEmpty: h.Invert && h.TreatMissingAsEmpty,
 		}
 
 		switch h.MatchType {

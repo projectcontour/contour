@@ -86,6 +86,16 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Port: 80,
 					}},
 				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerNotContainsMatchCondition("x-beta-release", "t", false, true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
 			},
 		},
 	}
@@ -97,11 +107,21 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:                       "x-beta-release",
-							Value:                      "true",
-							MatchType:                  "exact",
-							Invert:                     true,
-							TreatMissingHeadersAsEmpty: true,
+							Name:                "x-beta-release",
+							Value:               "true",
+							MatchType:           "exact",
+							Invert:              true,
+							TreatMissingAsEmpty: true,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:                "x-beta-release",
+							Value:               "t",
+							MatchType:           "contains",
+							Invert:              true,
+							TreatMissingAsEmpty: true,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
 					},

@@ -181,12 +181,12 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 			})
 		case cond.NotContains != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:                       cond.Name,
-				Value:                      cond.NotContains,
-				MatchType:                  HeaderMatchTypeContains,
-				Invert:                     true,
-				IgnoreCase:                 cond.IgnoreCase,
-				TreatMissingHeadersAsEmpty: cond.TreatMissingHeadersAsEmpty,
+				Name:                cond.Name,
+				Value:               cond.NotContains,
+				MatchType:           HeaderMatchTypeContains,
+				Invert:              true,
+				IgnoreCase:          cond.IgnoreCase,
+				TreatMissingAsEmpty: cond.TreatMissingAsEmpty,
 			})
 		case cond.Exact != "":
 			hc = append(hc, HeaderMatchCondition{
@@ -197,12 +197,12 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 			})
 		case cond.NotExact != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:                       cond.Name,
-				Value:                      cond.NotExact,
-				MatchType:                  HeaderMatchTypeExact,
-				Invert:                     true,
-				IgnoreCase:                 cond.IgnoreCase,
-				TreatMissingHeadersAsEmpty: cond.TreatMissingHeadersAsEmpty,
+				Name:                cond.Name,
+				Value:               cond.NotExact,
+				MatchType:           HeaderMatchTypeExact,
+				Invert:              true,
+				IgnoreCase:          cond.IgnoreCase,
+				TreatMissingAsEmpty: cond.TreatMissingAsEmpty,
 			})
 		case cond.Regex != "":
 			hc = append(hc, HeaderMatchCondition{

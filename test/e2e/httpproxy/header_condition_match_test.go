@@ -132,9 +132,9 @@ func testHeaderConditionMatch(namespace string) {
 						Conditions: []contourv1.MatchCondition{
 							{
 								Header: &contourv1.HeaderMatchCondition{
-									Name:                       "Target-NotContains",
-									NotContains:                "ContainsValue",
-									TreatMissingHeadersAsEmpty: true,
+									Name:                "Target-NotContains",
+									NotContains:         "ContainsValue",
+									TreatMissingAsEmpty: true,
 								},
 							},
 							// We use this case to and the two conditions otherwise the not
@@ -208,9 +208,9 @@ func testHeaderConditionMatch(namespace string) {
 						Conditions: []contourv1.MatchCondition{
 							{
 								Header: &contourv1.HeaderMatchCondition{
-									Name:                       "Target-NotExact",
-									NotContains:                "ExactValue",
-									TreatMissingHeadersAsEmpty: true,
+									Name:                "Target-NotExact",
+									NotContains:         "ExactValue",
+									TreatMissingAsEmpty: true,
 								},
 							},
 							// We use this case to and the two conditions otherwise the not

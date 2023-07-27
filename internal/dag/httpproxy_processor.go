@@ -1722,8 +1722,8 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 		if includeHeaderConds[i].Invert != includeHeaderConds[j].Invert {
 			return includeHeaderConds[i].Invert
 		}
-		if includeHeaderConds[i].TreatMissingHeadersAsEmpty != includeHeaderConds[j].TreatMissingHeadersAsEmpty {
-			return includeHeaderConds[i].TreatMissingHeadersAsEmpty
+		if includeHeaderConds[i].TreatMissingAsEmpty != includeHeaderConds[j].TreatMissingAsEmpty {
+			return includeHeaderConds[i].TreatMissingAsEmpty
 		}
 		if includeHeaderConds[i].Name != includeHeaderConds[j].Name {
 			return includeHeaderConds[i].Name < includeHeaderConds[j].Name

@@ -91,7 +91,7 @@ type MatchCondition struct {
 // headers. The Name field is required, only one of Present, NotPresent,
 // Contains, NotContains, Exact, NotExact and Regex can be set.
 // For negative matching rules only (e.g. NotContains or NotExact) you can set
-// TreatMissingHeadersAsEmpty.
+// TreatMissingAsEmpty.
 // IgnoreCase has no effect for Regex.
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
@@ -140,12 +140,12 @@ type HeaderMatchCondition struct {
 	// +optional
 	Regex string `json:"regex,omitempty"`
 
-	// TreatMissingHeadersAsEmpty specifies if the header match rule specified header
+	// TreatMissingAsEmpty specifies if the header match rule specified header
 	// does not exist, this header value will be treated as empty. Defaults to false.
 	// Unlike the underlying Envoy implementation this is **only** supported for
 	// negative matches (e.g. NotContains, NotExact).
 	// +optional
-	TreatMissingHeadersAsEmpty bool `json:"treatMissingHeadersAsEmpty,omitempty"`
+	TreatMissingAsEmpty bool `json:"TreatMissingAsEmpty,omitempty"`
 }
 
 // QueryParameterMatchCondition specifies how to conditionally match against HTTP

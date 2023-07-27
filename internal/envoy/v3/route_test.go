@@ -1929,11 +1929,11 @@ func TestRouteMatch(t *testing.T) {
 		"notcontains match -- treat missing as empty": {
 			route: &dag.Route{
 				HeaderMatchConditions: []dag.HeaderMatchCondition{{
-					Name:                       "x-header",
-					Value:                      "foo",
-					MatchType:                  "contains",
-					Invert:                     true,
-					TreatMissingHeadersAsEmpty: true,
+					Name:                "x-header",
+					Value:               "foo",
+					MatchType:           "contains",
+					Invert:              true,
+					TreatMissingAsEmpty: true,
 				}},
 			},
 			want: &envoy_route_v3.RouteMatch{
@@ -2155,11 +2155,11 @@ func TestRouteMatch(t *testing.T) {
 		"header not exact -- treat missing as empty": {
 			route: &dag.Route{
 				HeaderMatchConditions: []dag.HeaderMatchCondition{{
-					Name:                       "x-header-foo",
-					MatchType:                  dag.HeaderMatchTypeExact,
-					Value:                      "bar",
-					Invert:                     true,
-					TreatMissingHeadersAsEmpty: true,
+					Name:                "x-header-foo",
+					MatchType:           dag.HeaderMatchTypeExact,
+					Value:               "bar",
+					Invert:              true,
+					TreatMissingAsEmpty: true,
 				}},
 			},
 			want: &envoy_route_v3.RouteMatch{
