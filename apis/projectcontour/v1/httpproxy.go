@@ -145,7 +145,7 @@ type HeaderMatchCondition struct {
 	// Unlike the underlying Envoy implementation this is **only** supported for
 	// negative matches (e.g. NotContains, NotExact).
 	// +optional
-	TreatMissingAsEmpty bool `json:"TreatMissingAsEmpty,omitempty"`
+	TreatMissingAsEmpty bool `json:"treatMissingAsEmpty,omitempty"`
 }
 
 // QueryParameterMatchCondition specifies how to conditionally match against HTTP

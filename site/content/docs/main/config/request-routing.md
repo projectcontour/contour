@@ -109,7 +109,7 @@ For `header` conditions there is the following structure:
 
 1. one required field, `name`
 2. six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact`
-3. two optional modifiers: `ignoreCase` and `TreatMissingAsEmpty`
+3. two optional modifiers: `ignoreCase` and `treatMissingAsEmpty`
 
 Operators:
 - `present` is a boolean and checks that the header is present. The value will not be checked.
@@ -124,7 +124,7 @@ Operators:
 
 Modifiers:
 - `ignoreCase`: IgnoreCase specifies that string matching should be case insensitive. It has no effect on the `Regex` parameter.
-- `TreatMissingAsEmpty`: specifies if the header match rule specified header does not exist, this header value will be treated as empty. Defaults to false. Unlike the underlying Envoy implementation this is **only** supported for negative matches (e.g. NotContains, NotExact).
+- `treatMissingAsEmpty`: specifies if the header match rule specified header does not exist, this header value will be treated as empty. Defaults to false. Unlike the underlying Envoy implementation this is **only** supported for negative matches (e.g. NotContains, NotExact).
 
 #### Query parameter conditions
 
