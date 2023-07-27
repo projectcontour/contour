@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.8.3
 	github.com/stretchr/testify v1.8.4
 	github.com/tsaarni/certyaml v0.9.2
-	github.com/vektra/mockery/v2 v2.10.0
+	github.com/vektra/mockery/v2 v2.10.6
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gonum.org/v1/plot v0.10.1
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21
