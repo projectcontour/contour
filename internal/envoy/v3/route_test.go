@@ -1943,8 +1943,8 @@ func TestRouteMatch(t *testing.T) {
 					TreatMissingHeaderAsEmpty: true,
 					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
 						StringMatch: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_SafeRegex{
-								SafeRegex: SafeRegexMatch(".*foo.*"),
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "foo",
 							},
 						},
 					},
