@@ -19,7 +19,7 @@ CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 # Variables needed for running e2e and upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
 CONTOUR_E2E_IMAGE ?= ghcr.io/projectcontour/contour:main
-CONTOUR_E2E_PACKAGE_FOCUS ?= ./test/e2e/httpproxy
+CONTOUR_E2E_PACKAGE_FOCUS ?= ./test/e2e
 # Optional variables
 # Run specific test specs (matched by regex)
 CONTOUR_E2E_TEST_FOCUS ?=
