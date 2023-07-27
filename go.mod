@@ -42,7 +42,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/controller-tools v0.7.0
 	sigs.k8s.io/gateway-api v0.5.1
-	sigs.k8s.io/kustomize/kyaml v0.10.17
+	sigs.k8s.io/kustomize/kyaml v0.10.21
 )
 
 require (
@@ -74,7 +74,6 @@ require (
 	github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
-	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/go-pdf/fpdf v0.5.0 // indirect
 	github.com/gobuffalo/flect v0.2.3 // indirect
