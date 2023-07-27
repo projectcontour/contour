@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tsaarni/certyaml v0.9.2
 	github.com/vektra/mockery/v2 v2.26.1
-	go.uber.org/automaxprocs v1.5.2
+	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/oauth2 v0.7.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
