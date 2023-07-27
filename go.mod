@@ -34,7 +34,7 @@ require (
 	golang.org/x/oauth2 v0.7.0
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.55.1
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.26.7
