@@ -105,8 +105,13 @@ Regex conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
-For `header` conditions there is one required field, `name`, six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact` and a modifier `ignoreCase` which can be used together with all of the operator fields except `regex`, `notpresent` and `present`.
+For `header` conditions there is the following structure:
 
+1. one required field, `name`
+2. six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact`
+3. two optional modifiers: `ignoreCase` and `treatMissingAsEmpty`
+
+Operators:
 - `present` is a boolean and checks that the header is present. The value will not be checked.
 
 - `notpresent` similarly checks that the header is *not* present.
@@ -116,6 +121,10 @@ For `header` conditions there is one required field, `name`, six operator fields
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
 - `regex` is a string representing a regular expression, and checks that the header value matches against the given regular expression.
+
+Modifiers:
+- `ignoreCase`: IgnoreCase specifies that string matching should be case insensitive. It has no effect on the `Regex` parameter.
+- `treatMissingAsEmpty`: specifies if the header match rule specified header does not exist, this header value will be treated as empty. Defaults to false. Unlike the underlying Envoy implementation this is **only** supported for negative matches (e.g. NotContains, NotExact).
 
 #### Query parameter conditions
 

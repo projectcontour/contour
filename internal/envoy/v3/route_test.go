@@ -1926,6 +1926,31 @@ func TestRouteMatch(t *testing.T) {
 				}},
 			},
 		},
+		"notcontains match -- treat missing as empty": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:                "x-header",
+					Value:               "foo",
+					MatchType:           "contains",
+					Invert:              true,
+					TreatMissingAsEmpty: true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:                      "x-header",
+					InvertMatch:               true,
+					TreatMissingHeaderAsEmpty: true,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Contains{
+								Contains: "foo",
+							},
+						},
+					},
+				}},
+			},
+		},
 		"path prefix string prefix": {
 			route: &dag.Route{
 				PathMatchCondition: &dag.PrefixMatchCondition{
@@ -2122,6 +2147,29 @@ func TestRouteMatch(t *testing.T) {
 						StringMatch: &matcher.StringMatcher{
 							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
 							IgnoreCase:   true,
+						},
+					},
+				}},
+			},
+		},
+		"header not exact -- treat missing as empty": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:                "x-header-foo",
+					MatchType:           dag.HeaderMatchTypeExact,
+					Value:               "bar",
+					Invert:              true,
+					TreatMissingAsEmpty: true,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:                      "x-header-foo",
+					InvertMatch:               true,
+					TreatMissingHeaderAsEmpty: true,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{Exact: "bar"},
 						},
 					},
 				}},

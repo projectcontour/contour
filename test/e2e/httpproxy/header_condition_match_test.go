@@ -38,9 +38,11 @@ func testHeaderConditionMatch(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains-set-missing-as-empty")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact-case-insensitive")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact-set-missing-as-empty")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-regex")
 
 		// This HTTPProxy tests everything except the "notpresent" match type,
@@ -123,6 +125,32 @@ func testHeaderConditionMatch(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
+								Name: "echo-header-notcontains-set-missing-as-empty",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:                "Target-NotContains",
+									NotContains:         "ContainsValue",
+									TreatMissingAsEmpty: true,
+								},
+							},
+							// We use this case to and the two conditions otherwise the not
+							// contains statement would match anything and make the tests
+							// brittle.
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:  "X-Force-NotContains-Case",
+									Exact: "True",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
 								Name: "echo-header-exact",
 								Port: 80,
 							},
@@ -166,6 +194,32 @@ func testHeaderConditionMatch(namespace string) {
 								Header: &contourv1.HeaderMatchCondition{
 									Name:     "Target-NotExact",
 									NotExact: "ExactValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-notexact-set-missing-as-empty",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:                "Target-NotExact",
+									NotContains:         "ExactValue",
+									TreatMissingAsEmpty: true,
+								},
+							},
+							// We use this case to and the two conditions otherwise the not
+							// contains statement would match anything and make the tests
+							// brittle.
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:  "X-Force-NotExact-Case",
+									Exact: "True",
 								},
 							},
 						},
@@ -227,6 +281,11 @@ func testHeaderConditionMatch(namespace string) {
 				expectResponse: 404,
 			},
 			{
+				headers:        map[string]string{"X-Force-NotContains-Case": "True"},
+				expectResponse: 200,
+				expectService:  "echo-header-notcontains-set-missing-as-empty",
+			},
+			{
 				headers:        map[string]string{"Target-NotContains": "xxx ContainsValue xxx"},
 				expectResponse: 404,
 			},
@@ -266,6 +325,11 @@ func testHeaderConditionMatch(namespace string) {
 			{
 				headers:        map[string]string{"Target-NotExact": "ExactValue"},
 				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"X-Force-NotExact-Case": "True"},
+				expectResponse: 200,
+				expectService:  "echo-header-notexact-set-missing-as-empty",
 			},
 			{
 				headers:        map[string]string{"Target-Regex": "RegexMatch"},

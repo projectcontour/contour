@@ -741,8 +741,10 @@ spec:
                                             headers. The Name field is required, only
                                             one of Present, NotPresent, Contains,
                                             NotContains, Exact, NotExact and Regex
-                                            can be set. IgnoreCase has no effect for
-                                            Regex.
+                                            can be set. For negative matching rules
+                                            only (e.g. NotContains or NotExact) you
+                                            can set TreatMissingAsEmpty. IgnoreCase
+                                            has no effect for Regex.
                                           properties:
                                             contains:
                                               description: Contains specifies a substring
@@ -797,6 +799,16 @@ spec:
                                                 expression pattern that must match
                                                 the header value.
                                               type: string
+                                            treatMissingAsEmpty:
+                                              description: TreatMissingAsEmpty specifies
+                                                if the header match rule specified
+                                                header does not exist, this header
+                                                value will be treated as empty. Defaults
+                                                to false. Unlike the underlying Envoy
+                                                implementation this is **only** supported
+                                                for negative matches (e.g. NotContains,
+                                                NotExact).
+                                              type: boolean
                                           required:
                                           - name
                                           type: object
@@ -4135,8 +4147,10 @@ spec:
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
                                                 NotContains, Exact, NotExact and Regex
-                                                can be set. IgnoreCase has no effect
-                                                for Regex.
+                                                can be set. For negative matching
+                                                rules only (e.g. NotContains or NotExact)
+                                                you can set TreatMissingAsEmpty. IgnoreCase
+                                                has no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -4194,6 +4208,17 @@ spec:
                                                     expression pattern that must match
                                                     the header value.
                                                   type: string
+                                                treatMissingAsEmpty:
+                                                  description: TreatMissingAsEmpty
+                                                    specifies if the header match
+                                                    rule specified header does not
+                                                    exist, this header value will
+                                                    be treated as empty. Defaults
+                                                    to false. Unlike the underlying
+                                                    Envoy implementation this is **only**
+                                                    supported for negative matches
+                                                    (e.g. NotContains, NotExact).
+                                                  type: boolean
                                               required:
                                               - name
                                               type: object
@@ -4992,6 +5017,14 @@ spec:
                                 description: Regex specifies a regular expression
                                   pattern that must match the header value.
                                 type: string
+                              treatMissingAsEmpty:
+                                description: TreatMissingAsEmpty specifies if the
+                                  header match rule specified header does not exist,
+                                  this header value will be treated as empty. Defaults
+                                  to false. Unlike the underlying Envoy implementation
+                                  this is **only** supported for negative matches
+                                  (e.g. NotContains, NotExact).
+                                type: boolean
                             required:
                             - name
                             type: object
@@ -5154,6 +5187,14 @@ spec:
                                 description: Regex specifies a regular expression
                                   pattern that must match the header value.
                                 type: string
+                              treatMissingAsEmpty:
+                                description: TreatMissingAsEmpty specifies if the
+                                  header match rule specified header does not exist,
+                                  this header value will be treated as empty. Defaults
+                                  to false. Unlike the underlying Envoy implementation
+                                  this is **only** supported for negative matches
+                                  (e.g. NotContains, NotExact).
+                                type: boolean
                             required:
                             - name
                             type: object
@@ -5684,8 +5725,10 @@ spec:
                                                   is required, only one of Present,
                                                   NotPresent, Contains, NotContains,
                                                   Exact, NotExact and Regex can be
-                                                  set. IgnoreCase has no effect for
-                                                  Regex.
+                                                  set. For negative matching rules
+                                                  only (e.g. NotContains or NotExact)
+                                                  you can set TreatMissingAsEmpty.
+                                                  IgnoreCase has no effect for Regex.
                                                 properties:
                                                   contains:
                                                     description: Contains specifies
@@ -5746,6 +5789,17 @@ spec:
                                                       regular expression pattern that
                                                       must match the header value.
                                                     type: string
+                                                  treatMissingAsEmpty:
+                                                    description: TreatMissingAsEmpty
+                                                      specifies if the header match
+                                                      rule specified header does not
+                                                      exist, this header value will
+                                                      be treated as empty. Defaults
+                                                      to false. Unlike the underlying
+                                                      Envoy implementation this is
+                                                      **only** supported for negative
+                                                      matches (e.g. NotContains, NotExact).
+                                                    type: boolean
                                                 required:
                                                 - name
                                                 type: object
@@ -7053,8 +7107,10 @@ spec:
                                                 HTTP headers. The Name field is required,
                                                 only one of Present, NotPresent, Contains,
                                                 NotContains, Exact, NotExact and Regex
-                                                can be set. IgnoreCase has no effect
-                                                for Regex.
+                                                can be set. For negative matching
+                                                rules only (e.g. NotContains or NotExact)
+                                                you can set TreatMissingAsEmpty. IgnoreCase
+                                                has no effect for Regex.
                                               properties:
                                                 contains:
                                                   description: Contains specifies
@@ -7112,6 +7168,17 @@ spec:
                                                     expression pattern that must match
                                                     the header value.
                                                   type: string
+                                                treatMissingAsEmpty:
+                                                  description: TreatMissingAsEmpty
+                                                    specifies if the header match
+                                                    rule specified header does not
+                                                    exist, this header value will
+                                                    be treated as empty. Defaults
+                                                    to false. Unlike the underlying
+                                                    Envoy implementation this is **only**
+                                                    supported for negative matches
+                                                    (e.g. NotContains, NotExact).
+                                                  type: boolean
                                               required:
                                               - name
                                               type: object
