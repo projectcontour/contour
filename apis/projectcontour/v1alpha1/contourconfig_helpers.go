@@ -152,12 +152,12 @@ func (e *EnvoyConfig) Validate() error {
 
 // Validate ensures EnvoyTLS configuration is valid.
 func (e *EnvoyTLS) Validate() error {
-	parseVersion := func(version, str string, defVal float64) (float64, error) {
+	parseVersion := func(version, tip string, defVal float64) (float64, error) {
 		if version == "" {
 			return defVal, nil
 		}
 		if version != "1.2" && version != "1.3" {
-			return 0.0, fmt.Errorf("invalid TLS %s protocol version %q", version, str)
+			return 0.0, fmt.Errorf("invalid TLS %s protocol version: %q", tip, version)
 		}
 		return strconv.ParseFloat(version, 32)
 	}

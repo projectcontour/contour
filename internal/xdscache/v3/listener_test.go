@@ -3686,7 +3686,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().

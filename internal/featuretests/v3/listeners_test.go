@@ -1057,7 +1057,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 				Fqdn: "kuard.example.com",
 				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
-					MinimumProtocolVersion: "1.1",
+					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
@@ -1115,7 +1115,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
-					MaximumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{

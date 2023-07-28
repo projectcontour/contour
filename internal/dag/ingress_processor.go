@@ -129,6 +129,16 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 				svhost.MinTLSVersion = annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
 				// default to a maximum TLS version of 1.3 if it's not specified
 				svhost.MaxTLSVersion = annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-maximum-protocol-version"), "1.3")
+
+				if svhost.MaxTLSVersion < svhost.MinTLSVersion {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("minTLSVersion", svhost.MinTLSVersion).
+						WithField("maxTLSVersion", svhost.MaxTLSVersion).
+						Errorf("error TLS protocol version")
+					return
+				}
 			}
 		}
 	}

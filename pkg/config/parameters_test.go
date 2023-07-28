@@ -358,11 +358,14 @@ listener:
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
 	check := func(verifier func(*testing.T, *Parameters), yamlIn string) {
 		t.Helper()
-
 		conf, err := Parse(strings.NewReader(yamlIn))
-
 		require.NoError(t, err)
 		verifier(t, conf)
+	}
+	checkFail := func(yamlIn string) {
+		t.Helper()
+		_, err := Parse(strings.NewReader(yamlIn))
+		require.Error(t, err)
 	}
 
 	check(func(t *testing.T, conf *Parameters) {
@@ -390,17 +393,22 @@ tls:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "1.3", conf.TLS.MinimumProtocolVersion)
-		assert.Equal(t, "1.2", conf.TLS.MaximumProtocolVersion)
+		assert.Equal(t, "1.2", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.3", conf.TLS.MaximumProtocolVersion)
 		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
 	}, `
 tls:
-  minimum-protocol-version: 1.3
-  maximum-protocol-version: 1.2
+  minimum-protocol-version: 1.2
+  maximum-protocol-version: 1.3
   cipher-suites:
   - ECDHE-RSA-AES256-GCM-SHA384
 `)
 
+	checkFail(`
+tls:
+  minimum-protocol-version: 1.3
+  maximum-protocol-version: 1.2
+`)
 	check(func(t *testing.T, conf *Parameters) {
 		assert.ElementsMatch(t,
 			[]HTTPVersionType{HTTPVersion1, HTTPVersion2, HTTPVersion2, HTTPVersion1},

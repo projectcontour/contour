@@ -250,11 +250,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			svhost := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 			svhost.Secret = sec
+
 			// default to a minimum TLS version of 1.2 if it's not specified
 			svhost.MinTLSVersion = annotation.TLSVersion(tls.MinimumProtocolVersion, "1.2")
 
 			// default to a maximum TLS version of 1.3 if it's not specified
 			svhost.MaxTLSVersion = annotation.TLSVersion(tls.MaximumProtocolVersion, "1.3")
+			if svhost.MaxTLSVersion < svhost.MinTLSVersion {
+				validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
+					"Spec.Virtualhost.TLS the minimum protocol version is greater than the maximum protocol version")
+				return
+			}
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
