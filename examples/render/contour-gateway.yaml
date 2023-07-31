@@ -8835,6 +8835,9 @@ spec:
                 minLength: 1
                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
               description:
                 description: Description helps describe a GatewayClass with more details.
                 maxLength: 64
@@ -8889,7 +8892,9 @@ spec:
                 reason: Waiting
                 status: Unknown
                 type: Accepted
-            description: Status defines the current state of GatewayClass.
+            description: "Status defines the current state of GatewayClass. \n Implementations
+              MUST populate status on all GatewayClass resources which specify their
+              controller name."
             properties:
               conditions:
                 default:
@@ -8972,27 +8977,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              routabilities:
-                description: "Routabilities specifies a list of supported routabilities
-                  offered by the GatewayClass. The first entry in this list will be
-                  the default routability used when Gateways of this class are created.
-                  \n Implementations MAY provide a pre-defined set of GatewayClasses
-                  that limit the routability choices of a Gateway. \n Implementations
-                  MUST populate this list with the GatewayRoutability values that
-                  are supported by this GatewayClass. \n <gateway:experimental>"
-                items:
-                  description: "GatewayRoutability represents the routability of a
-                    Gateway \n The pre-defined values listed in this package can be
-                    compared semantically. `Public` has a larger scope than `Private`,
-                    while `Private` has a larger scope than `Cluster`. \n Implementations
-                    can define custom routability values by specifying a vendor prefix
-                    followed by a slash '/' and a custom name ie. `dev.example.com/my-routability`."
-                  maxLength: 253
-                  minLength: 1
-                  pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                  type: string
-                maxItems: 8
-                type: array
             type: object
         required:
         - spec
@@ -9056,6 +9040,9 @@ spec:
                 minLength: 1
                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
               description:
                 description: Description helps describe a GatewayClass with more details.
                 maxLength: 64
@@ -9110,7 +9097,9 @@ spec:
                 reason: Waiting
                 status: Unknown
                 type: Accepted
-            description: Status defines the current state of GatewayClass.
+            description: "Status defines the current state of GatewayClass. \n Implementations
+              MUST populate status on all GatewayClass resources which specify their
+              controller name."
             properties:
               conditions:
                 default:
@@ -9193,27 +9182,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              routabilities:
-                description: "Routabilities specifies a list of supported routabilities
-                  offered by the GatewayClass. The first entry in this list will be
-                  the default routability used when Gateways of this class are created.
-                  \n Implementations MAY provide a pre-defined set of GatewayClasses
-                  that limit the routability choices of a Gateway. \n Implementations
-                  MUST populate this list with the GatewayRoutability values that
-                  are supported by this GatewayClass. \n <gateway:experimental>"
-                items:
-                  description: "GatewayRoutability represents the routability of a
-                    Gateway \n The pre-defined values listed in this package can be
-                    compared semantically. `Public` has a larger scope than `Private`,
-                    while `Private` has a larger scope than `Cluster`. \n Implementations
-                    can define custom routability values by specifying a vendor prefix
-                    followed by a slash '/' and a custom name ie. `dev.example.com/my-routability`."
-                  maxLength: 253
-                  minLength: 1
-                  pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                  type: string
-                maxItems: 8
-                type: array
             type: object
         required:
         - spec
@@ -9304,10 +9272,24 @@ spec:
                   manner, assigning an appropriate set of Addresses. \n The implementation
                   MUST bind all Listeners to every GatewayAddress that it assigns
                   to the Gateway and add a corresponding entry in GatewayStatus.Addresses.
-                  \n Support: Extended"
+                  \n Support: Extended \n "
                 items:
                   description: GatewayAddress describes an address that can be bound
                     to a Gateway.
+                  oneOf:
+                  - properties:
+                      type:
+                        enum:
+                        - IPAddress
+                      value:
+                        anyOf:
+                        - format: ipv4
+                        - format: ipv6
+                  - properties:
+                      type:
+                        not:
+                          enum:
+                          - IPAddress
                   properties:
                     type:
                       default: IPAddress
@@ -9326,38 +9308,26 @@ spec:
                   required:
                   - value
                   type: object
+                  x-kubernetes-validations:
+                  - message: Hostname value must only contain valid characters (matching
+                      ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$)
+                    rule: 'self.type == ''Hostname'' ? self.value.matches(''^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$''):
+                      true'
                 maxItems: 16
                 type: array
+                x-kubernetes-validations:
+                - message: IPAddress values must be unique
+                  rule: 'self.all(a1, a1.type == ''IPAddress'' ? self.exists_one(a2,
+                    a2.type == a1.type && a2.value == a1.value) : true )'
+                - message: Hostname values must be unique
+                  rule: 'self.all(a1, a1.type == ''Hostname'' ? self.exists_one(a2,
+                    a2.type == a1.type && a2.value == a1.value) : true )'
               gatewayClassName:
                 description: GatewayClassName used for this Gateway. This is the name
                   of a GatewayClass resource.
                 maxLength: 253
                 minLength: 1
                 type: string
-              infrastructure:
-                description: "Infrastructure defines infrastructure level attributes
-                  about this Gateway instance. \n <gateway:experimental>"
-                properties:
-                  routability:
-                    description: "Routability allows the Gateway to specify the accessibility
-                      of its addresses. Setting this property will override the default
-                      value defined by the GatewayClass. \n If the desired Gateway
-                      routability is incompatible with the GatewayClass implementations
-                      MUST set the condition `Accepted` to `False` with `Reason` set
-                      to `UnsupportedRoutability`. \n The default value of routability
-                      is implementation specific and MUST remain consistent for Gateways
-                      with the same gatewayClassName \n Implementations MUST clearly
-                      document if they support updates to this field. The default
-                      expectation should be that changes to this field are not supported
-                      unless an implementation specifies otherwise. \n If a Gateway
-                      is mutated but does not support the desired routability it MUST
-                      set the `Accepted` and `Programmed` conditions to `False` with
-                      `Reason` set to `UnsupportedRoutability`."
-                    maxLength: 253
-                    minLength: 1
-                    pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                    type: string
-                type: object
               listeners:
                 description: "Listeners associated with this Gateway. Listeners define
                   logical endpoints that are bound on this Gateway's addresses. At
@@ -9690,6 +9660,11 @@ spec:
                           maxProperties: 16
                           type: object
                       type: object
+                      x-kubernetes-validations:
+                      - message: certificateRefs must be set and not empty when TLSModeType
+                          is Terminate
+                        rule: 'self.mode == ''Terminate'' ? size(self.certificateRefs)
+                          > 0 : true'
                   required:
                   - name
                   - port
@@ -9701,6 +9676,23 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+                x-kubernetes-validations:
+                - message: tls must be set for protocols ['HTTPS', 'TLS']
+                  rule: 'self.all(l, l.protocol in [''HTTPS'', ''TLS''] ? has(l.tls)
+                    : true)'
+                - message: tls must be empty for protocols ['HTTP', 'TCP', 'UDP']
+                  rule: 'self.all(l, l.protocol in [''HTTP'', ''TCP'', ''UDP''] ?
+                    !has(l.tls) : true)'
+                - message: hostname must be empty for protocols ['TCP', 'UDP']
+                  rule: 'self.all(l, l.protocol in [''TCP'', ''UDP'']  ? (!has(l.hostname)
+                    || l.hostname == '''') : true)'
+                - message: Listener name must be unique within the Gateway
+                  rule: self.all(l1, self.exists_one(l2, l1.name == l2.name))
+                - message: Combination of port, protocol and hostname must be unique
+                    for each listener
+                  rule: 'self.all(l1, self.exists_one(l2, l1.port == l2.port && l1.protocol
+                    == l2.protocol && (has(l1.hostname) && has(l2.hostname) ? l1.hostname
+                    == l2.hostname : true)))'
             required:
             - gatewayClassName
             - listeners
@@ -9724,26 +9716,25 @@ spec:
                 description: "Addresses lists the IP addresses that have actually
                   been bound to the Gateway. These addresses may differ from the addresses
                   in the Spec, e.g. if the Gateway automatically assigns an address
-                  from a reserved pool. \n Implementations that support GatewayRoutability
-                  MUST include an address that has the same routable semantics as
-                  defined in the Gateway spec. \n Implementations MAY add additional
-                  addresses in status, but they MUST be semantically less than the
-                  scope of the requested scope. For example if a user requests a `Private`
-                  routable Gateway then an additional address MAY have a routability
-                  of `Cluster` but MUST NOT include `Public`."
+                  from a reserved pool. \n "
                 items:
                   description: GatewayStatusAddress describes an address that is bound
                     to a Gateway.
+                  oneOf:
+                  - properties:
+                      type:
+                        enum:
+                        - IPAddress
+                      value:
+                        anyOf:
+                        - format: ipv4
+                        - format: ipv6
+                  - properties:
+                      type:
+                        not:
+                          enum:
+                          - IPAddress
                   properties:
-                    routability:
-                      description: "Routability specifies the routable bounds of this
-                        address Predefined values are: 'Private', 'Public', Cluster
-                        Other values MUST have a vendor prefix. \n Implementations
-                        that support Routability MUST populate this field \n <gateway:experimental>"
-                      maxLength: 253
-                      minLength: 1
-                      pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                      type: string
                     type:
                       default: IPAddress
                       description: Type of the address.
@@ -9761,6 +9752,11 @@ spec:
                   required:
                   - value
                   type: object
+                  x-kubernetes-validations:
+                  - message: Hostname value must only contain valid characters (matching
+                      ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$)
+                    rule: 'self.type == ''Hostname'' ? self.value.matches(''^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$''):
+                      true'
                 maxItems: 16
                 type: array
               conditions:
@@ -10049,10 +10045,24 @@ spec:
                   manner, assigning an appropriate set of Addresses. \n The implementation
                   MUST bind all Listeners to every GatewayAddress that it assigns
                   to the Gateway and add a corresponding entry in GatewayStatus.Addresses.
-                  \n Support: Extended"
+                  \n Support: Extended \n "
                 items:
                   description: GatewayAddress describes an address that can be bound
                     to a Gateway.
+                  oneOf:
+                  - properties:
+                      type:
+                        enum:
+                        - IPAddress
+                      value:
+                        anyOf:
+                        - format: ipv4
+                        - format: ipv6
+                  - properties:
+                      type:
+                        not:
+                          enum:
+                          - IPAddress
                   properties:
                     type:
                       default: IPAddress
@@ -10071,38 +10081,26 @@ spec:
                   required:
                   - value
                   type: object
+                  x-kubernetes-validations:
+                  - message: Hostname value must only contain valid characters (matching
+                      ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$)
+                    rule: 'self.type == ''Hostname'' ? self.value.matches(''^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$''):
+                      true'
                 maxItems: 16
                 type: array
+                x-kubernetes-validations:
+                - message: IPAddress values must be unique
+                  rule: 'self.all(a1, a1.type == ''IPAddress'' ? self.exists_one(a2,
+                    a2.type == a1.type && a2.value == a1.value) : true )'
+                - message: Hostname values must be unique
+                  rule: 'self.all(a1, a1.type == ''Hostname'' ? self.exists_one(a2,
+                    a2.type == a1.type && a2.value == a1.value) : true )'
               gatewayClassName:
                 description: GatewayClassName used for this Gateway. This is the name
                   of a GatewayClass resource.
                 maxLength: 253
                 minLength: 1
                 type: string
-              infrastructure:
-                description: "Infrastructure defines infrastructure level attributes
-                  about this Gateway instance. \n <gateway:experimental>"
-                properties:
-                  routability:
-                    description: "Routability allows the Gateway to specify the accessibility
-                      of its addresses. Setting this property will override the default
-                      value defined by the GatewayClass. \n If the desired Gateway
-                      routability is incompatible with the GatewayClass implementations
-                      MUST set the condition `Accepted` to `False` with `Reason` set
-                      to `UnsupportedRoutability`. \n The default value of routability
-                      is implementation specific and MUST remain consistent for Gateways
-                      with the same gatewayClassName \n Implementations MUST clearly
-                      document if they support updates to this field. The default
-                      expectation should be that changes to this field are not supported
-                      unless an implementation specifies otherwise. \n If a Gateway
-                      is mutated but does not support the desired routability it MUST
-                      set the `Accepted` and `Programmed` conditions to `False` with
-                      `Reason` set to `UnsupportedRoutability`."
-                    maxLength: 253
-                    minLength: 1
-                    pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                    type: string
-                type: object
               listeners:
                 description: "Listeners associated with this Gateway. Listeners define
                   logical endpoints that are bound on this Gateway's addresses. At
@@ -10435,6 +10433,11 @@ spec:
                           maxProperties: 16
                           type: object
                       type: object
+                      x-kubernetes-validations:
+                      - message: certificateRefs must be set and not empty when TLSModeType
+                          is Terminate
+                        rule: 'self.mode == ''Terminate'' ? size(self.certificateRefs)
+                          > 0 : true'
                   required:
                   - name
                   - port
@@ -10446,6 +10449,23 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+                x-kubernetes-validations:
+                - message: tls must be set for protocols ['HTTPS', 'TLS']
+                  rule: 'self.all(l, l.protocol in [''HTTPS'', ''TLS''] ? has(l.tls)
+                    : true)'
+                - message: tls must be empty for protocols ['HTTP', 'TCP', 'UDP']
+                  rule: 'self.all(l, l.protocol in [''HTTP'', ''TCP'', ''UDP''] ?
+                    !has(l.tls) : true)'
+                - message: hostname must be empty for protocols ['TCP', 'UDP']
+                  rule: 'self.all(l, l.protocol in [''TCP'', ''UDP'']  ? (!has(l.hostname)
+                    || l.hostname == '''') : true)'
+                - message: Listener name must be unique within the Gateway
+                  rule: self.all(l1, self.exists_one(l2, l1.name == l2.name))
+                - message: Combination of port, protocol and hostname must be unique
+                    for each listener
+                  rule: 'self.all(l1, self.exists_one(l2, l1.port == l2.port && l1.protocol
+                    == l2.protocol && (has(l1.hostname) && has(l2.hostname) ? l1.hostname
+                    == l2.hostname : true)))'
             required:
             - gatewayClassName
             - listeners
@@ -10469,26 +10489,25 @@ spec:
                 description: "Addresses lists the IP addresses that have actually
                   been bound to the Gateway. These addresses may differ from the addresses
                   in the Spec, e.g. if the Gateway automatically assigns an address
-                  from a reserved pool. \n Implementations that support GatewayRoutability
-                  MUST include an address that has the same routable semantics as
-                  defined in the Gateway spec. \n Implementations MAY add additional
-                  addresses in status, but they MUST be semantically less than the
-                  scope of the requested scope. For example if a user requests a `Private`
-                  routable Gateway then an additional address MAY have a routability
-                  of `Cluster` but MUST NOT include `Public`."
+                  from a reserved pool. \n "
                 items:
                   description: GatewayStatusAddress describes an address that is bound
                     to a Gateway.
+                  oneOf:
+                  - properties:
+                      type:
+                        enum:
+                        - IPAddress
+                      value:
+                        anyOf:
+                        - format: ipv4
+                        - format: ipv6
+                  - properties:
+                      type:
+                        not:
+                          enum:
+                          - IPAddress
                   properties:
-                    routability:
-                      description: "Routability specifies the routable bounds of this
-                        address Predefined values are: 'Private', 'Public', Cluster
-                        Other values MUST have a vendor prefix. \n Implementations
-                        that support Routability MUST populate this field \n <gateway:experimental>"
-                      maxLength: 253
-                      minLength: 1
-                      pattern: ^Public|Private|Cluster|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-_]+$
-                      type: string
                     type:
                       default: IPAddress
                       description: Type of the address.
@@ -10506,6 +10525,11 @@ spec:
                   required:
                   - value
                   type: object
+                  x-kubernetes-validations:
+                  - message: Hostname value must only contain valid characters (matching
+                      ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$)
+                    rule: 'self.type == ''Hostname'' ? self.value.matches(''^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$''):
+                      true'
                 maxItems: 16
                 type: array
               conditions:
@@ -10994,7 +11018,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -11084,7 +11108,9 @@ spec:
                                     extension to the \"filter\" behavior.  For example,
                                     resource \"myroutefilter\" in group \"networking.example.net\").
                                     ExtensionRef MUST NOT be used for core and extended
-                                    filters. \n Support: Implementation-specific"
+                                    filters. \n Support: Implementation-specific \n
+                                    This filter can be used multiple times within
+                                    the same rule."
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
@@ -11222,7 +11248,10 @@ spec:
                                   description: "RequestMirror defines a schema for
                                     a filter that mirrors requests. Requests are sent
                                     to the specified destination, but responses from
-                                    that destination are ignored. \n Support: Extended"
+                                    that destination are ignored. \n This filter can
+                                    be used multiple times within the same rule. Note
+                                    that not all implementations will be able to support
+                                    mirroring to multiple backends. \n Support: Extended"
                                   properties:
                                     backendRef:
                                       description: "BackendRef references a resource
@@ -11311,6 +11340,10 @@ spec:
                                       required:
                                       - name
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: Must have port for Service reference
+                                        rule: '(size(self.group) == 0 && self.kind
+                                          == ''Service'') ? has(self.port) : true'
                                   required:
                                   - backendRef
                                   type: object
@@ -11534,6 +11567,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       type: array
                     filters:
@@ -11546,8 +11583,8 @@ spec:
                         all implementations that support GRPCRoute. - Implementers
                         are encouraged to support extended filters. - Implementation-specific
                         custom filters have no API guarantees across implementations.
-                        \n Specifying a core filter multiple times has unspecified
-                        or implementation-specific conformance. \n If an implementation
+                        \n Specifying the same filter multiple times is not supported
+                        unless explicitly indicated in the filter. \n If an implementation
                         can not support a combinations of filters, they must clearly
                         document that limitation. In cases where incompatible or unsupported
                         filters are specified and cause the `Accepted` condition to
@@ -11568,7 +11605,8 @@ spec:
                               extension to the \"filter\" behavior.  For example,
                               resource \"myroutefilter\" in group \"networking.example.net\").
                               ExtensionRef MUST NOT be used for core and extended
-                              filters. \n Support: Implementation-specific"
+                              filters. \n Support: Implementation-specific \n This
+                              filter can be used multiple times within the same rule."
                             properties:
                               group:
                                 description: Group is the group of the referent. For
@@ -11698,7 +11736,10 @@ spec:
                             description: "RequestMirror defines a schema for a filter
                               that mirrors requests. Requests are sent to the specified
                               destination, but responses from that destination are
-                              ignored. \n Support: Extended"
+                              ignored. \n This filter can be used multiple times within
+                              the same rule. Note that not all implementations will
+                              be able to support mirroring to multiple backends. \n
+                              Support: Extended"
                             properties:
                               backendRef:
                                 description: "BackendRef references a resource where
@@ -11780,6 +11821,10 @@ spec:
                                 required:
                                 - name
                                 type: object
+                                x-kubernetes-validations:
+                                - message: Must have port for Service reference
+                                  rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                                    ? has(self.port) : true'
                             required:
                             - backendRef
                             type: object
@@ -12248,7 +12293,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
@@ -12531,7 +12576,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -12622,7 +12667,8 @@ spec:
                                     extension to the \"filter\" behavior.  For example,
                                     resource \"myroutefilter\" in group \"networking.example.net\").
                                     ExtensionRef MUST NOT be used for core and extended
-                                    filters. \n Support: Implementation-specific"
+                                    filters. \n This filter can be used multiple times
+                                    within the same rule. \n Support: Implementation-specific"
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
@@ -12760,7 +12806,10 @@ spec:
                                   description: "RequestMirror defines a schema for
                                     a filter that mirrors requests. Requests are sent
                                     to the specified destination, but responses from
-                                    that destination are ignored. \n Support: Extended"
+                                    that destination are ignored. \n This filter can
+                                    be used multiple times within the same rule. Note
+                                    that not all implementations will be able to support
+                                    mirroring to multiple backends. \n Support: Extended"
                                   properties:
                                     backendRef:
                                       description: "BackendRef references a resource
@@ -12849,6 +12898,10 @@ spec:
                                       required:
                                       - name
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: Must have port for Service reference
+                                        rule: '(size(self.group) == 0 && self.kind
+                                          == ''Service'') ? has(self.port) : true'
                                   required:
                                   - backendRef
                                   type: object
@@ -12938,6 +12991,23 @@ spec:
                                       required:
                                       - type
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: replaceFullPath must be set when
+                                          type is set to 'ReplaceFullPath'
+                                        rule: 'self.type == ''ReplaceFullPath'' ?
+                                          has(self.replaceFullPath) : true'
+                                      - message: type must be 'ReplaceFullPath' when
+                                          replaceFullPath is set
+                                        rule: 'has(self.replaceFullPath) ? self.type
+                                          == ''ReplaceFullPath'' : true'
+                                      - message: replacePrefixMatch must be set when
+                                          type is set to 'ReplacePrefixMatch'
+                                        rule: 'self.type == ''ReplacePrefixMatch''
+                                          ? has(self.replacePrefixMatch) : true'
+                                      - message: type must be 'ReplacePrefixMatch'
+                                          when replacePrefixMatch is set
+                                        rule: 'has(self.replacePrefixMatch) ? self.type
+                                          == ''ReplacePrefixMatch'' : true'
                                     port:
                                       description: "Port is the port to be used in
                                         the value of the `Location` header in the
@@ -13226,12 +13296,97 @@ spec:
                                       required:
                                       - type
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: replaceFullPath must be set when
+                                          type is set to 'ReplaceFullPath'
+                                        rule: 'self.type == ''ReplaceFullPath'' ?
+                                          has(self.replaceFullPath) : true'
+                                      - message: type must be 'ReplaceFullPath' when
+                                          replaceFullPath is set
+                                        rule: 'has(self.replaceFullPath) ? self.type
+                                          == ''ReplaceFullPath'' : true'
+                                      - message: replacePrefixMatch must be set when
+                                          type is set to 'ReplacePrefixMatch'
+                                        rule: 'self.type == ''ReplacePrefixMatch''
+                                          ? has(self.replacePrefixMatch) : true'
+                                      - message: type must be 'ReplacePrefixMatch'
+                                          when replacePrefixMatch is set
+                                        rule: 'has(self.replacePrefixMatch) ? self.type
+                                          == ''ReplacePrefixMatch'' : true'
                                   type: object
                               required:
                               - type
                               type: object
+                              x-kubernetes-validations:
+                              - message: filter.requestHeaderModifier must be nil
+                                  if the filter.type is not RequestHeaderModifier
+                                rule: '!(has(self.requestHeaderModifier) && self.type
+                                  != ''RequestHeaderModifier'')'
+                              - message: filter.requestHeaderModifier must be specified
+                                  for RequestHeaderModifier filter.type
+                                rule: '!(!has(self.requestHeaderModifier) && self.type
+                                  == ''RequestHeaderModifier'')'
+                              - message: filter.responseHeaderModifier must be nil
+                                  if the filter.type is not ResponseHeaderModifier
+                                rule: '!(has(self.responseHeaderModifier) && self.type
+                                  != ''ResponseHeaderModifier'')'
+                              - message: filter.responseHeaderModifier must be specified
+                                  for ResponseHeaderModifier filter.type
+                                rule: '!(!has(self.responseHeaderModifier) && self.type
+                                  == ''ResponseHeaderModifier'')'
+                              - message: filter.requestMirror must be nil if the filter.type
+                                  is not RequestMirror
+                                rule: '!(has(self.requestMirror) && self.type != ''RequestMirror'')'
+                              - message: filter.requestMirror must be specified for
+                                  RequestMirror filter.type
+                                rule: '!(!has(self.requestMirror) && self.type ==
+                                  ''RequestMirror'')'
+                              - message: filter.requestRedirect must be nil if the
+                                  filter.type is not RequestRedirect
+                                rule: '!(has(self.requestRedirect) && self.type !=
+                                  ''RequestRedirect'')'
+                              - message: filter.requestRedirect must be specified
+                                  for RequestRedirect filter.type
+                                rule: '!(!has(self.requestRedirect) && self.type ==
+                                  ''RequestRedirect'')'
+                              - message: filter.urlRewrite must be nil if the filter.type
+                                  is not URLRewrite
+                                rule: '!(has(self.urlRewrite) && self.type != ''URLRewrite'')'
+                              - message: filter.urlRewrite must be specified for URLRewrite
+                                  filter.type
+                                rule: '!(!has(self.urlRewrite) && self.type == ''URLRewrite'')'
+                              - message: filter.extensionRef must be nil if the filter.type
+                                  is not ExtensionRef
+                                rule: '!(has(self.extensionRef) && self.type != ''ExtensionRef'')'
+                              - message: filter.extensionRef must be specified for
+                                  ExtensionRef filter.type
+                                rule: '!(!has(self.extensionRef) && self.type == ''ExtensionRef'')'
                             maxItems: 16
                             type: array
+                            x-kubernetes-validations:
+                            - message: May specify either httpRouteFilterRequestRedirect
+                                or httpRouteFilterRequestRewrite, but not both
+                              rule: '!(self.exists(f, f.type == ''RequestRedirect'')
+                                && self.exists(f, f.type == ''URLRewrite''))'
+                            - message: May specify either httpRouteFilterRequestRedirect
+                                or httpRouteFilterRequestRewrite, but not both
+                              rule: '!(self.exists(f, f.type == ''RequestRedirect'')
+                                && self.exists(f, f.type == ''URLRewrite''))'
+                            - message: RequestHeaderModifier filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''RequestHeaderModifier'')
+                                ? self.exists_one(f, f.type == ''RequestHeaderModifier'')
+                                : true'
+                            - message: ResponseHeaderModifier filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''ResponseHeaderModifier'')
+                                ? self.exists_one(f, f.type == ''ResponseHeaderModifier'')
+                                : true'
+                            - message: RequestRedirect filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''RequestRedirect'')
+                                ? self.exists_one(f, f.type == ''RequestRedirect'')
+                                : true'
+                            - message: URLRewrite filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''URLRewrite'') ? self.exists_one(f,
+                                f.type == ''URLRewrite'') : true'
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
@@ -13307,6 +13462,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       type: array
                     filters:
@@ -13319,9 +13478,9 @@ spec:
                         all implementations. - Implementers are encouraged to support
                         extended filters. - Implementation-specific custom filters
                         have no API guarantees across implementations. \n Specifying
-                        a core filter multiple times has unspecified or implementation-specific
-                        conformance. \n All filters are expected to be compatible
-                        with each other except for the URLRewrite and RequestRedirect
+                        the same filter multiple times is not supported unless explicitly
+                        indicated in the filter. \n All filters are expected to be
+                        compatible with each other except for the URLRewrite and RequestRedirect
                         filters, which may not be combined. If an implementation can
                         not support other combinations of filters, they must clearly
                         document that limitation. In cases where incompatible or unsupported
@@ -13343,7 +13502,8 @@ spec:
                               extension to the \"filter\" behavior.  For example,
                               resource \"myroutefilter\" in group \"networking.example.net\").
                               ExtensionRef MUST NOT be used for core and extended
-                              filters. \n Support: Implementation-specific"
+                              filters. \n This filter can be used multiple times within
+                              the same rule. \n Support: Implementation-specific"
                             properties:
                               group:
                                 description: Group is the group of the referent. For
@@ -13473,7 +13633,10 @@ spec:
                             description: "RequestMirror defines a schema for a filter
                               that mirrors requests. Requests are sent to the specified
                               destination, but responses from that destination are
-                              ignored. \n Support: Extended"
+                              ignored. \n This filter can be used multiple times within
+                              the same rule. Note that not all implementations will
+                              be able to support mirroring to multiple backends. \n
+                              Support: Extended"
                             properties:
                               backendRef:
                                 description: "BackendRef references a resource where
@@ -13555,6 +13718,10 @@ spec:
                                 required:
                                 - name
                                 type: object
+                                x-kubernetes-validations:
+                                - message: Must have port for Service reference
+                                  rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                                    ? has(self.port) : true'
                             required:
                             - backendRef
                             type: object
@@ -13637,6 +13804,23 @@ spec:
                                 required:
                                 - type
                                 type: object
+                                x-kubernetes-validations:
+                                - message: replaceFullPath must be set when type is
+                                    set to 'ReplaceFullPath'
+                                  rule: 'self.type == ''ReplaceFullPath'' ? has(self.replaceFullPath)
+                                    : true'
+                                - message: type must be 'ReplaceFullPath' when replaceFullPath
+                                    is set
+                                  rule: 'has(self.replaceFullPath) ? self.type ==
+                                    ''ReplaceFullPath'' : true'
+                                - message: replacePrefixMatch must be set when type
+                                    is set to 'ReplacePrefixMatch'
+                                  rule: 'self.type == ''ReplacePrefixMatch'' ? has(self.replacePrefixMatch)
+                                    : true'
+                                - message: type must be 'ReplacePrefixMatch' when
+                                    replacePrefixMatch is set
+                                  rule: 'has(self.replacePrefixMatch) ? self.type
+                                    == ''ReplacePrefixMatch'' : true'
                               port:
                                 description: "Port is the port to be used in the value
                                   of the `Location` header in the response. \n If
@@ -13904,12 +14088,89 @@ spec:
                                 required:
                                 - type
                                 type: object
+                                x-kubernetes-validations:
+                                - message: replaceFullPath must be set when type is
+                                    set to 'ReplaceFullPath'
+                                  rule: 'self.type == ''ReplaceFullPath'' ? has(self.replaceFullPath)
+                                    : true'
+                                - message: type must be 'ReplaceFullPath' when replaceFullPath
+                                    is set
+                                  rule: 'has(self.replaceFullPath) ? self.type ==
+                                    ''ReplaceFullPath'' : true'
+                                - message: replacePrefixMatch must be set when type
+                                    is set to 'ReplacePrefixMatch'
+                                  rule: 'self.type == ''ReplacePrefixMatch'' ? has(self.replacePrefixMatch)
+                                    : true'
+                                - message: type must be 'ReplacePrefixMatch' when
+                                    replacePrefixMatch is set
+                                  rule: 'has(self.replacePrefixMatch) ? self.type
+                                    == ''ReplacePrefixMatch'' : true'
                             type: object
                         required:
                         - type
                         type: object
+                        x-kubernetes-validations:
+                        - message: filter.requestHeaderModifier must be nil if the
+                            filter.type is not RequestHeaderModifier
+                          rule: '!(has(self.requestHeaderModifier) && self.type !=
+                            ''RequestHeaderModifier'')'
+                        - message: filter.requestHeaderModifier must be specified
+                            for RequestHeaderModifier filter.type
+                          rule: '!(!has(self.requestHeaderModifier) && self.type ==
+                            ''RequestHeaderModifier'')'
+                        - message: filter.responseHeaderModifier must be nil if the
+                            filter.type is not ResponseHeaderModifier
+                          rule: '!(has(self.responseHeaderModifier) && self.type !=
+                            ''ResponseHeaderModifier'')'
+                        - message: filter.responseHeaderModifier must be specified
+                            for ResponseHeaderModifier filter.type
+                          rule: '!(!has(self.responseHeaderModifier) && self.type
+                            == ''ResponseHeaderModifier'')'
+                        - message: filter.requestMirror must be nil if the filter.type
+                            is not RequestMirror
+                          rule: '!(has(self.requestMirror) && self.type != ''RequestMirror'')'
+                        - message: filter.requestMirror must be specified for RequestMirror
+                            filter.type
+                          rule: '!(!has(self.requestMirror) && self.type == ''RequestMirror'')'
+                        - message: filter.requestRedirect must be nil if the filter.type
+                            is not RequestRedirect
+                          rule: '!(has(self.requestRedirect) && self.type != ''RequestRedirect'')'
+                        - message: filter.requestRedirect must be specified for RequestRedirect
+                            filter.type
+                          rule: '!(!has(self.requestRedirect) && self.type == ''RequestRedirect'')'
+                        - message: filter.urlRewrite must be nil if the filter.type
+                            is not URLRewrite
+                          rule: '!(has(self.urlRewrite) && self.type != ''URLRewrite'')'
+                        - message: filter.urlRewrite must be specified for URLRewrite
+                            filter.type
+                          rule: '!(!has(self.urlRewrite) && self.type == ''URLRewrite'')'
+                        - message: filter.extensionRef must be nil if the filter.type
+                            is not ExtensionRef
+                          rule: '!(has(self.extensionRef) && self.type != ''ExtensionRef'')'
+                        - message: filter.extensionRef must be specified for ExtensionRef
+                            filter.type
+                          rule: '!(!has(self.extensionRef) && self.type == ''ExtensionRef'')'
                       maxItems: 16
                       type: array
+                      x-kubernetes-validations:
+                      - message: May specify either httpRouteFilterRequestRedirect
+                          or httpRouteFilterRequestRewrite, but not both
+                        rule: '!(self.exists(f, f.type == ''RequestRedirect'') &&
+                          self.exists(f, f.type == ''URLRewrite''))'
+                      - message: RequestHeaderModifier filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''RequestHeaderModifier'')
+                          ? self.exists_one(f, f.type == ''RequestHeaderModifier'')
+                          : true'
+                      - message: ResponseHeaderModifier filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''ResponseHeaderModifier'')
+                          ? self.exists_one(f, f.type == ''ResponseHeaderModifier'')
+                          : true'
+                      - message: RequestRedirect filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''RequestRedirect'') ? self.exists_one(f,
+                          f.type == ''RequestRedirect'') : true'
+                      - message: URLRewrite filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''URLRewrite'') ? self.exists_one(f,
+                          f.type == ''URLRewrite'') : true'
                     matches:
                       default:
                       - path:
@@ -14053,6 +14314,53 @@ spec:
                                 maxLength: 1024
                                 type: string
                             type: object
+                            x-kubernetes-validations:
+                            - message: value must be an absolute path and start with
+                                '/' when type one of ['Exact', 'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? self.value.startsWith(''/'') : true'
+                            - message: must not contain '//' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''//'') : true'
+                            - message: must not contain '/./' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''/./'') : true'
+                            - message: must not contain '/../' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''/../'') : true'
+                            - message: must not contain '%2f' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''%2f'') : true'
+                            - message: must not contain '%2F' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''%2F'') : true'
+                            - message: must not contain '#' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''#'') : true'
+                            - message: must not end with '/..' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.endsWith(''/..'') : true'
+                            - message: must not end with '/.' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.endsWith(''/.'') : true'
+                            - message: type must be one of ['Exact', 'PathPrefix',
+                                'RegularExpression']
+                              rule: self.type == 'Exact' || self.type == 'PathPrefix'
+                                || self.type == 'RegularExpression'
+                            - message: must only contain valid characters (matching
+                                ^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$)
+                                for types ['Exact', 'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? self.value.matches(r"""^(?:[-A-Za-z0-9/._~!$&''()*+,;=:@]|[%][0-9a-fA-F]{2})+$""")
+                                : true'
                           queryParams:
                             description: "QueryParams specifies HTTP query parameter
                               matchers. Multiple match values are ANDed together,
@@ -14119,6 +14427,46 @@ spec:
                       maxItems: 8
                       type: array
                   type: object
+                  x-kubernetes-validations:
+                  - message: RequestRedirect filter must not be used together with
+                      backendRefs
+                    rule: '(has(self.backendRefs) && size(self.backendRefs) > 0) ?
+                      (!has(self.filters) || self.filters.all(f, !has(f.requestRedirect))):
+                      true'
+                  - message: When using RequestRedirect filter with path.replacePrefixMatch,
+                      exactly one PathPrefix match must be specified
+                    rule: '(has(self.filters) && self.filters.exists_one(f, has(f.requestRedirect)
+                      && has(f.requestRedirect.path) && f.requestRedirect.path.type
+                      == ''ReplacePrefixMatch'' && has(f.requestRedirect.path.replacePrefixMatch)))
+                      ? ((size(self.matches) != 1 || !has(self.matches[0].path) ||
+                      self.matches[0].path.type != ''PathPrefix'') ? false : true)
+                      : true'
+                  - message: When using URLRewrite filter with path.replacePrefixMatch,
+                      exactly one PathPrefix match must be specified
+                    rule: '(has(self.filters) && self.filters.exists_one(f, has(f.urlRewrite)
+                      && has(f.urlRewrite.path) && f.urlRewrite.path.type == ''ReplacePrefixMatch''
+                      && has(f.urlRewrite.path.replacePrefixMatch))) ? ((size(self.matches)
+                      != 1 || !has(self.matches[0].path) || self.matches[0].path.type
+                      != ''PathPrefix'') ? false : true) : true'
+                  - message: Within backendRefs, when using RequestRedirect filter
+                      with path.replacePrefixMatch, exactly one PathPrefix match must
+                      be specified
+                    rule: '(has(self.backendRefs) && self.backendRefs.exists_one(b,
+                      (has(b.filters) && b.filters.exists_one(f, has(f.requestRedirect)
+                      && has(f.requestRedirect.path) && f.requestRedirect.path.type
+                      == ''ReplacePrefixMatch'' && has(f.requestRedirect.path.replacePrefixMatch)))
+                      )) ? ((size(self.matches) != 1 || !has(self.matches[0].path)
+                      || self.matches[0].path.type != ''PathPrefix'') ? false : true)
+                      : true'
+                  - message: Within backendRefs, When using URLRewrite filter with
+                      path.replacePrefixMatch, exactly one PathPrefix match must be
+                      specified
+                    rule: '(has(self.backendRefs) && self.backendRefs.exists_one(b,
+                      (has(b.filters) && b.filters.exists_one(f, has(f.urlRewrite)
+                      && has(f.urlRewrite.path) && f.urlRewrite.path.type == ''ReplacePrefixMatch''
+                      && has(f.urlRewrite.path.replacePrefixMatch))) )) ? ((size(self.matches)
+                      != 1 || !has(self.matches[0].path) || self.matches[0].path.type
+                      != ''PathPrefix'') ? false : true) : true'
                 maxItems: 16
                 type: array
             type: object
@@ -14332,7 +14680,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
@@ -14587,7 +14935,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -14678,7 +15026,8 @@ spec:
                                     extension to the \"filter\" behavior.  For example,
                                     resource \"myroutefilter\" in group \"networking.example.net\").
                                     ExtensionRef MUST NOT be used for core and extended
-                                    filters. \n Support: Implementation-specific"
+                                    filters. \n This filter can be used multiple times
+                                    within the same rule. \n Support: Implementation-specific"
                                   properties:
                                     group:
                                       description: Group is the group of the referent.
@@ -14816,7 +15165,10 @@ spec:
                                   description: "RequestMirror defines a schema for
                                     a filter that mirrors requests. Requests are sent
                                     to the specified destination, but responses from
-                                    that destination are ignored. \n Support: Extended"
+                                    that destination are ignored. \n This filter can
+                                    be used multiple times within the same rule. Note
+                                    that not all implementations will be able to support
+                                    mirroring to multiple backends. \n Support: Extended"
                                   properties:
                                     backendRef:
                                       description: "BackendRef references a resource
@@ -14905,6 +15257,10 @@ spec:
                                       required:
                                       - name
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: Must have port for Service reference
+                                        rule: '(size(self.group) == 0 && self.kind
+                                          == ''Service'') ? has(self.port) : true'
                                   required:
                                   - backendRef
                                   type: object
@@ -14994,6 +15350,23 @@ spec:
                                       required:
                                       - type
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: replaceFullPath must be set when
+                                          type is set to 'ReplaceFullPath'
+                                        rule: 'self.type == ''ReplaceFullPath'' ?
+                                          has(self.replaceFullPath) : true'
+                                      - message: type must be 'ReplaceFullPath' when
+                                          replaceFullPath is set
+                                        rule: 'has(self.replaceFullPath) ? self.type
+                                          == ''ReplaceFullPath'' : true'
+                                      - message: replacePrefixMatch must be set when
+                                          type is set to 'ReplacePrefixMatch'
+                                        rule: 'self.type == ''ReplacePrefixMatch''
+                                          ? has(self.replacePrefixMatch) : true'
+                                      - message: type must be 'ReplacePrefixMatch'
+                                          when replacePrefixMatch is set
+                                        rule: 'has(self.replacePrefixMatch) ? self.type
+                                          == ''ReplacePrefixMatch'' : true'
                                     port:
                                       description: "Port is the port to be used in
                                         the value of the `Location` header in the
@@ -15282,12 +15655,97 @@ spec:
                                       required:
                                       - type
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: replaceFullPath must be set when
+                                          type is set to 'ReplaceFullPath'
+                                        rule: 'self.type == ''ReplaceFullPath'' ?
+                                          has(self.replaceFullPath) : true'
+                                      - message: type must be 'ReplaceFullPath' when
+                                          replaceFullPath is set
+                                        rule: 'has(self.replaceFullPath) ? self.type
+                                          == ''ReplaceFullPath'' : true'
+                                      - message: replacePrefixMatch must be set when
+                                          type is set to 'ReplacePrefixMatch'
+                                        rule: 'self.type == ''ReplacePrefixMatch''
+                                          ? has(self.replacePrefixMatch) : true'
+                                      - message: type must be 'ReplacePrefixMatch'
+                                          when replacePrefixMatch is set
+                                        rule: 'has(self.replacePrefixMatch) ? self.type
+                                          == ''ReplacePrefixMatch'' : true'
                                   type: object
                               required:
                               - type
                               type: object
+                              x-kubernetes-validations:
+                              - message: filter.requestHeaderModifier must be nil
+                                  if the filter.type is not RequestHeaderModifier
+                                rule: '!(has(self.requestHeaderModifier) && self.type
+                                  != ''RequestHeaderModifier'')'
+                              - message: filter.requestHeaderModifier must be specified
+                                  for RequestHeaderModifier filter.type
+                                rule: '!(!has(self.requestHeaderModifier) && self.type
+                                  == ''RequestHeaderModifier'')'
+                              - message: filter.responseHeaderModifier must be nil
+                                  if the filter.type is not ResponseHeaderModifier
+                                rule: '!(has(self.responseHeaderModifier) && self.type
+                                  != ''ResponseHeaderModifier'')'
+                              - message: filter.responseHeaderModifier must be specified
+                                  for ResponseHeaderModifier filter.type
+                                rule: '!(!has(self.responseHeaderModifier) && self.type
+                                  == ''ResponseHeaderModifier'')'
+                              - message: filter.requestMirror must be nil if the filter.type
+                                  is not RequestMirror
+                                rule: '!(has(self.requestMirror) && self.type != ''RequestMirror'')'
+                              - message: filter.requestMirror must be specified for
+                                  RequestMirror filter.type
+                                rule: '!(!has(self.requestMirror) && self.type ==
+                                  ''RequestMirror'')'
+                              - message: filter.requestRedirect must be nil if the
+                                  filter.type is not RequestRedirect
+                                rule: '!(has(self.requestRedirect) && self.type !=
+                                  ''RequestRedirect'')'
+                              - message: filter.requestRedirect must be specified
+                                  for RequestRedirect filter.type
+                                rule: '!(!has(self.requestRedirect) && self.type ==
+                                  ''RequestRedirect'')'
+                              - message: filter.urlRewrite must be nil if the filter.type
+                                  is not URLRewrite
+                                rule: '!(has(self.urlRewrite) && self.type != ''URLRewrite'')'
+                              - message: filter.urlRewrite must be specified for URLRewrite
+                                  filter.type
+                                rule: '!(!has(self.urlRewrite) && self.type == ''URLRewrite'')'
+                              - message: filter.extensionRef must be nil if the filter.type
+                                  is not ExtensionRef
+                                rule: '!(has(self.extensionRef) && self.type != ''ExtensionRef'')'
+                              - message: filter.extensionRef must be specified for
+                                  ExtensionRef filter.type
+                                rule: '!(!has(self.extensionRef) && self.type == ''ExtensionRef'')'
                             maxItems: 16
                             type: array
+                            x-kubernetes-validations:
+                            - message: May specify either httpRouteFilterRequestRedirect
+                                or httpRouteFilterRequestRewrite, but not both
+                              rule: '!(self.exists(f, f.type == ''RequestRedirect'')
+                                && self.exists(f, f.type == ''URLRewrite''))'
+                            - message: May specify either httpRouteFilterRequestRedirect
+                                or httpRouteFilterRequestRewrite, but not both
+                              rule: '!(self.exists(f, f.type == ''RequestRedirect'')
+                                && self.exists(f, f.type == ''URLRewrite''))'
+                            - message: RequestHeaderModifier filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''RequestHeaderModifier'')
+                                ? self.exists_one(f, f.type == ''RequestHeaderModifier'')
+                                : true'
+                            - message: ResponseHeaderModifier filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''ResponseHeaderModifier'')
+                                ? self.exists_one(f, f.type == ''ResponseHeaderModifier'')
+                                : true'
+                            - message: RequestRedirect filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''RequestRedirect'')
+                                ? self.exists_one(f, f.type == ''RequestRedirect'')
+                                : true'
+                            - message: URLRewrite filter cannot be repeated
+                              rule: 'self.exists(f, f.type == ''URLRewrite'') ? self.exists_one(f,
+                                f.type == ''URLRewrite'') : true'
                           group:
                             default: ""
                             description: Group is the group of the referent. For example,
@@ -15363,6 +15821,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       type: array
                     filters:
@@ -15375,9 +15837,9 @@ spec:
                         all implementations. - Implementers are encouraged to support
                         extended filters. - Implementation-specific custom filters
                         have no API guarantees across implementations. \n Specifying
-                        a core filter multiple times has unspecified or implementation-specific
-                        conformance. \n All filters are expected to be compatible
-                        with each other except for the URLRewrite and RequestRedirect
+                        the same filter multiple times is not supported unless explicitly
+                        indicated in the filter. \n All filters are expected to be
+                        compatible with each other except for the URLRewrite and RequestRedirect
                         filters, which may not be combined. If an implementation can
                         not support other combinations of filters, they must clearly
                         document that limitation. In cases where incompatible or unsupported
@@ -15399,7 +15861,8 @@ spec:
                               extension to the \"filter\" behavior.  For example,
                               resource \"myroutefilter\" in group \"networking.example.net\").
                               ExtensionRef MUST NOT be used for core and extended
-                              filters. \n Support: Implementation-specific"
+                              filters. \n This filter can be used multiple times within
+                              the same rule. \n Support: Implementation-specific"
                             properties:
                               group:
                                 description: Group is the group of the referent. For
@@ -15529,7 +15992,10 @@ spec:
                             description: "RequestMirror defines a schema for a filter
                               that mirrors requests. Requests are sent to the specified
                               destination, but responses from that destination are
-                              ignored. \n Support: Extended"
+                              ignored. \n This filter can be used multiple times within
+                              the same rule. Note that not all implementations will
+                              be able to support mirroring to multiple backends. \n
+                              Support: Extended"
                             properties:
                               backendRef:
                                 description: "BackendRef references a resource where
@@ -15611,6 +16077,10 @@ spec:
                                 required:
                                 - name
                                 type: object
+                                x-kubernetes-validations:
+                                - message: Must have port for Service reference
+                                  rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                                    ? has(self.port) : true'
                             required:
                             - backendRef
                             type: object
@@ -15693,6 +16163,23 @@ spec:
                                 required:
                                 - type
                                 type: object
+                                x-kubernetes-validations:
+                                - message: replaceFullPath must be set when type is
+                                    set to 'ReplaceFullPath'
+                                  rule: 'self.type == ''ReplaceFullPath'' ? has(self.replaceFullPath)
+                                    : true'
+                                - message: type must be 'ReplaceFullPath' when replaceFullPath
+                                    is set
+                                  rule: 'has(self.replaceFullPath) ? self.type ==
+                                    ''ReplaceFullPath'' : true'
+                                - message: replacePrefixMatch must be set when type
+                                    is set to 'ReplacePrefixMatch'
+                                  rule: 'self.type == ''ReplacePrefixMatch'' ? has(self.replacePrefixMatch)
+                                    : true'
+                                - message: type must be 'ReplacePrefixMatch' when
+                                    replacePrefixMatch is set
+                                  rule: 'has(self.replacePrefixMatch) ? self.type
+                                    == ''ReplacePrefixMatch'' : true'
                               port:
                                 description: "Port is the port to be used in the value
                                   of the `Location` header in the response. \n If
@@ -15960,12 +16447,89 @@ spec:
                                 required:
                                 - type
                                 type: object
+                                x-kubernetes-validations:
+                                - message: replaceFullPath must be set when type is
+                                    set to 'ReplaceFullPath'
+                                  rule: 'self.type == ''ReplaceFullPath'' ? has(self.replaceFullPath)
+                                    : true'
+                                - message: type must be 'ReplaceFullPath' when replaceFullPath
+                                    is set
+                                  rule: 'has(self.replaceFullPath) ? self.type ==
+                                    ''ReplaceFullPath'' : true'
+                                - message: replacePrefixMatch must be set when type
+                                    is set to 'ReplacePrefixMatch'
+                                  rule: 'self.type == ''ReplacePrefixMatch'' ? has(self.replacePrefixMatch)
+                                    : true'
+                                - message: type must be 'ReplacePrefixMatch' when
+                                    replacePrefixMatch is set
+                                  rule: 'has(self.replacePrefixMatch) ? self.type
+                                    == ''ReplacePrefixMatch'' : true'
                             type: object
                         required:
                         - type
                         type: object
+                        x-kubernetes-validations:
+                        - message: filter.requestHeaderModifier must be nil if the
+                            filter.type is not RequestHeaderModifier
+                          rule: '!(has(self.requestHeaderModifier) && self.type !=
+                            ''RequestHeaderModifier'')'
+                        - message: filter.requestHeaderModifier must be specified
+                            for RequestHeaderModifier filter.type
+                          rule: '!(!has(self.requestHeaderModifier) && self.type ==
+                            ''RequestHeaderModifier'')'
+                        - message: filter.responseHeaderModifier must be nil if the
+                            filter.type is not ResponseHeaderModifier
+                          rule: '!(has(self.responseHeaderModifier) && self.type !=
+                            ''ResponseHeaderModifier'')'
+                        - message: filter.responseHeaderModifier must be specified
+                            for ResponseHeaderModifier filter.type
+                          rule: '!(!has(self.responseHeaderModifier) && self.type
+                            == ''ResponseHeaderModifier'')'
+                        - message: filter.requestMirror must be nil if the filter.type
+                            is not RequestMirror
+                          rule: '!(has(self.requestMirror) && self.type != ''RequestMirror'')'
+                        - message: filter.requestMirror must be specified for RequestMirror
+                            filter.type
+                          rule: '!(!has(self.requestMirror) && self.type == ''RequestMirror'')'
+                        - message: filter.requestRedirect must be nil if the filter.type
+                            is not RequestRedirect
+                          rule: '!(has(self.requestRedirect) && self.type != ''RequestRedirect'')'
+                        - message: filter.requestRedirect must be specified for RequestRedirect
+                            filter.type
+                          rule: '!(!has(self.requestRedirect) && self.type == ''RequestRedirect'')'
+                        - message: filter.urlRewrite must be nil if the filter.type
+                            is not URLRewrite
+                          rule: '!(has(self.urlRewrite) && self.type != ''URLRewrite'')'
+                        - message: filter.urlRewrite must be specified for URLRewrite
+                            filter.type
+                          rule: '!(!has(self.urlRewrite) && self.type == ''URLRewrite'')'
+                        - message: filter.extensionRef must be nil if the filter.type
+                            is not ExtensionRef
+                          rule: '!(has(self.extensionRef) && self.type != ''ExtensionRef'')'
+                        - message: filter.extensionRef must be specified for ExtensionRef
+                            filter.type
+                          rule: '!(!has(self.extensionRef) && self.type == ''ExtensionRef'')'
                       maxItems: 16
                       type: array
+                      x-kubernetes-validations:
+                      - message: May specify either httpRouteFilterRequestRedirect
+                          or httpRouteFilterRequestRewrite, but not both
+                        rule: '!(self.exists(f, f.type == ''RequestRedirect'') &&
+                          self.exists(f, f.type == ''URLRewrite''))'
+                      - message: RequestHeaderModifier filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''RequestHeaderModifier'')
+                          ? self.exists_one(f, f.type == ''RequestHeaderModifier'')
+                          : true'
+                      - message: ResponseHeaderModifier filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''ResponseHeaderModifier'')
+                          ? self.exists_one(f, f.type == ''ResponseHeaderModifier'')
+                          : true'
+                      - message: RequestRedirect filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''RequestRedirect'') ? self.exists_one(f,
+                          f.type == ''RequestRedirect'') : true'
+                      - message: URLRewrite filter cannot be repeated
+                        rule: 'self.exists(f, f.type == ''URLRewrite'') ? self.exists_one(f,
+                          f.type == ''URLRewrite'') : true'
                     matches:
                       default:
                       - path:
@@ -16109,6 +16673,53 @@ spec:
                                 maxLength: 1024
                                 type: string
                             type: object
+                            x-kubernetes-validations:
+                            - message: value must be an absolute path and start with
+                                '/' when type one of ['Exact', 'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? self.value.startsWith(''/'') : true'
+                            - message: must not contain '//' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''//'') : true'
+                            - message: must not contain '/./' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''/./'') : true'
+                            - message: must not contain '/../' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''/../'') : true'
+                            - message: must not contain '%2f' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''%2f'') : true'
+                            - message: must not contain '%2F' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''%2F'') : true'
+                            - message: must not contain '#' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.contains(''#'') : true'
+                            - message: must not end with '/..' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.endsWith(''/..'') : true'
+                            - message: must not end with '/.' when type one of ['Exact',
+                                'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? !self.value.endsWith(''/.'') : true'
+                            - message: type must be one of ['Exact', 'PathPrefix',
+                                'RegularExpression']
+                              rule: self.type == 'Exact' || self.type == 'PathPrefix'
+                                || self.type == 'RegularExpression'
+                            - message: must only contain valid characters (matching
+                                ^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$)
+                                for types ['Exact', 'PathPrefix']
+                              rule: '(self.type == ''Exact'' || self.type == ''PathPrefix'')
+                                ? self.value.matches(r"""^(?:[-A-Za-z0-9/._~!$&''()*+,;=:@]|[%][0-9a-fA-F]{2})+$""")
+                                : true'
                           queryParams:
                             description: "QueryParams specifies HTTP query parameter
                               matchers. Multiple match values are ANDed together,
@@ -16175,6 +16786,46 @@ spec:
                       maxItems: 8
                       type: array
                   type: object
+                  x-kubernetes-validations:
+                  - message: RequestRedirect filter must not be used together with
+                      backendRefs
+                    rule: '(has(self.backendRefs) && size(self.backendRefs) > 0) ?
+                      (!has(self.filters) || self.filters.all(f, !has(f.requestRedirect))):
+                      true'
+                  - message: When using RequestRedirect filter with path.replacePrefixMatch,
+                      exactly one PathPrefix match must be specified
+                    rule: '(has(self.filters) && self.filters.exists_one(f, has(f.requestRedirect)
+                      && has(f.requestRedirect.path) && f.requestRedirect.path.type
+                      == ''ReplacePrefixMatch'' && has(f.requestRedirect.path.replacePrefixMatch)))
+                      ? ((size(self.matches) != 1 || !has(self.matches[0].path) ||
+                      self.matches[0].path.type != ''PathPrefix'') ? false : true)
+                      : true'
+                  - message: When using URLRewrite filter with path.replacePrefixMatch,
+                      exactly one PathPrefix match must be specified
+                    rule: '(has(self.filters) && self.filters.exists_one(f, has(f.urlRewrite)
+                      && has(f.urlRewrite.path) && f.urlRewrite.path.type == ''ReplacePrefixMatch''
+                      && has(f.urlRewrite.path.replacePrefixMatch))) ? ((size(self.matches)
+                      != 1 || !has(self.matches[0].path) || self.matches[0].path.type
+                      != ''PathPrefix'') ? false : true) : true'
+                  - message: Within backendRefs, when using RequestRedirect filter
+                      with path.replacePrefixMatch, exactly one PathPrefix match must
+                      be specified
+                    rule: '(has(self.backendRefs) && self.backendRefs.exists_one(b,
+                      (has(b.filters) && b.filters.exists_one(f, has(f.requestRedirect)
+                      && has(f.requestRedirect.path) && f.requestRedirect.path.type
+                      == ''ReplacePrefixMatch'' && has(f.requestRedirect.path.replacePrefixMatch)))
+                      )) ? ((size(self.matches) != 1 || !has(self.matches[0].path)
+                      || self.matches[0].path.type != ''PathPrefix'') ? false : true)
+                      : true'
+                  - message: Within backendRefs, When using URLRewrite filter with
+                      path.replacePrefixMatch, exactly one PathPrefix match must be
+                      specified
+                    rule: '(has(self.backendRefs) && self.backendRefs.exists_one(b,
+                      (has(b.filters) && b.filters.exists_one(f, has(f.urlRewrite)
+                      && has(f.urlRewrite.path) && f.urlRewrite.path.type == ''ReplacePrefixMatch''
+                      && has(f.urlRewrite.path.replacePrefixMatch))) )) ? ((size(self.matches)
+                      != 1 || !has(self.matches[0].path) || self.matches[0].path.type
+                      != ''PathPrefix'') ? false : true) : true'
                 maxItems: 16
                 type: array
             type: object
@@ -16388,7 +17039,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
@@ -16894,7 +17545,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -17026,6 +17677,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       minItems: 1
                       type: array
@@ -17246,7 +17901,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
@@ -17512,7 +18167,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -17647,6 +18302,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       minItems: 1
                       type: array
@@ -17867,7 +18526,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
@@ -18087,7 +18746,7 @@ spec:
                         Route, the Route MUST be considered successfully attached.
                         If no Gateway listeners accept attachment from this Route,
                         the Route MUST be considered detached from the Gateway. \n
-                        Support: Extended \n <gateway:experimental>"
+                        Support: Extended \n "
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -18219,6 +18878,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: Must have port for Service reference
+                          rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                            ? has(self.port) : true'
                       maxItems: 16
                       minItems: 1
                       type: array
@@ -18439,7 +19102,7 @@ spec:
                             the Route MUST be considered successfully attached. If
                             no Gateway listeners accept attachment from this Route,
                             the Route MUST be considered detached from the Gateway.
-                            \n Support: Extended \n <gateway:experimental>"
+                            \n Support: Extended \n "
                           format: int32
                           maximum: 65535
                           minimum: 1
