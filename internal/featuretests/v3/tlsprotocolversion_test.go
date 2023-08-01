@@ -87,29 +87,41 @@ func TestTLSProtocolVersion(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	i2 := &networking_v1.Ingress{
-		ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
-			"projectcontour.io/tls-minimum-protocol-version": "1.3",
-			"projectcontour.io/tls-maximum-protocol-version": "1.3",
-		}),
-		Spec: networking_v1.IngressSpec{
-			TLS: []networking_v1.IngressTLS{{
-				Hosts:      []string{"kuard.example.com"},
-				SecretName: sec1.Name,
-			}},
-			Rules: []networking_v1.IngressRule{{
-				Host: "kuard.example.com",
-				IngressRuleValue: networking_v1.IngressRuleValue{
-					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *featuretests.IngressBackend(s1),
-						}},
+	makeIngrgess := func(minVer, maxVer string) *networking_v1.Ingress {
+		return &networking_v1.Ingress{
+			ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
+				"projectcontour.io/tls-minimum-protocol-version": minVer,
+				"projectcontour.io/tls-maximum-protocol-version": maxVer,
+			}),
+			Spec: networking_v1.IngressSpec{
+				TLS: []networking_v1.IngressTLS{{
+					Hosts:      []string{"kuard.example.com"},
+					SecretName: sec1.Name,
+				}},
+				Rules: []networking_v1.IngressRule{{
+					Host: "kuard.example.com",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *featuretests.IngressBackend(s1),
+							}},
+						},
 					},
-				},
-			}},
-		},
+				}},
+			},
+		}
 	}
+
+	i2 := makeIngrgess("1.3", "1.2")
 	rh.OnUpdate(i1, i2)
+
+	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   listenerType,
+	})
+
+	i3 := makeIngrgess("1.3", "1.3")
+	rh.OnUpdate(i1, i3)
 
 	l1 := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
@@ -141,33 +153,42 @@ func TestTLSProtocolVersion(t *testing.T) {
 	})
 
 	rh.OnDelete(i2)
+	rh.OnDelete(i3)
 
-	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
-					SecretName:             sec1.Namespace + "/" + sec1.Name,
-					MinimumProtocolVersion: "1.3",
-					MaximumProtocolVersion: "1.3",
+	makeHTTPProxy := func(minVer, maxVer string) *contour_api_v1.HTTPProxy {
+		return &contour_api_v1.HTTPProxy{
+			ObjectMeta: fixture.ObjectMeta("simple"),
+			Spec: contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "kuard.example.com",
+					TLS: &contour_api_v1.TLS{
+						SecretName:             sec1.Namespace + "/" + sec1.Name,
+						MinimumProtocolVersion: minVer,
+						MaximumProtocolVersion: maxVer,
+					},
 				},
-			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
+				Routes: []contour_api_v1.Route{{
+					Conditions: matchconditions(prefixMatchCondition("/")),
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
 				}},
-			}},
-		},
+			},
+		}
 	}
+	hp1 := makeHTTPProxy("1.3", "1.3")
 	rh.OnAdd(hp1)
-
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			l1,
-		),
-		TypeUrl: listenerType,
+		Resources: resources(t, l1),
+		TypeUrl:   listenerType,
 	})
+
+	hp2 := makeHTTPProxy("1.3", "1.2")
+	rh.OnUpdate(hp1, hp2)
+	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   listenerType,
+	})
+
 }
