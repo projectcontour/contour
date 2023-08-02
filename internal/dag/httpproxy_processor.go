@@ -1013,7 +1013,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			}
-			if service.Mirror && len(r.MirrorPolicies) != 0 {
+			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
 					"only one service per route may be nominated as mirror")
 				return nil
