@@ -367,6 +367,13 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		return b
 	}
 
+	min := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
+		if a < b {
+			return a
+		}
+		return b
+	}
+
 	for _, listener := range root.Listeners {
 		// A Listener-level TCPProxy proxies all traffic for
 		// the Listener port, i.e. no filter chain match.
@@ -499,7 +506,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			if vh.Secret != nil {
 				// Choose the higher of the configured or requested TLS version.
 				minVer := max(cfg.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
-				maxVer := max(cfg.maxTLSVersion(), envoy_v3.ParseTLSVersion(vh.MaxTLSVersion))
+
+				// Choose the lower of the configured or requested TLS version.
+				maxVer := min(cfg.maxTLSVersion(), envoy_v3.ParseTLSVersion(vh.MaxTLSVersion))
 
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
 					vh.Secret,
