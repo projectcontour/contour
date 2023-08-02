@@ -1124,7 +1124,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			requestHeaderPolicy  *HeadersPolicy
 			responseHeaderPolicy *HeadersPolicy
 			redirect             *Redirect
-			mirrorPolicy         *MirrorPolicy
+			mirrorPolicies       []*MirrorPolicy
 			pathRewritePolicy    *PathRewritePolicy
 			urlRewriteHostname   string
 		)
@@ -1222,7 +1222,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					PathRewritePolicy: pathRewritePolicy,
 				}
 			case gatewayapi_v1beta1.HTTPRouteFilterRequestMirror:
-				if filter.RequestMirror == nil || mirrorPolicy != nil {
+				if filter.RequestMirror == nil {
 					continue
 				}
 
@@ -1231,12 +1231,12 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
 					continue
 				}
-				mirrorPolicy = &MirrorPolicy{
+				mirrorPolicies = append(mirrorPolicies, &MirrorPolicy{
 					Cluster: &Cluster{
 						Upstream: mirrorService,
 					},
 					Weight: 100,
-				}
+				})
 			case gatewayapi_v1beta1.HTTPRouteFilterURLRewrite:
 				if filter.URLRewrite == nil || pathRewritePolicy != nil {
 					continue
@@ -1337,7 +1337,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 				matchconditions,
 				requestHeaderPolicy,
 				responseHeaderPolicy,
-				mirrorPolicy,
+				mirrorPolicies,
 				clusters,
 				totalWeight,
 				priority,
@@ -1403,7 +1403,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 		// Process rule-level filters.
 		var (
 			requestHeaderPolicy, responseHeaderPolicy *HeadersPolicy
-			mirrorPolicy                              *MirrorPolicy
+			mirrorPolicies                            []*MirrorPolicy
 		)
 
 		// Per Gateway API docs: "Specifying a core filter multiple times
@@ -1433,7 +1433,8 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror:
-				if filter.RequestMirror == nil || mirrorPolicy != nil {
+				// If more than one, we only take the first RequestMirror filter.
+				if filter.RequestMirror == nil || len(mirrorPolicies) > 0 {
 					continue
 				}
 
@@ -1444,12 +1445,12 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 				}
 				// If protocol is not set on the service, need to set a default one based on listener's protocol type.
 				setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
-				mirrorPolicy = &MirrorPolicy{
+				mirrorPolicies = append(mirrorPolicies, &MirrorPolicy{
 					Cluster: &Cluster{
 						Upstream: mirrorService,
 					},
 					Weight: 100,
-				}
+				})
 			default:
 				routeAccessor.AddCondition(
 					gatewayapi_v1beta1.RouteConditionAccepted,
@@ -1481,7 +1482,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			matchconditions,
 			requestHeaderPolicy,
 			responseHeaderPolicy,
-			mirrorPolicy,
+			mirrorPolicies,
 			clusters,
 			totalWeight,
 			priority,
@@ -2043,7 +2044,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	matchConditions []*matchConditions,
 	requestHeaderPolicy *HeadersPolicy,
 	responseHeaderPolicy *HeadersPolicy,
-	mirrorPolicy *MirrorPolicy,
+	mirrorPolicies []*MirrorPolicy,
 	clusters []*Cluster,
 	totalWeight uint32,
 	priority uint8,
@@ -2071,7 +2072,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			QueryParamMatchConditions: mc.queryParams,
 			RequestHeadersPolicy:      requestHeaderPolicy,
 			ResponseHeadersPolicy:     responseHeaderPolicy,
-			MirrorPolicy:              mirrorPolicy,
+			MirrorPolicies:            mirrorPolicies,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
 		}

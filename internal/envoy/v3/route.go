@@ -491,19 +491,23 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 }
 
 func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {
-	if r.MirrorPolicy == nil {
+	if len(r.MirrorPolicies) == 0 {
 		return nil
 	}
 
-	return []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
-		Cluster: envoy.Clustername(r.MirrorPolicy.Cluster),
-		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
-			DefaultValue: &envoy_type_v3.FractionalPercent{
-				Numerator:   uint32(r.MirrorPolicy.Weight),
-				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+	mirrorPolicies := []*envoy_route_v3.RouteAction_RequestMirrorPolicy{}
+	for _, mp := range r.MirrorPolicies {
+		mirrorPolicies = append(mirrorPolicies, &envoy_route_v3.RouteAction_RequestMirrorPolicy{
+			Cluster: envoy.Clustername(mp.Cluster),
+			RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+				DefaultValue: &envoy_type_v3.FractionalPercent{
+					Numerator:   uint32(mp.Weight),
+					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+				},
 			},
-		},
-	}}
+		})
+	}
+	return mirrorPolicies
 }
 
 func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {

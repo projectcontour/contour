@@ -3840,7 +3840,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100))),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 100))),
 				},
 			),
 		},
@@ -3882,8 +3882,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100),
-						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2), 100),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 100),
+						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), []*Service{service(kuardService2)}, 100),
 					)),
 				},
 			),
@@ -5702,7 +5702,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c"), 100))),
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c")}, 100))),
 				},
 			),
 		},
@@ -11169,7 +11169,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							withMirror(prefixroute("/", service(s1)), service(s2), 100),
+							withMirror(prefixroute("/", service(s1)), []*Service{service(s2)}, 100),
 						),
 					),
 				},
@@ -16223,12 +16223,14 @@ func prefixSegment(prefix string) MatchCondition {
 func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
-func withMirror(r *Route, mirror *Service, weight int64) *Route {
-	r.MirrorPolicy = &MirrorPolicy{
-		Cluster: &Cluster{
-			Upstream: mirror,
-		},
-		Weight: weight,
+func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
+	for _, mirror := range mirrors {
+		r.MirrorPolicies = append(r.MirrorPolicies, &MirrorPolicy{
+			Cluster: &Cluster{
+				Upstream: mirror,
+			},
+			Weight: weight,
+		})
 	}
 	return r
 }

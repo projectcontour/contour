@@ -69,8 +69,10 @@ func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
 				nodes[route] = true
 
 				clusters := route.Clusters
-				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
-					clusters = append(clusters, route.MirrorPolicy.Cluster)
+				for _, mp := range route.MirrorPolicies {
+					if mp.Cluster != nil {
+						clusters = append(clusters, mp.Cluster)
+					}
 				}
 				for _, cluster := range clusters {
 					edges[pair{route, cluster}] = true
@@ -93,8 +95,10 @@ func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
 				nodes[route] = true
 
 				clusters := route.Clusters
-				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
-					clusters = append(clusters, route.MirrorPolicy.Cluster)
+				for _, mp := range route.MirrorPolicies {
+					if mp.Cluster != nil {
+						clusters = append(clusters, mp.Cluster)
+					}
 				}
 				for _, cluster := range clusters {
 					edges[pair{route, cluster}] = true

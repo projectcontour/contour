@@ -677,6 +677,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 		},
 
+		//TODO(liorlieberman) add multiple mirror test
 		"mirror": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
@@ -690,20 +691,21 @@ func TestRouteRoute(t *testing.T) {
 					},
 					Weight: 90,
 				}},
-				MirrorPolicy: &dag.MirrorPolicy{
-					Cluster: &dag.Cluster{
-						Upstream: &dag.Service{
-							Weighted: dag.WeightedService{
-								Weight:           1,
-								ServiceName:      s1.Name,
-								ServiceNamespace: s1.Namespace,
-								ServicePort:      s1.Spec.Ports[0],
+				MirrorPolicies: []*dag.MirrorPolicy{
+					{
+						Cluster: &dag.Cluster{
+							Upstream: &dag.Service{
+								Weighted: dag.WeightedService{
+									Weight:           1,
+									ServiceName:      s1.Name,
+									ServiceNamespace: s1.Namespace,
+									ServicePort:      s1.Spec.Ports[0],
+								},
 							},
 						},
+						Weight: 100,
 					},
-					Weight: 100,
-				},
-			},
+				}},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
 					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
