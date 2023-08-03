@@ -768,8 +768,8 @@ func TestListenerVisit(t *testing.T) {
 
 		"tls-protocol-version from config": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: "1.3",
-				MaximumTLSVersion: "1.2",
+				MinimumTLSVersion: "1.2",
+				MaximumTLSVersion: "1.3",
 			},
 			objs: []any{
 				&networking_v1.Ingress{
@@ -828,7 +828,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_3, envoy_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters:         envoy_v3.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
@@ -840,8 +840,8 @@ func TestListenerVisit(t *testing.T) {
 
 		"tls-protocol-version from config overridden by annotation": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: "1.3",
-				MaximumTLSVersion: "1.2",
+				MinimumTLSVersion: "1.2",
+				MaximumTLSVersion: "1.3",
 			},
 			objs: []any{
 				&networking_v1.Ingress{
@@ -849,7 +849,7 @@ func TestListenerVisit(t *testing.T) {
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"projectcontour.io/tls-minimum-protocol-version": "1.2",
+							"projectcontour.io/tls-minimum-protocol-version": "1.3",
 							"projectcontour.io/tls-maximum-protocol-version": "1.3",
 						},
 					},
@@ -916,8 +916,8 @@ func TestListenerVisit(t *testing.T) {
 
 		"tls-protocol-version from config overridden by httpproxy": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: "1.3",
-				MaximumTLSVersion: "1.2",
+				MinimumTLSVersion: "1.2",
+				MaximumTLSVersion: "1.3",
 			},
 			objs: []any{
 				&contour_api_v1.HTTPProxy{
@@ -930,7 +930,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 							TLS: &contour_api_v1.TLS{
 								SecretName:             "secret",
-								MinimumProtocolVersion: "1.2",
+								MinimumProtocolVersion: "1.3",
 								MaximumProtocolVersion: "1.3",
 							},
 						},

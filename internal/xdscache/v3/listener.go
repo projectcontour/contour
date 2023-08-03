@@ -509,6 +509,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 				// Choose the lower of the configured or requested TLS version.
 				maxVer := min(cfg.maxTLSVersion(), envoy_v3.ParseTLSVersion(vh.MaxTLSVersion))
+				if maxVer == envoy_tls_v3.TlsParameters_TLS_AUTO {
+					maxVer = cfg.maxTLSVersion()
+				}
 
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
 					vh.Secret,

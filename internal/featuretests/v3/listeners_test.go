@@ -493,7 +493,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
-					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_tls_v3.TlsParameters_TLSv1_2,
 					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
 					nil,
 					"h2", "http/1.1"),
