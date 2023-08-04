@@ -212,7 +212,7 @@ func TestTLSListener(t *testing.T) {
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 			statsListener(),
 		),
@@ -257,7 +257,7 @@ func TestTLSListener(t *testing.T) {
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 			statsListener(),
 		),
@@ -367,7 +367,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	// add service
@@ -417,7 +417,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	// add ingress and assert the existence of ingress_http and ingres_https
@@ -500,7 +500,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	// add service
@@ -579,7 +579,7 @@ func TestLDSFilter(t *testing.T) {
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -737,7 +737,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -833,7 +833,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -927,7 +927,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 					Get(),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
@@ -1013,7 +1013,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
@@ -1093,7 +1093,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
@@ -1151,7 +1151,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
@@ -1479,7 +1479,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 				Name:          "http-80",
 				Address:       envoy_v3.SocketAddress("127.0.0.100", 8080),
 				FilterChains:  envoy_v3.FilterChains(httpFilterForGateway()),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})
@@ -1499,7 +1499,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 						httpsFilterForGateway("https-443", "test.projectcontour.io"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})
@@ -1522,7 +1522,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 						tcpproxy("https-8443", "default/svc1/80/da39a3ee5e"),
 					),
 				}},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})
@@ -1538,7 +1538,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 						tcpproxy("tcp-27017", "default/svc1/80/da39a3ee5e"),
 					),
 				}},
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 		TypeUrl: listenerType,

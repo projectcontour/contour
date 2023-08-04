@@ -413,6 +413,10 @@ func TestConvertServeContext(t *testing.T) {
 						MinimumProtocolVersion: "",
 						MaximumProtocolVersion: "",
 					},
+					SocketOptions: &contour_api_v1alpha1.SocketOptions{
+						TOS:          0,
+						TrafficClass: 0,
+					},
 				},
 				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
 					Address:   "0.0.0.0",

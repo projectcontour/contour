@@ -533,6 +533,10 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
 					CipherSuites:           cipherSuites,
 				},
+				SocketOptions: &contour_api_v1alpha1.SocketOptions{
+					TOS:          ctx.Config.Listener.SocketOptions.TOS,
+					TrafficClass: ctx.Config.Listener.SocketOptions.TrafficClass,
+				},
 			},
 			Service: &contour_api_v1alpha1.NamespacedName{
 				Name:      ctx.Config.EnvoyServiceName,

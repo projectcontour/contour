@@ -15,20 +15,26 @@ package envoy
 
 import "syscall"
 
-// We only support Envoy on Linux so always configure Linux TCP keep-alive
-// socket options regardless of the platform that Contour is running on.
 // nolint:revive
 const (
+	// We only support Envoy on Linux so always configure Linux TCP keep-alive
+	// socket options regardless of the platform that Contour is running on (e.g. Contour on macOS + Envoy on Linux).
 	TCP_KEEPIDLE  = 0x4 // Linux syscall.TCP_KEEPIDLE
 	TCP_KEEPINTVL = 0x5 // Linux syscall.TCP_KEEPINTVL
 	TCP_KEEPCNT   = 0x6 // Linux syscall.TCP_KEEPCNT
+
+	// The following are for setting DSCP values on Linux.
+	IP_TOS      = 0x1  // Linux syscall.IP_TOS
+	IPV6_TCLASS = 0x43 // Linux syscall.IPV6_TCLASS
 
 	// The following are Linux syscall constants for all
 	// architectures except MIPS.
 	SOL_SOCKET   = 0x1
 	SO_KEEPALIVE = 0x9
 
-	// IPPROTO_TCP has the same value across Go platforms, but
+	// IPPROTO_* has the same value across Go platforms, but
 	// is defined here for consistency.
-	IPPROTO_TCP = syscall.IPPROTO_TCP
+	IPPROTO_IP   = syscall.IPPROTO_IP
+	IPPROTO_IPV6 = syscall.IPPROTO_IPV6
+	IPPROTO_TCP  = syscall.IPPROTO_TCP
 )

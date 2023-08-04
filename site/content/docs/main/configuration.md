@@ -194,6 +194,7 @@ The listener configuration block can be used to configure various parameters for
 | connection-balancer               | string | `""`    | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
 | max-requests-per-connection       | int    | none    | This field specifies the maximum requests for downstream connections. If not specified, there is no limit                                                                                                                                                     |
 | per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
+| socket-options                    | SocketOptions |  | The [Socket Options](#socket-options) for Envoy listeners.                                                                                                                                                                                                    |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -281,6 +282,13 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 | server-certificate-path | string | none                         | Optional path to the server certificate file.                                |
 | server-key-path         | string | none                         | Optional path to the server private key file.                                |
 | ca-certificate-path     | string | none                         | Optional path to the CA certificate file used to verify client certificates. |
+
+### Socket Options
+
+| Field Name      | Type   | Default | Description                                                                   |
+| --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
+| tos             | int    | 0       | Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv6-only addresses, setting this option will cause an error. |
+| traffic-class   | int    | 0       | Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv4-only addresses, setting this option will cause an error. |
 
 ### Configuration Example
 
@@ -452,6 +460,12 @@ data:
     #    server-certificate-path: /path/to/server-cert.pem
     #    server-key-path: /path/to/server-private-key.pem
     #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #
+    # listener:
+    #  connection-balancer: exact
+    #  socket-options:
+    #    tos: 64
+    #    traffic-class: 64
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

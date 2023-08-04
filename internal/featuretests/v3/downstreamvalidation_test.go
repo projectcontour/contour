@@ -96,7 +96,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -144,7 +144,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -195,7 +195,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -260,7 +260,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -313,7 +313,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -362,7 +362,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -422,7 +422,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -476,7 +476,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
