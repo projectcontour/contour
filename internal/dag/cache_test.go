@@ -1779,14 +1779,6 @@ func TestLookupService(t *testing.T) {
 		}
 	}
 
-	port := func(name string, port int32, protocol v1.Protocol) v1.ServicePort {
-		return v1.ServicePort{
-			Name:     name,
-			Port:     port,
-			Protocol: protocol,
-		}
-	}
-
 	tests := map[string]struct {
 		cache    *KubernetesCache
 		meta     types.NamespacedName
@@ -1796,40 +1788,40 @@ func TestLookupService(t *testing.T) {
 		wantErr  error
 	}{
 		"service and port exist with valid service protocol, lookup by port num": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromInt(80),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
+			wantPort: makeServicePort("http", v1.ProtocolTCP, 80),
 		},
 		"service and port exist with valid service protocol, lookup by port name": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromString("http"),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
+			wantPort: makeServicePort("http", v1.ProtocolTCP, 80),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port num": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromInt(9999),
 			wantErr: errors.New(`port "9999" on service "default/service-1" not matched`),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port name": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("wrong-port-name"),
 			wantErr: errors.New(`port "wrong-port-name" on service "default/service-1" not matched`),
 		},
 		"service and port exist, invalid service protocol": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolUDP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolUDP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("http"),
-			wantSvc: service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantSvc: service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
 			wantErr: errors.New(`unsupported service protocol "UDP"`),
 		},
 		"service does not exist": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "nonexistent-service"},
 			port:    intstr.FromInt(80),
 			wantErr: errors.New(`service "default/nonexistent-service" not found`),
