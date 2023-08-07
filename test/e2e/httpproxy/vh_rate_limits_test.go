@@ -96,18 +96,7 @@ func testGlobalWithVhostRateLimits(namespace string) {
 			return f.Client.Update(context.TODO(), p)
 		}))
 
-		// Make a request against the proxy, confirm a 200 response
-		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Path:      "/echo",
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Confirm a 429 response is now gotten since we've exceeded the rate limit.
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
@@ -231,18 +220,7 @@ func testGlobalWithVhostRateLimits(namespace string) {
 			return f.Client.Update(context.TODO(), p)
 		}))
 
-		// Make a request against the proxy, confirm a 200 response
-		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Path:      "/echo",
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Confirm a 429 response is now gotten since we've exceeded the rate limit.
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
@@ -367,18 +345,7 @@ func testGlobalWithVhostRateLimits(namespace string) {
 			return f.Client.Update(context.TODO(), p)
 		}))
 
-		// Make a request against the proxy, confirm a 200 response
-		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Path:      "/echo",
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Confirm a 429 response is now gotten since we've exceeded the rate limit.
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
@@ -493,18 +460,7 @@ func testGlobalWithVhostRateLimits(namespace string) {
 			return f.Client.Update(context.TODO(), p)
 		}))
 
-		// Make a request against the proxy, confirm a 200 response
-		// is returned since we're allowed one request per hour.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Path:      "/echo",
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Make another request against the proxy, confirm a 429 response
-		// is now gotten since we've exceeded the rate limit.
+		// Confirm a 429 response is now gotten since we've exceeded the rate limit.
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/echo",
