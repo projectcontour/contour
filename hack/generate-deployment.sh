@@ -17,11 +17,11 @@ readonly MODE="$1"
 
 case $MODE in
   deployment)
-      TARGET="${REPO}/examples/render/contour-deployment.yaml"
+      TARGET="${REPO}/examples/render/contour/contour-deployment.yaml"
       SKIP_FILE="*/03-envoy.yaml"
       ;;
   daemonset)
-      TARGET="${REPO}/examples/render/contour.yaml"
+      TARGET="${REPO}/examples/render/contour/contour.yaml"
       SKIP_FILE="*/03-envoy-deployment.yaml"
       ;;
 esac

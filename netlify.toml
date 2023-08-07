@@ -54,7 +54,7 @@ HUGO_ENABLEGITINFO = "true"
 # kubectl apply https://projectcontour.io/quickstart/contour.yaml
 [[redirects]]
   from = "/quickstart/contour.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour/contour.yaml"
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
@@ -63,7 +63,7 @@ HUGO_ENABLEGITINFO = "true"
 # kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour.yaml
 [[redirects]]
   from = "/quickstart/*/contour.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour/contour.yaml"
   status = 302
 
 # Redirect /quickstart/contour-gateway.yaml to the example Contour-Gateway manifest that matches :latest.
@@ -71,7 +71,7 @@ HUGO_ENABLEGITINFO = "true"
 # kubectl apply https://projectcontour.io/quickstart/contour-gateway.yaml
 [[redirects]]
 from = "/quickstart/contour-gateway.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour-gateway.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour/contour-gateway.yaml"
 status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
@@ -80,7 +80,7 @@ status = 302
 # kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour-gateway.yaml
 [[redirects]]
   from = "/quickstart/*/contour-gateway.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour-gateway.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour/contour-gateway.yaml"
   status = 302
 
 # Redirect /quickstart/contour-gateway-provisioner.yaml to the Gateway provisioner manifest that matches :latest.
@@ -88,7 +88,7 @@ status = 302
 # kubectl apply https://projectcontour.io/quickstart/contour-gateway-provisioner.yaml
 [[redirects]]
   from = "/quickstart/contour-gateway-provisioner.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour-gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.25/examples/render/contour/contour-gateway-provisioner.yaml"
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
@@ -97,7 +97,7 @@ status = 302
 # kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour-gateway-provisioner.yaml
 [[redirects]]
   from = "/quickstart/*/contour-gateway-provisioner.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour-gateway-provisioner.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour/contour-gateway-provisioner.yaml"
   status = 302
 
 

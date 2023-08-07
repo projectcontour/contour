@@ -7,7 +7,7 @@ set -o pipefail
 readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}"/.. && pwd)
 readonly PROGNAME=$(basename "$0")
-readonly TARGET="${REPO}/examples/render/contour-gateway.yaml"
+readonly TARGET="${REPO}/examples/render/contour/contour-gateway.yaml"
 
 exec > >(git stripspace >"$TARGET")
 

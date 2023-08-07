@@ -222,7 +222,7 @@ $ kubectl delete ns contour-operator
 ```
 
 [1]: #running-without-a-kubernetes-loadbalancer
-[2]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour.yaml
+[2]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour/contour.yaml
 [3]: #host-networking
 [4]: /guides/proxy-proto.md
 [5]: https://github.com/kubernetes-up-and-running/kuard
@@ -233,5 +233,5 @@ $ kubectl delete ns contour-operator
 [11]: redeploy-envoy.md
 [12]: https://github.com/projectcontour/contour-operator
 [13]: https://projectcontour.io/resources/deprecation-policy/
-[14]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour-deployment.yaml
+[14]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour/contour-deployment.yaml
 [15]: /resources/upgrading/

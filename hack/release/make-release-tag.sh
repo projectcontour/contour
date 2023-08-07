@@ -85,10 +85,10 @@ if git status -s examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then
         examples/contour/02-job-certgen.yaml \
         examples/deployment/03-envoy-deployment.yaml \
         examples/gateway-provisioner/03-gateway-provisioner.yaml \
-        examples/render/contour.yaml \
-        examples/render/contour-gateway.yaml \
-        examples/render/contour-deployment.yaml \
-        examples/render/contour-gateway-provisioner.yaml
+        examples/render/contour/contour.yaml \
+        examples/render/contour/contour-gateway.yaml \
+        examples/render/contour/contour-deployment.yaml \
+        examples/render/contour/contour-gateway-provisioner.yaml
 fi
 
 git tag -F - "$NEWVERS" <<EOF
