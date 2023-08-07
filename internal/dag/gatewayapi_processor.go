@@ -1433,8 +1433,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror:
-				// If more than one, we only take the first RequestMirror filter.
-				if filter.RequestMirror == nil || len(mirrorPolicies) > 0 {
+				if filter.RequestMirror == nil {
 					continue
 				}
 

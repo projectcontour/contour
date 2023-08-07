@@ -3844,6 +3844,54 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with two request mirror filters": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									},
+								},
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2), service(kuardService3)}, 100))),
+				},
+			),
+		},
 		"HTTPRoute rule with request mirror filter with multiple matches": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -5703,6 +5751,56 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c")}, 100))),
+				},
+			),
+		},
+		"GRPCRoute: rule with two request mirror filters": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									},
+								},
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c"), grpcService(kuardService3, "h2c")}, 100))),
 				},
 			),
 		},
