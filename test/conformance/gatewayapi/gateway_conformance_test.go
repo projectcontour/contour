@@ -67,10 +67,6 @@ func TestGatewayConformance(t *testing.T) {
 		},
 		ExemptFeatures: sets.New(
 			suite.SupportMesh,
-			suite.SupportGatewayClassRoutability,
-			suite.SupportGatewayPublicRoutability,
-			suite.SupportGatewayPrivateRoutability,
-			suite.SupportGatewayClusterRoutability,
 		),
 	})
 	cSuite.Setup(t)
