@@ -982,7 +982,7 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}),
 		},
 		"tls-maximum-protocol-version from config not overridden by httpproxy": {
@@ -1039,7 +1039,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
