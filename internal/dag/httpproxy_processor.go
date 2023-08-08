@@ -1982,7 +1982,7 @@ func rateLimitPerRoute(in *contour_api_v1.RouteRateLimitPolicy) (*RateLimitPerRo
 		return nil, nil
 	}
 
-	vrl := VhRateLimitsOverride
+	var vrl VhRateLimitsType
 	switch in.VhRateLimits {
 	case "Override":
 		vrl = VhRateLimitsOverride
