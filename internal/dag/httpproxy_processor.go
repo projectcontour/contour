@@ -1991,7 +1991,7 @@ func rateLimitPerRoute(in *contour_api_v1.RouteRateLimitPolicy) (*RateLimitPerRo
 	case "Ignore":
 		vrl = VhRateLimitsIgnore
 	default:
-		return nil, fmt.Errorf("error parsing rateLimitPerRoute config, %s is not supported", in)
+		return nil, fmt.Errorf("error parsing rateLimitPerRoute config, %s is not supported", in.VhRateLimits)
 	}
 
 	return &RateLimitPerRoute{

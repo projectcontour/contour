@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"net"
 	"testing"
 	"time"
@@ -1383,6 +1384,289 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			require.Equal(t, tc.isValidCond, isValid)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantConditionErrs, validCond.Errors)
+		})
+	}
+}
+
+func TestRateLimitPerRoute(t *testing.T) {
+	tests := map[string]struct {
+		httpproxy     *contour_api_v1.HTTPProxy
+		want          *RateLimitPerRoute
+		expectedError error
+	}{
+		"route RateLimitPolicy is not set": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+						},
+					},
+				},
+			},
+			want:          nil,
+			expectedError: nil,
+		},
+		"VhRateLimits value is not set in RateLimitPolicy": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "route_limit_key",
+														Value: "routelimit",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:          nil,
+			expectedError: nil,
+		},
+		"VhRateLimits value is set to Override in RateLimitPolicy": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
+								VhRateLimits: "Override",
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "route_limit_key",
+														Value: "routelimit",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPerRoute{
+				VhRateLimits: 0,
+			},
+			expectedError: nil,
+		},
+		"VhRateLimits value is set to Include in RateLimitPolicy": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
+								VhRateLimits: "Include",
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "route_limit_key",
+														Value: "routelimit",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPerRoute{
+				VhRateLimits: 1,
+			},
+			expectedError: nil,
+		},
+		"VhRateLimits value is set to Ignore in RateLimitPolicy": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
+								VhRateLimits: "Ignore",
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "route_limit_key",
+														Value: "routelimit",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPerRoute{
+				VhRateLimits: 2,
+			},
+			expectedError: nil,
+		},
+		"VhRateLimits value is set to an unsupported value in RateLimitPolicy": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RouteRateLimitPolicy{
+								VhRateLimits: "wrong_value",
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_api_v1.RateLimitDescriptor{
+										{
+											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+												{
+													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+														Key:   "route_limit_key",
+														Value: "routelimit",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:          nil,
+			expectedError: errors.New("error parsing rateLimitPerRoute config, wrong_value is not supported"),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			for _, route := range tc.httpproxy.Spec.Routes {
+				got, err := rateLimitPerRoute(route.RateLimitPolicy)
+				require.Equal(t, tc.expectedError, err)
+				require.Equal(t, tc.want, got)
+			}
 		})
 	}
 }
