@@ -603,7 +603,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-				metav1.ConditionFalse,
+				metav1.ConditionTrue,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
 				fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gatewayapi_v1beta1.GroupName),
 			)
@@ -613,7 +613,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-				metav1.ConditionFalse,
+				metav1.ConditionTrue,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
 				fmt.Sprintf("Kind %q is not supported, kind must be %q, %q, %q or %q", routeKind.Kind, KindHTTPRoute, KindTLSRoute, KindGRPCRoute, KindTCPRoute),
 			)
@@ -623,7 +623,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-				metav1.ConditionFalse,
+				metav1.ConditionTrue,
 				gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds,
 				fmt.Sprintf("TLSRoutes are incompatible with listener protocol %q", listener.Protocol),
 			)
@@ -671,7 +671,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 		gwAccessor.AddListenerCondition(
 			listenerName,
 			gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-			metav1.ConditionFalse,
+			metav1.ConditionTrue,
 			gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef,
 			fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q must contain a reference to a core.Secret", certificateRef.Name),
 		)
@@ -697,7 +697,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 			gwAccessor.AddListenerCondition(
 				listenerName,
 				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-				metav1.ConditionFalse,
+				metav1.ConditionTrue,
 				gatewayapi_v1beta1.ListenerReasonRefNotPermitted,
 				fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q namespace must match the Gateway's namespace or be covered by a ReferenceGrant", certificateRef.Name),
 			)
@@ -719,7 +719,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 		gwAccessor.AddListenerCondition(
 			listenerName,
 			gatewayapi_v1beta1.ListenerConditionResolvedRefs,
-			metav1.ConditionFalse,
+			metav1.ConditionTrue,
 			gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef,
 			fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q referent is invalid: %s", certificateRef.Name, err),
 		)
