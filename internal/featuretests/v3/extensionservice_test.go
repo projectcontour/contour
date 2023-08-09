@@ -54,6 +54,9 @@ func extBasic(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 						&envoy_v3_tls.UpstreamTlsContext{
 							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
 							},
 							// Note there's no SNI in this scenario.
 						},
@@ -137,6 +140,9 @@ func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 							},
 						},
 					},
+				},
+				TlsParams: &envoy_v3_tls.TlsParameters{
+					TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
 				},
 			},
 		},
@@ -273,6 +279,9 @@ func extIdleConnectionTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *C
 						&envoy_v3_tls.UpstreamTlsContext{
 							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
 							},
 						},
 					),
@@ -366,6 +375,9 @@ func extInvalidLoadBalancerPolicy(t *testing.T, rh ResourceEventHandlerWrapper, 
 						&envoy_v3_tls.UpstreamTlsContext{
 							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
 							},
 						},
 					),
@@ -399,6 +411,9 @@ func extInvalidLoadBalancerPolicy(t *testing.T, rh ResourceEventHandlerWrapper, 
 						&envoy_v3_tls.UpstreamTlsContext{
 							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
 							},
 						},
 					),

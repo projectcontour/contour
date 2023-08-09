@@ -45,7 +45,11 @@ func TestUpstreamTLSContext(t *testing.T) {
 	}{
 		"no alpn, no validation": {
 			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
+				},
 			},
 		},
 		"h2, no validation": {
@@ -53,6 +57,9 @@ func TestUpstreamTLSContext(t *testing.T) {
 			want: &envoy_v3_tls.UpstreamTlsContext{
 				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 					AlpnProtocols: []string{"h2c"},
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
 				},
 			},
 		},
@@ -61,7 +68,11 @@ func TestUpstreamTLSContext(t *testing.T) {
 				CACertificate: secret,
 			},
 			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
+				},
 			},
 		},
 		"no alpn, missing ca": {
@@ -69,7 +80,11 @@ func TestUpstreamTLSContext(t *testing.T) {
 				SubjectName: "www.example.com",
 			},
 			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
+				},
 			},
 		},
 		"no alpn, ca and altname": {
@@ -98,14 +113,21 @@ func TestUpstreamTLSContext(t *testing.T) {
 							},
 						},
 					},
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
 				},
 			},
 		},
 		"external name sni": {
 			externalName: "projectcontour.local",
 			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
-				Sni:              "projectcontour.local",
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+					},
+				},
+				Sni: "projectcontour.local",
 			},
 		},
 	}

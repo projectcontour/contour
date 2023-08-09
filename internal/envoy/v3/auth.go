@@ -38,6 +38,12 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
 			AlpnProtocols:                  alpnProtocols,
 			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
+			TlsParams: &envoy_v3_tls.TlsParameters{
+				// Envoy defaults to TLSv1.2 for both minimum and maximum protocol version, when acting as a client.
+				// Override the maximum to allow upstream server to use TLSv1.3.
+				// See https://github.com/envoyproxy/envoy/issues/9300 for further information.
+				TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+			},
 		},
 		Sni: sni,
 	}

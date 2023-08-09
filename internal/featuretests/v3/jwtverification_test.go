@@ -24,6 +24,7 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
@@ -213,8 +214,12 @@ func TestJWTVerification(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
-							Sni:              "jwt.example.com",
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
+							},
+							Sni: "jwt.example.com",
 						}),
 					},
 				},
@@ -698,8 +703,12 @@ func TestJWTVerification(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
-							Sni:              "jwt.example.com",
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
+							},
+							Sni: "jwt.example.com",
 						}),
 					},
 				},
@@ -872,6 +881,9 @@ func TestJWTVerification(t *testing.T) {
 										},
 									},
 								},
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
 							},
 							Sni: "jwt.example.com",
 						}),
@@ -1016,8 +1028,12 @@ func TestJWTVerification(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
-							Sni:              "jwt.example.com",
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
+							},
+							Sni: "jwt.example.com",
 						}),
 					},
 				},
@@ -1162,8 +1178,12 @@ func TestJWTVerification(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
-							Sni:              "jwt.example.com",
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
+							},
+							Sni: "jwt.example.com",
 						}),
 					},
 				},
@@ -1383,8 +1403,12 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					Name: "envoy.transport_sockets.tls",
 					ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_tls_v3.UpstreamTlsContext{
-							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
-							Sni:              "jwt.example.com",
+							CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+								TlsParams: &envoy_v3_tls.TlsParameters{
+									TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+								},
+							},
+							Sni: "jwt.example.com",
 						}),
 					},
 				},
