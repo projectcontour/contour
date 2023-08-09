@@ -1129,8 +1129,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			urlRewriteHostname   string
 		)
 
-		// Per Gateway API docs: "Specifying a core filter multiple times
-		// has unspecified or implementation-specific conformance." Contour
+		// Per Gateway API docs: "Specifying the same filter multiple times is
+		// not supported unless explicitly indicated in the filter." For filters
+		// that can't be used multiple times within the same rule, Contour
 		// chooses to use the first instance of each filter type and ignore
 		// subsequent instances.
 		for _, filter := range rule.Filters {
@@ -1406,8 +1407,9 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			mirrorPolicies                            []*MirrorPolicy
 		)
 
-		// Per Gateway API docs: "Specifying a core filter multiple times
-		// has unspecified or implementation-specific conformance." Contour
+		// Per Gateway API docs: "Specifying the same filter multiple times is
+		// not supported unless explicitly indicated in the filter." For filters
+		// that can't be used multiple times within the same rule, Contour
 		// chooses to use the first instance of each filter type and ignore
 		// subsequent instances.
 		for _, filter := range rule.Filters {
@@ -1890,8 +1892,9 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 		var clusterRequestHeaderPolicy *HeadersPolicy
 		var clusterResponseHeaderPolicy *HeadersPolicy
 
-		// Per Gateway API docs: "Specifying a core filter multiple times
-		// has unspecified or implementation-specific conformance." Contour
+		// Per Gateway API docs: "Specifying the same filter multiple times is
+		// not supported unless explicitly indicated in the filter." For filters
+		// that can't be used multiple times within the same rule, Contour
 		// chooses to use the first instance of each filter type and ignore
 		// subsequent instances.
 		for _, filter := range backendRef.Filters {
@@ -1973,8 +1976,9 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 
 		var clusterRequestHeaderPolicy, clusterResponseHeaderPolicy *HeadersPolicy
 
-		// Per Gateway API docs: "Specifying a core filter multiple times
-		// has unspecified or implementation-specific conformance." Contour
+		// Per Gateway API docs: "Specifying the same filter multiple times is
+		// not supported unless explicitly indicated in the filter." For filters
+		// that can't be used multiple times within the same rule, Contour
 		// chooses to use the first instance of each filter type and ignore
 		// subsequent instances.
 		for _, filter := range backendRef.Filters {

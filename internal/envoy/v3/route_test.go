@@ -679,7 +679,6 @@ func TestRouteRoute(t *testing.T) {
 			},
 		},
 
-		//TODO(liorlieberman) add multiple mirror test
 		"mirror": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
