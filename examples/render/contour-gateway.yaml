@@ -8759,8 +8759,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -9201,8 +9201,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -10789,8 +10789,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -10944,7 +10944,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -11067,6 +11067,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 default:
                 - matches:
@@ -12371,8 +12383,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -12513,7 +12525,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -12636,6 +12648,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 default:
                 - matches:
@@ -14883,7 +14907,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -15006,6 +15030,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 default:
                 - matches:
@@ -17141,8 +17177,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -17427,8 +17463,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -17504,7 +17540,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -17627,6 +17663,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 description: Rules are a list of TCP matchers and actions.
                 items:
@@ -18014,8 +18062,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -18137,7 +18185,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -18260,6 +18308,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 description: Rules are a list of TLS matchers and actions.
                 items:
@@ -18650,8 +18710,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/1923
-    gateway.networking.k8s.io/bundle-version: v0.7.1-dev
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2245
+    gateway.networking.k8s.io/bundle-version: v0.8.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
@@ -18727,7 +18787,7 @@ spec:
                   namespace are \"consumer\" routes, and these routing rules are only
                   applied to outbound connections originating from the same namespace
                   as the Route, for which the intended destination of the connections
-                  are a Service targeted as a ParentRef of the Route."
+                  are a Service targeted as a ParentRef of the Route. \n "
                 items:
                   description: "ParentReference identifies an API object (usually
                     a Gateway) that can be considered a parent of this resource (usually
@@ -18850,6 +18910,18 @@ spec:
                   type: object
                 maxItems: 32
                 type: array
+                x-kubernetes-validations:
+                - message: sectionName or port must be unique when parentRefs includes
+                    2 or more references to the same parent
+                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
+                    == p2.kind && ((!has(p1.__namespace__) && !has(p2.__namespace__))
+                    || (!has(p1.__namespace__) && p2.__namespace__ == '') || (p1.__namespace__
+                    == '' && !has(p2.__namespace__)) || (p1.__namespace__ == p2.__namespace__))
+                    && p1.name == p2.name && ((!has(p1.sectionName) && !has(p2.sectionName))
+                    || (!has(p1.sectionName) && p2.sectionName == '') || (p1.sectionName
+                    == '' && !has(p2.sectionName)) || (p1.sectionName == p2.sectionName))
+                    && ((!has(p1.port) && !has(p2.port)) || (!has(p1.port) && p2.port
+                    == 0) || (p1.port == 0 && !has(p2.port)) || (p1.port == p2.port))))
               rules:
                 description: Rules are a list of UDP matchers and actions.
                 items:
@@ -19435,8 +19507,8 @@ spec:
         imagePullPolicy: IfNotPresent
         args:
         - create
-        - --host=gateway-api-admission-server,gateway-api-admission-server.gateway-system.svc
-        - --namespace=gateway-system
+        - --host=gateway-api-admission-server,gateway-api-admission-server.$(POD_NAMESPACE).svc
+        - --namespace=$(POD_NAMESPACE)
         - --secret-name=gateway-api-admission
         env:
         - name: POD_NAMESPACE
@@ -19482,7 +19554,7 @@ spec:
         args:
         - patch
         - --webhook-name=gateway-api-admission
-        - --namespace=gateway-system
+        - --namespace=$(POD_NAMESPACE)
         - --patch-mutating=false
         - --patch-validating=true
         - --secret-name=gateway-api-admission

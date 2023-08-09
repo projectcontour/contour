@@ -92,8 +92,8 @@ spec:
         imagePullPolicy: IfNotPresent
         args:
         - create
-        - --host=gateway-api-admission-server,gateway-api-admission-server.gateway-system.svc
-        - --namespace=gateway-system
+        - --host=gateway-api-admission-server,gateway-api-admission-server.$(POD_NAMESPACE).svc
+        - --namespace=$(POD_NAMESPACE)
         - --secret-name=gateway-api-admission
         env:
         - name: POD_NAMESPACE
@@ -139,7 +139,7 @@ spec:
         args:
         - patch
         - --webhook-name=gateway-api-admission
-        - --namespace=gateway-system
+        - --namespace=$(POD_NAMESPACE)
         - --patch-mutating=false
         - --patch-validating=true
         - --secret-name=gateway-api-admission
