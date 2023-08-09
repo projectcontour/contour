@@ -282,6 +282,40 @@ func TestTLSParametersValidation(t *testing.T) {
 			"NOTAVALIDCIPHER",
 		},
 	}.Validate())
+
+	// TLS protocol version validation
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.1",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MaximumProtocolVersion: "invalid",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.3",
+		MaximumProtocolVersion: "1.2",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+		MaximumProtocolVersion: "1.2",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.3",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.1",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
 }
 
 func TestConfigFileValidation(t *testing.T) {
@@ -362,11 +396,6 @@ func TestConfigFileDefaultOverrideImport(t *testing.T) {
 		require.NoError(t, err)
 		verifier(t, conf)
 	}
-	checkFail := func(yamlIn string) {
-		t.Helper()
-		_, err := Parse(strings.NewReader(yamlIn))
-		require.Error(t, err)
-	}
 
 	check(func(t *testing.T, conf *Parameters) {
 		wanted := Defaults()
@@ -402,27 +431,6 @@ tls:
   maximum-protocol-version: 1.3
   cipher-suites:
   - ECDHE-RSA-AES256-GCM-SHA384
-`)
-
-	checkFail(`
-tls:
-  minimum-protocol-version: 1.3
-  maximum-protocol-version: 1.2
-`)
-	checkFail(`
-tls:
-  minimum-protocol-version: 1.1
-  maximum-protocol-version: 1.2
-`)
-	checkFail(`
-tls:
-  minimum-protocol-version: 1.2
-  maximum-protocol-version: 1.4
-`)
-	checkFail(`
-tls:
-  minimum-protocol-version: 1.1
-  maximum-protocol-version: 1.4
 `)
 
 	check(func(t *testing.T, conf *Parameters) {

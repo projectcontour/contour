@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -219,7 +218,7 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
 
-	return nil
+	return contour_api_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -995,26 +994,6 @@ func Parse(in io.Reader) (*Parameters, error) {
 	// constants (assuming that it will match).
 	for i, v := range conf.DefaultHTTPVersions {
 		conf.DefaultHTTPVersions[i] = HTTPVersionType(strings.ToLower(string(v)))
-	}
-
-	parseVersion := func(version, tip string) (float64, error) {
-		if version != "1.2" && version != "1.3" {
-			return 0.0, fmt.Errorf("invalid TLS %s protocol version: %q", tip, version)
-		}
-		return strconv.ParseFloat(version, 32)
-	}
-	if conf.TLS.MinimumProtocolVersion != "" && conf.TLS.MaximumProtocolVersion != "" {
-		minVer, err := parseVersion(conf.TLS.MinimumProtocolVersion, "minimum")
-		if err != nil {
-			return nil, err
-		}
-		maxVer, err := parseVersion(conf.TLS.MaximumProtocolVersion, "maximum")
-		if err != nil {
-			return nil, err
-		}
-		if maxVer < minVer {
-			return nil, fmt.Errorf("the minimum TLS protocol version is greater than the maximum TLS protocol version")
-		}
 	}
 
 	return &conf, nil
