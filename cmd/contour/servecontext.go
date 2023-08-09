@@ -530,6 +530,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				MaxRequestsPerConnection:      ctx.Config.Listener.MaxRequestsPerConnection,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
+					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
 					CipherSuites:           cipherSuites,
 				},
 			},

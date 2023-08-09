@@ -183,6 +183,7 @@ func (n NamespacedName) Validate() error {
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
 	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
@@ -217,7 +218,7 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
 
-	return nil
+	return contour_api_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.

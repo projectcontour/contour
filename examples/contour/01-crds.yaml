@@ -255,6 +255,11 @@ spec:
                             items:
                               type: string
                             type: array
+                          maximumProtocolVersion:
+                            description: "MaximumProtocolVersion is the maximum TLS
+                              version this vhost should negotiate. \n Values: `1.2`,
+                              `1.3`(default). \n Other values will produce an error."
+                            type: string
                           minimumProtocolVersion:
                             description: "MinimumProtocolVersion is the minimum TLS
                               version this vhost should negotiate. \n Values: `1.2`
@@ -3649,6 +3654,12 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              maximumProtocolVersion:
+                                description: "MaximumProtocolVersion is the maximum
+                                  TLS version this vhost should negotiate. \n Values:
+                                  `1.2`, `1.3`(default). \n Other values will produce
+                                  an error."
+                                type: string
                               minimumProtocolVersion:
                                 description: "MinimumProtocolVersion is the minimum
                                   TLS version this vhost should negotiate. \n Values:
@@ -7347,6 +7358,11 @@ spec:
                           should allow a default certificate to be applied which handles
                           all requests which don't match the SNI defined in this vhost.
                         type: boolean
+                      maximumProtocolVersion:
+                        description: MaximumProtocolVersion is the maximum TLS version
+                          this vhost should negotiate. Valid options are `1.2` and
+                          `1.3` (default). Any other value defaults to TLS 1.3.
+                        type: string
                       minimumProtocolVersion:
                         description: MinimumProtocolVersion is the minimum TLS version
                           this vhost should negotiate. Valid options are `1.2` (default)

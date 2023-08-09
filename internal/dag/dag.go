@@ -747,6 +747,9 @@ type SecureVirtualHost struct {
 	// TLS minimum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLS_AUTO
 	MinTLSVersion string
 
+	// TLS maximum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLSv1_3
+	MaxTLSVersion string
+
 	// The cert and key for this host.
 	Secret *Secret
 

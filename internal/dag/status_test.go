@@ -5039,6 +5039,49 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	tlsProtocolVersion := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "example",
+			Generation: 24,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				TLS: &contour_api_v1.TLS{
+					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.2",
+					SecretName:             fixture.SecretRootsCert.Name,
+				},
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "valid TLS protocol version", testcase{
+		objs: []any{
+			ingressSharedService,
+			tlsProtocolVersion,
+			fixture.ServiceRootsHome,
+			fixture.SecretRootsCert},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: tlsProtocolVersion.Name, Namespace: tlsProtocolVersion.Namespace}: fixture.NewValidCondition().
+				WithGeneration(tlsProtocolVersion.Generation).
+				WithError(
+					contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
+					`Spec.Virtualhost.TLS the minimum protocol version is greater than the maximum protocol version`,
+				),
+		},
+	})
+
 }
 
 func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1beta1.ProtocolType, attachedRoutes int) []*status.GatewayStatusUpdate {

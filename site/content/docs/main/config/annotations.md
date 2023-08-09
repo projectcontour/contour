@@ -49,7 +49,8 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
  - `projectcontour.io/per-try-timeout`: [The timeout per retry attempt][2], if there should be one. Applies only if `projectcontour.io/retry-on` is specified.
  - `projectcontour.io/response-timeout`: [The Envoy HTTP route timeout][3], specified as a [golang duration][4]. By default, Envoy has a 15 second timeout for a backend service to respond. Set this to `infinity` to specify that Envoy should never timeout the connection to the backend. Note that the value `0s` / zero has special semantics for Envoy.
  - `projectcontour.io/retry-on`: [The conditions for Envoy to retry a request][5]. See also [possible values and their meanings for `retry-on`][6].
- - `projectcontour.io/tls-minimum-protocol-version`: [The minimum TLS protocol version][7] the TLS listener should support. Valid options are `1.3`, `1.2` (default), `1.1`.
+ - `projectcontour.io/tls-minimum-protocol-version`: [The minimum TLS protocol version][7] the TLS listener should support. Valid options are `1.3`, `1.2` (default).
+ - `projectcontour.io/tls-maximum-protocol-version`: [The maximum TLS protocol version][7] the TLS listener should support. Valid options are `1.2`, `1.3` (default).
  - `projectcontour.io/websocket-routes`: [The routes supporting websocket protocol][8], the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behavior which is `use_websocket` to `false`.
  - `projectcontour.io/tls-cert-namespace`: The namespace where all TLS secrets of this Ingress are searched. This is necessary to use [TLS Certificate Delegation][18] with Ingress v1 because the slash notation (ex: different-ns/app-cert) used by HTTPProxy and Ingress v1beta1 is not accepted. See [this issue][19] for details.
 

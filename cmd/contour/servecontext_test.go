@@ -411,6 +411,7 @@ func TestConvertServeContext(t *testing.T) {
 					ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
+						MaximumProtocolVersion: "",
 					},
 				},
 				HTTPListener: &contour_api_v1alpha1.EnvoyListener{

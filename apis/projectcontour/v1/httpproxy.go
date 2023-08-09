@@ -433,6 +433,11 @@ type TLS struct {
 	// defaults to TLS 1.2.
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
+	// MaximumProtocolVersion is the maximum TLS version this vhost should
+	// negotiate. Valid options are `1.2` and `1.3` (default). Any other value
+	// defaults to TLS 1.3.
+	// +optional
+	MaximumProtocolVersion string `json:"maximumProtocolVersion,omitempty"`
 	// Passthrough defines whether the encrypted TLS handshake will be
 	// passed through to the backing cluster. Either Passthrough or
 	// SecretName must be specified, but not both.
