@@ -87,7 +87,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	makeIngrgess := func(minVer, maxVer string) *networking_v1.Ingress {
+	makeIngress := func(minVer, maxVer string) *networking_v1.Ingress {
 		return &networking_v1.Ingress{
 			ObjectMeta: fixture.ObjectMetaWithAnnotations("simple", map[string]string{
 				"projectcontour.io/tls-minimum-protocol-version": minVer,
@@ -112,7 +112,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 		}
 	}
 
-	i2 := makeIngrgess("1.3", "1.2")
+	i2 := makeIngress("1.3", "1.2")
 	rh.OnUpdate(i1, i2)
 
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -120,7 +120,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 		TypeUrl:   listenerType,
 	})
 
-	i3 := makeIngrgess("1.3", "1.3")
+	i3 := makeIngress("1.3", "1.3")
 	rh.OnUpdate(i1, i3)
 
 	l1 := &envoy_listener_v3.Listener{

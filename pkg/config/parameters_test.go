@@ -409,6 +409,22 @@ tls:
   minimum-protocol-version: 1.3
   maximum-protocol-version: 1.2
 `)
+	checkFail(`
+tls:
+  minimum-protocol-version: 1.1
+  maximum-protocol-version: 1.2
+`)
+	checkFail(`
+tls:
+  minimum-protocol-version: 1.2
+  maximum-protocol-version: 1.4
+`)
+	checkFail(`
+tls:
+  minimum-protocol-version: 1.1
+  maximum-protocol-version: 1.4
+`)
+
 	check(func(t *testing.T, conf *Parameters) {
 		assert.ElementsMatch(t,
 			[]HTTPVersionType{HTTPVersion1, HTTPVersion2, HTTPVersion2, HTTPVersion1},

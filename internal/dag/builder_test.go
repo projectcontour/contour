@@ -12499,7 +12499,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"HTTPProxy request redirect policy - no services": {
 			objs: []any{
 				&contour_api_v1.HTTPProxy{
