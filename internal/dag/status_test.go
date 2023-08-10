@@ -6304,7 +6304,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferenceGrant",
 						},
@@ -6461,7 +6461,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferenceGrant",
 						},
@@ -6663,7 +6663,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferenceGrant",
 						},
@@ -6866,7 +6866,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonRefNotPermitted),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferenceGrant",
 						},
@@ -8452,7 +8452,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
 							Message: "Group \"invalid-group\" is not supported, group must be \"gateway.networking.k8s.io\"",
 						},
@@ -8515,7 +8515,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
 							Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\", \"TLSRoute\", \"GRPCRoute\" or \"TCPRoute\"",
 						},
@@ -8578,7 +8578,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
 							Message: "TLSRoutes are incompatible with listener protocol \"HTTP\"",
 						},
@@ -8656,7 +8656,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"foo\" must contain a reference to a core.Secret",
 						},
@@ -8730,7 +8730,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidCertificateRef),
 							Message: "Spec.VirtualHost.TLS.CertificateRefs \"nonexistent-secret\" referent is invalid: Secret not found",
 						},
@@ -11015,7 +11015,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 						},
 						{
 							Type:    string(gatewayapi_v1beta1.ListenerConditionResolvedRefs),
-							Status:  metav1.ConditionFalse,
+							Status:  metav1.ConditionTrue,
 							Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalidRouteKinds),
 							Message: "TCPRoutes are incompatible with listener protocol \"HTTP\"",
 						},
