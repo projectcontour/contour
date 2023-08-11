@@ -268,4 +268,31 @@ func TestGetServiceClusters(t *testing.T) {
 	// We should only get one cluster since the other is for an ExternalName
 	// service.
 	assert.Len(t, d.GetServiceClusters(), 1)
+
+	dagWithMirror := &DAG{
+		Listeners: map[string]*Listener{
+			"http-1": {
+				VirtualHosts: []*VirtualHost{
+					{
+						Routes: map[string]*Route{
+							"foo": {
+								Clusters: []*Cluster{
+									{Upstream: &Service{}},
+								},
+								MirrorPolicies: []*MirrorPolicy{
+									{
+										Cluster: &Cluster{
+											Upstream: &Service{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// We should get two clusters since we have mirrorPolicies.
+	assert.Len(t, dagWithMirror.GetServiceClusters(), 2)
 }

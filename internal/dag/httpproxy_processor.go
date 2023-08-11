@@ -1024,7 +1024,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			}
-			if service.Mirror && r.MirrorPolicy != nil {
+			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
 					"only one service per route may be nominated as mirror")
 				return nil
@@ -1035,15 +1035,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				// EDGE CASE: This means that explicitly setting Weight to 0 will also result in 100%
 				// mirroring. The Mirror field must be set to false or removed to disable the mirror.
 				if service.Weight == 0 {
-					r.MirrorPolicy = &MirrorPolicy{
+					r.MirrorPolicies = []*MirrorPolicy{{
 						Cluster: c,
 						Weight:  100,
-					}
+					}}
 				} else {
-					r.MirrorPolicy = &MirrorPolicy{
+					r.MirrorPolicies = []*MirrorPolicy{{
 						Cluster: c,
 						Weight:  service.Weight,
-					}
+					}}
 				}
 			} else {
 				r.Clusters = append(r.Clusters, c)

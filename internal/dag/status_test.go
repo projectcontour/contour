@@ -7811,7 +7811,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// Invalid filters still result in an attached route.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1beta1.HTTPProtocolType, 1),
 	})
 
@@ -10566,7 +10565,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		// Invalid filters still result in an attached route.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1beta1.HTTPProtocolType, 1),
 	})
 
