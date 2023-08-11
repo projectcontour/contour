@@ -359,6 +359,9 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			{
 				IP: "127.0.0.1",
 			},
+			{
+				IP: "fe80::1",
+			},
 		},
 	}
 
@@ -416,6 +419,10 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
+						},
+						{
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Value: ipLBStatus.Ingress[1].IP,
 						},
 					},
 				},
@@ -580,6 +587,10 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
+						},
+						{
+							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Value: ipLBStatus.Ingress[1].IP,
 						},
 					},
 				},
