@@ -36,6 +36,7 @@ type EventHandlerConfig struct {
 	Builder                       *dag.Builder
 	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
+	CacheSyncDelay                time.Duration
 	StatusUpdater                 k8s.StatusUpdater
 }
 

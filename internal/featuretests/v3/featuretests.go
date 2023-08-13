@@ -32,6 +32,17 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/cache"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
@@ -46,16 +57,6 @@ import (
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -147,6 +148,8 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
 		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
+		//nolint:gosec
+		CacheSyncDelay: 3 * time.Second,
 		Observer: contour.NewRebuildMetricsObserver(
 			metrics.NewMetrics(registry),
 			dag.ComposeObservers(xdscache.ObserversOf(resources)...),
