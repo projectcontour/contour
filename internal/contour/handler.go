@@ -36,7 +36,7 @@ type EventHandlerConfig struct {
 	Builder                       *dag.Builder
 	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
-	CacheSyncDelay                time.Duration
+	CacheSyncCheckInterval        time.Duration
 	StatusUpdater                 k8s.StatusUpdater
 }
 
@@ -48,6 +48,8 @@ type EventHandler struct {
 	observer dag.Observer
 
 	holdoffDelay, holdoffMaxDelay time.Duration
+
+	cacheSyncCheckInterval time.Duration
 
 	statusUpdater k8s.StatusUpdater
 
@@ -90,7 +92,7 @@ func (e *EventHandler) IndexField(ctx context.Context, obj client.Object, field 
 
 // WaitForCacheSync is included to implement cache.Cache
 func (e *EventHandler) WaitForCacheSync(ctx context.Context) bool {
-	ticker := time.NewTicker(time.Second * 3)
+	ticker := time.NewTicker(e.cacheSyncCheckInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -106,15 +108,16 @@ func (e *EventHandler) WaitForCacheSync(ctx context.Context) bool {
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
 	return &EventHandler{
-		FieldLogger:     config.Logger,
-		builder:         config.Builder,
-		observer:        config.Observer,
-		holdoffDelay:    config.HoldoffDelay,
-		holdoffMaxDelay: config.HoldoffMaxDelay,
-		statusUpdater:   config.StatusUpdater,
-		update:          make(chan any),
-		sequence:        make(chan int, 1),
-		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
+		FieldLogger:            config.Logger,
+		builder:                config.Builder,
+		observer:               config.Observer,
+		holdoffDelay:           config.HoldoffDelay,
+		holdoffMaxDelay:        config.HoldoffMaxDelay,
+		cacheSyncCheckInterval: config.CacheSyncCheckInterval,
+		statusUpdater:          config.StatusUpdater,
+		update:                 make(chan any),
+		sequence:               make(chan int, 1),
+		syncTracker:            &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
 	}
 }
 
@@ -132,10 +135,10 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
-	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
 	if isInInitialList {
 		e.syncTracker.Start()
 	}
+	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj any) {
