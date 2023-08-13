@@ -22,9 +22,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache/synctrack"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -36,7 +34,6 @@ type EventHandlerConfig struct {
 	Builder                       *dag.Builder
 	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
-	CacheSyncCheckInterval        time.Duration
 	StatusUpdater                 k8s.StatusUpdater
 }
 
@@ -48,8 +45,6 @@ type EventHandler struct {
 	observer dag.Observer
 
 	holdoffDelay, holdoffMaxDelay time.Duration
-
-	cacheSyncCheckInterval time.Duration
 
 	statusUpdater k8s.StatusUpdater
 
@@ -65,59 +60,17 @@ type EventHandler struct {
 	syncTracker *synctrack.SingleFileTracker
 }
 
-// Get is included to implement cache.Cache
-func (e *EventHandler) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	return nil
-}
-
-// List is included to implement cache.Cache
-func (e *EventHandler) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	return nil
-}
-
-// GetInformer is included to implement cache.Cache
-func (e *EventHandler) GetInformer(ctx context.Context, obj client.Object) (cache.Informer, error) {
-	return nil, nil
-}
-
-// GetInformerForKind is included to implement cache.Cache
-func (e *EventHandler) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
-	return nil, nil
-}
-
-// IndexField is included to implement cache.Cache
-func (e *EventHandler) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
-	return nil
-}
-
-// WaitForCacheSync is included to implement cache.Cache
-func (e *EventHandler) WaitForCacheSync(ctx context.Context) bool {
-	ticker := time.NewTicker(e.cacheSyncCheckInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return false
-		case <-ticker.C:
-			if e.syncTracker.HasSynced() {
-				return true
-			}
-		}
-	}
-}
-
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
 	return &EventHandler{
-		FieldLogger:            config.Logger,
-		builder:                config.Builder,
-		observer:               config.Observer,
-		holdoffDelay:           config.HoldoffDelay,
-		holdoffMaxDelay:        config.HoldoffMaxDelay,
-		cacheSyncCheckInterval: config.CacheSyncCheckInterval,
-		statusUpdater:          config.StatusUpdater,
-		update:                 make(chan any),
-		sequence:               make(chan int, 1),
-		syncTracker:            &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
+		FieldLogger:     config.Logger,
+		builder:         config.Builder,
+		observer:        config.Observer,
+		holdoffDelay:    config.HoldoffDelay,
+		holdoffMaxDelay: config.HoldoffMaxDelay,
+		statusUpdater:   config.StatusUpdater,
+		update:          make(chan any),
+		sequence:        make(chan int, 1),
+		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
 	}
 }
 
@@ -149,9 +102,9 @@ func (e *EventHandler) OnDelete(obj any) {
 	e.update <- opDelete{obj: obj}
 }
 
-// GetCache is included to implement controller runtime's `hasCache`
-func (e *EventHandler) GetCache() cache.Cache {
-	return e
+// NeedLeaderElection is included to implement manager.LeaderElectionRunnable
+func (e *EventHandler) NeedLeaderElection() bool {
+	return false
 }
 
 // Implements leadership.NeedLeaderElectionNotification
@@ -226,10 +179,14 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				}
 			}
 		case <-pending:
-			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
-			e.rebuildDAG()
-			e.incSequence()
-			lastDAGRebuild = time.Now()
+			if e.syncTracker.HasSynced() {
+				e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
+				e.rebuildDAG()
+				e.incSequence()
+				lastDAGRebuild = time.Now()
+			} else {
+				e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", outstanding).Info("skipping delayed update")
+			}
 		case <-ctx.Done():
 			// shutdown
 			return nil

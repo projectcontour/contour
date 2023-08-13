@@ -12,3 +12,15 @@
 // limitations under the License.
 
 package contour
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+)
+
+func TestEventHandlerNotRequireLeaderElection(t *testing.T) {
+	var e manager.LeaderElectionRunnable = &EventHandler{}
+	require.False(t, e.NeedLeaderElection())
+}

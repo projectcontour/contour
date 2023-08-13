@@ -148,8 +148,6 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
 		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
-		//nolint:gosec
-		CacheSyncCheckInterval: 3 * time.Second,
 		Observer: contour.NewRebuildMetricsObserver(
 			metrics.NewMetrics(registry),
 			dag.ComposeObservers(xdscache.ObserversOf(resources)...),

@@ -540,13 +540,12 @@ func (s *Server) doServe() error {
 		dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 	)
 	contourHandler := contour.NewEventHandler(contour.EventHandlerConfig{
-		Logger:                 s.log.WithField("context", "contourEventHandler"),
-		HoldoffDelay:           100 * time.Millisecond,
-		HoldoffMaxDelay:        500 * time.Millisecond,
-		CacheSyncCheckInterval: 3 * time.Second,
-		Observer:               observer,
-		StatusUpdater:          sh.Writer(),
-		Builder:                builder,
+		Logger:          s.log.WithField("context", "contourEventHandler"),
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
+		Observer:        observer,
+		StatusUpdater:   sh.Writer(),
+		Builder:         builder,
 	})
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
