@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/tools/cache/synctrack"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -56,8 +55,7 @@ type EventHandler struct {
 
 	// seq is the sequence counter of the number of times
 	// an event has been received.
-	seq         int
-	syncTracker *synctrack.SingleFileTracker
+	seq int
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
@@ -70,7 +68,6 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		statusUpdater:   config.StatusUpdater,
 		update:          make(chan any),
 		sequence:        make(chan int, 1),
-		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
 	}
 }
 
@@ -88,9 +85,6 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
-	if isInInitialList {
-		e.syncTracker.Start()
-	}
 	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
 }
 
@@ -173,20 +167,11 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				// not to process it.
 				e.incSequence()
 			}
-			if updateOpAdd, ok := op.(opAdd); ok {
-				if updateOpAdd.isInInitialList {
-					e.syncTracker.Finished()
-				}
-			}
 		case <-pending:
-			if e.syncTracker.HasSynced() {
-				e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
-				e.rebuildDAG()
-				e.incSequence()
-				lastDAGRebuild = time.Now()
-			} else {
-				e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", outstanding).Info("skipping delayed update")
-			}
+			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
+			e.rebuildDAG()
+			e.incSequence()
+			lastDAGRebuild = time.Now()
 		case <-ctx.Done():
 			// shutdown
 			return nil
