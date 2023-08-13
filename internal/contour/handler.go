@@ -21,10 +21,14 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/cache/synctrack"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/sirupsen/logrus"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type EventHandlerConfig struct {
@@ -54,7 +58,49 @@ type EventHandler struct {
 
 	// seq is the sequence counter of the number of times
 	// an event has been received.
-	seq int
+	seq         int
+	syncTracker *synctrack.SingleFileTracker
+}
+
+// Get is included to implement cache.Cache
+func (e *EventHandler) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	return nil
+}
+
+// List is included to implement cache.Cache
+func (e *EventHandler) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	return nil
+}
+
+// GetInformer is included to implement cache.Cache
+func (e *EventHandler) GetInformer(ctx context.Context, obj client.Object) (cache.Informer, error) {
+	return nil, nil
+}
+
+// GetInformerForKind is included to implement cache.Cache
+func (e *EventHandler) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
+	return nil, nil
+}
+
+// IndexField is included to implement cache.Cache
+func (e *EventHandler) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
+	return nil
+}
+
+// WaitForCacheSync is included to implement cache.Cache
+func (e *EventHandler) WaitForCacheSync(ctx context.Context) bool {
+	ticker := time.NewTicker(time.Second * 3)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-ticker.C:
+			if e.syncTracker.HasSynced() {
+				return true
+			}
+		}
+	}
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
@@ -67,11 +113,13 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		statusUpdater:   config.StatusUpdater,
 		update:          make(chan any),
 		sequence:        make(chan int, 1),
+		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
 	}
 }
 
 type opAdd struct {
-	obj any
+	obj             any
+	isInInitialList bool
 }
 
 type opUpdate struct {
@@ -83,7 +131,10 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
-	e.update <- opAdd{obj: obj}
+	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
+	if isInInitialList {
+		e.syncTracker.Start()
+	}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj any) {
@@ -94,8 +145,9 @@ func (e *EventHandler) OnDelete(obj any) {
 	e.update <- opDelete{obj: obj}
 }
 
-func (e *EventHandler) NeedLeaderElection() bool {
-	return false
+// GetCache is included to implement controller runtime's `hasCache`
+func (e *EventHandler) GetCache() cache.Cache {
+	return e
 }
 
 // Implements leadership.NeedLeaderElectionNotification
@@ -163,6 +215,11 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				// notify any watchers that we received the event but chose
 				// not to process it.
 				e.incSequence()
+			}
+			if updateOpAdd, ok := op.(opAdd); ok {
+				if updateOpAdd.isInInitialList {
+					e.syncTracker.Finished()
+				}
 			}
 		case <-pending:
 			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
