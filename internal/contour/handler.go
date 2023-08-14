@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/tools/cache/synctrack"
+	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -58,29 +58,24 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	syncTracker *synctrack.SingleFileTracker
-
-	UpstreamSyncFuncs []func() bool
+	UpstreamCacheSyncs []cache.InformerSynced
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
 	return &EventHandler{
-		FieldLogger:       config.Logger,
-		builder:           config.Builder,
-		observer:          config.Observer,
-		holdoffDelay:      config.HoldoffDelay,
-		holdoffMaxDelay:   config.HoldoffMaxDelay,
-		statusUpdater:     config.StatusUpdater,
-		update:            make(chan any),
-		sequence:          make(chan int, 1),
-		syncTracker:       &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
-		UpstreamSyncFuncs: make([]func() bool, 0),
+		FieldLogger:     config.Logger,
+		builder:         config.Builder,
+		observer:        config.Observer,
+		holdoffDelay:    config.HoldoffDelay,
+		holdoffMaxDelay: config.HoldoffMaxDelay,
+		statusUpdater:   config.StatusUpdater,
+		update:          make(chan any),
+		sequence:        make(chan int, 1),
 	}
 }
 
 type opAdd struct {
-	obj             any
-	isInInitialList bool
+	obj any
 }
 
 type opUpdate struct {
@@ -92,10 +87,7 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
-	if isInInitialList {
-		e.syncTracker.Start()
-	}
-	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
+	e.update <- opAdd{obj: obj}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj any) {
@@ -155,7 +147,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		// 4. We're stopping.
 		//
 		// Only one of these things can happen at a time.
-	outerSelect:
 		select {
 		case op := <-e.update:
 			if e.onUpdate(op) {
@@ -178,21 +169,22 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				// not to process it.
 				e.incSequence()
 			}
-			if updateOpAdd, ok := op.(opAdd); ok {
-				if updateOpAdd.isInInitialList {
-					e.syncTracker.Finished()
-				}
-			}
 		case <-pending:
-			if !e.syncTracker.HasSynced() {
-				e.Info("inner cache not in sync, skipping")
-				break
-			}
-			for _, hasSynced := range e.UpstreamSyncFuncs {
-				if !hasSynced() {
-					e.Info("an upstream cache is not in sync, skipping")
-					break outerSelect
+
+			// Ensure informer caches are synced
+			hasSynced := true
+			for _, syncFunc := range e.UpstreamCacheSyncs {
+				if !syncFunc() {
+					e.Warn("at least one informer cache is not synced")
+					hasSynced = false
+					break
 				}
+			}
+
+			// Schedule a retry for dag rebuild
+			if !hasSynced {
+				timer.Reset(e.holdoffDelay)
+				break
 			}
 
 			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")

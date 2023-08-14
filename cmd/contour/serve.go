@@ -1210,7 +1210,7 @@ func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cac
 	if err == nil {
 		if er, ok := handler.(*contour.EventRecorder); ok {
 			if eh, ok := er.Next.(*contour.EventHandler); ok {
-				eh.UpstreamSyncFuncs = append(eh.UpstreamSyncFuncs, resourceEventHandlerRegistration.HasSynced)
+				eh.UpstreamCacheSyncs = append(eh.UpstreamCacheSyncs, resourceEventHandlerRegistration.HasSynced)
 			}
 		}
 	}
