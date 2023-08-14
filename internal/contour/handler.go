@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/tools/cache/synctrack"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -56,18 +57,24 @@ type EventHandler struct {
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
+
+	syncTracker *synctrack.SingleFileTracker
+
+	UpstreamSyncFuncs []func() bool
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
 	return &EventHandler{
-		FieldLogger:     config.Logger,
-		builder:         config.Builder,
-		observer:        config.Observer,
-		holdoffDelay:    config.HoldoffDelay,
-		holdoffMaxDelay: config.HoldoffMaxDelay,
-		statusUpdater:   config.StatusUpdater,
-		update:          make(chan any),
-		sequence:        make(chan int, 1),
+		FieldLogger:       config.Logger,
+		builder:           config.Builder,
+		observer:          config.Observer,
+		holdoffDelay:      config.HoldoffDelay,
+		holdoffMaxDelay:   config.HoldoffMaxDelay,
+		statusUpdater:     config.StatusUpdater,
+		update:            make(chan any),
+		sequence:          make(chan int, 1),
+		syncTracker:       &synctrack.SingleFileTracker{UpstreamHasSynced: func() bool { return true }},
+		UpstreamSyncFuncs: make([]func() bool, 0),
 	}
 }
 
@@ -85,6 +92,9 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
+	if isInInitialList {
+		e.syncTracker.Start()
+	}
 	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
 }
 
@@ -145,6 +155,7 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		// 4. We're stopping.
 		//
 		// Only one of these things can happen at a time.
+	outerSelect:
 		select {
 		case op := <-e.update:
 			if e.onUpdate(op) {
@@ -167,7 +178,23 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				// not to process it.
 				e.incSequence()
 			}
+			if updateOpAdd, ok := op.(opAdd); ok {
+				if updateOpAdd.isInInitialList {
+					e.syncTracker.Finished()
+				}
+			}
 		case <-pending:
+			if !e.syncTracker.HasSynced() {
+				e.Info("inner cache not in sync, skipping")
+				break
+			}
+			for _, hasSynced := range e.UpstreamSyncFuncs {
+				if !hasSynced() {
+					e.Info("an upstream cache is not in sync, skipping")
+					break outerSelect
+				}
+			}
+
 			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
 			e.rebuildDAG()
 			e.incSequence()

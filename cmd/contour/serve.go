@@ -1205,6 +1205,15 @@ func informOnResource(obj client.Object, handler cache.ResourceEventHandler, cac
 		return err
 	}
 
-	_, err = inf.AddEventHandler(handler)
+	resourceEventHandlerRegistration, err := inf.AddEventHandler(handler)
+
+	if err == nil {
+		if er, ok := handler.(*contour.EventRecorder); ok {
+			if eh, ok := er.Next.(*contour.EventHandler); ok {
+				eh.UpstreamSyncFuncs = append(eh.UpstreamSyncFuncs, resourceEventHandlerRegistration.HasSynced)
+			}
+		}
+	}
+
 	return err
 }
