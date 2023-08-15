@@ -31,7 +31,7 @@ This document outlines a checklist for Contour security team members (at time of
       The information that members receive on the Contour Distributors mailing list must not be made public, shared, or even hinted at anywhere beyond those who need to know within your specific team, unless you receive explicit approval to do so from the Contour Security Team. This remains true until the public disclosure date/time agreed upon by the list. Members of the list and others cannot use the information for any reason other than to get the issue fixed for your respective distribution's users.
       Before you share any information from the list with members of your team who are required to fix the issue, these team members must agree to the same terms, and only be provided with information on a need-to-know basis.
 
-      In the unfortunate event that you share information beyond what is permitted by this policy, you must urgently inform the [Contour Security Team](https://github.com/projectcontour/contour/security/policy#mailing-lists) of exactly what information was leaked and to whom. If you continue to leak information and break the policy outlined here, you will be permanently removed from the list.
+      In the unfortunate event that you share information beyond what is permitted by this policy, you must urgently inform the [Contour Security Team](https://projectcontour.io/resources/security-process#mailing-lists) of exactly what information was leaked and to whom. If you continue to leak information and break the policy outlined here, you will be permanently removed from the list.
       ```
     - Add #security tag to message
 1. Release patches for all supported minors
