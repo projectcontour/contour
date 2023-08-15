@@ -93,7 +93,6 @@ type opDelete struct {
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
 	if isInInitialList {
-		time.Sleep(time.Second * 3)
 		e.syncTracker.Start()
 	}
 	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}

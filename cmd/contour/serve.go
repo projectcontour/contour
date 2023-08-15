@@ -846,13 +846,12 @@ func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig,
 }
 
 type xdsServer struct {
-	log               logrus.FieldLogger
-	registry          *prometheus.Registry
-	config            contour_api_v1alpha1.XDSServerConfig
-	snapshotHandler   *xdscache.SnapshotHandler
-	resources         []xdscache.ResourceCache
-	handlerCacheSyncs []cache.InformerSynced
-	initialDagBuilt   func() bool
+	log             logrus.FieldLogger
+	registry        *prometheus.Registry
+	config          contour_api_v1alpha1.XDSServerConfig
+	snapshotHandler *xdscache.SnapshotHandler
+	resources       []xdscache.ResourceCache
+	initialDagBuilt func() bool
 }
 
 func (x *xdsServer) NeedLeaderElection() bool {
@@ -863,9 +862,9 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
 	log.Printf("waiting for the initial dag to be built")
-	if err := wait.PollImmediateUntil(initialDagBuildPollPeriod, func() (bool, error) {
+	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(ctx context.Context) (done bool, err error) {
 		return x.initialDagBuilt(), nil
-	}, ctx.Done()); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to wait for initial dag build, %w", err)
 	}
 	log.Printf("the initial dag is built")
