@@ -564,6 +564,21 @@ func TestListenerValidation(t *testing.T) {
 		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		SocketOptions: SocketOptions{
+			TOS:          64,
+			TrafficClass: 64,
+		},
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TOS: 256}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TrafficClass: 256}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TOS: -1}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TrafficClass: -1}}
+	require.Error(t, l.Validate())
 }
 
 func TestClusterParametersValidation(t *testing.T) {

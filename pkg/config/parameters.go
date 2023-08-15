@@ -481,6 +481,9 @@ type ListenerParameters struct {
 	//
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// SocketOptions is used to set socket options for listeners.
+	SocketOptions SocketOptions `yaml:"socket-options"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -498,6 +501,37 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
 		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+	}
+
+	return p.SocketOptions.Validate()
+}
+
+// SocketOptions defines configurable socket options for Envoy listeners.
+type SocketOptions struct {
+	// Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners.
+	// Single value is applied to all listeners.
+	// The value must be in the range 0-255, 0 means socket option is not set.
+	// If listeners are bound to IPv6-only addresses, setting this option will cause an error.
+	TOS int32 `yaml:"tos"`
+
+	// Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners.
+	// Single value is applied to all listeners.
+	// The value must be in the range 0-255, 0 means socket option is not set.
+	// If listeners are bound to IPv4-only addresses, setting this option will cause an error.
+	TrafficClass int32 `yaml:"traffic-class"`
+}
+
+func (p *SocketOptions) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.TOS < 0 || p.TOS > 255 {
+		return fmt.Errorf("invalid listener IPv4 TOS value %d, must be in the range 0-255", p.TOS)
+	}
+
+	if p.TrafficClass < 0 || p.TrafficClass > 255 {
+		return fmt.Errorf("invalid listener IPv6 TrafficClass value %d, must be in the range 0-255", p.TrafficClass)
 	}
 
 	return nil

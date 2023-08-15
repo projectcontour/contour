@@ -134,7 +134,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 				),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -197,7 +197,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 				httpsFilterFor("foo.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -346,7 +346,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 				),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -473,7 +473,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 				),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{

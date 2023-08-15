@@ -237,7 +237,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 						httpsFilterFor("*.foo-tls.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 			statsListener(),
 		),

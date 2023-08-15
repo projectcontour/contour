@@ -90,7 +90,7 @@ func TestJWTVerification(t *testing.T) {
 					filterchaintls("jwt.example.com", sec1, httpsFilterFor("jwt.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})
@@ -168,7 +168,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -321,7 +321,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -429,7 +429,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -559,7 +559,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -653,7 +653,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -807,7 +807,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -971,7 +971,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -1117,7 +1117,7 @@ func TestJWTVerification(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -1250,7 +1250,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					filterchaintls("jwt.example.com", sec1, httpsFilterFor("jwt.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})
@@ -1338,7 +1338,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -1501,7 +1501,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -1619,7 +1619,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -1759,7 +1759,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						}),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	}).Request(routeType, "https/jwt.example.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
