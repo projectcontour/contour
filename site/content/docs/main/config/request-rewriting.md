@@ -257,3 +257,74 @@ For per-Route requestHeadersPolicy only `%CONTOUR_NAMESPACE%` is set and using
 `%CONTOUR_SERVICE_NAME%` and `%CONTOUR_SERVICE_PORT%` will end up as the
 literal values `%%CONTOUR_SERVICE_NAME%%` and `%%CONTOUR_SERVICE_PORT%%`,
 respectively.
+
+### Manipulating the Host header.
+
+Contour allows users to manipulate the host header in two ways, using the `requestHeadersPolicy`.
+#### static rewrite
+
+You can set the host to a static value. This can be done on the route and service level.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: static-host-header-rewrite-route
+spec:
+  fqdn: local.projectcontour.io
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+    - requestHeaderPolicy:
+        set:
+        - name: host
+          value: foo.com
+```
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name:  static-host-header-rewrite-service
+spec:
+  fqdn: local.projectcontour.io
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+        - requestHeaderPolicy:
+            set:
+            - name: host
+              value: "foo.com"
+```
+
+#### dynamic rewrite
+
+You can also set the host header dynamically with the content of a existing header.
+The format has to be `"%REQ(<header-name>)%"`. If the header is empty, it is ignored.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: dynamic-host-header-rewrite-route
+spec:
+  fqdn: local.projectcontour.io
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+    - requestHeaderPolicy:
+        set:
+        - name: host
+          value: "%REQ(x-rewrite-header)%"
+```
+
+Note: Only one of static or dynamic host rewrite can be specified.

@@ -5897,8 +5897,10 @@ spec:
                           type: object
                       type: object
                     requestHeadersPolicy:
-                      description: The policy for managing request headers during
-                        proxying.
+                      description: 'The policy for managing request headers during
+                        proxying. NOTE: You can set the custom values to the host
+                        header on a request using the below format "%REQ(X-Header-Namee)%".
+                        If the value of the header is empty, it is ignored.'
                       properties:
                         remove:
                           description: Remove specifies a list of HTTP header names

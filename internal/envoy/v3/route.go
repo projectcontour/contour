@@ -415,9 +415,13 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	}
 
 	// Check for host header policy and set if found
-	if val := envoy.HostReplaceHeader(r.RequestHeadersPolicy); val != "" {
+	if val := envoy.HostRewriteLiteral(r.RequestHeadersPolicy); val != "" {
 		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteLiteral{
 			HostRewriteLiteral: val,
+		}
+	} else if val := envoy.HostRewriteHeader(r.RequestHeadersPolicy); val != "" {
+		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteHeader{
+			HostRewriteHeader: val,
 		}
 	}
 
@@ -616,7 +620,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 			// Check for host header policy and set if found
-			if val := envoy.HostReplaceHeader(cluster.RequestHeadersPolicy); val != "" {
+			if val := envoy.HostRewriteLiteral(cluster.RequestHeadersPolicy); val != "" {
 				c.HostRewriteSpecifier = &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{
 					HostRewriteLiteral: val,
 				}
