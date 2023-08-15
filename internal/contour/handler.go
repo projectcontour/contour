@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/cache/synctrack"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -58,10 +59,10 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	UpstreamCacheSyncs []cache.InformerSynced
+	syncTracker *synctrack.SingleFileTracker
 }
 
-func NewEventHandler(config EventHandlerConfig) *EventHandler {
+func NewEventHandler(config EventHandlerConfig, upstreamHasSynced cache.InformerSynced) *EventHandler {
 	return &EventHandler{
 		FieldLogger:     config.Logger,
 		builder:         config.Builder,
@@ -71,11 +72,13 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		statusUpdater:   config.StatusUpdater,
 		update:          make(chan any),
 		sequence:        make(chan int, 1),
+		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: upstreamHasSynced},
 	}
 }
 
 type opAdd struct {
-	obj any
+	obj             any
+	isInInitialList bool
 }
 
 type opUpdate struct {
@@ -87,7 +90,10 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
-	e.update <- opAdd{obj: obj}
+	if isInInitialList {
+		e.syncTracker.Start()
+	}
+	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj any) {
@@ -169,20 +175,19 @@ func (e *EventHandler) Start(ctx context.Context) error {
 				// not to process it.
 				e.incSequence()
 			}
-		case <-pending:
 
-			// Ensure informer caches are synced
-			hasSynced := true
-			for _, syncFunc := range e.UpstreamCacheSyncs {
-				if !syncFunc() {
-					e.Warn("at least one informer cache is not synced")
-					hasSynced = false
-					break
+			// We're done processing this event
+			if updateOpAdd, ok := op.(opAdd); ok {
+				if updateOpAdd.isInInitialList {
+					e.syncTracker.Finished()
 				}
 			}
-
-			// Schedule a retry for dag rebuild
-			if !hasSynced {
+		case <-pending:
+			// Ensure informer caches are synced.
+			// Schedule a retry for dag rebuild if cache is not synced yet.
+			// Note that we can't block and wait for the cache sync as it depends on progress of this loop.
+			if !e.syncTracker.HasSynced() {
+				e.Info("skipping dag rebuild as cache is not synced")
 				timer.Reset(e.holdoffDelay)
 				break
 			}
