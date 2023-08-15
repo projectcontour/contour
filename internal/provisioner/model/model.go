@@ -42,6 +42,7 @@ func Default(namespace, name string) *Contour {
 			EnvoyWorkloadType: WorkloadTypeDaemonSet,
 			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
 			EnvoyLogLevel:     contourv1alpha1.InfoLog,
+			EnvoyBaseID:       0,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
@@ -224,6 +225,12 @@ type ContourSpec struct {
 	// EnvoyLogLevel sets the log level for Envoy
 	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
 	EnvoyLogLevel contourv1alpha1.LogLevel
+
+	// The base ID to use when allocating shared memory regions.
+	// if Envoy needs to be run multiple times on the same machine, each running Envoy will need a unique base ID
+	// so that the shared memory regions do not conflict.
+	// defaults to 0.
+	EnvoyBaseID int32
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
