@@ -153,7 +153,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 			dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 		),
 		Builder: builder,
-	})
+	}, func() bool { return true })
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)

@@ -27,12 +27,6 @@ import (
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/xds"
-	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
-	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,6 +36,13 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/xds"
+	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
+	"github.com/projectcontour/contour/internal/xdscache"
 )
 
 func TestGRPC(t *testing.T) {
@@ -214,7 +215,7 @@ func TestGRPC(t *testing.T) {
 				Logger:   log,
 				Builder:  new(dag.Builder),
 				Observer: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
-			})
+			}, func() bool { return true })
 
 			srv := xds.NewServer(nil)
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
