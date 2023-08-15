@@ -53,8 +53,7 @@ BUILD_CGO_ENABLED ?= 0
 BUILD_GOPRIVATE ?= ""
 
 # Go module mirror to use.
-#BUILD_GOPROXY ?= https://proxy.golang.org
-BUILD_GOPROXY ?= https://goproxy.cn
+BUILD_GOPROXY ?= https://proxy.golang.org
 
 # Checksum db to use.
 BUILD_GOSUMDB ?= sum.golang.org
@@ -125,7 +124,7 @@ race:
 download: ## Download Go modules
 	go mod download
 
-multiarch-build2: ## Build and optionally push a multi-arch Contour container image to the Docker registry
+multiarch-build: ## Build and optionally push a multi-arch Contour container image to the Docker registry
 	@mkdir -p $(shell pwd)/image
 	docker buildx build $(IMAGE_RESULT_FLAG) \
 		--platform $(IMAGE_PLATFORMS) \
@@ -142,25 +141,6 @@ multiarch-build2: ## Build and optionally push a multi-arch Contour container im
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		$(shell pwd)
-
-multiarch-build: ## Build and optionally push a multi-arch Contour container image to the Docker registry
-	docker buildx build \
-		--platform $(IMAGE_PLATFORMS) \
-		--build-arg "BUILD_GOPRIVATE=$(BUILD_GOPRIVATE)" \
-		--build-arg "BUILD_GOPROXY=$(BUILD_GOPROXY)" \
-		--build-arg "BUILD_GOSUMDB=$(BUILD_GOSUMDB)" \
-		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
-		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
-		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
-		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
-		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
-		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
-		--build-arg "BUILD_GOEXPERIMENT=$(BUILD_GOEXPERIMENT)" \
-		$(DOCKER_BUILD_LABELS) \
-        -t release-ci.daocloud.io/skoala/contour:v1.25.2-with-envoy-base-id  \
-        $(shell pwd) \
-        --push
-
 
 container: ## Build the Contour container image
 	docker build \
@@ -247,7 +227,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml  generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
 
 .PHONY: generate-rbac
 generate-rbac:
