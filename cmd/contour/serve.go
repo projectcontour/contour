@@ -669,7 +669,6 @@ func (s *Server) doServe() error {
 
 	xdsServer := &xdsServer{
 		log:               s.log,
-		mgr:               s.mgr,
 		registry:          s.registry,
 		config:            *contourConfiguration.XDSServer,
 		snapshotHandler:   snapshotHandler,
@@ -843,7 +842,6 @@ func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig,
 
 type xdsServer struct {
 	log               logrus.FieldLogger
-	mgr               manager.Manager
 	registry          *prometheus.Registry
 	config            contour_api_v1alpha1.XDSServerConfig
 	snapshotHandler   *xdscache.SnapshotHandler
