@@ -7,4 +7,4 @@ For reporting security issues, please see the reporting process documentation av
 
 ## Contour's threat model
 
-For more information about the threat model Contour uses, please see https://projectcontour.io/resources/threat-model.
+For more information about the threat model Contour uses, please see https://projectcontour.io/resources/security-threat-model.
