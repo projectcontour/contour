@@ -60,6 +60,8 @@ type EventHandler struct {
 	seq int
 
 	syncTracker *synctrack.SingleFileTracker
+
+	initialDagBuilt bool
 }
 
 func NewEventHandler(config EventHandlerConfig, upstreamHasSynced cache.InformerSynced) *EventHandler {
@@ -91,6 +93,7 @@ type opDelete struct {
 
 func (e *EventHandler) OnAdd(obj any, isInInitialList bool) {
 	if isInInitialList {
+		time.Sleep(time.Second * 3)
 		e.syncTracker.Start()
 	}
 	e.update <- opAdd{obj: obj, isInInitialList: isInInitialList}
@@ -107,6 +110,10 @@ func (e *EventHandler) OnDelete(obj any) {
 // NeedLeaderElection is included to implement manager.LeaderElectionRunnable
 func (e *EventHandler) NeedLeaderElection() bool {
 	return false
+}
+
+func (e *EventHandler) HasBuiltInitialDag() bool {
+	return e.initialDagBuilt
 }
 
 // Implements leadership.NeedLeaderElectionNotification
@@ -196,6 +203,7 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			e.rebuildDAG()
 			e.incSequence()
 			lastDAGRebuild = time.Now()
+			e.initialDagBuilt = true
 		case <-ctx.Done():
 			// shutdown
 			return nil

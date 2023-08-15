@@ -30,6 +30,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -63,6 +64,10 @@ import (
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
+)
+
+const (
+	initialDagBuildPollPeriod = 100 * time.Millisecond
 )
 
 // registerServe registers the serve subcommand and flags
@@ -668,12 +673,12 @@ func (s *Server) doServe() error {
 	}
 
 	xdsServer := &xdsServer{
-		log:               s.log,
-		registry:          s.registry,
-		config:            *contourConfiguration.XDSServer,
-		snapshotHandler:   snapshotHandler,
-		resources:         resources,
-		handlerCacheSyncs: s.handlerCacheSyncs,
+		log:             s.log,
+		registry:        s.registry,
+		config:          *contourConfiguration.XDSServer,
+		snapshotHandler: snapshotHandler,
+		resources:       resources,
+		initialDagBuilt: contourHandler.HasBuiltInitialDag,
 	}
 	if err := s.mgr.Add(xdsServer); err != nil {
 		return err
@@ -847,6 +852,7 @@ type xdsServer struct {
 	snapshotHandler   *xdscache.SnapshotHandler
 	resources         []xdscache.ResourceCache
 	handlerCacheSyncs []cache.InformerSynced
+	initialDagBuilt   func() bool
 }
 
 func (x *xdsServer) NeedLeaderElection() bool {
@@ -856,9 +862,13 @@ func (x *xdsServer) NeedLeaderElection() bool {
 func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
-	log.Printf("waiting for the initial list to be delivered to handlers")
-	cache.WaitForCacheSync(ctx.Done(), x.handlerCacheSyncs...)
-	log.Printf("the initial list delivered to handlers")
+	log.Printf("waiting for the initial dag to be built")
+	if err := wait.PollImmediateUntil(initialDagBuildPollPeriod, func() (bool, error) {
+		return x.initialDagBuilt(), nil
+	}, ctx.Done()); err != nil {
+		return fmt.Errorf("failed to wait for initial dag build, %w", err)
+	}
+	log.Printf("the initial dag is built")
 
 	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
 
