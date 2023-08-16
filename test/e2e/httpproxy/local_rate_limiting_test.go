@@ -71,7 +71,7 @@ func testLocalRateLimitingVirtualHost(namespace string) {
 				return err
 			}
 
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.VhostRateLimitPolicy{
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
 				Local: &contourv1.LocalRateLimitPolicy{
 					Requests: 1,
 					Unit:     "hour",
@@ -158,7 +158,7 @@ func testLocalRateLimitingRoute(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RouteRateLimitPolicy{
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
 				Local: &contourv1.LocalRateLimitPolicy{
 					Requests: 1,
 					Unit:     "hour",

@@ -421,6 +421,8 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
 
 		f.NamespacedTest("httpproxy-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
+
+		f.NamespacedTest("httpproxy-global-rate-limiting-vhost-disable-per-route", withRateLimitService(testDisableVirtualHostGlobalRateLimitingOnRoute))
 	})
 
 	Context("default global rate limiting", func() {
@@ -498,54 +500,7 @@ descriptors:
 
 		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-non-tls", withRateLimitService(testDefaultGlobalRateLimitingVirtualHostNonTLS))
 		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-tls", withRateLimitService(testDefaultGlobalRateLimitingVirtualHostTLS))
-		f.NamespacedTest("httpproxy-default-global-rate-limiting-vh-rate-limits", withRateLimitService(testDefaultGlobalRateLimitingWithVhRateLimits))
-	})
-
-	Context("vh rate limits", func() {
-		withRateLimitService := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-			return func(namespace string) {
-				Context("with rate limit service", func() {
-					BeforeEach(func() {
-						contourConfig.RateLimitService = config.RateLimitService{
-							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
-							Domain:           "contour",
-							FailOpen:         false,
-						}
-						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-							ExtensionService: contour_api_v1alpha1.NamespacedName{
-								Name:      f.Deployment.RateLimitExtensionService.Name,
-								Namespace: namespace,
-							},
-							Domain:                  "contour",
-							FailOpen:                ref.To(false),
-							EnableXRateLimitHeaders: ref.To(false),
-						}
-						require.NoError(f.T(),
-							f.Deployment.EnsureRateLimitResources(
-								namespace,
-								`
-domain: contour
-descriptors:
-  - key: generic_key
-    value: vhostlimit
-    rate_limit:
-      unit: hour
-      requests_per_unit: 1
-  - key: route_limit_key
-    value: routelimit
-    rate_limit:
-      unit: hour
-      requests_per_unit: 1`))
-					})
-
-					body(namespace)
-				})
-			}
-		}
-
-		f.NamespacedTest("httpproxy-global-rate-limit-with-vh-rate-limits-option", withRateLimitService(testGlobalWithVhostRateLimits))
-
-		f.NamespacedTest("httpproxy-local-rate-limit-with-vh-rate-limits-option", withRateLimitService(testLocalWithVhostRateLimits))
+		f.NamespacedTest("httpproxy-default-global-rate-limiting-vhost-rate-limits-ignore", withRateLimitService(testDefaultGlobalRateLimitingWithVhRateLimitsIgnore))
 	})
 
 	Context("cookie-rewriting", func() {

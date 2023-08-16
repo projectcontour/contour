@@ -654,9 +654,9 @@ func TestHeadersPolicy(t *testing.T) {
 	}
 }
 
-func TestVhostRateLimitPolicy(t *testing.T) {
+func TestRateLimitPolicy(t *testing.T) {
 	tests := map[string]struct {
-		in      *contour_api_v1.VhostRateLimitPolicy
+		in      *contour_api_v1.RateLimitPolicy
 		want    *RateLimitPolicy
 		wantErr string
 	}{
@@ -665,11 +665,11 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			want: nil,
 		},
 		"nil local rate limit policy": {
-			in:   &contour_api_v1.VhostRateLimitPolicy{},
+			in:   &contour_api_v1.RateLimitPolicy{},
 			want: nil,
 		},
 		"local - no burst": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 3,
 					Unit:     "second",
@@ -684,7 +684,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"local - burst": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 3,
 					Unit:     "second",
@@ -700,7 +700,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"local - custom response status code": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests:           10,
 					Unit:               "minute",
@@ -717,7 +717,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"local - custom response headers to add": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 10,
 					Unit:     "hour",
@@ -746,7 +746,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"local - duplicate response header": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 10,
 					Unit:     "hour",
@@ -765,7 +765,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: "duplicate header addition: \"Duplicate-Header\"",
 		},
 		"local - invalid response header name": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 10,
 					Unit:     "hour",
@@ -780,7 +780,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: `invalid header name "Invalid-Header!": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`,
 		},
 		"local - invalid unit": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 10,
 					Unit:     "invalid-unit",
@@ -789,7 +789,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: "invalid unit \"invalid-unit\" in local rate limit policy",
 		},
 		"local - invalid requests": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 0,
 					Unit:     "second",
@@ -798,7 +798,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: "invalid requests value 0 in local rate limit policy",
 		},
 		"global - multiple descriptors": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Global: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
@@ -876,7 +876,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"global - multiple descriptor entries set": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Global: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
@@ -893,7 +893,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: "rate limit descriptor entry must have exactly one field set",
 		},
 		"global - no descriptor entries set": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Global: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
@@ -907,7 +907,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			wantErr: "rate limit descriptor entry must have exactly one field set",
 		},
 		"global - header value match": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Global: &contour_api_v1.GlobalRateLimitPolicy{
 					Descriptors: []contour_api_v1.RateLimitDescriptor{
 						{
@@ -954,7 +954,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"global and local": {
-			in: &contour_api_v1.VhostRateLimitPolicy{
+			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{
 					Requests: 20,
 					Unit:     "second",
@@ -994,358 +994,7 @@ func TestVhostRateLimitPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			rlp, err := vhostRateLimitPolicy(tc.in)
-
-			if tc.wantErr != "" {
-				assert.EqualError(t, err, tc.wantErr)
-			} else {
-				assert.Equal(t, tc.want, rlp)
-			}
-		})
-	}
-}
-
-func TestRouteRateLimitPolicy(t *testing.T) {
-	tests := map[string]struct {
-		in      *contour_api_v1.RouteRateLimitPolicy
-		want    *RateLimitPolicy
-		wantErr string
-	}{
-		"nil input": {
-			in:   nil,
-			want: nil,
-		},
-		"nil local rate limit policy": {
-			in:   &contour_api_v1.RouteRateLimitPolicy{},
-			want: nil,
-		},
-		"local - no burst": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 3,
-					Unit:     "second",
-				},
-			},
-			want: &RateLimitPolicy{
-				Local: &LocalRateLimitPolicy{
-					MaxTokens:     3,
-					TokensPerFill: 3,
-					FillInterval:  time.Second,
-				},
-			},
-		},
-		"local - burst": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 3,
-					Unit:     "second",
-					Burst:    4,
-				},
-			},
-			want: &RateLimitPolicy{
-				Local: &LocalRateLimitPolicy{
-					MaxTokens:     7,
-					TokensPerFill: 3,
-					FillInterval:  time.Second,
-				},
-			},
-		},
-		"local - custom response status code": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests:           10,
-					Unit:               "minute",
-					ResponseStatusCode: 431,
-				},
-			},
-			want: &RateLimitPolicy{
-				Local: &LocalRateLimitPolicy{
-					MaxTokens:          10,
-					TokensPerFill:      10,
-					FillInterval:       time.Minute,
-					ResponseStatusCode: 431,
-				},
-			},
-		},
-		"local - custom response headers to add": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 10,
-					Unit:     "hour",
-					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
-						{
-							Name:  "header-1",
-							Value: "header-value-1",
-						},
-						{
-							Name:  "header-2",
-							Value: "header-value-2",
-						},
-					},
-				},
-			},
-			want: &RateLimitPolicy{
-				Local: &LocalRateLimitPolicy{
-					MaxTokens:     10,
-					TokensPerFill: 10,
-					FillInterval:  time.Hour,
-					ResponseHeadersToAdd: map[string]string{
-						"Header-1": "header-value-1",
-						"Header-2": "header-value-2",
-					},
-				},
-			},
-		},
-		"local - duplicate response header": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 10,
-					Unit:     "hour",
-					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
-						{
-							Name:  "duplicate-header",
-							Value: "header-value-1",
-						},
-						{
-							Name:  "duplicate-header",
-							Value: "header-value-2",
-						},
-					},
-				},
-			},
-			wantErr: "duplicate header addition: \"Duplicate-Header\"",
-		},
-		"local - invalid response header name": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 10,
-					Unit:     "hour",
-					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
-						{
-							Name:  "invalid-header!",
-							Value: "header-value-1",
-						},
-					},
-				},
-			},
-			wantErr: `invalid header name "Invalid-Header!": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`,
-		},
-		"local - invalid unit": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 10,
-					Unit:     "invalid-unit",
-				},
-			},
-			wantErr: "invalid unit \"invalid-unit\" in local rate limit policy",
-		},
-		"local - invalid requests": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 0,
-					Unit:     "second",
-				},
-			},
-			wantErr: "invalid requests value 0 in local rate limit policy",
-		},
-		"global - multiple descriptors": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Global: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
-										Key:   "generic-key-key",
-										Value: "generic-key-value",
-									},
-								},
-								{
-									RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
-								},
-								{
-									RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
-										HeaderName:    "X-Header",
-										DescriptorKey: "request-header-key",
-									},
-								},
-							},
-						},
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{
-									RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
-								},
-								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
-										Key:   "generic-key-key-2",
-										Value: "generic-key-value-2",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &RateLimitPolicy{
-				Global: &GlobalRateLimitPolicy{
-					Descriptors: []*RateLimitDescriptor{
-						{
-							Entries: []RateLimitDescriptorEntry{
-								{
-									GenericKey: &GenericKeyDescriptorEntry{
-										Key:   "generic-key-key",
-										Value: "generic-key-value",
-									},
-								},
-								{
-									RemoteAddress: &RemoteAddressDescriptorEntry{},
-								},
-								{
-									HeaderMatch: &HeaderMatchDescriptorEntry{
-										HeaderName: "X-Header",
-										Key:        "request-header-key",
-									},
-								},
-							},
-						},
-						{
-							Entries: []RateLimitDescriptorEntry{
-								{
-									RemoteAddress: &RemoteAddressDescriptorEntry{},
-								},
-								{
-									GenericKey: &GenericKeyDescriptorEntry{
-										Key:   "generic-key-key-2",
-										Value: "generic-key-value-2",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"global - multiple descriptor entries set": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Global: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{
-									GenericKey:    &contour_api_v1.GenericKeyDescriptor{},
-									RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
-								},
-							},
-						},
-					},
-				},
-			},
-			wantErr: "rate limit descriptor entry must have exactly one field set",
-		},
-		"global - no descriptor entries set": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Global: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{},
-							},
-						},
-					},
-				},
-			},
-			wantErr: "rate limit descriptor entry must have exactly one field set",
-		},
-		"global - header value match": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Global: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{
-									RequestHeaderValueMatch: &contour_api_v1.RequestHeaderValueMatchDescriptor{
-										Headers: []contour_api_v1.HeaderMatchCondition{
-											{
-												Name:       "X-Header",
-												NotPresent: true,
-											},
-										},
-										ExpectMatch: true,
-										Value:       "header-is-not-present",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &RateLimitPolicy{
-				Global: &GlobalRateLimitPolicy{
-					Descriptors: []*RateLimitDescriptor{
-						{
-							Entries: []RateLimitDescriptorEntry{
-								{
-									HeaderValueMatch: &HeaderValueMatchDescriptorEntry{
-										Headers: []HeaderMatchCondition{
-											{
-												Name:      "X-Header",
-												MatchType: "present",
-												Invert:    true,
-											},
-										},
-										ExpectMatch: true,
-										Value:       "header-is-not-present",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"global and local": {
-			in: &contour_api_v1.RouteRateLimitPolicy{
-				Local: &contour_api_v1.LocalRateLimitPolicy{
-					Requests: 20,
-					Unit:     "second",
-				},
-				Global: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
-						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
-								{
-									RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &RateLimitPolicy{
-				Local: &LocalRateLimitPolicy{
-					MaxTokens:     20,
-					TokensPerFill: 20,
-					FillInterval:  time.Second,
-				},
-				Global: &GlobalRateLimitPolicy{
-					Descriptors: []*RateLimitDescriptor{
-						{
-							Entries: []RateLimitDescriptorEntry{
-								{
-									RemoteAddress: &RemoteAddressDescriptorEntry{},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			rlp, err := routeRateLimitPolicy(tc.in)
+			rlp, err := rateLimitPolicy(tc.in)
 
 			if tc.wantErr != "" {
 				assert.EqualError(t, err, tc.wantErr)

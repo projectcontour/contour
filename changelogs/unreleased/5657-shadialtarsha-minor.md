@@ -1,6 +1,6 @@
-## Add support for extensions.filters.http.ratelimit.v3.RateLimitPerRoute 
+## Disable the virtualhost's Global RateLimit policy 
 
-Envoy has extensions.filters.http.ratelimit.v3.RateLimitPerRoute API which allows control over the Vhost Rate Limits on the route level.
+Setting `global.disabled` flag to false on a specific route should disable the vhost global rate limit policy.
 
 ### Sample Configurations
 #### httpproxy.yaml
@@ -28,14 +28,8 @@ spec:
     - conditions:
         - prefix: /foo
       rateLimitPolicy:
-        vhRateLimits: "Ignore"
         global:
-          descriptors:
-            - entries:
-              - remoteAddress: {}
-            - entries:
-              - genericKey:
-                  value: foo
+          disabled: true
       services:
         - name: ingress-conformance-echo
           port: 80

@@ -791,19 +791,14 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		rlp, err := routeRateLimitPolicy(route.RateLimitPolicy)
+		rlp, err := rateLimitPolicy(route.RateLimitPolicy)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
 				"route.rateLimitPolicy is invalid: %s", err)
 			return nil
 		}
 
-		vrl, err := rateLimitPerRoute(route.RateLimitPolicy)
-		if err != nil {
-			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPerRouteNotValid",
-				"route.rateLimitPerRoute is invalid: %s", err)
-			return nil
-		}
+		vrl := rateLimitPerRoute(route.RateLimitPolicy)
 
 		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
@@ -1432,7 +1427,7 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 }
 
 func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rls *contour_api_v1alpha1.RateLimitServiceConfig, validCond *contour_api_v1.DetailedCondition) (*RateLimitPolicy, bool) {
-	rlp, err := vhostRateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
 			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
@@ -1977,24 +1972,13 @@ func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfi
 	}, nil
 }
 
-func rateLimitPerRoute(in *contour_api_v1.RouteRateLimitPolicy) (*RateLimitPerRoute, error) {
-	if in == nil || in.VhRateLimits == "" {
-		return nil, nil
+func rateLimitPerRoute(in *contour_api_v1.RateLimitPolicy) *RateLimitPerRoute {
+	// Ignore the virtual host global rate limit policy if disabled is true
+	if in != nil && in.Global != nil && in.Global.Disabled {
+		return &RateLimitPerRoute{
+			VhRateLimits: VhRateLimitsIgnore,
+		}
 	}
 
-	var vrl VhRateLimitsType
-	switch in.VhRateLimits {
-	case "Override":
-		vrl = VhRateLimitsOverride
-	case "Include":
-		vrl = VhRateLimitsInclude
-	case "Ignore":
-		vrl = VhRateLimitsIgnore
-	default:
-		return nil, fmt.Errorf("error parsing rateLimitPerRoute config, %s is not supported", in.VhRateLimits)
-	}
-
-	return &RateLimitPerRoute{
-		VhRateLimits: vrl,
-	}, nil
+	return nil
 }

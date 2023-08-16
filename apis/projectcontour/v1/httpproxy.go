@@ -322,7 +322,7 @@ type VirtualHost struct {
 	CORSPolicy *CORSPolicy `json:"corsPolicy,omitempty"`
 	// The policy for rate limiting on the virtual host.
 	// +optional
-	RateLimitPolicy *VhostRateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
 	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
 	// +optional
 	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
@@ -564,7 +564,7 @@ type Route struct {
 	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
 	// The policy for rate limiting on the route.
 	// +optional
-	RateLimitPolicy *RouteRateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
 
 	// RequestRedirectPolicy defines an HTTP redirection.
 	// +optional
@@ -785,8 +785,8 @@ type CookieDomainRewrite struct {
 	Value string `json:"value"`
 }
 
-// VhostRateLimitPolicy defines rate limiting parameters on the virtual host level.
-type VhostRateLimitPolicy struct {
+// RateLimitPolicy defines rate limiting parameters.
+type RateLimitPolicy struct {
 	// Local defines local rate limiting parameters, i.e. parameters
 	// for rate limiting that occurs within each Envoy pod as requests
 	// are handled.
@@ -798,27 +798,6 @@ type VhostRateLimitPolicy struct {
 	// service (RLS) for a rate limit decision on each request.
 	// +optional
 	Global *GlobalRateLimitPolicy `json:"global,omitempty"`
-}
-
-// RouteRateLimitPolicy defines rate limiting parameters on the route-level.
-type RouteRateLimitPolicy struct {
-	// Local defines local rate limiting parameters, i.e. parameters
-	// for rate limiting that occurs within each Envoy pod as requests
-	// are handled.
-	// +optional
-	Local *LocalRateLimitPolicy `json:"local,omitempty"`
-
-	// Global defines global rate limiting parameters, i.e. parameters
-	// defining descriptors that are sent to an external rate limit
-	// service (RLS) for a rate limit decision on each request.
-	// +optional
-	Global *GlobalRateLimitPolicy `json:"global,omitempty"`
-
-	// VhRateLimits defines how the route should handle rate limits defined by the virtual host.
-	// Default value is Override, which means use the virtual host rate limits unless the route has a rate limit policy.
-	// Allowed values are: Override, Include, or Ignore.
-	// +optional
-	VhRateLimits string `json:"vhRateLimits,omitempty"`
 }
 
 // LocalRateLimitPolicy defines local rate limiting parameters.
