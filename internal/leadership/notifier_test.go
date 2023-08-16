@@ -25,8 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=NeedLeaderElectionNotification  --disable-version-string
-
 func TestNotifier(t *testing.T) {
 	toNotify1 := &mocks.NeedLeaderElectionNotification{}
 	toNotify1.On("OnElectedLeader").Once()
