@@ -61,6 +61,6 @@ else
   # Keep the list of skipped features in sync with
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   go test -timeout=40m ./conformance -gateway-class=contour -all-features \
-    -exempt-features=Mesh,SupportGatewayClassRoutability,SupportGatewayPublicRoutability,SupportGatewayPrivateRoutability,SupportGatewayClusterRoutability \
+    -exempt-features=Mesh \
     -skip-tests=HTTPRouteRedirectPortAndScheme
 fi
