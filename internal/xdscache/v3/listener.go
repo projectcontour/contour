@@ -144,6 +144,9 @@ type ListenerConfig struct {
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
 	TracingConfig *TracingConfig
+
+	// SocketOptions configures socket options HTTP and HTTPS listeners.
+	SocketOptions *contour_api_v1alpha1.SocketOptions
 }
 
 type ExtensionServiceConfig struct {
@@ -374,6 +377,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		return b
 	}
 
+	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
+	if cfg.SocketOptions != nil {
+		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
+	}
+
 	for _, listener := range root.Listeners {
 		// A Listener-level TCPProxy proxies all traffic for
 		// the Listener port, i.e. no filter chain match.
@@ -383,6 +391,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Address,
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				nil,
 				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
@@ -422,6 +431,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Address,
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				proxyProtocol(cfg.UseProxyProto),
 				cm,
 			)
@@ -436,6 +446,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Address,
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				secureProxyProtocol(cfg.UseProxyProto),
 			)
 		}

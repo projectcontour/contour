@@ -6760,6 +6760,22 @@ EnvoyTLS
 <p>TLS holds various configurable Envoy TLS listener values.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>socketOptions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.SocketOptions">
+SocketOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SocketOptions defines configurable socket options for the listeners.
+Single set of options are applied to all listeners.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging
@@ -8322,6 +8338,55 @@ This is the default value.</p>
 if none is present.</p>
 </td>
 </tr></tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.SocketOptions">SocketOptions
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>SocketOptions defines configurable socket options for Envoy listeners.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>tos</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners.
+Single value is applied to all listeners.
+If listeners are bound to IPv6-only addresses, setting this option will cause an error.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>trafficClass</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners.
+Single value is applied to all listeners.
+If listeners are bound to IPv4-only addresses, setting this option will cause an error.</p>
+</td>
+</tr>
+</tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.TLS">TLS
 </h3>

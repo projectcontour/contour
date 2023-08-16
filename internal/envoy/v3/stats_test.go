@@ -106,7 +106,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				},
 			),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}}})
 
 	run(t, "stats-over-https-and-health-over-http", testcase{
@@ -164,7 +164,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				),
 			}},
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}, {
 			Name:    "health",
 			Address: SocketAddress("127.0.0.127", 8124),
@@ -194,7 +194,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				},
 			),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}}})
 
 	run(t, "stats-over-https-with-client-auth-and-health-over-http", testcase{
@@ -260,7 +260,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				),
 			}},
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}, {
 			Name:    "health",
 			Address: SocketAddress("127.0.0.127", 8124),
@@ -290,7 +290,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				},
 			),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}}})
 
 	run(t, "stats-and-health-over-http-but-different-listeners", testcase{
@@ -330,7 +330,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				},
 			),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}, {
 			Name:    "health",
 			Address: SocketAddress("127.0.0.128", 8124),
@@ -360,7 +360,7 @@ func TestStatsListeners(t *testing.T) {
 					},
 				},
 			),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 		}}})
 
 }

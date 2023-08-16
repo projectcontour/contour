@@ -386,6 +386,30 @@ type EnvoyListenerConfig struct {
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
+
+	// SocketOptions defines configurable socket options for the listeners.
+	// Single set of options are applied to all listeners.
+	// +optional
+	SocketOptions *SocketOptions `json:"socketOptions,omitempty"`
+}
+
+// SocketOptions defines configurable socket options for Envoy listeners.
+type SocketOptions struct {
+	// Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners.
+	// Single value is applied to all listeners.
+	// If listeners are bound to IPv6-only addresses, setting this option will cause an error.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=255
+	// +optional
+	TOS int32 `json:"tos,omitempty"`
+
+	// Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners.
+	// Single value is applied to all listeners.
+	// If listeners are bound to IPv4-only addresses, setting this option will cause an error.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=255
+	// +optional
+	TrafficClass int32 `json:"trafficClass,omitempty"`
 }
 
 // EnvoyTLS describes tls parameters for Envoy listneners.

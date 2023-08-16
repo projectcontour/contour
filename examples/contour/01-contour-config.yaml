@@ -177,3 +177,9 @@ data:
     #    server-certificate-path: /path/to/server-cert.pem
     #    server-key-path: /path/to/server-private-key.pem
     #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #
+    # listener:
+    #  connection-balancer: exact
+    #  socket-options:
+    #    tos: 64
+    #    traffic-class: 64

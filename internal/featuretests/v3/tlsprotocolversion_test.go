@@ -81,7 +81,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -142,7 +142,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{

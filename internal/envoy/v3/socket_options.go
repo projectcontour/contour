@@ -18,14 +18,18 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 )
 
-func TCPKeepaliveSocketOptions() []*envoy_core_v3.SocketOption {
+type SocketOptions struct {
+	options []*envoy_core_v3.SocketOption
+}
 
-	// Note: TCP_KEEPIDLE + (TCP_KEEPINTVL * TCP_KEEPCNT) must be greater than
-	// the grpc.KeepaliveParams time + timeout (currently 60 + 20 = 80 seconds)
-	// otherwise TestGRPC/StreamClusters fails.
-	return []*envoy_core_v3.SocketOption{
+func NewSocketOptions() *SocketOptions {
+	return &SocketOptions{}
+}
+
+func (so *SocketOptions) TCPKeepalive() *SocketOptions {
+	so.options = append(so.options,
 		// Enable TCP keep-alive.
-		{
+		&envoy_core_v3.SocketOption{
 			Description: "Enable TCP keep-alive",
 			Level:       envoy.SOL_SOCKET,
 			Name:        envoy.SO_KEEPALIVE,
@@ -34,7 +38,7 @@ func TCPKeepaliveSocketOptions() []*envoy_core_v3.SocketOption {
 		},
 		// The time (in seconds) the connection needs to remain idle
 		// before TCP starts sending keepalive probes.
-		{
+		&envoy_core_v3.SocketOption{
 			Description: "TCP keep-alive initial idle time",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPIDLE,
@@ -42,7 +46,7 @@ func TCPKeepaliveSocketOptions() []*envoy_core_v3.SocketOption {
 			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The time (in seconds) between individual keepalive probes.
-		{
+		&envoy_core_v3.SocketOption{
 			Description: "TCP keep-alive time between probes",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPINTVL,
@@ -52,12 +56,48 @@ func TCPKeepaliveSocketOptions() []*envoy_core_v3.SocketOption {
 		// The maximum number of TCP keep-alive probes to send before
 		// giving up and killing the connection if no response is
 		// obtained from the other end.
-		{
+		&envoy_core_v3.SocketOption{
 			Description: "TCP keep-alive probe count",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPCNT,
 			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 9},
 			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
+	)
+
+	return so
+}
+
+// TOS sets the IP_TOS socket option for IPv4 socket.
+func (so *SocketOptions) TOS(value int32) *SocketOptions {
+	if value != 0 {
+		so.options = append(so.options,
+			&envoy_core_v3.SocketOption{
+				Description: "Set IPv4 TOS field",
+				Level:       envoy.IPPROTO_IP,
+				Name:        envoy.IP_TOS,
+				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(value)},
+			})
 	}
+	return so
+}
+
+// TrafficClass sets the IPV6_TCLASS socket option for IPv4 socket.
+func (so *SocketOptions) TrafficClass(value int32) *SocketOptions {
+	if value != 0 {
+		so.options = append(so.options,
+			&envoy_core_v3.SocketOption{
+				Description: "Set IPv6 Traffic Class field",
+				Level:       envoy.IPPROTO_IPV6,
+				Name:        envoy.IPV6_TCLASS,
+				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(value)},
+			})
+	}
+	return so
+}
+
+func (so *SocketOptions) Build() []*envoy_core_v3.SocketOption {
+	return so.options
 }

@@ -100,7 +100,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"insecure listener w/ proxy": {
@@ -122,7 +122,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"secure listener": {
@@ -138,7 +138,7 @@ func TestListener(t *testing.T) {
 				ListenerFilters: ListenerFilters(
 					TLSInspector(),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"secure listener w/ proxy": {
@@ -156,7 +156,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 					TLSInspector(),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"listener w/ connection buffer limits": {
@@ -174,7 +174,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"secure listener w/ connection buffer limits": {
@@ -192,14 +192,14 @@ func TestListener(t *testing.T) {
 				ListenerFilters: ListenerFilters(
 					TLSInspector(),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Listener(tc.name, tc.address, tc.port, tc.perConnectionBufferLimitBytes, tc.lf, tc.f...)
+			got := Listener(tc.name, tc.address, tc.port, tc.perConnectionBufferLimitBytes, NewSocketOptions().TCPKeepalive(), tc.lf, tc.f...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
