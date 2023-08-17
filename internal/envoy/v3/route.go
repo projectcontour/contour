@@ -146,7 +146,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 		}
 
 		if dagRoute.RateLimitPerRoute != nil {
-			route.TypedPerFilterConfig["envoy.filters.http.ratelimit"] = rateLimitPerRoute(int(dagRoute.RateLimitPerRoute.VhRateLimits))
+			route.TypedPerFilterConfig["envoy.filters.http.ratelimit"] = rateLimitPerRoute(dagRoute.RateLimitPerRoute)
 		}
 
 		// Apply per-route authorization policy modifications.

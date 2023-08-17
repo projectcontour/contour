@@ -165,10 +165,10 @@ func enableXRateLimitHeaders(enable bool) ratelimit_filter_v3.RateLimit_XRateLim
 }
 
 // rateLimitPerRoute returns a per-route config to configure vhost rate limits.
-func rateLimitPerRoute(mode int) *anypb.Any {
+func rateLimitPerRoute(r *dag.RateLimitPerRoute) *anypb.Any {
 	return protobuf.MustMarshalAny(
 		&ratelimit_filter_v3.RateLimitPerRoute{
-			VhRateLimits: ratelimit_filter_v3.RateLimitPerRoute_VhRateLimitsOptions(mode),
+			VhRateLimits: ratelimit_filter_v3.RateLimitPerRoute_VhRateLimitsOptions(r.VhRateLimits),
 		},
 	)
 }
