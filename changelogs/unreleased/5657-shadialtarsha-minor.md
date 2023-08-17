@@ -1,6 +1,6 @@
 ## Disable the virtualhost's Global RateLimit policy 
 
-Setting `global.disabled` flag to false on a specific route should disable the vhost global rate limit policy.
+Setting `rateLimitPolicy.global.disabled` flag to true on a specific route now disables the global rate limit policy inherited from the virtual host for that route.
 
 ### Sample Configurations
 #### httpproxy.yaml
