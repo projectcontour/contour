@@ -1,4 +1,4 @@
-## Disable the virtualhost's Global RateLimit policy 
+## Specific routes can now opt out of the virtual host's global rate limit policy
 
 Setting `rateLimitPolicy.global.disabled` flag to true on a specific route now disables the global rate limit policy inherited from the virtual host for that route.
 
