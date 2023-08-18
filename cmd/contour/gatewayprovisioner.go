@@ -57,7 +57,9 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		Default(provisionerConfig.gatewayControllerName).
 		StringVar(&provisionerConfig.gatewayControllerName)
 
-	cmd.Flag("incluster", "Use in cluster configuration.").BoolVar(&provisionerConfig.inCluster)
+	cmd.Flag("incluster", "Use in cluster configuration.").
+		Default("true").
+		BoolVar(&provisionerConfig.inCluster)
 	cmd.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").
 		PlaceHolder("/path/to/file").
 		StringVar(&provisionerConfig.kubeconfig)
@@ -103,8 +105,8 @@ type gatewayProvisionerConfig struct {
 	gatewayControllerName string
 
 	// Kubernetes client parameters.
-	inCluster  bool   `yaml:"incluster,omitempty"`
-	kubeconfig string `yaml:"kubeconfig,omitempty"`
+	inCluster  bool
+	kubeconfig string
 }
 
 func runGatewayProvisioner(config *gatewayProvisionerConfig) {
