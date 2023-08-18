@@ -57,6 +57,9 @@ const (
 	LoadBalancerPolicyRequestHash = "RequestHash"
 )
 
+// match "%REQ(<X-Foo-Bar>)%"
+var hostRewriteHeaderRegex = regexp.MustCompile(`%REQ\((\S+)\)%`)
+
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
 func retryOn(ron []contour_api_v1.RetryOn) string {
@@ -223,9 +226,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 // extractHostRewriteHeaderValue returns the value of the header
 func extractHostRewriteHeaderValue(s string) string {
-	// match "%REQ(<X-Foo-Bar>)%"
-	re := regexp.MustCompile(`%REQ\((\S+)\)%`)
-	matches := re.FindStringSubmatch(s)
+	matches := hostRewriteHeaderRegex.FindStringSubmatch(s)
 
 	if len(matches) == 2 {
 		return strings.TrimSpace(matches[1])
