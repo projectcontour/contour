@@ -199,6 +199,7 @@ documentation </a> for details of what each of these resolve to:
 * `%DOWNSTREAM_PEER_CERT_V_END%`
 * `%HOSTNAME%`
 * `%REQ(header-name)%`
+* `%RESP(header-name)%`
 * `%PROTOCOL%`
 * `%RESPONSE_FLAGS%`
 * `%RESPONSE_CODE_DETAILS%`
@@ -211,8 +212,8 @@ skips them entirely - for example:
   remote address cannot be added to request headers as the upstream host has not
   been selected when custom request headers are generated."
 * `%DOWNSTREAM_TLS_VERSION%` is skipped if TLS is not in use
-* Envoy ignores REQ headers that refer to an non-existent header - for example
-  `%REQ(Host)%` works as expected but `%REQ(Missing-Header)%` is skipped
+* Envoy ignores REQ or RESP headers that refer to an non-existent header - for example
+  `%REQ(Host)%` or `%RESP(Host)%` works as expected but `%REQ(Missing-Header)%` `%RESP(Missing-Header)%` is skipped
 
 Contour already sets the `X-Request-Start` request header to
 `t=%START_TIME(%s.%3f)%` which is the Unix epoch time when the request
