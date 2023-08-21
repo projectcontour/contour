@@ -17,10 +17,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/ref"
+
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1097,6 +1098,32 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
 				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key", "prometheus.io/scrape", "prometheus.io/port")
+			},
+		},
+
+		"If ContourDeployment.Spec.Envoy.BaseID is specified, the Envoy container's arguments contain --base-id": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						BaseID: 1,
+					},
+				},
+			},
+			gateway: makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
+				assert.Contains(t, ds.Spec.Template.Spec.Containers[1].Args, "--base-id 1")
 			},
 		},
 

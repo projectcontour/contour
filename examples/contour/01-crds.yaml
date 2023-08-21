@@ -1458,6 +1458,14 @@ spec:
                   or Deployment), node placement constraints for the pods, and various
                   options for the Envoy service.
                 properties:
+                  baseID:
+                    description: The base ID to use when allocating shared memory
+                      regions. if Envoy needs to be run multiple times on the same
+                      machine, each running Envoy will need a unique base ID so that
+                      the shared memory regions do not conflict. defaults to 0.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   daemonSet:
                     description: DaemonSet describes the settings for running envoy
                       as a `DaemonSet`. if `WorkloadType` is `Deployment`,it's must

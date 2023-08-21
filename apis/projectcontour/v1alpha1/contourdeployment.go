@@ -206,6 +206,15 @@ type EnvoySettings struct {
 	// if `WorkloadType` is `DaemonSet`,it's must be nil
 	// +optional
 	Deployment *DeploymentSettings `json:"deployment,omitempty"`
+
+	// The base ID to use when allocating shared memory regions.
+	// if Envoy needs to be run multiple times on the same machine, each running Envoy will need a unique base ID
+	// so that the shared memory regions do not conflict.
+	// defaults to 0.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	BaseID int32 `json:"baseID,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

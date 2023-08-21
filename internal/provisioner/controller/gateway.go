@@ -357,6 +357,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *envoyParams.DaemonSet.UpdateStrategy
 			}
 
+			if envoyParams.BaseID > 0 {
+				contourModel.Spec.EnvoyBaseID = envoyParams.BaseID
+			}
+
 		}
 	}
 
