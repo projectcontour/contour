@@ -231,6 +231,11 @@ type ContourSpec struct {
 	// so that the shared memory regions do not conflict.
 	// defaults to 0.
 	EnvoyBaseID int32
+
+	// MaximumHeapSizeBytes defines how much memory the overload manager controls Envoy to allocate at most.
+	// If the value is 0, the overload manager is disabled.
+	// defaults to 0.
+	EnvoyMaxHeapSizeBytes uint64
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
