@@ -3,27 +3,79 @@
 Status: Draft
 
 ## Abstract
-This document recommends adding passive health checks to services to enhance routing reliability
+This document recommends adding passive health checks to services to enhance routing reliability.
 
 ## Background
 
 Envoy supports two types of health checks, namely active health check and [passive health check][1]. Passive and active health checks can be enabled simultaneously or independently, and form the basis of the overall upstream health check solution. Contour has implemented active health checks. If Passive health checks are configured to better monitor service status and route traffic to healthy instances.
 
 ## Goals
-- Add outlier detection related configuration detection for services
+- Add outlier detection related configuration detection for services.
+- Support global configuration of OutlierDetection, service level can be overridden or disabled.
 - Support configuration based on route and TCPRoute.
-- Support configuration for consecutive-5 xx and consecutive-local-origin-failure
+- Support configuration for consecutive-5 xx and consecutive-local-origin-failure.
 
 ## Non-Goals
-- Not supported Outlier Detection configuration for consecutive-gateway-failure, success-rate, and failure-percentage
+- Not supported Outlier Detection configuration for consecutive-gateway-failure, success-rate, and failure-percentage.
 
 ## Detailed Design
 
-Add a new field in the CRD of httpproxy for configuring Outlier Detection of the service. The field is defined as follows:
+### Global Configuration
+The `OutlierDetection` section of the Contour config file will look like:
 
+```yaml
+outlierDetection:
+  # ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+  # When the backend host encounters consecutive
+  # errors greater than or equal to ConsecutiveServerErrors, it will be
+  # ejected from the load balancing pool.
+  # for HTTP services, a 5xx counts as an error and for TCP services
+  # connection failures and connection timeouts count as an error.
+  # It can be disabled by setting the value to 0.
+  # Defaults to 5.
+  consecutiveServerErrors: 5
+  # Interval is the interval at which host status is evaluated.
+  # Defaults to 10s.
+  interval: 10s
+  # BaseEjectionTime is the base time that a host is ejected for.
+  # A host will remain ejected for a period of time equal to the
+  # product of the ejection base duration and the number of times the host has been ejected.
+  # Defaults to 30s.
+  baseEjectionTime: 30s
+  # MaxEjectionTime is the maximum time a host will be ejected for.
+  # After this amount of time, a host will be returned to normal operation.
+  # If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+  # Defaults to 300s.
+  maxEjectionTime: 300s
+  # SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
+  # Defaults to false.
+  splitExternalLocalOriginErrors: false
+  # ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+  # Parameters take effect only when SplitExternalLocalOriginErrors is true.
+  # Defaults to 5.
+  consecutiveLocalOriginFailure: 5
+  # MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+  # But will eject at least one host regardless of the value here.
+  # Defaults to 10%.
+  maxEjectionPercent: 10
+  # MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time, 
+  # in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+  # Defaults to 0s.
+  maxEjectionTimeJitter: 0s
+```
+
+
+### Httpproxy Configuration
+Add a new field in the CRD of httpproxy for configuring Outlier Detection of the service. The field is defined as follows:
 ```go
 // OutlierDetection defines the configuration for outlier detection on a service.
+// If not specified, global configuration will be used.
+// If specified, it will override the global configuration.
 type OutlierDetection struct {
+	
+	// Disabled defines whether to disable outlier detection for the service.
+	// Defaults to false. 
+	Disabled *bool `json:"disabled,omitempty"`
     // ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
     // When the backend host encounters consecutive
     // errors greater than or equal to ConsecutiveServerErrors, it will be
@@ -86,7 +138,7 @@ type OutlierDetection struct {
 
 ## Example
 
-Below are some configuration examples for outlier detection.
+If the global configuration is not configured,Below are some configuration examples for outlier detection.
 
 ### Example 1    
  ```yaml
