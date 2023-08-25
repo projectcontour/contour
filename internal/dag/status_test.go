@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -676,7 +677,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidIncludeCycle.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", fmt.Sprintf("root httpproxy cannot include another root httpproxy (%s/%s)", proxyInvalidIncludeCycle.Namespace, proxyInvalidIncludeCycle.Name)),
 		},
 	})
 
@@ -1052,7 +1053,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyIncludesRootDifferentFQDN.Name, Namespace: proxyIncludesRootDifferentFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludesRootDifferentFQDN.Generation).
-				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", fmt.Sprintf("root httpproxy cannot include another root httpproxy (%s/%s)", proxyRootIncludedByRootDiffFQDN.Namespace, proxyRootIncludedByRootDiffFQDN.Name)),
 			{Name: proxyRootIncludedByRootDiffFQDN.Name, Namespace: proxyRootIncludedByRootDiffFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludedByRootDiffFQDN.Generation).
 				Valid(),
@@ -1625,7 +1626,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []any{proxyTCPIncludesFoo, proxyValidTCPRoot, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot", fmt.Sprintf("root httpproxy cannot include another root httpproxy (%s/%s)", proxyValidTCPRoot.Namespace, proxyValidTCPRoot.Name)),
 			{Name: proxyValidTCPRoot.Name, Namespace: proxyValidTCPRoot.Namespace}: fixture.NewValidCondition().Valid(),
 		},
 	})

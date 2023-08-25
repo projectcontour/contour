@@ -715,7 +715,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		if includedProxy.Spec.VirtualHost != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot",
-				"root httpproxy cannot include another root httpproxy")
+				"root httpproxy cannot include another root httpproxy (%s/%s)", includedProxy.Namespace, includedProxy.Name)
 			// Set 502 response if include references another root
 			routes = p.addStatusBadGatewayRoute(routes, include.Conditions, proxy)
 			continue
@@ -1247,7 +1247,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	if dest.Spec.VirtualHost != nil {
 
 		validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot",
-			"root httpproxy cannot include another root httpproxy")
+			"root httpproxy cannot include another root httpproxy (%s/%s)", dest.Namespace, dest.Name)
 		return false
 	}
 
