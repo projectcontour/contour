@@ -199,10 +199,19 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			}
 
 			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
-			e.rebuildDAG()
-			e.incSequence()
+
+			// Rebuild the DAG
+			latestDAG := e.builder.Build()
 			lastDAGRebuild = time.Now()
 			e.initialDagBuilt = true
+
+			// Send update to the Observer and StatusUpdater
+			e.observer.OnChange(latestDAG)
+			for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
+				e.statusUpdater.Send(upd)
+			}
+
+			e.incSequence()
 		case <-ctx.Done():
 			// shutdown
 			return nil
@@ -269,16 +278,5 @@ func (e *EventHandler) incSequence() {
 		// This is a non blocking send so if this field is nil, or the
 		// receiver is not ready this send does not block incSequence's caller.
 	default:
-	}
-}
-
-// rebuildDAG builds a new DAG and sends it to the Observer,
-// the updates the status on objects, and updates the metrics.
-func (e *EventHandler) rebuildDAG() {
-	latestDAG := e.builder.Build()
-	e.observer.OnChange(latestDAG)
-
-	for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
-		e.statusUpdater.Send(upd)
 	}
 }
