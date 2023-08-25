@@ -200,13 +200,15 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
 
-			// Rebuild the DAG
+			// Build a new DAG and sends it to the Observer.
 			latestDAG := e.builder.Build()
 			lastDAGRebuild = time.Now()
+			e.observer.OnChange(latestDAG)
+
+			// Allow XDS server to start (if it hasn't already).
 			e.initialDagBuilt = true
 
-			// Send update to the Observer and StatusUpdater
-			e.observer.OnChange(latestDAG)
+			// Update the status on objects.
 			for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
 				e.statusUpdater.Send(upd)
 			}
