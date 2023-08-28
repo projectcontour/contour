@@ -384,7 +384,7 @@ func (l *listenerInfo) AllowsKind(kind gatewayapi_v1beta1.Kind) bool {
 
 // isAddressAssigned returns true if either there are no addresses requested in specAddresses,
 // or if at least one address from specAddresses appears in statusAddresses.
-func isAddressAssigned(specAddresses, statusAddresses []gatewayapi_v1beta1.GatewayAddress) bool {
+func isAddressAssigned(specAddresses []gatewayapi_v1beta1.GatewayAddress, statusAddresses []gatewayapi_v1beta1.GatewayStatusAddress) bool {
 	if len(specAddresses) == 0 {
 		return true
 	}

@@ -58,9 +58,9 @@ else
   git clone https://github.com/kubernetes-sigs/gateway-api
   cd gateway-api
   git checkout "${GATEWAY_API_VERSION}"
-  # TODO: Keep the list of skipped features in sync with
+  # Keep the list of skipped features in sync with
   # test/conformance/gatewayapi/gateway_conformance_test.go.
-  # Can implement with the -skip flag available with go 1.20
-  # or if Gateway API supports skipping tests via custom flag.
-  go test -timeout=40m ./conformance -gateway-class=contour -all-features -exempt-features=Mesh
+  go test -timeout=40m ./conformance -gateway-class=contour -all-features \
+    -exempt-features=Mesh \
+    -skip-tests=HTTPRouteRedirectPortAndScheme
 fi
