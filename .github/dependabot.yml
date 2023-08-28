@@ -9,6 +9,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   labels:
   - area/dependency
   - release-note/none-required
@@ -19,6 +20,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   labels:
   - area/tooling
   - release-note/none-required
@@ -31,6 +33,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -46,6 +49,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -63,6 +67,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -78,6 +83,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -95,6 +101,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -110,6 +117,7 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
