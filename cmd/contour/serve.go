@@ -60,6 +60,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -215,8 +216,10 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Instantiate a controller-runtime manager.
 	options := manager.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     "0",
+		Scheme: scheme,
+		Metrics: controller_runtime_metrics_server.Options{
+			BindAddress: "0",
+		},
 		HealthProbeBindAddress: "0",
 		Cache: ctrl_cache.Options{
 			// ByObject is a function that allows changing incoming objects before they are cached by the informer.
@@ -261,7 +264,12 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	if watchedNamespaces := ctx.watchedNamespaces(); watchedNamespaces != nil {
 		log.WithField("namespaces", watchedNamespaces).Info("watching subset of namespaces")
-		options.Cache.Namespaces = watchedNamespaces
+		// Maps namespaces to cache configs. We will set an empty config
+		// so the higher level defaults are used.
+		options.Cache.DefaultNamespaces = map[string]ctrl_cache.Config{}
+		for _, ns := range watchedNamespaces {
+			options.Cache.DefaultNamespaces[ns] = ctrl_cache.Config{}
+		}
 	}
 
 	if ctx.LeaderElection.Disable {

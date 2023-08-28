@@ -41,25 +41,32 @@ func (_m *Cache) Get(ctx context.Context, key types.NamespacedName, obj client.O
 	return r0
 }
 
-// GetInformer provides a mock function with given fields: ctx, obj
-func (_m *Cache) GetInformer(ctx context.Context, obj client.Object) (cache.Informer, error) {
-	ret := _m.Called(ctx, obj)
+// GetInformer provides a mock function with given fields: ctx, obj, opts
+func (_m *Cache) GetInformer(ctx context.Context, obj client.Object, opts ...cache.InformerGetOption) (cache.Informer, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, obj)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 cache.Informer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object) (cache.Informer, error)); ok {
-		return rf(ctx, obj)
+	if rf, ok := ret.Get(0).(func(context.Context, client.Object, ...cache.InformerGetOption) (cache.Informer, error)); ok {
+		return rf(ctx, obj, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object) cache.Informer); ok {
-		r0 = rf(ctx, obj)
+	if rf, ok := ret.Get(0).(func(context.Context, client.Object, ...cache.InformerGetOption) cache.Informer); ok {
+		r0 = rf(ctx, obj, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(cache.Informer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, client.Object) error); ok {
-		r1 = rf(ctx, obj)
+	if rf, ok := ret.Get(1).(func(context.Context, client.Object, ...cache.InformerGetOption) error); ok {
+		r1 = rf(ctx, obj, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -67,25 +74,32 @@ func (_m *Cache) GetInformer(ctx context.Context, obj client.Object) (cache.Info
 	return r0, r1
 }
 
-// GetInformerForKind provides a mock function with given fields: ctx, gvk
-func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
-	ret := _m.Called(ctx, gvk)
+// GetInformerForKind provides a mock function with given fields: ctx, gvk, opts
+func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, opts ...cache.InformerGetOption) (cache.Informer, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, gvk)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 cache.Informer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind) (cache.Informer, error)); ok {
-		return rf(ctx, gvk)
+	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) (cache.Informer, error)); ok {
+		return rf(ctx, gvk, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind) cache.Informer); ok {
-		r0 = rf(ctx, gvk)
+	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) cache.Informer); ok {
+		r0 = rf(ctx, gvk, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(cache.Informer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, schema.GroupVersionKind) error); ok {
-		r1 = rf(ctx, gvk)
+	if rf, ok := ret.Get(1).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) error); ok {
+		r1 = rf(ctx, gvk, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
