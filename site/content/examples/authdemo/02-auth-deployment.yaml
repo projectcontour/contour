@@ -18,7 +18,7 @@ spec:
       serviceAccountName: projectcontour-auth-htpasswd
       containers:
         - name: htpasswd
-          image: projectcontour/contour-authserver:v2
+          image: ghcr.io/projectcontour/contour-authserver:v4
           imagePullPolicy: IfNotPresent
           command:
             - /contour-authserver

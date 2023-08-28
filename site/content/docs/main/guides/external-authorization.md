@@ -119,8 +119,8 @@ patchesJson6902:
 
 images:
 - name: contour-authserver:latest
-  newName: docker.io/projectcontour/contour-authserver
-  newTag: v2
+  newName: ghcr.io/projectcontour/contour-authserver
+  newTag: v4
 ```
 
 Note that the kustomization patches the `Certificate` resource to use the

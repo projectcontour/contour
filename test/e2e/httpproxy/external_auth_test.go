@@ -60,7 +60,7 @@ func testExternalAuth(namespace string) {
 						Containers: []corev1.Container{
 							{
 								Name:            "testserver",
-								Image:           "docker.io/projectcontour/contour-authserver:v2",
+								Image:           "ghcr.io/projectcontour/contour-authserver:v4",
 								ImagePullPolicy: corev1.PullIfNotPresent,
 								Command: []string{
 									"/contour-authserver",
