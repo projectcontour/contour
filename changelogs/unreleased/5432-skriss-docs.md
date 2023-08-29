@@ -1,1 +1,0 @@
-Collapses the documentation for 1.21 and 1.20 into a single set per minor version, and removes older docs from the website dropdown.

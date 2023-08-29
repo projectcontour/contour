@@ -1,1 +1,0 @@
-Gateway provisioner: add a container port to the Envoy daemonset/deployment for the metrics port.
