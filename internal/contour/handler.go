@@ -202,7 +202,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			// Build a new DAG and sends it to the Observer.
 			latestDAG := e.builder.Build()
-			lastDAGRebuild = time.Now()
 			e.observer.OnChange(latestDAG)
 
 			// Allow XDS server to start (if it hasn't already).
@@ -214,6 +213,7 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			}
 
 			e.incSequence()
+			lastDAGRebuild = time.Now()
 		case <-ctx.Done():
 			// shutdown
 			return nil
