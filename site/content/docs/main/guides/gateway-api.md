@@ -2,54 +2,19 @@
 title: Using Gateway API with Contour
 ---
 
-## Introduction
-
-[Gateway API][1] is an open source project managed by the Kubernetes SIG-NETWORK community. The project's goal is to
-evolve service networking APIs within the Kubernetes ecosystem. Gateway API consists of multiple resources that provide
-user interfaces to expose Kubernetes applications- Services, Ingress, and more.
-
-This guide covers using version **v1beta1** of the Gateway API, with Contour `v1.22.0` or higher.
-
-### Background
-
-Gateway API targets three personas:
-
-- __Platform Provider__: The Platform Provider is responsible for the overall environment that the cluster runs in, i.e.
-  the cloud provider. The Platform Provider will interact with `GatewayClass` resources.
-- __Platform Operator__: The Platform Operator is responsible for overall cluster administration. They manage policies,
-  network access, application permissions and will interact with `Gateway` resources.
-- __Service Operator__: The Service Operator is responsible for defining application configuration and service
-  composition. They will interact with `HTTPRoute` and `TLSRoute` resources and other typical Kubernetes resources.
-
-Gateway API contains three primary resources:
-
-- __GatewayClass__: Defines a set of gateways with a common configuration and behavior.
-- __Gateway__: Requests a point where traffic can be translated to a Service within the cluster.
-- __HTTPRoute/TLSRoute__: Describes how traffic coming via the Gateway maps to the Services.
-
-Resources are meant to align with personas. For example, a platform operator will create a `Gateway`, so a developer can
-expose an HTTP application using an `HTTPRoute` resource.
+This tutorial walks through an example of using [Gateway API][1] with Contour.
+See the [Contour reference documentation][5] for more information on Contour's Gateway API support.
 
 ### Prerequisites
-The following prerequisites must be met before using Gateway API with Contour:
+The following prerequisites must be met before following this guide:
 
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
-## Deploying Contour with Gateway API
+## Deploy Contour with Gateway API enabled
 
-Contour supports two modes of provisioning for use with Gateway API: **static** and **dynamic**.
-
-In **static** provisioning, the platform operator defines a `Gateway` resource, and then manually deploys a Contour instance corresponding to that `Gateway` resource.
-It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
-With static provisioning, Contour can be configured with either a [controller name][8], or a specific gateway (see the [API documentation][7].)
-If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
-If configured with a specific gateway, Contour will process that `Gateway` and its routes.
-
-In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
-
-Static provisioning may be more appropriate for users who prefer the traditional model of deploying Contour, have just a single Contour instance, or have highly customized YAML for deploying Contour.
-Dynamic provisioning may be more appropriate for users who want a simple declarative API for provisioning Contour instances.
+First, deploy Contour with Gateway API enabled.
+This can be done using either [static or dynamic provisioning][6].
 
 ### Option #1: Statically provisioned
 
@@ -182,9 +147,9 @@ The above creates:
 - A `Gateway` resource named `contour` in the `projectcontour` namespace, using the `contour` GatewayClass
 - Contour and Envoy resources in the `projectcontour` namespace to implement the `Gateway`, i.e. a Contour deployment, an Envoy daemonset, an Envoy service, etc.
 
-See the next section ([Testing the Gateway API](#testing-the-gateway-api)) for how to deploy an application and route traffic to it using Gateway API!
+See the next section ([Testing the Gateway API](#test-routing)) for how to deploy an application and route traffic to it using Gateway API!
 
-## Testing the Gateway API
+## Configure an HTTPRoute
 
 Deploy the test application:
 ```shell
@@ -211,7 +176,7 @@ NAME                                        HOSTNAMES
 httproute.gateway.networking.k8s.io/kuard   ["local.projectcontour.io"]
 ```
 
-Test access to the kuard application:
+## Test Routing
 
 _Note, for simplicity and compatibility across all platforms we'll use `kubectl port-forward` to get traffic to Envoy, but in a production environment you would typically use the Envoy service's address._
 
@@ -232,44 +197,6 @@ You should receive a 200 response code along with the HTML body of the main `kua
 
 You can also open http://local.projectcontour.io:8888/ in a browser.
 
-## Next Steps
-
-### Customizing your dynamically provisioned Contour instances
-
-In the dynamic provisioning example, we used a default set of options for provisioning the Contour gateway.
-However, Gateway API also [supports attaching parameters to a GatewayClass][5], which can customize the Gateways that are provisioned for that GatewayClass.
-
-Contour defines a CRD called `ContourDeployment`, which can be used as `GatewayClass` parameters.
-
-A simple example of a parameterized Contour GatewayClass that provisions Envoy as a Deployment instead of the default DaemonSet looks like:
-
-```yaml
-kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
-metadata:
-  name: contour-with-envoy-deployment
-spec:
-  controllerName: projectcontour.io/gateway-controller
-  parametersRef:
-    kind: ContourDeployment
-    group: projectcontour.io
-    name: contour-with-envoy-deployment-params
-    namespace: projectcontour
----
-kind: ContourDeployment
-apiVersion: projectcontour.io/v1alpha1
-metadata:
-  namespace: projectcontour
-  name: contour-with-envoy-deployment-params
-spec:
-  envoy:
-    workloadType: Deployment
-```
-
-All Gateways provisioned using the `contour-with-envoy-deployment` GatewayClass would get an Envoy Deployment.
-
-See [the API documentation][6] for all `ContourDeployment` options.
-
 ### Further reading
 
 This guide only scratches the surface of the Gateway API's capabilities. See the [Gateway API website][1] for more information.
@@ -279,7 +206,5 @@ This guide only scratches the surface of the Gateway API's capabilities. See the
 [2]: https://kubernetes.io/
 [3]: https://projectcontour.io/resources/compatibility-matrix/
 [4]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[5]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-parameters
-[6]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.ContourDeployment
-[7]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.GatewayConfig
-[8]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-controller-selection
+[5]: /docs/{{< param version >}}/config/gateway-api
+[6]: /docs/{{< param version >}}/config/gateway-api#enabling-gateway-api-in-contour
