@@ -1,1 +1,0 @@
-The maximum TLS version on Envoy Listeners can be configured. Valid options are TLS versions `1.2` and `1.3` with a default of `1.3`.

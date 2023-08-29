@@ -1,1 +1,0 @@
-Updates external auth examples and manifests to use the new contour-authserver registry and version, `ghcr.io/projectcontour/contour-authserver:v4`.

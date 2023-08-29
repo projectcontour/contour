@@ -1,1 +1,0 @@
-Updates to Kubernetes 1.28. Supported/tested Kubernetes versions are now 1.26, 1.27 and 1.28.

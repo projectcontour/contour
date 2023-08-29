@@ -1,1 +1,0 @@
-Gateway provisioner: set the default resource requirements for containers: shutdown-manager & envoy-initconfig
