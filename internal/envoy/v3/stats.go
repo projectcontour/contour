@@ -43,14 +43,14 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 		listeners = []*envoy_listener_v3.Listener{{
 			Name:          "stats",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains: filterChain("stats",
 				DownstreamTLSTransportSocket(
 					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats")),
 		}, {
 			Name:          "health",
 			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
 		}}
 
@@ -60,7 +60,7 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 		listeners = []*envoy_listener_v3.Listener{{
 			Name:          "stats-health",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready", "/stats")),
 		}}
 
@@ -69,12 +69,12 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 		listeners = []*envoy_listener_v3.Listener{{
 			Name:          "stats",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/stats")),
 		}, {
 			Name:          "health",
 			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: TCPKeepaliveSocketOptions(),
+			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
 		}}
 	}
@@ -103,7 +103,7 @@ func AdminListener(port int) *envoy_listener_v3.Listener {
 				"/stats/recentlookups",
 			),
 		),
-		SocketOptions: TCPKeepaliveSocketOptions(),
+		SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 	}
 }
 

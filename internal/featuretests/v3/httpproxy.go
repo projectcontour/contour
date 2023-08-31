@@ -29,38 +29,44 @@ func prefixMatchCondition(prefix string) contour_api_v1.MatchCondition {
 	}
 }
 
-func headerContainsMatchCondition(name, value string) contour_api_v1.MatchCondition {
+func headerContainsMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		Header: &contour_api_v1.HeaderMatchCondition{
-			Name:     name,
-			Contains: value,
+			Name:       name,
+			Contains:   value,
+			IgnoreCase: ignoreCase,
 		},
 	}
 }
 
-func headerNotContainsMatchCondition(name, value string) contour_api_v1.MatchCondition {
+func headerNotContainsMatchCondition(name, value string, ignoreCase, treatMissingAsEmpty bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		Header: &contour_api_v1.HeaderMatchCondition{
-			Name:        name,
-			NotContains: value,
+			Name:                name,
+			NotContains:         value,
+			IgnoreCase:          ignoreCase,
+			TreatMissingAsEmpty: treatMissingAsEmpty,
 		},
 	}
 }
 
-func headerExactMatchCondition(name, value string) contour_api_v1.MatchCondition {
+func headerExactMatchCondition(name, value string, ignoreCase bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		Header: &contour_api_v1.HeaderMatchCondition{
-			Name:  name,
-			Exact: value,
+			Name:       name,
+			Exact:      value,
+			IgnoreCase: ignoreCase,
 		},
 	}
 }
 
-func headerNotExactMatchCondition(name, value string) contour_api_v1.MatchCondition {
+func headerNotExactMatchCondition(name, value string, ignoreCase bool, treatMissingAsEmpty bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		Header: &contour_api_v1.HeaderMatchCondition{
-			Name:     name,
-			NotExact: value,
+			Name:                name,
+			NotExact:            value,
+			IgnoreCase:          ignoreCase,
+			TreatMissingAsEmpty: treatMissingAsEmpty,
 		},
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -182,6 +183,7 @@ func (n NamespacedName) Validate() error {
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
 	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
@@ -216,7 +218,7 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
 
-	return nil
+	return contour_api_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -472,6 +474,16 @@ type ListenerParameters struct {
 	//
 	// +optional
 	MaxRequestsPerConnection *uint32 `yaml:"max-requests-per-connection,omitempty"`
+
+	// Defines the soft limit on size of the listener’s new connection read and write buffers
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// SocketOptions is used to set socket options for listeners.
+	SocketOptions SocketOptions `yaml:"socket-options"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -486,6 +498,42 @@ func (p *ListenerParameters) Validate() error {
 	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
 		return fmt.Errorf("invalid max connections per request value %q set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
+
+	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
+		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+	}
+
+	return p.SocketOptions.Validate()
+}
+
+// SocketOptions defines configurable socket options for Envoy listeners.
+type SocketOptions struct {
+	// Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners.
+	// Single value is applied to all listeners.
+	// The value must be in the range 0-255, 0 means socket option is not set.
+	// If listeners are bound to IPv6-only addresses, setting this option will cause an error.
+	TOS int32 `yaml:"tos"`
+
+	// Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners.
+	// Single value is applied to all listeners.
+	// The value must be in the range 0-255, 0 means socket option is not set.
+	// If listeners are bound to IPv4-only addresses, setting this option will cause an error.
+	TrafficClass int32 `yaml:"traffic-class"`
+}
+
+func (p *SocketOptions) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.TOS < 0 || p.TOS > 255 {
+		return fmt.Errorf("invalid listener IPv4 TOS value %d, must be in the range 0-255", p.TOS)
+	}
+
+	if p.TrafficClass < 0 || p.TrafficClass > 255 {
+		return fmt.Errorf("invalid listener IPv6 TrafficClass value %d, must be in the range 0-255", p.TrafficClass)
+	}
+
 	return nil
 }
 
@@ -736,6 +784,10 @@ type RateLimitService struct {
 	// EnableResourceExhaustedCode enables translating error code 429 to
 	// grpc code RESOURCE_EXHAUSTED. When disabled it's translated to UNAVAILABLE
 	EnableResourceExhaustedCode bool `yaml:"enableResourceExhaustedCode,omitempty"`
+
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for all HTTPProxy
+	// HTTPProxy can overwrite this configuration.
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both

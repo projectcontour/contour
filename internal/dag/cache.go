@@ -499,10 +499,12 @@ func isRefToService(ref gatewayapi_v1beta1.BackendObjectReference, service *v1.S
 }
 
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
-// or HTTPProxy object, or by the configuration file. If the secret is not in the same namespace
-// it must be mentioned by a TLSCertificateDelegation.
-func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
-	if _, isCA := secret.Data[CACertificateKey]; isCA {
+// or HTTPProxy object, or by the configuration file.
+// If the secret is not in the same namespace the function ignores TLSCertificateDelegation.
+// As a result, it may trigger rebuild even if the reference is invalid, which should be rare and not worth the added complexity.
+// Permission is checked when the secret is actually accessed.
+func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
+	if _, isCA := secretObj.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
 		// proxy object, determining if there is a valid delegation,
 		// and if the reference the secret as a certificate. The DAG already
@@ -511,38 +513,15 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 		return true
 	}
 
-	delegations := make(map[string]bool) // targetnamespace/secretname to bool
-
-	// TODO(youngnick): Check if this is required.
-	for _, d := range kc.tlscertificatedelegations {
-		for _, cd := range d.Spec.Delegations {
-			for _, n := range cd.TargetNamespaces {
-				delegations[n+"/"+cd.SecretName] = true
-			}
-		}
+	secret := types.NamespacedName{
+		Namespace: secretObj.Namespace,
+		Name:      secretObj.Name,
 	}
 
 	for _, ingress := range kc.ingresses {
-		if ingress.Namespace == secret.Namespace {
-			for _, tls := range ingress.Spec.TLS {
-				if tls.SecretName == secret.Name {
-					return true
-				}
-			}
-		}
-		if delegations[ingress.Namespace+"/"+secret.Name] {
-			for _, tls := range ingress.Spec.TLS {
-				if tls.SecretName == secret.Namespace+"/"+secret.Name {
-					return true
-				}
-			}
-		}
-
-		if delegations["*/"+secret.Name] {
-			for _, tls := range ingress.Spec.TLS {
-				if tls.SecretName == secret.Namespace+"/"+secret.Name {
-					return true
-				}
+		for _, tls := range ingress.Spec.TLS {
+			if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ingress), k8s.DefaultNamespace(ingress.Namespace)) {
+				return true
 			}
 		}
 	}
@@ -559,24 +538,19 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			continue
 		}
 
-		if proxy.Namespace == secret.Namespace && tls.SecretName == secret.Name {
+		if secret == k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace)) {
 			return true
 		}
-		if delegations[proxy.Namespace+"/"+secret.Name] {
-			if tls.SecretName == secret.Namespace+"/"+secret.Name {
-				return true
-			}
-		}
-		if delegations["*/"+secret.Name] {
-			if tls.SecretName == secret.Namespace+"/"+secret.Name {
-				return true
-			}
+
+		cv := tls.ClientValidation
+		if cv != nil && secret == k8s.NamespacedNameFrom(cv.CertificateRevocationList, k8s.DefaultNamespace(proxy.Namespace)) {
+			return true
 		}
 	}
 
 	// Secrets referred by the configuration file shall also trigger rebuild.
 	for _, s := range kc.ConfiguredSecretRefs {
-		if s.Namespace == secret.Namespace && s.Name == secret.Name {
+		if secret == *s {
 			return true
 		}
 	}
@@ -588,7 +562,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			}
 
 			for _, certificateRef := range listener.TLS.CertificateRefs {
-				if isRefToSecret(certificateRef, secret, kc.gateway.Namespace) {
+				if isRefToSecret(certificateRef, secretObj, kc.gateway.Namespace) {
 					return true
 				}
 			}

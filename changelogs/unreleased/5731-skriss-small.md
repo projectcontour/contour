@@ -1,0 +1,1 @@
+Updates to Go 1.21.0. See the [Go release notes](https://go.dev/doc/devel/release#go1.21) for more information.

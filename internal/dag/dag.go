@@ -140,10 +140,12 @@ const (
 
 // HeaderMatchCondition matches request headers by MatchType
 type HeaderMatchCondition struct {
-	Name      string
-	Value     string
-	MatchType string
-	Invert    bool
+	Name                string
+	Value               string
+	MatchType           string
+	Invert              bool
+	IgnoreCase          bool
+	TreatMissingAsEmpty bool
 }
 
 func (hc *HeaderMatchCondition) String() string {
@@ -151,7 +153,9 @@ func (hc *HeaderMatchCondition) String() string {
 		"name=" + hc.Name,
 		"value=" + hc.Value,
 		"matchtype=", hc.MatchType,
+		"TreatMissingAsEmpty=", strconv.FormatBool(hc.TreatMissingAsEmpty),
 		"invert=", strconv.FormatBool(hc.Invert),
+		"ignorecase=", strconv.FormatBool(hc.IgnoreCase),
 	}, "&")
 
 	return "header: " + details
@@ -271,7 +275,6 @@ type InternalRedirectPolicy struct {
 
 // Route defines the properties of a route to a Cluster.
 type Route struct {
-
 	// PathMatchCondition specifies a MatchCondition to match on the request path.
 	// Must not be nil.
 	PathMatchCondition MatchCondition
@@ -316,8 +319,8 @@ type Route struct {
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PathRewritePolicy *PathRewritePolicy
 
-	// Mirror Policy defines the mirroring policy for this Route.
-	MirrorPolicy *MirrorPolicy
+	// MirrorPolicies is a list defining the mirroring policies for this Route.
+	MirrorPolicies []*MirrorPolicy
 
 	// RequestHeadersPolicy defines how headers are managed during forwarding
 	RequestHeadersPolicy *HeadersPolicy
@@ -362,6 +365,11 @@ type Route struct {
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
+
+	// Metadata fields that can be used for access logging.
+	Kind      string
+	Namespace string
+	Name      string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -738,6 +746,9 @@ type SecureVirtualHost struct {
 
 	// TLS minimum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLS_AUTO
 	MinTLSVersion string
+
+	// TLS maximum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLSv1_3
+	MaxTLSVersion string
 
 	// The cert and key for this host.
 	Secret *Secret

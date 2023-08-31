@@ -180,27 +180,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
 				}
 
 				dco := gateway.DeepCopy()
-
-				if len(loadBalancerStatus.Ingress) == 0 {
-					return dco
-				}
-
-				if ip := loadBalancerStatus.Ingress[0].IP; len(ip) > 0 {
-					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
-						{
-							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
-							Value: ip,
-						},
-					}
-				} else if hostname := loadBalancerStatus.Ingress[0].Hostname; len(hostname) > 0 {
-					dco.Status.Addresses = []gatewayapi_v1beta1.GatewayAddress{
-						{
-							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
-							Value: hostname,
-						},
-					}
-				}
-
+				dco.Status.Addresses = lbStatusToGatewayAddresses(loadBalancerStatus)
 				return dco
 			}),
 		))
@@ -304,4 +284,25 @@ func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLo
 	return networking_v1.IngressLoadBalancerStatus{
 		Ingress: ingress,
 	}
+}
+
+func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1beta1.GatewayStatusAddress {
+	addrs := []gatewayapi_v1beta1.GatewayStatusAddress{}
+
+	for _, lbi := range lbs.Ingress {
+		if len(lbi.IP) > 0 {
+			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+				Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+				Value: lbi.IP,
+			})
+		}
+		if len(lbi.Hostname) > 0 {
+			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+				Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+				Value: lbi.Hostname,
+			})
+		}
+	}
+
+	return addrs
 }

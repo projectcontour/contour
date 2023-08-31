@@ -282,6 +282,40 @@ func TestTLSParametersValidation(t *testing.T) {
 			"NOTAVALIDCIPHER",
 		},
 	}.Validate())
+
+	// TLS protocol version validation
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.1",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MaximumProtocolVersion: "invalid",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.3",
+		MaximumProtocolVersion: "1.2",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.2",
+		MaximumProtocolVersion: "1.2",
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.3",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		MinimumProtocolVersion: "1.1",
+		MaximumProtocolVersion: "1.3",
+	}.Validate())
 }
 
 func TestConfigFileValidation(t *testing.T) {
@@ -358,9 +392,7 @@ listener:
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
 	check := func(verifier func(*testing.T, *Parameters), yamlIn string) {
 		t.Helper()
-
 		conf, err := Parse(strings.NewReader(yamlIn))
-
 		require.NoError(t, err)
 		verifier(t, conf)
 	}
@@ -390,11 +422,13 @@ tls:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "1.3", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.2", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.3", conf.TLS.MaximumProtocolVersion)
 		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
 	}, `
 tls:
-  minimum-protocol-version: 1.3
+  minimum-protocol-version: 1.2
+  maximum-protocol-version: 1.3
   cipher-suites:
   - ECDHE-RSA-AES256-GCM-SHA384
 `)
@@ -425,6 +459,13 @@ network:
 	}, `
 listener:
   max-requests-per-connection: 1
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Listener.PerConnectionBufferLimitBytes)
+	}, `
+listener:
+  per-connection-buffer-limit-bytes: 1
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
@@ -514,6 +555,29 @@ func TestListenerValidation(t *testing.T) {
 	l = &ListenerParameters{
 		MaxRequestsPerConnection: ref.To(uint32(0)),
 	}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		PerConnectionBufferLimitBytes: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		SocketOptions: SocketOptions{
+			TOS:          64,
+			TrafficClass: 64,
+		},
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TOS: 256}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TrafficClass: 256}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TOS: -1}}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{SocketOptions: SocketOptions{TrafficClass: -1}}
 	require.Error(t, l.Validate())
 }
 

@@ -59,6 +59,12 @@ type IngressProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // Run translates Ingresses into DAG objects and
@@ -117,10 +123,26 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 					return
 				}
 
+				// default to a minimum TLS version of 1.2 if it's not specified
+				minTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
+				// default to a maximum TLS version of 1.3 if it's not specified
+				maxTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-maximum-protocol-version"), "1.3")
+
+				if maxTLSVer < minTLSVer {
+					p.WithError(err).
+						WithField("name", ing.GetName()).
+						WithField("namespace", ing.GetNamespace()).
+						WithField("minTLSVersion", minTLSVer).
+						WithField("maxTLSVersion", maxTLSVer).
+						Errorf("error TLS protocol version, the minimum protocol version is greater than the maximum protocol version")
+					return
+				}
+
 				svhost := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 				svhost.Secret = sec
-				// default to a minimum TLS version of 1.2 if it's not specified
-				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
+				svhost.MinTLSVersion = minTLSVer
+				svhost.MaxTLSVersion = maxTLSVer
+
 			}
 		}
 	}
@@ -273,6 +295,12 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 		}},
+	}
+
+	if p.SetSourceMetadataOnRoutes {
+		r.Kind = "Ingress"
+		r.Namespace = ingress.Namespace
+		r.Name = ingress.Name
 	}
 
 	switch pathType {

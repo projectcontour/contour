@@ -71,6 +71,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				ConnectionBalancer:         "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.3",
 					CipherSuites:           contour_api_v1alpha1.DefaultTLSCiphers,
 				},
 			},

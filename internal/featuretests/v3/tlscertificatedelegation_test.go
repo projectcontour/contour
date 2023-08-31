@@ -111,7 +111,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{

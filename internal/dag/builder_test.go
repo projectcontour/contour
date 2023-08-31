@@ -42,12 +42,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -57,12 +52,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -72,12 +62,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -87,12 +72,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "custom",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -102,12 +82,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8080)},
 		},
 	}
 
@@ -921,7 +896,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLS Listener with TLS.Mode=Terminate is invalid": {
+		"TLS Listener with TLS.Mode=Terminate is invalid if certificateRef is not specified": {
 			gatewayclass: validClass,
 			gateway: &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -935,9 +910,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1beta1.TLSProtocolType,
 						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 							Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
-								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
-							},
 						},
 						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
@@ -3843,7 +3815,55 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100))),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 100))),
+				},
+			),
+		},
+		"HTTPRoute rule with two request mirror filters": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1beta1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									},
+								},
+								{
+									Type: gatewayapi_v1beta1.HTTPRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2), service(kuardService3)}, 100))),
 				},
 			),
 		},
@@ -3885,8 +3905,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), service(kuardService2), 100),
-						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), service(kuardService2), 100),
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 100),
+						withMirror(segmentPrefixHTTPRoute("/another-match", service(kuardService)), []*Service{service(kuardService2)}, 100),
 					)),
 				},
 			),
@@ -5705,7 +5725,57 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
-						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), grpcService(kuardService2, "h2c"), 100))),
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c")}, 100))),
+				},
+			),
+		},
+		"GRPCRoute: rule with two request mirror filters": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha2.GRPCRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									},
+								},
+								{
+									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+									RequestMirror: &gatewayapi_v1alpha2.HTTPRequestMirrorFilter{
+										BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c"), grpcService(kuardService3, "h2c")}, 100))),
 				},
 			),
 		},
@@ -6038,6 +6108,7 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
 	i6aV1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "two-vhosts",
@@ -6205,6 +6276,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 			Annotations: map[string]string{
 				"projectcontour.io/tls-minimum-protocol-version": "1.3",
+				"projectcontour.io/tls-maximum-protocol-version": "1.3",
 			},
 		},
 		Spec: networking_v1.IngressSpec{
@@ -6622,12 +6694,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8888),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8888)},
 		},
 	}
 
@@ -6668,12 +6735,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -6683,12 +6745,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "nginx-ingress",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8009,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8009, 8080)},
 		},
 	}
 
@@ -6716,7 +6773,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyMinTLS12 := &contour_api_v1.HTTPProxy{
+	proxyTLS12 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -6727,6 +6784,7 @@ func TestDAGInsert(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -6741,7 +6799,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyMinTLS13 := &contour_api_v1.HTTPProxy{
+	proxyTLS13 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -6752,6 +6810,7 @@ func TestDAGInsert(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -6766,7 +6825,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyMinTLSInvalid := &contour_api_v1.HTTPProxy{
+	proxyTLSInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -6777,6 +6836,7 @@ func TestDAGInsert(t *testing.T) {
 				TLS: &contour_api_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "0.999",
+					MaximumProtocolVersion: "1.4",
 				},
 			},
 			Routes: []contour_api_v1.Route{{
@@ -7022,12 +7082,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7041,12 +7096,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7063,12 +7113,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7079,12 +7124,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7096,12 +7136,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7112,12 +7147,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       9999,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 9999, 8080)},
 		},
 	}
 
@@ -7127,12 +7157,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7155,17 +7180,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(443),
-			}, {
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 443), makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
@@ -7175,11 +7190,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "it",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "blog",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("blog", "TCP", 8080)},
 		},
 	}
 
@@ -7189,12 +7200,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "teama",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -7204,12 +7210,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "teamb",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -9842,6 +9843,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"ingressv1: insert secret then ingress w/ tls": {
 			objs: []any{
 				sec1,
@@ -10176,9 +10178,10 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy with tls version 1.2": {
 			objs: []any{
-				proxyMinTLS12, s1, sec1,
+				proxyTLS12, s1, sec1,
 			},
 			want: listeners(
 				&Listener{
@@ -10199,15 +10202,17 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.2",
 							Secret:        secret(sec1),
 						},
 					),
 				},
 			),
 		},
+
 		"insert httpproxy with tls version 1.3": {
 			objs: []any{
-				proxyMinTLS13, s1, sec1,
+				proxyTLS13, s1, sec1,
 			},
 			want: listeners(
 				&Listener{
@@ -10228,15 +10233,17 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
 				},
 			),
 		},
+
 		"insert httpproxy with invalid tls version": {
 			objs: []any{
-				proxyMinTLSInvalid, s1, sec1,
+				proxyTLSInvalid, s1, sec1,
 			},
 			want: listeners(
 				&Listener{
@@ -10254,6 +10261,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy referencing two backends, one missing": {
 			objs: []any{
 				proxyMultipleBackends, s2,
@@ -10328,12 +10336,14 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
 				},
 			),
 		},
+
 		"ingressv1: insert ingress w/ websocket route annotation": {
 			objs: []any{
 				i11V1,
@@ -10477,6 +10487,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"ingressv1: insert ingress w/ infinite timeout annotation": {
 			objs: []any{
 				i12fV1,
@@ -10841,6 +10852,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy with two routes to the same service": {
 			objs: []any{
 				proxyWeightsTwoRoutesDiffWeights, s1,
@@ -11081,6 +11093,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httproxy w/ multiple routes with condition on the same header, one Contains and one NotContains": {
 			objs: []any{
 				proxy2e, s1,
@@ -11172,7 +11185,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							withMirror(prefixroute("/", service(s1)), service(s2), 100),
+							withMirror(prefixroute("/", service(s1)), []*Service{service(s2)}, 100),
 						),
 					),
 				},
@@ -11255,6 +11268,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy expecting upstream verification": {
 			objs: []any{
 				cert1, proxy17, s1a,
@@ -11397,6 +11411,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy with downstream verification": {
 			objs: []any{
 				cert1, proxy18, s1, sec1,
@@ -11419,6 +11434,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: caSecret(cert1),
@@ -11428,6 +11444,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tcpproxy in tls termination mode w/ downstream verification": {
 			objs: []any{
 				cert1, proxy19, s1, sec1,
@@ -11447,6 +11464,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: caSecret(cert1),
@@ -11456,6 +11474,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination mode w/ skip cert verification": {
 			objs: []any{
 				proxy20, s1, sec1,
@@ -11478,6 +11497,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
@@ -11487,6 +11507,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination mode w/ skip cert verification and a ca": {
 			objs: []any{
 				proxy21, s1, sec1, cert1,
@@ -11509,6 +11530,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
@@ -11519,6 +11541,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination with client validation and CRL check": {
 			objs: []any{
 				proxy22, s1, sec1, cert1, crl,
@@ -11541,6 +11564,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: caSecret(cert1),
@@ -11551,6 +11575,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination with client validation and CRL check but only for leaf-certificate": {
 			objs: []any{
 				proxy23, s1, sec1, cert1, crl,
@@ -11573,6 +11598,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate:         caSecret(cert1),
@@ -11584,6 +11610,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination with client cert forwarding": {
 			objs: []any{
 				proxy25, s1, sec1, cert1, crl,
@@ -11606,6 +11633,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: caSecret(cert1),
@@ -11622,6 +11650,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy w/ tls termination with optional client validation": {
 			objs: []any{
 				proxy24, s1, sec1, cert1, crl,
@@ -11644,6 +11673,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate:             caSecret(cert1),
@@ -12123,6 +12153,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy with include ending with /, / on included proxy": {
 			objs: []any{
 				proxy106, proxy106a, s1, s2,
@@ -12311,6 +12342,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy with route-level header manipulation": {
 			objs: []any{
 				proxy109, s1,
@@ -12391,6 +12423,7 @@ func TestDAGInsert(t *testing.T) {
 								Name: "example.com",
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
@@ -12400,6 +12433,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		// issue 1954
 		"httpproxy tcpproxy + permitinsecure": {
 			objs: []any{
@@ -12451,6 +12485,7 @@ func TestDAGInsert(t *testing.T) {
 								Name: "example.com",
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
@@ -12831,6 +12866,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"ingressv1: Ingress then HTTPProxy with identical details, except referencing s2a": {
 			objs: []any{
 				i17V1,
@@ -13001,12 +13037,14 @@ func TestDAGInsert(t *testing.T) {
 								}},
 							},
 							MinTLSVersion: "1.2",
+							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
 				},
 			),
 		},
+
 		"insert proxy with replace header policy - route - host header": {
 			objs: []any{
 				proxyReplaceHostHeaderRoute,
@@ -13196,6 +13234,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert proxy with request headers policy - empty value": {
 			objs: []any{
 				proxyReplaceHeaderEmptyValue,
@@ -13507,6 +13546,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
@@ -13514,6 +13554,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"httpproxy with fallback certificate enabled - cert delegation not configured": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "root",
@@ -13604,6 +13645,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
@@ -13670,6 +13712,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
@@ -13677,6 +13720,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"httpproxy with fallback certificate enabled - no tls secret": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
@@ -13809,6 +13853,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
@@ -13818,6 +13863,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -13871,6 +13917,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -13878,6 +13925,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"httpproxy with fallback certificate disabled - fallback cert specified": {
 			fallbackCertificateName:      "fallbacksecret",
 			fallbackCertificateNamespace: "default",
@@ -13925,6 +13973,7 @@ func TestDAGInsert(t *testing.T) {
 								Routes: routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
+							MaxTLSVersion:       "1.3",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -14020,6 +14069,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"httpproxy with tcpproxy with multiple services, some weighted, some not": {
 			objs: []any{
 				s1, s2, s9,
@@ -14146,12 +14196,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 	sec1 := &v1.Secret{
@@ -15116,11 +15161,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed1",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
@@ -15130,11 +15171,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed2",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
@@ -15282,12 +15319,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15297,12 +15329,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15728,12 +15755,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15744,12 +15766,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -16184,6 +16201,7 @@ func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route
 			Routes: routes(append([]*Route{first}, rest...)...),
 		},
 		MinTLSVersion: "1.2",
+		MaxTLSVersion: "1.3",
 		Secret:        secret(sec),
 	}
 }
@@ -16226,12 +16244,14 @@ func prefixSegment(prefix string) MatchCondition {
 func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
-func withMirror(r *Route, mirror *Service, weight int64) *Route {
-	r.MirrorPolicy = &MirrorPolicy{
-		Cluster: &Cluster{
-			Upstream: mirror,
-		},
-		Weight: weight,
+func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
+	for _, mirror := range mirrors {
+		r.MirrorPolicies = append(r.MirrorPolicies, &MirrorPolicy{
+			Cluster: &Cluster{
+				Upstream: mirror,
+			},
+			Weight: weight,
+		})
 	}
 	return r
 }

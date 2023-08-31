@@ -56,6 +56,7 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"projectcontour.io/response-timeout":             {},
 		"projectcontour.io/retry-on":                     {},
 		"projectcontour.io/tls-minimum-protocol-version": {},
+		"projectcontour.io/tls-maximum-protocol-version": {},
 		"projectcontour.io/tls-cert-namespace":           {},
 		"projectcontour.io/websocket-routes":             {},
 	},
@@ -209,9 +210,9 @@ func IngressClass(o metav1.Object) string {
 	return ""
 }
 
-// MinTLSVersion returns the TLS protocol version specified by an ingress annotation
+// TLSVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func MinTLSVersion(version string, defaultVal string) string {
+func TLSVersion(version string, defaultVal string) string {
 	switch version {
 	case "1.2", "1.3":
 		return version

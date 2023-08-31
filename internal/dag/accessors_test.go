@@ -25,6 +25,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...int) v1.ServicePort {
+	p := v1.ServicePort{
+		Name:     name,
+		Protocol: protocol,
+		Port:     port,
+	}
+	if len(extras) != 0 {
+		p.TargetPort = intstr.FromInt(extras[0])
+	}
+	return p
+
+}
 func TestBuilderLookupService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -32,12 +44,7 @@ func TestBuilderLookupService(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -47,20 +54,7 @@ func TestBuilderLookupService(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
-				{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       8080,
-					TargetPort: intstr.FromInt(8080),
-				},
-				{
-					Name:       "health",
-					Protocol:   "TCP",
-					Port:       8998,
-					TargetPort: intstr.FromInt(8998),
-				},
-			},
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080), makeServicePort("health", "TCP", 8998, 8998)},
 		},
 	}
 
@@ -72,12 +66,7 @@ func TestBuilderLookupService(t *testing.T) {
 		Spec: v1.ServiceSpec{
 			Type:         v1.ServiceTypeExternalName,
 			ExternalName: "external.projectcontour.io",
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}},
+			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
@@ -89,12 +78,7 @@ func TestBuilderLookupService(t *testing.T) {
 		Spec: v1.ServiceSpec{
 			Type:         v1.ServiceTypeExternalName,
 			ExternalName: "localhost",
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}},
+			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
@@ -149,18 +133,8 @@ func TestBuilderLookupService(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "externalnamevalid",
 					ServiceNamespace: "default",
-					ServicePort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(80),
-					},
-					HealthPort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(80),
-					},
+					ServicePort:      makeServicePort("http", "TCP", 80, 80),
+					HealthPort:       makeServicePort("http", "TCP", 80, 80),
 				},
 				ExternalName: "external.projectcontour.io",
 			},
@@ -294,4 +268,31 @@ func TestGetServiceClusters(t *testing.T) {
 	// We should only get one cluster since the other is for an ExternalName
 	// service.
 	assert.Len(t, d.GetServiceClusters(), 1)
+
+	dagWithMirror := &DAG{
+		Listeners: map[string]*Listener{
+			"http-1": {
+				VirtualHosts: []*VirtualHost{
+					{
+						Routes: map[string]*Route{
+							"foo": {
+								Clusters: []*Cluster{
+									{Upstream: &Service{}},
+								},
+								MirrorPolicies: []*MirrorPolicy{
+									{
+										Cluster: &Cluster{
+											Upstream: &Service{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// We should get two clusters since we have mirrorPolicies.
+	assert.Len(t, dagWithMirror.GetServiceClusters(), 2)
 }

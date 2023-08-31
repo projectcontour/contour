@@ -60,6 +60,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -215,8 +216,10 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Instantiate a controller-runtime manager.
 	options := manager.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     "0",
+		Scheme: scheme,
+		Metrics: controller_runtime_metrics_server.Options{
+			BindAddress: "0",
+		},
 		HealthProbeBindAddress: "0",
 		Cache: ctrl_cache.Options{
 			// ByObject is a function that allows changing incoming objects before they are cached by the informer.
@@ -261,7 +264,12 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	if watchedNamespaces := ctx.watchedNamespaces(); watchedNamespaces != nil {
 		log.WithField("namespaces", watchedNamespaces).Info("watching subset of namespaces")
-		options.Cache.Namespaces = watchedNamespaces
+		// Maps namespaces to cache configs. We will set an empty config
+		// so the higher level defaults are used.
+		options.Cache.DefaultNamespaces = map[string]ctrl_cache.Config{}
+		for _, ns := range watchedNamespaces {
+			options.Cache.DefaultNamespaces[ns] = ctrl_cache.Config{}
+		}
 	}
 
 	if ctx.LeaderElection.Disable {
@@ -403,24 +411,27 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto:                *contourConfiguration.Envoy.Listener.UseProxyProto,
-		HTTPAccessLog:                contourConfiguration.Envoy.HTTPListener.AccessLog,
-		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
-		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
-		AccessLogJSONFields:          contourConfiguration.Envoy.Logging.AccessLogJSONFields,
-		AccessLogLevel:               contourConfiguration.Envoy.Logging.AccessLogLevel,
-		AccessLogFormatString:        contourConfiguration.Envoy.Logging.AccessLogFormatString,
-		AccessLogFormatterExtensions: contourConfiguration.Envoy.Logging.AccessLogFormatterExtensions(),
-		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                 contourConfiguration.Envoy.Listener.TLS.SanitizedCipherSuites(),
-		Timeouts:                     timeouts,
-		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
-		AllowChunkedLength:           !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
-		MergeSlashes:                 !*contourConfiguration.Envoy.Listener.DisableMergeSlashes,
-		ServerHeaderTransformation:   contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
-		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
-		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
-		MaxRequestsPerConnection:     contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
+		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
+		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
+		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
+		AccessLogType:                 contourConfiguration.Envoy.Logging.AccessLogFormat,
+		AccessLogJSONFields:           contourConfiguration.Envoy.Logging.AccessLogJSONFields,
+		AccessLogLevel:                contourConfiguration.Envoy.Logging.AccessLogLevel,
+		AccessLogFormatString:         contourConfiguration.Envoy.Logging.AccessLogFormatString,
+		AccessLogFormatterExtensions:  contourConfiguration.Envoy.Logging.AccessLogFormatterExtensions(),
+		MinimumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
+		MaximumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MaximumProtocolVersion, "1.3"),
+		CipherSuites:                  contourConfiguration.Envoy.Listener.TLS.SanitizedCipherSuites(),
+		Timeouts:                      timeouts,
+		DefaultHTTPVersions:           parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
+		AllowChunkedLength:            !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		MergeSlashes:                  !*contourConfiguration.Envoy.Listener.DisableMergeSlashes,
+		ServerHeaderTransformation:    contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
+		XffNumTrustedHops:             *contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		ConnectionBalancer:            contourConfiguration.Envoy.Listener.ConnectionBalancer,
+		MaxRequestsPerConnection:      contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
+		PerConnectionBufferLimitBytes: contourConfiguration.Envoy.Listener.PerConnectionBufferLimitBytes,
+		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
@@ -516,6 +527,7 @@ func (s *Server) doServe() error {
 		httpsAddress:                       contourConfiguration.Envoy.HTTPSListener.Address,
 		httpsPort:                          contourConfiguration.Envoy.HTTPSListener.Port,
 		globalExternalAuthorizationService: contourConfiguration.GlobalExternalAuthorization,
+		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
 	})
@@ -1050,6 +1062,7 @@ type dagBuilderConfig struct {
 	globalExternalAuthorizationService *contour_api_v1.AuthorizationServer
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
+	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1119,6 +1132,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1138,7 +1152,9 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			GlobalExternalAuthorization:   dbc.globalExternalAuthorizationService,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
+			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		},
 	}
 
@@ -1149,6 +1165,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			SetSourceMetadataOnRoutes:     true,
 		})
 	}
 

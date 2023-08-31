@@ -420,6 +420,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			envoy_tls_v3.TlsParameters_TLSv1_3,
 			nil,
 			peerValidationContext,
 			alpn...),
@@ -433,6 +434,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			envoy_tls_v3.TlsParameters_TLSv1_3,
 			nil,
 			peerValidationContext,
 			alpn...),
@@ -595,6 +597,6 @@ func defaultHTTPListener() *envoy_listener_v3.Listener {
 		FilterChains: envoy_v3.FilterChains(
 			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
 		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 }

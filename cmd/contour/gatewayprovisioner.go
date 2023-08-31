@@ -17,16 +17,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/novln/docker-parser/distribution/reference"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/pkg/config"
-
-	"github.com/alecthomas/kingpin/v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
@@ -34,7 +34,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 
 	provisionerConfig := &gatewayProvisionerConfig{
 		contourImage:          "ghcr.io/projectcontour/contour:main",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.26.2",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.27.0",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
@@ -138,8 +138,10 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 		LeaderElectionID:              provisionerConfig.leaderElectionID,
 		LeaderElectionNamespace:       provisionerConfig.leaderElectionNamespace,
 		LeaderElectionReleaseOnCancel: true,
-		MetricsBindAddress:            provisionerConfig.metricsBindAddress,
-		Logger:                        ctrl.Log.WithName("contour-gateway-provisioner"),
+		Metrics: controller_runtime_metrics_server.Options{
+			BindAddress: provisionerConfig.metricsBindAddress,
+		},
+		Logger: ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)

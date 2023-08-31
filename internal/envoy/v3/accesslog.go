@@ -17,6 +17,7 @@ import (
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	envoy_metadata_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/metadata/v3"
 	envoy_req_without_query_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/req_without_query/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -124,10 +125,16 @@ func extensionConfig(extensions []string) []*envoy_config_core_v3.TypedExtension
 	var config []*envoy_config_core_v3.TypedExtensionConfig
 
 	for _, e := range extensions {
-		if e == "envoy.formatter.req_without_query" {
+		switch e {
+		case "envoy.formatter.req_without_query":
 			config = append(config, &envoy_config_core_v3.TypedExtensionConfig{
 				Name:        "envoy.formatter.req_without_query",
 				TypedConfig: protobuf.MustMarshalAny(&envoy_req_without_query_v3.ReqWithoutQuery{ /* empty */ }),
+			})
+		case "envoy.formatter.metadata":
+			config = append(config, &envoy_config_core_v3.TypedExtensionConfig{
+				Name:        "envoy.formatter.metadata",
+				TypedConfig: protobuf.MustMarshalAny(&envoy_metadata_v3.Metadata{}),
 			})
 		}
 	}

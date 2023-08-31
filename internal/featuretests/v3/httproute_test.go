@@ -180,7 +180,7 @@ func TestGateway_TLS(t *testing.T) {
 						httpsFilterForGateway("https-443", "test.projectcontour.io"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
 	})

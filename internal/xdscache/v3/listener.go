@@ -68,6 +68,9 @@ type ListenerConfig struct {
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string
 
+	// MaximumTLSVersion defines the maximum TLS protocol version the proxy should accept.
+	MaximumTLSVersion string
+
 	// CipherSuites defines the ciphers Envoy TLS listeners will accept when
 	// negotiating TLS 1.2.
 	CipherSuites []string
@@ -126,6 +129,10 @@ type ListenerConfig struct {
 	// if not specified there is no limit set.
 	MaxRequestsPerConnection *uint32
 
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers
+	// If unspecified, an implementation defined default is applied (1MiB).
+	PerConnectionBufferLimitBytes *uint32
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -137,6 +144,9 @@ type ListenerConfig struct {
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
 	TracingConfig *TracingConfig
+
+	// SocketOptions configures socket options HTTP and HTTPS listeners.
+	SocketOptions *contour_api_v1alpha1.SocketOptions
 }
 
 type ExtensionServiceConfig struct {
@@ -245,11 +255,21 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog 
 // minTLSVersion returns the requested minimum TLS protocol
 // version or envoy_tls_v3.TlsParameters_TLSv1_2 if not configured.
 func (lvc *ListenerConfig) minTLSVersion() envoy_tls_v3.TlsParameters_TlsProtocol {
-	minTLSVersion := envoy_v3.ParseTLSVersion(lvc.MinimumTLSVersion)
-	if minTLSVersion > envoy_tls_v3.TlsParameters_TLSv1_2 {
-		return minTLSVersion
+	ver := envoy_v3.ParseTLSVersion(lvc.MinimumTLSVersion)
+	if ver > envoy_tls_v3.TlsParameters_TLSv1_2 {
+		return ver
 	}
 	return envoy_tls_v3.TlsParameters_TLSv1_2
+}
+
+// maxTLSVersion returns the requested maximum TLS protocol
+// version or envoy_tls_v3.TlsParameters_TLSv1_3 if not configured.
+func (lvc *ListenerConfig) maxTLSVersion() envoy_tls_v3.TlsParameters_TlsProtocol {
+	ver := envoy_v3.ParseTLSVersion(lvc.MaximumTLSVersion)
+	if ver >= envoy_tls_v3.TlsParameters_TLSv1_2 {
+		return ver
+	}
+	return envoy_tls_v3.TlsParameters_TLSv1_3
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -350,21 +370,38 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		return b
 	}
 
+	min := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
+		if a < b {
+			return a
+		}
+		return b
+	}
+
+	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
+	if cfg.SocketOptions != nil {
+		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
+	}
+
 	for _, listener := range root.Listeners {
+		// A Listener-level TCPProxy proxies all traffic for
+		// the Listener port, i.e. no filter chain match.
 		if listener.TCPProxy != nil {
 			listeners[listener.Name] = envoy_v3.Listener(
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				nil,
 				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
 			)
 
 			continue
 		}
-
 		// If there are non-TLS vhosts bound to the listener,
 		// add a listener with a single filter chain.
+		// Note: Ensure the filter chain order matches with the filter chain
+		// order for the HTTPS virtualhosts.
 		if len(listener.VirtualHosts) > 0 {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
@@ -383,9 +420,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
+				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
-				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				EnableWebsockets(listener.EnableWebsockets).
 				Get()
 
@@ -393,6 +430,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				proxyProtocol(cfg.UseProxyProto),
 				cm,
 			)
@@ -406,6 +445,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Name,
 				listener.Address,
 				listener.Port,
+				cfg.PerConnectionBufferLimitBytes,
+				socketOptions,
 				secureProxyProtocol(cfg.UseProxyProto),
 			)
 		}
@@ -475,11 +516,18 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
 			if vh.Secret != nil {
 				// Choose the higher of the configured or requested TLS version.
-				vers := max(cfg.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
+				minVer := max(cfg.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
+
+				// Choose the lower of the configured or requested TLS version.
+				maxVer := min(cfg.maxTLSVersion(), envoy_v3.ParseTLSVersion(vh.MaxTLSVersion))
+				if maxVer == envoy_tls_v3.TlsParameters_TLS_AUTO {
+					maxVer = cfg.maxTLSVersion()
+				}
 
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
 					vh.Secret,
-					vers,
+					minVer,
+					maxVer,
 					cfg.CipherSuites,
 					vh.DownstreamValidation,
 					alpnProtos...)
@@ -493,11 +541,12 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			// point we don't actually know the full set of server names that will be bound to the
 			// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
 			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[listener.Name].FilterChains) {
-				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
+				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS min/max ProtocolVersion will use
 				// the value defined in the Contour Configuration file if defined.
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
 					vh.FallbackCertificate,
 					cfg.minTLSVersion(),
+					cfg.maxTLSVersion(),
 					cfg.CipherSuites,
 					vh.DownstreamValidation,
 					alpnProtos...,

@@ -122,10 +122,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
+						Annotations: map[string]string{
+							"projectcontour.io/tls-cert-namespace": "default",
+						},
 					},
 					Spec: networking_v1.IngressSpec{
 						TLS: []networking_v1.IngressTLS{{
-							SecretName: "default/secret",
+							SecretName: "secret",
 						}},
 					},
 				},
@@ -160,10 +163,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
+						Annotations: map[string]string{
+							"projectcontour.io/tls-cert-namespace": "default",
+						},
 					},
 					Spec: networking_v1.IngressSpec{
 						TLS: []networking_v1.IngressTLS{{
-							SecretName: "default/secret",
+							SecretName: "secret",
 						}},
 					},
 				},
@@ -1773,14 +1779,6 @@ func TestLookupService(t *testing.T) {
 		}
 	}
 
-	port := func(name string, port int32, protocol v1.Protocol) v1.ServicePort {
-		return v1.ServicePort{
-			Name:     name,
-			Port:     port,
-			Protocol: protocol,
-		}
-	}
-
 	tests := map[string]struct {
 		cache    *KubernetesCache
 		meta     types.NamespacedName
@@ -1790,40 +1788,40 @@ func TestLookupService(t *testing.T) {
 		wantErr  error
 	}{
 		"service and port exist with valid service protocol, lookup by port num": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromInt(80),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
+			wantPort: makeServicePort("http", v1.ProtocolTCP, 80),
 		},
 		"service and port exist with valid service protocol, lookup by port name": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromString("http"),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
+			wantPort: makeServicePort("http", v1.ProtocolTCP, 80),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port num": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromInt(9999),
 			wantErr: errors.New(`port "9999" on service "default/service-1" not matched`),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port name": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("wrong-port-name"),
 			wantErr: errors.New(`port "wrong-port-name" on service "default/service-1" not matched`),
 		},
 		"service and port exist, invalid service protocol": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolUDP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolUDP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("http"),
-			wantSvc: service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantSvc: service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
 			wantErr: errors.New(`unsupported service protocol "UDP"`),
 		},
 		"service does not exist": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "nonexistent-service"},
 			port:    intstr.FromInt(80),
 			wantErr: errors.New(`service "default/nonexistent-service" not found`),
@@ -2223,18 +2221,25 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	ingress := func(namespace, name, secretName string) *networking_v1.Ingress {
-		return &networking_v1.Ingress{
+	ingress := func(namespace, name, secretName string, secretNamespace string) *networking_v1.Ingress {
+		i := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
+
 			Spec: networking_v1.IngressSpec{
 				TLS: []networking_v1.IngressTLS{{
 					SecretName: secretName,
 				}},
 			},
 		}
+		if secretNamespace != "" {
+			i.ObjectMeta.Annotations = map[string]string{
+				"projectcontour.io/tls-cert-namespace": secretNamespace,
+			}
+		}
+		return i
 	}
 
 	cache := func(objs ...any) *KubernetesCache {
@@ -2264,6 +2269,27 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	httpProxyWithClientValidation := func(namespace, name, crlSecretName string) *contour_api_v1.HTTPProxy {
+		return &contour_api_v1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "",
+					TLS: &contour_api_v1.TLS{
+						SecretName: "tlscert",
+						ClientValidation: &contour_api_v1.DownstreamValidation{
+							CACertificate:             "ca",
+							CertificateRevocationList: crlSecretName,
+						},
+					},
+				},
+			},
+		}
+	}
+
 	tests := map[string]struct {
 		cache  *KubernetesCache
 		secret *v1.Secret
@@ -2281,23 +2307,15 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		},
 		"ingress secret triggers rebuild": {
 			cache: cache(
-				ingress("default", "secret", "secret"),
+				ingress("default", "secret", "secret", ""),
 			),
 			secret: secret("default", "secret"),
 			want:   true,
 		},
-		"ingress with delegated secret (specific namespace) triggers rebuild": {
+		"ingress with cross-namespace secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "tlscert", "user"),
-				ingress("user", "ingress", "default/tlscert"),
-			),
-			secret: secret("default", "tlscert"),
-			want:   true,
-		},
-		"ingress with delegated secret ('*' namespace) triggers rebuild": {
-			cache: cache(
-				tlsCertificateDelegation("default", "tlscert", "*"),
-				ingress("user", "ingress", "default/tlscert"),
+				ingress("user", "ingress", "tlscert", "default"),
 			),
 			secret: secret("default", "tlscert"),
 			want:   true,
@@ -2339,17 +2357,9 @@ func TestSecretTriggersRebuild(t *testing.T) {
 			secret: secret("default", "tlscert"),
 			want:   true,
 		},
-		"httpproxy with delegated secret (specific namespace) triggers rebuild": {
+		"httpproxy with cross-namespace secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "tlscert", "user"),
-				httpProxy("user", "ingress", "default/tlscert"),
-			),
-			secret: secret("default", "tlscert"),
-			want:   true,
-		},
-		"httpproxy with delegated secret ('*' namespace) triggers rebuild": {
-			cache: cache(
-				tlsCertificateDelegation("default", "tlscert", "*"),
 				httpProxy("user", "ingress", "default/tlscert"),
 			),
 			secret: secret("default", "tlscert"),
@@ -2450,6 +2460,18 @@ func TestSecretTriggersRebuild(t *testing.T) {
 				},
 			),
 			secret: secret("projectcontour", "tlscert"),
+			want:   true,
+		},
+		"HTTPProxy with client validation and CRL triggers rebuild": {
+			cache:  cache(httpProxyWithClientValidation("user", "proxy", "crl")),
+			secret: secret("user", "crl"),
+			want:   true,
+		},
+		"HTTPProxy with cross-namespace CRL secret reference triggers rebuild": {
+			cache: cache(
+				tlsCertificateDelegation("default", "crl", "thatnamespace", "thisnamespace"),
+				httpProxyWithClientValidation("thisnamespace", "proxy", "default/crl")),
+			secret: secret("default", "crl"),
 			want:   true,
 		},
 	}

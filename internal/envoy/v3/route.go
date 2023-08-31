@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -41,6 +40,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -82,10 +82,36 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	return evh
 }
 
+func getRouteMetadata(dagRoute *dag.Route) *envoy_core_v3.Metadata {
+	metadataFields := map[string]*structpb.Value{}
+	if len(dagRoute.Kind) > 0 {
+		metadataFields["io.projectcontour.kind"] = structpb.NewStringValue(dagRoute.Kind)
+	}
+	if len(dagRoute.Namespace) > 0 {
+		metadataFields["io.projectcontour.namespace"] = structpb.NewStringValue(dagRoute.Namespace)
+	}
+	if len(dagRoute.Name) > 0 {
+		metadataFields["io.projectcontour.name"] = structpb.NewStringValue(dagRoute.Name)
+	}
+
+	if len(metadataFields) == 0 {
+		return nil
+	}
+
+	return &envoy_core_v3.Metadata{
+		FilterMetadata: map[string]*structpb.Struct{
+			"envoy.access_loggers.file": {
+				Fields: metadataFields,
+			},
+		},
+	}
+}
+
 // buildRoute converts a DAG route to an Envoy route.
 func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
 	route := &envoy_route_v3.Route{
-		Match: RouteMatch(dagRoute),
+		Match:    RouteMatch(dagRoute),
+		Metadata: getRouteMetadata(dagRoute),
 	}
 
 	switch {
@@ -465,19 +491,23 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 }
 
 func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {
-	if r.MirrorPolicy == nil {
+	if len(r.MirrorPolicies) == 0 {
 		return nil
 	}
 
-	return []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
-		Cluster: envoy.Clustername(r.MirrorPolicy.Cluster),
-		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
-			DefaultValue: &envoy_type_v3.FractionalPercent{
-				Numerator:   uint32(r.MirrorPolicy.Weight),
-				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+	mirrorPolicies := []*envoy_route_v3.RouteAction_RequestMirrorPolicy{}
+	for _, mp := range r.MirrorPolicies {
+		mirrorPolicies = append(mirrorPolicies, &envoy_route_v3.RouteAction_RequestMirrorPolicy{
+			Cluster: envoy.Clustername(mp.Cluster),
+			RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+				DefaultValue: &envoy_type_v3.FractionalPercent{
+					Numerator:   uint32(mp.Weight),
+					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+				},
 			},
-		},
-	}}
+		})
+	}
+	return mirrorPolicies
 }
 
 func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
@@ -710,6 +740,8 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 		header := &envoy_route_v3.HeaderMatcher{
 			Name:        h.Name,
 			InvertMatch: h.Invert,
+			// We only want to turn on TreatMissingHeaderAsEmpty on invert matches
+			TreatMissingHeaderAsEmpty: h.Invert && h.TreatMissingAsEmpty,
 		}
 
 		switch h.MatchType {
@@ -717,10 +749,11 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
 				StringMatch: &matcher.StringMatcher{
 					MatchPattern: &matcher.StringMatcher_Exact{Exact: h.Value},
+					IgnoreCase:   h.IgnoreCase,
 				},
 			}
 		case dag.HeaderMatchTypeContains:
-			header.HeaderMatchSpecifier = containsMatch(h.Value)
+			header.HeaderMatchSpecifier = containsMatch(h.Value, h.IgnoreCase)
 		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		case dag.HeaderMatchTypeRegex:
@@ -796,16 +829,12 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_rout
 
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
-func containsMatch(s string) *envoy_route_v3.HeaderMatcher_StringMatch {
-	// convert the substring s into a regular expression that matches s.
-	// note that Envoy expects the expression to match the entire string, not just the substring
-	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
-	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
-
+func containsMatch(s string, ignoreCase bool) *envoy_route_v3.HeaderMatcher_StringMatch {
 	return &envoy_route_v3.HeaderMatcher_StringMatch{
 		StringMatch: &matcher.StringMatcher{
-			MatchPattern: &matcher.StringMatcher_SafeRegex{
-				SafeRegex: SafeRegexMatch(regex),
+			IgnoreCase: ignoreCase,
+			MatchPattern: &matcher.StringMatcher_Contains{
+				Contains: s,
 			},
 		},
 	}

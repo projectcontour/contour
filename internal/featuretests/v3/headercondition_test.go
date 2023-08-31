@@ -55,25 +55,48 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Name: "svc1",
 					Port: 80,
 				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerContainsMatchCondition("x-header", "abc"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					headerContainsMatchCondition("x-header", "abc"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerContainsMatchCondition("x-header", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerContainsMatchCondition("x-header", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerNotExactMatchCondition("x-beta-release", "true", false, true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerNotContainsMatchCondition("x-beta-release", "t", false, true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+			},
 		},
 	}
 	rh.OnAdd(proxy1)
@@ -82,6 +105,26 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:                "x-beta-release",
+							Value:               "true",
+							MatchType:           "exact",
+							Invert:              true,
+							TreatMissingAsEmpty: true,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:                "x-beta-release",
+							Value:               "t",
+							MatchType:           "contains",
+							Invert:              true,
+							TreatMissingAsEmpty: true,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
 					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -121,7 +164,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerNotContainsMatchCondition("x-header", "123"),
+					headerNotContainsMatchCondition("x-header", "123", false, false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -130,7 +173,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerNotContainsMatchCondition("x-header", "abc"),
+					headerNotContainsMatchCondition("x-header", "abc", false, false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -184,7 +227,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerExactMatchCondition("x-header", "abc"),
+					headerExactMatchCondition("x-header", "abc", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -193,7 +236,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerExactMatchCondition("x-header", "123"),
+					headerExactMatchCondition("x-header", "123", false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -247,7 +290,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/"),
-					headerNotExactMatchCondition("x-header", "abc"),
+					headerNotExactMatchCondition("x-header", "abc", false, false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc2",
@@ -256,7 +299,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			}, {
 				Conditions: matchconditions(
 					prefixMatchCondition("/blog"),
-					headerNotExactMatchCondition("x-header", "123"),
+					headerNotExactMatchCondition("x-header", "123", false, false),
 				),
 				Services: []contour_api_v1.Service{{
 					Name: "svc3",
@@ -369,7 +412,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "abc"),
+						headerContainsMatchCondition("x-header", "abc", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc1",
@@ -379,7 +422,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "def"),
+						headerContainsMatchCondition("x-header", "def", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc2",
@@ -428,7 +471,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerContainsMatchCondition("x-header", "abc"),
+						headerContainsMatchCondition("x-header", "abc", false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc1",
@@ -438,7 +481,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
-						headerNotContainsMatchCondition("x-header", "abc"),
+						headerNotContainsMatchCondition("x-header", "abc", false, false),
 					),
 					Services: []contour_api_v1.Service{{
 						Name: "svc2",

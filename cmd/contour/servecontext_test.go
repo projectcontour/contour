@@ -411,6 +411,11 @@ func TestConvertServeContext(t *testing.T) {
 					ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
 					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
+						MaximumProtocolVersion: "",
+					},
+					SocketOptions: &contour_api_v1alpha1.SocketOptions{
+						TOS:          0,
+						TrafficClass: 0,
 					},
 				},
 				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
@@ -629,6 +634,20 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    true,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,
+					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_api_v1.RateLimitDescriptor{
+							{
+								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									{
+										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+											Key:   "foo",
+											Value: "bar",
+										},
+									},
+								},
+							},
+						},
+					},
 				}
 				return ctx
 			},
@@ -642,6 +661,20 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    ref.To(true),
 					EnableXRateLimitHeaders:     ref.To(true),
 					EnableResourceExhaustedCode: ref.To(true),
+					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_api_v1.RateLimitDescriptor{
+							{
+								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									{
+										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+											Key:   "foo",
+											Value: "bar",
+										},
+									},
+								},
+							},
+						},
+					},
 				}
 				return cfg
 			},

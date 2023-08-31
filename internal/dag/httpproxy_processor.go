@@ -103,6 +103,15 @@ type HTTPProxyProcessor struct {
 
 	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
+
+	// GlobalRateLimitService defines Envoy's Global RateLimit Service configuration.
+	GlobalRateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
+
+	// SetSourceMetadataOnRoutes defines whether to set the Kind,
+	// Namespace and Name fields on generated DAG routes. This is
+	// configurable and off by default in order to support the feature
+	// without requiring all existing test cases to change.
+	SetSourceMetadataOnRoutes bool
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -239,10 +248,21 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				return
 			}
 
+			// default to a minimum TLS version of 1.2 if it's not specified
+			minTLSVer := annotation.TLSVersion(tls.MinimumProtocolVersion, "1.2")
+
+			// default to a maximum TLS version of 1.3 if it's not specified
+			maxTLSVer := annotation.TLSVersion(tls.MaximumProtocolVersion, "1.3")
+			if maxTLSVer < minTLSVer {
+				validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
+					"Spec.Virtualhost.TLS the minimum protocol version is greater than the maximum protocol version")
+				return
+			}
+
 			svhost := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 			svhost.Secret = sec
-			// default to a minimum TLS version of 1.2 if it's not specified
-			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, "1.2")
+			svhost.MinTLSVersion = minTLSVer
+			svhost.MaxTLSVersion = maxTLSVer
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
@@ -443,7 +463,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				// Get the DNS lookup family if specified, otherwise
-				// default to to the Contour-wide setting.
+				// default to the Contour-wide setting.
 				dnsLookupFamily := ""
 				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
 				case "auto", "v4", "v6", "all":
@@ -507,13 +527,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 	insecure.CORSPolicy = cp
 
-	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
-	if err != nil {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+	var isValidRLP bool
+	insecure.RateLimitPolicy, isValidRLP = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
+	if !isValidRLP {
 		return
 	}
-	insecure.RateLimitPolicy = rlp
 
 	if p.GlobalExternalAuthorization != nil && !proxy.Spec.VirtualHost.DisableAuthorization() {
 		p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
@@ -540,13 +558,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		secure := p.dag.EnsureSecureVirtualHost(listener.Name, host)
 		secure.CORSPolicy = cp
 
-		rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
-		if err != nil {
-			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
-				"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		secure.RateLimitPolicy, isValidRLP = computeVirtualHostRateLimitPolicy(proxy, p.GlobalRateLimitService, validCond)
+		if !isValidRLP {
 			return
 		}
-		secure.RateLimitPolicy = rlp
 
 		secure.IPFilterAllow, secure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
 		if err != nil {
@@ -603,14 +618,22 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
-func addStatusBadGatewayRoute(routes []*Route, conds []contour_api_v1.MatchCondition) []*Route {
+func (p *HTTPProxyProcessor) addStatusBadGatewayRoute(routes []*Route, conds []contour_api_v1.MatchCondition, proxy *contour_api_v1.HTTPProxy) []*Route {
 	if len(conds) > 0 {
-		routes = append(routes, &Route{
+		route := &Route{
 			PathMatchCondition:        mergePathMatchConditions(conds),
 			HeaderMatchConditions:     mergeHeaderMatchConditions(conds),
 			QueryParamMatchConditions: mergeQueryParamMatchConditions(conds),
 			DirectResponse:            directResponse(http.StatusBadGateway, ""),
-		})
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			route.Kind = "HTTPProxy"
+			route.Namespace = proxy.Namespace
+			route.Name = proxy.Name
+		}
+
+		routes = append(routes, route)
 	}
 	return routes
 }
@@ -686,15 +709,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				"include %s/%s not found", namespace, include.Name)
 
 			// Set 502 response when include was not found but include condition was valid.
-			routes = addStatusBadGatewayRoute(routes, include.Conditions)
+			routes = p.addStatusBadGatewayRoute(routes, include.Conditions, proxy)
 			continue
 		}
 
 		if includedProxy.Spec.VirtualHost != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot",
-				"root httpproxy cannot include another root httpproxy")
+				"root httpproxy cannot include another root httpproxy (%s/%s)", includedProxy.Namespace, includedProxy.Name)
 			// Set 502 response if include references another root
-			routes = addStatusBadGatewayRoute(routes, include.Conditions)
+			routes = p.addStatusBadGatewayRoute(routes, include.Conditions, proxy)
 			continue
 		}
 
@@ -804,6 +827,12 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    internalRedirectPolicy,
+		}
+
+		if p.SetSourceMetadataOnRoutes {
+			r.Kind = "HTTPProxy"
+			r.Namespace = proxy.Namespace
+			r.Name = proxy.Name
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -995,7 +1024,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			}
-			if service.Mirror && r.MirrorPolicy != nil {
+			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
 					"only one service per route may be nominated as mirror")
 				return nil
@@ -1006,15 +1035,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				// EDGE CASE: This means that explicitly setting Weight to 0 will also result in 100%
 				// mirroring. The Mirror field must be set to false or removed to disable the mirror.
 				if service.Weight == 0 {
-					r.MirrorPolicy = &MirrorPolicy{
+					r.MirrorPolicies = []*MirrorPolicy{{
 						Cluster: c,
 						Weight:  100,
-					}
+					}}
 				} else {
-					r.MirrorPolicy = &MirrorPolicy{
+					r.MirrorPolicies = []*MirrorPolicy{{
 						Cluster: c,
 						Weight:  service.Weight,
-					}
+					}}
 				}
 			} else {
 				r.Clusters = append(r.Clusters, c)
@@ -1218,7 +1247,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	if dest.Spec.VirtualHost != nil {
 
 		validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot",
-			"root httpproxy cannot include another root httpproxy")
+			"root httpproxy cannot include another root httpproxy (%s/%s)", dest.Namespace, dest.Name)
 		return false
 	}
 
@@ -1360,18 +1389,18 @@ func validateExternalAuthExtensionService(ref contour_api_v1.ExtensionServiceRef
 }
 
 func determineExternalAuthTimeout(responseTimeout string, validCond *contour_api_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
-	timeout, err := timeout.Parse(responseTimeout)
+	tout, err := timeout.Parse(responseTimeout)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
 			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 		return false, nil
 	}
 
-	if timeout.UseDefault() {
+	if tout.UseDefault() {
 		return true, &ext.RouteTimeoutPolicy.ResponseTimeout
 	}
 
-	return true, &timeout
+	return true, &tout
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
@@ -1394,11 +1423,46 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 	return true
 }
 
+func computeVirtualHostRateLimitPolicy(proxy *contour_api_v1.HTTPProxy, rls *contour_api_v1alpha1.RateLimitServiceConfig, validCond *contour_api_v1.DetailedCondition) (*RateLimitPolicy, bool) {
+	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
+			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		return nil, false
+	}
+
+	// If HTTPProxy defines its own Global RateLimit Policy, no need to check the default rate limit policy.
+	if rlp != nil && rlp.Global != nil {
+		return rlp, true
+	}
+
+	// Set the global rateLimit policy from the default global rateLimit policy
+	// if HTTPProxy is not opted out explicitly, or it defines its own global rate limit policy.
+	optedOut := proxy.Spec.VirtualHost.RateLimitPolicy != nil &&
+		proxy.Spec.VirtualHost.RateLimitPolicy.Global != nil &&
+		proxy.Spec.VirtualHost.RateLimitPolicy.Global.Disabled
+
+	// Attach the default global rate limit policy if the rate limit service defines one.
+	if rls != nil && rls.DefaultGlobalRateLimitPolicy != nil && !optedOut {
+		if rlp == nil {
+			rlp = &RateLimitPolicy{}
+		}
+		rlp.Global, err = globalRateLimitPolicy(rls.DefaultGlobalRateLimitPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "RateLimitPolicyNotValid",
+				"Default Global RateLimit Policy is invalid: %s", err)
+			return nil, false
+		}
+	}
+
+	return rlp, true
+}
+
 func (p *HTTPProxyProcessor) GlobalAuthorizationConfigured() bool {
 	return p.GlobalExternalAuthorization != nil
 }
 
-// AuthorizationContext returns the authorization policy context (if present).
+// GlobalAuthorizationContext returns the authorization policy context (if present).
 func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 	if p.GlobalAuthorizationConfigured() && p.GlobalExternalAuthorization.AuthPolicy != nil {
 		return p.GlobalExternalAuthorization.AuthPolicy.Context
@@ -1663,8 +1727,14 @@ func includeMatchConditionsIdentical(includeConds []contour_api_v1.MatchConditio
 		if includeHeaderConds[i].MatchType != includeHeaderConds[j].MatchType {
 			return includeHeaderConds[i].MatchType < includeHeaderConds[j].MatchType
 		}
+		if includeHeaderConds[i].IgnoreCase != includeHeaderConds[j].IgnoreCase {
+			return includeHeaderConds[i].IgnoreCase
+		}
 		if includeHeaderConds[i].Invert != includeHeaderConds[j].Invert {
 			return includeHeaderConds[i].Invert
+		}
+		if includeHeaderConds[i].TreatMissingAsEmpty != includeHeaderConds[j].TreatMissingAsEmpty {
+			return includeHeaderConds[i].TreatMissingAsEmpty
 		}
 		if includeHeaderConds[i].Name != includeHeaderConds[j].Name {
 			return includeHeaderConds[i].Name < includeHeaderConds[j].Name

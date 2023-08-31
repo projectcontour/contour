@@ -122,12 +122,7 @@ func TestServiceClusterValid(t *testing.T) {
 }
 
 func TestServiceClusterAdd(t *testing.T) {
-	port := v1.ServicePort{
-		Name:     "foo",
-		Protocol: v1.ProtocolTCP,
-		Port:     32,
-	}
-
+	port := makeServicePort("foo", "TCP", 32)
 	s := ServiceCluster{
 		ClusterName: "test",
 	}
@@ -165,12 +160,7 @@ func TestServiceClusterAdd(t *testing.T) {
 }
 
 func TestServiceClusterRebalance(t *testing.T) {
-	port := v1.ServicePort{
-		Name:     "foo",
-		Protocol: v1.ProtocolTCP,
-		Port:     32,
-	}
-
+	port := makeServicePort("foo", "TCP", 32)
 	cases := map[string]struct {
 		have ServiceCluster
 		want ServiceCluster

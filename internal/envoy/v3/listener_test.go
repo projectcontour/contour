@@ -80,11 +80,12 @@ func TestProtoNamesForVersions(t *testing.T) {
 
 func TestListener(t *testing.T) {
 	tests := map[string]struct {
-		name, address string
-		port          int
-		lf            []*envoy_listener_v3.ListenerFilter
-		f             []*envoy_listener_v3.Filter
-		want          *envoy_listener_v3.Listener
+		name, address                 string
+		port                          int
+		perConnectionBufferLimitBytes *uint32
+		lf                            []*envoy_listener_v3.ListenerFilter
+		f                             []*envoy_listener_v3.Filter
+		want                          *envoy_listener_v3.Listener
 	}{
 		"insecure listener": {
 			name:    "http",
@@ -99,7 +100,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"insecure listener w/ proxy": {
@@ -121,7 +122,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"secure listener": {
@@ -137,7 +138,7 @@ func TestListener(t *testing.T) {
 				ListenerFilters: ListenerFilters(
 					TLSInspector(),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 		"secure listener w/ proxy": {
@@ -155,14 +156,50 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 					TLSInspector(),
 				),
-				SocketOptions: TCPKeepaliveSocketOptions(),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+			},
+		},
+		"listener w/ connection buffer limits": {
+			name:                          "http",
+			address:                       "0.0.0.0",
+			port:                          9000,
+			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			f: []*envoy_listener_v3.Filter{
+				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+			},
+			want: &envoy_listener_v3.Listener{
+				Name:                          "http",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				FilterChains: FilterChains(
+					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, v1alpha1.LogLevelInfo), 0),
+				),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+			},
+		},
+		"secure listener w/ connection buffer limits": {
+			name:                          "https",
+			address:                       "0.0.0.0",
+			port:                          9000,
+			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			lf: ListenerFilters(
+				TLSInspector(),
+			),
+			want: &envoy_listener_v3.Listener{
+				Name:                          "https",
+				Address:                       SocketAddress("0.0.0.0", 9000),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				ListenerFilters: ListenerFilters(
+					TLSInspector(),
+				),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
+			got := Listener(tc.name, tc.address, tc.port, tc.perConnectionBufferLimitBytes, NewSocketOptions().TCPKeepalive(), tc.lf, tc.f...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -426,7 +463,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 		want *envoy_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, nil, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -436,7 +473,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContext, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContext, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -448,7 +485,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -460,7 +497,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -472,7 +509,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -484,7 +521,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"optional client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -496,7 +533,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -508,7 +545,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check but only for leaf-certificate": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,

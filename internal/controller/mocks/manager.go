@@ -64,20 +64,6 @@ func (_m *Manager) AddHealthzCheck(name string, check healthz.Checker) error {
 	return r0
 }
 
-// AddMetricsExtraHandler provides a mock function with given fields: path, handler
-func (_m *Manager) AddMetricsExtraHandler(path string, handler http.Handler) error {
-	ret := _m.Called(path, handler)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, http.Handler) error); ok {
-		r0 = rf(path, handler)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // AddReadyzCheck provides a mock function with given fields: name, check
 func (_m *Manager) AddReadyzCheck(name string, check healthz.Checker) error {
 	ret := _m.Called(name, check)

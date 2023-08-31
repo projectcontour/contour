@@ -374,9 +374,42 @@ type EnvoyListenerConfig struct {
 	// +optional
 	MaxRequestsPerConnection *uint32 `json:"maxRequestsPerConnection,omitempty"`
 
+	// Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
+	// If unspecified, an implementation defined default is applied (1MiB).
+	// see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#envoy-v3-api-field-config-listener-v3-listener-per-connection-buffer-limit-bytes
+	// for more information.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
+
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
+
+	// SocketOptions defines configurable socket options for the listeners.
+	// Single set of options are applied to all listeners.
+	// +optional
+	SocketOptions *SocketOptions `json:"socketOptions,omitempty"`
+}
+
+// SocketOptions defines configurable socket options for Envoy listeners.
+type SocketOptions struct {
+	// Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners.
+	// Single value is applied to all listeners.
+	// If listeners are bound to IPv6-only addresses, setting this option will cause an error.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=255
+	// +optional
+	TOS int32 `json:"tos,omitempty"`
+
+	// Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners.
+	// Single value is applied to all listeners.
+	// If listeners are bound to IPv4-only addresses, setting this option will cause an error.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=255
+	// +optional
+	TrafficClass int32 `json:"trafficClass,omitempty"`
 }
 
 // EnvoyTLS describes tls parameters for Envoy listneners.
@@ -389,6 +422,15 @@ type EnvoyTLS struct {
 	// Other values will produce an error.
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
+
+	// MaximumProtocolVersion is the maximum TLS version this vhost should
+	// negotiate.
+	//
+	// Values: `1.2`, `1.3`(default).
+	//
+	// Other values will produce an error.
+	// +optional
+	MaximumProtocolVersion string `json:"maximumProtocolVersion,omitempty"`
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
@@ -685,6 +727,12 @@ type RateLimitServiceConfig struct {
 	//
 	// +optional
 	EnableResourceExhaustedCode *bool `json:"enableResourceExhaustedCode,omitempty"`
+
+	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for every HTTPProxy.
+	// HTTPProxy can overwrite this configuration.
+	//
+	// +optional
+	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `json:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // TracingConfig defines properties for exporting trace data to OpenTelemetry.
