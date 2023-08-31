@@ -289,6 +289,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	testLogLevelArg := "--log-level debug"
+	testBaseIDArg := "--base-id 1"
 
 	resQutoa := corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
@@ -311,10 +312,13 @@ func TestDesiredDaemonSet(t *testing.T) {
 			},
 		},
 	}
+	// Change the Envoy base id to test --base-id 1
+	cntr.Spec.EnvoyBaseID = 1
 
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
+	checkContainerHasArg(t, container, testBaseIDArg)
 	checkContainerHasImage(t, container, testEnvoyImage)
 	checkContainerHasReadinessPort(t, container, 8002)
 

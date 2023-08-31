@@ -286,18 +286,18 @@ func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLo
 	}
 }
 
-func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1beta1.GatewayAddress {
-	addrs := []gatewayapi_v1beta1.GatewayAddress{}
+func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1beta1.GatewayStatusAddress {
+	addrs := []gatewayapi_v1beta1.GatewayStatusAddress{}
 
 	for _, lbi := range lbs.Ingress {
 		if len(lbi.IP) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayAddress{
+			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 				Value: lbi.IP,
 			})
 		}
 		if len(lbi.Hostname) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayAddress{
+			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 				Value: lbi.Hostname,
 			})

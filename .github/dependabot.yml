@@ -9,16 +9,22 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   labels:
   - area/dependency
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+  groups:
+    k8s-dependencies:
+      patterns:
+      - "k8s.io/*"
 - target-branch: main
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   labels:
   - area/tooling
   - release-note/none-required
@@ -26,11 +32,12 @@ updates:
   - projectcontour/maintainers
   
 # release branch N targets
-- target-branch: release-1.25
+- target-branch: release-1.26
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -41,11 +48,16 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
-- target-branch: release-1.25
+  groups:
+    k8s-dependencies:
+      patterns:
+      - "k8s.io/*"
+- target-branch: release-1.26
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -58,11 +70,12 @@ updates:
   - projectcontour/maintainers
 
 # release branch N-1 targets
-- target-branch: release-1.24
+- target-branch: release-1.25
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -73,11 +86,16 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
-- target-branch: release-1.24
+  groups:
+    k8s-dependencies:
+      patterns:
+      - "k8s.io/*"
+- target-branch: release-1.25
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -90,11 +108,12 @@ updates:
   - projectcontour/maintainers
 
 # release branch N-2 targets
-- target-branch: release-1.23
+- target-branch: release-1.24
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:
@@ -105,11 +124,16 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
-- target-branch: release-1.23
+  groups:
+    k8s-dependencies:
+      patterns:
+      - "k8s.io/*"
+- target-branch: release-1.24
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
+    day: "sunday"
   ignore:
   - dependency-name: "*"
     update-types:

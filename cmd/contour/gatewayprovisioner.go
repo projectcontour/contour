@@ -28,6 +28,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
@@ -157,8 +158,10 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 		LeaderElectionID:              provisionerConfig.leaderElectionID,
 		LeaderElectionNamespace:       provisionerConfig.leaderElectionNamespace,
 		LeaderElectionReleaseOnCancel: true,
-		MetricsBindAddress:            provisionerConfig.metricsBindAddress,
-		Logger:                        ctrl.Log.WithName("contour-gateway-provisioner"),
+		Metrics: controller_runtime_metrics_server.Options{
+			BindAddress: provisionerConfig.metricsBindAddress,
+		},
+		Logger: ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)

@@ -1,1 +1,0 @@
-HTTPProxy: HTTP health checks can now be configured to treat response codes other than 200 as healthy. See [HTTPProxy Health Checking](https://projectcontour.io/docs/1.26/config/health-checks/#http-proxy-health-checking) and [HTTPHealthCheckPolicy reference docs](https://projectcontour.io/docs/1.26/config/api/#projectcontour.io/v1.HTTPHealthCheckPolicy) for more information.

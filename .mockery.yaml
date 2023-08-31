@@ -1,0 +1,26 @@
+with-expecter: False
+mockname: "{{.InterfaceName}}"
+filename: "{{.InterfaceNameSnake}}.go"
+outpkg: "mocks"
+dir: '{{trimPrefix .PackagePath "github.com/projectcontour/contour/" }}/mocks'
+disable-version-string: True
+packages:
+    sigs.k8s.io/controller-runtime/pkg/manager:
+        config:
+            dir: "internal/controller/mocks"
+        interfaces:
+            Manager:
+    github.com/projectcontour/contour/internal/debug:
+        interfaces:
+            DagBuilder:
+    github.com/projectcontour/contour/internal/k8s:
+        interfaces:
+            StatusMetrics:
+    sigs.k8s.io/controller-runtime/pkg/cache:
+        config:
+            dir: "internal/k8s/mocks"
+        interfaces:
+            Cache:
+    github.com/projectcontour/contour/internal/leadership:
+        interfaces:
+            NeedLeaderElectionNotification:

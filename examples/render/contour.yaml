@@ -222,7 +222,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: contourconfigurations.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -1428,7 +1428,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: contourdeployments.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -1677,6 +1677,14 @@ spec:
                   or Deployment), node placement constraints for the pods, and various
                   options for the Envoy service.
                 properties:
+                  baseID:
+                    description: The base ID to use when allocating shared memory
+                      regions. if Envoy needs to be run multiple times on the same
+                      machine, each running Envoy will need a unique base ID so that
+                      the shared memory regions do not conflict. defaults to 0.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   daemonSet:
                     description: DaemonSet describes the settings for running envoy
                       as a `DaemonSet`. if `WorkloadType` is `Deployment`,it's must
@@ -4737,7 +4745,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: extensionservices.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -5161,7 +5169,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: httpproxies.projectcontour.io
 spec:
   preserveUnknownFields: false
@@ -7956,7 +7964,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: tlscertificatedelegations.projectcontour.io
 spec:
   preserveUnknownFields: false

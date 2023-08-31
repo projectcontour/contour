@@ -27,8 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=StatusMetrics --disable-version-string
-
 func TestStatusUpdateHandlerRequiresLeaderElection(t *testing.T) {
 	var s manager.LeaderElectionRunnable = &StatusUpdateHandler{}
 	require.True(t, s.NeedLeaderElection())

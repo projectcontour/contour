@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.20.7
+BUILD_BASE_IMAGE ?= golang:1.21.0
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -271,7 +271,7 @@ generate-metrics-docs:
 .PHONY: generate-go
 generate-go:
 	@echo "Generating mocks..."
-	@go generate ./...
+	@go run github.com/vektra/mockery/v2
 
 .PHONY: check-generate
 check-generate: generate

@@ -209,6 +209,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				fmt.Sprintf("--service-cluster $(%s)", envoyNsEnvVar),
 				fmt.Sprintf("--service-node $(%s)", envoyPodEnvVar),
 				fmt.Sprintf("--log-level %s", contour.Spec.EnvoyLogLevel),
+				fmt.Sprintf("--base-id %d", contour.Spec.EnvoyBaseID),
 			},
 			Env: []corev1.EnvVar{
 				{

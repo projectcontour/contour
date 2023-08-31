@@ -349,7 +349,6 @@ func TestStatusAddressUpdater(t *testing.T) {
 	}
 }
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Cache --srcpkg=sigs.k8s.io/controller-runtime/pkg/cache  --disable-version-string
 func TestStatusAddressUpdater_Gateway(t *testing.T) {
 	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
@@ -415,7 +414,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
@@ -463,7 +462,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
@@ -583,7 +582,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayAddress{
+					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
