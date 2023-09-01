@@ -133,12 +133,8 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager depl
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 
 if [[ "${SKIP_GATEWAY_API_INSTALL}" != "true" ]]; then
-  # Install Gateway API CRDs and webhook.
+  # Install Gateway API CRDs.
   ${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
-  ${KUBECTL} apply -f "${REPO}/examples/gateway/00-namespace.yaml"
-  ${KUBECTL} apply -f "${REPO}/examples/gateway/01-admission_webhook.yaml"
-  ${KUBECTL} apply -f "${REPO}/examples/gateway/02-certificate_config.yaml"
-  ${KUBECTL} wait --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server --for=condition=Available
 fi
 
 # Install Contour CRDs.
