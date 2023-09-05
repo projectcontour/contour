@@ -29,7 +29,7 @@ require (
 	github.com/vektra/mockery/v2 v2.33.1
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/oauth2 v0.11.0
-	gonum.org/v1/plot v0.13.0
+	gonum.org/v1/plot v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230526203410-71b5a4ffd15e
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
@@ -46,10 +46,11 @@ require (
 )
 
 require (
-	git.sr.ht/~sbinet/gg v0.4.1 // indirect
+	git.sr.ht/~sbinet/gg v0.5.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chigopher/pathlib v0.15.0 // indirect
@@ -114,8 +115,8 @@ require (
 	github.com/tsaarni/x500dn v1.0.0 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea // indirect
-	golang.org/x/image v0.7.0 // indirect
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b // indirect
+	golang.org/x/image v0.11.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
