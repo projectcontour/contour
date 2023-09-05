@@ -651,6 +651,13 @@ type Parameters struct {
 
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
+
+	// FeatureFlags defines toggle to enable new contour features.
+	// available toggles are
+	// useEndpointSlices - configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to false and reading endpoint
+	// data from the k8s endpoints.
+	FeatureFlags []string `yaml:"featureFlags,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -817,6 +824,10 @@ type MetricsServerParameters struct {
 	// Optional: required only if client certificates shall be validated to protect the metrics endpoint.
 	CABundle string `yaml:"ca-certificate-path,omitempty"`
 }
+
+// FeatureFlags defines the set of feature flags
+// to toggle new contour features.
+type FeatureFlags []string
 
 func (p *MetricsParameters) Validate() error {
 	if err := p.Contour.Validate(); err != nil {

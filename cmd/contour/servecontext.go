@@ -588,6 +588,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
 		Tracing:                     tracingConfig,
+		FeatureFlags:                ctx.Config.FeatureFlags,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType
