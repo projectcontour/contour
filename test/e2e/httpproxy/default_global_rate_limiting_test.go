@@ -408,7 +408,7 @@ func testDefaultGlobalRateLimitingWithVhRateLimitsIgnore(namespace string) {
 			Path:      "/echo",
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_1",
+					"X-Another-Header": "randomvalue",
 				}),
 			},
 		})
@@ -438,7 +438,7 @@ func testDefaultGlobalRateLimitingWithVhRateLimitsIgnore(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(map[string]string{
-					"X-Default-Header": "test_value_1",
+					"X-Another-Header": "randomvalue",
 				}),
 			},
 		})

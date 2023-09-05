@@ -471,7 +471,7 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 							Entries: []contourv1.RateLimitDescriptorEntry{
 								{
 									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "vhostlimit",
+										Value: "randomvalue",
 									},
 								},
 							},
@@ -573,7 +573,7 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 							Entries: []contourv1.RateLimitDescriptorEntry{
 								{
 									GenericKey: &contourv1.GenericKeyDescriptor{
-										Value: "vhostlimit",
+										Value: "randomvalue",
 									},
 								},
 							},

@@ -406,6 +406,11 @@ descriptors:
     value: tlsroutelimit
     rate_limit:
       unit: hour
+      requests_per_unit: 1
+  - key: generic_key
+    value: randomvalue
+    rate_limit:
+      unit: hour
       requests_per_unit: 1`))
 					})
 
@@ -446,6 +451,16 @@ descriptors:
 											},
 										},
 									},
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{
+												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+													HeaderName:    "X-Another-Header",
+													DescriptorKey: "anotherHeader",
+												},
+											},
+										},
+									},
 								},
 							},
 						}
@@ -469,6 +484,16 @@ descriptors:
 											},
 										},
 									},
+									{
+										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											{
+												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+													HeaderName:    "X-Another-Header",
+													DescriptorKey: "anotherHeader",
+												},
+											},
+										},
+									},
 								},
 							},
 						}
@@ -488,6 +513,10 @@ descriptors:
       unit: hour
       requests_per_unit: 1
   - key: customHeader
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1  
+  - key: anotherHeader
     rate_limit:
       unit: hour
       requests_per_unit: 1`))
