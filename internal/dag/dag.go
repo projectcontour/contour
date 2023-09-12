@@ -24,10 +24,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/projectcontour/contour/internal/status"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // Observer is an interface for receiving notification of DAG updates.
@@ -373,6 +374,9 @@ type Route struct {
 	Kind      string
 	Namespace string
 	Name      string
+
+	// The stat_prefix to set on envoy route
+	StatPrefix *string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.

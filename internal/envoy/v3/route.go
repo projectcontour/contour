@@ -34,14 +34,15 @@ import (
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/sorter"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
@@ -112,6 +113,10 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 	route := &envoy_route_v3.Route{
 		Match:    RouteMatch(dagRoute),
 		Metadata: getRouteMetadata(dagRoute),
+	}
+
+	if dagRoute.StatPrefix != nil {
+		route.StatPrefix = *dagRoute.StatPrefix
 	}
 
 	switch {

@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -560,11 +561,15 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+<<<<<<< HEAD
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
 			MaximumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MaximumProtocolVersion, "1.3"),
 			CipherSuites:           contourConfiguration.Envoy.Cluster.UpstreamTLS.SanitizedCipherSuites(),
 		},
+=======
+		enableStatPrefix:                   *contourConfiguration.Envoy.EnableStatPrefix,
+>>>>>>> 5ca2b2c2 (set stat_prefix if enableStatPrefix is true)
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1122,7 +1127,11 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
+<<<<<<< HEAD
 	upstreamTLS                        *dag.UpstreamTLS
+=======
+	enableStatPrefix                   bool
+>>>>>>> 5ca2b2c2 (set stat_prefix if enableStatPrefix is true)
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1193,7 +1202,11 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+<<<<<<< HEAD
 			UpstreamTLS:                   dbc.upstreamTLS,
+=======
+			EnableStatPrefix:              dbc.enableStatPrefix,
+>>>>>>> 5ca2b2c2 (set stat_prefix if enableStatPrefix is true)
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1217,7 +1230,11 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+<<<<<<< HEAD
 			UpstreamTLS:                   dbc.upstreamTLS,
+=======
+			EnableStatPrefix:              dbc.enableStatPrefix,
+>>>>>>> 5ca2b2c2 (set stat_prefix if enableStatPrefix is true)
 		},
 	}
 
@@ -1229,6 +1246,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			EnableStatPrefix:              dbc.enableStatPrefix,
 		})
 	}
 

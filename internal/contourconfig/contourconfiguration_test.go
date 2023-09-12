@@ -17,13 +17,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestOverlayOnDefaults(t *testing.T) {
@@ -133,6 +134,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				XffNumTrustedHops: ref.To(uint32(77)),
 				EnvoyAdminPort:    ref.To(9997),
 			},
+			EnableStatPrefix: ref.To(false),
 		},
 		Gateway: &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: "gatewaycontroller",
