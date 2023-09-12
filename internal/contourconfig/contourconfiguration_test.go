@@ -134,6 +134,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				XffNumTrustedHops: ptr.To(uint32(77)),
 				EnvoyAdminPort:    ptr.To(9997),
 			},
+			EnableStatPrefix: ptr.To(false),
 		},
 		Gateway: &contour_v1alpha1.GatewayConfig{
 			GatewayRef: contour_v1alpha1.NamespacedName{
