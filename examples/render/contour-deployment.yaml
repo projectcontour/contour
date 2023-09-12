@@ -450,6 +450,9 @@ spec:
                         version.
                       type: string
                     type: array
+                  enableStatPrefix:
+                    description: Set StatPrefix on envoy routes
+                    type: boolean
                   health:
                     description: |-
                       Health defines the endpoint Envoy uses to serve health checks.
@@ -4232,6 +4235,9 @@ spec:
                             HTTP version.
                           type: string
                         type: array
+                      enableStatPrefix:
+                        description: Set StatPrefix on envoy routes
+                        type: boolean
                       health:
                         description: |-
                           Health defines the endpoint Envoy uses to serve health checks.

@@ -81,6 +81,9 @@ type GatewayAPIProcessor struct {
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
 	UpstreamTLS *UpstreamTLS
+
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 }
 
 // matchConditions holds match rules.
@@ -2405,6 +2408,10 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			route.Name = name
 		}
 
+		if p.EnableStatPrefix {
+			route.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", namespace, name))
+		}
+
 		routes = append(routes, route)
 	}
 
@@ -2471,6 +2478,10 @@ func (p *GatewayAPIProcessor) redirectRoutes(
 			route.Kind = kind
 			route.Namespace = namespace
 			route.Name = name
+		}
+
+		if p.EnableStatPrefix {
+			route.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", namespace, name))
 		}
 
 		routes = append(routes, route)

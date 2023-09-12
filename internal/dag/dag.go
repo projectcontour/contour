@@ -374,6 +374,9 @@ type Route struct {
 	Kind      string
 	Namespace string
 	Name      string
+
+	// The stat_prefix to set on envoy route
+	StatPrefix *string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
