@@ -46,7 +46,7 @@ func TestHttpPaths(t *testing.T) {
 							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}, {
 							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Backend: *backendv1("kuarder", intstr.FromInt32(8080)),
 						}},
 					},
 				},
@@ -55,7 +55,7 @@ func TestHttpPaths(t *testing.T) {
 				Backend: *backendv1("kuard", intstr.FromString("http")),
 			}, {
 				Path:    "/kuarder",
-				Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+				Backend: *backendv1("kuarder", intstr.FromInt32(8080)),
 			}},
 		},
 	}

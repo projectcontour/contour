@@ -148,7 +148,7 @@ func (e *Echo) DeployN(ns, name string, replicas int32) (func(), *appsv1.Deploym
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/health",
-										Port: intstr.FromInt(3000),
+										Port: intstr.FromInt32(3000),
 									},
 								},
 							},
@@ -365,7 +365,7 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/health",
-										Port: intstr.FromInt(3000),
+										Port: intstr.FromInt32(3000),
 									},
 								},
 							},

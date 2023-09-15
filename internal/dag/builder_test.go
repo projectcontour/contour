@@ -6036,7 +6036,7 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuard", intstr.FromInt(8080)),
+							Backend: *backendv1("kuard", intstr.FromInt32(8080)),
 						}},
 					},
 				},
@@ -6057,7 +6057,7 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuard", intstr.FromInt(8080)),
+							Backend: *backendv1("kuard", intstr.FromInt32(8080)),
 						}},
 					},
 				},
@@ -6073,7 +6073,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
-				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt32(8080))),
 			}},
 		},
 	}
@@ -6105,7 +6105,7 @@ func TestDAGInsert(t *testing.T) {
 			}},
 			Rules: []networking_v1.IngressRule{{
 				Host:             "kuard.example.com",
-				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt32(8080))),
 			}},
 		},
 	}
@@ -6245,7 +6245,7 @@ func TestDAGInsert(t *testing.T) {
 							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}, {
 							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Backend: *backendv1("kuarder", intstr.FromInt32(8080)),
 						}},
 					},
 				},

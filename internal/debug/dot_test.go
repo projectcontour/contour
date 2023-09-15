@@ -130,7 +130,7 @@ func newTestService() *dag.Service {
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
+				TargetPort: intstr.FromInt32(8080),
 			},
 		},
 	}

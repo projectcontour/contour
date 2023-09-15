@@ -35,7 +35,7 @@ func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...an
 	}
 
 	if len(extras) > 0 {
-		p.TargetPort = intstr.FromInt(extras[0].(int))
+		p.TargetPort = intstr.FromInt32(extras[0].(int32))
 	}
 
 	if len(extras) > 1 {

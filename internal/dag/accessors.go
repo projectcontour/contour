@@ -29,14 +29,14 @@ import (
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
 func (d *DAG) EnsureService(meta types.NamespacedName, port int, healthPort int, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
-	svc, svcPort, err := cache.LookupService(meta, intstr.FromInt(port))
+	svc, svcPort, err := cache.LookupService(meta, intstr.FromInt32(int32(port)))
 	if err != nil {
 		return nil, err
 	}
 
 	healthSvcPort := svcPort
 	if healthPort != 0 && healthPort != port {
-		_, healthSvcPort, err = cache.LookupService(meta, intstr.FromInt(healthPort))
+		_, healthSvcPort, err = cache.LookupService(meta, intstr.FromInt32(int32(healthPort)))
 		if err != nil {
 			return nil, err
 		}
