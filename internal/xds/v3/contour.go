@@ -15,6 +15,7 @@ package v3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -81,7 +82,7 @@ func (s *contourServer) stream(st grpcStream) error {
 	done := func(log logrus.FieldLogger, err error) error {
 		// If the stream has been closed by the client "gracefully",
 		// do not log as an error.
-		if err != nil && err != context.Canceled && status.Code(err) != codes.Canceled {
+		if err != nil && !errors.Is(err, context.Canceled) && status.Code(err) != codes.Canceled {
 			log.WithError(err).Error("stream terminated")
 			return err
 		}

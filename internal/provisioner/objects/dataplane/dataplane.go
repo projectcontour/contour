@@ -266,7 +266,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				PreStop: &corev1.LifecycleHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/shutdown",
-						Port:   intstr.FromInt(8090),
+						Port:   intstr.FromInt32(8090),
 						Scheme: "HTTP",
 					},
 				},

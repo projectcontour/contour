@@ -118,7 +118,7 @@ func testExternalAuth(namespace string) {
 						Name:       "auth",
 						Protocol:   corev1.ProtocolTCP,
 						Port:       9443,
-						TargetPort: intstr.FromInt(9443),
+						TargetPort: intstr.FromInt32(9443),
 					},
 				},
 				Selector: map[string]string{

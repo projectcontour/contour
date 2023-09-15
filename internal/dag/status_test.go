@@ -361,7 +361,7 @@ func TestDAGStatus(t *testing.T) {
 			}},
 			Rules: []networking_v1.IngressRule{{
 				Host:             "example.com",
-				IngressRuleValue: ingressrulev1value(backendv1(fixture.ServiceRootsNginx.Name, intstr.FromInt(80))),
+				IngressRuleValue: ingressrulev1value(backendv1(fixture.ServiceRootsNginx.Name, intstr.FromInt32(80))),
 			}},
 		},
 	}

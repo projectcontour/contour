@@ -187,7 +187,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 			Name:      target.Name,
 		}
 
-		svc, port, err := cache.LookupService(svcName, intstr.FromInt(target.Port))
+		svc, port, err := cache.LookupService(svcName, intstr.FromInt32(int32(target.Port)))
 		if err != nil {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 				"unresolved service %q: %s", svcName, err)

@@ -1790,7 +1790,7 @@ func TestLookupService(t *testing.T) {
 		"service and port exist with valid service protocol, lookup by port num": {
 			cache:    cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
-			port:     intstr.FromInt(80),
+			port:     intstr.FromInt32(80),
 			wantSvc:  service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80)),
 			wantPort: makeServicePort("http", v1.ProtocolTCP, 80),
 		},
@@ -1804,7 +1804,7 @@ func TestLookupService(t *testing.T) {
 		"service and port exist with valid service protocol, lookup by wrong port num": {
 			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
-			port:    intstr.FromInt(9999),
+			port:    intstr.FromInt32(9999),
 			wantErr: errors.New(`port "9999" on service "default/service-1" not matched`),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port name": {
@@ -1823,7 +1823,7 @@ func TestLookupService(t *testing.T) {
 		"service does not exist": {
 			cache:   cache(service("default", "service-1", makeServicePort("http", v1.ProtocolTCP, 80))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "nonexistent-service"},
-			port:    intstr.FromInt(80),
+			port:    intstr.FromInt32(80),
 			wantErr: errors.New(`service "default/nonexistent-service" not found`),
 		},
 	}
@@ -1901,7 +1901,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: networking_v1.IngressSpec{
-				DefaultBackend: backendv1(name, intstr.FromInt(80)),
+				DefaultBackend: backendv1(name, intstr.FromInt32(80)),
 				Rules: []networking_v1.IngressRule{{
 					Host: "test.projectcontour.io",
 				}},

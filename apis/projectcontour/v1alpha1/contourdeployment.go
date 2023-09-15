@@ -77,7 +77,7 @@ type ContourDeploymentSpec struct {
 type ContourSettings struct {
 	// Deprecated: Use `DeploymentSettings.Replicas` instead.
 	//
-	// Replicas is the desired number of Contour replicas. If if unset,
+	// Replicas is the desired number of Contour replicas. If unset,
 	// defaults to 2.
 	//
 	// if both `DeploymentSettings.Replicas` and this one is set, use `DeploymentSettings.Replicas`.

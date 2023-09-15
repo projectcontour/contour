@@ -173,7 +173,7 @@ var _ = Describe("Benchmark", func() {
 											ProbeHandler: corev1.ProbeHandler{
 												HTTPGet: &corev1.HTTPGetAction{
 													Path: "/health",
-													Port: intstr.FromInt(3000),
+													Port: intstr.FromInt32(3000),
 												},
 											},
 										},

@@ -50,7 +50,7 @@ func TestCluster(t *testing.T) {
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
-				TargetPort: intstr.FromInt(8080),
+				TargetPort: intstr.FromInt32(8080),
 			}},
 		},
 	}
@@ -66,7 +66,7 @@ func TestCluster(t *testing.T) {
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
-				TargetPort: intstr.FromInt(8080),
+				TargetPort: intstr.FromInt32(8080),
 			}},
 		},
 	}
@@ -250,7 +250,7 @@ func TestCluster(t *testing.T) {
 		"externalName service - dns-lookup-family not defined": {
 			cluster: &dag.Cluster{
 				Upstream: service(s2),
-				//DNSLookupFamily: "auto",
+				// DNSLookupFamily: "auto",
 			},
 			want: &envoy_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
