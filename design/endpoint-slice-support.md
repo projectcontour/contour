@@ -99,6 +99,9 @@ refer [ready status](https://kubernetes.io/docs/concepts/services-networking/end
 #### FQDN Address types
 FQDN address types on EndpointSlices will not be supported. Contour will continue to support `externalName` service types.
 
+#### Disabled Mirroring
+If a service has [endpoint mirroring](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/#endpointslice-mirroring) disabled, it will not be processed by Contour.
+
 ## Tests
 
 To ensure the feature is well tested, this feature will have
