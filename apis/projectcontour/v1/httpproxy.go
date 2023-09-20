@@ -552,9 +552,12 @@ type Route struct {
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
 	// The policy for managing request headers during proxying.
 	// NOTE: You can set the custom values to the host header on a request using
-	// the below format "%REQ(X-Header-Namee)%". If the value of the header
+	// the below format "%REQ(X-Header-Name)%". If the value of the header
 	// is empty, it is ignored.
-	//
+	// *NOTE: Pay attention to the potential security implications of using this option.
+	// Provided header must come from trusted source.
+	// **NOTE: The header rewrite is only done while forwarding and has no bearing
+	// on the routing decision.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.

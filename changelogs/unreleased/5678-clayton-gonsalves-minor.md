@@ -1,4 +1,4 @@
-## HTTPProxy:Allow Host header rewrite with dynamic headers.
+## HTTPProxy: Allow Host header rewrite with dynamic headers.
 
 This Change allows the host header to be rewritten on requests using dynamic headers on the only route level.
 
