@@ -1357,11 +1357,11 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
-					//TODO(davinci26): should we use the sorter here?
+					// TODO(davinci26): should we use the sorter here?
 				default:
 					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
-					//TODO(davinci26): should we use the sorter here?
+					// TODO(davinci26): should we use the sorter here?
 				}
 
 				programmed = true
@@ -1503,11 +1503,11 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
 					svhost.AddRoute(route)
-					//TODO(davinci26): should we use the sorter here?
+					// TODO(davinci26): should we use the sorter here?
 				default:
 					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
-					//TODO(davinci26): should we use the sorter here?
+					// TODO(davinci26): should we use the sorter here?
 				}
 
 				programmed = true
