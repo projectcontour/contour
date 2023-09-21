@@ -263,18 +263,18 @@ func TestJWTVerification(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					Services: []contour_api_v1.Service{{
-						Name: s1.Name,
-						Port: 80,
-					}},
-					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
-				},
-				{
 					Conditions: []contour_api_v1.MatchCondition{{Prefix: "/css"}},
 					Services: []contour_api_v1.Service{{
 						Name: s1.Name,
 						Port: 80,
 					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 				},
 			},
 		})
@@ -371,18 +371,18 @@ func TestJWTVerification(t *testing.T) {
 			},
 			Routes: []contour_api_v1.Route{
 				{
-					Services: []contour_api_v1.Service{{
-						Name: s1.Name,
-						Port: 80,
-					}},
-				},
-				{
 					Conditions: []contour_api_v1.MatchCondition{{Prefix: "/css"}},
 					Services: []contour_api_v1.Service{{
 						Name: s1.Name,
 						Port: 80,
 					}},
 					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Disabled: true},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
 				},
 			},
 		})
@@ -1442,18 +1442,18 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{
 				{
-					Services: []contour_api_v1.Service{{
-						Name: s1.Name,
-						Port: 80,
-					}},
-					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
-				},
-				{
 					Conditions: []contour_api_v1.MatchCondition{{Prefix: "/css"}},
 					Services: []contour_api_v1.Service{{
 						Name: s1.Name,
 						Port: 80,
 					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Require: "provider-1"},
 				},
 			},
 		})
@@ -1560,18 +1560,18 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{
 				{
-					Services: []contour_api_v1.Service{{
-						Name: s1.Name,
-						Port: 80,
-					}},
-				},
-				{
 					Conditions: []contour_api_v1.MatchCondition{{Prefix: "/css"}},
 					Services: []contour_api_v1.Service{{
 						Name: s1.Name,
 						Port: 80,
 					}},
 					JWTVerificationPolicy: &contour_api_v1.JWTVerificationPolicy{Disabled: true},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
 				},
 			},
 		})

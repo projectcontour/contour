@@ -225,18 +225,16 @@ func routeRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 	rh.OnAdd(p)
 
 	vhost := envoy_v3.VirtualHost("foo.com",
-		// note, order of routes is reversed here because route sorting of prefixes
-		// is reverse alphabetic.
 		&envoy_route_v3.Route{
-			Match:  routePrefix("/s2"),
-			Action: routeCluster("default/s2/80/da39a3ee5e"),
+			Match:  routePrefix("/s1"),
+			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
-						MaxTokens:     6,
-						TokensPerFill: wrapperspb.UInt32(5),
-						FillInterval:  durationpb.New(time.Second),
+						MaxTokens:     150,
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -253,15 +251,15 @@ func routeRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 				}),
 		},
 		&envoy_route_v3.Route{
-			Match:  routePrefix("/s1"),
-			Action: routeCluster("default/s1/80/da39a3ee5e"),
+			Match:  routePrefix("/s2"),
+			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
-						MaxTokens:     150,
-						TokensPerFill: wrapperspb.UInt32(100),
-						FillInterval:  durationpb.New(time.Minute),
+						MaxTokens:     6,
+						TokensPerFill: wrapperspb.UInt32(5),
+						FillInterval:  durationpb.New(time.Second),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -350,18 +348,16 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper
 	rh.OnAdd(p)
 
 	vhost := envoy_v3.VirtualHost("foo.com",
-		// note, order of routes is reversed here because route sorting of prefixes
-		// is reverse alphabetic.
 		&envoy_route_v3.Route{
-			Match:  routePrefix("/s2"),
-			Action: routeCluster("default/s2/80/da39a3ee5e"),
+			Match:  routePrefix("/s1"),
+			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
-						MaxTokens:     6,
-						TokensPerFill: wrapperspb.UInt32(5),
-						FillInterval:  durationpb.New(time.Second),
+						MaxTokens:     150,
+						TokensPerFill: wrapperspb.UInt32(100),
+						FillInterval:  durationpb.New(time.Minute),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
@@ -378,15 +374,15 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper
 				}),
 		},
 		&envoy_route_v3.Route{
-			Match:  routePrefix("/s1"),
-			Action: routeCluster("default/s1/80/da39a3ee5e"),
+			Match:  routePrefix("/s2"),
+			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
-						MaxTokens:     150,
-						TokensPerFill: wrapperspb.UInt32(100),
-						FillInterval:  durationpb.New(time.Minute),
+						MaxTokens:     6,
+						TokensPerFill: wrapperspb.UInt32(5),
+						FillInterval:  durationpb.New(time.Second),
 					},
 					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{

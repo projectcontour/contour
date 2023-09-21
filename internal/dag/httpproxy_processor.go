@@ -1486,83 +1486,77 @@ func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 // | `/foo`          | `/bar/`     | `/foosball` | X `/bar/sball` |
 // | `/foo/`         | `/bar/`     | `/foo/type` |   `/bar/type`  |
 func expandPrefixMatches(routes []*Route) []*Route {
-	prefixedRoutes := map[string][]*Route{}
+	return expandPrefixMatchesOrdered(routes)
+}
 
+func expandPrefixMatchesOrdered(routes []*Route) []*Route {
 	expandedRoutes := []*Route{}
 
-	// First, we group the Routes by their slash-consistent prefix match condition.
-	for _, r := range routes {
-		// If there is no path prefix, we won't do any expansion, so skip it.
-		if !r.HasPathPrefix() {
-			expandedRoutes = append(expandedRoutes, r)
-		}
+	prefixCount := make(map[string]int, 0)
 
-		// Skip for exact path match conditions
-		if r.HasPathExact() || r.HasPathRegex() {
+	// First, we find the non expandable prefix routes. Those are two:
+	// - if both versions of the route exist e.g. /api/ and /api
+	// - root prefix `/`
+	for _, r := range routes {
+		if !r.HasPathPrefix() {
 			continue
 		}
 
 		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
 
+		if routingPrefix == "/" {
+			prefixCount[routingPrefix] = 2
+			continue
+		}
+
 		if routingPrefix != "/" {
 			routingPrefix = strings.TrimRight(routingPrefix, "/")
 		}
 
-		prefixedRoutes[routingPrefix] = append(prefixedRoutes[routingPrefix], r)
+		prefixCount[routingPrefix] += 1
 	}
 
-	for prefix, routes := range prefixedRoutes {
-		// Propagate the Routes into the expanded set. Since
-		// we have a slice of pointers, we can propagate here
-		// prior to any Route modifications.
-		expandedRoutes = append(expandedRoutes, routes...)
-
-		switch len(routes) {
-		case 1:
-			// Don't modify if we are not doing a replacement.
-			if routes[0].PathRewritePolicy == nil {
-				continue
-			}
-
-			routingPrefix := routes[0].PathMatchCondition.(*PrefixMatchCondition).Prefix
-
-			// There's no alternate forms for '/' :)
-			if routingPrefix == "/" {
-				continue
-			}
-
-			// Shallow copy the Route. TODO(jpeach) deep copying would be more robust.
-			newRoute := *routes[0]
-
-			// Now, make the original route handle '/foo' and the new route handle '/foo'.
-			routes[0].PathRewritePolicy.PrefixRewrite = strings.TrimRight(routes[0].PathRewritePolicy.PrefixRewrite, "/")
-			routes[0].PathMatchCondition = &PrefixMatchCondition{Prefix: prefix}
-
-			// Replace the entire PathRewritePolicy since we didn't deep-copy the route.
-			newRoute.PathRewritePolicy = &PathRewritePolicy{
-				PrefixRewrite: routes[0].PathRewritePolicy.PrefixRewrite + "/",
-			}
-			newRoute.PathMatchCondition = &PrefixMatchCondition{Prefix: prefix + "/"}
-
-			// Since we trimmed trailing '/', it's possible that
-			// we made the replacement empty. There's no such
-			// thing as an empty rewrite; it's the same as
-			// rewriting to '/'.
-			if len(routes[0].PathRewritePolicy.PrefixRewrite) == 0 {
-				routes[0].PathRewritePolicy.PrefixRewrite = "/"
-			}
-
-			expandedRoutes = append(expandedRoutes, &newRoute)
-		case 2:
-			// This group routes on both '/foo' and
-			// '/foo/' so we can't add any implicit prefix
-			// matches. This is why we didn't filter out
-			// routes that don't have replacements earlier.
+	for _, r := range routes {
+		expandedRoutes = append(expandedRoutes, r)
+		// If there is no path prefix, we won't do any expansion, so skip it.
+		if !r.HasPathPrefix() {
 			continue
-		default:
-			// This can't happen unless there are routes
-			// with duplicate prefix paths.
 		}
+
+		if r.PathRewritePolicy == nil {
+			continue
+		}
+
+		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
+		// We want to trim `/` at the end to create two routes
+		// one with `/` at the end and one with not.
+		if routingPrefix != "/" {
+			routingPrefix = strings.TrimRight(routingPrefix, "/")
+		}
+
+		if c, ok := prefixCount[routingPrefix]; ok && c == 2 {
+			continue
+		}
+
+		r.PathRewritePolicy.PrefixRewrite = strings.TrimRight(r.PathRewritePolicy.PrefixRewrite, "/")
+		r.PathMatchCondition = &PrefixMatchCondition{Prefix: routingPrefix}
+
+		newRoute := *r
+		// Replace the entire PathRewritePolicy since we didn't deep-copy the route.
+		newRoute.PathRewritePolicy = &PathRewritePolicy{
+			PrefixRewrite: r.PathRewritePolicy.PrefixRewrite + "/",
+		}
+		newRoute.PathMatchCondition = &PrefixMatchCondition{Prefix: routingPrefix + "/"}
+
+		// Since we trimmed trailing '/', it's possible that
+		// we made the replacement empty. There's no such
+		// thing as an empty rewrite; it's the same as
+		// rewriting to '/'.
+		if len(r.PathRewritePolicy.PrefixRewrite) == 0 {
+			r.PathRewritePolicy.PrefixRewrite = "/"
+		}
+
+		expandedRoutes = append(expandedRoutes, &newRoute)
 
 	}
 

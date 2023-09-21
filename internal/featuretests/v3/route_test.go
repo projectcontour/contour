@@ -247,13 +247,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
@@ -289,13 +292,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
@@ -349,13 +355,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
@@ -1238,24 +1247,24 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: envoy_v3.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy_v3.RouteConfiguration("https/test2.test.com",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: routecluster("default/svc2/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: routecluster("default/svc2/80/da39a3ee5e"),
 					},
 				),
 			),
@@ -1335,11 +1344,11 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
+						Match:  routePrefix("/insecure"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/insecure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 				),
@@ -1347,12 +1356,12 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/test2.test.com",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: routecluster("default/svc2/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: routecluster("default/svc2/80/da39a3ee5e"),
 					},
 				),
 			),
@@ -1610,24 +1619,24 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: envoy_v3.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy_v3.RouteConfiguration("https/test2.test.com",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: routecluster("default/svc2/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: routecluster("default/svc2/80/da39a3ee5e"),
 					},
 				),
 			),
@@ -1703,11 +1712,11 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
+						Match:  routePrefix("/insecure"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/insecure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 				),
@@ -1715,12 +1724,12 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 			envoy_v3.RouteConfiguration("https/test2.test.com",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: routecluster("default/svc2/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/insecure"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/secure"),
+						Action: routecluster("default/svc2/80/da39a3ee5e"),
 					},
 				),
 			),

@@ -87,27 +87,31 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}, {
-				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
-				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}, {
-				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
-				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
+					EnableWebsockets: true,
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+				},
+				{
+					Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
+					EnableWebsockets: true,
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(prefixMatchCondition("/")),
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+				},
+			},
 		},
 	}
 	rh.OnAdd(hp1)
@@ -138,30 +142,34 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}, {
-				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
-				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}, {
-					Name: s2.Name,
-					Port: 80,
-				}},
-			}, {
-				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
-				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
+					EnableWebsockets: true,
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+				},
+				{
+					Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
+					EnableWebsockets: true,
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}, {
+						Name: s2.Name,
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(prefixMatchCondition("/")),
+					Services: []contour_api_v1.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}},
+				},
+			},
 		},
 	}
 	rh.OnUpdate(hp1, hp2)

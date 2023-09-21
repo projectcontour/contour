@@ -111,10 +111,10 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 				}
 
 				var routes []*dag.Route
-				for _, route := range vhost.Routes {
-					routes = append(routes, route)
+				routes = append(routes, vhost.Routes...)
+				if vhost.ShouldSortRoutes {
+					sortRoutes(routes)
 				}
-				sortRoutes(routes)
 
 				routeConfigs[routeConfigName].VirtualHosts = append(routeConfigs[routeConfigName].VirtualHosts,
 					envoy_v3.VirtualHostAndRoutes(vhost, routes, false),
@@ -136,10 +136,10 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 				}
 
 				var routes []*dag.Route
-				for _, route := range vhost.Routes {
-					routes = append(routes, route)
+				routes = append(routes, vhost.Routes...)
+				if vhost.ShouldSortRoutes {
+					sortRoutes(routes)
 				}
-				sortRoutes(routes)
 
 				routeConfigs[routeConfigName].VirtualHosts = append(routeConfigs[routeConfigName].VirtualHosts,
 					envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
@@ -159,10 +159,6 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 				}
 			}
 		}
-	}
-
-	for _, routeConfig := range routeConfigs {
-		sort.Stable(sorter.For(routeConfig.VirtualHosts))
 	}
 
 	c.Update(routeConfigs)
