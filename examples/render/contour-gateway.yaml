@@ -3603,6 +3603,15 @@ spec:
                           type: object
                         type: array
                     type: object
+                  overloadMaxHeapSize:
+                    description: 'OverloadMaxHeapSize defines the maximum heap memory
+                      of the envoy controlled by the overload manager. When the value
+                      is greater than 0, the overload manager is enabled, and when
+                      envoy reaches 95% of the maximum heap size, it performs a shrink
+                      heap operation, When it reaches 98% of the maximum heap size,
+                      Envoy Will stop accepting requests. More info: https://projectcontour.io/docs/main/config/overload-manager/'
+                    format: int64
+                    type: integer
                   podAnnotations:
                     additionalProperties:
                       type: string
