@@ -1,6 +1,6 @@
 ## Fix bug with algorithm used to sort Envoy regex/prefix path rules
 
-Envoy is greedy matching path routes and as a result order is important. Contour to produce consistent routing tables in the precence of HTTPProxy inclusion and Ingress Conformance sorts the routes before updating Envoy.
+Envoy is greedy matching path routes and as a result order is important. Contour to produce consistent routing tables in the presence of HTTPProxy inclusion and Ingress Conformance sorts the routes before updating Envoy.
 
 This changes fixes the sorting algorithm used for `Prefix` and `Regex` based path matching. Previously the algorithm lexicographically sorted the regex routes instead of sorting them based on the length of the `Prefix`|`Regex`.
 
