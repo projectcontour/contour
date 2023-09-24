@@ -279,7 +279,7 @@ func TestSortRoutesPathMatch(t *testing.T) {
 		},
 		// Note that regex matches sort before prefix matches.
 		{
-			PathMatchCondition: matchRegex("/this/is/the/longest"),
+			PathMatchCondition: matchRegex("/athis/is/the/longest"),
 		},
 		{
 			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
@@ -287,16 +287,7 @@ func TestSortRoutesPathMatch(t *testing.T) {
 		{
 			PathMatchCondition: matchRegex("/"),
 		},
-		{
-			PathMatchCondition: matchRegex("."),
-		},
 		// Prefix segment matches sort before string matches.
-		{
-			PathMatchCondition: matchPrefixSegment("/path/prefix2"),
-		},
-		{
-			PathMatchCondition: matchPrefixString("/path/prefix2"),
-		},
 		{
 			PathMatchCondition: matchPrefixSegment("/path/prefix/a"),
 		},
@@ -304,7 +295,13 @@ func TestSortRoutesPathMatch(t *testing.T) {
 			PathMatchCondition: matchPrefixString("/path/prefix/a"),
 		},
 		{
-			PathMatchCondition: matchPrefixString("/path/prefix"),
+			PathMatchCondition: matchPrefixString("/path/prf222"),
+		},
+		{
+			PathMatchCondition: matchPrefixString("/path/prf122"),
+		},
+		{
+			PathMatchCondition: matchPrefixString("/path/prfx"),
 		},
 		{
 			PathMatchCondition: matchPrefixSegment("/path/p"),

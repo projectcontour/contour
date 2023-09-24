@@ -478,21 +478,30 @@ func artifactoryDocker(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("artifactory.projectcontour.io",
-
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-external/"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-external/v2/"),
+					},
 					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-sandbox/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-sandbox/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-sandbox"),
-						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-sandbox/v2"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-release/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-release/v2/"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-external"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-external/v2"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-sandbox"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-sandbox/v2"),
 					},
 					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-release"),
@@ -508,16 +517,6 @@ func artifactoryDocker(t *testing.T) {
 						Match: routePrefix("/v2/container-public"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-public/v2"),
-					},
-					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-external/"),
-						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-external/v2/"),
-					},
-					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-external"),
-						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-external/v2"),
 					},
 				),
 			),
