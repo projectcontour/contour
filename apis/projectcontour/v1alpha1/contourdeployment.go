@@ -215,6 +215,15 @@ type EnvoySettings struct {
 	// +kubebuilder:validation:Minimum=0
 	// +optional
 	BaseID int32 `json:"baseID,omitempty"`
+
+	// OverloadMaxHeapSize defines the maximum heap memory of the envoy controlled by the overload manager.
+	// When the value is greater than 0, the overload manager is enabled,
+	// and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation,
+	// When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests.
+	// More info: https://projectcontour.io/docs/main/config/overload-manager/
+	//
+	// +optional
+	OverloadMaxHeapSize uint64 `json:"overloadMaxHeapSize,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -13,9 +13,6 @@
 #       examples/contour/03-contour.yaml
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
-#       examples/gateway/00-namespace.yaml
-#       examples/gateway/01-admission_webhook.yaml
-#       examples/gateway/02-certificate_config.yaml
 #       examples/gateway/03-gatewayclass.yaml
 #       examples/gateway/04-gateway.yaml
 
@@ -3606,6 +3603,15 @@ spec:
                           type: object
                         type: array
                     type: object
+                  overloadMaxHeapSize:
+                    description: 'OverloadMaxHeapSize defines the maximum heap memory
+                      of the envoy controlled by the overload manager. When the value
+                      is greater than 0, the overload manager is enabled, and when
+                      envoy reaches 95% of the maximum heap size, it performs a shrink
+                      heap operation, When it reaches 98% of the maximum heap size,
+                      Envoy Will stop accepting requests. More info: https://projectcontour.io/docs/main/config/overload-manager/'
+                    format: int64
+                    type: integer
                   podAnnotations:
                     additionalProperties:
                       type: string
@@ -9697,7 +9703,7 @@ spec:
                     for each listener
                   rule: 'self.all(l1, self.exists_one(l2, l1.port == l2.port && l1.protocol
                     == l2.protocol && (has(l1.hostname) && has(l2.hostname) ? l1.hostname
-                    == l2.hostname : true)))'
+                    == l2.hostname : !has(l1.hostname) && !has(l2.hostname))))'
             required:
             - gatewayClassName
             - listeners
@@ -10475,7 +10481,7 @@ spec:
                     for each listener
                   rule: 'self.all(l1, self.exists_one(l2, l1.port == l2.port && l1.protocol
                     == l2.protocol && (has(l1.hostname) && has(l2.hostname) ? l1.hostname
-                    == l2.hostname : true)))'
+                    == l2.hostname : !has(l1.hostname) && !has(l2.hostname))))'
             required:
             - gatewayClassName
             - listeners
@@ -14602,6 +14608,48 @@ spec:
                         type: object
                       maxItems: 8
                       type: array
+                    timeouts:
+                      description: "Timeouts defines the timeouts that can be configured
+                        for an HTTP request. \n Support: Extended \n "
+                      properties:
+                        backendRequest:
+                          description: "BackendRequest specifies a timeout for an
+                            individual request from the gateway to a backend. This
+                            covers the time from when the request first starts being
+                            sent from the gateway to when the full response has been
+                            received from the backend. \n An entire client HTTP transaction
+                            with a gateway, covered by the Request timeout, may result
+                            in more than one call from the gateway to the destination
+                            backend, for example, if automatic retries are supported.
+                            \n Because the Request timeout encompasses the BackendRequest
+                            timeout, the value of BackendRequest must be <= the value
+                            of Request timeout. \n Support: Extended"
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
+                        request:
+                          description: "Request specifies the maximum duration for
+                            a gateway to respond to an HTTP request. If the gateway
+                            has not been able to respond before this deadline is met,
+                            the gateway MUST return a timeout error. \n For example,
+                            setting the `rules.timeouts.request` field to the value
+                            `10s` in an `HTTPRoute` will cause a timeout if a client
+                            request is taking longer than 10 seconds to complete.
+                            \n This timeout is intended to cover as close to the whole
+                            request-response transaction as possible although an implementation
+                            MAY choose to start the timeout after the entire request
+                            stream has been received instead of immediately after
+                            the transaction is initiated by the client. \n When this
+                            field is unspecified, request timeout behavior is implementation-specific.
+                            \n Support: Extended"
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
+                      type: object
+                      x-kubernetes-validations:
+                      - message: backendRequest timeout cannot be longer than request
+                          timeout
+                        rule: '!(has(self.request) && has(self.backendRequest) &&
+                          duration(self.request) != duration(''0s'') && duration(self.backendRequest)
+                          > duration(self.request))'
                   type: object
                   x-kubernetes-validations:
                   - message: RequestRedirect filter must not be used together with
@@ -17001,6 +17049,48 @@ spec:
                         type: object
                       maxItems: 8
                       type: array
+                    timeouts:
+                      description: "Timeouts defines the timeouts that can be configured
+                        for an HTTP request. \n Support: Extended \n "
+                      properties:
+                        backendRequest:
+                          description: "BackendRequest specifies a timeout for an
+                            individual request from the gateway to a backend. This
+                            covers the time from when the request first starts being
+                            sent from the gateway to when the full response has been
+                            received from the backend. \n An entire client HTTP transaction
+                            with a gateway, covered by the Request timeout, may result
+                            in more than one call from the gateway to the destination
+                            backend, for example, if automatic retries are supported.
+                            \n Because the Request timeout encompasses the BackendRequest
+                            timeout, the value of BackendRequest must be <= the value
+                            of Request timeout. \n Support: Extended"
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
+                        request:
+                          description: "Request specifies the maximum duration for
+                            a gateway to respond to an HTTP request. If the gateway
+                            has not been able to respond before this deadline is met,
+                            the gateway MUST return a timeout error. \n For example,
+                            setting the `rules.timeouts.request` field to the value
+                            `10s` in an `HTTPRoute` will cause a timeout if a client
+                            request is taking longer than 10 seconds to complete.
+                            \n This timeout is intended to cover as close to the whole
+                            request-response transaction as possible although an implementation
+                            MAY choose to start the timeout after the entire request
+                            stream has been received instead of immediately after
+                            the transaction is initiated by the client. \n When this
+                            field is unspecified, request timeout behavior is implementation-specific.
+                            \n Support: Extended"
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
+                      type: object
+                      x-kubernetes-validations:
+                      - message: backendRequest timeout cannot be longer than request
+                          timeout
+                        rule: '!(has(self.request) && has(self.backendRequest) &&
+                          duration(self.request) != duration(''0s'') && duration(self.backendRequest)
+                          > duration(self.request))'
                   type: object
                   x-kubernetes-validations:
                   - message: RequestRedirect filter must not be used together with
@@ -19488,283 +19578,6 @@ status:
     plural: ""
   conditions: null
   storedVersions: null
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gateway-system
-  labels:
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
-
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: gateway-api-admission
-webhooks:
-- name: validate.gateway.networking.k8s.io
-  matchPolicy: Equivalent
-  rules:
-  - operations: [ "CREATE" , "UPDATE" ]
-    apiGroups: [ "gateway.networking.k8s.io" ]
-    apiVersions: [ "v1alpha2", "v1beta1" ]
-    resources: [ "gateways", "gatewayclasses", "httproutes" ]
-  failurePolicy: Fail
-  sideEffects: None
-  admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: gateway-api-admission-server
-      namespace: gateway-system
-      path: "/validate"
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    name: gateway-api-webhook-server
-  name: gateway-api-admission-server
-  namespace: gateway-system
-spec:
-  type: ClusterIP
-  ports:
-  - name: https-webhook
-    port: 443
-    targetPort: 8443
-  selector:
-    name: gateway-api-admission-server
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gateway-api-admission-server
-  namespace: gateway-system
-  labels:
-    name: gateway-api-admission-server
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      name: gateway-api-admission-server
-  template:
-    metadata:
-      name: gateway-api-admission-server
-      labels:
-        name: gateway-api-admission-server
-    spec:
-      containers:
-      - name: webhook
-        image: registry.k8s.io/gateway-api/admission-server:v0.8.0
-        imagePullPolicy: IfNotPresent
-        args:
-        - -logtostderr
-        - --tlsCertFile=/etc/certs/cert
-        - --tlsKeyFile=/etc/certs/key
-        - -v=10
-        - 2>&1
-        ports:
-        - containerPort: 8443
-          name: webhook
-        resources:
-          limits:
-            memory: 50Mi
-            cpu: 100m
-          requests:
-            memory: 50Mi
-            cpu: 100m
-        volumeMounts:
-        - name: webhook-certs
-          mountPath: /etc/certs
-          readOnly: true
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 65532
-          runAsGroup: 65532
-          capabilities:
-            drop:
-            - "ALL"
-          seccompProfile:
-            type: RuntimeDefault
-      volumes:
-      - name: webhook-certs
-        secret:
-          secretName: gateway-api-admission
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: gateway-api-admission
-  labels:
-    name: gateway-api-webhook
-  namespace: gateway-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gateway-api-admission
-  labels:
-    name: gateway-api
-rules:
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingwebhookconfigurations
-  verbs:
-  - get
-  - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: gateway-api-admission
-  annotations:
-  labels:
-    name: gateway-api-webhook
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: gateway-api-admission
-subjects:
-- kind: ServiceAccount
-  name: gateway-api-admission
-  namespace: gateway-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: gateway-api-admission
-  annotations:
-  labels:
-    name: gateway-api-webhook
-  namespace: gateway-system
-rules:
-- apiGroups:
-  - ''
-  resources:
-  - secrets
-  verbs:
-  - get
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: gateway-api-admission
-  annotations:
-  labels:
-    name: gateway-api-webhook
-  namespace: gateway-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: gateway-api-admission
-subjects:
-- kind: ServiceAccount
-  name: gateway-api-admission
-  namespace: gateway-system
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: gateway-api-admission
-  annotations:
-  labels:
-    name: gateway-api-webhook
-  namespace: gateway-system
-spec:
-  template:
-    metadata:
-      name: gateway-api-admission-create
-      labels:
-        name: gateway-api-webhook
-    spec:
-      containers:
-      - name: create
-        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
-        imagePullPolicy: IfNotPresent
-        args:
-        - create
-        - --host=gateway-api-admission-server,gateway-api-admission-server.$(POD_NAMESPACE).svc
-        - --namespace=$(POD_NAMESPACE)
-        - --secret-name=gateway-api-admission
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 2000
-          runAsGroup: 2000
-          capabilities:
-            drop:
-            - "ALL"
-          seccompProfile:
-            type: RuntimeDefault
-      restartPolicy: OnFailure
-      serviceAccountName: gateway-api-admission
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 2000
-        runAsGroup: 2000
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: gateway-api-admission-patch
-  labels:
-    name: gateway-api-webhook
-  namespace: gateway-system
-spec:
-  template:
-    metadata:
-      name: gateway-api-admission-patch
-      labels:
-        name: gateway-api-webhook
-    spec:
-      containers:
-      - name: patch
-        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1
-        imagePullPolicy: IfNotPresent
-        args:
-        - patch
-        - --webhook-name=gateway-api-admission
-        - --namespace=$(POD_NAMESPACE)
-        - --patch-mutating=false
-        - --patch-validating=true
-        - --secret-name=gateway-api-admission
-        - --patch-failure-policy=Fail
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 2000
-          runAsGroup: 2000
-          capabilities:
-            drop:
-            - "ALL"
-          seccompProfile:
-            type: RuntimeDefault
-      restartPolicy: OnFailure
-      serviceAccountName: gateway-api-admission
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 2000
-        runAsGroup: 2000
 
 ---
 kind: GatewayClass

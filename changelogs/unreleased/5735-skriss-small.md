@@ -1,0 +1,1 @@
+Drops the Gateway API webhook from example manifests and testing since validations are now implemented in Common Expression Language (CEL).

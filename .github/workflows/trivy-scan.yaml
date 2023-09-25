@@ -18,10 +18,10 @@ jobs:
         - release-1.24
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-      - uses: aquasecurity/trivy-action@0.11.2
+      - uses: aquasecurity/trivy-action@0.12.0
         with:
           scanners: vuln
           scan-type: 'fs'

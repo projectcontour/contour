@@ -202,12 +202,10 @@ lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
-# The inline config is needed to allow the Gateway API validating webhook YAML
-# (which we import directly from the Gateway API repo) to pass.
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint -d "{rules: {brackets: {max-spaces-inside: 1}, commas: {max-spaces-before: 1}}}" examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd

@@ -7067,6 +7067,23 @@ so that the shared memory regions do not conflict.
 defaults to 0.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overloadMaxHeapSize</code>
+<br>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverloadMaxHeapSize defines the maximum heap memory of the envoy controlled by the overload manager.
+When the value is greater than 0, the overload manager is enabled,
+and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation,
+When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests.
+More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/">https://projectcontour.io/docs/main/config/overload-manager/</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS

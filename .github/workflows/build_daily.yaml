@@ -15,7 +15,7 @@ jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -49,7 +49,7 @@ jobs:
   e2e-envoy-deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -83,7 +83,7 @@ jobs:
   e2e-gateway-reconcile-controller:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -118,7 +118,7 @@ jobs:
   e2e-ipv6:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
