@@ -20,6 +20,8 @@ This level of specificity ensures accurate routing of Thrift requests to their i
 * Cluster Management: The Thrift Proxy offers support for weighted clusters and mirrored clusters, enabling efficient load balancing and fail-over strategies.
 * Route Discovery: It facilitates route discovery mechanisms, making it easier to dynamically configure and manage Thrift routing rules.
 
+For more details about the initial Envoy thrift design check https://docs.google.com/document/d/1QuiZMT1ruetavVHsj4Sv55YpBFVxTEzJj-ZpOJqAboc/edit#heading=h.tj2vl7vtdsxn
+
 ### Contour's Current Capabilities
 
 As of the current Contour release, the project provides "TCP Proxying" functionality. 
@@ -49,6 +51,7 @@ where they can specify custom Thrift routing rules, enabling fine-grained contro
 K8s ingresses and API Gateway support are intentionally excluded from this project to maintain a clear scope.
 * This iteration doesn't include API Gateway support: While this project introduces ThriftProxy to enhance Contour's Thrift routing capabilities, it does not encompass the development of a full-fledged API Gateway. 
 API Gateway functionality may be considered in future iterations.
+* Allowing Thrift over HTTP is also not a goal of this design
 
 # Thrift Proxy Components
 Before delving into the high-level design, it's essential to understand the key components that play a crucial role in achieving the project goals. 
@@ -81,7 +84,7 @@ They offer advanced features like weighted clusters, request mirror policies, an
 
 ## Thrift Route Discovery Service(TRDS)
 `extensions.filters.network.thrift_proxy.v3.Trds`  
-The Thrift Route Discovery Service (TRDS) serves as a critical component for Thrift route discovery. 
+[The Thrift Route Discovery Service (TRDS)](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/thrift_proxy/v3/thrift_proxy.proto#extensions-filters-network-thrift-proxy-v3-trds) serves as a critical component for Thrift route discovery. 
 It is currently compatible with Aggregated Service Discovery (ADS) and is responsible for fetching specific route configurations. 
 TRDS identifies the desired route configuration by name, allowing for the use of different configurations as needed.
 
