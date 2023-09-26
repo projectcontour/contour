@@ -285,6 +285,12 @@ func TestSortRoutesPathMatch(t *testing.T) {
 			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
 		},
 		{
+			PathMatchCondition: matchRegex("/bar.*"),
+		},
+		{
+			PathMatchCondition: matchRegex("/foo.*"),
+		},
+		{
 			PathMatchCondition: matchRegex("/"),
 		},
 		// Prefix segment matches sort before string matches.

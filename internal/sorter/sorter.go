@@ -14,6 +14,7 @@
 package sorter
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -213,7 +214,7 @@ func (s queryParamMatchConditionSorter) Less(i, j int) bool {
 // comparisons), HeaderMatchConditions, and QueryParamMatchConditions slices
 // for lhs and rhs and returns true if the conditions for the lhs Route mean
 // it should sort first.
-func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
+func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) (bool, error) {
 	// Find if method matches exist. Should only ever be one.
 	// If found, exclude from HeaderMatchConditions slices we will
 	// compare.
@@ -238,24 +239,24 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 
 	// Now check if only one of the routes had a method match.
 	if lhsMethodMatchFound != rhsMethodMatchFound {
-		return lhsMethodMatchFound
+		return lhsMethodMatchFound, nil
 	}
 
 	// One route has a longer HeaderMatchConditions slice.
 	if len(lhsHeaderMatchConditions) != len(rhsHeaderMatchConditions) {
-		return len(lhsHeaderMatchConditions) > len(rhsHeaderMatchConditions)
+		return len(lhsHeaderMatchConditions) > len(rhsHeaderMatchConditions), nil
 	}
 
 	// One route has a longer QueryParamMatchConditions slice.
 	if len(lhs.QueryParamMatchConditions) != len(rhs.QueryParamMatchConditions) {
-		return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions)
+		return len(lhs.QueryParamMatchConditions) > len(rhs.QueryParamMatchConditions), nil
 	}
 
 	// If there are the same number of header and query parameter matches, sort
 	// based on the priority of the route.
 	// Note: lower values mean a higher priority.
 	if lhs.Priority != rhs.Priority {
-		return lhs.Priority < rhs.Priority
+		return lhs.Priority < rhs.Priority, nil
 	}
 
 	// HeaderMatchConditions are equal length: compare item by item.
@@ -265,7 +266,7 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 		pair[1] = rhsHeaderMatchConditions[i]
 
 		if headerMatchConditionSorter(pair).Less(0, 1) {
-			return true
+			return true, nil
 		}
 	}
 
@@ -276,11 +277,11 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 		qPair[1] = rhs.QueryParamMatchConditions[i]
 
 		if queryParamMatchConditionSorter(qPair).Less(0, 1) {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, fmt.Errorf("could not compare routes")
 }
 
 // Sorts the given Route slice in place. Routes are ordered first by
@@ -311,7 +312,8 @@ func (s routeSorter) Less(i, j int) bool {
 					return false
 				default:
 					if a.PrefixMatchType == b.PrefixMatchType {
-						return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+						v, _ := compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+						return v
 					}
 					// Segment prefixes sort first as they are more specific.
 					return a.PrefixMatchType == dag.PrefixMatchSegment
@@ -328,7 +330,11 @@ func (s routeSorter) Less(i, j int) bool {
 			case len(a.Regex) < len(b.Regex):
 				return false
 			default:
-				return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				v, err := compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				if err != nil {
+					return strings.Compare(a.Regex, b.Regex) == -1
+				}
+				return v
 			}
 		case *dag.PrefixMatchCondition:
 			return true
@@ -346,7 +352,8 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				v, _ := compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				return v
 			}
 		case *dag.PrefixMatchCondition:
 			return true
