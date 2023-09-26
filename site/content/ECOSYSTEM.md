@@ -1,4 +1,7 @@
-# Ecosystem
+---
+title: Contour Ecosystem
+layout: page
+---
 
 This is a list of Contour related resources. If you have a suggestion on what to add, please don't hesitate to [submit a pull request][2]!
 
