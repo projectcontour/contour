@@ -308,7 +308,7 @@ func (s routeSorter) Less(i, j int) bool {
 				switch cmp {
 				case 1:
 					return true
-				case 2:
+				case -1:
 					return false
 				default:
 					if a.PrefixMatchType == b.PrefixMatchType {
