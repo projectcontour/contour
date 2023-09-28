@@ -67,6 +67,11 @@ type ContourConfigurationSpec struct {
 	// +optional
 	GlobalExternalAuthorization *contour_api_v1.AuthorizationServer `json:"globalExtAuth,omitempty"`
 
+	// GlobalExternalProcessor allows envoys external processing filters
+	// to be enabled for all virtual hosts.
+	// +optional
+	GlobalExternalProcessor *contour_api_v1.ExternalProcessor `json:"globalExternalProcessor,omitempty"`
+
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
 	// +optional

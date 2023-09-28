@@ -21,12 +21,14 @@ import (
 	"time"
 
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_mutation_rules_v3 "github.com/envoyproxy/go-control-plane/envoy/config/common/mutation_rules/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_gzip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -41,14 +43,15 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type HTTPVersionType = http.HttpConnectionManager_CodecType
@@ -378,6 +381,13 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 		},
 	)
 
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) AddFilters(filters []*http.HttpFilter) *httpConnectionManagerBuilder {
+	for _, f := range filters {
+		b.AddFilter(f)
+	}
 	return b
 }
 
@@ -760,6 +770,34 @@ end
 					},
 				},
 			}),
+		},
+	}
+}
+
+// FilterExtProc returns an `ext_proc` filter configured with the
+// requested parameters.
+func FilterExtProc(extProc *dag.ExternalProcessor) *http.HttpFilter {
+	extProcConfig := envoy_config_filter_http_ext_proc_v3.ExternalProcessor{
+		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
+		FailureModeAllow:       extProc.FailOpen,
+		ProcessingMode:         dag.MakeProcessMode(extProc.ProcessingMode),
+		MessageTimeout:         envoy.Timeout(timeout.DefaultSetting()),
+		MaxMessageTimeout:      envoy.Timeout(timeout.DefaultSetting()),
+		DisableClearRouteCache: false,
+		AllowModeOverride:      true,
+		MutationRules: &envoy_mutation_rules_v3.HeaderMutationRules{
+			AllowAllRouting: &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowAllRouting},
+			AllowEnvoy:      &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowEnvoy},
+			DisallowSystem:  &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowSystem},
+			DisallowAll:     &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowAll},
+			DisallowIsError: &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowIsError},
+		},
+	}
+
+	return &http.HttpFilter{
+		Name: "envoy.filters.http.ext_proc",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&extProcConfig),
 		},
 	}
 }

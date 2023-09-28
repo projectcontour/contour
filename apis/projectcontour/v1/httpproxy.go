@@ -291,6 +291,158 @@ type AuthorizationPolicy struct {
 	Context map[string]string `json:"context,omitempty"`
 }
 
+// Control how headers and trailers are handled
+type HeaderSendMode int32
+
+const (
+	// The default HeaderSendMode depends on which part of the message is being
+	// processed. By default, request and response headers are sent,
+	// while trailers are skipped.
+	ProcessingMode_DEFAULT HeaderSendMode = 0
+	// Send the header or trailer.
+	ProcessingMode_SEND HeaderSendMode = 1
+	// Do not send the header or trailer.
+	ProcessingMode_SKIP HeaderSendMode = 2
+)
+
+// Control how the request and response bodies are handled
+type BodySendMode int32
+
+const (
+	// Do not send the body at all. This is the default.
+	ProcessingMode_NONE BodySendMode = 0
+	// Stream the body to the server in pieces as they arrive at the
+	// proxy.
+	ProcessingMode_STREAMED BodySendMode = 1
+	// Buffer the message body in memory and send the entire body at once.
+	// If the body exceeds the configured buffer limit, then the
+	// downstream system will receive an error.
+	ProcessingMode_BUFFERED BodySendMode = 2
+	// Buffer the message body in memory and send the entire body in one
+	// chunk. If the body exceeds the configured buffer limit, then the body contents
+	// up to the buffer limit will be sent.
+	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
+)
+
+type HeaderMutationRules struct {
+	// By default, certain headers that could affect processing of subsequent
+	// filters or request routing cannot be modified. These headers are
+	// ``host``, ``:authority``, ``:scheme``, and ``:method``. Setting this parameter
+	// to true allows these headers to be modified as well.
+	AllowAllRouting bool
+	// If true, allow modification of envoy internal headers. By default, these
+	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap``
+	// configuration. Default is false.
+	AllowEnvoy bool
+	// If true, prevent modification of any system header, defined as a header
+	// that starts with a ``:`` character, regardless of any other settings.
+	// A processing server may still override the ``:status`` of an HTTP response
+	// using an ``ImmediateResponse`` message. Default is false.
+	DisallowSystem bool
+	// If true, prevent modifications of all header values, regardless of any
+	// other settings. A processing server may still override the ``:status``
+	// of an HTTP response using an ``ImmediateResponse`` message. Default is false.
+	DisallowAll bool
+	// If true, and if the rules in this list cause a header mutation to be
+	// disallowed, then the filter using this configuration will terminate the
+	// request with a 500 error. In addition, regardless of the setting of this
+	// parameter, any attempt to set, add, or modify a disallowed header will
+	// cause the ``rejected_header_mutations`` counter to be incremented.
+	// Default is false.
+	DisallowIsError bool
+}
+
+type ProcessingMode struct {
+	// How to handle the request header. Default is "SEND".
+	RequestHeaderMode HeaderSendMode
+	// How to handle the response header. Default is "SEND".
+	ResponseHeaderMode HeaderSendMode
+	// How to handle the request body. Default is "NONE".
+	RequestBodyMode BodySendMode
+	// How do handle the response body. Default is "NONE".
+	ResponseBodyMode BodySendMode
+	// How to handle the request trailers. Default is "SKIP".
+	RequestTrailerMode HeaderSendMode
+	// How to handle the response trailers. Default is "SKIP".
+	ResponseTrailerMode HeaderSendMode
+}
+
+type GRPCService struct {
+	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
+	//
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
+
+	// ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	ResponseTimeout string `json:"responseTimeout,omitempty"`
+
+	// If FailOpen is true, the client request is forwarded to the upstream service
+	// even if the authorization server fails to respond. This field should not be
+	// set in most cases. It is intended for use only while migrating applications
+	// from internal authorization to Contour external authorization.
+	//
+	// +optional
+	FailOpen bool `json:"failOpen,omitempty"`
+}
+
+// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy
+// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExtProc struct {
+	//
+	// +optional
+	GRPCService *GRPCService
+	//
+	// +optional
+	ProcessingMode *ProcessingMode
+	//
+	// +optional
+	MutationRules *HeaderMutationRules
+}
+
+type ExtProcOverride struct {
+	//
+	// +optional
+	GRPCService *GRPCService
+	//
+	// +optional
+	ProcessingMode *ProcessingMode
+}
+
+type ExternalProcessor struct {
+
+	//
+	// +optional
+	Processors []ExtProc `json:"processors,omitempty"`
+
+	// ExtProcPolicy sets a external processing policy.
+	// This policy will be used unless overridden by individual routes.
+	// for the default global external processor, it's must be nil
+	//
+	// +optional
+	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
+}
+
+// ExtProcPolicy modifies how requests/responses are operated.
+type ExtProcPolicy struct {
+	// When true, this field disables client request external processing
+	// for the scope of the policy.
+	//
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
+	// for global external processing, it's not exists
+	//
+	// +optional
+	Overrides *ExtProcOverride `json:"overrides,omitempty"`
+}
+
 // VirtualHost appears at most once. If it is present, the object is considered
 // to be a "root".
 type VirtualHost struct {
@@ -338,6 +490,11 @@ type VirtualHost struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// ExternalProcessor are a list of external processors which allow to act on HTTP traffic in a flexible way.
+	//
+	// +optional
+	ExternalProcessor *ExternalProcessor `json:"externalProcessor,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -593,6 +750,12 @@ type Route struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// ExtProcPolicy updates the external processing policy that was set
+	// on the root HTTPProxy object for client requests/responses that
+	// match this route.
+	// +optional
+	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {

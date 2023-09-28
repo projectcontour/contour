@@ -24,8 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
+
+	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -365,6 +368,13 @@ type Route struct {
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
+
+	// ExtProcDisabled disable the filter for this particular vhost or route.
+	// If disabled is specified in multiple per-filter-configs, the most specific one will be used.
+	//
+	// TODO: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto#envoy-v3-api-msg-extensions-filters-http-ext-proc-v3-extprocoverrides
+	ExtProcDisabled  bool
+	ExtProcOverrides *ExtProcOverrides
 
 	// Metadata fields that can be used for access logging.
 	Kind      string
@@ -766,6 +776,10 @@ type SecureVirtualHost struct {
 	// the ExtAuthz filter.
 	ExternalAuthorization *ExternalAuthorization
 
+	// ExtProcs contains the configurations for enabling
+	// the ExtProc filters.
+	ExtProcs []ExternalProcessor
+
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
 }
@@ -832,6 +846,31 @@ type ExternalAuthorization struct {
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+}
+
+type ExternalProcessor struct {
+	// ExtProcService points to the extension that client
+	// requests are forwarded to for external processing. If nil, no
+	// external processing is enabled for this host.
+	ExtProcService *ExtensionCluster
+
+	// ResponseTimeout sets how long the proxy should wait
+	// for extenal processor responses.
+	// This is the timeout for a specific request.
+	ResponseTimeout timeout.Setting
+
+	// FailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	FailOpen bool
+
+	// Specifies default options for how HTTP headers, trailers, and bodies are sent.
+	ProcessingMode *ProcessingMode
+
+	// Rules that determine what modifications an external processing server may
+	// make to message headers.
+	MutationRules *HeaderMutationRules
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client
@@ -1234,4 +1273,116 @@ type SlowStartConfig struct {
 
 func (s *SlowStartConfig) String() string {
 	return fmt.Sprintf("%s%f%d", s.Window.String(), s.Aggression, s.MinWeightPercent)
+}
+
+// Control how headers and trailers are handled
+type HeaderSendMode int32
+
+const (
+	// The default HeaderSendMode depends on which part of the message is being
+	// processed. By default, request and response headers are sent,
+	// while trailers are skipped.
+	ProcessingMode_DEFAULT HeaderSendMode = 0
+	// Send the header or trailer.
+	ProcessingMode_SEND HeaderSendMode = 1
+	// Do not send the header or trailer.
+	ProcessingMode_SKIP HeaderSendMode = 2
+)
+
+// Control how the request and response bodies are handled
+type BodySendMode int32
+
+const (
+	// Do not send the body at all. This is the default.
+	ProcessingMode_NONE BodySendMode = 0
+	// Stream the body to the server in pieces as they arrive at the
+	// proxy.
+	ProcessingMode_STREAMED BodySendMode = 1
+	// Buffer the message body in memory and send the entire body at once.
+	// If the body exceeds the configured buffer limit, then the
+	// downstream system will receive an error.
+	ProcessingMode_BUFFERED BodySendMode = 2
+	// Buffer the message body in memory and send the entire body in one
+	// chunk. If the body exceeds the configured buffer limit, then the body contents
+	// up to the buffer limit will be sent.
+	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
+)
+
+// TODO: lewgun
+type GrpcService struct {
+
+	// The timeout for the gRPC request. This is the timeout for a specific
+	// request.
+	Timeout *duration.Duration
+
+	// Additional metadata to include in streams initiated to the GrpcService. This can be used for
+	// scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to
+	// be injected. For more information, including details on header value syntax, see the
+	// documentation on :ref:`custom request headers
+	// <config_http_conn_man_headers_custom_request_headers>`.
+	InitialMetadata []*HeaderValue
+}
+
+// Overrides that may be set on a per-route basis
+type ExtProcOverrides struct {
+	// Set a different processing mode for this route than the default.
+	ProcessingMode *ProcessingMode
+	// Set a different gRPC service for this route than the default.
+	GrpcService *GrpcService
+}
+
+type ProcessingMode struct {
+	// How to handle the request header. Default is "SEND".
+	RequestHeaderMode HeaderSendMode
+	// How to handle the response header. Default is "SEND".
+	ResponseHeaderMode HeaderSendMode
+	// How to handle the request body. Default is "NONE".
+	RequestBodyMode BodySendMode
+	// How do handle the response body. Default is "NONE".
+	ResponseBodyMode BodySendMode
+	// How to handle the request trailers. Default is "SKIP".
+	RequestTrailerMode HeaderSendMode
+	// How to handle the response trailers. Default is "SKIP".
+	ResponseTrailerMode HeaderSendMode
+}
+
+type HeaderMutationRules struct {
+	// By default, certain headers that could affect processing of subsequent
+	// filters or request routing cannot be modified. These headers are
+	// ``host``, ``:authority``, ``:scheme``, and ``:method``. Setting this parameter
+	// to true allows these headers to be modified as well.
+	AllowAllRouting bool
+	// If true, allow modification of envoy internal headers. By default, these
+	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap``
+	// configuration. Default is false.
+	AllowEnvoy bool
+	// If true, prevent modification of any system header, defined as a header
+	// that starts with a ``:`` character, regardless of any other settings.
+	// A processing server may still override the ``:status`` of an HTTP response
+	// using an ``ImmediateResponse`` message. Default is false.
+	DisallowSystem bool
+	// If true, prevent modifications of all header values, regardless of any
+	// other settings. A processing server may still override the ``:status``
+	// of an HTTP response using an ``ImmediateResponse`` message. Default is false.
+	DisallowAll bool
+	// If true, and if the rules in this list cause a header mutation to be
+	// disallowed, then the filter using this configuration will terminate the
+	// request with a 500 error. In addition, regardless of the setting of this
+	// parameter, any attempt to set, add, or modify a disallowed header will
+	// cause the ``rejected_header_mutations`` counter to be incremented.
+	// Default is false.
+	DisallowIsError bool
+}
+
+func MakeProcessMode(mode *ProcessingMode) *envoy_config_filter_http_ext_proc_v3.ProcessingMode {
+	return &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestHeaderMode),
+		ResponseHeaderMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseHeaderMode),
+
+		RequestBodyMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.RequestBodyMode),
+		ResponseBodyMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.ResponseBodyMode),
+
+		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestTrailerMode),
+		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseTrailerMode),
+	}
 }

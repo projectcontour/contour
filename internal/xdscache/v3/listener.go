@@ -22,6 +22,9 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"google.golang.org/protobuf/proto"
+	"k8s.io/apimachinery/pkg/types"
+
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -31,8 +34,6 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
-	"google.golang.org/protobuf/proto"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // nolint:revive
@@ -137,9 +138,13 @@ type ListenerConfig struct {
 	// used.
 	RateLimitConfig *RateLimitConfig
 
-	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
+	// GlobalExternalAuthConfig optionally configures the global external authz Services to be
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
+
+	// GlobalExternalProcessorConfig optionally configures the global external processing Services to be
+	// used.
+	GlobalExternalProcessorConfig *GlobalExtProcConfig
 
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
@@ -196,6 +201,18 @@ type GlobalExternalAuthConfig struct {
 	FailOpen        bool
 	Context         map[string]string
 	WithRequestBody *dag.AuthorizationServerBufferSettings
+}
+
+type ExtProcConfig struct {
+	ExtensionServiceConfig
+	FailOpen bool
+
+	ProcessingMode *dag.ProcessingMode
+	MutationRules  *dag.HeaderMutationRules
+}
+
+type GlobalExtProcConfig struct {
+	Processors []ExtProcConfig
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -421,6 +438,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
+				AddFilters(httpGlobalExtProcConfig(cfg.GlobalExternalProcessorConfig)).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
@@ -467,6 +485,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					authFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
+				var extProcFilters []*http.HttpFilter
+				for _, ep := range vh.ExtProcs {
+					extProcFilters = append(extProcFilters, envoy_v3.FilterExtProc(&ep))
+				}
+
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
@@ -479,6 +502,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
 					AddFilter(authFilter).
+					AddFilters(extProcFilters).
 					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
@@ -622,6 +646,27 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
 
+}
+
+func httpGlobalExtProcConfig(config *GlobalExtProcConfig) []*http.HttpFilter {
+	if config == nil {
+		return nil
+	}
+
+	var filters []*http.HttpFilter
+	for _, epCfg := range config.Processors {
+		filters = append(filters, envoy_v3.FilterExtProc(&dag.ExternalProcessor{
+			ExtProcService: &dag.ExtensionCluster{
+				Name: dag.ExtensionClusterName(epCfg.ExtensionServiceConfig.ExtensionService),
+				SNI:  epCfg.ExtensionServiceConfig.SNI,
+			},
+			FailOpen:        epCfg.FailOpen,
+			ResponseTimeout: epCfg.ExtensionServiceConfig.Timeout,
+			ProcessingMode:  epCfg.ProcessingMode,
+			MutationRules:   epCfg.MutationRules,
+		}))
+	}
+	return filters
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {

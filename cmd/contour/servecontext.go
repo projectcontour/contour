@@ -460,6 +460,28 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 	}
 
+	globalExtProc := &contour_api_v1.ExternalProcessor{}
+	if ctx.Config.GlobalExternalProcessor != nil {
+		for _, ep := range ctx.Config.GlobalExternalProcessor.Processors {
+			nsedName := k8s.NamespacedNameFrom(ep.ExtensionService)
+			extProc := contour_api_v1.ExtProc{
+				GRPCService: &contour_api_v1.GRPCService{
+					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+						Name:      nsedName.Name,
+						Namespace: nsedName.Namespace,
+					},
+					ResponseTimeout: ctx.Config.GlobalExternalAuthorization.ResponseTimeout,
+					FailOpen:        ctx.Config.GlobalExternalAuthorization.FailOpen,
+				},
+			}
+			globalExtProc.Processors = append(globalExtProc.Processors, extProc)
+		}
+
+		// globalExtProc.ProcessingPolicy = &contour_api_v1.ExternalProcessingPolicy{
+		// 	Disabled: ctx.Config.GlobalExternalProcessor.ProcessingPolicy.Disabled,
+		// }
+
+	}
 	policy := &contour_api_v1alpha1.PolicyConfig{
 		RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
 			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
@@ -584,6 +606,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		},
 		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
 		GlobalExternalAuthorization: globalExtAuth,
+		GlobalExternalProcessor:     globalExtProc,
 		RateLimitService:            rateLimitService,
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,

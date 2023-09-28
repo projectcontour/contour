@@ -21,7 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -29,10 +33,6 @@ import (
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/sirupsen/logrus"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 const (

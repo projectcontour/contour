@@ -446,6 +446,10 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	if listenerConfig.GlobalExternalProcessorConfig, err = s.setupGlobalExternalProcessor(contourConfiguration); err != nil {
+		return err
+	}
+
 	contourMetrics := metrics.NewMetrics(s.registry)
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
@@ -530,6 +534,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		globalExternalProcessor:            contourConfiguration.GlobalExternalProcessor,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -816,6 +821,33 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	return globalExternalAuthConfig, nil
 }
 
+func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExtProcConfig, error) {
+	if contourCfg.GlobalExternalProcessor == nil {
+		return nil, nil
+	}
+
+	globalExtProcCfg := &xdscache_v3.GlobalExtProcConfig{
+		//Disabled: contourCfg.GlobalExternalProcessor.ProcessingPolicy.Disabled,
+	}
+	for _, ep := range contourCfg.GlobalExternalProcessor.Processors {
+
+		// ensure the specified ExtensionService exists
+		extSvcCfg, err := s.getExtensionSvcConfig(ep.GRPCService.ExtensionServiceRef.Name, ep.GRPCService.ExtensionServiceRef.Namespace)
+		if err != nil {
+			return nil, err
+		}
+
+		globalExtProcCfg.Processors = append(globalExtProcCfg.Processors, xdscache_v3.ExtProcConfig{
+			ExtensionServiceConfig: extSvcCfg,
+			FailOpen:               ep.GRPCService.FailOpen,
+			ProcessingMode:         dag.ToProcessingMode(ep.ProcessingMode),
+			MutationRules:          dag.ToMutationRules(ep.MutationRules),
+		})
+	}
+
+	return globalExtProcCfg, nil
+}
+
 func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {
 	debugsvc := &debug.Service{
 		Service: httpsvc.Service{
@@ -1063,6 +1095,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
+	globalExternalProcessor            *contour_api_v1.ExternalProcessor
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1155,6 +1188,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			GlobalExternalProcessor:       dbc.globalExternalProcessor,
 		},
 	}
 

@@ -24,19 +24,18 @@ func (v *VirtualHost) AuthorizationConfigured() bool {
 }
 
 // DisableAuthorization returns true if this virtual host disables
-// authorization. If an authorization server is present, the default
+// authorization. If an authorization server is (un)present, the default
 // policy is to not disable.
 func (v *VirtualHost) DisableAuthorization() bool {
-	// No authorization, so it is disabled.
 	if v.AuthorizationConfigured() {
 		// No policy specified, default is to not disable.
 		if v.Authorization.AuthPolicy == nil {
 			return false
 		}
-
 		return v.Authorization.AuthPolicy.Disabled
 	}
 
+	// No authorization, so it is not disable.
 	return false
 }
 
@@ -49,6 +48,26 @@ func (v *VirtualHost) AuthorizationContext() map[string]string {
 	}
 
 	return nil
+}
+
+// ExtProcConfigured returns whether external processing are
+// configured on this virtual host.
+func (v *VirtualHost) ExtProcConfigured() bool {
+	return v.ExternalProcessor != nil
+}
+
+// DisableExtProc returns true if this virtual host disables
+// external processing. If an external processor is present, the default
+// policy is to not disable.
+func (v *VirtualHost) DisableExtProc() bool {
+	// No external processor(s), so it is disabled.
+	if v.ExtProcConfigured() {
+		if v.ExternalProcessor.ExtProcPolicy == nil {
+			return false
+		}
+		return v.ExternalProcessor.ExtProcPolicy.Disabled
+	}
+	return false
 }
 
 // GetPrefixReplacements returns replacement prefixes from the path

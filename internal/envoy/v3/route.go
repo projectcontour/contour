@@ -21,27 +21,28 @@ import (
 	"strings"
 	"text/template"
 
-	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/sorter"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
@@ -152,6 +153,14 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
+		// Apply per-route external processing policy modifications.
+		if dagRoute.ExtProcDisabled {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcDisabled()
+
+		} else if dagRoute.ExtProcOverrides != nil {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcOverrides(dagRoute.ExtProcOverrides)
+		}
+
 		// If JWT verification is enabled, add per-route filter
 		// config referencing a requirement in the main filter
 		// config.
@@ -175,6 +184,28 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 	}
 
 	return route
+}
+
+// routeExtProcDisabled returns a per-route config to disable extProc for this particular vhost or route.
+func routeExtProcDisabled() *anypb.Any {
+	return protobuf.MustMarshalAny(
+		&envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute_Disabled{
+				Disabled: true,
+			},
+		},
+	)
+}
+
+func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
+	return protobuf.MustMarshalAny(
+		&envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute_Overrides{
+				// TODO: lewgun
+				//Overrides: true,
+			},
+		},
+	)
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
