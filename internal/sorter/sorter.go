@@ -296,33 +296,47 @@ func (s routeSorter) Less(i, j int) bool {
 	switch a := s[i].PathMatchCondition.(type) {
 	case *dag.PrefixMatchCondition:
 		if b, ok := s[j].PathMatchCondition.(*dag.PrefixMatchCondition); ok {
-			cmp := strings.Compare(a.Prefix, b.Prefix)
-			switch cmp {
-			case 1:
+			switch {
+			case len(a.Prefix) > len(b.Prefix):
 				// Sort longest prefix first.
 				return true
-			case -1:
+			case len(a.Prefix) < len(b.Prefix):
 				return false
 			default:
-				if a.PrefixMatchType == b.PrefixMatchType {
-					return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				cmp := strings.Compare(a.Prefix, b.Prefix)
+				switch cmp {
+				case 1:
+					return true
+				case -1:
+					return false
+				default:
+					if a.PrefixMatchType == b.PrefixMatchType {
+						return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+					}
+					// Segment prefixes sort first as they are more specific.
+					return a.PrefixMatchType == dag.PrefixMatchSegment
 				}
-				// Segment prefixes sort first as they are more specific.
-				return a.PrefixMatchType == dag.PrefixMatchSegment
 			}
 		}
 	case *dag.RegexMatchCondition:
 		switch b := s[j].PathMatchCondition.(type) {
 		case *dag.RegexMatchCondition:
-			cmp := strings.Compare(a.Regex, b.Regex)
-			switch cmp {
-			case 1:
+			switch {
+			case len(a.Regex) > len(b.Regex):
 				// Sort longest regex first.
 				return true
-			case -1:
+			case len(a.Regex) < len(b.Regex):
 				return false
 			default:
-				return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				cmp := strings.Compare(a.Regex, b.Regex)
+				switch cmp {
+				case 1:
+					return true
+				case -1:
+					return false
+				default:
+					return compareRoutesByMethodHeaderQueryParams(s[i], s[j])
+				}
 			}
 		case *dag.PrefixMatchCondition:
 			return true
@@ -331,9 +345,11 @@ func (s routeSorter) Less(i, j int) bool {
 		switch b := s[j].PathMatchCondition.(type) {
 		case *dag.ExactMatchCondition:
 			cmp := strings.Compare(a.Path, b.Path)
+			// Sorting function doesn't really matter here
+			// since we want exact matching. Lexicographic sorting
+			// is ok
 			switch cmp {
 			case 1:
-				// Sort longest path first.
 				return true
 			case -1:
 				return false
