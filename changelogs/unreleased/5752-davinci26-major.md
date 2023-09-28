@@ -4,6 +4,7 @@ Envoy greedy matches routes and as a result the order route matches are presente
 
 This changes fixes the sorting algorithm used for `Prefix` and `Regex` based path matching. Previously the algorithm lexicographically sorted based on the path match string instead of sorting them based on the length of the `Prefix`|`Regex`. i.e. Longer prefix/regexes will be sorted first in order to give preference to more specific routes, then lexicographic sorting for things of the same length.
 
+Note that for prefix matching, this change is _not_ expected to change the relative ordering of more specific prefixes vs. less specific ones when the more specific prefix match string has the less specific one as a prefix, e.g. `/foo/bar` will continue to sort before `/foo`. However, relative ordering of other combinations of prefix matches may change per the above description.
 ### How to update safely
 
 Caution is advised if you update Contour and you are operating large routing tables. We advise you to:
