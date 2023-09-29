@@ -262,7 +262,6 @@ respectively.
 
 Contour allows users to manipulate the host header in two ways, using the `requestHeadersPolicy`.
 
-Suggested change
 #### Static rewrite
 
 You can set the host to a static value. This can be done on the route and service level.
