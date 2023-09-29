@@ -58,7 +58,7 @@ const (
 )
 
 // match "%REQ(<X-Foo-Bar>)%"
-var hostRewriteHeaderRegex = regexp.MustCompile(`%REQ\((\S+)\)%`)
+var hostRewriteHeaderRegex = regexp.MustCompile(`%REQ\(([A-Za-z0-9-]+)\)%`)
 
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
@@ -183,7 +183,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
 			}
 			if extractedHostRewriteHeader := extractHostRewriteHeaderValue(entry.Value); extractedHostRewriteHeader != "" {
-				hostRewriteHeader = extractedHostRewriteHeader
+				hostRewriteHeader = http.CanonicalHeaderKey(extractedHostRewriteHeader)
 				continue
 			} else {
 				hostRewrite = entry.Value

@@ -79,7 +79,7 @@ func testHostRewriteLiteral(namespace string) {
 func testHostRewriteHeaderHTTPService(namespace string) {
 	opts := []func(*http.Request){
 		e2e.OptSetHeaders(map[string]string{
-			"x-host-rewrite": "newhostrewritten.com",
+			"x-host-rewrite": "dynamichostrewritten.com",
 		}),
 	}
 
@@ -95,7 +95,7 @@ func testHostRewriteHeaderHTTPService(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "hostheaderrewrite.projectcontour.io",
+					Fqdn: "dynamichostrewrite.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -127,14 +127,14 @@ func testHostRewriteHeaderHTTPService(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		assert.Equal(t, "newhostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
+		assert.Equal(t, "dynamichostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
 	})
 }
 
 func testHostRewriteHeaderHTTPSService(namespace string) {
 	opts := []func(*http.Request){
 		e2e.OptSetHeaders(map[string]string{
-			"x-host-rewrite": "newhostrewritten.com",
+			"x-host-rewrite": "securedynamichostrewritten.com",
 		}),
 	}
 
@@ -151,7 +151,7 @@ func testHostRewriteHeaderHTTPSService(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "https.hostheaderrewrite.projectcontour.io",
+					Fqdn: "https.dynamichostrewrite.projectcontour.io",
 					TLS: &contourv1.TLS{
 						SecretName: "ingress-conformance-echo",
 					},
@@ -187,14 +187,14 @@ func testHostRewriteHeaderHTTPSService(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		assert.Equal(t, "newhostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
+		assert.Equal(t, "securedynamichostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
 	})
 }
 
-func testHostRewriteHeadeExternalNameService(namespace string) {
+func testHostRewriteHeaderExternalNameService(namespace string) {
 	opts := []func(*http.Request){
 		e2e.OptSetHeaders(map[string]string{
-			"x-host-rewrite": "newhostrewritten.com",
+			"x-host-rewrite": "external.newhostrewritten.com",
 		}),
 	}
 
@@ -228,7 +228,7 @@ func testHostRewriteHeadeExternalNameService(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "hostheaderrewrite.projectcontour.io",
+					Fqdn: "externalhostheaderrewrite.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
@@ -260,6 +260,6 @@ func testHostRewriteHeadeExternalNameService(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		assert.Equal(t, "newhostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
+		assert.Equal(t, "external.newhostrewritten.com", f.GetEchoResponseBody(res.Body).Host)
 	})
 }

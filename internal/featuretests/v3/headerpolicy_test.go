@@ -255,7 +255,7 @@ func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeHostRewriteHeader("default/svc1/80/da39a3ee5e", "x-goodbye-planet"),
+						Action: routeHostRewriteHeader("default/svc1/80/da39a3ee5e", "X-Goodbye-Planet"),
 					},
 				),
 			),
@@ -325,7 +325,7 @@ func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeHostRewriteHeader("default/externalname/443/9ebffe8f28", "x-goodbye-planet"),
+						Action: routeHostRewriteHeader("default/externalname/443/9ebffe8f28", "X-Goodbye-Planet"),
 					},
 				)),
 		),

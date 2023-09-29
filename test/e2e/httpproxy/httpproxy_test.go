@@ -300,7 +300,7 @@ var _ = Describe("HTTPProxy", func() {
 				contourConfig.EnableExternalNameService = true
 				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
 			})
-			testHostRewriteHeadeExternalNameService(namespace)
+			testHostRewriteHeaderExternalNameService(namespace)
 		})
 	})
 

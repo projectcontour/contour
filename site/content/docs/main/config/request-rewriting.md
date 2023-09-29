@@ -258,10 +258,12 @@ For per-Route requestHeadersPolicy only `%CONTOUR_NAMESPACE%` is set and using
 literal values `%%CONTOUR_SERVICE_NAME%%` and `%%CONTOUR_SERVICE_PORT%%`,
 respectively.
 
-### Manipulating the Host header.
+### Manipulating the Host header
 
 Contour allows users to manipulate the host header in two ways, using the `requestHeadersPolicy`.
-#### static rewrite
+
+Suggested change
+#### Static rewrite
 
 You can set the host to a static value. This can be done on the route and service level.
 
@@ -303,9 +305,9 @@ spec:
               value: "foo.com"
 ```
 
-#### dynamic rewrite
+#### Dynamic rewrite
 
-You can also set the host header dynamically with the content of a existing header.
+You can also set the host header dynamically with the content of an existing header.
 The format has to be `"%REQ(<header-name>)%"`. If the header is empty, it is ignored.
 
 ```yaml
@@ -328,3 +330,9 @@ spec:
 ```
 
 Note: Only one of static or dynamic host rewrite can be specified.
+
+Note: Dynamic rewrite is only available at the route level and not possible on the service level.
+
+Note: Pay attention to the potential security implications of using this option, the provided header must come from a trusted source.
+
+Note: The header rewrite is only done while forwarding and has no bearing on the routing decision.

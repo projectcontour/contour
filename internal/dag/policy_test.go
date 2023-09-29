@@ -1251,27 +1251,6 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			},
 		},
 	}, {
-		name: "rewrite host header with dynamic headers",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "100%",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo": "50%",
-			},
-		},
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo": "100%%",
-			},
-		},
-	}, {
 		name: "Host header rewrite via dynamic header",
 		in: &contour_api_v1.HeadersPolicy{
 			Set: []contour_api_v1.HeaderValue{{
