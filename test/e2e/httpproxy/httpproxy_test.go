@@ -288,7 +288,21 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)
 
-	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
+	f.NamespacedTest("httpproxy-host-header-rewrite-literal", testHostRewriteLiteral)
+
+	f.NamespacedTest("httpproxy-host-header-rewrite-header", testHostRewriteHeaderHTTPService)
+
+	f.NamespacedTest("httpproxy-host-header-rewrite-header-https", testHostRewriteHeaderHTTPSService)
+
+	f.NamespacedTest("httpproxy-host-header-rewrite-header-externalname-service", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+			})
+			testHostRewriteHeaderExternalNameService(namespace)
+		})
+	})
 
 	f.NamespacedTest("httpproxy-ip-filters", func(namespace string) {
 		// ip filter tests rely on the ability to forge x-forwarded-for

@@ -457,6 +457,10 @@ type HeadersPolicy struct {
 	// HostRewrite defines if a host should be rewritten on upstream requests
 	HostRewrite string
 
+	// HostRewriteHeader defines if a host should be rewritten on upstream requests
+	// via a header value. only applicable for routes.
+	HostRewriteHeader string
+
 	Add    map[string]string
 	Set    map[string]string
 	Remove []string

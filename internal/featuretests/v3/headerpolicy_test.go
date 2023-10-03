@@ -219,3 +219,123 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 }
+
+func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
+	// Enable ExternalName processing here because
+	// we need to check that host rewrites work in combination
+	// with ExternalName.
+	rh, c, done := setup(t, enableExternalNameService(t))
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
+						Name:  "Host",
+						Value: "%REQ(x-goodbye-planet)%",
+					}},
+				},
+			}},
+		}),
+	)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeHostRewriteHeader("default/svc1/80/da39a3ee5e", "X-Goodbye-Planet"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnAdd(fixture.NewService("externalname").
+		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
+		WithSpec(v1.ServiceSpec{
+			ExternalName: "goodbye.planet",
+			Type:         v1.ServiceTypeExternalName,
+			Ports: []v1.ServicePort{{
+				Port: 443,
+				Name: "https",
+			}},
+		}),
+	)
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	})
+
+	// Proxy with SNI
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "hello.world",
+				TLS:  &contour_api_v1.TLS{SecretName: "foo"},
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "externalname",
+					Port: 443,
+				}},
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
+						Name:  "Host",
+						Value: "%REQ(x-goodbye-planet)%",
+					}},
+				},
+			}},
+		}),
+	)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: routeResources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match: routePrefix("/"),
+						Action: &envoy_route_v3.Route_Redirect{
+							Redirect: &envoy_route_v3.RedirectAction{
+								SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+									HttpsRedirect: true,
+								},
+							},
+						},
+					}),
+			),
+			envoy_v3.RouteConfiguration("https/hello.world",
+				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeHostRewriteHeader("default/externalname/443/9ebffe8f28", "X-Goodbye-Planet"),
+					},
+				)),
+		),
+		TypeUrl: routeType,
+	})
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(externalNameCluster("default/externalname/443/9ebffe8f28", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil),
+		),
+		TypeUrl: clusterType,
+	})
+}
