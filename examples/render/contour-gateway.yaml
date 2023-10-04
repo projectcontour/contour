@@ -5233,6 +5233,17 @@ spec:
           spec:
             description: HTTPProxySpec defines the spec of the CRD.
             properties:
+              httpVersions:
+                description: HttpVersions specify the http versions to offer for this
+                  HTTPProxy. If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig
+                  will be used. It is ignored when TCPProxy is set.
+                items:
+                  description: HttpVersion is an alias to enforce validation
+                  enum:
+                  - h2
+                  - http/1.1
+                  type: string
+                type: array
               includes:
                 description: Includes allow for specific routing configuration to
                   be included from another HTTPProxy, possibly in another namespace.
