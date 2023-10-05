@@ -36,8 +36,11 @@ func RuntimeLayers() []*envoy_service_runtime_v3.Runtime {
 func baseRuntimeLayer() *structpb.Struct {
 	return &structpb.Struct{
 		Fields: map[string]*structpb.Value{
-			"re2.max_program_size.error_level": {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeError}},
-			"re2.max_program_size.warn_level":  {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeWarn}},
+			"re2.max_program_size.error_level":                     structpb.NewNumberValue(maxRegexProgramSizeError),
+			"re2.max_program_size.warn_level":                      structpb.NewNumberValue(maxRegexProgramSizeWarn),
+			"overload.premature_reset_total_stream_count":          structpb.NewNumberValue(50),
+			"overload.premature_reset_min_stream_lifetime_seconds": structpb.NewNumberValue(1),
+			"http.max_requests_per_io_cycle":                       structpb.NewNumberValue(10),
 		},
 	}
 }

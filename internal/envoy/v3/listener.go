@@ -486,6 +486,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 			AcceptHttp_10:      true,
 			AllowChunkedLength: b.allowChunkedLength,
 		},
+		Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{
+			MaxConcurrentStreams:        wrapperspb.UInt32(100),
+			HpackTableSize:              wrapperspb.UInt32(4096),
+			InitialStreamWindowSize:     wrapperspb.UInt32(65535),
+			InitialConnectionWindowSize: wrapperspb.UInt32(65535),
+		},
 
 		UseRemoteAddress:  wrapperspb.Bool(true),
 		XffNumTrustedHops: b.numTrustedHops,
