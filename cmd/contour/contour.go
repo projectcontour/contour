@@ -45,7 +45,7 @@ func main() {
 
 	// Log-format applies to log format of all sub-commands.
 	logFormat := app.Flag("log-format", "Log output format for Contour. Either text or json.").Default("text").Enum("text", "json")
-
+	logPath := app.Flag("log-path", "Log output path.").Default("").String()
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 
 	certgenApp, certgenConfig := registerCertGen(app)
@@ -82,6 +82,14 @@ func main() {
 
 	args := os.Args[1:]
 	cmd := kingpin.MustParse(app.Parse(args))
+
+	if *logPath != "" {
+		f, err := os.OpenFile(*logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.WithError(err).Fatalf("failed to open log file %s", *logPath)
+		}
+		log.Out = f
+	}
 
 	switch *logFormat {
 	case "text":
