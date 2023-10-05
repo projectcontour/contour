@@ -1224,9 +1224,10 @@ func (s *Server) informOnResource(obj client.Object, handler cache.ResourceEvent
 
 	registration, err := inf.AddEventHandler(handler)
 
-	if err == nil {
-		s.handlerCacheSyncs = append(s.handlerCacheSyncs, registration.HasSynced)
+	if err != nil {
+		return err
 	}
 
-	return err
+	s.handlerCacheSyncs = append(s.handlerCacheSyncs, registration.HasSynced)
+	return nil
 }
