@@ -326,7 +326,6 @@ run-e2e:
 	CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
 	go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s --focus '$(CONTOUR_E2E_TEST_FOCUS)' -r $(CONTOUR_E2E_PACKAGE_FOCUS)
 
-
 .PHONY: cleanup-kind
 cleanup-kind:
 	./test/scripts/cleanup.sh

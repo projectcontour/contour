@@ -60,6 +60,7 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
+	// syncTracker is used to update/query the status of the cache sync.
 	syncTracker *synctrack.SingleFileTracker
 
 	initialDagBuilt atomic.Bool
