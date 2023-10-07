@@ -935,7 +935,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// policy, let that override.
 			if route.ExtProcPolicy != nil {
 				disabled = route.ExtProcPolicy.Disabled
-				r.ExtProcOverrides = toExtProcOverrides(route.ExtProcPolicy.Overrides)
+				if route.ExtProcPolicy.Overrides != nil {
+					overrides := toExtProcOverrides(route.ExtProcPolicy.Overrides, validCond, proxy.Namespace, p.dag.GetExtensionCluster)
+					if overrides == nil {
+						return nil
+					}
+					r.ExtProcOverrides = overrides
+				}
 			}
 			r.ExtProcDisabled = disabled
 		}
@@ -1166,12 +1172,34 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	return routes
 }
 
-func toExtProcOverrides(override *contour_api_v1.ExtProcOverride) *ExtProcOverrides {
-	return &ExtProcOverrides{
-		ProcessingMode: ToProcessingMode(override.ProcessingMode),
+func toExtProcOverrides(
+	override *contour_api_v1.ExtProcOverride,
+	validCond *contour_api_v1.DetailedCondition,
+	defaultNamespace string,
+	extClusterGetter func(name string) *ExtensionCluster,
+) *ExtProcOverrides {
+	ok, extSvc := validateExtensionService(
+		defaultExtensionRef(override.GRPCService.ExtensionServiceRef),
+		validCond,
+		defaultNamespace,
+		contour_api_v1.ConditionTypeExtProcError,
+		extClusterGetter)
+	if !ok {
+		return nil
+	}
+	ok, respTimeout := determineExtensionServiceTimeout(
+		contour_api_v1.ConditionTypeExtProcError,
+		override.GRPCService.ResponseTimeout,
+		validCond,
+		extSvc)
+	if !ok {
+		return nil
+	}
 
-		//TODO: lewgun
-		//GrpcService: GrpcService(v.GRPCService.ExtensionServiceRef.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout), &GrpcService{},
+	return &ExtProcOverrides{
+		ProcessingMode:  ToProcessingMode(override.ProcessingMode),
+		ExtProcService:  extSvc,
+		ResponseTimeout: respTimeout,
 	}
 }
 
@@ -1421,24 +1449,27 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 	return false
 }
 
-func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_api_v1.AuthorizationServer, validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy) *ExternalAuthorization {
-	ok, ext := validateExtensionService(
+func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(
+	auth *contour_api_v1.AuthorizationServer,
+	validCond *contour_api_v1.DetailedCondition,
+	httpproxy *contour_api_v1.HTTPProxy) *ExternalAuthorization {
+	ok, extSvc := validateExtensionService(
 		defaultExtensionRef(auth.ExtensionServiceRef),
 		validCond,
-		httpproxy,
+		httpproxy.Namespace,
 		contour_api_v1.ConditionTypeAuthError,
 		p.dag.GetExtensionCluster)
 	if !ok {
 		return nil
 	}
 
-	ok, respTimeout := determineExtensionServiceTimeout(contour_api_v1.ConditionTypeAuthError, auth.ResponseTimeout, validCond, ext)
+	ok, respTimeout := determineExtensionServiceTimeout(contour_api_v1.ConditionTypeAuthError, auth.ResponseTimeout, validCond, extSvc)
 	if !ok {
 		return nil
 	}
 
 	extAuth := &ExternalAuthorization{
-		AuthorizationService:         ext,
+		AuthorizationService:         extSvc,
 		AuthorizationFailOpen:        auth.FailOpen,
 		AuthorizationResponseTimeout: *respTimeout,
 	}
@@ -1467,7 +1498,7 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 		ok, extSvc := validateExtensionService(
 			defaultExtensionRef(proc.GRPCService.ExtensionServiceRef),
 			validCond,
-			httpproxy,
+			httpproxy.Namespace,
 			contour_api_v1.ConditionTypeExtProcError,
 			p.dag.GetExtensionCluster)
 		if !ok {
@@ -1497,9 +1528,9 @@ const extSvcNotFound = "%s extension service %q not found"
 func validateExtensionService(
 	ref contour_api_v1.ExtensionServiceReference,
 	validCond *contour_api_v1.DetailedCondition,
-	httpproxy *contour_api_v1.HTTPProxy,
+	defaultNamespace string,
 	errorType string,
-	extensionClusterGetter func(name string) *ExtensionCluster,
+	extClusterGetter func(name string) *ExtensionCluster,
 ) (bool, *ExtensionCluster) {
 	if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
 		reason := "AuthBadResourceVersion"
@@ -1516,10 +1547,10 @@ func validateExtensionService(
 	// Lookup the extension service reference.
 	extensionName := types.NamespacedName{
 		Name:      ref.Name,
-		Namespace: stringOrDefault(ref.Namespace, httpproxy.Namespace),
+		Namespace: stringOrDefault(ref.Namespace, defaultNamespace),
 	}
 
-	ext := extensionClusterGetter(ExtensionClusterName(extensionName))
+	ext := extClusterGetter(ExtensionClusterName(extensionName))
 	if ext == nil {
 		field := "Spec.Virtualhost.Authorization.ServiceRef"
 		if errorType == contour_api_v1.ConditionTypeExtProcError {
@@ -1531,12 +1562,16 @@ func validateExtensionService(
 	return true, ext
 }
 
-const extSvcRespTimeoutFormat = "%s  is invalid: %q"
+const extSvcRespTimeoutFormat = "%s is invalid: %q"
 
-func determineExtensionServiceTimeout(errorType string, responseTimeout string, validCond *contour_api_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
-	tout, err := timeout.Parse(responseTimeout)
+func determineExtensionServiceTimeout(
+	errorType string,
+	respTimeout string,
+	validCond *contour_api_v1.DetailedCondition,
+	ext *ExtensionCluster) (bool, *timeout.Setting) {
+
+	tout, err := timeout.Parse(respTimeout)
 	if err != nil {
-
 		reason := "AuthResponseTimeoutInvalid"
 		field := "Spec.Virtualhost.Authorization.ResponseTimeout"
 
@@ -2041,6 +2076,10 @@ func routeExtProcValid(policy *contour_api_v1.ExtProcPolicy) error {
 
 	if policy.Overrides != nil && policy.Disabled {
 		return fmt.Errorf("cannot specify both ExtProcPolicy.Overrides and ExtProcPolicy.Disabled ")
+	}
+
+	if policy.Disabled {
+		return nil
 	}
 	return nil
 }

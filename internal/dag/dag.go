@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 
@@ -1308,27 +1307,14 @@ const (
 	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
 )
 
-// TODO: lewgun
-type GrpcService struct {
-
-	// The timeout for the gRPC request. This is the timeout for a specific
-	// request.
-	Timeout *duration.Duration
-
-	// Additional metadata to include in streams initiated to the GrpcService. This can be used for
-	// scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to
-	// be injected. For more information, including details on header value syntax, see the
-	// documentation on :ref:`custom request headers
-	// <config_http_conn_man_headers_custom_request_headers>`.
-	InitialMetadata []*HeaderValue
-}
-
 // Overrides that may be set on a per-route basis
 type ExtProcOverrides struct {
 	// Set a different processing mode for this route than the default.
 	ProcessingMode *ProcessingMode
+
 	// Set a different gRPC service for this route than the default.
-	GrpcService *GrpcService
+	ExtProcService  *ExtensionCluster
+	ResponseTimeout *timeout.Setting
 }
 
 type ProcessingMode struct {

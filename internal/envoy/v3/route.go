@@ -198,11 +198,22 @@ func routeExtProcDisabled() *anypb.Any {
 }
 
 func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
+	pm := &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.RequestHeaderMode),
+		ResponseHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.ResponseHeaderMode),
+		RequestBodyMode:     envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(overrides.ProcessingMode.RequestBodyMode),
+		ResponseBodyMode:    envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(overrides.ProcessingMode.ResponseBodyMode),
+		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.RequestTrailerMode),
+		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.ResponseTrailerMode),
+	}
+
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute{
 			Override: &envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute_Overrides{
-				// TODO: lewgun
-				//Overrides: true,
+				Overrides: &envoy_config_filter_http_ext_proc_v3.ExtProcOverrides{
+					ProcessingMode: pm,
+					GrpcService:    GrpcService(overrides.ExtProcService.Name, overrides.ExtProcService.SNI, *overrides.ResponseTimeout),
+				},
 			},
 		},
 	)

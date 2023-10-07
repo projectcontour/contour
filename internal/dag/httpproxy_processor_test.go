@@ -803,7 +803,7 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			validCond := &contour_api_v1.DetailedCondition{}
-			gotBool, got := validateExtensionService(tc.ref, validCond, tc.httpproxy, contour_api_v1.ConditionTypeAuthError, tc.getExtensionCluster)
+			gotBool, got := validateExtensionService(tc.ref, validCond, tc.httpproxy.Namespace, contour_api_v1.ConditionTypeAuthError, tc.getExtensionCluster)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantBool, gotBool)
 			require.Equal(t, tc.wantValidCond, validCond)
