@@ -57,6 +57,9 @@ const (
 	LoadBalancerPolicyRequestHash = "RequestHash"
 )
 
+// match "%REQ(<X-Foo-Bar>)%"
+var hostRewriteHeaderRegex = regexp.MustCompile(`%REQ\(([A-Za-z0-9-]+)\)%`)
+
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
 func retryOn(ron []contour_api_v1.RetryOn) string {
@@ -127,6 +130,11 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.H
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
 			}
 			if len(userPolicy.HostRewrite) == 0 {
+				// check for the hostRewriteHeader on the service. Return error if set since this
+				// is not supported on envoy.
+				if HostRewriteHeader := extractHostRewriteHeaderValue(v); HostRewriteHeader != "" {
+					return nil, fmt.Errorf("rewriting %q host header with dynamic value is not supported on service", key)
+				}
 				userPolicy.HostRewrite = v
 			}
 			continue
@@ -164,6 +172,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 	set := make(map[string]string, len(policy.Set))
 	hostRewrite := ""
+	hostRewriteHeader := ""
 	for _, entry := range policy.Set {
 		key := http.CanonicalHeaderKey(entry.Name)
 		if _, ok := set[key]; ok {
@@ -173,8 +182,13 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 			if !allowHostRewrite {
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
 			}
-			hostRewrite = entry.Value
-			continue
+			if extractedHostRewriteHeader := extractHostRewriteHeaderValue(entry.Value); extractedHostRewriteHeader != "" {
+				hostRewriteHeader = http.CanonicalHeaderKey(extractedHostRewriteHeader)
+				continue
+			} else {
+				hostRewrite = entry.Value
+				continue
+			}
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
@@ -203,10 +217,22 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 	}
 
 	return &HeadersPolicy{
-		Set:         set,
-		HostRewrite: hostRewrite,
-		Remove:      rl,
+		Set:               set,
+		HostRewrite:       hostRewrite,
+		HostRewriteHeader: hostRewriteHeader,
+		Remove:            rl,
 	}, nil
+}
+
+// extractHostRewriteHeaderValue returns the value of the header
+func extractHostRewriteHeaderValue(s string) string {
+	matches := hostRewriteHeaderRegex.FindStringSubmatch(s)
+
+	if len(matches) == 2 {
+		return strings.TrimSpace(matches[1])
+	}
+
+	return ""
 }
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.

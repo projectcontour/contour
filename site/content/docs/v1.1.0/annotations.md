@@ -16,7 +16,7 @@ The <code>contour.heptio.com</code> annotations are deprecated, please use the <
 
 ## Standard Kubernetes Ingress annotations
 
-The following Kubernetes annotions are supported on [`Ingress`] objects:
+The following Kubernetes annotations are supported on [`Ingress`] objects:
 
  - `kubernetes.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `kubernetes.io/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls][16].

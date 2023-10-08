@@ -145,7 +145,7 @@ Contour will provide a new command or external tool (similar to ir2proxy) which 
 A managed version of Contour was made available with the `Contour Operator`.
 Since Contour will manage Envoy instances, the Operator will now manage instances of Contour.
 The details of how an instance of Contour should be deployed within a cluster will be defined in the second CRD named `ContourDeployment`. 
-The `spec.confguration` of this object will be the same struct defined in the `ContourConfiguration`. 
+The `spec.configuration` of this object will be the same struct defined in the `ContourConfiguration`. 
 
 A controller will watch for these objects to be created and take action on them accordingly to make desired state in the cluster match the configuration on the spec. 
 

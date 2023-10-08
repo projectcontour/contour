@@ -3,47 +3,35 @@
   command = "hugo --gc --minify"
   publish = "site/public"
 
+  [build.environment]
+    HUGO_VERSION = "0.119.0"
+
 [context.production.environment]
-HUGO_VERSION = "0.83.1"
-HUGO_ENV = "production"
-HUGO_ENABLEGITINFO = "true"
+  HUGO_ENV = "production"
+  HUGO_ENABLEGITINFO = "true"
 
 [context.split1]
-command = "hugo --gc --minify --enableGitInfo"
+  command = "hugo --gc --minify --enableGitInfo"
 
-[context.split1.environment]
-HUGO_VERSION = "0.83.1"
-HUGO_ENV = "production"
+  [context.split1.environment]
+    HUGO_ENV = "production"
 
 [context.deploy-preview]
-command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL"
-
-[context.deploy-preview.environment]
-HUGO_VERSION = "0.83.1"
+  command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL"
 
 [context.branch-deploy]
-command = "hugo --gc --minify -b $DEPLOY_PRIME_URL"
-
-[context.branch-deploy.environment]
-HUGO_VERSION = "0.83.1"
+  command = "hugo --gc --minify -b $DEPLOY_PRIME_URL"
 
 [context.next.environment]
-HUGO_ENABLEGITINFO = "true"
+  HUGO_ENABLEGITINFO = "true"
 
 [build.processing]
-  skip_processing = false # -> Enable processing
-[build.processing.css]
-  bundle = true # -> Concatenate consecutive CSS files together to reduce HTTP requests.
-  minify = true # -> Run CSS through a minifier to reduce file size.
-[build.processing.js]
-  bundle = true # -> Concatenate consecutive JS files together to reduce HTTP requests.
-  minify = true # -> Run JS through a minifier to reduce file size.
-[build.processing.images]
-  compress = true # -> Run all images through lossless image compression.
+  skip_processing = true # -> Disable post-processing. Asset optimization is deprecated.
 
 # Reference documentation
 # Optimization blog post: https://www.netlify.com/blog/2019/08/05/control-your-asset-optimization-settings-from-netlify.toml/
 # How to guide: https://docs.netlify.com/configure-builds/file-based-configuration/#post-processing
+# Hugo on Netlify docs: https://gohugo.io/hosting-and-deployment/hosting-on-netlify/
 
 ###################
 # Contour redirects
@@ -70,9 +58,9 @@ HUGO_ENABLEGITINFO = "true"
 #
 # kubectl apply https://projectcontour.io/quickstart/contour-gateway.yaml
 [[redirects]]
-from = "/quickstart/contour-gateway.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.26/examples/render/contour-gateway.yaml"
-status = 302
+  from = "/quickstart/contour-gateway.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.26/examples/render/contour-gateway.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
@@ -109,86 +97,86 @@ status = 302
 #
 # kubectl apply https://projectcontour.io/quickstart/operator.yaml
 [[redirects]]
-from = "/quickstart/operator.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/operator/operator.yaml"
-status = 302
+  from = "/quickstart/operator.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/operator/operator.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.11.0/operator.yaml
 [[redirects]]
-from = "/quickstart/*/operator.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/operator/operator.yaml"
-status = 302
+  from = "/quickstart/*/operator.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/operator/operator.yaml"
+  status = 302
 
 # Redirect /quickstart/contour-custom-resource.yaml to the Contour custom resource that matches :latest.
 #
 # kubectl apply https://projectcontour.io/quickstart/contour-custom-resource.yaml
 [[redirects]]
-from = "/quickstart/contour-custom-resource.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/contour/contour.yaml"
-status = 302
+  from = "/quickstart/contour-custom-resource.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/contour/contour.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.11.0/contour-custom-resource.yaml
 [[redirects]]
-from = "/quickstart/*/contour-custom-resource.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/contour/contour.yaml"
-status = 302
+  from = "/quickstart/*/contour-custom-resource.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/contour/contour.yaml"
+  status = 302
 
 # Redirect /quickstart/gateway.yaml to the example Gateway manifest that matches :latest.
 #
 # kubectl apply https://projectcontour.io/quickstart/gateway.yaml
 [[redirects]]
-from = "/quickstart/gateway.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/gateway.yaml"
-status = 302
+  from = "/quickstart/gateway.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/gateway.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.11.0/gateway.yaml
 [[redirects]]
-from = "/quickstart/*/gateway.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway.yaml"
-status = 302
+  from = "/quickstart/*/gateway.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway.yaml"
+  status = 302
 
 # Redirect /quickstart/gateway-nodeport.yaml to the example Gateway manifest that matches :latest.
 #
 # kubectl apply https://projectcontour.io/quickstart/gateway-nodeport.yaml
 [[redirects]]
-from = "/quickstart/gateway-nodeport.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/gateway-nodeport.yaml"
-status = 302
+  from = "/quickstart/gateway-nodeport.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/gateway-nodeport.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.11.0/gateway-nodeport.yaml
 [[redirects]]
-from = "/quickstart/*/gateway-nodeport.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway-nodeport.yaml"
-status = 302
+  from = "/quickstart/*/gateway-nodeport.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway-nodeport.yaml"
+  status = 302
 
 # Redirect /quickstart/kuard.yaml to the example Kuard manifest that matches :latest.
 #
 # kubectl apply https://projectcontour.io/quickstart/kuard.yaml
 [[redirects]]
-from = "/quickstart/kuard.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/kuard/kuard.yaml"
-status = 302
+  from = "/quickstart/kuard.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.24/examples/gateway/kuard/kuard.yaml"
+  status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
 # users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.11.0/kuard.yaml
 [[redirects]]
-from = "/quickstart/*/kuard.yaml"
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/kuard/kuard.yaml"
-status = 302
+  from = "/quickstart/*/kuard.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/kuard/kuard.yaml"
+  status = 302
 
 
 #####################################

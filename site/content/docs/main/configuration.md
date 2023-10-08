@@ -497,7 +497,7 @@ There are flags that can be passed to `contour bootstrap` that help configure ho
 connects to Contour:
 
 | Flag                                   | Default           | Description                                                                                                                                                                                                  |
-| -------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -------------------------------------- |-------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <nobr>--resources-dir</nobr>           | ""                | Directory where resource files will be written.                                                                                                                                                              |
 | <nobr>--admin-address</nobr>           | /admin/admin.sock | Path to Envoy admin unix domain socket.                                                                                                                                                                      |
 | <nobr>--admin-port (Deprecated)</nobr> | 9001              | Deprecated: Port is now configured as a Contour flag.                                                                                                                                                        |
@@ -510,7 +510,7 @@ connects to Contour:
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
-| <nobr>--overload-max-heap              | ""                | Defines the maximum heap size in bytes until Envoy overload manager stops accepting new connections. |
+| <nobr>--overload-max-heap              | 0                 | Defines the maximum heap memory of the envoy controlled by the overload manager. When the value is greater than 0, the overload manager is enabled, and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation. When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml
