@@ -329,42 +329,64 @@ type HeaderMutationRules struct {
 	// filters or request routing cannot be modified. These headers are
 	// ``host``, ``:authority``, ``:scheme``, and ``:method``. Setting this parameter
 	// to true allows these headers to be modified as well.
-	AllowAllRouting bool
+	//
+	// +optional
+	AllowAllRouting bool `json:"allowAllRouting,omitempty"`
 	// If true, allow modification of envoy internal headers. By default, these
 	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap``
 	// configuration. Default is false.
-	AllowEnvoy bool
+	//
+	// +optional
+	AllowEnvoy bool `json:"allowEnvoy,omitempty"`
 	// If true, prevent modification of any system header, defined as a header
 	// that starts with a ``:`` character, regardless of any other settings.
 	// A processing server may still override the ``:status`` of an HTTP response
 	// using an ``ImmediateResponse`` message. Default is false.
-	DisallowSystem bool
+	//
+	// +optional
+	DisallowSystem bool `json:"disallowSystem,omitempty"`
 	// If true, prevent modifications of all header values, regardless of any
 	// other settings. A processing server may still override the ``:status``
 	// of an HTTP response using an ``ImmediateResponse`` message. Default is false.
-	DisallowAll bool
+	//
+	// +optional
+	DisallowAll bool `json:"disallowAll,omitempty"`
 	// If true, and if the rules in this list cause a header mutation to be
 	// disallowed, then the filter using this configuration will terminate the
 	// request with a 500 error. In addition, regardless of the setting of this
 	// parameter, any attempt to set, add, or modify a disallowed header will
 	// cause the ``rejected_header_mutations`` counter to be incremented.
 	// Default is false.
-	DisallowIsError bool
+	//
+	// +optional
+	DisallowIsError bool `json:"disallowIsError,omitempty"`
 }
 
 type ProcessingMode struct {
 	// How to handle the request header. Default is "SEND".
-	RequestHeaderMode HeaderSendMode
+	//
+	// +optional
+	RequestHeaderMode HeaderSendMode `json:"requestHeaderMode,omitempty"`
 	// How to handle the response header. Default is "SEND".
-	ResponseHeaderMode HeaderSendMode
+	//
+	// +optional
+	ResponseHeaderMode HeaderSendMode `json:"responseHeaderMode,omitempty"`
 	// How to handle the request body. Default is "NONE".
-	RequestBodyMode BodySendMode
+	//
+	// +optional
+	RequestBodyMode BodySendMode `json:"requestBodyMode,omitempty"`
 	// How do handle the response body. Default is "NONE".
-	ResponseBodyMode BodySendMode
+	//
+	// +optional
+	ResponseBodyMode BodySendMode `json:"responseBodyMode,omitempty"`
 	// How to handle the request trailers. Default is "SKIP".
-	RequestTrailerMode HeaderSendMode
+	//
+	// +optional
+	RequestTrailerMode HeaderSendMode `json:"requestTrailerMode,omitempty"`
 	// How to handle the response trailers. Default is "SKIP".
-	ResponseTrailerMode HeaderSendMode
+	//
+	// +optional
+	ResponseTrailerMode HeaderSendMode `json:"responseTrailerMode,omitempty"`
 }
 
 type GRPCService struct {
@@ -409,31 +431,34 @@ type ExtProc struct {
 	// TODO: lewgun
 	// https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase
 	// Phase determines where in the filter chain this extProc is to be injected.
-	Phase ProcessingPhase
+	//
+	// +optional
+	Phase ProcessingPhase `json:"phase,omitempty"`
 
 	// Priority determines ordering of extProc in the same phase. When multiple extProc are applied to the same workload in the same phase,
 	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
 	// they will follow the order in which extProc(s) are added, Defaults to 0.
-	Priority int32
-
 	//
 	// +optional
-	GRPCService *GRPCService
+	Priority int32 `json:"priority,omitempty"`
 	//
 	// +optional
-	ProcessingMode *ProcessingMode
+	GRPCService *GRPCService `json:"grpcService,omitempty"`
 	//
 	// +optional
-	MutationRules *HeaderMutationRules
+	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
+	//
+	// +optional
+	MutationRules *HeaderMutationRules `json:"mutationRules,omitempty"`
 }
 
 type ExtProcOverride struct {
 	//
 	// +optional
-	GRPCService *GRPCService
+	GRPCService *GRPCService `json:"grpcService,omitempty"`
 	//
 	// +optional
-	ProcessingMode *ProcessingMode
+	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
 }
 
 type ExternalProcessor struct {

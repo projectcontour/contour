@@ -179,6 +179,11 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		*out = new(v1.AuthorizationServer)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.GlobalExternalProcessor != nil {
+		in, out := &in.GlobalExternalProcessor, &out.GlobalExternalProcessor
+		*out = new(v1.ExternalProcessor)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RateLimitService != nil {
 		in, out := &in.RateLimitService, &out.RateLimitService
 		*out = new(RateLimitServiceConfig)

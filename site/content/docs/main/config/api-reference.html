@@ -482,6 +482,41 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.BodySendMode">BodySendMode
+(<code>int32</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ProcessingMode">ProcessingMode</a>)
+</p>
+<p>
+<p>Control how the request and response bodies are handled</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>2</p></td>
+<td><p>Buffer the message body in memory and send the entire body at once.
+If the body exceeds the configured buffer limit, then the
+downstream system will receive an error.</p>
+</td>
+</tr><tr><td><p>3</p></td>
+<td><p>Buffer the message body in memory and send the entire body in one
+chunk. If the body exceeds the configured buffer limit, then the body contents
+up to the buffer limit will be sent.</p>
+</td>
+</tr><tr><td><p>0</p></td>
+<td><p>Do not send the body at all. This is the default.</p>
+</td>
+</tr><tr><td><p>1</p></td>
+<td><p>Stream the body to the server in pieces as they arrive at the
+proxy.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1.CORSHeaderValue">CORSHeaderValue
 (<code>string</code> alias)</p></h3>
 <p>
@@ -1115,11 +1150,202 @@ SkipClientCertValidation is set. Defaults to false.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.ExtProc">ExtProc
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>)
+</p>
+<p>
+<p>The External Processing filter allows an external service to act on HTTP traffic in a flexible way
+The external server must implement the v3 Envoy
+external processing GRPC protocol (<a href="https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto">https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto</a>).</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>phase</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ProcessingPhase">
+ProcessingPhase
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TODO: lewgun
+<a href="https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase">https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase</a>
+Phase determines where in the filter chain this extProc is to be injected.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>priority</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Priority determines ordering of extProc in the same phase. When multiple extProc are applied to the same workload in the same phase,
+they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
+they will follow the order in which extProc(s) are added, Defaults to 0.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>grpcService</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GRPCService">
+GRPCService
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>processingMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ProcessingMode">
+ProcessingMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>mutationRules</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderMutationRules">
+HeaderMutationRules
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ExtProcOverride">ExtProcOverride
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExtProcPolicy">ExtProcPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>grpcService</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GRPCService">
+GRPCService
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>processingMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ProcessingMode">
+ProcessingMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ExtProcPolicy">ExtProcPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>ExtProcPolicy modifies how requests/responses are operated.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>disabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>When true, this field disables client request external processing
+for the scope of the policy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overrides</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtProcOverride">
+ExtProcOverride
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>for global external processing, it&rsquo;s not exists</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.ExtensionServiceReference">ExtensionServiceReference
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.GRPCService">GRPCService</a>)
 </p>
 <p>
 <p>ExtensionServiceReference names an ExtensionService resource.</p>
@@ -1172,6 +1398,122 @@ string
 <td>
 <p>Name of the referent.</p>
 <p>More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names">https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ExternalProcessor">ExternalProcessor
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>processors</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtProc">
+[]ExtProc
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extProcPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtProcPolicy">
+ExtProcPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtProcPolicy sets a external processing policy.
+This policy will be used unless overridden by individual routes.
+for the default global external processor, it&rsquo;s must be nil</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.GRPCService">GRPCService
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>, 
+<a href="#projectcontour.io/v1.ExtProcOverride">ExtProcOverride</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>extensionRef</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtensionServiceReference">
+ExtensionServiceReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseTimeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+Timeout durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>failOpen</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If FailOpen is true, the client request is forwarded to the upstream service
+even if the authorization server fails to respond. This field should not be
+set in most cases. It is intended for use only while migrating applications
+from internal authorization to Contour external authorization.</p>
 </td>
 </tr>
 </tbody>
@@ -2044,6 +2386,133 @@ negative matches (e.g. NotContains, NotExact).</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HeaderMutationRules">HeaderMutationRules
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>allowAllRouting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>By default, certain headers that could affect processing of subsequent
+filters or request routing cannot be modified. These headers are
+<code>host</code>, <code>:authority</code>, <code>:scheme</code>, and <code>:method</code>. Setting this parameter
+to true allows these headers to be modified as well.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowEnvoy</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If true, allow modification of envoy internal headers. By default, these
+start with <code>x-envoy</code> but this may be overridden in the <code>Bootstrap</code>
+configuration. Default is false.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disallowSystem</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If true, prevent modification of any system header, defined as a header
+that starts with a <code>:</code> character, regardless of any other settings.
+A processing server may still override the <code>:status</code> of an HTTP response
+using an <code>ImmediateResponse</code> message. Default is false.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disallowAll</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If true, prevent modifications of all header values, regardless of any
+other settings. A processing server may still override the <code>:status</code>
+of an HTTP response using an <code>ImmediateResponse</code> message. Default is false.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disallowIsError</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If true, and if the rules in this list cause a header mutation to be
+disallowed, then the filter using this configuration will terminate the
+request with a 500 error. In addition, regardless of the setting of this
+parameter, any attempt to set, add, or modify a disallowed header will
+cause the <code>rejected_header_mutations</code> counter to be incremented.
+Default is false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HeaderSendMode">HeaderSendMode
+(<code>int32</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ProcessingMode">ProcessingMode</a>)
+</p>
+<p>
+<p>Control how headers and trailers are handled</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>0</p></td>
+<td><p>The default HeaderSendMode depends on which part of the message is being
+processed. By default, request and response headers are sent,
+while trailers are skipped.</p>
+</td>
+</tr><tr><td><p>1</p></td>
+<td><p>Send the header or trailer.</p>
+</td>
+</tr><tr><td><p>2</p></td>
+<td><p>Do not send the header or trailer.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
 </h3>
 <p>
@@ -2713,6 +3182,142 @@ No HTTP headers or body content is rewritten.</p>
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="projectcontour.io/v1.ProcessingMode">ProcessingMode
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>, 
+<a href="#projectcontour.io/v1.ExtProcOverride">ExtProcOverride</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeaderMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderSendMode">
+HeaderSendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How to handle the request header. Default is &ldquo;SEND&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseHeaderMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderSendMode">
+HeaderSendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How to handle the response header. Default is &ldquo;SEND&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestBodyMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.BodySendMode">
+BodySendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How to handle the request body. Default is &ldquo;NONE&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseBodyMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.BodySendMode">
+BodySendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How do handle the response body. Default is &ldquo;NONE&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestTrailerMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderSendMode">
+HeaderSendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How to handle the request trailers. Default is &ldquo;SKIP&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseTrailerMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderSendMode">
+HeaderSendMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>How to handle the response trailers. Default is &ldquo;SKIP&rdquo;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ProcessingPhase">ProcessingPhase
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;AuthN&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;AuthZ&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;CORS&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;RateLimit&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;UnspecifiedPhase&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1.QueryParameterHashOptions">QueryParameterHashOptions
 </h3>
@@ -3857,6 +4462,23 @@ Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here override any rules set on the root HTTPProxy.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extProcPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtProcPolicy">
+ExtProcPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtProcPolicy updates the external processing policy that was set
+on the root HTTPProxy object for client requests/responses that
+match this route.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.Service">Service
@@ -4859,6 +5481,21 @@ Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here may be overridden in a Route.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>externalProcessor</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExternalProcessor">
+ExternalProcessor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExternalProcessor are a list of external processors which allow to act on HTTP traffic in a flexible way.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <hr/>
@@ -5069,6 +5706,22 @@ AuthorizationServer
 <td>
 <em>(Optional)</em>
 <p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExternalProcessor</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExternalProcessor">
+ExternalProcessor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalProcessor allows envoys external processing filters
 to be enabled for all virtual hosts.</p>
 </td>
 </tr>
@@ -5811,6 +6464,22 @@ AuthorizationServer
 <td>
 <em>(Optional)</em>
 <p>GlobalExternalAuthorization allows envoys external authorization filter
+to be enabled for all virtual hosts.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExternalProcessor</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExternalProcessor">
+ExternalProcessor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalProcessor allows envoys external processing filters
 to be enabled for all virtual hosts.</p>
 </td>
 </tr>
