@@ -887,7 +887,7 @@ func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext
 	return fc
 }
 
-// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain conifgured for FallbackCertificate.
+// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain configured for FallbackCertificate.
 func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
 	fc := &envoy_listener_v3.FilterChain{
 		Name:    "fallback-certificate",
