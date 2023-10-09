@@ -29,7 +29,7 @@ More information about the HTTPProxy API can be found [in the HTTPProxy document
 
 ## Q: When I load my site in Safari, it shows me an empty page. Developer tools show that the HTTP response was 421. Why does this happen?
 
-The HTTP/2 specification allows user agents (browsers) to re-use TLS sessions to different hostnames as long as they share an IP address and a TLS server certificate (see [RFC 7540](https://tools.ietf.org/html/rfc7540#section-9.1.1)).
+The HTTP/2 specification allows user agents (browsers) to reuse TLS sessions to different hostnames as long as they share an IP address and a TLS server certificate (see [RFC 7540](https://tools.ietf.org/html/rfc7540#section-9.1.1)).
 Sharing a TLS certificate typically uses a wildcard certificate, or a certificate containing multiple alternate names.
 If this kind of session reuse is not supported by the server, it sends a "421 Misdirected Request", and the user agent may retry the request with a new TLS session.
 Although Chrome and Firefox correctly retry 421 responses, Safari does not, and simply displays the 421 response body.
@@ -39,7 +39,7 @@ This is done for security reasons, so that TLS protocol configuration guarantees
 
 The best workaround for this Safari issue is to avoid the use of wildcard certificates.
 [cert-manager](https://cert-manager.io) can automatically issue TLS certificates for Ingress and HTTPProxy resources (see the [configuration guide][2]).
-If wildcard certificates cannot be avoided, the other workaround is to disable HTTP/2 support which will prevent inappropriate TLS session re-use.
+If wildcard certificates cannot be avoided, the other workaround is to disable HTTP/2 support which will prevent inappropriate TLS session reuse.
 HTTP/2 support can be disabled by setting the `default-http-versions` field in the Contour [configuration file][3].
 
 ## Q: Why is the Envoy container not accepting connections even though Contour is running?
