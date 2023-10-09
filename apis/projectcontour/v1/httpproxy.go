@@ -391,10 +391,31 @@ type GRPCService struct {
 	FailOpen bool `json:"failOpen,omitempty"`
 }
 
+type ProcessingPhase string
+
+const (
+	UnspecifiedPhase ProcessingPhase = "UnspecifiedPhase"
+	AuthN            ProcessingPhase = "AuthN"
+	AuthZ            ProcessingPhase = "AuthZ"
+	CORS             ProcessingPhase = "CORS"
+	RateLimit        ProcessingPhase = "RateLimit"
+)
+
 // The External Processing filter allows an external service to act on HTTP traffic in a flexible way
 // The external server must implement the v3 Envoy
 // external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
 type ExtProc struct {
+
+	// TODO: lewgun
+	// https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase
+	// Phase determines where in the filter chain this extProc is to be injected.
+	Phase ProcessingPhase
+
+	// Priority determines ordering of extProc in the same phase. When multiple extProc are applied to the same workload in the same phase,
+	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
+	// they will follow the order in which extProc(s) are added, Defaults to 0.
+	Priority int32
+
 	//
 	// +optional
 	GRPCService *GRPCService
