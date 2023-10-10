@@ -14,13 +14,12 @@
 package xdscache
 
 import (
-	"math"
 	"reflect"
-	"strconv"
 	"sync"
 
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/google/uuid"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 )
@@ -35,9 +34,6 @@ type Snapshotter interface {
 type SnapshotHandler struct {
 	// resources holds the cache of xDS contents.
 	resources map[envoy_resource_v3.Type]ResourceCache
-
-	// snapshotVersion holds the current version of the snapshot.
-	snapshotVersion int64
 
 	snapshotters []Snapshotter
 	snapLock     sync.Mutex
@@ -75,7 +71,7 @@ func (s *SnapshotHandler) OnChange(root *dag.DAG) {
 // the Contour XDS caches.
 func (s *SnapshotHandler) generateNewSnapshot() {
 	// Generate new snapshot version.
-	version := s.newSnapshotVersion()
+	version := uuid.NewString()
 
 	// Convert caches to envoy xDS Resources.
 	resources := map[envoy_resource_v3.Type][]envoy_types.Resource{
@@ -95,20 +91,6 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 			s.Errorf("failed to generate snapshot version %q: %s", version, err)
 		}
 	}
-}
-
-// newSnapshotVersion increments the current snapshotVersion
-// and returns as a string.
-func (s *SnapshotHandler) newSnapshotVersion() string {
-
-	// Reset the snapshotVersion if it ever hits max size.
-	if s.snapshotVersion == math.MaxInt64 {
-		s.snapshotVersion = 0
-	}
-
-	// Increment the snapshot version & return as string.
-	s.snapshotVersion++
-	return strconv.FormatInt(s.snapshotVersion, 10)
 }
 
 // asResources casts the given slice of values (that implement the envoy_types.Resource
