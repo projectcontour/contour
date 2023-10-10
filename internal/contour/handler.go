@@ -61,6 +61,8 @@ type EventHandler struct {
 	seq int
 
 	// syncTracker is used to update/query the status of the cache sync.
+	// Uses an internal counter: incremented at item start, decremented at end.
+	// HasSynced returns true if its UpstreamHasSynced returns true and the counter is non-positive.
 	syncTracker *synctrack.SingleFileTracker
 
 	initialDagBuilt atomic.Bool
