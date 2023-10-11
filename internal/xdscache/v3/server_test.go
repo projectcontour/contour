@@ -208,7 +208,7 @@ func TestGRPC(t *testing.T) {
 				&RouteCache{},
 				&ClusterCache{},
 				et,
-				&RuntimeCache{},
+				NewRuntimeCache(ConfigurableRuntimeSettings{}),
 			}
 
 			eh = contour.NewEventHandler(contour.EventHandlerConfig{
