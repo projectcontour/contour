@@ -49,6 +49,18 @@ func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_a
 }
 
 func ToProcessingMode(pm *contour_api_v1.ProcessingMode) *ProcessingMode {
+
+	// TODO: move to somewhere?
+	if pm == nil {
+		pm = &contour_api_v1.ProcessingMode{
+			RequestHeaderMode:   1,
+			ResponseHeaderMode:  1,
+			RequestBodyMode:     0,
+			ResponseBodyMode:    0,
+			RequestTrailerMode:  2,
+			ResponseTrailerMode: 2,
+		}
+	}
 	return &ProcessingMode{
 		RequestHeaderMode:  HeaderSendMode(pm.RequestHeaderMode),
 		ResponseHeaderMode: HeaderSendMode(pm.ResponseHeaderMode),
@@ -62,6 +74,10 @@ func ToProcessingMode(pm *contour_api_v1.ProcessingMode) *ProcessingMode {
 }
 
 func ToMutationRules(rule *contour_api_v1.HeaderMutationRules) *HeaderMutationRules {
+	// TODO: move to somewhere?
+	if rule == nil {
+		rule = &contour_api_v1.HeaderMutationRules{}
+	}
 	return &HeaderMutationRules{
 		AllowAllRouting: rule.AllowAllRouting,
 		AllowEnvoy:      rule.AllowEnvoy,

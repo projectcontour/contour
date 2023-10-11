@@ -363,6 +363,7 @@ type HeaderMutationRules struct {
 }
 
 type ProcessingMode struct {
+	//TODO: lewgun string?
 	// How to handle the request header. Default is "SEND".
 	//
 	// +optional
