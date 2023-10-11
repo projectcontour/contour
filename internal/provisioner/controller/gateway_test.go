@@ -1110,8 +1110,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contourv1alpha1.ContourDeploymentSpec{
 					Envoy: &contourv1alpha1.EnvoySettings{
-						BaseID:              1,
-						OverloadMaxHeapSize: 10000000,
+						BaseID: 1,
 					},
 				},
 			},
