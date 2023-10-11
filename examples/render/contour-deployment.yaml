@@ -428,7 +428,8 @@ spec:
                           I/O cycle. Requests over this limit are processed in subsequent
                           I/O cycles. Can be used as a mitigation for CVE-2023-44487
                           when abusive traffic is detected. Configures the http.max_requests_per_io_cycle
-                          Envoy runtime setting.
+                          Envoy runtime setting. The default value when this is not
+                          set is no limit.
                         format: int32
                         minimum: 1
                         type: integer
@@ -3879,7 +3880,8 @@ spec:
                               in subsequent I/O cycles. Can be used as a mitigation
                               for CVE-2023-44487 when abusive traffic is detected.
                               Configures the http.max_requests_per_io_cycle Envoy
-                              runtime setting.
+                              runtime setting. The default value when this is not
+                              set is no limit.
                             format: int32
                             minimum: 1
                             type: integer
