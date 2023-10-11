@@ -14,8 +14,6 @@
 package v3
 
 import (
-	"reflect"
-
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -33,10 +31,6 @@ type ConfigurableRuntimeSettings struct {
 type runtimeCache struct {
 	contour.Cond
 	runtimeKV map[string]*structpb.Value
-}
-
-var supportedRuntimeKeyTypes = map[string]reflect.Kind{
-	"http.max_requests_per_io_cycle": reflect.Int32,
 }
 
 // NewRuntimeCache builds a RuntimeCache with the provided runtime
