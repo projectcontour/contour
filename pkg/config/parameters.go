@@ -484,6 +484,13 @@ type ListenerParameters struct {
 
 	// SocketOptions is used to set socket options for listeners.
 	SocketOptions SocketOptions `yaml:"socket-options"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	MaxRequestsPerIOCycle *uint32 `yaml:"max-requests-per-io-cycle"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -501,6 +508,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
 		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+	}
+
+	if p.MaxRequestsPerIOCycle != nil && *p.MaxRequestsPerIOCycle < 1 {
+		return fmt.Errorf("invalid max connections per IO cycle value %q set on listener, minimum value is 1", *p.MaxRequestsPerIOCycle)
 	}
 
 	return p.SocketOptions.Validate()
