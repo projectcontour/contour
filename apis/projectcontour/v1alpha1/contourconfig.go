@@ -688,6 +688,11 @@ type ClusterParameters struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// UpstreamTLS contains the TLS policy parameters for upstream connections
+	//
+	// +optional
+	UpstreamTLS *EnvoyTLS `json:"upstream-tls,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

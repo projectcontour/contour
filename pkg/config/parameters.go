@@ -429,6 +429,11 @@ type ClusterParameters struct {
 	//
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// UpstreamTLS contains the TLS policy parameters for upstream connections
+	//
+	// +optional
+	UpstreamTLS TLSParameters `yaml:"upstream-tls,omitempty"`
 }
 
 func (p *ClusterParameters) Validate() error {
@@ -443,6 +448,11 @@ func (p *ClusterParameters) Validate() error {
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
 		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on cluster, minimum value is 1", *p.PerConnectionBufferLimitBytes)
 	}
+
+	if err := p.UpstreamTLS.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

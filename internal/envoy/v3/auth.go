@@ -25,7 +25,7 @@ import (
 // UpstreamTLSContext creates an envoy_v3_tls.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, alpnProtocols ...string) *envoy_v3_tls.UpstreamTlsContext {
+func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_v3_tls.UpstreamTlsContext {
 	var clientSecretConfigs []*envoy_v3_tls.SdsSecretConfig
 	if clientSecret != nil {
 		clientSecretConfigs = []*envoy_v3_tls.SdsSecretConfig{{
@@ -34,8 +34,19 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		}}
 	}
 
+	tlsParams := &envoy_v3_tls.TlsParameters{}
+
+	if upstreamTLS != nil {
+		tlsParams = &envoy_v3_tls.TlsParameters{
+			TlsMinimumProtocolVersion: ParseTLSVersion(upstreamTLS.MinimumProtocolVersion),
+			TlsMaximumProtocolVersion: ParseTLSVersion(upstreamTLS.MaximumProtocolVersion),
+			CipherSuites:              tlsParams.CipherSuites,
+		}
+	}
+
 	context := &envoy_v3_tls.UpstreamTlsContext{
 		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+			TlsParams:                      tlsParams,
 			AlpnProtocols:                  alpnProtocols,
 			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
 		},

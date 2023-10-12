@@ -30,11 +30,11 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 		want *envoy_core_v3.TransportSocket
 	}{
 		"h2": {
-			ctxt: UpstreamTLSContext(nil, "", nil, "h2"),
+			ctxt: UpstreamTLSContext(nil, "", nil, nil, "h2"),
 			want: &envoy_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
 				ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(UpstreamTLSContext(nil, "", nil, "h2")),
+					TypedConfig: protobuf.MustMarshalAny(UpstreamTLSContext(nil, "", nil, nil, "h2")),
 				},
 			},
 		},
