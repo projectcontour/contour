@@ -2097,9 +2097,6 @@ func routeExtProcValid(policy *contour_api_v1.ExtProcPolicy) error {
 		return fmt.Errorf("cannot specify both ExtProcPolicy.Overrides and ExtProcPolicy.Disabled ")
 	}
 
-	if policy.Disabled {
-		return nil
-	}
 	return nil
 }
 

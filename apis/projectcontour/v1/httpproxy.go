@@ -470,7 +470,7 @@ type ExternalProcessor struct {
 
 	// ExtProcPolicy sets a external processing policy.
 	// This policy will be used unless overridden by individual routes.
-	// for the default global external processor, it's must be nil
+	// NOTES: for the default global external processor, it's must be nil
 	//
 	// +optional
 	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
@@ -484,7 +484,6 @@ type ExtProcPolicy struct {
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 
-	// for global external processing, it's not exists
 	//
 	// +optional
 	Overrides *ExtProcOverride `json:"overrides,omitempty"`
