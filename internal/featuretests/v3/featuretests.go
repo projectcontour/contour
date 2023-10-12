@@ -102,8 +102,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	registry := prometheus.NewRegistry()
 
-	rand.Seed(time.Now().Unix())
-
 	builder := &dag.Builder{
 		Source: dag.KubernetesCache{
 			FieldLogger: log,
