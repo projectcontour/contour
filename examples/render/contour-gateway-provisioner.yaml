@@ -194,6 +194,17 @@ spec:
                           slashes from request URL paths. \n Contour's default is
                           false."
                         type: boolean
+                      maxRequestsPerIOCycle:
+                        description: Defines the limit on number of HTTP requests
+                          that Envoy will process from a single connection in a single
+                          I/O cycle. Requests over this limit are processed in subsequent
+                          I/O cycles. Can be used as a mitigation for CVE-2023-44487
+                          when abusive traffic is detected. Configures the http.max_requests_per_io_cycle
+                          Envoy runtime setting. The default value when this is not
+                          set is no limit.
+                        format: int32
+                        minimum: 1
+                        type: integer
                       serverHeaderTransformation:
                         description: "Defines the action to be applied to the Server
                           header on the response path. When configured as overwrite,
@@ -3211,6 +3222,18 @@ spec:
                               duplicate slashes from request URL paths. \n Contour's
                               default is false."
                             type: boolean
+                          maxRequestsPerIOCycle:
+                            description: Defines the limit on number of HTTP requests
+                              that Envoy will process from a single connection in
+                              a single I/O cycle. Requests over this limit are processed
+                              in subsequent I/O cycles. Can be used as a mitigation
+                              for CVE-2023-44487 when abusive traffic is detected.
+                              Configures the http.max_requests_per_io_cycle Envoy
+                              runtime setting. The default value when this is not
+                              set is no limit.
+                            format: int32
+                            minimum: 1
+                            type: integer
                           serverHeaderTransformation:
                             description: "Defines the action to be applied to the
                               Server header on the response path. When configured

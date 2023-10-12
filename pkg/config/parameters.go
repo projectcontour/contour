@@ -436,6 +436,13 @@ type ListenerParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
 	ConnectionBalancer string `yaml:"connection-balancer"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	MaxRequestsPerIOCycle *uint32 `yaml:"max-requests-per-io-cycle"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -445,6 +452,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.ConnectionBalancer != "" && p.ConnectionBalancer != "exact" {
 		return fmt.Errorf("invalid listener connection balancer value %q, only 'exact' connection balancing is supported for now", p.ConnectionBalancer)
+	}
+
+	if p.MaxRequestsPerIOCycle != nil && *p.MaxRequestsPerIOCycle < 1 {
+		return fmt.Errorf("invalid max connections per IO cycle value %q set on listener, minimum value is 1", *p.MaxRequestsPerIOCycle)
 	}
 	return nil
 }

@@ -454,6 +454,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				DisableMergeSlashes:        &ctx.Config.DisableMergeSlashes,
 				ServerHeaderTransformation: serverHeaderTransformation,
 				ConnectionBalancer:         ctx.Config.Listener.ConnectionBalancer,
+				MaxRequestsPerIOCycle:      ctx.Config.Listener.MaxRequestsPerIOCycle,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,
