@@ -478,8 +478,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
-					AddFilter(authFilter).
 					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
+					AddFilter(authFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
