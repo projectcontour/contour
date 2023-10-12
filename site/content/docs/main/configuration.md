@@ -186,6 +186,9 @@ The listener configuration block can be used to configure various parameters for
 | Field Name          | Type   | Default | Description                                                                                                                                                                                                                                                   |
 | ------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | connection-balancer | string | `""`    | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
+| max-requests-per-io-cycle         | int    | none    | Defines the limit on number of HTTP requests that Envoy will process from a single connection in a single I/O cycle. Requests over this limit are processed in subsequent I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is detected. Configures the `http.max_requests_per_io_cycle` Envoy runtime setting. The default value when this is not set is no limit. |
+
+_This is Envoy's default setting value and is not explicitly configured by Contour._
 
 ### Server Configuration
 
