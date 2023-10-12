@@ -41,7 +41,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.19.13
+BUILD_BASE_IMAGE ?= golang:1.20.10
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -195,7 +195,7 @@ lint-codespell:
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,tools,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 # The inline config is needed to allow the Gateway API validating webhook YAML
 # (which we import directly from the Gateway API repo) to pass.
