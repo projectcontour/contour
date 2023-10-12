@@ -22,15 +22,38 @@ import (
 )
 
 func TestRuntimeLayers(t *testing.T) {
-	require.Equal(t, []*envoy_service_runtime_v3.Runtime{
-		{
-			Name: "dynamic",
-			Layer: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"re2.max_program_size.error_level": {Kind: &structpb.Value_NumberValue{NumberValue: 1 << 20}},
-					"re2.max_program_size.warn_level":  {Kind: &structpb.Value_NumberValue{NumberValue: 1000}},
-				},
+	testCases := map[string]struct {
+		configurableFields map[string]*structpb.Value
+	}{
+		"nil configurable fields": {},
+		"empty configurable fields": {
+			configurableFields: map[string]*structpb.Value{},
+		},
+		"some configurable fields": {
+			configurableFields: map[string]*structpb.Value{
+				"some.value1": structpb.NewBoolValue(true),
+				"some.value2": structpb.NewNumberValue(1000),
 			},
 		},
-	}, RuntimeLayers())
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			expectedFields := map[string]*structpb.Value{
+				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+			}
+			for k, v := range tc.configurableFields {
+				expectedFields[k] = v
+			}
+			layers := RuntimeLayers(tc.configurableFields)
+			require.Equal(t, []*envoy_service_runtime_v3.Runtime{
+				{
+					Name: "dynamic",
+					Layer: &structpb.Struct{
+						Fields: expectedFields,
+					},
+				},
+			}, layers)
+		})
+	}
 }

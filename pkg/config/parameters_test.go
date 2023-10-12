@@ -469,6 +469,13 @@ listener:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerIOCycle)
+	}, `
+listener:
+  max-requests-per-io-cycle: 1
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, ref.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
 	}, `
 cluster:
@@ -562,6 +569,14 @@ func TestListenerValidation(t *testing.T) {
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
 		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerIOCycle: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerIOCycle: ref.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{

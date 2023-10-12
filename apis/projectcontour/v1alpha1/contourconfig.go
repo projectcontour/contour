@@ -391,6 +391,16 @@ type EnvoyListenerConfig struct {
 	// Single set of options are applied to all listeners.
 	// +optional
 	SocketOptions *SocketOptions `json:"socketOptions,omitempty"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxRequestsPerIOCycle *uint32 `json:"maxRequestsPerIOCycle"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

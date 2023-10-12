@@ -195,6 +195,7 @@ The listener configuration block can be used to configure various parameters for
 | max-requests-per-connection       | int    | none    | This field specifies the maximum requests for downstream connections. If not specified, there is no limit                                                                                                                                                     |
 | per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
 | socket-options                    | SocketOptions |  | The [Socket Options](#socket-options) for Envoy listeners.                                                                                                                                                                                                    |
+| max-requests-per-io-cycle         | int    | none    | Defines the limit on number of HTTP requests that Envoy will process from a single connection in a single I/O cycle. Requests over this limit are processed in subsequent I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is detected. Configures the `http.max_requests_per_io_cycle` Envoy runtime setting. The default value when this is not set is no limit. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
