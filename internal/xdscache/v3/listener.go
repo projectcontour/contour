@@ -461,10 +461,10 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			}
 
 			if vh.TCPProxy == nil {
-				var authFilter *http.HttpFilter
+				var authzFilter *http.HttpFilter
 
 				if vh.ExternalAuthorization != nil {
-					authFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
+					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
 				// Create a uniquely named HTTP connection manager for
@@ -478,8 +478,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
-					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
-					AddFilter(authFilter).
+					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
+					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
