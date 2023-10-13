@@ -626,6 +626,12 @@ func TestClusterParametersValidation(t *testing.T) {
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
+		UpstreamTLS: TLSParameters{
+			MaximumProtocolVersion: "invalid",
+		},
+	}
+	require.Error(t, l.Validate())
+	l = &ClusterParameters{
 		PerConnectionBufferLimitBytes: ref.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
