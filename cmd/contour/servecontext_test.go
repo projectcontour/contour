@@ -474,6 +474,10 @@ func TestConvertServeContext(t *testing.T) {
 				},
 				Cluster: &contour_api_v1alpha1.ClusterParameters{
 					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: "",
+						MaximumProtocolVersion: "",
+					},
 				},
 				Network: &contour_api_v1alpha1.NetworkParameters{
 					EnvoyAdminPort:    ref.To(9001),
