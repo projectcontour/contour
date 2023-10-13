@@ -390,6 +390,7 @@ func (s *Server) doServe() error {
 		ServerHeaderTransformation:   contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
 		XffNumTrustedHops:            *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
+		HTTP2MaxConcurrentStreams:    contourConfiguration.Envoy.Listener.HTTP2MaxConcurrentStreams,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {

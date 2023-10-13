@@ -55,6 +55,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				UseProxyProto:              ref.To(true),
 				DisableAllowChunkedLength:  ref.To(true),
 				DisableMergeSlashes:        ref.To(true),
+				HTTP2MaxConcurrentStreams:  ref.To(uint32(10)),
 				ServerHeaderTransformation: contour_api_v1alpha1.PassThroughServerHeader,
 				ConnectionBalancer:         "yesplease",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{

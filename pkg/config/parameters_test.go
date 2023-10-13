@@ -420,6 +420,13 @@ network:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(10)), conf.Listener.HTTP2MaxConcurrentStreams)
+	}, `
+listener:
+  http2-max-concurrent-streams: 10
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerIOCycle)
 	}, `
 listener:
@@ -505,6 +512,14 @@ func TestListenerValidation(t *testing.T) {
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
 		MaxRequestsPerIOCycle: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		HTTP2MaxConcurrentStreams: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		HTTP2MaxConcurrentStreams: ref.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 }

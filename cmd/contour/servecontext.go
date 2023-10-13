@@ -510,6 +510,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				ServerHeaderTransformation: serverHeaderTransformation,
 				ConnectionBalancer:         ctx.Config.Listener.ConnectionBalancer,
 				MaxRequestsPerIOCycle:      ctx.Config.Listener.MaxRequestsPerIOCycle,
+				HTTP2MaxConcurrentStreams:  ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					CipherSuites:           cipherSuites,
