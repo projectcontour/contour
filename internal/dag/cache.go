@@ -675,6 +675,7 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
 
+	// CEL validation should enforce that SubjectName must be set if SubjectNames is used. So, SubjectName will always be present.
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
 		return nil, errors.New("missing subject alternative name")
@@ -683,6 +684,7 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 	return &PeerValidationContext{
 		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
+		SubjectNames:  uv.SubjectNames,
 	}, nil
 }
 

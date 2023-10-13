@@ -1306,6 +1306,7 @@ type HeaderValue struct {
 }
 
 // UpstreamValidation defines how to verify the backend service's certificate
+// +kubebuilder:validation:XValidation:message="subjectNames[0] must equal subjectName if set",rule="has(self.subjectNames) ? self.subjectNames[0] == self.subjectName : true"
 type UpstreamValidation struct {
 	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 	// The secret must contain key named ca.crt.
@@ -1313,7 +1314,16 @@ type UpstreamValidation struct {
 	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
+	// Deprecated, migrate to using the plural field subjectNames.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=256
 	SubjectName string `json:"subjectName"`
+	// List of keys, of which at least one is expected to be present in the 'subjectAltName of the
+	// presented certificate.
+	// +optional
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=8
+	SubjectNames []string `json:"subjectNames"`
 }
 
 // DownstreamValidation defines how to verify the client certificate.

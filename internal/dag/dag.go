@@ -672,6 +672,9 @@ type PeerValidationContext struct {
 	// SubjectName holds an optional subject name which Envoy will check against the
 	// certificate presented by the upstream.
 	SubjectName string
+	// SubjectNames holds optional subject names which Envoy will check against the
+	// certificate presented by the upstream. The first entry must match the value of SubjectName
+	SubjectNames []string
 	// SkipClientCertValidation when set to true will ensure Envoy requests but
 	// does not verify peer certificates.
 	SkipClientCertValidation bool
@@ -704,7 +707,23 @@ func (pvc *PeerValidationContext) GetSubjectName() string {
 		// No validation required.
 		return ""
 	}
+
 	return pvc.SubjectName
+}
+
+// GetSubjectName returns the SubjectNames from PeerValidationContext.
+func (pvc *PeerValidationContext) GetSubjectNames() []string {
+	if pvc == nil {
+		// No validation required.
+		return []string{}
+	}
+
+	// CEL validation should enforce that if SubjectNames is used, the first entry must match the value of SubjectName.
+	if len(pvc.SubjectNames) > 0 {
+		return pvc.SubjectNames
+	}
+
+	return []string{pvc.SubjectName}
 }
 
 // GetCRL returns the Certificate Revocation List.

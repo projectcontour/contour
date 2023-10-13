@@ -4706,7 +4706,22 @@ string
 </em>
 </td>
 <td>
-<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate.</p>
+<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate.
+Deprecated, migrate to using the plural field subjectNames.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>subjectNames</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of keys, of which at least one is expected to be present in the &lsquo;subjectAltName of the
+presented certificate.</p>
 </td>
 </tr>
 </tbody>
