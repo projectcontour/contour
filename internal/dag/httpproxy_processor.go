@@ -1603,7 +1603,7 @@ func determineUpstreamTLS(eTLS *contour_api_v1alpha1.EnvoyTLS) *UpstreamTLS {
 		}
 	}
 
-	return &UpstreamTLS{}
+	return nil
 
 }
 
