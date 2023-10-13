@@ -402,7 +402,7 @@ type EnvoyListenerConfig struct {
 	// +optional
 	MaxRequestsPerIOCycle *uint32 `json:"maxRequestsPerIOCycle,omitempty"`
 
-	// Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertize in the
+	// Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
 	// SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed
 	// for a peer on a single HTTP/2 connection. It is recommended to not set this lower
 	// than 100 but this field can be used to bound resource usage by HTTP/2 connections
