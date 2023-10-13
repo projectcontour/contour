@@ -415,6 +415,18 @@ spec:
                           slashes from request URL paths. \n Contour's default is
                           false."
                         type: boolean
+                      httpMaxConcurrentStreams:
+                        description: Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS
+                          Envoy will advertise in the SETTINGS frame in HTTP/2 connections
+                          and the limit for concurrent streams allowed for a peer
+                          on a single HTTP/2 connection. It is recommended to not
+                          set this lower than 100 but this field can be used to bound
+                          resource usage by HTTP/2 connections and mitigate attacks
+                          like CVE-2023-44487. The default value when this is not
+                          set is unlimited.
+                        format: int32
+                        minimum: 1
+                        type: integer
                       maxRequestsPerConnection:
                         description: Defines the maximum requests for downstream connections.
                           If not specified, there is no limit. see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions
@@ -3865,6 +3877,18 @@ spec:
                               duplicate slashes from request URL paths. \n Contour's
                               default is false."
                             type: boolean
+                          httpMaxConcurrentStreams:
+                            description: Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS
+                              Envoy will advertise in the SETTINGS frame in HTTP/2
+                              connections and the limit for concurrent streams allowed
+                              for a peer on a single HTTP/2 connection. It is recommended
+                              to not set this lower than 100 but this field can be
+                              used to bound resource usage by HTTP/2 connections and
+                              mitigate attacks like CVE-2023-44487. The default value
+                              when this is not set is unlimited.
+                            format: int32
+                            minimum: 1
+                            type: integer
                           maxRequestsPerConnection:
                             description: Defines the maximum requests for downstream
                               connections. If not specified, there is no limit. see
