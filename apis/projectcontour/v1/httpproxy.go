@@ -1314,7 +1314,7 @@ type UpstreamValidation struct {
 	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
-	// Deprecated, migrate to using the plural field subjectNames.
+	// Deprecated: migrate to using the plural field subjectNames.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
 	SubjectName string `json:"subjectName"`
