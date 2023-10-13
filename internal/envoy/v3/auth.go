@@ -34,23 +34,20 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		}}
 	}
 
-	tlsParams := &envoy_v3_tls.TlsParameters{}
-
-	if upstreamTLS != nil {
-		tlsParams = &envoy_v3_tls.TlsParameters{
-			TlsMinimumProtocolVersion: ParseTLSVersion(upstreamTLS.MinimumProtocolVersion),
-			TlsMaximumProtocolVersion: ParseTLSVersion(upstreamTLS.MaximumProtocolVersion),
-			CipherSuites:              tlsParams.CipherSuites,
-		}
-	}
-
 	context := &envoy_v3_tls.UpstreamTlsContext{
 		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-			TlsParams:                      tlsParams,
 			AlpnProtocols:                  alpnProtocols,
 			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
 		},
 		Sni: sni,
+	}
+
+	if upstreamTLS != nil {
+		context.CommonTlsContext.TlsParams = &envoy_v3_tls.TlsParameters{
+			TlsMinimumProtocolVersion: ParseTLSVersion(upstreamTLS.MinimumProtocolVersion),
+			TlsMaximumProtocolVersion: ParseTLSVersion(upstreamTLS.MaximumProtocolVersion),
+			CipherSuites:              upstreamTLS.CipherSuites,
+		}
 	}
 
 	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectName()) > 0 {
