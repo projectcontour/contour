@@ -470,7 +470,9 @@ type ExternalProcessor struct {
 
 	// ExtProcPolicy sets a external processing policy.
 	// This policy will be used unless overridden by individual routes.
-	// NOTES: for the default global external processor, it's must be nil
+	//
+	// TODO: split?
+	// NOTE: for the default global external processor, it's must be nil (fatal or warnning)
 	//
 	// +optional
 	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
@@ -484,6 +486,8 @@ type ExtProcPolicy struct {
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 
+	// TODO: split?
+	// NOTE: for VirtualHost's external processor, it's must be nil (fatal or warnning)
 	//
 	// +optional
 	Overrides *ExtProcOverride `json:"overrides,omitempty"`
@@ -540,7 +544,7 @@ type VirtualHost struct {
 	// ExternalProcessor are a list of external processors which allow to act on HTTP traffic in a flexible way.
 	//
 	// +optional
-	ExternalProcessor *ExternalProcessor `json:"externalProcessor,omitempty"`
+	ExternalProcessor *ExternalProcessor `json:"externalProcessor,omitempty"` // TODO: rename to: extProc
 }
 
 // JWTProvider defines how to verify JWTs on requests.

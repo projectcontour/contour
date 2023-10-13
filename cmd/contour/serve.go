@@ -826,6 +826,10 @@ func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.Co
 		return nil, nil
 	}
 
+	if contourCfg.GlobalExternalProcessor.ExtProcPolicy != nil {
+		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined.")
+	}
+
 	globalExtProcCfg := &xdscache_v3.GlobalExtProcConfig{}
 	for _, ep := range contourCfg.GlobalExternalProcessor.Processors {
 		// ensure the specified ExtensionService exists

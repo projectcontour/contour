@@ -237,13 +237,21 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 
-	if proxy.Spec.VirtualHost.TLS == nil && proxy.Spec.VirtualHost.ExternalProcessor != nil {
-		for _, ep := range proxy.Spec.VirtualHost.ExternalProcessor.Processors {
-			if len(ep.GRPCService.ExtensionServiceRef.Name) > 0 {
-				validCond.AddError(contour_api_v1.ConditionTypeExtProcError, "ExtProcNotPermitted",
-					"Spec.VirtualHost.ExternalProcessor.Processors[*].ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
-				return
+	extProc := proxy.Spec.VirtualHost.ExternalProcessor
+	if extProc != nil {
+		if proxy.Spec.VirtualHost.TLS == nil {
+			for _, ep := range extProc.Processors {
+				if len(ep.GRPCService.ExtensionServiceRef.Name) > 0 {
+					validCond.AddError(contour_api_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
+						"Spec.VirtualHost.ExternalProcessor.Processors[*].ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
+					return
+				}
 			}
+		}
+		if extProc.ExtProcPolicy != nil && extProc.ExtProcPolicy.Overrides != nil {
+			validCond.AddError(contour_api_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
+				"Spec.VirtualHost.ExternalProcessor.ExtProcPolicy.Overrides cannot be defined.")
+			return
 		}
 
 	}
