@@ -45,7 +45,7 @@ func main() {
 
 	// Log-format applies to log format of all sub-commands.
 	logFormat := app.Flag("log-format", "Log output format for Contour. Either text or json.").Default("text").Enum("text", "json")
-	logPath := app.Flag("log-path", "Log output path. If not specified it defaults to standard error.").Default("").String()
+	logPath := app.Flag("log-path", "Log output path. If not specified it defaults to stderr.").Default("").String()
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 
 	certgenApp, certgenConfig := registerCertGen(app)
