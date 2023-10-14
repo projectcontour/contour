@@ -1,0 +1,1 @@
+Rearrange the order of filters, put the external authorization filter after the JWT verification filter.
