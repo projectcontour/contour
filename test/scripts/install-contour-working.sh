@@ -44,15 +44,13 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Set (pseudo) random image tag to trigger restarts at every deployment.
-# TODO: Come up with a scheme that doesn't fill up the dev environment with randomly-tagged images.
-VERSION="v$$"
+docker rmi ghcr.io/projectcontour/contour:dev --force
 
 # Build the image.
-make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
+make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=dev
 
 # Push the Contour build image into the cluster.
-kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
+kind::cluster::load::docker ghcr.io/projectcontour/contour:dev
 
 # Install Contour
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
@@ -71,10 +69,13 @@ for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contou
   # we built above.
   sed \
     "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
-    "-es|image: ghcr.io/projectcontour/contour:.*$|image: ghcr.io/projectcontour/contour:${VERSION}|" \
+    "-es|image: ghcr.io/projectcontour/contour:.*$|image: ghcr.io/projectcontour/contour:dev|" \
     "$file" | \
   ${KUBECTL} apply -f -
 done
+
+# Patching the deployment with timestamp will trigger pod restart.
+${KUBECTL} patch deployment -n projectcontour contour --patch '{"spec": {"template": {"metadata": {"annotations": {"timestamp": "'$(date +%s)'"}}}}}'
 
 # Wait for Contour and Envoy to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available

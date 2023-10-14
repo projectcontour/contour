@@ -49,6 +49,11 @@ ${KUBECTL} apply -f <(cat examples/gateway-provisioner/03-gateway-provisioner.ya
     yq eval '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' - | \
     yq eval '.spec.template.spec.containers[0].args += "--contour-image="+env(CONTOUR_IMG)' -)
 
+# Patching the deployment with timestamp will trigger pod restart.
+for deployment in $(kubectl get deployment -n projectcontour -l app.kubernetes.io/managed-by=contour-gateway-provisioner -o name) ; do
+  ${KUBECTL} patch $deployment -n projectcontour --patch '{"spec": {"template": {"metadata": {"annotations": {"timestamp": "'$(date +%s)'"}}}}}'
+done
+
 # Wait for the provisioner to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner pods --for=condition=Ready
