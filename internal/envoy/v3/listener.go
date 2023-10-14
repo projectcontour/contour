@@ -172,6 +172,7 @@ type httpConnectionManagerBuilder struct {
 	numTrustedHops                uint32
 	tracingConfig                 *http.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
+	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 }
 
@@ -281,6 +282,11 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
 func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerConnection *uint32) *httpConnectionManagerBuilder {
 	b.maxRequestsPerConnection = maxRequestsPerConnection
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurrentStreams *uint32) *httpConnectionManagerBuilder {
+	b.http2MaxConcurrentStreams = http2MaxConcurrentStreams
 	return b
 }
 
@@ -536,6 +542,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// if maxConnectionsPerRequest is defined, set it.
 	if b.maxRequestsPerConnection != nil {
 		cm.CommonHttpProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*b.maxRequestsPerConnection)
+	}
+
+	if b.http2MaxConcurrentStreams != nil {
+		cm.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{
+			MaxConcurrentStreams: wrapperspb.UInt32(*b.http2MaxConcurrentStreams),
+		}
 	}
 
 	if b.enableWebsockets {

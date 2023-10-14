@@ -874,6 +874,18 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"envoy listener settings": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
+				ctx.Config.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
+				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
+				return cfg
+			},
+		},
 	}
 
 	for name, tc := range cases {

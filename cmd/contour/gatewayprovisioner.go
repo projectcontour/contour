@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/pkg/config"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/novln/docker-parser/distribution/reference"
+	"github.com/distribution/reference"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,7 +36,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 
 	provisionerConfig := &gatewayProvisionerConfig{
 		contourImage:          "ghcr.io/projectcontour/contour:main",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.27.0",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.27.1",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",

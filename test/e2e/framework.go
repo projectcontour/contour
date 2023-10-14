@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bombsimon/logrusr/v2"
+	"github.com/bombsimon/logrusr/v4"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/onsi/ginkgo/v2"

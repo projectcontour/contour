@@ -38,11 +38,12 @@ func Default(namespace, name string) *Contour {
 			Name:      name,
 		},
 		Spec: ContourSpec{
-			ContourReplicas:   2,
-			EnvoyWorkloadType: WorkloadTypeDaemonSet,
-			EnvoyReplicas:     2, // ignored if not provisioning Envoy as a deployment.
-			EnvoyLogLevel:     contourv1alpha1.InfoLog,
-			EnvoyBaseID:       0,
+			ContourReplicas:       2,
+			EnvoyWorkloadType:     WorkloadTypeDaemonSet,
+			EnvoyReplicas:         2, // ignored if not provisioning Envoy as a deployment.
+			EnvoyLogLevel:         contourv1alpha1.InfoLog,
+			EnvoyBaseID:           0,
+			EnvoyMaxHeapSizeBytes: 0,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
