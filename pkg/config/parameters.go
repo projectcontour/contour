@@ -653,7 +653,7 @@ type Parameters struct {
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
 	// GlobalExternalProcessor optionally holds properties of the global external processing configurations.
-	GlobalExternalProcessor *GlobalExternalProcessor `yaml:"globalExternalProcessor,omitempty"`
+	GlobalExternalProcessor *GlobalExternalProcessor `yaml:"globalExtProc,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -787,6 +787,7 @@ type ExternalProcessor struct {
 	FailOpen bool `yaml:"failOpen,omitempty"`
 }
 
+// TODO: lewgun
 // The External Processing filter allows an external service to act on HTTP traffic in a flexible way
 // The external server must implement the v3 Envoy
 // external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
