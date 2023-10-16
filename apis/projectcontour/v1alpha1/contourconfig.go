@@ -361,6 +361,27 @@ type EnvoyListenerConfig struct {
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
 	TLS *EnvoyTLS `json:"tls,omitempty"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxRequestsPerIOCycle *uint32 `json:"maxRequestsPerIOCycle,omitempty"`
+
+	// Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
+	// SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed
+	// for a peer on a single HTTP/2 connection. It is recommended to not set this lower
+	// than 100 but this field can be used to bound resource usage by HTTP/2 connections
+	// and mitigate attacks like CVE-2023-44487. The default value when this is not set is
+	// unlimited.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	HTTP2MaxConcurrentStreams *uint32 `json:"httpMaxConcurrentStreams,omitempty"`
 }
 
 // EnvoyTLS describes tls parameters for Envoy listneners.

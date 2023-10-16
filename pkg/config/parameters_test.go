@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -417,6 +418,20 @@ network:
   num-trusted-hops: 1
   admin-port: 9001
 `)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(10)), conf.Listener.HTTP2MaxConcurrentStreams)
+	}, `
+listener:
+  http2-max-concurrent-streams: 10
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerIOCycle)
+	}, `
+listener:
+  max-requests-per-io-cycle: 1
+`)
 }
 
 func TestMetricsParametersValidation(t *testing.T) {
@@ -491,4 +506,19 @@ func TestListenerValidation(t *testing.T) {
 		ConnectionBalancer: "invalid",
 	}
 	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerIOCycle: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestsPerIOCycle: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ListenerParameters{
+		HTTP2MaxConcurrentStreams: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		HTTP2MaxConcurrentStreams: ref.To(uint32(0)),
+	}
 }
