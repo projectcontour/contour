@@ -430,6 +430,7 @@ func (s *Server) doServe() error {
 		XffNumTrustedHops:             *contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:            contourConfiguration.Envoy.Listener.ConnectionBalancer,
 		MaxRequestsPerConnection:      contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
+		HTTP2MaxConcurrentStreams:     contourConfiguration.Envoy.Listener.HTTP2MaxConcurrentStreams,
 		PerConnectionBufferLimitBytes: contourConfiguration.Envoy.Listener.PerConnectionBufferLimitBytes,
 		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
 	}
@@ -458,7 +459,9 @@ func (s *Server) doServe() error {
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
 		endpointHandler,
-		&xdscache_v3.RuntimeCache{},
+		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
+			MaxRequestsPerIOCycle: contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+		}),
 	}
 
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
