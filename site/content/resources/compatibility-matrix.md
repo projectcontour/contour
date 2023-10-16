@@ -11,10 +11,13 @@ These combinations of versions are specifically tested in CI and supported by th
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
 | main            | [1.27.2][42]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
+| 1.26.1          | [1.27.1][42]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
 | 1.26.0          | [1.27.0][41]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
+| 1.25.3          | [1.26.5][43]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
 | 1.25.2          | [1.26.4][40]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
 | 1.25.1          | [1.26.4][40]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
 | 1.25.0          | [1.26.1][35]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
+| 1.24.6          | [1.25.10][44]        | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.5          | [1.25.9][39]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.4          | [1.25.6][36]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
 | 1.24.3          | [1.25.4][32]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
@@ -167,6 +170,8 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [40]: https://www.envoyproxy.io/docs/envoy/v1.26.4/version_history/v1.26/v1.26.4
 [41]: https://www.envoyproxy.io/docs/envoy/v1.27.0/version_history/v1.27/v1.27.0
 [42]: https://www.envoyproxy.io/docs/envoy/v1.27.2/version_history/v1.27/v1.27.2
+[43]: https://www.envoyproxy.io/docs/envoy/v1.26.5/version_history/v1.26/v1.26.5
+[44]: https://www.envoyproxy.io/docs/envoy/v1.25.10/version_history/v1.25/v1.25.10
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
