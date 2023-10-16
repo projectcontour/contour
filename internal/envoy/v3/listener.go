@@ -660,7 +660,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 }
 
 // UnixSocketAddress creates a new Unix Socket envoy_core_v3.Address.
-func UnixSocketAddress(address string, port int) *envoy_core_v3.Address {
+func UnixSocketAddress(address string) *envoy_core_v3.Address {
 	return &envoy_core_v3.Address{
 		Address: &envoy_core_v3.Address_Pipe{
 			Pipe: &envoy_core_v3.Pipe{
