@@ -138,6 +138,6 @@ func (l *alwaysEnabledLogSink) WithCallDepth(depth int) logr.LogSink {
 
 // Override Enabled to always return true since we rely on klog itself to do log
 // level filtering.
-func (l *alwaysEnabledLogSink) Enabled(level int) bool {
+func (l *alwaysEnabledLogSink) Enabled(_ int) bool {
 	return true
 }

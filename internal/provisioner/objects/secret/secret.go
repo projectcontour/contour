@@ -134,7 +134,7 @@ func EnsureXDSSecretsDeleted(ctx context.Context, cli client.Client, contour *mo
 			},
 		}
 
-		if err := cli.Delete(context.Background(), s); err != nil && !errors.IsNotFound(err) {
+		if err := cli.Delete(ctx, s); err != nil && !errors.IsNotFound(err) {
 			return err
 		}
 	}

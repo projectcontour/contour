@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testLeaderElection(namespace string) {
+func testLeaderElection() {
 	// This test is solely a check on the fact that we have set up leader
 	// election resources as expected. This does not test that internal
 	// components (e.g. status writers) are set up properly given a contour
