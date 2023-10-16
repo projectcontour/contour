@@ -121,6 +121,9 @@ type ListenerConfig struct {
 	// If no configuration is specified, Envoy will not attempt to balance active connections between worker threads
 	// If specified, the listener will use the exact connection balancer.
 	ConnectionBalancer string
+
+	HTTP2MaxConcurrentStreams *uint32
+
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -367,6 +370,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				MergeSlashes(cfg.MergeSlashes).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
+				HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
@@ -438,6 +442,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
+					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -502,6 +507,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
+					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					Get()
 
 				// Default filter chain

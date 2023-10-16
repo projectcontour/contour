@@ -166,6 +166,7 @@ type httpConnectionManagerBuilder struct {
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
 	tracingConfig                 *http.HttpConnectionManager_Tracing
+	http2MaxConcurrentStreams     *uint32
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -263,6 +264,11 @@ func (b *httpConnectionManagerBuilder) ForwardClientCertificate(details *dag.Cli
 
 func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
 	b.numTrustedHops = num
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurrentStreams *uint32) *httpConnectionManagerBuilder {
+	b.http2MaxConcurrentStreams = http2MaxConcurrentStreams
 	return b
 }
 
@@ -520,6 +526,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 			Chain:   b.forwardClientCertificate.Chain,
 			Dns:     b.forwardClientCertificate.DNS,
 			Uri:     b.forwardClientCertificate.URI,
+		}
+	}
+
+	if b.http2MaxConcurrentStreams != nil {
+		cm.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{
+			MaxConcurrentStreams: wrapperspb.UInt32(*b.http2MaxConcurrentStreams),
 		}
 	}
 
