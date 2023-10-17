@@ -67,7 +67,7 @@ func (s *SnapshotHandler) Refresh() {
 }
 
 // OnChange is called when the DAG is rebuilt and a new snapshot is needed.
-func (s *SnapshotHandler) OnChange(root *dag.DAG) {
+func (s *SnapshotHandler) OnChange(_ *dag.DAG) {
 	s.generateNewSnapshot()
 }
 
