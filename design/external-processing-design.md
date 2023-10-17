@@ -475,14 +475,15 @@ Setting this field without also setting the `TLS` field is an error.
 
 ### Progressing Flow
 
-This chart (copy from [External Processing Filter][10]) shows the simplest possible implementation of the filter -- a filter server receives the HTTP request headers, decides to accept the response (and can optionally modify the headers) so it closes the stream cleanly. At this point it is no longer involved in filter processing. see [External Processing Filter][10] for more information
+This chart (copy from [External Processing Filter][10]) shows the simplest possible implementation of the filter -- a filter server receives the HTTP request headers, decides to accept the response (and can optionally modify the headers) so it closes the stream cleanly. At this point it is no longer involved in filter processing. see [External Processing Filter][10] for more information.
+
 ![drawing](images/ext_proc_flow.png)
 
 ### Sample configurations
 
-Please refer to examples/external-processing
+Please refer to `examples/external-processing`.
 
-With this proposal, contour will generate the envoy configuration snippet below. 
+With this proposal, contour will generate the envoy configuration snippet below for `examples/external-processing`. 
 NOTE: this snippet only represents the relevant bits of the Route.
 
 ##### Envoy
