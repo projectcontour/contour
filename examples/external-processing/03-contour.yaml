@@ -1,0 +1,203 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: extproc-test-tls
+  namespace: extproc-test
+data:
+  tls.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNekNDQWhzQ0ZBbzRkQWVqQnptWFFmYlpGOWF6RVd3MVhqUXhNQTBHQ1NxR1NJYjNEUUVCQ3dVQU1FVXgKQ3pBSkJnTlZCQVlUQWtGVk1STXdFUVlEVlFRSURBcFRiMjFsTFZOMFlYUmxNU0V3SHdZRFZRUUtEQmhKYm5SbApjbTVsZENCWGFXUm5hWFJ6SUZCMGVTQk1kR1F3SGhjTk1qTXhNREUzTURnd016TXlXaGNOTXpNeE1ERTBNRGd3Ck16TXlXakJuTVFzd0NRWURWUVFHRXdKQlZURVRNQkVHQTFVRUNBd0tVMjl0WlMxVGRHRjBaVEVoTUI4R0ExVUUKQ2d3WVNXNTBaWEp1WlhRZ1YybGtaMmwwY3lCUWRIa2dUSFJrTVNBd0hnWURWUVFEREJkb2RIUndjeTV3Y205cQpaV04wWTI5dWRHOTFjaTVwYnpDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTlVTCjRwbEd0bkRsUXZkNVErVHBiSHBJamIxdlk1VlQ0Y0VPVDlrbjM2anloU0hPbVdvTEI4eTNNU3VkRy9DSzNPVFgKOUhNcnBvWEY0YlZwbStLTEpaZ2JSQmxQRTR2SCtBd005a3BEdkszT2xSUTEzblBTOE1VcUh3RVVPV2NnL3F5KwpZOHA2T0pYeThhNWIvWTYrWU9vUDJiajQyeTFiZDN1cXQ4VVRaQTV2MWcvWHNtUGdOMmRkYVI1ZmpyOWh4N0RWCjRETTZ1MWxoMWc2cFZWZEFWUlRMdWQyQzFVWURaMlp6d0lxTlp1ZXRXaVVsc2xOTk9JT1dOVTlNNGMxcVJYZysKZUNsMmZBRmc4ZnAvaFJabWVSaVR2WDArN3BITjUrZTVxbW10Z01BaDNmU1YyN2lXNEJoMnVCQ1pUMzY1SU9hZwo1K29QcDQ2Z2FOUkEvbHVvZ0VFQ0F3RUFBVEFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBWEpHQ1ZlRzQra2cvCmNiUlR6KzlTeWRlQzJzVk9XT0dpaXRmSnRabndSN2p2WVc3WjhDTVgxNDNkTVBtWThYNDdPWVpqMlJXZkNIcVkKcGhiQ21tZnBOQTVSZnNiSmFlbEdEN3BLdVkvMzF2TklFTTlxSEFkQ2pTaDJlTHdGeHV6bTRzR3RyM0FSVE4rbQpERW84U1EySkVvZFhOVjI5d2krK0FzZmsycXZOQXRMRnlDUm15K0o0aUNCZkdBcTBqOFNvQ3ROSDEwZEJKRTlKCmx5QTJnbkszZzBkNzFZc09LMDI2UjROOGV3WGhIbUQzM2F5cmYxeVJlN0d5SUlBbEUyVWJkS1hHd0RabjAxVE4KSE4vY2U1bTNzN1JZOEVzVEtHcDJhdHBOVTB2N3hWbFBsd2N6REhrRWY4d3dJYmJSK2prdWNKQnJoYWRRNFpzcAo3VzVoeDlaQWJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBMVJMaW1VYTJjT1ZDOTNsRDVPbHNla2lOdlc5amxWUGh3UTVQMlNmZnFQS0ZJYzZaCmFnc0h6TGN4SzUwYjhJcmM1TmYwY3l1bWhjWGh0V21iNG9zbG1CdEVHVThUaThmNERBejJTa084cmM2VkZEWGUKYzlMd3hTb2ZBUlE1WnlEK3JMNWp5bm80bGZMeHJsdjlqcjVnNmcvWnVQamJMVnQzZTZxM3hSTmtEbS9XRDlleQpZK0EzWjExcEhsK092MkhIc05YZ016cTdXV0hXRHFsVlYwQlZGTXU1M1lMVlJnTm5ablBBaW8xbTU2MWFKU1d5ClUwMDRnNVkxVDB6aHpXcEZlRDU0S1haOEFXRHgrbitGRm1aNUdKTzlmVDd1a2MzbjU3bXFhYTJBd0NIZDlKWGIKdUpiZ0dIYTRFSmxQZnJrZzVxRG42ZytuanFCbzFFRCtXNmlBUVFJREFRQUJBb0lCQUhZLzA5Z0N3VzlvSE1FZwo0SWdpNzF2eDlnK2l5TjV2dmdNWlFVRWYrdVZWS29OM2wvYWRCb2diUnNPUW5wZmhTUFFMMFpNMUwyWmdTb0lXCmlUZXh4M3hoN1dvcVU0dW92OFZZVURzbzJvYU85bmRQNmhQWGhsMjFvWjFFcnhMSDRlN1dmcVU1TFR3eXB1UUEKRTNqcnVQZE5NcVNRSDN0Tm5zTFlITUxYbnhqTy9zQUdRei9raGJPOGtBa1FlUTd1RzE2eVBRd29uZngxendkSQp2WGxIYjZLODVLSDFOZ1VTeWdOc0FPNU55OW84SVZVZCs1dmwxbGM0ald0dmFISVdXa2JPUEFxdWFxVHVoa0V5CjNSZFZoNkdFaS9oWmhEcmpXeFZ5NkVvZzVIWEp1MzJha1Z0RXFvRXU4ZnRNejhGTjA0NW5JS1ZXVStuVmZacFYKOW9iZVp6MENnWUVBOC9SRkNVNG1KelhSM2d6WklkRlI3VDJWZU9EbkVmdklzZnI1NFFkN3A2d2RrOUI2OHdnUAprcjRJUWpFQmo4VEZncjFGUVRGd3k2MFQ1L1p5eDNIT29Zd25DMk9lZEVsWGV2OGRsZjdhaSttdDVJTFRYb21KCnZTb0k2UVJrMnVEQWwyRGpBMFY0S1E2UDk2UklKcnhxRk50M3JyeGJUSHlwK1lZSXJ6UlIvWk1DZ1lFQTM1aEUKcURZRHJPOEpKZkRiQWRlYmt1N0F6MlFqQW9zM2RwTkwzZ1JMVlR4Rzk3SW1XcG1CS2lkcXNob3VETjVkTm5Qego1RFR1cytDNjBVQURtS0JhNndaWlRNd1RxbXVOL0ZuUHJXZ1hkMnVqdGE0eisyRzhqRU1Gc1JnVGpVU1pzZWZpCjkvRUJOZnpLMlg0bmU4SFAzamE5TTdhY3JSeFQzbWtocVBlUlQxc0NnWUVBazFRVEdWS0w4aVFyc1hsNjdGUjQKc05qL1d6Z2Y5SmxsbEM4cEY0Q29haE9rN1M3OEFhZjlsN2FTVUQ4K1hUQU54QzVBRStZaTQ2Nk1GZ3VkTjl3QQpXVW5HRHJmRDZ5Q2I1MWtJNmh3MnFrYWUwU0U5TzV1K2huSkxYVVpkRGw2cmtRQmZPUXVNVE9kUmhOSS9ETDIvCkp3ZC8yUlJCNHdocXNwb0N4cVRIVzJjQ2dZRUFrWjZmaUZXMVN4bGFnZVU5SFJRSWRFY2VOM05tQWJBZGJSSTkKSk5qekh3M2t3a2k2QmVOWFpkYkovRGhrcVdqZ21DZ29QUVhrT0M0eVBUbE5ua2RCTHpPeFVQelFDZnVHTzBWYQpwZnJXM2FXeXR3NC9PSWJNdnlTZlBsa0owc1ZNdTdyajdNcC9HV1FMMEY0QzVPeXlybXhFQ0x2emlpS2ExSXp2CnFSV2pBMlVDZ1lBVUtIblVSS2lmRlRva1l2Q3JZdTB6R0N1UTZQOEhFQWVKNzJHOEJPdG1qSnQraTNEM1ZxNkQKV05rbG5neXRUV1Z3bmlsYVBTN2lKbHlGTW0yWitUNHhNYlhpT0FEM0ZEVmJBYjJWYU5ydkQvK09tWVpnUnA0YQpSYVVXOHRkazBSTTRERENPRStVWTZkd2NsVDE5UStqK2psbTcrUEpBTFJ5aXZXVkxWazVaYXc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+type: kubernetes.io/tls
+
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  name: extproc-extsvc
+  namespace: extproc-test
+spec:
+  loadBalancerPolicy:
+    strategy: RoundRobin
+  protocol: h2c
+  protocolVersion: v3
+  services:
+    - name: extproc-service
+      port: 50051
+  timeoutPolicy:
+    response: 60s
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  name: extproc-extsvc2
+  namespace: extproc-test
+spec:
+  loadBalancerPolicy:
+    strategy: RoundRobin
+  protocol: h2c
+  protocolVersion: v3
+  services:
+    - name: extproc-service2
+      port: 50051
+  timeoutPolicy:
+    response: 60s
+
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  name: extproc-extsvc3
+  namespace: extproc-test
+spec:
+  loadBalancerPolicy:
+    strategy: RoundRobin
+  protocol: h2c
+  protocolVersion: v3
+  services:
+    - name: extproc-service3
+      port: 50051
+  timeoutPolicy:
+    response: 60s
+
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  name: extproc-extsvc4
+  namespace: extproc-test
+spec:
+  loadBalancerPolicy:
+    strategy: RoundRobin
+  protocol: h2c
+  protocolVersion: v3
+  services:
+    - name: extproc-service4
+      port: 50051
+  timeoutPolicy:
+    response: 60s
+---
+
+apiVersion: projectcontour.io/v1alpha1
+kind: ContourConfiguration
+metadata:
+  name: extproc-contourconfig
+  namespace: extproc-test
+spec:
+  globalExtProc:
+    processors:
+      - grpcService:
+          extensionRef:
+            apiVersion: projectcontour.io/v1alpha1
+            name: extproc-extsvc
+            namespace: extproc-test
+          failOpen: true
+          responseTimeout: 60s
+        processingMode:
+          requestBodyMode: 0
+          requestHeaderMode: 1
+          requestTrailerMode: 2
+          responseBodyMode: 0
+          responseHeaderMode: 1
+          responseTrailerMode: 2
+      - grpcService:
+          extensionRef:
+            apiVersion: projectcontour.io/v1alpha1
+            name: extproc-extsvc2
+            namespace: extproc-test
+          failOpen: true
+          responseTimeout: 60s
+        processingMode:
+          requestBodyMode: 0
+          requestHeaderMode: 1
+          requestTrailerMode: 2
+          responseBodyMode: 0
+          responseHeaderMode: 1
+          responseTrailerMode: 2
+  httpproxy:
+    rootNamespaces:
+      - extproc-test
+  xdsServer:
+    type: envoy
+    tls:
+      insecure: true
+
+---
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: extproc-fine-grained
+  namespace: extproc-test
+spec:
+  routes:
+    - conditions:
+        - prefix: /disabled
+      extProcPolicy:
+        disabled: true
+      services:
+        - name: http-echo-service
+          port: 5678
+    - conditions:
+        - prefix: /use-vh
+      services:
+        - name: http-echo-service2
+          port: 5678
+    - conditions:
+        - prefix: /use-route
+      extProcPolicy:
+        overrides:
+          grpcService:
+            extensionRef:
+              apiVersion: projectcontour.io/v1alpha1
+              name: extproc-extsvc3
+              namespace: extproc-test
+            failOpen: true
+            responseTimeout: 30s
+          processingMode:
+            requestBodyMode: 0
+            requestHeaderMode: 1
+            requestTrailerMode: 2
+            responseBodyMode: 0
+            responseHeaderMode: 1
+            responseTrailerMode: 2
+      services:
+        - name: http-echo-service3
+          port: 5678
+  virtualhost:
+    fqdn: https.projectcontour.io
+    tls:
+      secretName: extproc-test-tls
+    extProc:
+      extProcPolicy:
+        disabled: false
+      processors:
+        - grpcService:
+            extensionRef:
+              apiVersion: projectcontour.io/v1alpha1
+              name: extproc-extsvc4
+              namespace: extproc-test
+            failOpen: true
+            responseTimeout: 60s
+          processingMode:
+            requestBodyMode: 0
+            requestHeaderMode: 1
+            requestTrailerMode: 2
+            responseBodyMode: 0
+            responseHeaderMode: 1
+            responseTrailerMode: 2
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: extproc-use-default
+  namespace: extproc-test
+spec:
+  routes:
+    - conditions:
+        - prefix: /use-default
+      services:
+        - name: http-echo-service4
+          port: 5678
+  virtualhost:
+    fqdn: http.projectcontour.io

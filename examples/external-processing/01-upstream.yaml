@@ -1,0 +1,177 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: extproc-test
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-echo
+  namespace: extproc-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-echo
+  template:
+    metadata:
+      labels:
+        app: http-echo
+    spec:
+      containers:
+        - name: http-echo
+          image: hashicorp/http-echo
+          args:
+            - '-text=hello http-echo'
+          ports:
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-echo2
+  namespace: extproc-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-echo2
+  template:
+    metadata:
+      labels:
+        app: http-echo2
+    spec:
+      containers:
+        - name: http-echo2
+          image: hashicorp/http-echo
+          args:
+            - '-text=hello http-echo2'
+          ports:
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-echo3
+  namespace: extproc-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-echo3
+  template:
+    metadata:
+      labels:
+        app: http-echo3
+    spec:
+      containers:
+        - name: http-echo3
+          image: hashicorp/http-echo
+          args:
+            - '-text=hello http-echo3'
+          ports:
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-echo4
+  namespace: extproc-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-echo4
+  template:
+    metadata:
+      labels:
+        app: http-echo4
+    spec:
+      containers:
+        - name: http-echo
+          image: hashicorp/http-echo
+          args:
+            - '-text=hello http-echo4'
+          ports:
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+          imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-echo-service
+  namespace: extproc-test
+  labels:
+    app: http-echo
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5678
+      targetPort: 5678
+  selector:
+    app: http-echo
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-echo-service2
+  namespace: extproc-test
+  labels:
+    app: http-echo2
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5678
+      targetPort: 5678
+  selector:
+    app: http-echo2
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-echo-service3
+  namespace: extproc-test
+  labels:
+    app: http-echo3
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5678
+      targetPort: 5678
+  selector:
+    app: http-echo3
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-echo-service4
+  namespace: extproc-test
+  labels:
+    app: http-echo4
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5678
+      targetPort: 5678
+  selector:
+    app: http-echo4
+  type: NodePort

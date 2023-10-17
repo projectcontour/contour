@@ -1,0 +1,202 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extproc
+  namespace: extproc-test
+  labels:
+    app: extproc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extproc
+  template:
+    metadata:
+      labels:
+        app: extproc
+    spec:
+      containers:
+        - name: extproc
+          image: tempvar/extproc:v0.0.1
+          command:
+            - extproc
+          args:
+            - timer
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          imagePullPolicy: Always
+      restartPolicy: Always
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extproc2
+  namespace: extproc-test
+  labels:
+    app: extproc2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extproc2
+  template:
+    metadata:
+      labels:
+        app: extproc2
+    spec:
+      containers:
+        - name: extproc
+          image: tempvar/extproc:v0.0.1
+          command:
+            - extproc
+          args:
+            - noop
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          imagePullPolicy: Always
+      restartPolicy: Always
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extproc3
+  namespace: extproc-test
+  labels:
+    app: extproc3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extproc3
+  template:
+    metadata:
+      labels:
+        app: extproc3
+    spec:
+      containers:
+        - name: extproc
+          image: tempvar/extproc:v0.0.1
+          command:
+            - extproc
+          args:
+            - echo
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          imagePullPolicy: Always
+      restartPolicy: Always
+---
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extproc4
+  namespace: extproc-test
+  labels:
+    app: extproc4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extproc4
+  template:
+    metadata:
+      labels:
+        app: extproc4
+    spec:
+      containers:
+        - name: extproc
+          image: tempvar/extproc:v0.0.1
+          command:
+            - extproc
+          args:
+            - trivial
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          imagePullPolicy: Always
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extproc-service
+  namespace: extproc-test
+  labels:
+    app: extproc
+spec:
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: extproc
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extproc-service2
+  namespace: extproc-test
+  labels:
+    app: extproc2
+spec:
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: extproc2
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extproc-service3
+  namespace: extproc-test
+  labels:
+    app: extproc3
+spec:
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: extproc3
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extproc-service4
+  namespace: extproc-test
+  labels:
+    app: extproc4
+spec:
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: extproc4
+  type: NodePort
+
+---
