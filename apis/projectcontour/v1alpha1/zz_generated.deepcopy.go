@@ -179,11 +179,6 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		*out = new(v1.AuthorizationServer)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.GlobalExternalProcessor != nil {
-		in, out := &in.GlobalExternalProcessor, &out.GlobalExternalProcessor
-		*out = new(v1.ExternalProcessor)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.RateLimitService != nil {
 		in, out := &in.RateLimitService, &out.RateLimitService
 		*out = new(RateLimitServiceConfig)
@@ -202,6 +197,11 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 	if in.Tracing != nil {
 		in, out := &in.Tracing, &out.Tracing
 		*out = new(TracingConfig)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.GlobalExternalProcessor != nil {
+		in, out := &in.GlobalExternalProcessor, &out.GlobalExternalProcessor
+		*out = new(v1.ExternalProcessor)
 		(*in).DeepCopyInto(*out)
 	}
 }

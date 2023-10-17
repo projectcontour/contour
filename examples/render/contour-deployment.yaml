@@ -774,27 +774,31 @@ spec:
                         type: boolean
                     type: object
                 type: object
-              globalExternalProcessor:
+              globalExtProc:
                 description: GlobalExternalProcessor allows envoys external processing
                   filters to be enabled for all virtual hosts.
                 properties:
                   extProcPolicy:
-                    description: ExtProcPolicy sets a external processing policy.
+                    description: "ExtProcPolicy sets a external processing policy.
                       This policy will be used unless overridden by individual routes.
-                      for the default global external processor, it's must be nil
+                      \n **Note: for the Global External Processor, it's must be nil."
                     properties:
                       disabled:
                         description: When true, this field disables client request
-                          external processing for the scope of the policy.
+                          external processing for the scope of the policy. Precisely
+                          one of disabled, overrides must be set.
                         type: boolean
                       overrides:
-                        description: for global external processing, it's not exists
+                        description: "Overrides aspects of the configuration for this
+                          route. \n **Note: For VirtualHost, it's must be nil."
                         properties:
                           grpcService:
+                            description: GRPCService configure the gRPC service that
+                              the filter will communicate with.
                             properties:
                               extensionRef:
                                 description: ExtensionServiceRef specifies the extension
-                                  resource that will authorize client requests.
+                                  resource that will handle the client requests.
                                 properties:
                                   apiVersion:
                                     description: API version of the referent. If this
@@ -818,16 +822,13 @@ spec:
                               failOpen:
                                 description: If FailOpen is true, the client request
                                   is forwarded to the upstream service even if the
-                                  authorization server fails to respond. This field
-                                  should not be set in most cases. It is intended
-                                  for use only while migrating applications from internal
-                                  authorization to Contour external authorization.
+                                  server fails to respond. This field should not be
+                                  set in most cases.
                                 type: boolean
                               responseTimeout:
-                                description: ResponseTimeout configures maximum time
-                                  to wait for a check response from the authorization
-                                  server. Timeout durations are expressed in the Go
-                                  [Duration format](https://godoc.org/time#ParseDuration).
+                                description: ResponseTimeout sets how long the proxy
+                                  should wait for responses. Timeout durations are
+                                  expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                   Valid time units are "ns", "us" (or "µs"), "ms",
                                   "s", "m", "h". The string "infinity" is also a valid
                                   input and specifies no timeout.
@@ -835,6 +836,9 @@ spec:
                                 type: string
                             type: object
                           processingMode:
+                            description: ProcessingMode describes which parts of an
+                              HTTP request and response are sent to a remote server
+                              and how they are delivered.
                             properties:
                               requestBodyMode:
                                 description: How to handle the request body. Default
@@ -870,17 +874,25 @@ spec:
                         type: object
                     type: object
                   processors:
+                    description: Processors defines a processing filter list,and each
+                      filter in the list will be added to the corresponding processing
+                      Priority in ascending order of it's Priority within the same
+                      phase. If no phase is specified, it will be added before the
+                      Router. If no Priority is specified, the filters will be added
+                      in the order they appear in the list.
                     items:
-                      description: The External Processing filter allows an external
-                        service to act on HTTP traffic in a flexible way The external
-                        server must implement the v3 Envoy external processing GRPC
-                        protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+                      description: ExtProc defines the envoy External Processing filter
+                        which allows an external service to act on HTTP traffic in
+                        a flexible way The external server must implement the v3 Envoy
+                        external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
                       properties:
                         grpcService:
+                          description: GRPCService configure the gRPC service that
+                            the filter will communicate with.
                           properties:
                             extensionRef:
                               description: ExtensionServiceRef specifies the extension
-                                resource that will authorize client requests.
+                                resource that will handle the client requests.
                               properties:
                                 apiVersion:
                                   description: API version of the referent. If this
@@ -903,17 +915,14 @@ spec:
                               type: object
                             failOpen:
                               description: If FailOpen is true, the client request
-                                is forwarded to the upstream service even if the authorization
-                                server fails to respond. This field should not be
-                                set in most cases. It is intended for use only while
-                                migrating applications from internal authorization
-                                to Contour external authorization.
+                                is forwarded to the upstream service even if the server
+                                fails to respond. This field should not be set in
+                                most cases.
                               type: boolean
                             responseTimeout:
-                              description: ResponseTimeout configures maximum time
-                                to wait for a check response from the authorization
-                                server. Timeout durations are expressed in the Go
-                                [Duration format](https://godoc.org/time#ParseDuration).
+                              description: ResponseTimeout sets how long the proxy
+                                should wait for responses. Timeout durations are expressed
+                                in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                 Valid time units are "ns", "us" (or "µs"), "ms", "s",
                                 "m", "h". The string "infinity" is also a valid input
                                 and specifies no timeout.
@@ -921,6 +930,10 @@ spec:
                               type: string
                           type: object
                         mutationRules:
+                          description: MutationRules specifies what headers may be
+                            manipulated by a processing filter. This set of rules
+                            makes it possible to control which modifications a filter
+                            may make.
                           properties:
                             allowAllRouting:
                               description: By default, certain headers that could
@@ -963,20 +976,22 @@ spec:
                               type: boolean
                           type: object
                         phase:
-                          description: 'TODO: lewgun https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase
-                            Phase determines where in the filter chain this extProc
-                            is to be injected.'
+                          description: Phase determines where in the filter chain
+                            this extProc is to be injected.
                           type: string
                         priority:
-                          description: Priority determines ordering of extProc in
-                            the same phase. When multiple extProc are applied to the
-                            same workload in the same phase, they will be applied
+                          description: Priority determines ordering of processing
+                            filters in the same phase. When multiple extProc are applied
+                            to the same workload in the same phase, they will be applied
                             by priority, in descending order, If priority is not set
                             or two extProc exist with the same value, they will follow
                             the order in which extProc(s) are added, Defaults to 0.
                           format: int32
                           type: integer
                         processingMode:
+                          description: ProcessingMode describes which parts of an
+                            HTTP request and response are sent to a remote server
+                            and how they are delivered.
                           properties:
                             requestBodyMode:
                               description: How to handle the request body. Default
@@ -4462,29 +4477,33 @@ spec:
                             type: boolean
                         type: object
                     type: object
-                  globalExternalProcessor:
+                  globalExtProc:
                     description: GlobalExternalProcessor allows envoys external processing
                       filters to be enabled for all virtual hosts.
                     properties:
                       extProcPolicy:
-                        description: ExtProcPolicy sets a external processing policy.
+                        description: "ExtProcPolicy sets a external processing policy.
                           This policy will be used unless overridden by individual
-                          routes. for the default global external processor, it's
-                          must be nil
+                          routes. \n **Note: for the Global External Processor, it's
+                          must be nil."
                         properties:
                           disabled:
                             description: When true, this field disables client request
-                              external processing for the scope of the policy.
+                              external processing for the scope of the policy. Precisely
+                              one of disabled, overrides must be set.
                             type: boolean
                           overrides:
-                            description: for global external processing, it's not
-                              exists
+                            description: "Overrides aspects of the configuration for
+                              this route. \n **Note: For VirtualHost, it's must be
+                              nil."
                             properties:
                               grpcService:
+                                description: GRPCService configure the gRPC service
+                                  that the filter will communicate with.
                                 properties:
                                   extensionRef:
                                     description: ExtensionServiceRef specifies the
-                                      extension resource that will authorize client
+                                      extension resource that will handle the client
                                       requests.
                                     properties:
                                       apiVersion:
@@ -4509,17 +4528,13 @@ spec:
                                   failOpen:
                                     description: If FailOpen is true, the client request
                                       is forwarded to the upstream service even if
-                                      the authorization server fails to respond. This
-                                      field should not be set in most cases. It is
-                                      intended for use only while migrating applications
-                                      from internal authorization to Contour external
-                                      authorization.
+                                      the server fails to respond. This field should
+                                      not be set in most cases.
                                     type: boolean
                                   responseTimeout:
-                                    description: ResponseTimeout configures maximum
-                                      time to wait for a check response from the authorization
-                                      server. Timeout durations are expressed in the
-                                      Go [Duration format](https://godoc.org/time#ParseDuration).
+                                    description: ResponseTimeout sets how long the
+                                      proxy should wait for responses. Timeout durations
+                                      are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                       Valid time units are "ns", "us" (or "µs"), "ms",
                                       "s", "m", "h". The string "infinity" is also
                                       a valid input and specifies no timeout.
@@ -4527,6 +4542,9 @@ spec:
                                     type: string
                                 type: object
                               processingMode:
+                                description: ProcessingMode describes which parts
+                                  of an HTTP request and response are sent to a remote
+                                  server and how they are delivered.
                                 properties:
                                   requestBodyMode:
                                     description: How to handle the request body. Default
@@ -4562,17 +4580,26 @@ spec:
                             type: object
                         type: object
                       processors:
+                        description: Processors defines a processing filter list,and
+                          each filter in the list will be added to the corresponding
+                          processing Priority in ascending order of it's Priority
+                          within the same phase. If no phase is specified, it will
+                          be added before the Router. If no Priority is specified,
+                          the filters will be added in the order they appear in the
+                          list.
                         items:
-                          description: The External Processing filter allows an external
-                            service to act on HTTP traffic in a flexible way The external
-                            server must implement the v3 Envoy external processing
-                            GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+                          description: ExtProc defines the envoy External Processing
+                            filter which allows an external service to act on HTTP
+                            traffic in a flexible way The external server must implement
+                            the v3 Envoy external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
                           properties:
                             grpcService:
+                              description: GRPCService configure the gRPC service
+                                that the filter will communicate with.
                               properties:
                                 extensionRef:
                                   description: ExtensionServiceRef specifies the extension
-                                    resource that will authorize client requests.
+                                    resource that will handle the client requests.
                                   properties:
                                     apiVersion:
                                       description: API version of the referent. If
@@ -4596,16 +4623,13 @@ spec:
                                 failOpen:
                                   description: If FailOpen is true, the client request
                                     is forwarded to the upstream service even if the
-                                    authorization server fails to respond. This field
-                                    should not be set in most cases. It is intended
-                                    for use only while migrating applications from
-                                    internal authorization to Contour external authorization.
+                                    server fails to respond. This field should not
+                                    be set in most cases.
                                   type: boolean
                                 responseTimeout:
-                                  description: ResponseTimeout configures maximum
-                                    time to wait for a check response from the authorization
-                                    server. Timeout durations are expressed in the
-                                    Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  description: ResponseTimeout sets how long the proxy
+                                    should wait for responses. Timeout durations are
+                                    expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                     Valid time units are "ns", "us" (or "µs"), "ms",
                                     "s", "m", "h". The string "infinity" is also a
                                     valid input and specifies no timeout.
@@ -4613,6 +4637,10 @@ spec:
                                   type: string
                               type: object
                             mutationRules:
+                              description: MutationRules specifies what headers may
+                                be manipulated by a processing filter. This set of
+                                rules makes it possible to control which modifications
+                                a filter may make.
                               properties:
                                 allowAllRouting:
                                   description: By default, certain headers that could
@@ -4655,21 +4683,23 @@ spec:
                                   type: boolean
                               type: object
                             phase:
-                              description: 'TODO: lewgun https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase
-                                Phase determines where in the filter chain this extProc
-                                is to be injected.'
+                              description: Phase determines where in the filter chain
+                                this extProc is to be injected.
                               type: string
                             priority:
-                              description: Priority determines ordering of extProc
-                                in the same phase. When multiple extProc are applied
-                                to the same workload in the same phase, they will
-                                be applied by priority, in descending order, If priority
-                                is not set or two extProc exist with the same value,
-                                they will follow the order in which extProc(s) are
-                                added, Defaults to 0.
+                              description: Priority determines ordering of processing
+                                filters in the same phase. When multiple extProc are
+                                applied to the same workload in the same phase, they
+                                will be applied by priority, in descending order,
+                                If priority is not set or two extProc exist with the
+                                same value, they will follow the order in which extProc(s)
+                                are added, Defaults to 0.
                               format: int32
                               type: integer
                             processingMode:
+                              description: ProcessingMode describes which parts of
+                                an HTTP request and response are sent to a remote
+                                server and how they are delivered.
                               properties:
                                 requestBodyMode:
                                   description: How to handle the request body. Default
@@ -6106,16 +6136,20 @@ spec:
                       properties:
                         disabled:
                           description: When true, this field disables client request
-                            external processing for the scope of the policy.
+                            external processing for the scope of the policy. Precisely
+                            one of disabled, overrides must be set.
                           type: boolean
                         overrides:
-                          description: for global external processing, it's not exists
+                          description: "Overrides aspects of the configuration for
+                            this route. \n **Note: For VirtualHost, it's must be nil."
                           properties:
                             grpcService:
+                              description: GRPCService configure the gRPC service
+                                that the filter will communicate with.
                               properties:
                                 extensionRef:
                                   description: ExtensionServiceRef specifies the extension
-                                    resource that will authorize client requests.
+                                    resource that will handle the client requests.
                                   properties:
                                     apiVersion:
                                       description: API version of the referent. If
@@ -6139,16 +6173,13 @@ spec:
                                 failOpen:
                                   description: If FailOpen is true, the client request
                                     is forwarded to the upstream service even if the
-                                    authorization server fails to respond. This field
-                                    should not be set in most cases. It is intended
-                                    for use only while migrating applications from
-                                    internal authorization to Contour external authorization.
+                                    server fails to respond. This field should not
+                                    be set in most cases.
                                   type: boolean
                                 responseTimeout:
-                                  description: ResponseTimeout configures maximum
-                                    time to wait for a check response from the authorization
-                                    server. Timeout durations are expressed in the
-                                    Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  description: ResponseTimeout sets how long the proxy
+                                    should wait for responses. Timeout durations are
+                                    expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                     Valid time units are "ns", "us" (or "µs"), "ms",
                                     "s", "m", "h". The string "infinity" is also a
                                     valid input and specifies no timeout.
@@ -6156,6 +6187,9 @@ spec:
                                   type: string
                               type: object
                             processingMode:
+                              description: ProcessingMode describes which parts of
+                                an HTTP request and response are sent to a remote
+                                server and how they are delivered.
                               properties:
                                 requestBodyMode:
                                   description: How to handle the request body. Default
@@ -7718,29 +7752,34 @@ spec:
                     - allowMethods
                     - allowOrigin
                     type: object
-                  externalProcessor:
-                    description: ExternalProcessor are a list of external processors
-                      which allow to act on HTTP traffic in a flexible way.
+                  extProc:
+                    description: ExternalProcessor contains a list of external processors
+                      which allow to act on HTTP traffic in a flexible way and the
+                      policy for fine-grained at VirtualHost level.
                     properties:
                       extProcPolicy:
-                        description: ExtProcPolicy sets a external processing policy.
+                        description: "ExtProcPolicy sets a external processing policy.
                           This policy will be used unless overridden by individual
-                          routes. for the default global external processor, it's
-                          must be nil
+                          routes. \n **Note: for the Global External Processor, it's
+                          must be nil."
                         properties:
                           disabled:
                             description: When true, this field disables client request
-                              external processing for the scope of the policy.
+                              external processing for the scope of the policy. Precisely
+                              one of disabled, overrides must be set.
                             type: boolean
                           overrides:
-                            description: for global external processing, it's not
-                              exists
+                            description: "Overrides aspects of the configuration for
+                              this route. \n **Note: For VirtualHost, it's must be
+                              nil."
                             properties:
                               grpcService:
+                                description: GRPCService configure the gRPC service
+                                  that the filter will communicate with.
                                 properties:
                                   extensionRef:
                                     description: ExtensionServiceRef specifies the
-                                      extension resource that will authorize client
+                                      extension resource that will handle the client
                                       requests.
                                     properties:
                                       apiVersion:
@@ -7765,17 +7804,13 @@ spec:
                                   failOpen:
                                     description: If FailOpen is true, the client request
                                       is forwarded to the upstream service even if
-                                      the authorization server fails to respond. This
-                                      field should not be set in most cases. It is
-                                      intended for use only while migrating applications
-                                      from internal authorization to Contour external
-                                      authorization.
+                                      the server fails to respond. This field should
+                                      not be set in most cases.
                                     type: boolean
                                   responseTimeout:
-                                    description: ResponseTimeout configures maximum
-                                      time to wait for a check response from the authorization
-                                      server. Timeout durations are expressed in the
-                                      Go [Duration format](https://godoc.org/time#ParseDuration).
+                                    description: ResponseTimeout sets how long the
+                                      proxy should wait for responses. Timeout durations
+                                      are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                       Valid time units are "ns", "us" (or "µs"), "ms",
                                       "s", "m", "h". The string "infinity" is also
                                       a valid input and specifies no timeout.
@@ -7783,6 +7818,9 @@ spec:
                                     type: string
                                 type: object
                               processingMode:
+                                description: ProcessingMode describes which parts
+                                  of an HTTP request and response are sent to a remote
+                                  server and how they are delivered.
                                 properties:
                                   requestBodyMode:
                                     description: How to handle the request body. Default
@@ -7818,17 +7856,26 @@ spec:
                             type: object
                         type: object
                       processors:
+                        description: Processors defines a processing filter list,and
+                          each filter in the list will be added to the corresponding
+                          processing Priority in ascending order of it's Priority
+                          within the same phase. If no phase is specified, it will
+                          be added before the Router. If no Priority is specified,
+                          the filters will be added in the order they appear in the
+                          list.
                         items:
-                          description: The External Processing filter allows an external
-                            service to act on HTTP traffic in a flexible way The external
-                            server must implement the v3 Envoy external processing
-                            GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+                          description: ExtProc defines the envoy External Processing
+                            filter which allows an external service to act on HTTP
+                            traffic in a flexible way The external server must implement
+                            the v3 Envoy external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
                           properties:
                             grpcService:
+                              description: GRPCService configure the gRPC service
+                                that the filter will communicate with.
                               properties:
                                 extensionRef:
                                   description: ExtensionServiceRef specifies the extension
-                                    resource that will authorize client requests.
+                                    resource that will handle the client requests.
                                   properties:
                                     apiVersion:
                                       description: API version of the referent. If
@@ -7852,16 +7899,13 @@ spec:
                                 failOpen:
                                   description: If FailOpen is true, the client request
                                     is forwarded to the upstream service even if the
-                                    authorization server fails to respond. This field
-                                    should not be set in most cases. It is intended
-                                    for use only while migrating applications from
-                                    internal authorization to Contour external authorization.
+                                    server fails to respond. This field should not
+                                    be set in most cases.
                                   type: boolean
                                 responseTimeout:
-                                  description: ResponseTimeout configures maximum
-                                    time to wait for a check response from the authorization
-                                    server. Timeout durations are expressed in the
-                                    Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  description: ResponseTimeout sets how long the proxy
+                                    should wait for responses. Timeout durations are
+                                    expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
                                     Valid time units are "ns", "us" (or "µs"), "ms",
                                     "s", "m", "h". The string "infinity" is also a
                                     valid input and specifies no timeout.
@@ -7869,6 +7913,10 @@ spec:
                                   type: string
                               type: object
                             mutationRules:
+                              description: MutationRules specifies what headers may
+                                be manipulated by a processing filter. This set of
+                                rules makes it possible to control which modifications
+                                a filter may make.
                               properties:
                                 allowAllRouting:
                                   description: By default, certain headers that could
@@ -7911,21 +7959,23 @@ spec:
                                   type: boolean
                               type: object
                             phase:
-                              description: 'TODO: lewgun https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/#PluginPhase
-                                Phase determines where in the filter chain this extProc
-                                is to be injected.'
+                              description: Phase determines where in the filter chain
+                                this extProc is to be injected.
                               type: string
                             priority:
-                              description: Priority determines ordering of extProc
-                                in the same phase. When multiple extProc are applied
-                                to the same workload in the same phase, they will
-                                be applied by priority, in descending order, If priority
-                                is not set or two extProc exist with the same value,
-                                they will follow the order in which extProc(s) are
-                                added, Defaults to 0.
+                              description: Priority determines ordering of processing
+                                filters in the same phase. When multiple extProc are
+                                applied to the same workload in the same phase, they
+                                will be applied by priority, in descending order,
+                                If priority is not set or two extProc exist with the
+                                same value, they will follow the order in which extProc(s)
+                                are added, Defaults to 0.
                               format: int32
                               type: integer
                             processingMode:
+                              description: ProcessingMode describes which parts of
+                                an HTTP request and response are sent to a remote
+                                server and how they are delivered.
                               properties:
                                 requestBodyMode:
                                   description: How to handle the request body. Default

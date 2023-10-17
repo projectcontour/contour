@@ -25,7 +25,7 @@ type HTTPProxySpec struct {
 	// +optional
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes. If TCPProxy is present, Routes is ignored.
-	//  +optional
+	// +optional
 	Routes []Route `json:"routes,omitempty"`
 	// TCPProxy holds TCP proxy information.
 	// +optional
@@ -501,6 +501,7 @@ type ExtProcOverride struct {
 	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
 }
 
+// ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.
 type ExternalProcessor struct {
 	// Processors defines a processing filter list,and each filter in the list
 	// will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
@@ -513,7 +514,7 @@ type ExternalProcessor struct {
 	// ExtProcPolicy sets a external processing policy.
 	// This policy will be used unless overridden by individual routes.
 	//
-	// For the Global External Processor, it's must be nil.
+	// **Note: for the Global External Processor, it's must be nil.
 	//
 	// +optional
 	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
@@ -530,7 +531,7 @@ type ExtProcPolicy struct {
 
 	// Overrides aspects of the configuration for this route.
 	//
-	// For VirtualHost, it's must be nil.
+	// **Note: For VirtualHost, it's must be nil.
 	//
 	// +optional
 	Overrides *ExtProcOverride `json:"overrides,omitempty"`
@@ -584,7 +585,8 @@ type VirtualHost struct {
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExternalProcessor are a list of external processors which allow to act on HTTP traffic in a flexible way.
+	// ExternalProcessor contains a list of external processors which allow to act on HTTP traffic in a flexible way
+	// and the policy for fine-grained at VirtualHost level.
 	//
 	// +optional
 	ExternalProcessor *ExternalProcessor `json:"extProc,omitempty"`
@@ -859,6 +861,7 @@ type Route struct {
 	// ExtProcPolicy updates the external processing policy that was set
 	// on the root HTTPProxy object for client requests/responses that
 	// match this route.
+	//
 	// +optional
 	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
 }

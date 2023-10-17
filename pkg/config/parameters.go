@@ -653,7 +653,7 @@ type Parameters struct {
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
 	// GlobalExternalProcessor optionally holds properties of the global external processing configurations.
-	GlobalExternalProcessor *GlobalExternalProcessor `yaml:"globalExtProc,omitempty"`
+	GlobalExternalProcessor *contour_api_v1.ExternalProcessor `yaml:"globalExtProc,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -760,41 +760,6 @@ type GlobalAuthorizationPolicy struct {
 	//
 	// +optional
 	Context map[string]string `yaml:"context,omitempty"`
-}
-
-// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
-// The external server must implement the v3 Envoy
-// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-type ExternalProcessor struct {
-	// ExtensionService identifies the extension service defining the RLS,
-	// formatted as <namespace>/<name>.
-	ExtensionService string `yaml:"extensionService,omitempty"`
-
-	// ResponseTimeout configures maximum time to wait for a check response from the expProc server.
-	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
-	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-	// The string "infinity" is also a valid input and specifies no timeout.
-	//
-	// +optional
-	ResponseTimeout string `yaml:"responseTimeout,omitempty"`
-
-	// If FailOpen is true, the client request is forwarded to the upstream service
-	// even if the authorization server fails to respond. This field should not be
-	// set in most cases. It is intended for use only while migrating applications
-	// from internal authorization to Contour external authorization.
-	//
-	// +optional
-	FailOpen bool `yaml:"failOpen,omitempty"`
-}
-
-// TODO: lewgun
-// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
-// The external server must implement the v3 Envoy
-// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-type GlobalExternalProcessor struct {
-	//
-	// +optional
-	Processors []ExternalProcessor
 }
 
 // RateLimitService defines properties of a global Rate Limit Service.
