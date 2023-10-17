@@ -18,7 +18,7 @@ versions:
   - version: v1.26.1
     supported: "true"
     dependencies:
-      envoy: "1.27.1"
+      envoy: "1.27.2"
       kubernetes:
         - "1.28"
         - "1.27"
@@ -40,7 +40,7 @@ versions:
   - version: v1.25.3
     supported: "true"
     dependencies:
-      envoy: "1.26.5"
+      envoy: "1.26.6"
       kubernetes:
         - "1.27"
         - "1.26"
@@ -84,7 +84,7 @@ versions:
   - version: v1.24.6
     supported: "true"
     dependencies:
-      envoy: "1.25.10"
+      envoy: "1.25.11"
       kubernetes:
         - "1.26"
         - "1.25"

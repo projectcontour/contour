@@ -8,7 +8,7 @@ We are delighted to present version v1.24.6 of Contour, our layer 7 HTTP reverse
 
 This release includes various dependency bumps and fixes for [CVE-2023-44487](https://nvd.nist.gov/vuln/detail/CVE-2023-44487), including:
 
-- Update to Envoy v1.25.10. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.25.10/version_history/v1.25/v1.25.10) for more information about the content of the release.
+- Update to Envoy v1.25.11. See the release notes for v1.25.10 [here](https://www.envoyproxy.io/docs/envoy/v1.25.10/version_history/v1.25/v1.25.10) and v1.25.11 [here](https://www.envoyproxy.io/docs/envoy/v1.25.11/version_history/v1.25/v1.25.11).
 - Update to Go v1.20.10. See the [Go release notes](https://go.dev/doc/devel/release#go1.20.minor) for more information.
 
 Additional mitigations have been added for CVE-2023-44487 in the form of new configuration fields:
