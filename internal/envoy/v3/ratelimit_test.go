@@ -411,3 +411,40 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestRateLimitPerRoute(t *testing.T) {
+	tests := map[string]struct {
+		name string
+		cfg  *dag.RateLimitPerRoute
+		want *anypb.Any
+	}{
+		"VhRateLimits in Override mode": {
+			cfg: &dag.RateLimitPerRoute{
+				VhRateLimits: dag.VhRateLimitsOverride,
+			},
+			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+				VhRateLimits: 0,
+			}),
+		}, "VhRateLimits in Include mode": {
+			cfg: &dag.RateLimitPerRoute{
+				VhRateLimits: dag.VhRateLimitsInclude,
+			},
+			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+				VhRateLimits: 1,
+			}),
+		}, "VhRateLimits in Ignore mode": {
+			cfg: &dag.RateLimitPerRoute{
+				VhRateLimits: dag.VhRateLimitsIgnore,
+			},
+			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+				VhRateLimits: 2,
+			}),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, rateLimitPerRoute(tc.cfg))
+		})
+	}
+}

@@ -61,7 +61,6 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 								},
 							},
 						},
-						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 				},
 			},

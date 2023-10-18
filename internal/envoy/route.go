@@ -19,11 +19,18 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func HostReplaceHeader(hp *dag.HeadersPolicy) string {
+func HostRewriteLiteral(hp *dag.HeadersPolicy) string {
 	if hp == nil {
 		return ""
 	}
 	return hp.HostRewrite
+}
+
+func HostRewriteHeader(hp *dag.HeadersPolicy) string {
+	if hp == nil {
+		return ""
+	}
+	return hp.HostRewriteHeader
 }
 
 // Timeout converts a timeout.Setting to a protobuf.Duration

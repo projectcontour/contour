@@ -59,7 +59,7 @@ The same approach shall be followed for configuring revocation lists as is used 
 The CRL is stored in an opaque Kubernetes secret.
 The secret will be stored in the same namespace as the corresponding `HTTPProxy` object.
 The secret object shall contain entry named `crl.pem`.
-The constents shall be the CRL in PEM format.
+The contents shall be the CRL in PEM format.
 The file may contain "PEM bundle", that is, a list of CRLs concatenated in single file.
 
 Example:

@@ -3722,9 +3722,9 @@ func TestSortLongestRouteFirst(t *testing.T) {
 				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v1/.+"},
 			}},
 			want: []*dag.Route{{
-				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v2"},
-			}, {
 				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v1/.+"},
+			}, {
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v2"},
 			}},
 		},
 		"two exact matches": {

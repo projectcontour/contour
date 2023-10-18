@@ -1386,3 +1386,116 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 		})
 	}
 }
+
+func TestRateLimitPerRoute(t *testing.T) {
+	tests := map[string]struct {
+		httpproxy *contour_api_v1.HTTPProxy
+		want      *RateLimitPerRoute
+	}{
+		"route doesn't disable the global rate limit functionality": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		"route disables the global rate limit functionality": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Disabled: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPerRoute{
+				VhRateLimits: 2,
+			},
+		},
+		"route doesn't disable the global rate limit functionality explicitly": {
+			httpproxy: &contour_api_v1.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: "ns",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "foo.projectcontour.io",
+					},
+					Routes: []contour_api_v1.Route{
+						{
+							Services: []contour_api_v1.Service{
+								{
+									Name: "foo",
+									Port: 80,
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{
+								{
+									Prefix: "/bar",
+								},
+							},
+							RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+								Global: &contour_api_v1.GlobalRateLimitPolicy{
+									Disabled: false,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			for _, route := range tc.httpproxy.Spec.Routes {
+				got := rateLimitPerRoute(route.RateLimitPolicy)
+				require.Equal(t, tc.want, got)
+			}
+		})
+	}
+}

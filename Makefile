@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.27.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.27.2
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.20.7
+BUILD_BASE_IMAGE ?= golang:1.21.3
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -202,12 +202,10 @@ lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
-# The inline config is needed to allow the Gateway API validating webhook YAML
-# (which we import directly from the Gateway API repo) to pass.
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint -d "{rules: {brackets: {max-spaces-inside: 1}, commas: {max-spaces-before: 1}}}" examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd

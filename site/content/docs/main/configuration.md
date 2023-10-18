@@ -195,6 +195,8 @@ The listener configuration block can be used to configure various parameters for
 | max-requests-per-connection       | int    | none    | This field specifies the maximum requests for downstream connections. If not specified, there is no limit                                                                                                                                                     |
 | per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the listener’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                                                                                                            |
 | socket-options                    | SocketOptions |  | The [Socket Options](#socket-options) for Envoy listeners.                                                                                                                                                                                                    |
+| max-requests-per-io-cycle         | int    | none    | Defines the limit on number of HTTP requests that Envoy will process from a single connection in a single I/O cycle. Requests over this limit are processed in subsequent I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is detected. Configures the `http.max_requests_per_io_cycle` Envoy runtime setting. The default value when this is not set is no limit. |
+| http2-max-concurrent-streams      | int    | none    | Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed for a peer on a single HTTP/2 connection. It is recommended to not set this lower than 100 but this field can be used to bound resource usage by HTTP/2 connections and mitigate attacks like CVE-2023-44487. The default value when this is not set is unlimited. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -497,7 +499,7 @@ There are flags that can be passed to `contour bootstrap` that help configure ho
 connects to Contour:
 
 | Flag                                   | Default           | Description                                                                                                                                                                                                  |
-| -------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -------------------------------------- |-------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <nobr>--resources-dir</nobr>           | ""                | Directory where resource files will be written.                                                                                                                                                              |
 | <nobr>--admin-address</nobr>           | /admin/admin.sock | Path to Envoy admin unix domain socket.                                                                                                                                                                      |
 | <nobr>--admin-port (Deprecated)</nobr> | 9001              | Deprecated: Port is now configured as a Contour flag.                                                                                                                                                        |
@@ -510,7 +512,7 @@ connects to Contour:
 | <nobr>--xds-resource-version</nobr>    | v3                | Currently, the only valid xDS API resource version is `v3`.                                                                                                                                                  |
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
-| <nobr>--overload-max-heap              | ""                | Defines the maximum heap size in bytes until Envoy overload manager stops accepting new connections. |
+| <nobr>--overload-max-heap              | 0                 | Defines the maximum heap memory of the envoy controlled by the overload manager. When the value is greater than 0, the overload manager is enabled, and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation. When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml

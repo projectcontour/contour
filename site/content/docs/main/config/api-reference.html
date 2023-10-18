@@ -2097,7 +2097,7 @@ string
 </p>
 <p>
 <p>HeadersPolicy defines how headers are managed during forwarding.
-The <code>Host</code> header is treated specially and if set in a HTTP response
+The <code>Host</code> header is treated specially and if set in a HTTP request
 will be used as the SNI server name when forwarding over TLS. It is an
 error to attempt to set the <code>Host</code> header in a HTTP response.</p>
 </p>
@@ -3705,6 +3705,14 @@ HeadersPolicy
 <td>
 <em>(Optional)</em>
 <p>The policy for managing request headers during proxying.</p>
+<p>You may dynamically rewrite the Host header to be forwarded
+upstream to the content of a request header using
+the below format &ldquo;%REQ(X-Header-Name)%&rdquo;. If the value of the header
+is empty, it is ignored.</p>
+<p>*NOTE: Pay attention to the potential security implications of using this option.
+Provided header must come from trusted source.</p>
+<p>**NOTE: The header rewrite is only done while forwarding and has no bearing
+on the routing decision.</p>
 </td>
 </tr>
 <tr>
@@ -6776,6 +6784,41 @@ SocketOptions
 Single set of options are applied to all listeners.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequestsPerIOCycle</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the limit on number of HTTP requests that Envoy will process from a single
+connection in a single I/O cycle. Requests over this limit are processed in subsequent
+I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+value when this is not set is no limit.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpMaxConcurrentStreams</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
+SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed
+for a peer on a single HTTP/2 connection. It is recommended to not set this lower
+than 100 but this field can be used to bound resource usage by HTTP/2 connections
+and mitigate attacks like CVE-2023-44487. The default value when this is not set is
+unlimited.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging
@@ -7065,6 +7108,23 @@ int32
 if Envoy needs to be run multiple times on the same machine, each running Envoy will need a unique base ID
 so that the shared memory regions do not conflict.
 defaults to 0.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overloadMaxHeapSize</code>
+<br>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverloadMaxHeapSize defines the maximum heap memory of the envoy controlled by the overload manager.
+When the value is greater than 0, the overload manager is enabled,
+and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation,
+When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests.
+More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/">https://projectcontour.io/docs/main/config/overload-manager/</a></p>
 </td>
 </tr>
 </tbody>

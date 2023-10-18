@@ -11,7 +11,7 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.20.7
+  GO_VERSION: 1.21.3
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -20,7 +20,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Codespell
         uses: codespell-project/actions-codespell@v2.0
         with:
@@ -56,7 +56,7 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -92,9 +92,9 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
       with:
         version: latest
     - name: Build image
@@ -129,18 +129,18 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
+            node_image: "docker.io/kindest/node:v1.28.0@sha256:b7a4cad12c197af3ba43202d3efe03246b3f0793f162afb40a33c923952d5b31"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.26.6@sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb"
+            node_image: "docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.25.11@sha256:227fa11ce74ea76a0474eeefb84cb75d8dad1b08638371ecf0e86259b35be0c8"
+            node_image: "docker.io/kindest/node:v1.26.6@sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb"
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
             use_config_crd: "true"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download image
         uses: actions/download-artifact@v3
         with:
@@ -192,13 +192,13 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
+            node_image: "docker.io/kindest/node:v1.28.0@sha256:b7a4cad12c197af3ba43202d3efe03246b3f0793f162afb40a33c923952d5b31"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.26.6@sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb"
+            node_image: "docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.25.11@sha256:227fa11ce74ea76a0474eeefb84cb75d8dad1b08638371ecf0e86259b35be0c8"
+            node_image: "docker.io/kindest/node:v1.26.6@sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Fetch history for all tags and branches so we can figure out most
           # recent release tag.
@@ -245,7 +245,7 @@ jobs:
   # ingress-conformance:
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v3
+  #     - uses: actions/checkout@v4
   #     - name: add deps to path
   #       run: |
   #         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -260,7 +260,7 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -301,7 +301,7 @@ jobs:
       - codegen
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -334,7 +334,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-image]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download image
         uses: actions/download-artifact@v3
         with:

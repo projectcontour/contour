@@ -10,12 +10,12 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.20.7
+  GO_VERSION: 1.21.3
 jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -49,7 +49,7 @@ jobs:
   e2e-envoy-deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -83,7 +83,7 @@ jobs:
   e2e-gateway-reconcile-controller:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache
@@ -118,7 +118,7 @@ jobs:
   e2e-ipv6:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           # * Module download cache

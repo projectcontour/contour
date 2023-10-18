@@ -15,6 +15,7 @@ package dag
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -1249,6 +1250,15 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				"K-Foo": "100%%",
 			},
 		},
+	}, {
+		name: "Host header rewrite via dynamic header",
+		in: &contour_api_v1.HeadersPolicy{
+			Set: []contour_api_v1.HeaderValue{{
+				Name:  "Host",
+				Value: "%REQ(foo)%",
+			}},
+		},
+		wantErr: fmt.Errorf("rewriting \"Host\" header is not supported"),
 	}}
 
 	for _, test := range tests {
@@ -1256,6 +1266,127 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
+		})
+	}
+}
+
+func TestExtractHeaderValue(t *testing.T) {
+	tests := map[string]string{
+		"%REQ(X-Header-Name)%":  "X-Header-Name",
+		"%req(X-Header-Name)%":  "",
+		"%REQ( Content-Type )%": "",
+		"REQ(Content-Type)":     "",
+		"%REQ(Content-Type%":    "",
+		"SomeOtherValue":        "",
+	}
+
+	for input, expected := range tests {
+		t.Run(input, func(t *testing.T) {
+			actual := extractHostRewriteHeaderValue(input)
+			if actual != expected {
+				t.Errorf("For input %q, expected %q, got %q", input, expected, actual)
+			}
+		})
+	}
+}
+
+func TestHeadersPolicyRoute(t *testing.T) {
+	tests := []struct {
+		name         string
+		policy       *contour_api_v1.HeadersPolicy
+		allowRewrite bool
+		dynHeaders   map[string]string
+		expected     *HeadersPolicy
+		expectedErr  error
+	}{
+		{
+			name:     "nil policy",
+			policy:   nil,
+			expected: nil,
+		},
+		{
+			name: "duplicate set headers",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: "X-Header", Value: "Test"}, {Name: "X-Header", Value: "Test2"}},
+			},
+			expectedErr: fmt.Errorf("duplicate header addition: %q", "X-Header"),
+		},
+		{
+			name: "host rewrite not allowed",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: "Host", Value: "Test"}},
+			},
+			allowRewrite: false,
+			expectedErr:  fmt.Errorf("rewriting %q header is not supported", "Host"),
+		},
+		{
+			name: "host rewrite allowed",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: "Host", Value: "Test"}},
+			},
+			allowRewrite: true,
+			expected: &HeadersPolicy{
+				HostRewrite: "Test",
+				Remove:      nil,
+			},
+		},
+		{
+			name: "host rewrite allowed, by header",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: "Host", Value: "%REQ(Test)%"}},
+			},
+			allowRewrite: true,
+			expected: &HeadersPolicy{
+				HostRewrite:       "",
+				HostRewriteHeader: "Test",
+				Remove:            nil,
+			},
+		},
+		{
+			name: "host rewrite allowed, by header. invalid",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: "Host", Value: "%REQ (Test"}},
+			},
+			allowRewrite: true,
+			expected: &HeadersPolicy{
+				HostRewrite:       "%REQ (Test",
+				HostRewriteHeader: "",
+				Remove:            nil,
+			},
+		},
+		{
+			name: "invalid header name",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{Name: " Invalid-Header ", Value: "Test"}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header " Invalid-Header ": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
+		},
+		{
+			name: "duplicate remove headers",
+			policy: &contour_api_v1.HeadersPolicy{
+				Remove: []string{"X-Header", "X-Header"},
+			},
+			expectedErr: fmt.Errorf("duplicate header removal: %q", "X-Header"),
+		},
+		{
+			name: "valid set and remove headers",
+			policy: &contour_api_v1.HeadersPolicy{
+				Set:    []contour_api_v1.HeaderValue{{Name: "X-Header", Value: "Test"}},
+				Remove: []string{"Y-Header"},
+			},
+			expected: &HeadersPolicy{
+				Set:         map[string]string{"X-Header": "Test"},
+				HostRewrite: "",
+				Remove:      []string{"Y-Header"},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := headersPolicyRoute(tc.policy, tc.allowRewrite, tc.dynHeaders)
+			assert.Equal(t, tc.expected, result)
+			assert.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
