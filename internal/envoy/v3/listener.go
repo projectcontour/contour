@@ -428,7 +428,8 @@ func (b *httpConnectionManagerBuilder) AddExtProcFilters(processors []*dag.Exter
 	for phase, name := range phases {
 		// only insert when we find the 'anchor'
 		if i := findFilterIndex(b.filters, name); i != -1 {
-			second := b.filters[i:]
+			second := make([]*http.HttpFilter, len(b.filters[i:]))
+			copy(second, b.filters[i:])
 			b.filters = b.filters[:i]
 
 			for _, f := range makePhaseFilters(processors, phase) {

@@ -658,6 +658,8 @@ func toExternalProcessors(processors []GlobalExtProcConfig) []*dag.ExternalProce
 			ResponseTimeout: p.ExtensionServiceConfig.Timeout,
 			ProcessingMode:  p.ProcessingMode,
 			MutationRules:   p.MutationRules,
+			Phase:           p.Phase,
+			Priority:        p.Priority,
 		}
 		extProcs = append(extProcs, ep)
 	}

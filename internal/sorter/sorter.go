@@ -447,7 +447,7 @@ type extProcSorter []*dag.ExternalProcessor
 
 func (s extProcSorter) Len() int           { return len(s) }
 func (s extProcSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s extProcSorter) Less(i, j int) bool { return s[i].Priority < s[j].Priority }
+func (s extProcSorter) Less(i, j int) bool { return s[i].Priority > s[j].Priority }
 
 // For returns a sort.Interface object that can be used to sort the
 // given value. It returns nil if there is no sorter for the type of

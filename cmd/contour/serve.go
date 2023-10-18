@@ -830,13 +830,23 @@ func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.Co
 		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined.")
 	}
 
+	m := map[client.ObjectKey]struct{}{}
+
 	var globalExtProcs []xdscache_v3.GlobalExtProcConfig
 	for _, ep := range contourCfg.GlobalExternalProcessor.Processors {
+
 		// ensure the specified ExtensionService exists
 		extSvcCfg, err := s.getExtensionSvcConfig(ep.GRPCService.ExtensionServiceRef.Name, ep.GRPCService.ExtensionServiceRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
+
+		// ensure unique external processing
+		if _, ok := m[extSvcCfg.ExtensionService]; ok {
+			return nil, fmt.Errorf("external processing %s/%s is duplicated.", extSvcCfg.ExtensionService.Namespace, extSvcCfg.ExtensionService.Namespace)
+		}
+		m[extSvcCfg.ExtensionService] = struct{}{}
+
 		globalExtProcs = append(globalExtProcs, xdscache_v3.GlobalExtProcConfig{
 			ExtensionServiceConfig: extSvcCfg,
 			FailOpen:               ep.GRPCService.FailOpen,

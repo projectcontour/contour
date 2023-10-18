@@ -200,6 +200,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	extProc := proxy.Spec.VirtualHost.ExternalProcessor
 	if extProc != nil {
+		m := map[contour_api_v1.ExtensionServiceReference]struct{}{}
+		for _, ep := range extProc.Processors {
+			objKey := ep.GRPCService.ExtensionServiceRef
+			if _, ok := m[objKey]; ok {
+				validCond.AddError(contour_api_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
+					fmt.Sprintf("Spec.VirtualHost.ExternalProcessor.Processors is invalid: duplicate name %s/%s", objKey.Namespace, objKey.Name))
+				return
+			}
+			m[ep.GRPCService.ExtensionServiceRef] = struct{}{}
+		}
+
 		if proxy.Spec.VirtualHost.TLS == nil {
 			for _, ep := range extProc.Processors {
 				if len(ep.GRPCService.ExtensionServiceRef.Name) > 0 {
