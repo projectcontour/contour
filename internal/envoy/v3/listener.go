@@ -46,6 +46,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -384,9 +385,59 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	return b
 }
 
-func (b *httpConnectionManagerBuilder) AddFilters(filters []*http.HttpFilter) *httpConnectionManagerBuilder {
-	for _, f := range filters {
-		b.AddFilter(f)
+func findFilterIndex(filters []*http.HttpFilter, name string) int {
+	for i, v := range filters {
+		if v.Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
+func makePhaseFilters(processors []*dag.ExternalProcessor, phase contour_api_v1.ProcessingPhase) []*http.HttpFilter {
+	var filters []*http.HttpFilter
+	var extProcs []*dag.ExternalProcessor
+
+	for _, ep := range processors {
+		// UnspecifiedPhase decides where to insert the external processing service.
+		// This will generally be at the end of the filter chain, right before the Router
+		if len(ep.Phase) == 0 {
+			ep.Phase = contour_api_v1.UnspecifiedPhase
+		}
+		if ep.Phase != phase {
+			continue
+		}
+		extProcs = append(extProcs, ep)
+	}
+
+	sort.Stable(sorter.For(extProcs))
+	for _, ep := range extProcs {
+		filters = append(filters, filterExtProc(ep))
+	}
+	return filters
+}
+
+func (b *httpConnectionManagerBuilder) AddExtProcFilters(processors []*dag.ExternalProcessor) *httpConnectionManagerBuilder {
+	phases := map[contour_api_v1.ProcessingPhase]string{
+		contour_api_v1.AuthN:            "envoy.filters.http.jwt_authn",
+		contour_api_v1.AuthZ:            "envoy.filters.http.ext_authz",
+		contour_api_v1.CORS:             "cors",
+		contour_api_v1.RateLimit:        wellknown.HTTPRateLimit,
+		contour_api_v1.UnspecifiedPhase: "router",
+	}
+	for phase, name := range phases {
+		// only insert when we find the 'anchor'
+		if i := findFilterIndex(b.filters, name); i != -1 {
+			second := b.filters[i:]
+			b.filters = b.filters[:i]
+
+			for _, f := range makePhaseFilters(processors, phase) {
+				b.AddFilter(f)
+			}
+			for _, f := range second {
+				b.AddFilter(f)
+			}
+		}
 	}
 	return b
 }
@@ -422,7 +473,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		// If this happens, it has to be programmer error, so we panic to tell them
 		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 		// the second one earlier, because we're panicking anyway.
-		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
+		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) && routerIndex != lastIndex {
 			panic("Can't add more than one router to a filter chain")
 		}
 		if routerIndex != lastIndex {
@@ -774,13 +825,40 @@ end
 	}
 }
 
-// FilterExtProc returns an `ext_proc` filter configured with the
+func makeProcessMode(mode *contour_api_v1.ProcessingMode) *envoy_config_filter_http_ext_proc_v3.ProcessingMode {
+	return &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestHeaderMode),
+		ResponseHeaderMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseHeaderMode),
+
+		RequestBodyMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.RequestBodyMode),
+		ResponseBodyMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.ResponseBodyMode),
+
+		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestTrailerMode),
+		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseTrailerMode),
+	}
+}
+
+// filterExtProc returns an `ext_proc` filter configured with the
 // requested parameters.
-func FilterExtProc(extProc *dag.ExternalProcessor) *http.HttpFilter {
+func filterExtProc(extProc *dag.ExternalProcessor) *http.HttpFilter {
+	if extProc.ProcessingMode == nil {
+		extProc.ProcessingMode = &contour_api_v1.ProcessingMode{
+			RequestHeaderMode:   1,
+			ResponseHeaderMode:  1,
+			RequestBodyMode:     0,
+			ResponseBodyMode:    0,
+			RequestTrailerMode:  2,
+			ResponseTrailerMode: 2,
+		}
+	}
+	if extProc.MutationRules == nil {
+		extProc.MutationRules = &contour_api_v1.HeaderMutationRules{}
+	}
+
 	extProcConfig := envoy_config_filter_http_ext_proc_v3.ExternalProcessor{
 		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
 		FailureModeAllow:       extProc.FailOpen,
-		ProcessingMode:         dag.MakeProcessMode(extProc.ProcessingMode),
+		ProcessingMode:         makeProcessMode(extProc.ProcessingMode),
 		MessageTimeout:         envoy.Timeout(timeout.DefaultSetting()),
 		MaxMessageTimeout:      envoy.Timeout(timeout.DefaultSetting()),
 		DisableClearRouteCache: false,

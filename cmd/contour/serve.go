@@ -446,7 +446,7 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	if listenerConfig.GlobalExternalProcessorConfig, err = s.setupGlobalExternalProcessor(contourConfiguration); err != nil {
+	if listenerConfig.GlobalExternalProcessors, err = s.setupGlobalExternalProcessor(contourConfiguration); err != nil {
 		return err
 	}
 
@@ -821,7 +821,7 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	return globalExternalAuthConfig, nil
 }
 
-func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExtProcConfig, error) {
+func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.ContourConfigurationSpec) ([]xdscache_v3.GlobalExtProcConfig, error) {
 	if contourCfg.GlobalExternalProcessor == nil {
 		return nil, nil
 	}
@@ -830,23 +830,23 @@ func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.Co
 		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined.")
 	}
 
-	globalExtProcCfg := &xdscache_v3.GlobalExtProcConfig{}
+	var globalExtProcs []xdscache_v3.GlobalExtProcConfig
 	for _, ep := range contourCfg.GlobalExternalProcessor.Processors {
 		// ensure the specified ExtensionService exists
 		extSvcCfg, err := s.getExtensionSvcConfig(ep.GRPCService.ExtensionServiceRef.Name, ep.GRPCService.ExtensionServiceRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
-
-		globalExtProcCfg.Processors = append(globalExtProcCfg.Processors, xdscache_v3.ExtProcConfig{
+		globalExtProcs = append(globalExtProcs, xdscache_v3.GlobalExtProcConfig{
 			ExtensionServiceConfig: extSvcCfg,
 			FailOpen:               ep.GRPCService.FailOpen,
-			ProcessingMode:         dag.ToProcessingMode(ep.ProcessingMode),
-			MutationRules:          dag.ToMutationRules(ep.MutationRules),
+			Phase:                  ep.Phase,
+			Priority:               ep.Priority,
+			ProcessingMode:         ep.ProcessingMode,
+			MutationRules:          ep.MutationRules,
 		})
 	}
-
-	return globalExtProcCfg, nil
+	return globalExtProcs, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {

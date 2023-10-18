@@ -48,45 +48,6 @@ func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_a
 	return ref
 }
 
-func ToProcessingMode(pm *contour_api_v1.ProcessingMode) *ProcessingMode {
-
-	// TODO: move to somewhere?
-	if pm == nil {
-		pm = &contour_api_v1.ProcessingMode{
-			RequestHeaderMode:   1,
-			ResponseHeaderMode:  1,
-			RequestBodyMode:     0,
-			ResponseBodyMode:    0,
-			RequestTrailerMode:  2,
-			ResponseTrailerMode: 2,
-		}
-	}
-	return &ProcessingMode{
-		RequestHeaderMode:  HeaderSendMode(pm.RequestHeaderMode),
-		ResponseHeaderMode: HeaderSendMode(pm.ResponseHeaderMode),
-
-		RequestBodyMode:  BodySendMode(pm.RequestBodyMode),
-		ResponseBodyMode: BodySendMode(pm.ResponseBodyMode),
-
-		RequestTrailerMode:  HeaderSendMode(pm.RequestTrailerMode),
-		ResponseTrailerMode: HeaderSendMode(pm.ResponseTrailerMode),
-	}
-}
-
-func ToMutationRules(rule *contour_api_v1.HeaderMutationRules) *HeaderMutationRules {
-	// TODO: move to somewhere?
-	if rule == nil {
-		rule = &contour_api_v1.HeaderMutationRules{}
-	}
-	return &HeaderMutationRules{
-		AllowAllRouting: rule.AllowAllRouting,
-		AllowEnvoy:      rule.AllowEnvoy,
-		DisallowSystem:  rule.DisallowSystem,
-		DisallowAll:     rule.DisallowAll,
-		DisallowIsError: rule.DisallowIsError,
-	}
-}
-
 // HTTPProxyProcessor translates HTTPProxies into DAG
 // objects and adds them to the DAG.
 type HTTPProxyProcessor struct {
@@ -1224,7 +1185,7 @@ func toExtProcOverrides(
 	}
 
 	return &ExtProcOverrides{
-		ProcessingMode:  ToProcessingMode(override.ProcessingMode),
+		ProcessingMode:  override.ProcessingMode,
 		ExtProcService:  extSvc,
 		ResponseTimeout: respTimeout,
 	}
@@ -1518,12 +1479,12 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(
 func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 	extProcessor *contour_api_v1.ExternalProcessor,
 	validCond *contour_api_v1.DetailedCondition,
-	httpproxy *contour_api_v1.HTTPProxy) []ExternalProcessor {
+	httpproxy *contour_api_v1.HTTPProxy) []*ExternalProcessor {
 
-	var extProcs []ExternalProcessor
-	for _, proc := range extProcessor.Processors {
+	var extProcs []*ExternalProcessor
+	for _, ep := range extProcessor.Processors {
 		ok, extSvc := validateExtensionService(
-			defaultExtensionRef(proc.GRPCService.ExtensionServiceRef),
+			defaultExtensionRef(ep.GRPCService.ExtensionServiceRef),
 			validCond,
 			httpproxy.Namespace,
 			contour_api_v1.ConditionTypeExtProcError,
@@ -1531,17 +1492,19 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 		if !ok {
 			return nil
 		}
-		ok, respTimeout := determineExtensionServiceTimeout(contour_api_v1.ConditionTypeExtProcError, proc.GRPCService.ResponseTimeout, validCond, extSvc)
+		ok, respTimeout := determineExtensionServiceTimeout(contour_api_v1.ConditionTypeExtProcError, ep.GRPCService.ResponseTimeout, validCond, extSvc)
 		if !ok {
 			return nil
 		}
 
-		extProcs = append(extProcs, ExternalProcessor{
+		extProcs = append(extProcs, &ExternalProcessor{
 			ExtProcService:  extSvc,
 			ResponseTimeout: *respTimeout,
-			FailOpen:        proc.GRPCService.FailOpen,
-			ProcessingMode:  ToProcessingMode(proc.ProcessingMode),
-			MutationRules:   ToMutationRules(proc.MutationRules),
+			FailOpen:        ep.GRPCService.FailOpen,
+			ProcessingMode:  ep.ProcessingMode,
+			MutationRules:   ep.MutationRules,
+			Phase:           ep.Phase,
+			Priority:        ep.Priority,
 		})
 
 	}

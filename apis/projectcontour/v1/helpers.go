@@ -24,7 +24,7 @@ func (v *VirtualHost) AuthorizationConfigured() bool {
 }
 
 // DisableAuthorization returns true if this virtual host disables
-// authorization. If an authorization server is (un)present, the default
+// authorization. If an authorization server is present, the default
 // policy is to not disable.
 func (v *VirtualHost) DisableAuthorization() bool {
 	if v.AuthorizationConfigured() {

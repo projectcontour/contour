@@ -437,6 +437,7 @@ type ProcessingPhase string
 const (
 	// UnspecifiedPhase decides where to insert the external processing service.
 	// This will generally be at the end of the filter chain, right before the Router
+	// **NOTE: if not specify, default to UnspecifiedPhase
 	UnspecifiedPhase ProcessingPhase = "UnspecifiedPhase"
 
 	// Insert before contour authentication filter(s).

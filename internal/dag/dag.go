@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 
-	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -275,6 +275,16 @@ type InternalRedirectPolicy struct {
 	DenyRepeatedRouteRedirect bool
 }
 
+// Overrides that may be set on a per-route basis
+type ExtProcOverrides struct {
+	// Set a different processing mode for this route than the default.
+	ProcessingMode *contour_api_v1.ProcessingMode
+
+	// Set a different gRPC service for this route than the default.
+	ExtProcService  *ExtensionCluster
+	ResponseTimeout *timeout.Setting
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 	// PathMatchCondition specifies a MatchCondition to match on the request path.
@@ -366,15 +376,13 @@ type Route struct {
 	// If false, traffic is allowed only if it doesn't match any rule.
 	IPFilterAllow bool
 
-	// IPFilterRules is a list of ipv4/6 filter rules for which matching
+	// IPFilterRules i /6 filter rules for which matching
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
 	// ExtProcDisabled disable the filter for this particular vhost or route.
 	// If disabled is specified in multiple per-filter-configs, the most specific one will be used.
-	//
-	// TODO: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto#envoy-v3-api-msg-extensions-filters-http-ext-proc-v3-extprocoverrides
 	ExtProcDisabled  bool
 	ExtProcOverrides *ExtProcOverrides
 
@@ -802,7 +810,7 @@ type SecureVirtualHost struct {
 
 	// ExtProcs contains the configurations for enabling
 	// the ExtProc filters.
-	ExtProcs []ExternalProcessor
+	ExtProcs []*ExternalProcessor
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
@@ -889,12 +897,20 @@ type ExternalProcessor struct {
 	// from internal to external authorization.
 	FailOpen bool
 
+	// Phase determines where in the filter chain this extProc is to be injected.
+	Phase contour_api_v1.ProcessingPhase
+
+	// Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
+	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
+	// they will follow the order in which extProc(s) are added, Defaults to 0.
+	Priority int32
+
 	// Specifies default options for how HTTP headers, trailers, and bodies are sent.
-	ProcessingMode *ProcessingMode
+	ProcessingMode *contour_api_v1.ProcessingMode
 
 	// Rules that determine what modifications an external processing server may
 	// make to message headers.
-	MutationRules *HeaderMutationRules
+	MutationRules *contour_api_v1.HeaderMutationRules
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client
@@ -1297,103 +1313,4 @@ type SlowStartConfig struct {
 
 func (s *SlowStartConfig) String() string {
 	return fmt.Sprintf("%s%f%d", s.Window.String(), s.Aggression, s.MinWeightPercent)
-}
-
-// Control how headers and trailers are handled
-type HeaderSendMode int32
-
-const (
-	// The default HeaderSendMode depends on which part of the message is being
-	// processed. By default, request and response headers are sent,
-	// while trailers are skipped.
-	ProcessingMode_DEFAULT HeaderSendMode = 0
-	// Send the header or trailer.
-	ProcessingMode_SEND HeaderSendMode = 1
-	// Do not send the header or trailer.
-	ProcessingMode_SKIP HeaderSendMode = 2
-)
-
-// Control how the request and response bodies are handled
-type BodySendMode int32
-
-const (
-	// Do not send the body at all. This is the default.
-	ProcessingMode_NONE BodySendMode = 0
-	// Stream the body to the server in pieces as they arrive at the
-	// proxy.
-	ProcessingMode_STREAMED BodySendMode = 1
-	// Buffer the message body in memory and send the entire body at once.
-	// If the body exceeds the configured buffer limit, then the
-	// downstream system will receive an error.
-	ProcessingMode_BUFFERED BodySendMode = 2
-	// Buffer the message body in memory and send the entire body in one
-	// chunk. If the body exceeds the configured buffer limit, then the body contents
-	// up to the buffer limit will be sent.
-	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
-)
-
-// Overrides that may be set on a per-route basis
-type ExtProcOverrides struct {
-	// Set a different processing mode for this route than the default.
-	ProcessingMode *ProcessingMode
-
-	// Set a different gRPC service for this route than the default.
-	ExtProcService  *ExtensionCluster
-	ResponseTimeout *timeout.Setting
-}
-
-type ProcessingMode struct {
-	// How to handle the request header. Default is "SEND".
-	RequestHeaderMode HeaderSendMode
-	// How to handle the response header. Default is "SEND".
-	ResponseHeaderMode HeaderSendMode
-	// How to handle the request body. Default is "NONE".
-	RequestBodyMode BodySendMode
-	// How do handle the response body. Default is "NONE".
-	ResponseBodyMode BodySendMode
-	// How to handle the request trailers. Default is "SKIP".
-	RequestTrailerMode HeaderSendMode
-	// How to handle the response trailers. Default is "SKIP".
-	ResponseTrailerMode HeaderSendMode
-}
-
-type HeaderMutationRules struct {
-	// By default, certain headers that could affect processing of subsequent
-	// filters or request routing cannot be modified. These headers are
-	// ``host``, ``:authority``, ``:scheme``, and ``:method``. Setting this parameter
-	// to true allows these headers to be modified as well.
-	AllowAllRouting bool
-	// If true, allow modification of envoy internal headers. By default, these
-	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap``
-	// configuration. Default is false.
-	AllowEnvoy bool
-	// If true, prevent modification of any system header, defined as a header
-	// that starts with a ``:`` character, regardless of any other settings.
-	// A processing server may still override the ``:status`` of an HTTP response
-	// using an ``ImmediateResponse`` message. Default is false.
-	DisallowSystem bool
-	// If true, prevent modifications of all header values, regardless of any
-	// other settings. A processing server may still override the ``:status``
-	// of an HTTP response using an ``ImmediateResponse`` message. Default is false.
-	DisallowAll bool
-	// If true, and if the rules in this list cause a header mutation to be
-	// disallowed, then the filter using this configuration will terminate the
-	// request with a 500 error. In addition, regardless of the setting of this
-	// parameter, any attempt to set, add, or modify a disallowed header will
-	// cause the ``rejected_header_mutations`` counter to be incremented.
-	// Default is false.
-	DisallowIsError bool
-}
-
-func MakeProcessMode(mode *ProcessingMode) *envoy_config_filter_http_ext_proc_v3.ProcessingMode {
-	return &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
-		RequestHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestHeaderMode),
-		ResponseHeaderMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseHeaderMode),
-
-		RequestBodyMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.RequestBodyMode),
-		ResponseBodyMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.ResponseBodyMode),
-
-		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestTrailerMode),
-		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseTrailerMode),
-	}
 }
