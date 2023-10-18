@@ -101,7 +101,7 @@ var _ = Describe("Incluster", func() {
 
 	f.NamespacedTest("smoke-test", testSimpleSmoke)
 
-	f.NamespacedTest("leader-election", testLeaderElection)
+	testLeaderElection()
 
 	f.NamespacedTest("projectcontour-resource-rbac", testProjectcontourResourcesRBAC)
 
