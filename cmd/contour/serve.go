@@ -847,7 +847,7 @@ func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.Co
 	}
 
 	if contourCfg.GlobalExternalProcessor.ExtProcPolicy != nil {
-		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined.")
+		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined")
 	}
 
 	m := map[client.ObjectKey]struct{}{}
@@ -863,7 +863,7 @@ func (s *Server) setupGlobalExternalProcessor(contourCfg contour_api_v1alpha1.Co
 
 		// ensure unique external processing
 		if _, ok := m[extSvcCfg.ExtensionService]; ok {
-			return nil, fmt.Errorf("external processing %s/%s is duplicated.", extSvcCfg.ExtensionService.Namespace, extSvcCfg.ExtensionService.Namespace)
+			return nil, fmt.Errorf("external processing %s/%s is duplicated", extSvcCfg.ExtensionService.Namespace, extSvcCfg.ExtensionService.Namespace)
 		}
 		m[extSvcCfg.ExtensionService] = struct{}{}
 

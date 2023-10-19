@@ -887,7 +887,7 @@ type ExternalProcessor struct {
 	ExtProcService *ExtensionCluster
 
 	// ResponseTimeout sets how long the proxy should wait
-	// for extenal processor responses.
+	// for external processor responses.
 	// This is the timeout for a specific request.
 	ResponseTimeout timeout.Setting
 

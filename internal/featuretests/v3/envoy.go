@@ -523,29 +523,6 @@ func authzFilterFor(
 		Get()
 }
 
-// TODO: lewgun
-// extProcFilterFor does the same as httpsFilterFor but inserts a
-// `ext_authz` filter with the specified configuration into the
-// filter chain.
-func extProcFilterFor(
-	vhost string,
-	authz *envoy_config_filter_http_ext_authz_v3.ExtAuthz,
-) *envoy_listener_v3.Filter {
-	return envoy_v3.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
-		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.ext_authz",
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(authz),
-			},
-		}).
-		RouteConfigName(path.Join("https", vhost)).
-		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
-		Get()
-}
-
 func jwtAuthnFilterFor(
 	vhost string,
 	jwt *envoy_jwt_v3.JwtAuthentication,

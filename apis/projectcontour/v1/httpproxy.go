@@ -298,13 +298,13 @@ const (
 	// The default HeaderSendMode depends on which part of the message is being
 	// processed. By default, request and response headers are sent,
 	// while trailers are skipped.
-	ProcessingMode_DEFAULT HeaderSendMode = 0
+	ProcessingModeDefault HeaderSendMode = 0
 
 	// Send the header or trailer.
-	ProcessingMode_SEND HeaderSendMode = 1
+	ProcessingModeSend HeaderSendMode = 1
 
 	// Do not send the header or trailer.
-	ProcessingMode_SKIP HeaderSendMode = 2
+	ProcessingModeSkip HeaderSendMode = 2
 )
 
 // BodySendMode control how the request and response bodies are handled
@@ -312,21 +312,21 @@ type BodySendMode int32
 
 const (
 	// Do not send the body at all. This is the default.
-	ProcessingMode_NONE BodySendMode = 0
+	ProcessingModeNone BodySendMode = 0
 
 	// Stream the body to the server in pieces as they arrive at the
 	// proxy.
-	ProcessingMode_STREAMED BodySendMode = 1
+	ProcessingModeStreamed BodySendMode = 1
 
 	// Buffer the message body in memory and send the entire body at once.
 	// If the body exceeds the configured buffer limit, then the
 	// downstream system will receive an error.
-	ProcessingMode_BUFFERED BodySendMode = 2
+	ProcessingModeBuffered BodySendMode = 2
 
 	// Buffer the message body in memory and send the entire body in one
 	// chunk. If the body exceeds the configured buffer limit, then the body contents
 	// up to the buffer limit will be sent.
-	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
+	ProcessingModeBufferedPartial BodySendMode = 3
 )
 
 // HeaderMutationRules specifies what headers may be manipulated by a processing filter.
