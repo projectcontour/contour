@@ -188,7 +188,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	r.log.WithField("namespace", request.Namespace).WithField("name", request.Name).Info("reconciling gateway")
 
 	var gatewayClasses gatewayapi_v1beta1.GatewayClassList
-	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+	if err := r.client.List(ctx, &gatewayClasses); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gateway classes")
 	}
 
@@ -219,7 +219,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	var allGateways gatewayapi_v1beta1.GatewayList
-	if err := r.client.List(context.Background(), &allGateways); err != nil {
+	if err := r.client.List(ctx, &allGateways); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gateways")
 	}
 
@@ -280,8 +280,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			})
 		} else {
 			// this branch makes testing easier by not going through the StatusUpdater.
-			copy := setGatewayNotAccepted(gw.DeepCopy())
-			if err := r.client.Status().Update(context.Background(), copy); err != nil {
+			gwCopy := setGatewayNotAccepted(gw.DeepCopy())
+			if err := r.client.Status().Update(ctx, gwCopy); err != nil {
 				r.log.WithError(err).Error("error updating gateway status")
 				return reconcile.Result{}, fmt.Errorf("error updating status of gateway %s/%s: %v", gw.Namespace, gw.Name, err)
 			}
