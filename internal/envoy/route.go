@@ -71,18 +71,16 @@ func SingleSimpleCluster(route *dag.Route) bool {
 	// If the target cluster performs any kind of header manipulation,
 	// then we should use a WeightedCluster to encode the additional
 	// configuration.
-	if cluster.RequestHeadersPolicy == nil {
-		// no request headers policy
-	} else if len(cluster.RequestHeadersPolicy.Set) != 0 ||
-		len(cluster.RequestHeadersPolicy.Add) != 0 ||
-		len(cluster.RequestHeadersPolicy.Remove) != 0 ||
-		len(cluster.RequestHeadersPolicy.HostRewrite) != 0 {
+	if cluster.RequestHeadersPolicy != nil &&
+		(len(cluster.RequestHeadersPolicy.Set) != 0 ||
+			len(cluster.RequestHeadersPolicy.Add) != 0 ||
+			len(cluster.RequestHeadersPolicy.Remove) != 0 ||
+			len(cluster.RequestHeadersPolicy.HostRewrite) != 0) {
 		return false
 	}
-	if cluster.ResponseHeadersPolicy == nil {
-		// no response headers policy
-	} else if len(cluster.ResponseHeadersPolicy.Set) != 0 ||
-		len(cluster.ResponseHeadersPolicy.Remove) != 0 {
+	if cluster.ResponseHeadersPolicy != nil &&
+		(len(cluster.ResponseHeadersPolicy.Set) != 0 ||
+			len(cluster.ResponseHeadersPolicy.Remove) != 0) {
 		return false
 	}
 	if len(cluster.CookieRewritePolicies) > 0 {

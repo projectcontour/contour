@@ -136,7 +136,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	r.log.WithField("name", request.Name).Info("reconciling gatewayclass")
 
 	var gatewayClasses gatewayapi_v1beta1.GatewayClassList
-	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+	if err := r.client.List(ctx, &gatewayClasses); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gatewayclasses: %w", err)
 	}
 
@@ -177,15 +177,15 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 						panic(fmt.Sprintf("unsupported object type %T", obj))
 					}
 
-					return status.SetGatewayClassAccepted(context.Background(), r.client, gwc.DeepCopy(), accepted)
+					return status.SetGatewayClassAccepted(gwc.DeepCopy(), accepted)
 				}),
 			})
 		} else {
 			// this branch makes testing easier by not going through the StatusUpdater.
-			copy := status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), accepted)
+			gcCopy := status.SetGatewayClassAccepted(gc.DeepCopy(), accepted)
 
-			if err := r.client.Status().Update(context.Background(), copy); err != nil {
-				return fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+			if err := r.client.Status().Update(ctx, gcCopy); err != nil {
+				return fmt.Errorf("error updating status of gateway class %s: %v", gcCopy.Name, err)
 			}
 		}
 		return nil
