@@ -595,6 +595,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					AddExtProcFilters(toExternalProcessors(cfg.GlobalExternalProcessors)).
 					Get()
 
 				// Default filter chain

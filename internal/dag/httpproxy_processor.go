@@ -1563,7 +1563,7 @@ func validateExtensionService(
 	return true, ext
 }
 
-const extSvcRespTimeoutFormat = "%s is invalid: %q"
+const extSvcRespTimeoutFormat = "%s is invalid: %s"
 
 func determineExtensionServiceTimeout(
 	errorType string,

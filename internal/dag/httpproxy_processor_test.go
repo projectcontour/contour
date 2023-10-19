@@ -866,7 +866,7 @@ func TestDetermineExternalAuthTimeout(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			validCond := &contour_api_v1.DetailedCondition{}
-			gotBool, got := determineExtensionServiceTimeout(tc.responseTimeout, validCond, tc.ext)
+			gotBool, got := determineExtensionServiceTimeout(contour_api_v1.ConditionTypeAuthError, tc.responseTimeout, validCond, tc.ext)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantBool, gotBool)
 			require.Equal(t, tc.wantValidCond, validCond)
