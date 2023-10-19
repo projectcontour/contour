@@ -348,7 +348,7 @@ func equal(a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment) bool {
 	return true
 }
 
-func (e *EndpointsTranslator) OnAdd(obj any, isInInitialList bool) {
+func (e *EndpointsTranslator) OnAdd(obj any, _ bool) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
 		if !e.cache.UpdateEndpoint(obj) {

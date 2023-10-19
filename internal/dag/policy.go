@@ -185,10 +185,9 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 			if extractedHostRewriteHeader := extractHostRewriteHeaderValue(entry.Value); extractedHostRewriteHeader != "" {
 				hostRewriteHeader = http.CanonicalHeaderKey(extractedHostRewriteHeader)
 				continue
-			} else {
-				hostRewrite = entry.Value
-				continue
 			}
+			hostRewrite = entry.Value
+			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)

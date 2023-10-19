@@ -61,7 +61,7 @@ func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
 // OnAdd updates the given Ingress/HTTPProxy/Gateway object with the
 // current load balancer address. Note that this method can be called
 // concurrently from an informer or from Contour itself.
-func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
+func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 	// Hold the mutex to get a shallow copy. We don't need to
 	// deep copy, since all the references are read-only.
 	s.mu.Lock()
@@ -191,7 +191,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
 	}
 }
 
-func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj any) {
+func (s *StatusAddressUpdater) OnUpdate(_, newObj any) {
 
 	// We only care about the new object, because we're only updating its status.
 	// So, we can get away with just passing this call to OnAdd.
@@ -199,7 +199,7 @@ func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj any) {
 
 }
 
-func (s *StatusAddressUpdater) OnDelete(obj any) {
+func (s *StatusAddressUpdater) OnDelete(_ any) {
 	// we don't need to update the status on resources that
 	// have been deleted.
 }
@@ -214,7 +214,7 @@ type ServiceStatusLoadBalancerWatcher struct {
 	Log         logrus.FieldLogger
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, isInInitialList bool) {
+func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 	svc, ok := obj.(*v1.Service)
 	if !ok {
 		// not a service
@@ -230,7 +230,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, isInInitialList bool) 
 	s.notify(svc.Status.LoadBalancer)
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj any) {
+func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 	svc, ok := newObj.(*v1.Service)
 	if !ok {
 		// not a service

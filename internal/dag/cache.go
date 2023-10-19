@@ -671,9 +671,8 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 	if err != nil {
 		if _, ok := err.(DelegationNotPermittedError); ok {
 			return nil, err
-		} else {
-			return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 		}
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
 
 	if uv.SubjectName == "" {
