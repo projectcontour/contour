@@ -1,0 +1,1 @@
+Switch to documenting the Gateway API release semantic version instead of API versions in versions.yaml and the [compatibility matrix](https://projectcontour.io/resources/compatibility-matrix/), to provide more information about features available with each release.
