@@ -199,7 +199,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 		}
 
 		var err error
-		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour")
+		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour", "-race")
 		require.NoError(t, err)
 	}
 
