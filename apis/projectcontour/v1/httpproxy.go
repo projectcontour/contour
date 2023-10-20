@@ -551,6 +551,18 @@ type Route struct {
 	// +optional
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
 	// The policy for managing request headers during proxying.
+	//
+	// You may dynamically rewrite the Host header to be forwarded
+	// upstream to the content of a request header using
+	// the below format "%REQ(X-Header-Name)%". If the value of the header
+	// is empty, it is ignored.
+	//
+	// *NOTE: Pay attention to the potential security implications of using this option.
+	// Provided header must come from trusted source.
+	//
+	// **NOTE: The header rewrite is only done while forwarding and has no bearing
+	// on the routing decision.
+	//
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.
@@ -1268,7 +1280,7 @@ type LoadBalancerPolicy struct {
 }
 
 // HeadersPolicy defines how headers are managed during forwarding.
-// The `Host` header is treated specially and if set in a HTTP response
+// The `Host` header is treated specially and if set in a HTTP request
 // will be used as the SNI server name when forwarding over TLS. It is an
 // error to attempt to set the `Host` header in a HTTP response.
 type HeadersPolicy struct {

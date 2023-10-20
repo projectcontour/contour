@@ -172,6 +172,7 @@ type httpConnectionManagerBuilder struct {
 	numTrustedHops                uint32
 	tracingConfig                 *http.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
+	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 }
 
@@ -281,6 +282,11 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
 func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerConnection *uint32) *httpConnectionManagerBuilder {
 	b.maxRequestsPerConnection = maxRequestsPerConnection
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurrentStreams *uint32) *httpConnectionManagerBuilder {
+	b.http2MaxConcurrentStreams = http2MaxConcurrentStreams
 	return b
 }
 
@@ -538,6 +544,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		cm.CommonHttpProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*b.maxRequestsPerConnection)
 	}
 
+	if b.http2MaxConcurrentStreams != nil {
+		cm.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{
+			MaxConcurrentStreams: wrapperspb.UInt32(*b.http2MaxConcurrentStreams),
+		}
+	}
+
 	if b.enableWebsockets {
 		cm.UpgradeConfigs = append(cm.UpgradeConfigs,
 			&http.HttpConnectionManager_UpgradeConfig{
@@ -648,7 +660,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 }
 
 // UnixSocketAddress creates a new Unix Socket envoy_core_v3.Address.
-func UnixSocketAddress(address string, port int) *envoy_core_v3.Address {
+func UnixSocketAddress(address string) *envoy_core_v3.Address {
 	return &envoy_core_v3.Address{
 		Address: &envoy_core_v3.Address_Pipe{
 			Pipe: &envoy_core_v3.Pipe{
@@ -887,7 +899,7 @@ func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext
 	return fc
 }
 
-// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain conifgured for FallbackCertificate.
+// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain configured for FallbackCertificate.
 func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
 	fc := &envoy_listener_v3.FilterChain{
 		Name:    "fallback-certificate",

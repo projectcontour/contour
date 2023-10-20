@@ -60,7 +60,7 @@ else
   git checkout "${GATEWAY_API_VERSION}"
   # Keep the list of skipped features in sync with
   # test/conformance/gatewayapi/gateway_conformance_test.go.
-  go test -timeout=40m ./conformance -gateway-class=contour -all-features \
+  go test -timeout=40m ./conformance -run TestConformance -gateway-class=contour -all-features \
     -exempt-features=Mesh \
     -skip-tests=HTTPRouteRedirectPortAndScheme
 fi

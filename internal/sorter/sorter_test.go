@@ -279,24 +279,21 @@ func TestSortRoutesPathMatch(t *testing.T) {
 		},
 		// Note that regex matches sort before prefix matches.
 		{
-			PathMatchCondition: matchRegex("/this/is/the/longest"),
+			PathMatchCondition: matchRegex("/athis/is/the/longest"),
 		},
 		{
 			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
 		},
 		{
+			PathMatchCondition: matchRegex("/foo.*"),
+		},
+		{
+			PathMatchCondition: matchRegex("/bar.*"),
+		},
+		{
 			PathMatchCondition: matchRegex("/"),
 		},
-		{
-			PathMatchCondition: matchRegex("."),
-		},
 		// Prefix segment matches sort before string matches.
-		{
-			PathMatchCondition: matchPrefixSegment("/path/prefix2"),
-		},
-		{
-			PathMatchCondition: matchPrefixString("/path/prefix2"),
-		},
 		{
 			PathMatchCondition: matchPrefixSegment("/path/prefix/a"),
 		},
@@ -304,7 +301,13 @@ func TestSortRoutesPathMatch(t *testing.T) {
 			PathMatchCondition: matchPrefixString("/path/prefix/a"),
 		},
 		{
-			PathMatchCondition: matchPrefixString("/path/prefix"),
+			PathMatchCondition: matchPrefixString("/path/prf222"),
+		},
+		{
+			PathMatchCondition: matchPrefixString("/path/prf122"),
+		},
+		{
+			PathMatchCondition: matchPrefixString("/path/prfx"),
 		},
 		{
 			PathMatchCondition: matchPrefixSegment("/path/p"),
@@ -389,25 +392,31 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 			PathMatchCondition: matchExact("/pathexact"),
 		},
 		{
-			PathMatchCondition: matchRegex("/pathregex"),
-			HeaderMatchConditions: []dag.HeaderMatchCondition{
-				exactHeader("header-name", "header-value"),
-			},
-		},
-		{
-			PathMatchCondition: matchRegex("/pathregex"),
+			PathMatchCondition: matchRegex("/pathregex2"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				presentHeader("header-name"),
 			},
 		},
 		{
-			PathMatchCondition: matchRegex("/pathregex"),
+			PathMatchCondition: matchRegex("/pathregex1"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex1"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex1"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				exactHeader("long-header-name", "long-header-value"),
 			},
 		},
 		{
-			PathMatchCondition: matchRegex("/pathregex"),
+			PathMatchCondition: matchRegex("/pathregex1"),
 		},
 		{
 			PathMatchCondition: matchPrefixSegment("/path"),

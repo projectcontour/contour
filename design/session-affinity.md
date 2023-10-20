@@ -155,7 +155,7 @@ For example consider two routes, `/cart` and `/checkout` are served by the same 
     - name: ecommerce-pro
       port: 8080
       strategy: Cookie
-  - match: /cheeckout
+  - match: /checkout
     - name: ecommerce-pro
       port: 8080
       strategy: Cookie

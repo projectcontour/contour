@@ -428,10 +428,9 @@ func (p *GatewayAPIProcessor) computeListener(
 			msg,
 		)
 	}
-	// set the listener's "Programmed" condition based on whether we've
-	// added any other conditions for the listener. The assumption
-	// here is that if another condition is set, the listener is
-	// invalid/not programmed.
+
+	// Set required Listener conditions (Programmed, Accepted, ResolvedRefs)
+	// if they haven't already been set.
 	defer func() {
 		listenerStatus := gwAccessor.ListenerStatus[string(listener.Name)]
 
@@ -450,9 +449,18 @@ func (p *GatewayAPIProcessor) computeListener(
 				gatewayapi_v1beta1.ListenerReasonAccepted,
 				"Listener accepted",
 			)
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1beta1.ListenerConditionResolvedRefs,
+				metav1.ConditionTrue,
+				gatewayapi_v1beta1.ListenerReasonResolvedRefs,
+				"Listener references resolved",
+			)
 		} else {
 			programmedConditionExists := false
 			acceptedConditionExists := false
+			resolvedRefsConditionExists := false
+
 			for _, cond := range listenerStatus.Conditions {
 				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionProgrammed) {
 					programmedConditionExists = true
@@ -460,17 +468,20 @@ func (p *GatewayAPIProcessor) computeListener(
 				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionAccepted) {
 					acceptedConditionExists = true
 				}
+				if cond.Type == string(gatewayapi_v1beta1.ListenerConditionResolvedRefs) {
+					resolvedRefsConditionExists = true
+				}
 			}
 
-			// Only set the Programmed or Accepted conditions if
+			// Only set the required Listener conditions if
 			// they don't already exist in the status update, since
 			// if they do exist, they will contain more specific
 			// information in the reason, message, etc.
 			if !programmedConditionExists {
 				addInvalidListenerCondition("Invalid listener, see other listener conditions for details")
 			}
-			// Accepted condition is always true for now if not
-			// explicitly set.
+			// Set Accepted condition to true if not
+			// explicitly set otherwise.
 			if !acceptedConditionExists {
 				gwAccessor.AddListenerCondition(
 					string(listener.Name),
@@ -478,6 +489,17 @@ func (p *GatewayAPIProcessor) computeListener(
 					metav1.ConditionTrue,
 					gatewayapi_v1beta1.ListenerReasonAccepted,
 					"Listener accepted",
+				)
+			}
+			// Set ResolvedRefs condition to true if not
+			// explicitly set otherwise.
+			if !resolvedRefsConditionExists {
+				gwAccessor.AddListenerCondition(
+					string(listener.Name),
+					gatewayapi_v1beta1.ListenerConditionResolvedRefs,
+					metav1.ConditionTrue,
+					gatewayapi_v1beta1.ListenerReasonResolvedRefs,
+					"Listener references resolved",
 				)
 			}
 		}

@@ -32,7 +32,7 @@ This document describes a design for performing request authorization for virtua
 
 ## High-Level Design
 A new `ExtensionService` CRD adds a way to represent and track an authorization service.
-This CRD is relatively generic, so that it can be re-used for Envoy rate limiting and logging services.
+This CRD is relatively generic, so that it can be reused for Envoy rate limiting and logging services.
 The core of the `ExtensionService` CRD is subset of the `projectcontour.v1.HTTPProxy` `Service` specification.
 Re-using the `Service` type allows the operator to specify configuration in familiar and consistent terms, especially TLS configuration.
 
@@ -115,7 +115,7 @@ Note that the Envoy cluster name can be non-obvious, so exposing it in status ma
 
 If the `Service` refers to a Kubernetes `ExternalName`, Contour should program Envoy to send the traffic to the external destination.
 
-The `ExtensionService` CRD re-uses the `Service` type from the `projectcontour.io/v1` API.
+The `ExtensionService` CRD reuses the `Service` type from the `projectcontour.io/v1` API.
 However, the setting following fields can generate a validation errors:
 
 - `Protocol` may only be set to `h2` or `h2c` (the default should be `h2`).
@@ -338,7 +338,7 @@ Once that happens, the client has to resend the original request and it will ent
 1. Contour could install itself as the authorization server.
    This could remove some of the limitations of the Envoy configuration structure at the cost of more complexity in Contour.
 1. Integrate external authorization directly into `HTTPProxy`.
-   This increases the complexity of the `HTTPProxy` structure and makes it difficult to re-use the same authorization service acrtoss multiple proxies.
+   This increases the complexity of the `HTTPProxy` structure and makes it difficult to reuse the same authorization service acrtoss multiple proxies.
    A separate CRD gives better opportunities to expose useful operational status.
    Integrating specific authorization parameters into `HTTPProxy` prevents operators implementing their own authorization flows.
 

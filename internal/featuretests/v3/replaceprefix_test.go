@@ -489,6 +489,16 @@ func artifactoryDocker(t *testing.T) {
 							"/artifactory/api/docker/container-sandbox/v2/"),
 					},
 					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-external"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-external/v2"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-sandbox"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-sandbox/v2"),
+					},
+					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-release"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-release/v2"),

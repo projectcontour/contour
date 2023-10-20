@@ -798,6 +798,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		vrl := rateLimitPerRoute(route.RateLimitPolicy)
+
 		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
 		redirectPolicy, err := redirectRoutePolicy(route.RequestRedirectPolicy)
@@ -807,7 +809,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy)
+		irp := internalRedirectPolicy(route.InternalRedirectPolicy)
 
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
@@ -823,10 +825,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			ResponseHeadersPolicy:     respHP,
 			CookieRewritePolicies:     cookieRP,
 			RateLimitPolicy:           rlp,
+			RateLimitPerRoute:         vrl,
 			RequestHashPolicies:       requestHashPolicies,
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
-			InternalRedirectPolicy:    internalRedirectPolicy,
+			InternalRedirectPolicy:    irp,
 		}
 
 		if p.SetSourceMetadataOnRoutes {
@@ -1961,4 +1964,15 @@ func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfi
 		Aggression:       aggression,
 		MinWeightPercent: slowStart.MinimumWeightPercent,
 	}, nil
+}
+
+func rateLimitPerRoute(in *contour_api_v1.RateLimitPolicy) *RateLimitPerRoute {
+	// Ignore the virtual host global rate limit policy if disabled is true
+	if in != nil && in.Global != nil && in.Global.Disabled {
+		return &RateLimitPerRoute{
+			VhRateLimits: VhRateLimitsIgnore,
+		}
+	}
+
+	return nil
 }
