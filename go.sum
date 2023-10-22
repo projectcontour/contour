@@ -369,8 +369,8 @@ github.com/tsaarni/certyaml v0.9.2 h1:LoRTuajwjJ1CHAJiMv5cpOtwQ05207Oqe6cT9D7WDa
 github.com/tsaarni/certyaml v0.9.2/go.mod h1:s+ErAC1wZ32r1ihSULvR7HXedKKN5HZasdb8Cj8gT9E=
 github.com/tsaarni/x500dn v1.0.0 h1:LvaWTkqRpse4VHBhB5uwf3wytokK4vF9IOyNAEyiA+U=
 github.com/tsaarni/x500dn v1.0.0/go.mod h1:QaHa3EcUKC4dfCAZmj8+ZRGLKukWgpGv9H3oOCsAbcE=
-github.com/vektra/mockery/v2 v2.35.4 h1:IGD/3KQNKkLw1MiWh5Zi5XQse2h17j6ygSYK6ky9ODY=
-github.com/vektra/mockery/v2 v2.35.4/go.mod h1:diB13hxXG6QrTR0ol2Rk8s2dRMftzvExSvPDKr+IYKk=
+github.com/vektra/mockery/v2 v2.36.0 h1:TO4tST9f7lm4DHybPI2MC4Vb74bL89PtWvRhpNPAVo4=
+github.com/vektra/mockery/v2 v2.36.0/go.mod h1:diB13hxXG6QrTR0ol2Rk8s2dRMftzvExSvPDKr+IYKk=
 github.com/xhit/go-str2duration/v2 v2.1.0 h1:lxklc02Drh6ynqX+DdPyp5pCKLUQpRT8bp8Ydu2Bstc=
 github.com/xhit/go-str2duration/v2 v2.1.0/go.mod h1:ohY8p+0f07DiV6Em5LKB0s2YpLtXVyJfNt1+BlmyAsU=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
