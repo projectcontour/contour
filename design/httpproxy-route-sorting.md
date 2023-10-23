@@ -17,7 +17,7 @@ Since Envoy is greedy matching path routes, order is important. Contour sorts th
 And it breaks ties in the following way:
 
 1. Matches of the same type are ordered by their length.
-2. Matches of the same length are sorted by the presense of additional matching conditions(e.g. if a particular header exists)
+2. Matches of the same length are sorted by the presence of additional matching conditions(e.g. if a particular header exists)
 3. Matches of the same type, length and match conditions are sorted lexicographically.
 
 ## Personas
