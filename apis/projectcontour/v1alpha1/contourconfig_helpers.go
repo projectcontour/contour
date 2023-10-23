@@ -15,9 +15,14 @@ package v1alpha1
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	featureFlagRouteSorting string = "omitRouteSorting"
 )
 
 // Validate configuration that is not already covered by CRD validation.
@@ -230,6 +235,16 @@ func (g *GatewayConfig) Validate() error {
 	}
 
 	return nil
+}
+
+// TODO(sotiris): Pick up the feature flag in Endpoint Slices PR
+// func (f FeatureFlags) RouteSortingEnabled() bool {
+// return slices.Contains(f, featureFlagUseEndpointSlices)
+// return slices.Contains([]string{featureFlagRouteSorting}, featureFlagRouteSorting)
+// }
+func ShouldSortHTTPProxyRoutes() bool {
+	f := os.Getenv(featureFlagRouteSorting)
+	return f == ""
 }
 
 func (e *EnvoyLogging) Validate() error {

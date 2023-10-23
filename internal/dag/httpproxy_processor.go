@@ -112,6 +112,10 @@ type HTTPProxyProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// Allows cluster operators to prevent the processor from sorting the routes
+	// before sending them to Envoy.
+	ShouldSortRoutes bool
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -544,6 +548,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 
+	if !insecure.ShouldSortRoutes {
+		insecure.ShouldSortRoutes = p.ShouldSortRoutes
+	}
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -570,6 +577,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			return
 		}
 
+		if !secure.ShouldSortRoutes {
+			secure.ShouldSortRoutes = p.ShouldSortRoutes
+		}
 		addRoutes(secure, routes)
 
 		// Process JWT verification requirements.

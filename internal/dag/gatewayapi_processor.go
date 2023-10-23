@@ -1024,6 +1024,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 
 		for host := range hosts {
 			secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+			secure.ShouldSortRoutes = true
 
 			if listener.tlsSecret != nil {
 				secure.Secret = listener.tlsSecret
@@ -1378,12 +1379,12 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 				case listener.tlsSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
+					svhost.ShouldSortRoutes = true
 					svhost.AddRoute(route)
-					// TODO(davinci26): should we use the sorter here?
 				default:
 					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+					vhost.ShouldSortRoutes = true
 					vhost.AddRoute(route)
-					// TODO(davinci26): should we use the sorter here?
 				}
 
 				programmed = true
@@ -1524,12 +1525,12 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 				case listener.tlsSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
 					svhost.Secret = listener.tlsSecret
+					svhost.ShouldSortRoutes = true
 					svhost.AddRoute(route)
-					// TODO(davinci26): should we use the sorter here?
 				default:
 					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+					vhost.ShouldSortRoutes = true
 					vhost.AddRoute(route)
-					// TODO(davinci26): should we use the sorter here?
 				}
 
 				programmed = true
@@ -1686,6 +1687,7 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 
 	if listener.tlsSecret != nil {
 		secure := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, "*")
+		secure.ShouldSortRoutes = true
 		secure.Secret = listener.tlsSecret
 		secure.TCPProxy = &proxy
 	} else {
