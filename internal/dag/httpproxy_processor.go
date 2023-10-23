@@ -1504,9 +1504,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 
 func expandPrefixMatchesOrdered(routes []*Route) []*Route {
 	expandedRoutes := []*Route{}
-
 	prefixCount := make(map[string]int, 0)
-
 	// First, we find the non expandable prefix routes. Those are two:
 	// - if both versions of the route exist e.g. /api/ and /api
 	// - root prefix `/`
@@ -1526,7 +1524,7 @@ func expandPrefixMatchesOrdered(routes []*Route) []*Route {
 			routingPrefix = strings.TrimRight(routingPrefix, "/")
 		}
 
-		prefixCount[routingPrefix] += 1
+		prefixCount[routingPrefix]++
 	}
 
 	for _, r := range routes {
