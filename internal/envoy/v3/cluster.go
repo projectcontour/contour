@@ -179,7 +179,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 				ext.UpstreamValidation,
 				ext.SNI,
 				ext.ClientCertificate,
-				nil, // TODO(KauzClay): should TLS protocol version settings be configurable for extensionservices too?
+				ext.UpstreamTLS,
 				"h2",
 			),
 		)
@@ -210,7 +210,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	var transportSocket *envoy_core_v3.TransportSocket
 	if c.Scheme == "https" {
-		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil, nil))
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil, c.UpstreamTLS))
 	}
 
 	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))

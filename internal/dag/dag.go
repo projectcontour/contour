@@ -818,6 +818,7 @@ type DNSNameCluster struct {
 	Port               int
 	DNSLookupFamily    string
 	UpstreamValidation *PeerValidationContext
+	UpstreamTLS        *UpstreamTLS
 }
 
 type JWTRule struct {
