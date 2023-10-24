@@ -351,7 +351,7 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	}
 }
 
-func (e *EndpointSliceTranslator) OnAdd(obj any, isInInitialList bool) {
+func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {
 	switch obj := obj.(type) {
 	case *discoveryv1.EndpointSlice:
 		if !e.cache.UpdateEndpointSlice(obj) {
