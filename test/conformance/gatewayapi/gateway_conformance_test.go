@@ -16,9 +16,14 @@
 package gatewayapi
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bombsimon/logrusr/v4"
+	"github.com/distribution/reference"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -28,9 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
+	conformance_v1alpha1 "sigs.k8s.io/gateway-api/conformance/apis/v1alpha1"
 	"sigs.k8s.io/gateway-api/conformance/tests"
 	"sigs.k8s.io/gateway-api/conformance/utils/flags"
 	"sigs.k8s.io/gateway-api/conformance/utils/suite"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGatewayConformance(t *testing.T) {
@@ -48,7 +55,7 @@ func TestGatewayConformance(t *testing.T) {
 	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
 	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
 
-	cSuite := suite.New(suite.Options{
+	cSuiteOptions := suite.Options{
 		Client: client,
 		// This clientset is needed in addition to the client only because
 		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
@@ -68,8 +75,58 @@ func TestGatewayConformance(t *testing.T) {
 		ExemptFeatures: sets.New(
 			suite.SupportMesh,
 		),
-	})
-	cSuite.Setup(t)
-	cSuite.Run(t, tests.ConformanceTests)
+	}
+	if os.Getenv("GENERATE_GATEWAY_CONFORMANCE_REPORT") == "true" {
+		reportDir, ok := os.LookupEnv("GATEWAY_CONFORMANCE_REPORT_OUTDIR")
+		require.True(t, ok, "GATEWAY_CONFORMANCE_REPORT_OUTDIR not set")
 
+		image, ok := os.LookupEnv("CONTOUR_E2E_IMAGE")
+		require.True(t, ok, "CONTOUR_E2E_IMAGE not set")
+
+		imageRef, err := reference.Parse(image)
+		require.NoErrorf(t, err, "CONTOUR_E2E_IMAGE invalid image ref: %s", imageRef)
+		taggedImage, ok := imageRef.(reference.NamedTagged)
+		require.True(t, ok)
+		require.NotEmpty(t, taggedImage)
+
+		// Workaround since the experimental suite doesn't properly
+		// exclude tests we don't want to run using the ExemptFeatures
+		// field.
+		cSuiteOptions.EnableAllSupportedFeatures = false
+		cSuiteOptions.SupportedFeatures = suite.AllFeatures.Delete(suite.MeshCoreFeatures.UnsortedList()...)
+
+		cSuite, err := suite.NewExperimentalConformanceTestSuite(suite.ExperimentalConformanceOptions{
+			Options: cSuiteOptions,
+			Implementation: conformance_v1alpha1.Implementation{
+				Organization: "projectcontour",
+				Project:      "contour",
+				URL:          "https://projectcontour.io/",
+				Version:      taggedImage.Tag(),
+				Contact:      []string{"@projectcontour/maintainers"},
+			},
+			ConformanceProfiles: sets.New[suite.ConformanceProfileName](
+				suite.HTTPConformanceProfileName,
+				suite.TLSConformanceProfileName,
+			),
+		})
+		require.NoError(t, err)
+
+		cSuite.Setup(t)
+		require.NoError(t, cSuite.Run(t, tests.ConformanceTests))
+
+		report, err := cSuite.Report()
+		require.NoError(t, err, "failed generating conformance report")
+		rawReport, err := yaml.Marshal(report)
+		require.NoError(t, err)
+		t.Logf("Conformance report:\n%s", string(rawReport))
+
+		require.NoError(t, os.MkdirAll(reportDir, 0o755))
+		outFile := filepath.Join(reportDir, fmt.Sprintf("projectcontour-contour-%d.yaml", time.Now().UnixNano()))
+		require.NoError(t, os.WriteFile(outFile, rawReport, 0o600))
+		t.Logf("Report written to: %s", outFile)
+	} else {
+		cSuite := suite.New(cSuiteOptions)
+		cSuite.Setup(t)
+		cSuite.Run(t, tests.ConformanceTests)
+	}
 }
