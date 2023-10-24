@@ -471,6 +471,14 @@ spec:
                         type: string
                     type: object
                 type: object
+              featureFlags:
+                description: 'FeatureFlags defines toggle to enable new contour features.
+                  Available toggles are: useEndpointSlices - configures contour to
+                  fetch endpoint data from k8s endpoint slices. defaults to false
+                  and reading endpoint data from the k8s endpoints.'
+                items:
+                  type: string
+                type: array
               gateway:
                 description: Gateway contains parameters for the gateway-api Gateway
                   that Contour is configured to serve traffic.
@@ -3945,6 +3953,14 @@ spec:
                             type: string
                         type: object
                     type: object
+                  featureFlags:
+                    description: 'FeatureFlags defines toggle to enable new contour
+                      features. Available toggles are: useEndpointSlices - configures
+                      contour to fetch endpoint data from k8s endpoint slices. defaults
+                      to false and reading endpoint data from the k8s endpoints.'
+                    items:
+                      type: string
+                    type: array
                   gateway:
                     description: Gateway contains parameters for the gateway-api Gateway
                       that Contour is configured to serve traffic.

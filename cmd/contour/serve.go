@@ -64,6 +64,7 @@ import (
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
+	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
 const (
@@ -188,6 +189,12 @@ type Server struct {
 	mgr               manager.Manager
 	registry          *prometheus.Registry
 	handlerCacheSyncs []cache.InformerSynced
+}
+
+type EndpointsTranslator interface {
+	cache.ResourceEventHandler
+	xdscache.ResourceCache
+	SetObserver(observer contour.Observer)
 }
 
 // NewServer returns a Server object which contains the initial configuration
@@ -456,9 +463,13 @@ func (s *Server) doServe() error {
 
 	contourMetrics := metrics.NewMetrics(s.registry)
 
-	// Endpoints updates are handled directly by the EndpointsTranslator
-	// due to their high update rate and their orthogonal nature.
-	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
+	// Endpoints updates are handled directly by the EndpointsTranslator/EndpointSliceTranslator due to the high update volume.
+	var endpointHandler EndpointsTranslator
+	if contourConfiguration.FeatureFlags.IsEndpointSliceEnabled() {
+		endpointHandler = xdscache_v3.NewEndpointSliceTranslator(s.log.WithField("context", "endpointslicetranslator"))
+	} else {
+		endpointHandler = xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
+	}
 
 	resources := []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
@@ -475,7 +486,7 @@ func (s *Server) doServe() error {
 	snapshotHandler := xdscache.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
 
 	// register observer for endpoints updates.
-	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
+	endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
 
 	// Log that we're using the fallback certificate if configured.
 	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
@@ -608,12 +619,21 @@ func (s *Server) doServe() error {
 		s.log.WithError(err).WithField("resource", "secrets").Fatal("failed to create informer")
 	}
 
-	// Inform on endpoints.
-	if err := s.informOnResource(&corev1.Endpoints{}, &contour.EventRecorder{
-		Next:    endpointHandler,
-		Counter: contourMetrics.EventHandlerOperations,
-	}); err != nil {
-		s.log.WithError(err).WithField("resource", "endpoints").Fatal("failed to create informer")
+	// Inform on endpoints/endpointSlices.
+	if contourConfiguration.FeatureFlags.IsEndpointSliceEnabled() {
+		if err := s.informOnResource(&discoveryv1.EndpointSlice{}, &contour.EventRecorder{
+			Next:    endpointHandler,
+			Counter: contourMetrics.EventHandlerOperations,
+		}); err != nil {
+			s.log.WithError(err).WithField("resource", "endpointslices").Fatal("failed to create informer")
+		}
+	} else {
+		if err := s.informOnResource(&corev1.Endpoints{}, &contour.EventRecorder{
+			Next:    endpointHandler,
+			Counter: contourMetrics.EventHandlerOperations,
+		}); err != nil {
+			s.log.WithError(err).WithField("resource", "endpoints").Fatal("failed to create informer")
+		}
 	}
 
 	// Register our event handler with the manager.

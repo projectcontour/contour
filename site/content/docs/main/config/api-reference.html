@@ -5133,6 +5133,24 @@ TracingConfig
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>featureFlags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.FeatureFlags">
+FeatureFlags
+</a>
+</em>
+</td>
+<td>
+<p>FeatureFlags defines toggle to enable new contour features.
+Available toggles are:
+useEndpointSlices - configures contour to fetch endpoint data
+from k8s endpoint slices. defaults to false and reading endpoint
+data from the k8s endpoints.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5873,6 +5891,24 @@ TracingConfig
 </td>
 <td>
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>featureFlags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.FeatureFlags">
+FeatureFlags
+</a>
+</em>
+</td>
+<td>
+<p>FeatureFlags defines toggle to enable new contour features.
+Available toggles are:
+useEndpointSlices - configures contour to fetch endpoint data
+from k8s endpoint slices. defaults to false and reading endpoint
+data from the k8s endpoints.</p>
 </td>
 </tr>
 </tbody>
@@ -7464,6 +7500,16 @@ uint32
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.FeatureFlags">FeatureFlags
+(<code>[]string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>FeatureFlags defines the set of feature flags
+to toggle new contour features.</p>
+</p>
 <h3 id="projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig
 </h3>
 <p>
