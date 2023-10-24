@@ -116,6 +116,11 @@ func TestGatewayConformance(t *testing.T) {
 
 		report, err := cSuite.Report()
 		require.NoError(t, err, "failed generating conformance report")
+
+		if gwAPIVersion := os.Getenv("GATEWAY_API_VERSION"); gwAPIVersion != "" {
+			report.GatewayAPIVersion = gwAPIVersion
+		}
+
 		rawReport, err := yaml.Marshal(report)
 		require.NoError(t, err)
 		t.Logf("Conformance report:\n%s", string(rawReport))
