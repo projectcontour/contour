@@ -71,7 +71,7 @@ jobs:
           GENERATE_GATEWAY_CONFORMANCE_REPORT: "true"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(git describe --tags)"
-          make gateway-conformance
+          make setup-kind-cluster run-gateway-conformance cleanup-kind
       - name: Upload gateway conformance report
         uses: actions/upload-artifact@v3
         with:
