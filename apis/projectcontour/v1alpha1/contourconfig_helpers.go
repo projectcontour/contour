@@ -258,7 +258,7 @@ func (g *GatewayConfig) Validate() error {
 }
 
 func (f FeatureFlags) RouteSortingEnabled() bool {
-	return slices.Contains(f, featureFlagUseEndpointSlices)
+	return !slices.Contains(f, featureFlagUseEndpointSlices)
 }
 
 func (e *EnvoyLogging) Validate() error {
