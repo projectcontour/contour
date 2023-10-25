@@ -15,15 +15,21 @@ package v1alpha1
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	featureFlagRouteSorting string = "omitRouteSorting"
+	featureFlagRouteSorting      string = "omitRouteSorting"
+	featureFlagUseEndpointSlices string = "useEndpointSlices"
 )
+
+var featureFlagsMap = map[string]bool{
+	featureFlagUseEndpointSlices: true,
+	featureFlagRouteSorting:      true,
+}
 
 // Validate configuration that is not already covered by CRD validation.
 func (c *ContourConfigurationSpec) Validate() error {
@@ -220,6 +226,20 @@ func (e *EnvoyTLS) SanitizedCipherSuites() []string {
 	return validatedCiphers
 }
 
+func (f FeatureFlags) Validate() error {
+	for _, featureFlag := range f {
+		if _, found := featureFlagsMap[featureFlag]; !found {
+			return fmt.Errorf("invalid contour configuration, unknown feature flag:%s", featureFlag)
+		}
+	}
+
+	return nil
+}
+
+func (f FeatureFlags) IsEndpointSliceEnabled() bool {
+	return slices.Contains(f, featureFlagUseEndpointSlices)
+}
+
 // Validate ensures that exactly one of ControllerName or GatewayRef are specified.
 func (g *GatewayConfig) Validate() error {
 	if g == nil {
@@ -237,14 +257,8 @@ func (g *GatewayConfig) Validate() error {
 	return nil
 }
 
-// TODO(sotiris): Pick up the feature flag in Endpoint Slices PR
-// func (f FeatureFlags) RouteSortingEnabled() bool {
-// return slices.Contains(f, featureFlagUseEndpointSlices)
-// return slices.Contains([]string{featureFlagRouteSorting}, featureFlagRouteSorting)
-// }
-func ShouldSortHTTPProxyRoutes() bool {
-	f := os.Getenv(featureFlagRouteSorting)
-	return f == ""
+func (f FeatureFlags) RouteSortingEnabled() bool {
+	return slices.Contains(f, featureFlagUseEndpointSlices)
 }
 
 func (e *EnvoyLogging) Validate() error {

@@ -330,6 +330,31 @@ func createAndWaitFor[T client.Object](t require.TestingT, client client.Client,
 	return obj, true
 }
 
+func updateAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+	require.NoError(t, client.Update(context.Background(), obj))
+
+	key := types.NamespacedName{
+		Namespace: obj.GetNamespace(),
+		Name:      obj.GetName(),
+	}
+
+	if err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
+		if err := client.Get(ctx, key, obj); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(obj), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return obj, false
+	}
+
+	return obj, true
+}
+
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {

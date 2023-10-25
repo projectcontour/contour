@@ -29,56 +29,73 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
-type LocalityEndpoints = envoy_endpoint_v3.LocalityLbEndpoints
-type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
-
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
-// resources by matching the given service port to the given v1.Endpoints.
-// eps may be nil, in which case, the result is also nil.
-func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []*LoadBalancingEndpoint {
-	if eps == nil {
-		return nil
-	}
-
+// resources by matching the given service port to the given discoveryv1.EndpointSlice.
+// endpointSliceMap may be nil, in which case, the result is also nil.
+func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePort, endpointSliceMap map[string]*discoveryv1.EndpointSlice) []*LoadBalancingEndpoint {
 	var lb []*LoadBalancingEndpoint
+	uniqueEndpoints := make(map[string]struct{}, 0)
 	var healthCheckPort int32
 
-	for _, s := range eps.Subsets {
-		// Skip subsets without ready addresses.
-		if len(s.Addresses) < 1 {
-			continue
-		}
+	for _, endpointSlice := range endpointSliceMap {
+		sort.Slice(endpointSlice.Endpoints, func(i, j int) bool {
+			return endpointSlice.Endpoints[i].Addresses[0] < endpointSlice.Endpoints[j].Addresses[0]
+		})
 
-		for _, p := range s.Ports {
-			if (healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol) && p.Protocol != v1.ProtocolTCP {
-				// NOTE: we only support "TCP", which is the default.
+		for _, endpoint := range endpointSlice.Endpoints {
+			// Skip if the endpointSlice is not marked as ready.
+			if endpoint.Conditions.Ready != nil && !*endpoint.Conditions.Ready {
 				continue
 			}
 
-			// Set healthCheckPort only when port and healthPort are different.
-			if healthPort.Name != "" && healthPort.Name == p.Name && port.Name != healthPort.Name {
-				healthCheckPort = p.Port
-			}
+			// Range over each port. We want the resultant endpoints to be a
+			// a cartesian product MxN where M are the endpoints and N are the ports.
+			for _, p := range endpointSlice.Ports {
+				// Nil check for the port.
+				if p.Port == nil {
+					continue
+				}
 
-			// If the port isn't named, it must be the
-			// only Service port, so it's a match by
-			// definition. Otherwise, only take endpoint
-			// ports that match the service port name.
-			if port.Name != "" && port.Name != p.Name {
-				continue
-			}
+				if p.Protocol == nil || (healthPort.Protocol != *p.Protocol || port.Protocol != *p.Protocol) && *p.Protocol != v1.ProtocolTCP {
+					continue
+				}
 
-			// If we matched this port, collect Envoy endpoints for all the ready addresses.
-			addresses := append([]v1.EndpointAddress{}, s.Addresses...) // Shallow copy.
-			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
+				// Set healthCheckPort only when port and healthPort are different.
+				if p.Name != nil && (healthPort.Name != "" && healthPort.Name == *p.Name && port.Name != healthPort.Name) {
+					healthCheckPort = *p.Port
+				}
 
-			for _, a := range addresses {
-				addr := envoy_v3.SocketAddress(a.IP, int(p.Port))
-				lb = append(lb, envoy_v3.LBEndpoint(addr))
+				// Match by port name.
+				if port.Name != "" && p.Name != nil && port.Name != *p.Name {
+					continue
+				}
+
+				// we can safely take the first element here.
+				// Refer k8s API description:
+				// The contents of this field are interpreted according to
+				// the corresponding EndpointSlice addressType field.
+				// Consumers must handle different types of addresses in the context
+				// of their own capabilities. This must contain at least one
+				// address but no more than 100. These are all assumed to be fungible
+				// and clients may choose to only use the first element.
+				// Refer to: https://issue.k8s.io/106267
+				addr := envoy_v3.SocketAddress(endpoint.Addresses[0], int(*p.Port))
+
+				// as per note on https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/
+				// Clients of the EndpointSlice API must iterate through all the existing EndpointSlices associated to
+				// a Service and build a complete list of unique network endpoints. It is important to mention that
+				// endpoints may be duplicated in different EndpointSlices.
+				// Hence, we need to ensure that the endpoints we add to []*LoadBalancingEndpoint aren't duplicated.
+				endpointKey := fmt.Sprintf("%s:%d", endpoint.Addresses[0], *p.Port)
+				if _, exists := uniqueEndpoints[endpointKey]; !exists {
+					lb = append(lb, envoy_v3.LBEndpoint(addr))
+					uniqueEndpoints[endpointKey] = struct{}{}
+				}
 			}
 		}
 	}
@@ -92,13 +109,13 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []
 	return lb
 }
 
-// EndpointsCache is a cache of Endpoint and ServiceCluster objects.
-type EndpointsCache struct {
+// EndpointSliceCache is a cache of EndpointSlice and ServiceCluster objects.
+type EndpointSliceCache struct {
 	mu sync.Mutex // Protects all fields.
 
 	// Slice of stale clusters. A stale cluster is one that
 	// needs to be recalculated. Clusters can be added to the stale
-	// slice due to changes in Endpoints or due to a DAG rebuild.
+	// slice due to changes in EndpointSlices or due to a DAG rebuild.
 	stale []*dag.ServiceCluster
 
 	// Index of ServiceClusters. ServiceClusters are indexed
@@ -106,16 +123,18 @@ type EndpointsCache struct {
 	// easy to determine which Endpoints affect which ServiceCluster.
 	services map[types.NamespacedName][]*dag.ServiceCluster
 
-	// Cache of endpoints, indexed by name.
-	endpoints map[types.NamespacedName]*v1.Endpoints
+	// Cache of endpointsSlices, indexed by Namespaced name of the associated service.
+	// the Inner map is a map[k,v] where k is the endpoint slice name and v is the
+	// endpoint slice itself.
+	endpointSlices map[types.NamespacedName]map[string]*discoveryv1.EndpointSlice
 }
 
 // Recalculate regenerates all the ClusterLoadAssignments from the
-// cached Endpoints and stale ServiceClusters. A ClusterLoadAssignment
+// cached EndpointSlices and stale ServiceClusters. A ClusterLoadAssignment
 // will be generated for every stale ServerCluster, however, if there
-// are no endpoints for the Services in the ServiceCluster, the
+// are no endpointSlices for the Services in the ServiceCluster, the
 // ClusterLoadAssignment will be empty.
-func (c *EndpointsCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoadAssignment {
+func (c *EndpointSliceCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -133,11 +152,11 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoad
 			Policy:      nil,
 		}
 
-		// Look up each service, and if we have endpoints for that service,
-		// attach them as a new LocalityEndpoints resource2.
+		// Look up each service, and if we have endpointSlice for that service,
+		// attach them as a new LocalityEndpoints resource.
 		for _, w := range cluster.Services {
 			n := types.NamespacedName{Namespace: w.ServiceNamespace, Name: w.ServiceName}
-			if lb := RecalculateEndpoints(w.ServicePort, w.HealthPort, c.endpoints[n]); lb != nil {
+			if lb := c.RecalculateEndpoints(w.ServicePort, w.HealthPort, c.endpointSlices[n]); lb != nil {
 				// Append the new set of endpoints. Users are allowed to set the load
 				// balancing weight to 0, which we reflect to Envoy as nil in order to
 				// assign no load to that locality.
@@ -160,7 +179,7 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoad
 
 // SetClusters replaces the cache of ServiceCluster resources. All
 // the added clusters will be marked stale.
-func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
+func (c *EndpointSliceCache) SetClusters(clusters []*dag.ServiceCluster) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -199,18 +218,22 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 	return nil
 }
 
-// UpdateEndpoint adds eps to the cache, or replaces it if it is
+// UpdateEndpointSlice adds endpointSlice to the cache, or replaces it if it is
 // already cached. Any ServiceClusters that are backed by a Service
-// that eps belongs become stale. Returns a boolean indicating whether
-// any ServiceClusters use eps or not.
-func (c *EndpointsCache) UpdateEndpoint(eps *v1.Endpoints) bool {
+// that endpointSlice belongs become stale. Returns a boolean indicating whether
+// any ServiceClusters use endpointSlice or not.
+func (c *EndpointSliceCache) UpdateEndpointSlice(endpointSlice *discoveryv1.EndpointSlice) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(eps)
-	c.endpoints[name] = eps.DeepCopy()
+	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discoveryv1.LabelServiceName]}
 
-	// If any service clusters include this endpoint, mark them
+	if c.endpointSlices[name] == nil {
+		c.endpointSlices[name] = make(map[string]*discoveryv1.EndpointSlice)
+	}
+	c.endpointSlices[name][endpointSlice.Name] = endpointSlice.DeepCopy()
+
+	// If any service clusters include this endpointSlice, mark them
 	// all as stale.
 	if affected := c.services[name]; len(affected) > 0 {
 		c.stale = append(c.stale, affected...)
@@ -220,17 +243,17 @@ func (c *EndpointsCache) UpdateEndpoint(eps *v1.Endpoints) bool {
 	return false
 }
 
-// DeleteEndpoint deletes eps from the cache. Any ServiceClusters
-// that are backed by a Service that eps belongs become stale. Returns
-// a boolean indicating whether any ServiceClusters use eps or not.
-func (c *EndpointsCache) DeleteEndpoint(eps *v1.Endpoints) bool {
+// DeleteEndpointSlice deletes endpointSlice from the cache. Any ServiceClusters
+// that are backed by a Service that endpointSlice belongs to, become stale. Returns
+// a boolean indicating whether any ServiceClusters use endpointSlice or not.
+func (c *EndpointSliceCache) DeleteEndpointSlice(endpointSlice *discoveryv1.EndpointSlice) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(eps)
-	delete(c.endpoints, name)
+	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discoveryv1.LabelServiceName]}
+	delete(c.endpointSlices[name], endpointSlice.Name)
 
-	// If any service clusters include this endpoint, mark them
+	// If any service clusters include this endpointSlice, mark them
 	// all as stale.
 	if affected := c.services[name]; len(affected) > 0 {
 		c.stale = append(c.stale, affected...)
@@ -240,39 +263,39 @@ func (c *EndpointsCache) DeleteEndpoint(eps *v1.Endpoints) bool {
 	return false
 }
 
-// NewEndpointsTranslator allocates a new endpoints translator.
-func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
-	return &EndpointsTranslator{
+// NewEndpointSliceTranslator allocates a new endpointsSlice translator.
+func NewEndpointSliceTranslator(log logrus.FieldLogger) *EndpointSliceTranslator {
+	return &EndpointSliceTranslator{
 		Cond:        contour.Cond{},
 		FieldLogger: log,
 		entries:     map[string]*envoy_endpoint_v3.ClusterLoadAssignment{},
-		cache: EndpointsCache{
-			stale:     nil,
-			services:  map[types.NamespacedName][]*dag.ServiceCluster{},
-			endpoints: map[types.NamespacedName]*v1.Endpoints{},
+		cache: EndpointSliceCache{
+			stale:          nil,
+			services:       map[types.NamespacedName][]*dag.ServiceCluster{},
+			endpointSlices: map[types.NamespacedName]map[string]*discoveryv1.EndpointSlice{},
 		},
 	}
 }
 
-// A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
+// A EndpointsSliceTranslator translates Kubernetes EndpointSlice objects into Envoy
 // ClusterLoadAssignment resources.
-type EndpointsTranslator struct {
-	// Observer notifies when the endpoints cache has been updated.
+type EndpointSliceTranslator struct {
+	// Observer notifies when the endpointSlice cache has been updated.
 	Observer contour.Observer
 
 	contour.Cond
 	logrus.FieldLogger
 
-	cache EndpointsCache
+	cache EndpointSliceCache
 
 	mu      sync.Mutex // Protects entries.
 	entries map[string]*envoy_endpoint_v3.ClusterLoadAssignment
 }
 
 // Merge combines the given entries with the existing entries in the
-// EndpointsTranslator. If the same key exists in both maps, an existing entry
+// EndpointSliceTranslator. If the same key exists in both maps, an existing entry
 // is replaced.
-func (e *EndpointsTranslator) Merge(entries map[string]*envoy_endpoint_v3.ClusterLoadAssignment) {
+func (e *EndpointSliceTranslator) Merge(entries map[string]*envoy_endpoint_v3.ClusterLoadAssignment) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -282,7 +305,7 @@ func (e *EndpointsTranslator) Merge(entries map[string]*envoy_endpoint_v3.Cluste
 }
 
 // OnChange observes DAG rebuild events.
-func (e *EndpointsTranslator) OnChange(root *dag.DAG) {
+func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	clusters := []*dag.ServiceCluster{}
 	names := map[string]bool{}
 
@@ -328,34 +351,14 @@ func (e *EndpointsTranslator) OnChange(root *dag.DAG) {
 	}
 }
 
-// equal returns true if a and b are the same length, have the same set
-// of keys, and have proto-equivalent values for each key, or false otherwise.
-func equal(a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for k := range a {
-		if _, ok := b[k]; !ok {
-			return false
-		}
-
-		if !proto.Equal(a[k], b[k]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (e *EndpointsTranslator) OnAdd(obj any, _ bool) {
+func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {
 	switch obj := obj.(type) {
-	case *v1.Endpoints:
-		if !e.cache.UpdateEndpoint(obj) {
+	case *discoveryv1.EndpointSlice:
+		if !e.cache.UpdateEndpointSlice(obj) {
 			return
 		}
 
-		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
+		e.WithField("endpointSlice", k8s.NamespacedNameOf(obj)).Debug("EndpointSlice is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
@@ -366,33 +369,33 @@ func (e *EndpointsTranslator) OnAdd(obj any, _ bool) {
 	}
 }
 
-func (e *EndpointsTranslator) OnUpdate(oldObj, newObj any) {
+func (e *EndpointSliceTranslator) OnUpdate(oldObj, newObj any) {
 	switch newObj := newObj.(type) {
-	case *v1.Endpoints:
-		oldObj, ok := oldObj.(*v1.Endpoints)
+	case *discoveryv1.EndpointSlice:
+		oldObj, ok := oldObj.(*discoveryv1.EndpointSlice)
 		if !ok {
-			e.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
+			e.Errorf("OnUpdate endpointSlice %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
 			return
 		}
 
 		// Skip computation if either old and new services or
-		// endpoints are equal (thus also handling nil).
+		// endpointSlice are equal (thus also handling nil).
 		if oldObj == newObj {
 			return
 		}
 
-		// If there are no endpoints in this object, and the old
-		// object also had zero endpoints, ignore this update
+		// If there are no endpointSlice in this object, and the old
+		// object also had zero endpointSlice, ignore this update
 		// to avoid sending a noop notification to watchers.
-		if len(oldObj.Subsets) == 0 && len(newObj.Subsets) == 0 {
+		if len(oldObj.Endpoints) == 0 && len(newObj.Endpoints) == 0 {
 			return
 		}
 
-		if !e.cache.UpdateEndpoint(newObj) {
+		if !e.cache.UpdateEndpointSlice(newObj) {
 			return
 		}
 
-		e.WithField("endpoint", k8s.NamespacedNameOf(newObj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
+		e.WithField("endpointSlice", k8s.NamespacedNameOf(newObj)).Debug("EndpointSlice is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
@@ -403,14 +406,14 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj any) {
 	}
 }
 
-func (e *EndpointsTranslator) OnDelete(obj any) {
+func (e *EndpointSliceTranslator) OnDelete(obj any) {
 	switch obj := obj.(type) {
-	case *v1.Endpoints:
-		if !e.cache.DeleteEndpoint(obj) {
+	case *discoveryv1.EndpointSlice:
+		if !e.cache.DeleteEndpointSlice(obj) {
 			return
 		}
 
-		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint was in use by a ServiceCluster, recalculating ClusterLoadAssignments")
+		e.WithField("endpointSlice", k8s.NamespacedNameOf(obj)).Debug("EndpointSlice was in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
@@ -424,7 +427,7 @@ func (e *EndpointsTranslator) OnDelete(obj any) {
 }
 
 // Contents returns a copy of the contents of the cache.
-func (e *EndpointsTranslator) Contents() []proto.Message {
+func (e *EndpointSliceTranslator) Contents() []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -437,7 +440,7 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (e *EndpointsTranslator) Query(names []string) []proto.Message {
+func (e *EndpointSliceTranslator) Query(names []string) []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -457,6 +460,6 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
+func (*EndpointSliceTranslator) TypeURL() string { return resource.EndpointType }
 
-func (e *EndpointsTranslator) SetObserver(observer contour.Observer) { e.Observer = observer }
+func (e *EndpointSliceTranslator) SetObserver(observer contour.Observer) { e.Observer = observer }
