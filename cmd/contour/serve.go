@@ -551,7 +551,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
-		sortHTTProxyRoutes:                 contour_api_v1alpha1.ShouldSortHTTPProxyRoutes(),
+		sortHTTProxyRoutes:                 contourConfiguration.FeatureFlags.RouteSortingEnabled(),
 	})
 
 	// Build the core Kubernetes event handler.
