@@ -1,7 +1,7 @@
 reviewers:
   defaults:
-    - team:projectcontour/maintainers
-    - team:projectcontour/reviewers
+    - team:maintainers
+    - team:contour-reviewers
 
 options:
   ignore_draft: true
