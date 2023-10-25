@@ -10,5 +10,5 @@ jobs:
     steps:
       - uses: necojackarc/auto-request-review@v0.12.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_FOR_AUTO_REQUEST_REVIEW }}
           config: .github/reviewers.yaml
