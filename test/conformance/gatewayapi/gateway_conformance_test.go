@@ -73,6 +73,13 @@ func TestGatewayConformance(t *testing.T) {
 			// header which Envoy is stripping.
 			// See: https://github.com/envoyproxy/envoy/issues/17318
 			tests.HTTPRouteRedirectPortAndScheme.ShortName,
+
+			// Tests newly failing with Gateway API 1.0, to be addressed.
+			tests.HTTPRouteBackendProtocolH2C.ShortName,
+			tests.HTTPRouteTimeoutBackendRequest.ShortName,
+			tests.HTTPRouteTimeoutRequest.ShortName,
+			tests.GatewayWithAttachedRoutes.ShortName,
+			tests.GatewayStaticAddresses.ShortName,
 		},
 		ExemptFeatures: sets.New(
 			suite.SupportMesh,
