@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -286,18 +287,18 @@ func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLo
 	}
 }
 
-func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1beta1.GatewayStatusAddress {
-	addrs := []gatewayapi_v1beta1.GatewayStatusAddress{}
+func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1.GatewayStatusAddress {
+	addrs := []gatewayapi_v1.GatewayStatusAddress{}
 
 	for _, lbi := range lbs.Ingress {
 		if len(lbi.IP) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 				Value: lbi.IP,
 			})
 		}
 		if len(lbi.Hostname) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 				Value: lbi.Hostname,
 			})
