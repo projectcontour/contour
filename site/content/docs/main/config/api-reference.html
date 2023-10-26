@@ -7625,6 +7625,20 @@ NamespacedName
 use as fallback when a non-SNI request is received.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>omitRouteSorting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>OmitRouteSorting determines if routes will be sorted by Contour before
+being sent to Envoy or the original order will be determined.
+Defaults to routing being sorted.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.HTTPVersionType">HTTPVersionType

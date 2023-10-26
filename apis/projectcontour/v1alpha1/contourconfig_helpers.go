@@ -22,13 +22,11 @@ import (
 )
 
 const (
-	featureFlagRouteSorting      string = "omitRouteSorting"
 	featureFlagUseEndpointSlices string = "useEndpointSlices"
 )
 
 var featureFlagsMap = map[string]bool{
 	featureFlagUseEndpointSlices: true,
-	featureFlagRouteSorting:      true,
 }
 
 // Validate configuration that is not already covered by CRD validation.
@@ -255,10 +253,6 @@ func (g *GatewayConfig) Validate() error {
 	}
 
 	return nil
-}
-
-func (f FeatureFlags) RouteSortingEnabled() bool {
-	return !slices.Contains(f, featureFlagUseEndpointSlices)
 }
 
 func (e *EnvoyLogging) Validate() error {
