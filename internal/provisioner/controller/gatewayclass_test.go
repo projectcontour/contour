@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -81,9 +82,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionTrue,
-				Reason: string(gatewayv1beta1.GatewayClassReasonAccepted),
+				Reason: string(gatewayapi_v1.GatewayClassReasonAccepted),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (target does not exist) gets Accepted: false condition": {
@@ -102,9 +103,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid group) gets Accepted: false condition": {
@@ -129,9 +130,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid kind) gets Accepted: false condition": {
@@ -156,9 +157,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid name) gets Accepted: false condition": {
@@ -183,9 +184,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid namespace) gets Accepted: false condition": {
@@ -210,9 +211,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef gets Accepted: true condition": {
@@ -237,9 +238,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionTrue,
-				Reason: string(gatewayv1beta1.GatewayClassReasonAccepted),
+				Reason: string(gatewayapi_v1.GatewayClassReasonAccepted),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for NetworkPublishing gets Accepted: false condition": {
@@ -272,9 +273,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExtraVolumeMounts gets Accepted: false condition": {
@@ -313,9 +314,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for LogLevel gets Accepted: false condition": {
@@ -345,9 +346,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExternalTrafficPolicy gets Accepted: false condition": {
@@ -379,9 +380,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for IPFamilyPolicy gets Accepted: false condition": {
@@ -413,9 +414,9 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
-				Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+				Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass with status from previous generation is updated": {
@@ -429,17 +430,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 				Status: gatewayv1beta1.GatewayClassStatus{
 					Conditions: []metav1.Condition{{
-						Type:               string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+						Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 						Status:             metav1.ConditionTrue,
-						Reason:             string(gatewayv1beta1.GatewayClassReasonAccepted),
+						Reason:             string(gatewayapi_v1.GatewayClassReasonAccepted),
 						ObservedGeneration: 1,
 					}},
 				},
 			},
 			wantCondition: &metav1.Condition{
-				Type:               string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+				Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 				Status:             metav1.ConditionTrue,
-				Reason:             string(gatewayv1beta1.GatewayClassReasonAccepted),
+				Reason:             string(gatewayapi_v1.GatewayClassReasonAccepted),
 				ObservedGeneration: 2,
 			},
 		},

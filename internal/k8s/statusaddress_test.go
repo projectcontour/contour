@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -393,7 +394,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -410,11 +411,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
+					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
@@ -441,7 +442,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -458,11 +459,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
+					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
@@ -485,7 +486,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -502,7 +503,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -523,7 +524,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -540,7 +541,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -561,7 +562,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -578,11 +579,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				Status: gatewayapi_v1beta1.GatewayStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
 							Status: metav1.ConditionTrue,
 						},
 					},
-					Addresses: []gatewayapi_v1beta1.GatewayStatusAddress{
+					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
 							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
