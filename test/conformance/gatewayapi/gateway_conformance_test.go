@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	v1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	conformance_v1alpha1 "sigs.k8s.io/gateway-api/conformance/apis/v1alpha1"
@@ -54,6 +55,7 @@ func TestGatewayConformance(t *testing.T) {
 
 	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
 	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
+	require.NoError(t, v1.AddToScheme(client.Scheme()))
 
 	cSuiteOptions := suite.Options{
 		Client: client,
