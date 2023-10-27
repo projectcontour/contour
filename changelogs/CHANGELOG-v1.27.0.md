@@ -7,7 +7,6 @@ A big thank you to everyone who contributed to the release.
 - [Minor Changes](#minor-changes)
 - [Other Changes](#other-changes)
 - [Docs Changes](#docs-changes)
-- [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 - [Community Thanks!](#community-thanks)
@@ -21,6 +20,7 @@ Envoy greedy matches routes and as a result the order route matches are presente
 This changes fixes the sorting algorithm used for `Prefix` and `Regex` based path matching. Previously the algorithm lexicographically sorted based on the path match string instead of sorting them based on the length of the `Prefix`|`Regex`. i.e. Longer prefix/regexes will be sorted first in order to give preference to more specific routes, then lexicographic sorting for things of the same length.
 
 Note that for prefix matching, this change is _not_ expected to change the relative ordering of more specific prefixes vs. less specific ones when the more specific prefix match string has the less specific one as a prefix, e.g. `/foo/bar` will continue to sort before `/foo`. However, relative ordering of other combinations of prefix matches may change per the above description.
+
 ### How to update safely
 
 Caution is advised if you update Contour and you are operating large routing tables. We advise you to:
@@ -163,10 +163,6 @@ listener:
 
 # Docs Changes
 - Switch to documenting the Gateway API release semantic version instead of API versions in versions.yaml and the [compatibility matrix](https://projectcontour.io/resources/compatibility-matrix/), to provide more information about features available with each release. (#5871, @skriss)
-
-
-# Deprecation and Removal Notices
-
 
 
 # Installing and Upgrading
