@@ -1499,10 +1499,6 @@ func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 // | `/foo`          | `/bar/`     | `/foosball` | X `/bar/sball` |
 // | `/foo/`         | `/bar/`     | `/foo/type` |   `/bar/type`  |
 func expandPrefixMatches(routes []*Route) []*Route {
-	return expandPrefixMatchesOrdered(routes)
-}
-
-func expandPrefixMatchesOrdered(routes []*Route) []*Route {
 	expandedRoutes := []*Route{}
 	prefixCount := make(map[string]int, 0)
 	// First, we find the non expandable prefix routes. Those are two:
