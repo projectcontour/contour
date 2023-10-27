@@ -155,7 +155,9 @@ the configuration.
 
 ## Alternatives Considered
 
-Continue to improve the heuristic used to sort the routes. The main issues with this approach are:
+### Continue to improve the heuristic used to sort the routes.
+
+The main issues with this approach are:
 
 1. It is hard to create one heuristic that fit all uses cases. While the intuition behind the heuristic is reasonable there might be different organizations adopting Contour which disagree on what is `more-specific` routing rule. For example consider the two following routing rules:
     1.  If header `X-Experiment-Header: foo` route the requests to backend `foo` regardless of the path
@@ -168,3 +170,17 @@ Continue to improve the heuristic used to sort the routes. The main issues with 
     2. if `a > b` and `b > c` then `a > c`
 
 The above makes a lot of sense mathematically but in practice it becomes not-intuitive when dealing with `MatchConditions` and their length.
+
+
+### Offer guidance via documentation about what users configuring contour should do to realize certain routing schemes.
+
+This may take the form of generating additional routing rules with specific matches to get the precedence behavior desired
+
+pros:
+* no changes to Contour
+* Contour routing stays similar to the ingress/gateway api standard for all users so migration is not an issue
+
+cons:
+* could lead to proliferation of special case rules that are hard to reason about for humans
+* no guarantee the exact routing specificity can be achieved
+
