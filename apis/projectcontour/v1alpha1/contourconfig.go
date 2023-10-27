@@ -423,6 +423,7 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	HTTP2MaxConcurrentStreams *uint32 `json:"httpMaxConcurrentStreams,omitempty"`
+	PrematureResetTotalStreams *uint32 `json:"prematureResetTotalStreams,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

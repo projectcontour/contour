@@ -479,6 +479,7 @@ func (s *Server) doServe() error {
 		endpointHandler,
 		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
 			MaxRequestsPerIOCycle: contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+			PrematureResetTotalStreams: contourConfiguration.Envoy.Listener.PrematureResetTotalStreams,
 		}),
 	}
 

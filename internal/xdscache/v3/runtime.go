@@ -25,6 +25,7 @@ import (
 
 type ConfigurableRuntimeSettings struct {
 	MaxRequestsPerIOCycle *uint32
+	PrematureResetTotalStreams *uint32
 }
 
 // RuntimeCache manages the contents of the gRPC RTDS cache.
@@ -39,6 +40,9 @@ func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache 
 	runtimeKV := make(map[string]*structpb.Value)
 	if runtimeSettings.MaxRequestsPerIOCycle != nil && *runtimeSettings.MaxRequestsPerIOCycle > 0 {
 		runtimeKV["http.max_requests_per_io_cycle"] = structpb.NewNumberValue(float64(*runtimeSettings.MaxRequestsPerIOCycle))
+	}
+	if runtimeSettings.PrematureResetTotalStreams != nil && *runtimeSettings.PrematureResetTotalStreams > 0 {
+		runtimeKV["overload.premature_reset_total_stream_count"] = structpb.NewNumberValue(float64(*runtimeSettings.PrematureResetTotalStreams))
 	}
 	return &RuntimeCache{runtimeKV: runtimeKV}
 }

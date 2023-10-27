@@ -499,6 +499,7 @@ type ListenerParameters struct {
 	// and mitigate attacks like CVE-2023-44487. The default value when this is not set is
 	// unlimited.
 	HTTP2MaxConcurrentStreams *uint32 `yaml:"http2-max-concurrent-streams,omitempty"`
+	PrematureResetTotalStreams *uint32 `yaml:"premature-reset-total-streams,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -524,6 +525,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.HTTP2MaxConcurrentStreams != nil && *p.HTTP2MaxConcurrentStreams < 1 {
 		return fmt.Errorf("invalid max HTTP/2 concurrent streams value %q set on listener, minimum value is 1", *p.HTTP2MaxConcurrentStreams)
+	}
+
+	if p.PrematureResetTotalStreams != nil && *p.PrematureResetTotalStreams < 1 {
+		return fmt.Errorf("invalid premature reset total streams value %q set on listener, minimum value is 1", *p.PrematureResetTotalStreams)
 	}
 
 	return p.SocketOptions.Validate()
