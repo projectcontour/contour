@@ -840,8 +840,8 @@ rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8
 rsc.io/pdf v0.1.1 h1:k1MczvYDUvJBe93bYd7wrZLLUEcLZAuF824/I4e5Xr4=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
-sigs.k8s.io/controller-runtime v0.14.6 h1:oxstGVvXGNnMvY7TAESYk+lzr6S3V5VFxQ6d92KcwQA=
-sigs.k8s.io/controller-runtime v0.14.6/go.mod h1:WqIdsAY6JBsjfc/CqO0CORmNtoCtE4S6qbPc9s68h+0=
+sigs.k8s.io/controller-runtime v0.14.7 h1:Vrnm2vk9ZFlRkXATHz0W0wXcqNl7kPat8q2JyxVy0Q8=
+sigs.k8s.io/controller-runtime v0.14.7/go.mod h1:ErTs3SJCOujNUnTz4AS+uh8hp6DHMo1gj6fFndJT1X8=
 sigs.k8s.io/controller-tools v0.11.4 h1:jqXJ/Xb6yBgbgcBbw1YoC3rC+Bt1XZWiLjj0ZHv/GrU=
 sigs.k8s.io/controller-tools v0.11.4/go.mod h1:qcfX7jfcfYD/b7lAhvqAyTbt/px4GpvN88WKLFFv7p8=
 sigs.k8s.io/gateway-api v0.6.2 h1:583XHiX2M2bKEA0SAdkoxL1nY73W1+/M+IAm8LJvbEA=
