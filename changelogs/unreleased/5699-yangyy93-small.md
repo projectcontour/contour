@@ -1,1 +1,0 @@
-Gateway provisioner: Add the `overloadMaxHeapSize` configuration option to contourDeployment to allow adding [overloadManager](https://projectcontour.io/docs/main/config/overload-manager/) configuration when generating envoy's initial configuration file.
