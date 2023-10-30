@@ -609,6 +609,7 @@ func TestConvertServeContext(t *testing.T) {
 		"httpproxy": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.DisablePermitInsecure = true
+				ctx.Config.OmitRouteSorting = true
 				ctx.Config.TLS.FallbackCertificate = config.NamespacedName{
 					Name:      "fallbackname",
 					Namespace: "fallbacknamespace",
@@ -622,6 +623,7 @@ func TestConvertServeContext(t *testing.T) {
 						Name:      "fallbackname",
 						Namespace: "fallbacknamespace",
 					},
+					OmitRouteSorting: true,
 				}
 				return cfg
 			},
