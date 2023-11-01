@@ -54,7 +54,7 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []
 		}
 
 		for _, p := range s.Ports {
-			if (healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol) && p.Protocol != v1.ProtocolTCP {
+			if healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol || p.Protocol != v1.ProtocolTCP {
 				// NOTE: we only support "TCP", which is the default.
 				continue
 			}
