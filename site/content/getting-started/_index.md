@@ -97,7 +97,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -110,7 +110,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -197,7 +197,7 @@ Congratulations, you have installed Contour, deployed a backend application, cre
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
-- Explore the [Gateway API documentation][32] and [Gateway API guide][14] (beta)
+- Explore the [Gateway API documentation][32] and [Gateway API guide][14]
 - Explore other [deployment options][1]
 
 Check out the following demo videos:

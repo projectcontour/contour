@@ -9,7 +9,7 @@ layout: page
 evolve service networking APIs within the Kubernetes ecosystem. Gateway API consists of multiple resources that provide
 user interfaces to expose Kubernetes applications- Services, Ingress, and more.
 
-This guide covers using version **v1beta1** of the Gateway API, with Contour `v1.22.0` or higher.
+This guide covers using version **v1** of the Gateway API, with Contour `v1.28.0` or higher.
 
 ### Background
 
@@ -65,7 +65,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -82,7 +82,7 @@ metadata:
   name: projectcontour
 ---
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -151,7 +151,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -164,7 +164,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -248,7 +248,7 @@ A simple example of a parameterized Contour GatewayClass that provisions Envoy a
 
 ```yaml
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour-with-envoy-deployment
 spec:
