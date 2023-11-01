@@ -283,7 +283,7 @@ type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
 type NamespacedTestBody func(string)
 type TestBody func()
 
-func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody) {
+func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
 		ginkgo.BeforeEach(func() {
 			f.CreateNamespace(namespace)
