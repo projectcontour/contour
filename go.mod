@@ -12,7 +12,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/distribution/reference v0.5.0
 	github.com/envoyproxy/go-control-plane v0.11.2-0.20231019082134-6e4589f570e1
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.3.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v48 v48.2.0
 	github.com/google/uuid v1.4.0
