@@ -26,6 +26,7 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -1711,7 +1712,11 @@ func resolvedRefsFalse(reason gatewayapi_v1beta1.RouteConditionReason, msg strin
 // is valid. Returns a metav1.Condition for the route if any errors are detected.
 // As BackendObjectReference is used in multiple fields, the given field is used
 // to build the message in metav1.Condition.
-func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewayapi_v1beta1.BackendObjectReference, field string, routeKind, routeNamespace string) (*Service, *metav1.Condition) {
+func (p *GatewayAPIProcessor) validateBackendObjectRef(
+	backendObjectRef gatewayapi_v1beta1.BackendObjectReference,
+	field string,
+	routeKind string,
+	routeNamespace string) (*Service, *metav1.Condition) {
 
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
@@ -1761,7 +1766,36 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(backendObjectRef gatewaya
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
+	if err = validateAPPProtocol(&service.Weighted.ServicePort); err != nil {
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
+	}
+
 	return service, nil
+}
+
+const (
+	protoK8sH2C     = "kubernetes.io/h2c"
+	protoContourH2C = "projectcontour.io/h2c"
+	protoContourH2  = "projectcontour.io/h2"
+	protoContourTLS = "projectcontour.io/tls"
+)
+
+func validateAPPProtocol(svc *v1.ServicePort) error {
+	if svc.AppProtocol == nil {
+		return nil
+	}
+
+	appProtos := map[string]struct{}{
+		protoContourH2:  {},
+		protoContourH2C: {},
+		protoContourTLS: {},
+		protoK8sH2C:     {},
+	}
+
+	if _, ok := appProtos[*svc.AppProtocol]; ok {
+		return nil
+	}
+	return fmt.Errorf("appProtocol: %s is unsupported", *svc.AppProtocol)
 }
 
 func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {

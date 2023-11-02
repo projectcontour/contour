@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,11 +84,46 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
+	annotatedService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "annotated-service",
+			Namespace:   "default",
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "foo",
+				Protocol:   "TCP",
+				Port:       8443,
+				TargetPort: intstr.FromInt(26441),
+			}},
+		},
+	}
+
+	appProtoService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "app-protocol-service",
+			Namespace:   "default",
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:        "foo",
+				Protocol:    "TCP",
+				AppProtocol: ref.To("kubernetes.io/wss"),
+				Port:        8443,
+				TargetPort:  intstr.FromInt(26441),
+			}},
+		},
+	}
+
 	services := map[types.NamespacedName]*v1.Service{
-		{Name: "service1", Namespace: "default"}:              s1,
-		{Name: "servicehealthcheck", Namespace: "default"}:    s2,
-		{Name: "externalnamevalid", Namespace: "default"}:     externalNameValid,
-		{Name: "externalnamelocalhost", Namespace: "default"}: externalNameLocalhost,
+		{Name: "service1", Namespace: "default"}:                             s1,
+		{Name: "servicehealthcheck", Namespace: "default"}:                   s2,
+		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,
+		{Name: "externalnamelocalhost", Namespace: "default"}:                externalNameLocalhost,
+		{Name: annotatedService.Name, Namespace: annotatedService.Namespace}: annotatedService,
+		{Name: appProtoService.Name, Namespace: appProtoService.Namespace}:   appProtoService,
 	}
 
 	tests := map[string]struct {
@@ -136,6 +173,7 @@ func TestBuilderLookupService(t *testing.T) {
 					ServicePort:      makeServicePort("http", "TCP", 80, 80),
 					HealthPort:       makeServicePort("http", "TCP", 80, 80),
 				},
+				IPProtocol:   v1.ProtocolTCP,
 				ExternalName: "external.projectcontour.io",
 			},
 			enableExternalNameSvc: true,
