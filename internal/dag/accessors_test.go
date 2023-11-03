@@ -104,16 +104,35 @@ func TestBuilderLookupService(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "app-protocol-service",
 			Namespace:   "default",
-			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444,8445,8446"},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:        "foo",
-				Protocol:    "TCP",
-				AppProtocol: ref.To("kubernetes.io/wss"),
-				Port:        8443,
-				TargetPort:  intstr.FromInt(26441),
-			}},
+			Ports: []v1.ServicePort{
+				{
+					Name:        "k8s-h2c",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("kubernetes.io/h2c"),
+					Port:        8443,
+				},
+				{
+					Name:        "k8s-ws",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("kubernetes.io/ws"),
+					Port:        8444,
+				},
+				{
+					Name:        "contour-h2",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("projectcontour.io/h2"),
+					Port:        8445,
+				},
+				{
+					Name:        "contour-unsupported",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("projectcontour.io/unsupported"),
+					Port:        8446,
+				},
+			},
 		},
 	}
 
@@ -173,7 +192,6 @@ func TestBuilderLookupService(t *testing.T) {
 					ServicePort:      makeServicePort("http", "TCP", 80, 80),
 					HealthPort:       makeServicePort("http", "TCP", 80, 80),
 				},
-				IPProtocol:   v1.ProtocolTCP,
 				ExternalName: "external.projectcontour.io",
 			},
 			enableExternalNameSvc: true,
@@ -188,6 +206,34 @@ func TestBuilderLookupService(t *testing.T) {
 			port:                  80,
 			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
 			enableExternalNameSvc: true,
+		},
+		"lookup service by port number with annotated number": {
+			NamespacedName: types.NamespacedName{Name: annotatedService.Name, Namespace: annotatedService.Namespace},
+			port:           8443,
+			want:           appProtcolService(annotatedService, "tls"),
+		},
+		"lookup service by port number with k8s app protocol: h2c": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8443,
+			want:           appProtcolService(appProtoService, "h2c"),
+		},
+
+		"lookup service by port number with unsupported k8s app protocol: wss": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8444,
+			want:           appProtcolService(appProtoService, "", 1),
+		},
+
+		"lookup service by port number with contour app protocol: h2": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8445,
+			want:           appProtcolService(appProtoService, "h2", 2),
+		},
+
+		"lookup service by port number with contour app protocol: unsupported": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8446,
+			want:           appProtcolService(appProtoService, "", 3),
 		},
 	}
 

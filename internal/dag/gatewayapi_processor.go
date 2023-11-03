@@ -1773,6 +1773,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	return service, nil
 }
 
+// the ServicePort's AppProtocol must be one of the these.
 const (
 	protoK8sH2C     = "kubernetes.io/h2c"
 	protoContourH2C = "projectcontour.io/h2c"

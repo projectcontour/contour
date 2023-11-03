@@ -112,6 +112,7 @@ func toContourProtocol(appProtocol string) string {
 	}[appProtocol]
 }
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
+	// if appProtocol is not nil, check it only
 	if port.AppProtocol != nil {
 		return toContourProtocol(*port.AppProtocol)
 	}
