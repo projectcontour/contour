@@ -6,16 +6,16 @@ layout: page
 If you're using Contour and want to add your organization to this list, please
 [submit a pull request][1]!
 
-<a href="https://knative.dev" target="_blank"><img alt="knative.dev" src="../img/adopters/knative.svg" height="50"></a>
+<a href="https://knative.dev" target="_blank"><img alt="knative.dev" src="../../img/adopters/knative.svg" height="50"></a>
 
 
-<a href="https://www.vmware.com" target="_blank"><img alt="vmware.com" src="../img/adopters/VMware-logo-grey.jpg" height="50"></a>
+<a href="https://www.vmware.com" target="_blank"><img alt="vmware.com" src="../../img/adopters/VMware-logo-grey.jpg" height="50"></a>
 
-<a href="https://flyte.org/" target="_blank"><img alt="flyte.com" src="../img/adopters/flyte.png" height="50"></a>
+<a href="https://flyte.org/" target="_blank"><img alt="flyte.com" src="../../img/adopters/flyte.png" height="50"></a>
 
-<a href="https://gojek.io/"  target="_blank"><img alt="gojek.io" src="../img/adopters/gojek.svg" height="50"></a>
+<a href="https://gojek.io/"  target="_blank"><img alt="gojek.io" src="../../img/adopters/gojek.svg" height="50"></a>
 
-<a href="https://daocloud.io/" target="_blank"><img alt="daocloud.io" src="../img/adopters/daocloud.png" height="50"></a>
+<a href="https://daocloud.io/" target="_blank"><img alt="daocloud.io" src="../../img/adopters/daocloud.png" height="50"></a>
 
 ## Success Stories
 
