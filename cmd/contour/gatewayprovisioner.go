@@ -17,11 +17,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/alecthomas/kingpin/v2"
-	"github.com/novln/docker-parser/distribution/reference"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/pkg/config"
+
+	"github.com/alecthomas/kingpin/v2"
+	"github.com/distribution/reference"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,7 +36,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 
 	provisionerConfig := &gatewayProvisionerConfig{
 		contourImage:          "ghcr.io/projectcontour/contour:main",
-		envoyImage:            "docker.io/envoyproxy/envoy:v1.27.0",
+		envoyImage:            "docker.io/envoyproxy/envoy:v1.28.0",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
@@ -55,6 +57,13 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
 		Default(provisionerConfig.gatewayControllerName).
 		StringVar(&provisionerConfig.gatewayControllerName)
+
+	cmd.Flag("incluster", "Use in cluster configuration.").
+		Default("true").
+		BoolVar(&provisionerConfig.inCluster)
+	cmd.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").
+		PlaceHolder("/path/to/file").
+		StringVar(&provisionerConfig.kubeconfig)
 
 	cmd.Flag("leader-election-namespace", "The namespace in which the leader election resource will be created.").
 		Default(config.GetenvOr("CONTOUR_PROVISIONER_NAMESPACE", "projectcontour")).
@@ -95,6 +104,10 @@ type gatewayProvisionerConfig struct {
 	// gatewayControllerName defines the controller string that this gateway provisioner instance
 	// will process GatewayClasses and Gateways for.
 	gatewayControllerName string
+
+	// Kubernetes client parameters.
+	inCluster  bool
+	kubeconfig string
 }
 
 func runGatewayProvisioner(config *gatewayProvisionerConfig) {
@@ -111,7 +124,14 @@ func runGatewayProvisioner(config *gatewayProvisionerConfig) {
 	setupLog.Info("using contour", "image", config.contourImage)
 	setupLog.Info("using envoy", "image", config.envoyImage)
 
-	mgr, err := createManager(ctrl.GetConfigOrDie(), config)
+	// Establish k8s core client connection.
+	restConfig, err := k8s.NewRestConfig(config.kubeconfig, config.inCluster)
+	if err != nil {
+		setupLog.Error(err, "failed to create REST config for Kubernetes clients")
+		os.Exit(1)
+	}
+
+	mgr, err := createManager(restConfig, config)
 	if err != nil {
 		setupLog.Error(err, "failed to create contour gateway provisioner")
 		os.Exit(1)

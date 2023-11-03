@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -49,10 +50,10 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/complex-redirect"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/complex-redirect"),
 						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 							{
-								Type: gatewayapi_v1beta1.HTTPRouteFilterRequestRedirect,
+								Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
 									Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
 									StatusCode: ref.To(301),

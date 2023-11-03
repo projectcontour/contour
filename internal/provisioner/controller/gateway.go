@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -121,7 +122,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 
 	var accepted bool
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
+		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				accepted = true
 			}
@@ -361,6 +362,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyBaseID = envoyParams.BaseID
 			}
 
+			if envoyParams.OverloadMaxHeapSize > 0 {
+				contourModel.Spec.EnvoyMaxHeapSizeBytes = envoyParams.OverloadMaxHeapSize
+			}
+
 		}
 	}
 
@@ -370,7 +375,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var newConds []metav1.Condition
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionAccepted) {
+		if cond.Type == string(gatewayapi_v1.GatewayConditionAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				return ctrl.Result{}, nil
 			}
@@ -385,11 +390,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
+		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: gateway.Generation,
 		LastTransitionTime: metav1.Now(),
-		Reason:             string(gatewayapi_v1beta1.GatewayReasonAccepted),
+		Reason:             string(gatewayapi_v1.GatewayReasonAccepted),
 		Message:            "Gateway is accepted",
 	})
 

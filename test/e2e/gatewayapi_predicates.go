@@ -17,6 +17,7 @@ package e2e
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -30,7 +31,7 @@ func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 
 	return conditionExists(
 		gatewayClass.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 		metav1.ConditionTrue,
 	)
 }
@@ -44,7 +45,7 @@ func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool
 
 	return conditionExists(
 		gatewayClass.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 		metav1.ConditionFalse,
 	)
 }
@@ -58,7 +59,7 @@ func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionAccepted),
+		string(gatewayapi_v1.GatewayConditionAccepted),
 		metav1.ConditionTrue,
 	)
 }
@@ -72,7 +73,7 @@ func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 	return conditionExists(
 		gateway.Status.Conditions,
-		string(gatewayapi_v1beta1.GatewayConditionProgrammed),
+		string(gatewayapi_v1.GatewayConditionProgrammed),
 		metav1.ConditionTrue,
 	)
 }
@@ -84,7 +85,7 @@ func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v
 		if listenerStatus.Name == listener {
 			return conditionExists(
 				listenerStatus.Conditions,
-				string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				string(gatewayapi_v1.ListenerConditionAccepted),
 				metav1.ConditionTrue,
 			)
 		}

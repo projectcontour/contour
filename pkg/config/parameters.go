@@ -484,6 +484,21 @@ type ListenerParameters struct {
 
 	// SocketOptions is used to set socket options for listeners.
 	SocketOptions SocketOptions `yaml:"socket-options"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	MaxRequestsPerIOCycle *uint32 `yaml:"max-requests-per-io-cycle,omitempty"`
+
+	// Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
+	// SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed
+	// for a peer on a single HTTP/2 connection. It is recommended to not set this lower
+	// than 100 but this field can be used to bound resource usage by HTTP/2 connections
+	// and mitigate attacks like CVE-2023-44487. The default value when this is not set is
+	// unlimited.
+	HTTP2MaxConcurrentStreams *uint32 `yaml:"http2-max-concurrent-streams,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -501,6 +516,14 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
 		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+	}
+
+	if p.MaxRequestsPerIOCycle != nil && *p.MaxRequestsPerIOCycle < 1 {
+		return fmt.Errorf("invalid max connections per IO cycle value %q set on listener, minimum value is 1", *p.MaxRequestsPerIOCycle)
+	}
+
+	if p.HTTP2MaxConcurrentStreams != nil && *p.HTTP2MaxConcurrentStreams < 1 {
+		return fmt.Errorf("invalid max HTTP/2 concurrent streams value %q set on listener, minimum value is 1", *p.HTTP2MaxConcurrentStreams)
 	}
 
 	return p.SocketOptions.Validate()
@@ -651,6 +674,13 @@ type Parameters struct {
 
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
+
+	// FeatureFlags defines toggle to enable new contour features.
+	// available toggles are
+	// useEndpointSlices - configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to false and reading endpoint
+	// data from the k8s endpoints.
+	FeatureFlags []string `yaml:"featureFlags,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -817,6 +847,10 @@ type MetricsServerParameters struct {
 	// Optional: required only if client certificates shall be validated to protect the metrics endpoint.
 	CABundle string `yaml:"ca-certificate-path,omitempty"`
 }
+
+// FeatureFlags defines the set of feature flags
+// to toggle new contour features.
+type FeatureFlags []string
 
 func (p *MetricsParameters) Validate() error {
 	if err := p.Contour.Validate(); err != nil {

@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -182,11 +183,11 @@ var _ = Describe("Gateway API", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -221,20 +222,20 @@ var _ = Describe("Gateway API", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "insecure",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Kinds: []gatewayapi_v1beta1.RouteGroupKind{
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
 						{
 							Name:     "secure",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
@@ -246,7 +247,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -281,7 +282,7 @@ var _ = Describe("Gateway API", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "https-1",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-1.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
@@ -294,13 +295,13 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
 						{
 							Name:     "https-2",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-2.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
@@ -313,13 +314,13 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
 						{
 							Name:     "https-3",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(443),
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-3.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
@@ -332,7 +333,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -366,11 +367,11 @@ var _ = Describe("Gateway API", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "tcp",
-							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Protocol: gatewayapi_v1.TCPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},

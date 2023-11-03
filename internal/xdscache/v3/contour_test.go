@@ -15,6 +15,7 @@ package v3
 
 import (
 	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,4 +35,20 @@ func addresses(ips ...string) []v1.EndpointAddress {
 		addrs = append(addrs, v1.EndpointAddress{IP: ip})
 	}
 	return addrs
+}
+
+func endpointSlice(ns, name, service string, addressType discoveryv1.AddressType, endpoints []discoveryv1.Endpoint, ports []discoveryv1.EndpointPort) *discoveryv1.EndpointSlice {
+	return &discoveryv1.EndpointSlice{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+			Labels: map[string]string{
+				discoveryv1.LabelServiceName: service,
+			},
+		},
+
+		AddressType: addressType,
+		Endpoints:   endpoints,
+		Ports:       ports,
+	}
 }

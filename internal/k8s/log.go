@@ -19,7 +19,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bombsimon/logrusr/v2"
+	"github.com/bombsimon/logrusr/v4"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	klog "k8s.io/klog/v2"
@@ -138,6 +138,6 @@ func (l *alwaysEnabledLogSink) WithCallDepth(depth int) logr.LogSink {
 
 // Override Enabled to always return true since we rely on klog itself to do log
 // level filtering.
-func (l *alwaysEnabledLogSink) Enabled(level int) bool {
+func (l *alwaysEnabledLogSink) Enabled(_ int) bool {
 	return true
 }

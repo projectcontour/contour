@@ -84,7 +84,18 @@ type ContourConfigurationSpec struct {
 
 	// Tracing defines properties for exporting trace data to OpenTelemetry.
 	Tracing *TracingConfig `json:"tracing,omitempty"`
+
+	// FeatureFlags defines toggle to enable new contour features.
+	// Available toggles are:
+	// useEndpointSlices - configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to false and reading endpoint
+	// data from the k8s endpoints.
+	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
 }
+
+// FeatureFlags defines the set of feature flags
+// to toggle new contour features.
+type FeatureFlags []string
 
 // XDSServerType is the type of xDS server implementation.
 type XDSServerType string
@@ -391,6 +402,27 @@ type EnvoyListenerConfig struct {
 	// Single set of options are applied to all listeners.
 	// +optional
 	SocketOptions *SocketOptions `json:"socketOptions,omitempty"`
+
+	// Defines the limit on number of HTTP requests that Envoy will process from a single
+	// connection in a single I/O cycle. Requests over this limit are processed in subsequent
+	// I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is
+	// detected. Configures the http.max_requests_per_io_cycle Envoy runtime setting. The default
+	// value when this is not set is no limit.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxRequestsPerIOCycle *uint32 `json:"maxRequestsPerIOCycle,omitempty"`
+
+	// Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
+	// SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed
+	// for a peer on a single HTTP/2 connection. It is recommended to not set this lower
+	// than 100 but this field can be used to bound resource usage by HTTP/2 connections
+	// and mitigate attacks like CVE-2023-44487. The default value when this is not set is
+	// unlimited.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	HTTP2MaxConcurrentStreams *uint32 `json:"httpMaxConcurrentStreams,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

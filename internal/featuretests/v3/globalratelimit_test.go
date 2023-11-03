@@ -188,7 +188,6 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 			),
 		})
 	}
-
 }
 
 func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {

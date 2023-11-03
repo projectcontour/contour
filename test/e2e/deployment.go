@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/onsi/gomega/gexec"
@@ -696,6 +697,7 @@ func localAddress() string {
 }
 
 func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile string) error {
+	defer os.RemoveAll(configFile)
 
 	// Look for the ENV variable to tell if this test run should use
 	// the ContourConfiguration file or the ContourConfiguration CRD.
@@ -714,8 +716,11 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 
 	// Default timeout of 1s produces test flakes,
 	// a minute should be more than enough to avoid them.
-	contourCmd.Terminate().Wait(time.Minute)
-	return os.RemoveAll(configFile)
+	logs := contourCmd.Terminate().Wait(time.Minute).Err.Contents()
+	if strings.Contains(string(logs), "DATA RACE") {
+		return errors.New("Detected data race, see log output above to diagnose")
+	}
+	return nil
 }
 
 // Convenience method for deploying the pieces of the deployment needed for
