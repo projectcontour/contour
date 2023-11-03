@@ -105,10 +105,11 @@ func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
 
 func toContourProtocol(appProtocol string) string {
 	return map[string]string{
+		protoK8sH2C: "h2c",
+
 		protoContourH2:  "h2",
 		protoContourH2C: "h2c",
 		protoContourTLS: "tls",
-		protoK8sH2C:     "h2c",
 	}[appProtocol]
 }
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {

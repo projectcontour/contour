@@ -1776,6 +1776,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 // the ServicePort's AppProtocol must be one of the these.
 const (
 	protoK8sH2C     = "kubernetes.io/h2c"
+	protoK8sWS      = "kubernetes.io/ws"
 	protoContourH2C = "projectcontour.io/h2c"
 	protoContourH2  = "projectcontour.io/h2"
 	protoContourTLS = "projectcontour.io/tls"
@@ -1787,10 +1788,13 @@ func validateAPPProtocol(svc *v1.ServicePort) error {
 	}
 
 	appProtos := map[string]struct{}{
+		// *NOTE: for gateway-api: the websocket is enabled by default
+		protoK8sWS:  {},
+		protoK8sH2C: {},
+
 		protoContourH2:  {},
 		protoContourH2C: {},
 		protoContourTLS: {},
-		protoK8sH2C:     {},
 	}
 
 	if _, ok := appProtos[*svc.AppProtocol]; ok {
