@@ -283,13 +283,17 @@ type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
 type NamespacedTestBody func(string)
 type TestBody func()
 
-func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody) {
+func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
 		ginkgo.BeforeEach(func() {
-			f.CreateNamespace(namespace)
+			for _, ns := range append(additionalNamespaces, namespace) {
+				f.CreateNamespace(ns)
+			}
 		})
 		ginkgo.AfterEach(func() {
-			f.DeleteNamespace(namespace, false)
+			for _, ns := range append(additionalNamespaces, namespace) {
+				f.DeleteNamespace(ns, false)
+			}
 		})
 
 		body(namespace)

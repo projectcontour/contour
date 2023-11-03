@@ -20,6 +20,7 @@ A minor release requires:
 - an update to dependabot config
 - a release tag to be created
 - a GitHub release with release notes
+- submitting a Gateway API conformance report (if applicable)
 - public communication
 - cleanup
 
@@ -94,6 +95,16 @@ git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 Update the `.github/dependabot.yml` file to update the target branches for Dependabot scanning.
 The latest minor (N) and two previous minors should be scanned (N-1 and N-2).
 
+### Submit a Gateway API conformance report
+
+If the compatible Gateway API version has been bumped in this release, a conformance report should be reported upstream.
+Currently the process is manual but we have automated running the conformance suite and report generation in CI on release tags.
+Steps to submit a conformance report are:
+
+1. Find the corresponding `Build and push a release` GitHub Action workflow run for this release from [here][6]
+1. Download the `gateway-conformance-report` artifact from the workflow run and unzip
+1. Check it for accuracy, and make a PR like [this one][7] to the `gateway-api` repo with the content of the report
+
 ### Update quickstart YAML redirects
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
@@ -117,6 +128,7 @@ A patch release requires:
 - YAML to be customized
 - a release tag to be created
 - a GitHub release with release notes
+- submitting a Gateway API conformance report (if applicable)
 - public communication
 - cleanup
 
@@ -182,6 +194,16 @@ git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR
 ```bash
 git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
+
+### Submit a Gateway API conformance report
+
+If the compatible Gateway API version has been bumped in this release, a conformance report should be reported upstream.
+Currently the process is manual but we have automated running the conformance suite and report generation in CI on release tags.
+Steps to submit a conformance report are:
+
+1. Find the corresponding `Build and push a release` GitHub Action workflow run for this release from [here][6]
+1. Download the `gateway-conformance-report` artifact from the workflow run and unzip
+1. Check it for accuracy, and make a PR like [this one][7] to the `gateway-api` repo with the content of the report
 
 ### Do the Github release
 
@@ -278,3 +300,5 @@ If you encountered any problems or areas for improvement while executing the rel
 [3]: #rc-release-process
 [4]: https://lists.cncf.io/g/cncf-contour-users/
 [5]: https://lists.cncf.io/g/cncf-contour-distributors-announce/
+[6]: https://github.com/projectcontour/contour/actions/workflows/build_tag.yaml
+[7]: https://github.com/kubernetes-sigs/gateway-api/pull/2556
