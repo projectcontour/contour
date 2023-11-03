@@ -1785,6 +1785,35 @@ func TestAddFilter(t *testing.T) {
 				},
 			},
 		},
+		"Add a single router filter to non-empty builder": {
+			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+				Name: "grpcweb",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
+				},
+			}),
+			add: &http.HttpFilter{
+				Name: "router",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+				},
+			},
+			want: []*http.HttpFilter{
+				{
+					Name: "grpcweb",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
+					},
+				},
+				{
+					Name: "router",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+					},
+				},
+			},
+		},
+
 		"Add a filter to a builder with a router": {
 			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 				Name: "router",
