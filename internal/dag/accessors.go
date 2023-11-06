@@ -335,9 +335,7 @@ func (d *DAG) GetVirtualHostRoutes() map[*VirtualHost][]*Route {
 	for _, l := range d.Listeners {
 		for _, vhost := range l.VirtualHosts {
 			var routes []*Route
-			for _, r := range vhost.Routes {
-				routes = append(routes, r)
-			}
+			routes = append(routes, vhost.Routes...)
 			if len(routes) > 0 {
 				res[vhost] = routes
 			}
@@ -353,9 +351,7 @@ func (d *DAG) GetSecureVirtualHostRoutes() map[*SecureVirtualHost][]*Route {
 	for _, l := range d.Listeners {
 		for _, vhost := range l.SecureVirtualHosts {
 			var routes []*Route
-			for _, r := range vhost.Routes {
-				routes = append(routes, r)
-			}
+			routes = append(routes, vhost.Routes...)
 			if len(routes) > 0 {
 				res[vhost] = routes
 			}

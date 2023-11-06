@@ -583,6 +583,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			DisablePermitInsecure: &ctx.Config.DisablePermitInsecure,
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
+			OmitRouteSorting:      ctx.Config.OmitRouteSorting,
 		},
 		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
 		GlobalExternalAuthorization: globalExtAuth,

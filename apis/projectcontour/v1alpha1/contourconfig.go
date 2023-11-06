@@ -707,6 +707,11 @@ type HTTPProxyConfig struct {
 	// use as fallback when a non-SNI request is received.
 	// +optional
 	FallbackCertificate *NamespacedName `json:"fallbackCertificate,omitempty"`
+
+	// OmitRouteSorting determines if routes will be sorted by Contour before
+	// being sent to Envoy or the original order will be determined.
+	// Defaults to routing being sorted.
+	OmitRouteSorting bool `json:"omitRouteSorting,omitempty"`
 }
 
 // NetworkParameters hold various configurable network values.

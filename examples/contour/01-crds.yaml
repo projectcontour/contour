@@ -619,6 +619,11 @@ spec:
                     - name
                     - namespace
                     type: object
+                  omitRouteSorting:
+                    description: OmitRouteSorting determines if routes will be sorted
+                      by Contour before being sent to Envoy or the original order
+                      will be determined. Defaults to routing being sorted.
+                    type: boolean
                   rootNamespaces:
                     description: Restrict Contour to searching these namespaces for
                       root ingress routes.
@@ -4102,6 +4107,11 @@ spec:
                         - name
                         - namespace
                         type: object
+                      omitRouteSorting:
+                        description: OmitRouteSorting determines if routes will be
+                          sorted by Contour before being sent to Envoy or the original
+                          order will be determined. Defaults to routing being sorted.
+                        type: boolean
                       rootNamespaces:
                         description: Restrict Contour to searching these namespaces
                           for root ingress routes.

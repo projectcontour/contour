@@ -675,6 +675,10 @@ type Parameters struct {
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
+	// OmitRouteSorting determines if routes will be sorted by Contour before being sent to Envoy or the original order
+	// will be determined. Defaults to routing being sorted.
+	OmitRouteSorting bool `yaml:"omitRouteSorting,omitempty"`
+
 	// FeatureFlags defines toggle to enable new contour features.
 	// available toggles are
 	// useEndpointSlices - configures contour to fetch endpoint data

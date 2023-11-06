@@ -529,7 +529,7 @@ descriptors:
   - key: customHeader
     rate_limit:
       unit: hour
-      requests_per_unit: 1  
+      requests_per_unit: 1
   - key: anotherHeader
     rate_limit:
       unit: hour
@@ -752,4 +752,16 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-ext-auth-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthTLSAuthDisabled))
 	})
 
+	f.NamespacedTest("httpproxy-omit-route-sorting", func(namespace string) {
+		Context("omit route sorting", func() {
+			BeforeEach(func() {
+				if !e2e.UsingContourConfigCRD() {
+					// Test only applies to contour config CRD.
+					Skip("")
+				}
+				contourConfiguration.Spec.HTTPProxy.OmitRouteSorting = true
+			})
+			testOmitRouteSorting(namespace)
+		})
+	})
 })

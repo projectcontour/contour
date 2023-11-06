@@ -50,30 +50,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterContainsMatchCondition("query-param", "abc", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterContainsMatchCondition("query-param", "abc", true),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterContainsMatchCondition("query-param", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterContainsMatchCondition("query-param", "abc", true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		},
 	}
 	rh.OnAdd(proxy1)
@@ -83,15 +87,6 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:       "query-param",
-							Value:      "abc",
-							MatchType:  "contains",
-							IgnoreCase: true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:       "query-param",
 							Value:      "abc",
@@ -99,6 +94,15 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 							IgnoreCase: false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:       "query-param",
+							Value:      "abc",
+							MatchType:  "contains",
+							IgnoreCase: true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),
@@ -113,30 +117,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 	proxy2 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterExactMatchCondition("query-param", "123", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterExactMatchCondition("query-param", "abc", true),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterExactMatchCondition("query-param", "123", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterExactMatchCondition("query-param", "abc", true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy1, proxy2)
@@ -146,15 +154,6 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:       "query-param",
-							Value:      "abc",
-							MatchType:  "exact",
-							IgnoreCase: true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:       "query-param",
 							Value:      "123",
@@ -162,6 +161,15 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 							IgnoreCase: false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:       "query-param",
+							Value:      "abc",
+							MatchType:  "exact",
+							IgnoreCase: true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),
@@ -176,30 +184,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 	proxy3 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterPrefixMatchCondition("query-param", "abc", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterPrefixMatchCondition("query-param", "123", true),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterPrefixMatchCondition("query-param", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterPrefixMatchCondition("query-param", "123", true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy2, proxy3)
@@ -209,15 +221,6 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:       "query-param",
-							Value:      "123",
-							MatchType:  "prefix",
-							IgnoreCase: true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:       "query-param",
 							Value:      "abc",
@@ -225,6 +228,15 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 							IgnoreCase: false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:       "query-param",
+							Value:      "123",
+							MatchType:  "prefix",
+							IgnoreCase: true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),
@@ -239,30 +251,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 	proxy4 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterSuffixMatchCondition("query-param", "abc", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterSuffixMatchCondition("query-param", "123", true),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterSuffixMatchCondition("query-param", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterSuffixMatchCondition("query-param", "123", true),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy3, proxy4)
@@ -272,15 +288,6 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:       "query-param",
-							Value:      "123",
-							MatchType:  "suffix",
-							IgnoreCase: true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:       "query-param",
 							Value:      "abc",
@@ -288,6 +295,15 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 							IgnoreCase: false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:       "query-param",
+							Value:      "123",
+							MatchType:  "suffix",
+							IgnoreCase: true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),
@@ -302,30 +318,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 	proxy5 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterRegexMatchCondition("query-param", "^123.*"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterRegexMatchCondition("query-param", "^123.*"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterRegexMatchCondition("query-param", "^123.*"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterRegexMatchCondition("query-param", "^123.*"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy4, proxy5)
@@ -335,20 +355,20 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:      "query-param",
-							Value:     "^123.*",
-							MatchType: "regex",
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:      "query-param",
 							Value:     "^123.*",
 							MatchType: "regex",
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:      "query-param",
+							Value:     "^123.*",
+							MatchType: "regex",
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),
@@ -363,30 +383,34 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 	proxy6 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					queryParameterPresentMatchCondition("query-param"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					queryParameterPresentMatchCondition("query-param"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						queryParameterPresentMatchCondition("query-param"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						queryParameterPresentMatchCondition("query-param"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy5, proxy6)
@@ -396,18 +420,18 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
-							Name:      "query-param",
-							MatchType: "present",
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 							Name:      "query-param",
 							MatchType: "present",
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithQueryParameterConditions("/blog", dag.QueryParamMatchCondition{
+							Name:      "query-param",
+							MatchType: "present",
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefixWithQueryParameterConditions("/"),

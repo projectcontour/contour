@@ -252,8 +252,8 @@ func TestGetServiceClusters(t *testing.T) {
 			"http-1": {
 				VirtualHosts: []*VirtualHost{
 					{
-						Routes: map[string]*Route{
-							"foo": {
+						Routes: []*Route{
+							{
 								Clusters: []*Cluster{
 									{Upstream: &Service{ExternalName: "bar.com"}},
 									{Upstream: &Service{}},
@@ -274,8 +274,8 @@ func TestGetServiceClusters(t *testing.T) {
 			"http-1": {
 				VirtualHosts: []*VirtualHost{
 					{
-						Routes: map[string]*Route{
-							"foo": {
+						Routes: []*Route{
+							{
 								Clusters: []*Cluster{
 									{Upstream: &Service{}},
 								},

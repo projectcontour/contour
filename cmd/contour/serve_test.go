@@ -40,6 +40,7 @@ func TestGetDAGBuilder(t *testing.T) {
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, builder)
 		assert.True(t, httpProxyProcessor.SetSourceMetadataOnRoutes)
+		assert.False(t, httpProxyProcessor.ShouldSortRoutes)
 	}
 
 	t.Run("all default options", func(t *testing.T) {
@@ -187,6 +188,24 @@ func TestGetDAGBuilder(t *testing.T) {
 		})
 		commonAssertions(t, got)
 		assert.EqualValues(t, ingressClassNames, got.Source.IngressClassNames)
+	})
+
+	t.Run("Sort HTTPRoutes config", func(t *testing.T) {
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, sortHTTProxyRoutes: true})
+
+		assert.Empty(t, got.Source.ConfiguredSecretRefs)
+		assert.Len(t, got.Processors, 4)
+		assert.IsType(t, &dag.ListenerProcessor{}, got.Processors[0])
+
+		ingressProcessor := mustGetIngressProcessor(t, got)
+		assert.True(t, ingressProcessor.SetSourceMetadataOnRoutes)
+
+		httpProxyProcessor := mustGetHTTPProxyProcessor(t, got)
+		assert.True(t, httpProxyProcessor.SetSourceMetadataOnRoutes)
+		assert.True(t, httpProxyProcessor.ShouldSortRoutes)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))

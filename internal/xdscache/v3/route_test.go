@@ -3459,6 +3459,118 @@ func TestRouteVisit(t *testing.T) {
 	}
 }
 
+func TestRouteVisit_WithSortingEnabled(t *testing.T) {
+	tests := map[string]struct {
+		objs []any
+		want map[string]*envoy_route_v3.RouteConfiguration
+	}{
+		"Routes should be sorted with sorter enabled": {
+			objs: []any{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.unique.com",
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{{
+									Prefix: "/",
+								}},
+								Services: []contour_api_v1.Service{{
+									Name: "backend",
+									Port: 80,
+								}},
+							},
+							{
+								Conditions: []contour_api_v1.MatchCondition{{
+									Regex: "/fizzbuzz.*",
+								}},
+								Services: []contour_api_v1.Service{{
+									Name: "backend",
+									Port: 80,
+								}},
+							},
+							{
+								Conditions: []contour_api_v1.MatchCondition{{
+									Exact: "/foobar",
+								}},
+								Services: []contour_api_v1.Service{{
+									Name: "backend",
+									Port: 80,
+								}},
+							},
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.unique.com",
+						&envoy_route_v3.Route{
+							Match:  routeExact("/foobar"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routeRegex("/fizzbuzz.*"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					),
+				),
+			),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var rc RouteCache
+			builder := dag.Builder{
+				Source: dag.KubernetesCache{
+					FieldLogger: fixture.NewTestLogger(t),
+				},
+				Processors: []dag.Processor{
+					&dag.ListenerProcessor{
+						HTTPAddress:  "0.0.0.0",
+						HTTPPort:     8080,
+						HTTPSAddress: "0.0.0.0",
+						HTTPSPort:    8443,
+					},
+					&dag.IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&dag.HTTPProxyProcessor{
+						ShouldSortRoutes: true,
+					},
+				},
+			}
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			rc.OnChange(builder.Build())
+			protobuf.ExpectEqual(t, tc.want, rc.values)
+		})
+	}
+}
+
 func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 	tests := map[string]struct {
 		objs                []any

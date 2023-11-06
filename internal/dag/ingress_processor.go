@@ -237,6 +237,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 			vhost := p.dag.EnsureVirtualHost(listener.Name, host)
 			vhost.AddRoute(r)
+			vhost.ShouldSortRoutes = true
 		}
 
 		listener, err := p.dag.GetSingleListener("https")
@@ -253,6 +254,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		// it is correctly configured for TLS.
 		if svh := p.dag.GetSecureVirtualHost(listener.Name, host); svh != nil && host != "*" {
 			svh.AddRoute(r)
+			svh.ShouldSortRoutes = true
 		}
 	}
 }

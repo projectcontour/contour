@@ -739,14 +739,40 @@ type VirtualHost struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
-	Routes map[string]*Route
+	// Order here matters since we want to be able to generate the Envoy routes
+	// in the same order as the ones specified in the HTTPProxy objects.
+	// As a result we are not allowed to use a map to store the routes internally
+	// and we have to use a slice.
+	Routes []*Route
+
+	// ShouldSortRoutes is set to true if the routes in this virtual host need
+	// to be logically sorted before being used.
+	// The `Routes` in this objected are ordered in the order they are inserted
+	// in the object.
+	ShouldSortRoutes bool
 }
 
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
-		v.Routes = make(map[string]*Route)
+		v.Routes = make([]*Route, 0)
 	}
-	v.Routes[conditionsToString(route)] = route
+
+	// There are cases where the route might already exist and in that case
+	// we need to replace it with the new route. We use the `conditionsToString`
+	// as a way to compare different routes and then delete the original route
+	// and re-add it at the end of the routing table.
+	name := conditionsToString(route)
+	idxToDel := -1
+	for i, r := range v.Routes {
+		if strings.EqualFold(name, conditionsToString(r)) {
+			idxToDel = i
+		}
+	}
+
+	if idxToDel != -1 {
+		v.Routes = append(v.Routes[:idxToDel], v.Routes[idxToDel+1:]...)
+	}
+	v.Routes = append(v.Routes, route)
 }
 
 func conditionsToString(r *Route) string {

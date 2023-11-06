@@ -50,12 +50,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			},
+			Routes: []contour_api_v1.Route{
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
@@ -96,6 +91,12 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Port: 80,
 					}},
 				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
 			},
 		},
 	}
@@ -105,6 +106,24 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
+					},
 					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
 							Name:                "x-beta-release",
@@ -126,24 +145,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							Value:     "abc",
-							MatchType: "contains",
-							Invert:    false,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							Value:     "abc",
-							MatchType: "contains",
-							Invert:    false,
-						}),
-						Action: routeCluster("default/svc2/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
 					},
@@ -156,30 +157,33 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	proxy2 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerNotContainsMatchCondition("x-header", "123", false, false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					headerNotContainsMatchCondition("x-header", "abc", false, false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerNotContainsMatchCondition("x-header", "123", false, false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				}, {
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerNotContainsMatchCondition("x-header", "abc", false, false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy1, proxy2)
@@ -189,15 +193,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							Value:     "abc",
-							MatchType: "contains",
-							Invert:    true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "123",
@@ -205,6 +200,15 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 							Invert:    true,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -219,30 +223,33 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	proxy3 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerExactMatchCondition("x-header", "abc", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					headerExactMatchCondition("x-header", "123", false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerExactMatchCondition("x-header", "abc", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				}, {
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerExactMatchCondition("x-header", "123", false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy2, proxy3)
@@ -252,15 +259,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							Value:     "123",
-							MatchType: "exact",
-							Invert:    false,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
@@ -268,6 +266,15 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 							Invert:    false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "123",
+							MatchType: "exact",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -282,30 +289,34 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	proxy4 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerNotExactMatchCondition("x-header", "abc", false, false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					headerNotExactMatchCondition("x-header", "123", false, false),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerNotExactMatchCondition("x-header", "abc", false, false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerNotExactMatchCondition("x-header", "123", false, false),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy3, proxy4)
@@ -315,15 +326,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							Value:     "123",
-							MatchType: "exact",
-							Invert:    true,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
@@ -331,6 +333,15 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 							Invert:    true,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							Value:     "123",
+							MatchType: "exact",
+							Invert:    true,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -345,30 +356,34 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	proxy5 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerPresentMatchCondition("x-header"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/blog"),
-					headerPresentMatchCondition("x-header"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerPresentMatchCondition("x-header"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/blog"),
+						headerPresentMatchCondition("x-header"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy4, proxy5)
@@ -378,20 +393,20 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.world",
 					&envoy_route_v3.Route{
-						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
-							Name:      "x-header",
-							MatchType: "present",
-							Invert:    false,
-						}),
-						Action: routeCluster("default/svc3/80/da39a3ee5e"),
-					},
-					&envoy_route_v3.Route{
 						Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							MatchType: "present",
 							Invert:    false,
 						}),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefixWithHeaderConditions("/blog", dag.HeaderMatchCondition{
+							Name:      "x-header",
+							MatchType: "present",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -428,7 +443,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Name: "svc2",
 						Port: 80,
 					}},
-				}},
+				},
+			},
 		},
 	)
 
@@ -487,7 +503,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Name: "svc2",
 						Port: 80,
 					}},
-				}},
+				},
+			},
 		},
 	)
 
@@ -525,30 +542,34 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	proxy8 := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerRegexMatchCondition("x-header", "^123.*"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}, {
-				Conditions: matchconditions(
-					prefixMatchCondition("/"),
-					headerRegexMatchCondition("x-header", "^789.*"),
-				),
-				Services: []contour_api_v1.Service{{
-					Name: "svc3",
-					Port: 80,
-				}},
-			}},
+			Routes: []contour_api_v1.Route{
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerRegexMatchCondition("x-header", "^123.*"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerRegexMatchCondition("x-header", "^789.*"),
+					),
+					Services: []contour_api_v1.Service{{
+						Name: "svc3",
+						Port: 80,
+					}},
+				},
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+			},
 		})
 
 	rh.OnUpdate(proxy7, proxy8)

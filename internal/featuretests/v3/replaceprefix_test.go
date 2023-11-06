@@ -71,12 +71,12 @@ func basic(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/api/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/api"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/api/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
 					},
 				),
 			),
@@ -116,12 +116,12 @@ func basic(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/api/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/api"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/api/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
 					},
 				),
 			),
@@ -162,12 +162,12 @@ func basic(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/api/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/full/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/api"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/full"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/api/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/full/"),
 					},
 				),
 			),
@@ -254,22 +254,22 @@ func multiInclude(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("host1.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/v1/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/v1"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/v1/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
 					},
 				),
 				envoy_v3.VirtualHost("host2.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/v2/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/v2"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/v2/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
 					},
 				),
 			),
@@ -291,12 +291,12 @@ func multiInclude(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("host1.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/v1/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
-					},
-					&envoy_route_v3.Route{
 						Match:  routePrefix("/v1"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1"),
+					},
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/v1/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
 					},
 				),
 				envoy_v3.VirtualHost("host2.projectcontour.io",
@@ -367,21 +367,21 @@ func replaceWithSlash(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("host1.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/foo/"),
+						Match:  routePrefix("/foo"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/foo"),
+						Match:  routePrefix("/foo/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 				),
 				envoy_v3.VirtualHost("host2.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/bar/"),
+						Match:  routePrefix("/bar"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/bar"),
+						Match:  routePrefix("/bar/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 				),
@@ -408,11 +408,11 @@ func replaceWithSlash(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("host1.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/foo/"),
+						Match:  routePrefix("/foo"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/foo"),
+						Match:  routePrefix("/foo/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 				),
@@ -479,14 +479,19 @@ func artifactoryDocker(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("artifactory.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-external/"),
+						Match: routePrefix("/v2/container-sandbox"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-external/v2/"),
+							"/artifactory/api/docker/container-sandbox/v2"),
 					},
 					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-sandbox/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-sandbox/v2/"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-release"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-release/v2"),
 					},
 					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-release/"),
@@ -499,24 +504,19 @@ func artifactoryDocker(t *testing.T) {
 							"/artifactory/api/docker/container-external/v2"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-sandbox"),
+						Match: routePrefix("/v2/container-external/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-sandbox/v2"),
-					},
-					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-release"),
-						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-release/v2"),
-					},
-					&envoy_route_v3.Route{
-						Match: routePrefix("/v2/container-public/"),
-						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-public/v2/"),
+							"/artifactory/api/docker/container-external/v2/"),
 					},
 					&envoy_route_v3.Route{
 						Match: routePrefix("/v2/container-public"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
 							"/artifactory/api/docker/container-public/v2"),
+					},
+					&envoy_route_v3.Route{
+						Match: routePrefix("/v2/container-public/"),
+						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
+							"/artifactory/api/docker/container-public/v2/"),
 					},
 				),
 			),

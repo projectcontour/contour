@@ -68,3 +68,5 @@ issues:
   - path: test/e2e
     linters:
       - bodyclose
+      # Gikno which is used in e2e tests is dot imported
+      - revive

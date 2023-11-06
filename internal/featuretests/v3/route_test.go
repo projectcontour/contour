@@ -247,13 +247,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
@@ -289,13 +292,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
@@ -349,13 +355,16 @@ func TestEditIngressInPlace(t *testing.T) {
 				Host: "hello.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/",
-							Backend: *featuretests.IngressBackend(s1),
-						}, {
-							Path:    "/whoop",
-							Backend: *featuretests.IngressBackend(s2),
-						}},
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								Path:    "/whoop",
+								Backend: *featuretests.IngressBackend(s2),
+							},
+							{
+								Path:    "/",
+								Backend: *featuretests.IngressBackend(s1),
+							},
+						},
 					},
 				},
 			}},
