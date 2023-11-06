@@ -27,15 +27,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...int) v1.ServicePort {
+func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...any) v1.ServicePort {
 	p := v1.ServicePort{
 		Name:     name,
 		Protocol: protocol,
 		Port:     port,
 	}
-	if len(extras) != 0 {
-		p.TargetPort = intstr.FromInt(extras[0])
+
+	if len(extras) > 0 {
+		p.TargetPort = intstr.FromInt(extras[0].(int))
 	}
+
+	if len(extras) > 1 {
+		p.AppProtocol = ref.To(extras[1].(string))
+	}
+
 	return p
 
 }
@@ -115,9 +121,9 @@ func TestBuilderLookupService(t *testing.T) {
 					Port:        8443,
 				},
 				{
-					Name:        "k8s-ws",
+					Name:        "k8s-wss",
 					Protocol:    "TCP",
-					AppProtocol: ref.To("kubernetes.io/ws"),
+					AppProtocol: ref.To("kubernetes.io/wss"),
 					Port:        8444,
 				},
 				{

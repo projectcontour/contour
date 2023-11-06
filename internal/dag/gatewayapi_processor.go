@@ -1789,9 +1789,9 @@ func validateAPPProtocol(svc *v1.ServicePort) error {
 
 	appProtos := map[string]struct{}{
 		// *NOTE: for gateway-api: the websocket is enabled by default
-		protoK8sWS:  {},
-		protoK8sH2C: {},
+		protoK8sWS: {},
 
+		protoK8sH2C:     {},
 		protoContourH2:  {},
 		protoContourH2C: {},
 		protoContourTLS: {},
@@ -1800,7 +1800,7 @@ func validateAPPProtocol(svc *v1.ServicePort) error {
 	if _, ok := appProtos[*svc.AppProtocol]; ok {
 		return nil
 	}
-	return fmt.Errorf("appProtocol: %s is unsupported", *svc.AppProtocol)
+	return fmt.Errorf("AppProtocol: \"%s\" is unsupported", *svc.AppProtocol)
 }
 
 func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {
