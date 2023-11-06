@@ -418,7 +418,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		// If this happens, it has to be programmer error, so we panic to tell them
 		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 		// the second one earlier, because we're panicking anyway.
-		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
+		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) && routerIndex != lastIndex {
 			panic("Can't add more than one router to a filter chain")
 		}
 		if routerIndex != lastIndex {
