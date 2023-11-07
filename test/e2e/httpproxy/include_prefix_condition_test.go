@@ -35,8 +35,7 @@ func testIncludePrefixCondition(namespace string) {
 		)
 
 		for _, ns := range []string{appNamespace, adminNamespace} {
-			f.CreateNamespace(ns)
-			defer f.DeleteNamespace(ns, false)
+			defer f.NamespacedTest(ns, nil)
 		}
 
 		f.Fixtures.Echo.Deploy(appNamespace, "echo-app")

@@ -582,119 +582,100 @@ descriptors:
 				"root-ns-crd-2",
 			}
 			nonRootNamespace := "nonroot-ns-crd"
-
+	
 			BeforeEach(func() {
 				if !e2e.UsingContourConfigCRD() {
 					// Test only applies to contour config CRD.
 					Skip("")
 				}
-				for _, ns := range rootNamespaces {
-					f.CreateNamespace(ns)
-				}
-				contourConfiguration.Spec.HTTPProxy.RootNamespaces = rootNamespaces
 			})
-
+	
 			AfterEach(func() {
-				for _, ns := range rootNamespaces {
-					f.DeleteNamespace(ns, false)
-				}
+				// No need to handle namespace deletion here
 			})
-
-			f.NamespacedTest(nonRootNamespace, testRootNamespaces(rootNamespaces))
-		})
-
-		Context("configured via CLI flag", func() {
-			rootNamespaces := []string{
-				"root-ns-cli-1",
-				"root-ns-cli-2",
-			}
-			nonRootNamespace := "nonroot-ns-cli"
-
-			BeforeEach(func() {
-				if e2e.UsingContourConfigCRD() {
-					// Test only applies to contour configmap.
-					Skip("")
-				}
-				for _, ns := range rootNamespaces {
-					f.CreateNamespace(ns)
-				}
-				additionalContourArgs = []string{
-					"--root-namespaces=" + strings.Join(rootNamespaces, ","),
-				}
-			})
-
-			AfterEach(func() {
-				for _, ns := range rootNamespaces {
-					f.DeleteNamespace(ns, false)
-				}
-			})
-
+	
+			// Call NamespacedTest with specific namespace names
+			f.NamespacedTest(rootNamespaces[0], testRootNamespaces(rootNamespaces))
+			f.NamespacedTest(rootNamespaces[1], testRootNamespaces(rootNamespaces))
 			f.NamespacedTest(nonRootNamespace, testRootNamespaces(rootNamespaces))
 		})
 	})
+	
+
+	Context("configured via CLI flag", func() {
+		rootNamespaces := []string{
+			"root-ns-cli-1",
+			"root-ns-cli-2",
+		}
+		nonRootNamespace := "nonroot-ns-cli"
+	
+		BeforeEach(func() {
+			if e2e.UsingContourConfigCRD() {
+				// Test only applies to contour configmap.
+				Skip("")
+			}
+		})
+	
+		AfterEach(func() {
+			// No need to handle namespace deletion here
+		})
+	
+		// Call NamespacedTest with specific namespace names
+		f.NamespacedTest(rootNamespaces[0], testRootNamespaces(rootNamespaces))
+		f.NamespacedTest(rootNamespaces[1], testRootNamespaces(rootNamespaces))
+		f.NamespacedTest(nonRootNamespace, testRootNamespaces(rootNamespaces))
+	})
+	
 
 	Context("using watch namespaces", func() {
-		Context("only", func() {
-			watchNamespaces := []string{
-				"watched-ns-1",
-				"watched-ns-2",
+		watchNamespaces := []string{
+			"watched-ns-1",
+			"watched-ns-2",
+		}
+		nonWatchedNamespace := "nonwatched-ns"
+	
+		BeforeEach(func() {
+			if e2e.UsingContourConfigCRD() {
+				
+				Skip("")
 			}
-			nonWatchedNamespace := "nonwatched-ns"
-
-			BeforeEach(func() {
-				if e2e.UsingContourConfigCRD() {
-					// Test only applies to contour configmap.
-					Skip("")
-				}
-				for _, ns := range watchNamespaces {
-					f.CreateNamespace(ns)
-				}
-				additionalContourArgs = []string{
-					"--watch-namespaces=" + strings.Join(watchNamespaces, ","),
-				}
-			})
-
-			AfterEach(func() {
-				for _, ns := range watchNamespaces {
-					f.DeleteNamespace(ns, false)
-				}
-			})
-
-			f.NamespacedTest(nonWatchedNamespace, testWatchNamespaces(watchNamespaces))
 		})
-
-		Context("with root namespaces", func() {
-			rootNamespaces := []string{
-				"root-ns-1",
-				"root-ns-2",
-			}
-			nonRootNamespace := "nonroot-ns"
-			watchNamespaces := append(rootNamespaces, nonRootNamespace)
-			nonWatchedNamespace := "nonwatched-nonroot-ns"
-
-			BeforeEach(func() {
-				if e2e.UsingContourConfigCRD() {
-					// Test only applies to contour configmap.
-					Skip("")
-				}
-				for _, ns := range watchNamespaces {
-					f.CreateNamespace(ns)
-				}
-				additionalContourArgs = []string{
-					"--watch-namespaces=" + strings.Join(watchNamespaces, ","),
-					"--root-namespaces=" + strings.Join(rootNamespaces, ","),
-				}
-			})
-
-			AfterEach(func() {
-				for _, ns := range watchNamespaces {
-					f.DeleteNamespace(ns, false)
-				}
-			})
-
-			f.NamespacedTest(nonWatchedNamespace, testWatchAndRootNamespaces(rootNamespaces, nonRootNamespace))
+	
+		AfterEach(func() {
+			
 		})
+	
+		
+		f.NamespacedTest(watchNamespaces[0], testWatchNamespaces(watchNamespaces))
+		f.NamespacedTest(watchNamespaces[1], testWatchNamespaces(watchNamespaces))
+		f.NamespacedTest(nonWatchedNamespace, testWatchNamespaces(watchNamespaces))
 	})
+	
+
+	Context("with root namespaces", func() {
+		rootNamespaces := []string{
+			"root-ns-1",
+			"root-ns-2",
+		}
+		nonRootNamespace := "nonroot-ns"
+		watchNamespaces := append(rootNamespaces, nonRootNamespace)
+		nonWatchedNamespace := "nonwatched-nonroot-ns"
+	
+		BeforeEach(func() {
+			if e2e.UsingContourConfigCRD() {
+				// Test only applies to contour configmap.
+				Skip("")
+			}
+		})
+	
+		AfterEach(func() {
+			// No need to handle namespace deletion here
+		})
+	
+		// Call NamespacedTest with specific namespace names
+		f.NamespacedTest(nonWatchedNamespace, testWatchAndRootNamespaces(rootNamespaces, nonRootNamespace))
+	})
+	
 
 	f.NamespacedTest("httpproxy-crl", testClientCertRevocation)
 

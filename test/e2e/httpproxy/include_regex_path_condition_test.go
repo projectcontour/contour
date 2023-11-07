@@ -34,10 +34,8 @@ func testIncludeRegexCondition(namespace string) {
 			echo2Namespace = "echo-2"
 		)
 
-		for _, ns := range []string{echo1Namespace, echo2Namespace} {
-			f.CreateNamespace(ns)
-			defer f.DeleteNamespace(ns, false)
-		}
+		defer f.NamespacedTest(echo1Namespace, nil)
+		defer f.NamespacedTest(echo2Namespace, nil)
 
 		f.Fixtures.Echo.Deploy(echo1Namespace, "echo-1")
 		f.Fixtures.Echo.Deploy(echo2Namespace, "echo-2")
