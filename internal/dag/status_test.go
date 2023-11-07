@@ -9163,6 +9163,90 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 	})
 
+	run(t, "route rule with valid timeouts", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
+								Request:        ref.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ref.To(gatewayapi_v1.Duration("30s")),
+							},
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
+
+	run(t, "route rule with invalid timeouts: request empty", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
+								//Request:        ref.To(gatewayapi_v1.Duration("0s")),
+								BackendRequest: ref.To(gatewayapi_v1.Duration("30s")),
+							},
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(status.ReasonInvalidTimeout, "the value of \"BackendRequest\" must be <= the value of \"Request\" timeout"),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+	})
+
 }
 
 func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
