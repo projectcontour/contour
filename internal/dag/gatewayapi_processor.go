@@ -1125,8 +1125,7 @@ func validateTimeout(timeout *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPol
 
 	rp := retryPolicy(br)
 	if rp.PerTryTimeout.Duration() > rtp.ResponseTimeout.Duration() {
-		return nil, nil, fmt.Errorf("the value of \"BackendRequest\" must be <= the value of \"Request\" timeout")
-
+		rtp.ResponseTimeout = rp.PerTryTimeout
 	}
 	return &rtp, rp, nil
 
