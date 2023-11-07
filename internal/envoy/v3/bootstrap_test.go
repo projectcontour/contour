@@ -2056,6 +2056,7 @@ func TestBootstrap(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			tc := tc
 			steps, gotError := bootstrap(&tc.config)
 			assert.Equal(t, gotError != nil, tc.wantedError)
 
