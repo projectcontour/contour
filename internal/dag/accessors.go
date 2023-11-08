@@ -103,28 +103,38 @@ func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
 	return nil
 }
 
-func toContourProtocol(appProtocol string) string {
-	return map[string]string{
+// the ServicePort's AppProtocol must be one of the these.
+const (
+	protoK8sH2C     = "kubernetes.io/h2c"
+	protoK8sWS      = "kubernetes.io/ws"
+	protoContourH2  = "projectcontour.io/h2"
+	protoContourTLS = "projectcontour.io/tls"
+)
+
+func toContourProtocol(appProtocol string) (string, bool) {
+	proto, ok := map[string]string{
+		// *NOTE: for gateway-api: the websocket is enabled by default
+		protoK8sWS:  "",
 		protoK8sH2C: "h2c",
 
 		protoContourH2:  "h2",
-		protoContourH2C: "h2c",
 		protoContourTLS: "tls",
 	}[appProtocol]
+	return proto, ok
 }
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	// if appProtocol is not nil, check it only
 	if port.AppProtocol != nil {
-		return toContourProtocol(*port.AppProtocol)
+		proto, _ := toContourProtocol(*port.AppProtocol)
+		return proto
 	}
 
 	up := annotation.ParseUpstreamProtocols(svc.Annotations)
-	protocol := up[port.Name]
-	if protocol == "" {
-		protocol = up[strconv.Itoa(int(port.Port))]
+	proto := up[port.Name]
+	if proto == "" {
+		proto = up[strconv.Itoa(int(port.Port))]
 	}
-
-	return protocol
+	return proto
 }
 
 func externalName(svc *v1.Service) string {

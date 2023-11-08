@@ -1766,38 +1766,18 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
-	if err = validateAPPProtocol(&service.Weighted.ServicePort); err != nil {
+	if err = validateAppProtocol(&service.Weighted.ServicePort); err != nil {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
 	}
 
 	return service, nil
 }
 
-// the ServicePort's AppProtocol must be one of the these.
-const (
-	protoK8sH2C     = "kubernetes.io/h2c"
-	protoK8sWS      = "kubernetes.io/ws"
-	protoContourH2C = "projectcontour.io/h2c"
-	protoContourH2  = "projectcontour.io/h2"
-	protoContourTLS = "projectcontour.io/tls"
-)
-
-func validateAPPProtocol(svc *v1.ServicePort) error {
+func validateAppProtocol(svc *v1.ServicePort) error {
 	if svc.AppProtocol == nil {
 		return nil
 	}
-
-	appProtos := map[string]struct{}{
-		// *NOTE: for gateway-api: the websocket is enabled by default
-		protoK8sWS: {},
-
-		protoK8sH2C:     {},
-		protoContourH2:  {},
-		protoContourH2C: {},
-		protoContourTLS: {},
-	}
-
-	if _, ok := appProtos[*svc.AppProtocol]; ok {
+	if _, ok := toContourProtocol(*svc.AppProtocol); ok {
 		return nil
 	}
 	return fmt.Errorf("AppProtocol: \"%s\" is unsupported", *svc.AppProtocol)
