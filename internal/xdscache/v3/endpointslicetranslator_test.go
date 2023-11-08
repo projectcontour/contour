@@ -1008,6 +1008,7 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	}
 
 	for name, tc := range tests {
+		tc := tc
 		t.Run(name, func(t *testing.T) {
 			endpointSliceTranslator := NewEndpointSliceTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, endpointSliceTranslator.cache.SetClusters([]*dag.ServiceCluster{&tc.cluster}))
