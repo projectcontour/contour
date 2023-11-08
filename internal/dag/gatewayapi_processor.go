@@ -1103,7 +1103,9 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 	}
 }
 
-func validateTimeout(timeout *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, *RetryPolicy, error) {
+// *NOTE: the Gateway API does not yet support retries, we have implemented it here for future use.
+// please refer to https://github.com/projectcontour/contour/pull/5940#discussion_r1385198654 for more information.
+func parseHTTPRouteTimeouts(timeout *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, *RetryPolicy, error) {
 	if timeout == nil || (timeout.BackendRequest == nil && timeout.Request == nil) {
 		return nil, nil, nil
 	}
@@ -1184,7 +1186,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 			requestTimeoutPolicy *RouteTimeoutPolicy
 		)
 
-		requestTimeoutPolicy, retryPolicy, err = validateTimeout(rule.Timeouts)
+		requestTimeoutPolicy, retryPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts)
 		if err != nil {
 			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, metav1.ConditionFalse, status.ReasonInvalidTimeout, err.Error())
 			continue

@@ -436,6 +436,30 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	httpRouteTimeouts := &gatewayapi_v1.HTTPRouteTimeouts{
+		Request:        ref.To(gatewayapi_v1.Duration("5s")),
+		BackendRequest: ref.To(gatewayapi_v1.Duration("10s")),
+	}
+	httpRouteWithTimeouts := &gatewayapi_v1beta1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+				Timeouts:    httpRouteTimeouts,
+			}},
+		},
+	}
+
 	basicTLSRoute := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
@@ -4155,6 +4179,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							Clusters: clustersWeight(service(kuardService)),
 						},
 					)),
+				},
+			),
+		},
+
+		"Route rule with timeouts": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				httpRouteWithTimeouts,
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", timeoutsHTTPProute("/", httpRouteTimeouts, service(kuardService))),
+					),
 				},
 			),
 		},
@@ -15933,6 +15974,18 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	return &Route{
 		PathMatchCondition: prefixString(prefix),
 		Clusters:           clusters(services...),
+	}
+}
+
+func timeoutsHTTPProute(prefix string, timeouts *gatewayapi_v1.HTTPRouteTimeouts, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	rtp, rp, _ := parseHTTPRouteTimeouts(timeouts)
+
+	return &Route{
+		PathMatchCondition: prefixString(prefix),
+		Clusters:           clustersWeight(services...),
+		TimeoutPolicy:      *rtp,
+		RetryPolicy:        rp,
 	}
 }
 
