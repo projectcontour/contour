@@ -112,7 +112,7 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	assert.Empty(t, <-outC)
 
 	infoEntry := logHook.AllEntries()[0]
-	assert.Equal(t, infoLog+"\n", infoEntry.Message)
+	assert.Equal(t, infoLog, infoEntry.Message)
 	assert.Len(t, infoEntry.Data, 2)
 	assert.Equal(t, "bar", infoEntry.Data["foo"])
 	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, infoLine), infoEntry.Data["caller"])

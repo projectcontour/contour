@@ -59,12 +59,12 @@ linters-settings:
 
 issues:
   exclude-rules:
-  - linters:
-    - unparam
+  - linters: ["unparam"]
     text: "always receives"
   - path: zz_generated
-    linters:
-    - goimports
+    linters: ["goimports"]
   - path: test/e2e
-    linters:
-      - bodyclose
+    linters: ["bodyclose"]
+  - path: test/e2e
+    linters: ["revive"]
+    text: "should not use dot imports"
