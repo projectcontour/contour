@@ -6415,6 +6415,13 @@ spec:
                             - unavailable
                             type: string
                           type: array
+                        skipPreviousHost:
+                          description: SkipPreviousHost configures Envoy to use Previous
+                            Host Retry Predicate that allows it to choose a different
+                            host than the host where previous request has failed.
+                          type: boolean
+                      required:
+                      - skipPreviousHost
                       type: object
                     services:
                       description: Services are the services to proxy traffic.

@@ -54,7 +54,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond, false),
 					},
 				),
 			),
@@ -80,7 +80,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond, false),
 					},
 				),
 			),
@@ -106,7 +106,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond, false),
 					},
 				),
 			),
@@ -132,7 +132,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 0, 120*time.Millisecond),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 0, 120*time.Millisecond, false),
 					},
 				),
 			),
@@ -158,7 +158,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 1, 120*time.Millisecond),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 1, 120*time.Millisecond, false),
 					},
 				),
 			),
@@ -192,7 +192,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 5, 105*time.Second),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 5, 105*time.Second, false),
 					},
 				),
 			),
@@ -224,7 +224,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 0, 105*time.Second),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 0, 105*time.Second, false),
 					},
 				),
 			),
@@ -256,7 +256,7 @@ func TestRetryPolicy(t *testing.T) {
 				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 1, 105*time.Second),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 1, 105*time.Second, false),
 					},
 				),
 			),
@@ -264,5 +264,38 @@ func TestRetryPolicy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	rh.OnDelete(hp3)
+	hp4 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: fixture.ObjectMeta("simple"),
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
+			Routes: []contour_api_v1.Route{{
+				RetryPolicy: &contour_api_v1.RetryPolicy{
+					NumRetries:       1,
+					PerTryTimeout:    "107s",
+					SkipPreviousHost: true,
+				},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(hp3, hp4)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 1, 107*time.Second, true),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(hp4)
 }

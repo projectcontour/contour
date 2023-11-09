@@ -302,7 +302,7 @@ func withPrefixRewrite(route *envoy_route_v3.Route_Route, replacement string) *e
 	return route
 }
 
-func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
+func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration, skipPreviousHost bool) *envoy_route_v3.Route_Route {
 	route.Route.RetryPolicy = &envoy_route_v3.RetryPolicy{
 		RetryOn: retryOn,
 	}
@@ -311,6 +311,15 @@ func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetri
 	}
 	if perTryTimeout > 0 {
 		route.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
+	}
+
+	if skipPreviousHost {
+		route.Route.RetryPolicy.RetryHostPredicate = []*envoy_route_v3.RetryPolicy_RetryHostPredicate{
+			{
+				Name:       "envoy.retry_host_predicates.previous_hosts",
+				ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{},
+			},
+		}
 	}
 	return route
 }

@@ -323,6 +323,33 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"retry skip previous host": {
+			route: &dag.Route{
+				RetryPolicy: &dag.RetryPolicy{
+					RetryOn:              "retriable-status-codes",
+					RetriableStatusCodes: []uint32{503},
+					SkipPreviousHost:     true,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RetryPolicy: &envoy_route_v3.RetryPolicy{
+						RetryOn:              "retriable-status-codes",
+						RetriableStatusCodes: []uint32{503},
+						RetryHostPredicate: []*envoy_route_v3.RetryPolicy_RetryHostPredicate{
+							{
+								Name:       "envoy.retry_host_predicates.previous_hosts",
+								ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{},
+							},
+						},
+					},
+				},
+			},
+		},
 		"timeout 90s": {
 			route: &dag.Route{
 				TimeoutPolicy: dag.RouteTimeoutPolicy{

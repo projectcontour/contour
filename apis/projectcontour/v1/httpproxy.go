@@ -1171,6 +1171,11 @@ type RetryPolicy struct {
 	// This field is only respected when you include `retriable-status-codes` in the `RetryOn` field.
 	// +optional
 	RetriableStatusCodes []uint32 `json:"retriableStatusCodes,omitempty"`
+
+	// SkipPreviousHost configures Envoy to use Previous Host Retry Predicate
+	// that allows it to choose a different host than the host where previous request
+	// has failed.
+	SkipPreviousHost bool `json:"skipPreviousHost"`
 }
 
 // ReplacePrefix describes a path prefix replacement.

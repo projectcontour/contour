@@ -130,8 +130,9 @@ func TestRetryPolicy(t *testing.T) {
 		"empty policy": {
 			rp: &contour_api_v1.RetryPolicy{},
 			want: &RetryPolicy{
-				RetryOn:    "5xx",
-				NumRetries: 1,
+				RetryOn:          "5xx",
+				NumRetries:       1,
+				SkipPreviousHost: false,
 			},
 		},
 		"explicitly zero retries": {
@@ -180,6 +181,16 @@ func TestRetryPolicy(t *testing.T) {
 				RetryOn:              "5xx",
 				RetriableStatusCodes: []uint32{502, 503, 504},
 				NumRetries:           1,
+			},
+		},
+		"retry skip previous host": {
+			rp: &contour_api_v1.RetryPolicy{
+				SkipPreviousHost: true,
+			},
+			want: &RetryPolicy{
+				NumRetries:       1,
+				RetryOn:          "5xx",
+				SkipPreviousHost: true,
 			},
 		},
 	}

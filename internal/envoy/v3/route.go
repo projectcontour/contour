@@ -535,6 +535,15 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 	}
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
+	if r.RetryPolicy.SkipPreviousHost {
+		rp.RetryHostPredicate = []*envoy_route_v3.RetryPolicy_RetryHostPredicate{
+			{
+				Name:       "envoy.retry_host_predicates.previous_hosts",
+				ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{},
+			},
+		}
+	}
+
 	return rp
 }
 
