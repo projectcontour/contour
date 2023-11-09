@@ -742,7 +742,11 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			rsu := &status.RouteStatusUpdate{}
 			rpsu := rsu.StatusUpdateFor(tc.routeParentRef)
 
-			got := processor.getListenersForRouteParentRef(tc.routeParentRef, tc.routeNamespace, gatewayapi_v1beta1.Kind(tc.routeKind), tc.listeners, rpsu)
+			got := processor.getListenersForRouteParentRef(
+				tc.routeParentRef,
+				tc.routeNamespace,
+				gatewayapi_v1beta1.Kind(tc.routeKind),
+				tc.listeners, rpsu, map[string]int{})
 
 			var want []*listenerInfo
 			for _, i := range tc.want {

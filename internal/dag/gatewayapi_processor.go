@@ -198,15 +198,15 @@ func (p *GatewayAPIProcessor) processRoute(
 
 		routeParentStatus := routeStatus.StatusUpdateFor(routeParentRef)
 
+		// Get the list of listeners that are (a) included by this parent ref, and
+		// (b) allow the route (based on kind, namespace).
+		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus, listenerAttachedRoutes)
+
 		// If the Gateway is invalid, set status on the route and we're done.
 		if gatewayNotProgrammedCondition != nil {
 			routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 			continue
 		}
-
-		// Get the list of listeners that are (a) included by this parent ref, and
-		// (b) allow the route (based on kind, namespace).
-		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus)
 		if len(allowedListeners) == 0 {
 			p.resolveRouteRefs(route, routeParentStatus)
 		}
@@ -263,9 +263,10 @@ func (p *GatewayAPIProcessor) processRoute(
 				attached = p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
 
-			if attached {
-				listenerAttachedRoutes[string(listener.listener.Name)]++
-			}
+			println(attached)
+			// if attached {
+			// 	listenerAttachedRoutes[string(listener.listener.Name)]++
+			// }
 
 			hostCount += hosts.Len()
 		}
@@ -308,6 +309,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	routeKind gatewayapi_v1beta1.Kind,
 	validListeners []*listenerInfo,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
+	listenerAttachedRoutes map[string]int,
 ) []*listenerInfo {
 
 	// Find the set of valid listeners that are relevant given this
@@ -348,6 +350,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
 			continue
 		}
+		listenerAttachedRoutes[string(selectedListener.listener.Name)]++
 
 		allowedListeners = append(allowedListeners, selectedListener)
 	}
@@ -1102,8 +1105,14 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 	}
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
+func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
+	route *gatewayapi_v1beta1.HTTPRoute,
+	routeAccessor *status.RouteParentStatusUpdate,
+	listener *listenerInfo,
+	hosts sets.Set[string]) bool {
+
 	var programmed bool
+
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
