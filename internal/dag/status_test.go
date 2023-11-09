@@ -11002,14 +11002,14 @@ func routeAcceptedGRPCRouteCondition() metav1.Condition {
 	}
 }
 
-func routeAcceptedTCPRouteCondition() metav1.Condition {
-	return metav1.Condition{
-		Type:    string(gatewayapi_v1.RouteConditionAccepted),
-		Status:  contour_api_v1.ConditionTrue,
-		Reason:  string(gatewayapi_v1.RouteReasonAccepted),
-		Message: "Accepted TCPRoute",
-	}
-}
+// func routeAcceptedTCPRouteCondition() metav1.Condition {
+// 	return metav1.Condition{
+// 		Type:    string(gatewayapi_v1.RouteConditionAccepted),
+// 		Status:  contour_api_v1.ConditionTrue,
+// 		Reason:  string(gatewayapi_v1.RouteReasonAccepted),
+// 		Message: "Accepted TCPRoute",
+// 	}
+// }
 
 func listenerProgrammedCondition() metav1.Condition {
 	return metav1.Condition{
