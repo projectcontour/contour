@@ -110,7 +110,7 @@ func TestBuilderLookupService(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "app-protocol-service",
 			Namespace:   "default",
-			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444,8445,8446"},
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444"},
 		},
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{
@@ -125,18 +125,6 @@ func TestBuilderLookupService(t *testing.T) {
 					Protocol:    "TCP",
 					AppProtocol: ref.To("kubernetes.io/wss"),
 					Port:        8444,
-				},
-				{
-					Name:        "contour-h2",
-					Protocol:    "TCP",
-					AppProtocol: ref.To("projectcontour.io/h2"),
-					Port:        8445,
-				},
-				{
-					Name:        "contour-unsupported",
-					Protocol:    "TCP",
-					AppProtocol: ref.To("projectcontour.io/unsupported"),
-					Port:        8446,
 				},
 			},
 		},
@@ -228,18 +216,6 @@ func TestBuilderLookupService(t *testing.T) {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8444,
 			want:           appProtcolService(appProtoService, "", 1),
-		},
-
-		"lookup service by port number with contour app protocol: h2": {
-			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
-			port:           8445,
-			want:           appProtcolService(appProtoService, "h2", 2),
-		},
-
-		"lookup service by port number with contour app protocol: unsupported": {
-			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
-			port:           8446,
-			want:           appProtcolService(appProtoService, "", 3),
 		},
 	}
 
