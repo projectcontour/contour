@@ -5533,6 +5533,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
+	// TODO: temp disabled
 	// run(t, "regular expression path match with invalid value for httproute", testcase{
 	// 	objs: []any{
 	// 		kuardService,
