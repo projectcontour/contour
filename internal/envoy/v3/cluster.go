@@ -85,7 +85,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 				MaxPendingRequests: protobuf.UInt32OrNil(service.MaxPendingRequests),
 				MaxRequests:        protobuf.UInt32OrNil(service.MaxRequests),
 				MaxRetries:         protobuf.UInt32OrNil(service.MaxRetries),
-				TrackRemaining:     protobuf.BoolOrNil(true),
+                TrackRemaining:     protobuf.Bool(true),
 			}},
 		}
 	}

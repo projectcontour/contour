@@ -224,14 +224,14 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 						MaxPendingRequests: wrapperspb.UInt32(100000),
 						MaxRequests:        wrapperspb.UInt32(60000000),
 						MaxRetries:         wrapperspb.UInt32(50),
-						TrackRemaining:     protobuf.BoolOrNil(true),
+						TrackRemaining:     wrapperspb.Bool(true),
 					}, {
 						Priority:           envoy_core_v3.RoutingPriority_DEFAULT,
 						MaxConnections:     wrapperspb.UInt32(100000),
 						MaxPendingRequests: wrapperspb.UInt32(100000),
 						MaxRequests:        wrapperspb.UInt32(60000000),
 						MaxRetries:         wrapperspb.UInt32(50),
-						TrackRemaining:     protobuf.BoolOrNil(true),
+						TrackRemaining:     wrapperspb.Bool(true),
 					}},
 				},
 			}, {
