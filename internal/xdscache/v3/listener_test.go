@@ -259,19 +259,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -464,19 +452,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -817,19 +793,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -881,19 +845,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -945,19 +897,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1019,19 +959,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1122,19 +1050,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1225,19 +1141,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1328,19 +1232,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1431,19 +1323,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1534,19 +1414,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1631,19 +1499,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1731,19 +1587,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1814,19 +1658,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(),
 		},
@@ -1863,19 +1695,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1925,19 +1745,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1981,19 +1789,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2037,19 +1833,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2093,19 +1877,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2149,19 +1921,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2207,19 +1967,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2281,19 +2029,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2335,19 +2071,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 
 			want: listenermap(&envoy_listener_v3.Listener{
@@ -2390,19 +2114,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 
 			want: listenermap(&envoy_listener_v3.Listener{
@@ -2445,19 +2157,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2502,19 +2202,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2580,19 +2268,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2657,19 +2333,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2734,19 +2398,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2817,19 +2469,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2902,19 +2542,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3040,19 +2668,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 				secret,
 				fallbackSecret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3198,19 +2814,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -3244,19 +2848,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3299,19 +2891,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3373,19 +2953,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3428,19 +2996,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3502,19 +3058,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:                          ENVOY_HTTP_LISTENER,
@@ -3557,19 +3101,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:                          ENVOY_HTTP_LISTENER,
@@ -3646,19 +3178,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				secret,
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:                          ENVOY_HTTP_LISTENER,
