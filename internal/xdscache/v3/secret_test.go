@@ -504,6 +504,7 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 			FieldLogger: fixture.NewTestLogger(t),
 		},
 		Processors: []dag.Processor{
+			&dag.ExtensionServiceProcessor{},
 			&dag.ListenerProcessor{
 				HTTPAddress:  "0.0.0.0",
 				HTTPPort:     8080,
