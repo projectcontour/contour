@@ -199,7 +199,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 		}
 
 		var err error
-		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour")
+		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour", "-race")
 		require.NoError(t, err)
 	}
 
@@ -283,13 +283,17 @@ type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
 type NamespacedTestBody func(string)
 type TestBody func()
 
-func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody) {
+func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
 		ginkgo.BeforeEach(func() {
-			f.CreateNamespace(namespace)
+			for _, ns := range append(additionalNamespaces, namespace) {
+				f.CreateNamespace(ns)
+			}
 		})
 		ginkgo.AfterEach(func() {
-			f.DeleteNamespace(namespace, false)
+			for _, ns := range append(additionalNamespaces, namespace) {
+				f.DeleteNamespace(ns, false)
+			}
 		})
 
 		body(namespace)
@@ -307,6 +311,31 @@ func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) error {
 
 func createAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
 	require.NoError(t, client.Create(context.Background(), obj))
+
+	key := types.NamespacedName{
+		Namespace: obj.GetNamespace(),
+		Name:      obj.GetName(),
+	}
+
+	if err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
+		if err := client.Get(ctx, key, obj); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(obj), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return obj, false
+	}
+
+	return obj, true
+}
+
+func updateAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+	require.NoError(t, client.Update(context.Background(), obj))
 
 	key := types.NamespacedName{
 		Namespace: obj.GetNamespace(),

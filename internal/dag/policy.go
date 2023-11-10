@@ -22,6 +22,7 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -185,10 +186,9 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 			if extractedHostRewriteHeader := extractHostRewriteHeaderValue(entry.Value); extractedHostRewriteHeader != "" {
 				hostRewriteHeader = http.CanonicalHeaderKey(extractedHostRewriteHeader)
 				continue
-			} else {
-				hostRewrite = entry.Value
-				continue
 			}
+			hostRewrite = entry.Value
+			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
@@ -253,7 +253,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPoli
 				errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 				continue
 			}
-			if key == "Host" && (headerPolicyType == string(gatewayapi_v1beta1.HTTPRouteFilterRequestHeaderModifier) ||
+			if key == "Host" && (headerPolicyType == string(gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier) ||
 				headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
 				hostRewrite = header.Value
 				continue

@@ -32,16 +32,39 @@ linters-settings:
       - http.DefaultTransport
   revive:
     rules:
-      - name: use-any
+    - name: blank-imports
+    - name: context-as-argument
+    - name: context-keys-type
+    - name: dot-imports
+    - name: empty-block
+    - name: error-naming
+    - name: error-return
+    - name: error-strings
+    - name: errorf
+    - name: exported
+    - name: increment-decrement
+    - name: indent-error-flow
+    - name: package-comments
+    - name: range
+    - name: receiver-naming
+    - name: redefines-builtin-id
+    - name: superfluous-else
+    - name: time-naming
+    - name: unexported-return
+    - name: unreachable-code
+    - name: unused-parameter
+    - name: use-any
+    - name: var-declaration
+    - name: var-naming
 
 issues:
   exclude-rules:
-  - linters:
-    - unparam
+  - linters: ["unparam"]
     text: "always receives"
   - path: zz_generated
-    linters:
-    - goimports
+    linters: ["goimports"]
   - path: test/e2e
-    linters:
-      - bodyclose
+    linters: ["bodyclose"]
+  - path: test/e2e
+    linters: ["revive"]
+    text: "should not use dot imports"

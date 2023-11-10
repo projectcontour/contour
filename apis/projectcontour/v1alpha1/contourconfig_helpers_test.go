@@ -14,6 +14,7 @@
 package v1alpha1_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -293,4 +294,40 @@ func TestAccessLogFormatExtensions(t *testing.T) {
 		AccessLogFormat: v1alpha1.EnvoyAccessLog,
 	}
 	assert.Empty(t, e3.AccessLogFormatterExtensions())
+}
+
+func TestFeatureFlagsValidate(t *testing.T) {
+	tests := []struct {
+		name     string
+		flags    v1alpha1.FeatureFlags
+		expected error
+	}{
+		{
+			name:     "valid flag",
+			flags:    v1alpha1.FeatureFlags{"useEndpointSlices"},
+			expected: nil,
+		},
+		{
+			name:     "invalid flag",
+			flags:    v1alpha1.FeatureFlags{"invalidFlag"},
+			expected: fmt.Errorf("invalid contour configuration, unknown feature flag:invalidFlag"),
+		},
+		{
+			name:     "mix of valid and invalid flags",
+			flags:    v1alpha1.FeatureFlags{"useEndpointSlices", "invalidFlag"},
+			expected: fmt.Errorf("invalid contour configuration, unknown feature flag:invalidFlag"),
+		},
+		{
+			name:     "empty flags",
+			flags:    v1alpha1.FeatureFlags{},
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.flags.Validate()
+			assert.Equal(t, tt.expected, err)
+		})
+	}
 }

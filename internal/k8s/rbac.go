@@ -27,3 +27,6 @@ package k8s
 // Add RBAC policy to support leader election.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;get;update,namespace=projectcontour
 // +kubebuilder:rbac:groups="coordination.k8s.io",resources=leases,verbs=create;get;update,namespace=projectcontour
+
+// Add RBAC policy for endpoint slices
+// +kubebuilder:rbac:groups="discovery.k8s.io",resources=endpointslices,verbs=list;get;watch

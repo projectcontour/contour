@@ -233,22 +233,22 @@ func (e *EventHandler) onUpdate(op any) bool {
 	case opAdd:
 		return e.builder.Source.Insert(op.obj)
 	case opUpdate:
-		old, oldOk := op.oldObj.(client.Object)
-		new, newOk := op.newObj.(client.Object)
+		oldO, oldOk := op.oldObj.(client.Object)
+		newO, newOk := op.newObj.(client.Object)
 		if oldOk && newOk {
-			equal, err := k8s.IsObjectEqual(old, new)
+			equal, err := k8s.IsObjectEqual(oldO, newO)
 			// Error is returned if there was no support for comparing equality of the specific object type.
 			// We can still process the object but it will be always considered as changed.
 			if err != nil {
 				e.WithError(err).WithField("op", "update").
-					WithField("name", new.GetName()).WithField("namespace", new.GetNamespace()).
-					WithField("gvk", reflect.TypeOf(new)).Errorf("error comparing objects")
+					WithField("name", newO.GetName()).WithField("namespace", newO.GetNamespace()).
+					WithField("gvk", reflect.TypeOf(newO)).Errorf("error comparing objects")
 			}
 			if equal {
 				// log the object name and namespace to help with debugging.
 				e.WithField("op", "update").
-					WithField("name", old.GetName()).WithField("namespace", old.GetNamespace()).
-					WithField("gvk", reflect.TypeOf(new)).Debugf("skipping update, no changes to relevant fields")
+					WithField("name", oldO.GetName()).WithField("namespace", oldO.GetNamespace()).
+					WithField("gvk", reflect.TypeOf(newO)).Debugf("skipping update, no changes to relevant fields")
 				return false
 			}
 			remove := e.builder.Source.Remove(op.oldObj)

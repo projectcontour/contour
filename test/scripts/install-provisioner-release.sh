@@ -34,7 +34,11 @@ fi
 # Install the Contour version.
 ${KUBECTL} apply -f "https://projectcontour.io/quickstart/$VERS/contour-gateway-provisioner.yaml"
 
-# Wait for admission server to be fully rolled out.
-${KUBECTL} rollout status --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server
+# Wait for Gateway API admission server to be fully rolled out.
+# This is only for backwards compatibility, the Gateway API
+# admission server is not included as of Contour 1.27.
+if ${KUBECTL} get namespace gateway-system > /dev/null 2>&1; then
+        ${KUBECTL} rollout status --timeout="${WAITTIME}" -n gateway-system deployment/gateway-api-admission-server
+fi
 
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available

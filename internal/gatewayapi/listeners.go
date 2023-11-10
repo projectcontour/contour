@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -66,8 +67,8 @@ type ListenerPort struct {
 func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListenersResult {
 	// TLS-based protocols that can all exist on the same port.
 	compatibleTLSProtocols := sets.New(
-		gatewayapi_v1beta1.HTTPSProtocolType,
-		gatewayapi_v1beta1.TLSProtocolType,
+		gatewayapi_v1.HTTPSProtocolType,
+		gatewayapi_v1.TLSProtocolType,
 		ContourHTTPSProtocolType,
 	)
 
@@ -81,9 +82,9 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		if hostname := ref.Val(listener.Hostname, ""); len(hostname) > 0 {
 			if err := IsValidHostname(string(hostname)); err != nil {
 				result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+					Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
 					Status:  metav1.ConditionFalse,
-					Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
+					Reason:  string(gatewayapi_v1.ListenerReasonInvalid),
 					Message: err.Error(),
 				}
 				continue
@@ -92,12 +93,12 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 
 		// Check for a supported protocol.
 		switch listener.Protocol {
-		case gatewayapi_v1beta1.HTTPProtocolType, gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType, gatewayapi_v1beta1.TCPProtocolType, ContourHTTPSProtocolType:
+		case gatewayapi_v1.HTTPProtocolType, gatewayapi_v1.HTTPSProtocolType, gatewayapi_v1.TLSProtocolType, gatewayapi_v1.TCPProtocolType, ContourHTTPSProtocolType:
 		default:
 			result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Type:    string(gatewayapi_v1.ListenerConditionAccepted),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol),
+				Reason:  string(gatewayapi_v1.ListenerReasonUnsupportedProtocol),
 				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS, TLS, TCP or projectcontour.io/https", listener.Protocol),
 			}
 			continue
@@ -117,9 +118,9 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 					// If there are conflicting container ports, the listener can't be accepted.
 					if toContainerPort(listener.Port) == toContainerPort(otherListener.Port) {
 						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+							Type:    string(gatewayapi_v1.ListenerConditionAccepted),
 							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+							Reason:  string(gatewayapi_v1.ListenerReasonPortUnavailable),
 							Message: "Listener port conflicts with a previous Listener's port",
 						}
 						return true
@@ -131,12 +132,12 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 
 				// Protocol conflict
 				switch {
-				case listener.Protocol == gatewayapi_v1beta1.HTTPProtocolType:
-					if otherListener.Protocol != gatewayapi_v1beta1.HTTPProtocolType {
+				case listener.Protocol == gatewayapi_v1.HTTPProtocolType:
+					if otherListener.Protocol != gatewayapi_v1.HTTPProtocolType {
 						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 							Message: "All Listener protocols for a given port must be compatible",
 						}
 						return true
@@ -144,19 +145,19 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				case compatibleTLSProtocols.Has(listener.Protocol):
 					if !compatibleTLSProtocols.Has(otherListener.Protocol) {
 						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 							Message: "All Listener protocols for a given port must be compatible",
 						}
 						return true
 					}
-				case listener.Protocol == gatewayapi_v1beta1.TCPProtocolType:
-					if otherListener.Protocol != gatewayapi_v1beta1.TCPProtocolType {
+				case listener.Protocol == gatewayapi_v1.TCPProtocolType:
+					if otherListener.Protocol != gatewayapi_v1.TCPProtocolType {
 						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 							Message: "All Listener protocols for a given port must be compatible",
 						}
 						return true
@@ -166,9 +167,9 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				// Hostname conflict
 				if ref.Val(listener.Hostname, "") == ref.Val(otherListener.Hostname, "") {
 					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-						Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+						Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 						Status:  metav1.ConditionTrue,
-						Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
+						Reason:  string(gatewayapi_v1.ListenerReasonHostnameConflict),
 						Message: "All Listener hostnames for a given port must be unique",
 					}
 					return true
@@ -185,11 +186,11 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 		// Add an entry in the Listener name map.
 		var protocol string
 		switch listener.Protocol {
-		case gatewayapi_v1beta1.HTTPProtocolType:
+		case gatewayapi_v1.HTTPProtocolType:
 			protocol = "http"
-		case gatewayapi_v1beta1.HTTPSProtocolType, gatewayapi_v1beta1.TLSProtocolType, ContourHTTPSProtocolType:
+		case gatewayapi_v1.HTTPSProtocolType, gatewayapi_v1.TLSProtocolType, ContourHTTPSProtocolType:
 			protocol = "https"
-		case gatewayapi_v1beta1.TCPProtocolType:
+		case gatewayapi_v1.TCPProtocolType:
 			protocol = "tcp"
 		}
 		envoyListenerName := fmt.Sprintf("%s-%d", protocol, listener.Port)

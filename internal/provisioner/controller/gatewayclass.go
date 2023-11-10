@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -149,7 +150,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			ctx,
 			gatewayClass,
 			metav1.ConditionFalse,
-			gatewayapi_v1beta1.GatewayClassReasonInvalidParameters,
+			gatewayapi_v1.GatewayClassReasonInvalidParameters,
 			"Invalid ParametersRef, must be a reference to an existing namespaced projectcontour.io/ContourDeployment resource",
 		); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
@@ -230,7 +231,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				ctx,
 				gatewayClass,
 				metav1.ConditionFalse,
-				gatewayapi_v1beta1.GatewayClassReasonInvalidParameters,
+				gatewayapi_v1.GatewayClassReasonInvalidParameters,
 				strings.Join(invalidParamsMessages, "; "),
 			); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
@@ -240,7 +241,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	if err := r.setAcceptedCondition(ctx, gatewayClass, metav1.ConditionTrue, gatewayapi_v1beta1.GatewayClassReasonAccepted, "GatewayClass has been accepted by the controller"); err != nil {
+	if err := r.setAcceptedCondition(ctx, gatewayClass, metav1.ConditionTrue, gatewayapi_v1.GatewayClassReasonAccepted, "GatewayClass has been accepted by the controller"); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
 	}
 
@@ -255,7 +256,7 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 	message string,
 ) error {
 	currentAcceptedCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+		Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 		Status:             status,
 		ObservedGeneration: gatewayClass.Generation,
 		LastTransitionTime: metav1.Now(),
@@ -264,7 +265,7 @@ func (r *gatewayClassReconciler) setAcceptedCondition(
 	}
 	var newConds []metav1.Condition
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
+		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == status {
 				// If status hasn't changed, don't change the condition, just
 				// update the generation.

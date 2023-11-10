@@ -38,16 +38,16 @@ type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
 
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.
-// ep may be nil, in which case, the result is also nil.
-func RecalculateEndpoints(port, healthPort v1.ServicePort, ep *v1.Endpoints) []*LoadBalancingEndpoint {
-	if ep == nil {
+// eps may be nil, in which case, the result is also nil.
+func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []*LoadBalancingEndpoint {
+	if eps == nil {
 		return nil
 	}
 
 	var lb []*LoadBalancingEndpoint
 	var healthCheckPort int32
 
-	for _, s := range ep.Subsets {
+	for _, s := range eps.Subsets {
 		// Skip subsets without ready addresses.
 		if len(s.Addresses) < 1 {
 			continue
@@ -199,16 +199,16 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 	return nil
 }
 
-// UpdateEndpoint adds ep to the cache, or replaces it if it is
+// UpdateEndpoint adds eps to the cache, or replaces it if it is
 // already cached. Any ServiceClusters that are backed by a Service
-// that ep belongs become stale. Returns a boolean indicating whether
-// any ServiceClusters use ep or not.
-func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) bool {
+// that eps belongs become stale. Returns a boolean indicating whether
+// any ServiceClusters use eps or not.
+func (c *EndpointsCache) UpdateEndpoint(eps *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(ep)
-	c.endpoints[name] = ep.DeepCopy()
+	name := k8s.NamespacedNameOf(eps)
+	c.endpoints[name] = eps.DeepCopy()
 
 	// If any service clusters include this endpoint, mark them
 	// all as stale.
@@ -220,14 +220,14 @@ func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) bool {
 	return false
 }
 
-// DeleteEndpoint deletes ep from the cache. Any ServiceClusters
-// that are backed by a Service that ep belongs become stale. Returns
-// a boolean indicating whether any ServiceClusters use ep or not.
-func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) bool {
+// DeleteEndpoint deletes eps from the cache. Any ServiceClusters
+// that are backed by a Service that eps belongs become stale. Returns
+// a boolean indicating whether any ServiceClusters use eps or not.
+func (c *EndpointsCache) DeleteEndpoint(eps *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(ep)
+	name := k8s.NamespacedNameOf(eps)
 	delete(c.endpoints, name)
 
 	// If any service clusters include this endpoint, mark them
@@ -348,7 +348,7 @@ func equal(a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment) bool {
 	return true
 }
 
-func (e *EndpointsTranslator) OnAdd(obj any, isInInitialList bool) {
+func (e *EndpointsTranslator) OnAdd(obj any, _ bool) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
 		if !e.cache.UpdateEndpoint(obj) {
@@ -458,3 +458,5 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 }
 
 func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
+
+func (e *EndpointsTranslator) SetObserver(observer contour.Observer) { e.Observer = observer }

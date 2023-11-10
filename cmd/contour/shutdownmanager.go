@@ -98,7 +98,7 @@ func newShutdownContext() *shutdownContext {
 }
 
 // healthzHandler handles the /healthz endpoint which is used for the shutdown-manager's liveness probe.
-func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.Request) {
+func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, _ *http.Request) {
 	if _, err := w.Write([]byte(http.StatusText(http.StatusOK))); err != nil {
 		s.WithField("context", "healthzHandler").Error(err)
 	}

@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -61,7 +62,7 @@ func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
 // OnAdd updates the given Ingress/HTTPProxy/Gateway object with the
 // current load balancer address. Note that this method can be called
 // concurrently from an informer or from Contour itself.
-func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
+func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 	// Hold the mutex to get a shallow copy. We don't need to
 	// deep copy, since all the references are read-only.
 	s.mu.Lock()
@@ -191,7 +192,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, isInInitialList bool) {
 	}
 }
 
-func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj any) {
+func (s *StatusAddressUpdater) OnUpdate(_, newObj any) {
 
 	// We only care about the new object, because we're only updating its status.
 	// So, we can get away with just passing this call to OnAdd.
@@ -199,7 +200,7 @@ func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj any) {
 
 }
 
-func (s *StatusAddressUpdater) OnDelete(obj any) {
+func (s *StatusAddressUpdater) OnDelete(_ any) {
 	// we don't need to update the status on resources that
 	// have been deleted.
 }
@@ -214,7 +215,7 @@ type ServiceStatusLoadBalancerWatcher struct {
 	Log         logrus.FieldLogger
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, isInInitialList bool) {
+func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 	svc, ok := obj.(*v1.Service)
 	if !ok {
 		// not a service
@@ -230,7 +231,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, isInInitialList bool) 
 	s.notify(svc.Status.LoadBalancer)
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj any) {
+func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 	svc, ok := newObj.(*v1.Service)
 	if !ok {
 		// not a service
@@ -286,18 +287,18 @@ func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLo
 	}
 }
 
-func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1beta1.GatewayStatusAddress {
-	addrs := []gatewayapi_v1beta1.GatewayStatusAddress{}
+func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1.GatewayStatusAddress {
+	addrs := []gatewayapi_v1.GatewayStatusAddress{}
 
 	for _, lbi := range lbs.Ingress {
 		if len(lbi.IP) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
 				Value: lbi.IP,
 			})
 		}
 		if len(lbi.Hostname) > 0 {
-			addrs = append(addrs, gatewayapi_v1beta1.GatewayStatusAddress{
+			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
 				Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
 				Value: lbi.Hostname,
 			})

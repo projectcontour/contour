@@ -129,6 +129,10 @@ toc:
         link: /resources/faq
       - page: Tagging
         link: /resources/tagging
+      - page: Adopters
+        link: /resources/adopters
+      - page: Ecosystem
+        link: /resources/ecosystem
   - title: Security
     subfolderitems:
       - page: Threat Model and Security Posture

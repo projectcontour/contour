@@ -418,7 +418,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 		// If this happens, it has to be programmer error, so we panic to tell them
 		// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 		// the second one earlier, because we're panicking anyway.
-		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) {
+		if f.GetTypedConfig().MessageIs(&envoy_router_v3.Router{}) && routerIndex != lastIndex {
 			panic("Can't add more than one router to a filter chain")
 		}
 		if routerIndex != lastIndex {
@@ -660,7 +660,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 }
 
 // UnixSocketAddress creates a new Unix Socket envoy_core_v3.Address.
-func UnixSocketAddress(address string, port int) *envoy_core_v3.Address {
+func UnixSocketAddress(address string) *envoy_core_v3.Address {
 	return &envoy_core_v3.Address{
 		Address: &envoy_core_v3.Address_Pipe{
 			Pipe: &envoy_core_v3.Pipe{
@@ -828,6 +828,7 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 	}
 
 	for _, provider := range jwtProviders {
+		provider := provider
 		var cacheDuration *durationpb.Duration
 		if provider.RemoteJWKS.CacheDuration != nil {
 			cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)
