@@ -1,0 +1,1 @@
+Added support for enabling circuit breaker statistics tracking.The `TrackRemaining` option has been introduced to expose the number of resources remaining until the circuit breakers open.
