@@ -884,13 +884,13 @@ func (x *xdsServer) NeedLeaderElection() bool {
 func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
-	log.Printf("waiting for the initial dag to be built")
+	log.Info("waiting for the initial dag to be built")
 	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(ctx context.Context) (done bool, err error) {
 		return x.initialDagBuilt(), nil
 	}); err != nil {
 		return fmt.Errorf("failed to wait for initial dag build, %w", err)
 	}
-	log.Printf("the initial dag is built")
+	log.Info("the initial dag is built")
 
 	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
 
