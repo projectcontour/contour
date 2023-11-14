@@ -317,7 +317,7 @@ func (p *GatewayAPIProcessor) processRoute(
 
 			if attached {
 				println(attached)
-				//listenerAttachedRoutes[string(listener.listener.Name)]++
+				// listenerAttachedRoutes[string(listener.listener.Name)]++
 			}
 
 			hostCount += hosts.Len()
@@ -364,6 +364,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	listenerAttachedRoutes map[string]int,
 ) []*listenerInfo {
 
+	_ = listenerAttachedRoutes
 	// Find the set of valid listeners that are relevant given this
 	// parent ref (either all of them, if the ref is to the entire
 	// gateway, or one of them, if the ref is to a specific listener,
@@ -402,7 +403,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
 			continue
 		}
-		//listenerAttachedRoutes[string(selectedListener.listener.Name)]++
+		// listenerAttachedRoutes[string(selectedListener.listener.Name)]++
 
 		allowedListeners = append(allowedListeners, selectedListener)
 	}
