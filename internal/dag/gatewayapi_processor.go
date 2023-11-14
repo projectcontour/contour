@@ -315,10 +315,9 @@ func (p *GatewayAPIProcessor) processRoute(
 				attached = p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
 
-			//println("abcx", attached)
-			// if attached {
-			// 	listenerAttachedRoutes[string(listener.listener.Name)]++
-			// }
+			if attached {
+				//listenerAttachedRoutes[string(listener.listener.Name)]++
+			}
 
 			hostCount += hosts.Len()
 		}
