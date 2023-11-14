@@ -620,3 +620,205 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }
+
+func testDisableVhtGRLOnDirectResponseRoute(namespace string) {
+	Specify("global rate limit policy set on virtualhost is applied with disabled set to false on a direct response route", func() {
+		t := f.T()
+
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "globalratelimitvhostnontls",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						DirectResponsePolicy: &contourv1.HTTPDirectResponsePolicy{
+							Body:       "ok",
+							StatusCode: 200,
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/echo",
+							},
+						},
+					},
+				},
+			},
+		}
+		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+
+		// Wait until we get a 200 from the proxy confirming
+		// the pods are up and serving traffic.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			// Add a global rate limit policy on the virtual host.
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Global: &contourv1.GlobalRateLimitPolicy{
+					Descriptors: []contourv1.RateLimitDescriptor{
+						{
+							Entries: []contourv1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contourv1.GenericKeyDescriptor{
+										Value: "randomvalue",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Wait until we confirm a 200 response because it is a direct response.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			// Set disabled to false explicitly on the route.
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Global: &contourv1.GlobalRateLimitPolicy{
+					Disabled: false,
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Confirm we still see a 200 response.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+	})
+
+	Specify("global rate limit policy set on virtualhost is applied with disabled set to true on a direct response route", func() {
+		t := f.T()
+
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "globalratelimitvhostnontls",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						DirectResponsePolicy: &contourv1.HTTPDirectResponsePolicy{
+							Body:       "ok",
+							StatusCode: 200,
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/echo",
+							},
+						},
+					},
+				},
+			},
+		}
+		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+
+		// Wait until we get a 200 from the proxy confirming
+		// the pods are up and serving traffic.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			// Add a global rate limit policy on the virtual host.
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Global: &contourv1.GlobalRateLimitPolicy{
+					Descriptors: []contourv1.RateLimitDescriptor{
+						{
+							Entries: []contourv1.RateLimitDescriptorEntry{
+								{
+									GenericKey: &contourv1.GenericKeyDescriptor{
+										Value: "randomvalue",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Wait until we confirm a 200 response because it is a direct response.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
+
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			// Disable Vhost global rate limit policy on the route.
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Global: &contourv1.GlobalRateLimitPolicy{
+					Disabled: true,
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Make another request against the proxy, confirm a 200 response
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+	})
+}

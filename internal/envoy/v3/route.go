@@ -122,6 +122,15 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 		// redirect routes to *both* the insecure and secure vhosts.
 		route.Action = UpgradeHTTPS()
 	case dagRoute.DirectResponse != nil:
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+
+		// Apply per-route authorization policy modifications.
+		if dagRoute.AuthDisabled {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+		} else if len(dagRoute.AuthContext) > 0 {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+		}
+
 		route.Action = routeDirectResponse(dagRoute.DirectResponse)
 	case dagRoute.Redirect != nil:
 		// TODO request/response headers?

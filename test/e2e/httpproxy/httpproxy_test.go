@@ -442,6 +442,8 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 
 		f.NamespacedTest("httpproxy-global-rate-limiting-vhost-disable-per-route", withRateLimitService(testDisableVirtualHostGlobalRateLimitingOnRoute))
+
+		f.NamespacedTest("httpproxy-grl-vhost-disable-per-direct-response-route", withRateLimitService(testDisableVhtGRLOnDirectResponseRoute))
 	})
 
 	Context("default global rate limiting", func() {
