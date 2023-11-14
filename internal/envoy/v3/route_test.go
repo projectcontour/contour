@@ -27,6 +27,7 @@ import (
 	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
+	envoy_prev_hosts_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/retry/host/previous_hosts/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -342,8 +343,10 @@ func TestRouteRoute(t *testing.T) {
 						RetriableStatusCodes: []uint32{503},
 						RetryHostPredicate: []*envoy_route_v3.RetryPolicy_RetryHostPredicate{
 							{
-								Name:       "envoy.retry_host_predicates.previous_hosts",
-								ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{},
+								Name: "envoy.retry_host_predicates.previous_hosts",
+								ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{
+									TypedConfig: protobuf.MustMarshalAny(&envoy_prev_hosts_v3.PreviousHostsPredicate{}),
+								},
 							},
 						},
 					},
