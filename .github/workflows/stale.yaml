@@ -28,6 +28,7 @@ jobs:
 
           You can:
 
+          - *Ensure your PR is passing all CI checks.* PRs that are fully green are more likely to be reviewed. If you are having trouble with CI checks, reach out to the #contour channel in the Kubernetes Slack workspace.
           - Mark this PR as fresh by commenting or pushing a commit
           - Close this PR
           - Offer to help out with triage
@@ -43,6 +44,7 @@ jobs:
 
           You can:
 
+          - *Ensure your PR is passing all CI checks.* PRs that are fully green are more likely to be reviewed. If you are having trouble with CI checks, reach out to the #contour channel in the Kubernetes Slack workspace.
           - Mark this PR as fresh by commenting or pushing a commit
           - Close this PR
           - Offer to help out with triage
