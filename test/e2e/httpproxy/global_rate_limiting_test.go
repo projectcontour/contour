@@ -795,7 +795,7 @@ func testDisableVhtGRLOnDirectResponseRoute(namespace string) {
 			Condition: e2e.HasStatusCode(200),
 		})
 		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
