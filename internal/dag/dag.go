@@ -433,8 +433,7 @@ type RetryPolicy struct {
 	// SkipPreviousHost configures Envoy to use Previous Host Retry Predicate
 	// that allows it to choose a different host than the host where previous request
 	// has failed.
-	// +optional
-	SkipPreviousHost bool `json:"SkipPreviousHost,omitempty"`
+	SkipPreviousHost bool
 }
 
 // PathRewritePolicy defines a policy for rewriting the path of
