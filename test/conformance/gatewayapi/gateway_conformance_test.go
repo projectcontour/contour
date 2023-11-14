@@ -78,7 +78,6 @@ func TestGatewayConformance(t *testing.T) {
 			tests.HTTPRouteBackendProtocolH2C.ShortName,
 			tests.HTTPRouteTimeoutBackendRequest.ShortName,
 			tests.HTTPRouteTimeoutRequest.ShortName,
-			tests.GatewayWithAttachedRoutes.ShortName,
 			tests.GatewayStaticAddresses.ShortName,
 		},
 		ExemptFeatures: sets.New(

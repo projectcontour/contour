@@ -17,14 +17,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -5217,6 +5218,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
+
 			dag := builder.Build()
 			gotRouteUpdates := dag.StatusCache.GetRouteUpdates()
 			gotGatewayUpdates := dag.StatusCache.GetGatewayUpdates()
@@ -5483,7 +5485,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 	run(t, "exact path match not starting with '/' for httproute", testcase{
 		objs: []any{
@@ -5529,7 +5531,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "regular expression path match with invalid value for httproute", testcase{
@@ -5571,7 +5573,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "prefix path match with consecutive '/' characters for httproute", testcase{
@@ -5618,7 +5620,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "exact path match with consecutive '/' characters for httproute", testcase{
@@ -5665,7 +5667,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "invalid path match type for httproute", testcase{
@@ -5711,7 +5713,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "invalid header match type not supported for httproute", testcase{
@@ -5764,7 +5766,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "regular expression header match with invalid value for httproute", testcase{
@@ -5817,7 +5819,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "regular expression query param match with valid value for httproute", testcase{
@@ -5923,7 +5925,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "query param match with invalid type for httproute", testcase{
@@ -5976,7 +5978,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "spec.rules.backendRef.name not specified", testcase{
@@ -6152,7 +6154,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "spec.rules.backendRef.namespace does not match route", testcase{
@@ -6919,7 +6921,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname", testcase{
@@ -6961,7 +6963,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
@@ -7001,7 +7003,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "two HTTP listeners, route's hostname intersects with one of them", testcase{
@@ -7097,7 +7099,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					"listener-2": {
 						Name:           gatewayapi_v1beta1.SectionName("listener-2"),
-						AttachedRoutes: int32(0),
+						AttachedRoutes: int32(1),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
@@ -7198,7 +7200,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
 					"listener-1": {
 						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
-						AttachedRoutes: int32(0),
+						AttachedRoutes: int32(1),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
@@ -7213,7 +7215,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 					"listener-2": {
 						Name:           gatewayapi_v1beta1.SectionName("listener-2"),
-						AttachedRoutes: int32(0),
+						AttachedRoutes: int32(1),
 						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
 							{
 								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
@@ -9336,7 +9338,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.backendRef.name invalid on two matches", testcase{
@@ -9379,7 +9381,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.backendRef.port not specified", testcase{
@@ -9427,7 +9429,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.backendRefs not specified", testcase{
@@ -9468,7 +9470,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
@@ -9511,7 +9513,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
@@ -9554,7 +9556,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
@@ -9595,7 +9597,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
@@ -9642,7 +9644,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), gw.Spec.Listeners[0].Protocol, 1),
 	})
 
 	run(t, "TLSRoute: backendrefs still validated when route not accepted", testcase{
@@ -9784,6 +9786,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						listenerAcceptedCondition(),
 						listenerResolvedRefsCondition(),
 					},
+					AttachedRoutes: 1,
 				},
 			},
 		}},
@@ -9859,6 +9862,9 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				}
 			}
 
+			if desc == "anchorrrr" {
+				println("hello")
+			}
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
@@ -10013,7 +10019,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: method match must have Service configured", testcase{
@@ -10056,7 +10062,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: method match must have Method configured", testcase{
@@ -10099,7 +10105,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: invalid header match type is not supported", testcase{
@@ -10154,7 +10160,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: regular expression header match has invalid value", testcase{
@@ -10209,7 +10215,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: invalid RequestHeaderModifier due to duplicated headers", testcase{
@@ -10497,7 +10503,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 	run(t, "grpcroute: still validate backendrefs when not accepted", testcase{
@@ -10896,7 +10902,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 1),
 	})
 	run(t, "TCPRoute with rule with no backends", testcase{
 		objs: []any{
@@ -10927,7 +10933,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 1),
 	})
 	run(t, "TCPRoute with rule with ref to nonexistent backend", testcase{
 		objs: []any{
@@ -10960,7 +10966,7 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 0),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 1),
 	})
 }
 
