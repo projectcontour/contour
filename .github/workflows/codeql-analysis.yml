@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: '0 10 * * 1'
 
+env:
+  GOPROXY: https://proxy.golang.org/
+  GO_VERSION: 1.21.3
 jobs:
   CodeQL-Build:
 
@@ -28,6 +31,11 @@ jobs:
         key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-${{ github.job }}-go-
+
+    - uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: false
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
