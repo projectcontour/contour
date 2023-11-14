@@ -746,7 +746,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 				tc.routeParentRef,
 				tc.routeNamespace,
 				gatewayapi_v1beta1.Kind(tc.routeKind),
-				tc.listeners, rpsu, map[string]int{})
+				tc.listeners, rpsu)
 
 			var want []*listenerInfo
 			for _, i := range tc.want {

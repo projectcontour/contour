@@ -80,6 +80,35 @@ type matchConditions struct {
 	queryParams []QueryParamMatchCondition
 }
 
+// computeAttachedRoutes compute the attached routes for the listener(s)
+func (p *GatewayAPIProcessor) computeAttachedRoutes() map[string]int {
+	var listeners []*listenerInfo
+	for _, listener := range p.source.gateway.Spec.Listeners {
+		listeners = append(listeners, p.computeListenerForAttachedRoutes(listener))
+	}
+
+	// Keep track of the number of routes attached
+	// to each Listener so we can set status properly.
+	attachedRoutes := map[string]int{}
+
+	for _, httpRoute := range p.source.httproutes {
+		p.computeAttachedRoutesForKind(KindHTTPRoute, httpRoute.Namespace, httpRoute.Spec.ParentRefs, listeners, attachedRoutes)
+	}
+	for _, tlsRoute := range p.source.tlsroutes {
+		p.computeAttachedRoutesForKind(KindTLSRoute, tlsRoute.Namespace, tlsRoute.Spec.ParentRefs, listeners, attachedRoutes)
+	}
+
+	for _, grpcRoute := range p.source.grpcroutes {
+		p.computeAttachedRoutesForKind(KindGRPCRoute, grpcRoute.Namespace, grpcRoute.Spec.ParentRefs, listeners, attachedRoutes)
+	}
+
+	for _, tcpRoute := range p.source.tcproutes {
+		p.computeAttachedRoutesForKind(KindTCPRoute, tcpRoute.Namespace, tcpRoute.Spec.ParentRefs, listeners, attachedRoutes)
+	}
+
+	return attachedRoutes
+}
+
 // Run translates Gateway API types into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
@@ -143,83 +172,27 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	}
 
-	var attachedRoutesListeners []*listenerInfo
-	for _, listener := range p.source.gateway.Spec.Listeners {
-		attachedRoutesListeners = append(attachedRoutesListeners, p.computeListenerForAttachedRoutes(listener))
-	}
-
-	// Keep track of the number of routes attached
-	// to each Listener so we can set status properly.
-	listenerAttachedRoutes := map[string]int{}
-
-	for _, httpRoute := range p.source.httproutes {
-		for _, routeParentRef := range httpRoute.Spec.ParentRefs {
-			// If this parent ref is to a different Gateway, ignore it.
-			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-				continue
-			}
-
-			p.calcAttachedRoutes(routeParentRef, httpRoute.GetNamespace(), KindHTTPRoute, attachedRoutesListeners, listenerAttachedRoutes)
-
-		}
-	}
-	for _, tlsRoute := range p.source.tlsroutes {
-		for _, routeParentRef := range tlsRoute.Spec.ParentRefs {
-			// If this parent ref is to a different Gateway, ignore it.
-			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-				continue
-			}
-
-			p.calcAttachedRoutes(routeParentRef, tlsRoute.GetNamespace(), KindTLSRoute, attachedRoutesListeners, listenerAttachedRoutes)
-
-		}
-	}
-
-	for _, grpcRoute := range p.source.grpcroutes {
-		for _, routeParentRef := range grpcRoute.Spec.ParentRefs {
-			// If this parent ref is to a different Gateway, ignore it.
-			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-				continue
-			}
-
-			p.calcAttachedRoutes(routeParentRef, grpcRoute.GetNamespace(), KindGRPCRoute, attachedRoutesListeners, listenerAttachedRoutes)
-
-		}
-	}
-
-	for _, tcpRoute := range p.source.tcproutes {
-		for _, routeParentRef := range tcpRoute.Spec.ParentRefs {
-			// If this parent ref is to a different Gateway, ignore it.
-			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-				continue
-			}
-
-			p.calcAttachedRoutes(routeParentRef, tcpRoute.GetNamespace(), KindTCPRoute, attachedRoutesListeners, listenerAttachedRoutes)
-
-		}
-	}
-
 	// Process HTTPRoutes.
 	for _, httpRoute := range p.source.httproutes {
-		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1beta1.HTTPRoute{})
+		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1beta1.HTTPRoute{})
 	}
 
 	// Process TLSRoutes.
 	for _, tlsRoute := range p.source.tlsroutes {
-		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.TLSRoute{})
+		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.TLSRoute{})
 	}
 
 	// Process GRPCRoutes.
 	for _, grpcRoute := range p.source.grpcroutes {
-		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.GRPCRoute{})
+		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.GRPCRoute{})
 	}
 
 	// Process TCPRoutes.
 	for _, tcpRoute := range p.source.tcproutes {
-		p.processRoute(KindTCPRoute, tcpRoute, tcpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, listenerAttachedRoutes, &gatewayapi_v1alpha2.TCPRoute{})
+		p.processRoute(KindTCPRoute, tcpRoute, tcpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.TCPRoute{})
 	}
 
-	for listenerName, attachedRoutes := range listenerAttachedRoutes {
+	for listenerName, attachedRoutes := range p.computeAttachedRoutes() {
 		gwAccessor.SetListenerAttachedRoutes(listenerName, attachedRoutes)
 	}
 
@@ -232,7 +205,6 @@ func (p *GatewayAPIProcessor) processRoute(
 	parentRefs []gatewayapi_v1beta1.ParentReference,
 	gatewayNotProgrammedCondition *metav1.Condition,
 	readyListeners []*listenerInfo,
-	listenerAttachedRoutes map[string]int,
 	emptyResource client.Object,
 ) {
 	routeStatus, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -252,7 +224,7 @@ func (p *GatewayAPIProcessor) processRoute(
 
 		// Get the list of listeners that are (a) included by this parent ref, and
 		// (b) allow the route (based on kind, namespace).
-		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus, listenerAttachedRoutes)
+		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus)
 
 		// If the Gateway is invalid, set status on the route and we're done.
 		if gatewayNotProgrammedCondition != nil {
@@ -302,22 +274,15 @@ func (p *GatewayAPIProcessor) processRoute(
 				}
 			}
 
-			var attached bool
-
 			switch route := route.(type) {
 			case *gatewayapi_v1beta1.HTTPRoute:
-				attached = p.computeHTTPRouteForListener(route, routeParentStatus, listener, hosts)
+				p.computeHTTPRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1alpha2.TLSRoute:
-				attached = p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
+				p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1alpha2.GRPCRoute:
-				attached = p.computeGRPCRouteForListener(route, routeParentStatus, listener, hosts)
+				p.computeGRPCRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1alpha2.TCPRoute:
-				attached = p.computeTCPRouteForListener(route, routeParentStatus, listener)
-			}
-
-			if attached {
-				println(attached)
-				// listenerAttachedRoutes[string(listener.listener.Name)]++
+				p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
 
 			hostCount += hosts.Len()
@@ -361,10 +326,8 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	routeKind gatewayapi_v1beta1.Kind,
 	validListeners []*listenerInfo,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
-	listenerAttachedRoutes map[string]int,
 ) []*listenerInfo {
 
-	_ = listenerAttachedRoutes
 	// Find the set of valid listeners that are relevant given this
 	// parent ref (either all of them, if the ref is to the entire
 	// gateway, or one of them, if the ref is to a specific listener,
@@ -403,7 +366,6 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
 			continue
 		}
-		// listenerAttachedRoutes[string(selectedListener.listener.Name)]++
 
 		allowedListeners = append(allowedListeners, selectedListener)
 	}
@@ -421,45 +383,52 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	return allowedListeners
 }
 
-func (p *GatewayAPIProcessor) calcAttachedRoutes(
-	routeParentRef gatewayapi_v1beta1.ParentReference,
-	routeNamespace string,
+// computeAttachedRoutesForKind compute attached routes for the specific kind
+func (p *GatewayAPIProcessor) computeAttachedRoutesForKind(
 	routeKind gatewayapi_v1beta1.Kind,
+	namespace string,
+	parentRefs []gatewayapi_v1beta1.ParentReference,
 	listeners []*listenerInfo,
-	listenerAttachedRoutes map[string]int,
+	attachedRoutes map[string]int,
 ) {
 
-	// Find the set of valid listeners that are relevant given this
-	// parent ref (either all of them, if the ref is to the entire
-	// gateway, or one of them, if the ref is to a specific listener,
-	// or none of them, if the listener(s) the ref targets are invalid).
-	var selectedListeners []*listenerInfo
-	for _, validListener := range listeners {
-		// We've already verified the parent ref is for this Gateway,
-		// now check if it has a listener name and port specified.
-		// Both need to match the listener if specified.
-		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name) &&
-			(routeParentRef.Port == nil || *routeParentRef.Port == validListener.listener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
-		}
-	}
+	for _, parentRef := range parentRefs {
 
-	// Now find the subset of those listeners that allow this route
-	// to select them, based on route kind and namespace.
-	for _, selectedListener := range selectedListeners {
-		// Check if the listener allows routes of this kind
-		if !selectedListener.AllowsKind(routeKind) {
+		// If this parent ref is to a different Gateway, ignore it.
+		if !gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(p.source.gateway)) {
 			continue
 		}
 
-		// Check if the route is in a namespace that the listener allows.
-		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
-			continue
+		// Find the set of listeners that are relevant given this
+		// parent ref (either all of them, if the ref is to the entire
+		// gateway, or one of them, if the ref is to a specific listener,
+		// or none of them, if the listener(s) the ref targets are invalid).
+		var selectedListeners []*listenerInfo
+		for _, listener := range listeners {
+			// We've already verified the parent ref is for this Gateway,
+			// now check if it has a listener name and port specified.
+			// Both need to match the listener if specified.
+			if (parentRef.SectionName == nil || *parentRef.SectionName == listener.listener.Name) &&
+				(parentRef.Port == nil || *parentRef.Port == listener.listener.Port) {
+				selectedListeners = append(selectedListeners, listener)
+			}
 		}
-		listenerAttachedRoutes[string(selectedListener.listener.Name)]++
 
+		// Now find the subset of those listeners that allow this route
+		// to select them, based on route kind and namespace.
+		for _, selectedListener := range selectedListeners {
+			// Check if the listener allows routes of this kind
+			if !selectedListener.AllowsKind(routeKind) {
+				continue
+			}
+
+			// Check if the route is in a namespace that the listener allows.
+			if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, namespace) {
+				continue
+			}
+			attachedRoutes[string(selectedListener.listener.Name)]++
+		}
 	}
-
 }
 
 type listenerInfo struct {
@@ -698,10 +667,8 @@ func (p *GatewayAPIProcessor) computeListener(
 	}
 }
 
-// computeListener processes a Listener's spec, including TLS details,
-// allowed routes, etc., and sets the appropriate conditions on it in
-// the Gateway's .status.listeners. It returns a listenerInfo struct with
-// the allowed route kinds and TLS secret (if any).
+// computeListenerForAttachedRoutes processes a Listener's spec.
+// It returns a listenerInfo struct with the allowed route kinds and namespace selector
 func (p *GatewayAPIProcessor) computeListenerForAttachedRoutes(listener gatewayapi_v1beta1.Listener) *listenerInfo {
 	var selector labels.Selector
 
@@ -1229,9 +1196,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	route *gatewayapi_v1beta1.HTTPRoute,
 	routeAccessor *status.RouteParentStatusUpdate,
 	listener *listenerInfo,
-	hosts sets.Set[string]) bool {
-
-	var programmed bool
+	hosts sets.Set[string]) {
 
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
@@ -1513,13 +1478,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
 					vhost.AddRoute(route)
 				}
-
-				programmed = true
 			}
 		}
 	}
-
-	return programmed
 }
 
 func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {

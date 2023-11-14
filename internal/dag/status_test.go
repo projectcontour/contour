@@ -6883,356 +6883,356 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 	// END TLS CertificateRef + ReferenceGrant tests
 
-	// run(t, "spec.rules.hostname: invalid wildcard", testcase{
-	// 	objs: []any{
-	// 		kuardService,
-	// 		&gatewayapi_v1beta1.HTTPRoute{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name:      "basic",
-	// 				Namespace: "default",
-	// 			},
-	// 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-	// 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-	// 					ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-	// 				},
-	// 				Hostnames: []gatewayapi_v1beta1.Hostname{
-	// 					"*.*.projectcontour.io",
-	// 				},
-	// 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-	// 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-	// 				}},
-	// 			},
-	// 		}},
-	// 	wantRouteConditions: []*status.RouteStatusUpdate{{
-	// 		FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-	// 		RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-	// 			{
-	// 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-	// 				Conditions: []metav1.Condition{
-	// 					resolvedRefsFalse(
-	// 						status.ReasonDegraded,
-	// 						"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
-	// 					{
-	// 						Type:    string(gatewayapi_v1.RouteConditionAccepted),
-	// 						Status:  contour_api_v1.ConditionFalse,
-	// 						Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
-	// 						Message: "No intersecting hostnames were found between the listener and the route.",
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// 	wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
-	// })
+	run(t, "spec.rules.hostname: invalid wildcard", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"*.*.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+						{
+							Type:    string(gatewayapi_v1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
 
-	// run(t, "spec.rules.hostname: invalid hostname", testcase{
-	// 	objs: []any{
-	// 		kuardService,
-	// 		&gatewayapi_v1beta1.HTTPRoute{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name:      "basic",
-	// 				Namespace: "default",
-	// 			},
-	// 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-	// 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-	// 					ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-	// 				},
-	// 				Hostnames: []gatewayapi_v1beta1.Hostname{
-	// 					"#projectcontour.io",
-	// 				},
-	// 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-	// 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-	// 				}},
-	// 			},
-	// 		}},
-	// 	wantRouteConditions: []*status.RouteStatusUpdate{{
-	// 		FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-	// 		RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-	// 			{
-	// 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-	// 				Conditions: []metav1.Condition{
-	// 					resolvedRefsFalse(
-	// 						status.ReasonDegraded,
-	// 						"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
-	// 					{
-	// 						Type:    string(gatewayapi_v1.RouteConditionAccepted),
-	// 						Status:  contour_api_v1.ConditionFalse,
-	// 						Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
-	// 						Message: "No intersecting hostnames were found between the listener and the route.",
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// 	wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
-	// })
+	run(t, "spec.rules.hostname: invalid hostname", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"#projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(
+							status.ReasonDegraded,
+							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+						{
+							Type:    string(gatewayapi_v1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
 
-	// run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
-	// 	objs: []any{
-	// 		kuardService,
-	// 		&gatewayapi_v1beta1.HTTPRoute{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name:      "basic",
-	// 				Namespace: "default",
-	// 			},
-	// 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-	// 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-	// 					ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-	// 				},
-	// 				Hostnames: []gatewayapi_v1beta1.Hostname{
-	// 					"1.2.3.4",
-	// 				},
-	// 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-	// 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-	// 				}},
-	// 			},
-	// 		}},
-	// 	wantRouteConditions: []*status.RouteStatusUpdate{{
-	// 		FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-	// 		RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-	// 			{
-	// 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-	// 				Conditions: []metav1.Condition{
-	// 					resolvedRefsFalse(status.ReasonDegraded, "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address"),
-	// 					{
-	// 						Type:    string(gatewayapi_v1.RouteConditionAccepted),
-	// 						Status:  contour_api_v1.ConditionFalse,
-	// 						Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
-	// 						Message: "No intersecting hostnames were found between the listener and the route.",
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// 	wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
-	// })
+	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"1.2.3.4",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(status.ReasonDegraded, "invalid hostname \"1.2.3.4\": must be a DNS name, not an IP address"),
+						{
+							Type:    string(gatewayapi_v1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
 
-	// run(t, "two HTTP listeners, route's hostname intersects with one of them", testcase{
-	// 	objs: []any{
-	// 		kuardService,
-	// 		&gatewayapi_v1beta1.HTTPRoute{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name:      "basic",
-	// 				Namespace: "default",
-	// 			},
-	// 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-	// 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-	// 					ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-	// 				},
-	// 				Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
-	// 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-	// 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-	// 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-	// 				}},
-	// 			},
-	// 		}},
-	// 	gateway: &gatewayapi_v1beta1.Gateway{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      "contour",
-	// 			Namespace: "projectcontour",
-	// 		},
-	// 		Spec: gatewayapi_v1beta1.GatewaySpec{
-	// 			Listeners: []gatewayapi_v1beta1.Listener{
-	// 				{
-	// 					Name:     "listener-1",
-	// 					Port:     80,
-	// 					Protocol: gatewayapi_v1.HTTPProtocolType,
-	// 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-	// 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-	// 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
-	// 						},
-	// 					},
-	// 					Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
-	// 				},
-	// 				{
-	// 					Name:     "listener-2",
-	// 					Port:     80,
-	// 					Protocol: gatewayapi_v1.HTTPProtocolType,
-	// 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-	// 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-	// 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
-	// 						},
-	// 					},
-	// 					Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	wantRouteConditions: []*status.RouteStatusUpdate{{
-	// 		FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-	// 		RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-	// 			{
-	// 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-	// 				Conditions: []metav1.Condition{
-	// 					routeResolvedRefsCondition(),
-	// 					routeAcceptedHTTPRouteCondition(),
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// 	wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
-	// 		{
-	// 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
-	// 			Conditions: map[gatewayapi_v1.GatewayConditionType]metav1.Condition{
-	// 				gatewayapi_v1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-	// 				gatewayapi_v1.GatewayConditionProgrammed: {
-	// 					Type:    string(gatewayapi_v1.GatewayConditionProgrammed),
-	// 					Status:  contour_api_v1.ConditionTrue,
-	// 					Reason:  string(gatewayapi_v1.GatewayReasonProgrammed),
-	// 					Message: status.MessageValidGateway,
-	// 				},
-	// 			},
-	// 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-	// 				"listener-1": {
-	// 					Name:           gatewayapi_v1beta1.SectionName("listener-1"),
-	// 					AttachedRoutes: int32(1),
-	// 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "HTTPRoute",
-	// 						},
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "GRPCRoute",
-	// 						},
-	// 					},
-	// 					Conditions: listenerValidConditions(),
-	// 				},
-	// 				"listener-2": {
-	// 					Name:           gatewayapi_v1beta1.SectionName("listener-2"),
-	// 					AttachedRoutes: int32(0),
-	// 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "HTTPRoute",
-	// 						},
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "GRPCRoute",
-	// 						},
-	// 					},
-	// 					Conditions: listenerValidConditions(),
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// })
+	run(t, "two HTTP listeners, route's hostname intersects with one of them", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+					{
+						Name:     "listener-2",
+						Port:     80,
+						Protocol: gatewayapi_v1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  string(gatewayapi_v1.GatewayReasonProgrammed),
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
+						},
+						Conditions: listenerValidConditions(),
+					},
+					"listener-2": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-2"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
+						},
+						Conditions: listenerValidConditions(),
+					},
+				},
+			},
+		},
+	})
 
-	// run(t, "two HTTP listeners, route's hostname intersects with neither of them", testcase{
-	// 	objs: []any{
-	// 		kuardService,
-	// 		&gatewayapi_v1beta1.HTTPRoute{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name:      "basic",
-	// 				Namespace: "default",
-	// 			},
-	// 			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-	// 				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-	// 					ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-	// 				},
-	// 				Hostnames: []gatewayapi_v1beta1.Hostname{"foo.randomdomain.io"},
-	// 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-	// 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-	// 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-	// 				}},
-	// 			},
-	// 		}},
-	// 	gateway: &gatewayapi_v1beta1.Gateway{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      "contour",
-	// 			Namespace: "projectcontour",
-	// 		},
-	// 		Spec: gatewayapi_v1beta1.GatewaySpec{
-	// 			Listeners: []gatewayapi_v1beta1.Listener{
-	// 				{
-	// 					Name:     "listener-1",
-	// 					Port:     80,
-	// 					Protocol: gatewayapi_v1.HTTPProtocolType,
-	// 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-	// 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-	// 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
-	// 						},
-	// 					},
-	// 					Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
-	// 				},
-	// 				{
-	// 					Name:     "listener-2",
-	// 					Port:     80,
-	// 					Protocol: gatewayapi_v1.HTTPProtocolType,
-	// 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-	// 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-	// 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
-	// 						},
-	// 					},
-	// 					Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	wantRouteConditions: []*status.RouteStatusUpdate{{
-	// 		FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
-	// 		RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
-	// 			{
-	// 				ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-	// 				Conditions: []metav1.Condition{
-	// 					routeResolvedRefsCondition(),
-	// 					{
-	// 						Type:    string(gatewayapi_v1.RouteConditionAccepted),
-	// 						Status:  contour_api_v1.ConditionFalse,
-	// 						Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
-	// 						Message: "No intersecting hostnames were found between the listener and the route.",
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// 	wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
-	// 		{
-	// 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
-	// 			Conditions: map[gatewayapi_v1.GatewayConditionType]metav1.Condition{
-	// 				gatewayapi_v1.GatewayConditionAccepted: gatewayAcceptedCondition(),
-	// 				gatewayapi_v1.GatewayConditionProgrammed: {
-	// 					Type:    string(gatewayapi_v1.GatewayConditionProgrammed),
-	// 					Status:  contour_api_v1.ConditionTrue,
-	// 					Reason:  string(gatewayapi_v1.GatewayReasonProgrammed),
-	// 					Message: status.MessageValidGateway,
-	// 				},
-	// 			},
-	// 			ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
-	// 				"listener-1": {
-	// 					Name:           gatewayapi_v1beta1.SectionName("listener-1"),
-	// 					AttachedRoutes: int32(0),
-	// 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "HTTPRoute",
-	// 						},
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "GRPCRoute",
-	// 						},
-	// 					},
-	// 					Conditions: listenerValidConditions(),
-	// 				},
-	// 				"listener-2": {
-	// 					Name:           gatewayapi_v1beta1.SectionName("listener-2"),
-	// 					AttachedRoutes: int32(0),
-	// 					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "HTTPRoute",
-	// 						},
-	// 						{
-	// 							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-	// 							Kind:  "GRPCRoute",
-	// 						},
-	// 					},
-	// 					Conditions: listenerValidConditions(),
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// })
+	run(t, "two HTTP listeners, route's hostname intersects with neither of them", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.randomdomain.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+					{
+						Name:     "listener-2",
+						Port:     80,
+						Protocol: gatewayapi_v1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("specific.hostname.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						{
+							Type:    string(gatewayapi_v1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1.RouteReasonNoMatchingListenerHostname),
+							Message: "No intersecting hostnames were found between the listener and the route.",
+						},
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionTrue,
+						Reason:  string(gatewayapi_v1.GatewayReasonProgrammed),
+						Message: status.MessageValidGateway,
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
+						},
+						Conditions: listenerValidConditions(),
+					},
+					"listener-2": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-2"),
+						AttachedRoutes: int32(1),
+						SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "HTTPRoute",
+							},
+							{
+								Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
+								Kind:  "GRPCRoute",
+							},
+						},
+						Conditions: listenerValidConditions(),
+					},
+				},
+			},
+		},
+	})
 
 	run(t, "HTTP listener, route's parent ref sectionname does not match", testcase{
 		objs: []any{
