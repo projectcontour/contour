@@ -316,6 +316,7 @@ func (p *GatewayAPIProcessor) processRoute(
 			}
 
 			if attached {
+				println(attached)
 				//listenerAttachedRoutes[string(listener.listener.Name)]++
 			}
 
