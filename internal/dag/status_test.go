@@ -9862,9 +9862,6 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				}
 			}
 
-			if desc == "anchorrrr" {
-				println("hello")
-			}
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
