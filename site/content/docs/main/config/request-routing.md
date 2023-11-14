@@ -309,6 +309,7 @@ spec:
     retryPolicy:
       count: 3
       perTryTimeout: 150ms
+      skipPreviousHost: true
     services:
     - name: s1
       port: 80
@@ -340,6 +341,8 @@ Example input values: "300ms", "5s", "1m".
 
 - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
   If left unspecified, `timeoutPolicy.request` will be used.
+
+- `retryPolicy.skipPreviousHost` which configures Envoy to use the Previous Host Retry Predicate that allows it to choose a different host than the host where previous request has failed. If left unspecified it defaults to `false`.
 
 ## Load Balancing Strategy
 

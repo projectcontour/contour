@@ -6923,8 +6923,9 @@ func TestDAGInsert(t *testing.T) {
 					Prefix: "/",
 				}},
 				RetryPolicy: &contour_api_v1.RetryPolicy{
-					NumRetries:    6,
-					PerTryTimeout: "10s",
+					NumRetries:       6,
+					PerTryTimeout:    "10s",
+					SkipPreviousHost: true,
 				},
 				Services: []contour_api_v1.Service{{
 					Name: "kuard",
@@ -10549,9 +10550,10 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
-								RetryOn:       "5xx",
-								NumRetries:    6,
-								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
+								RetryOn:          "5xx",
+								NumRetries:       6,
+								PerTryTimeout:    timeout.DurationSetting(10 * time.Second),
+								SkipPreviousHost: true,
 							},
 						}),
 					),

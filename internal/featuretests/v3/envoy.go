@@ -30,8 +30,10 @@ import (
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_prev_hosts_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/retry/host/previous_hosts/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
@@ -302,7 +304,7 @@ func withPrefixRewrite(route *envoy_route_v3.Route_Route, replacement string) *e
 	return route
 }
 
-func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
+func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration, skipPreviousHost bool) *envoy_route_v3.Route_Route {
 	route.Route.RetryPolicy = &envoy_route_v3.RetryPolicy{
 		RetryOn: retryOn,
 	}
@@ -311,6 +313,17 @@ func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetri
 	}
 	if perTryTimeout > 0 {
 		route.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
+	}
+
+	if skipPreviousHost {
+		route.Route.RetryPolicy.RetryHostPredicate = []*envoy_route_v3.RetryPolicy_RetryHostPredicate{
+			{
+				Name: "envoy.retry_host_predicates.previous_hosts",
+				ConfigType: &envoy_route_v3.RetryPolicy_RetryHostPredicate_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_prev_hosts_v3.PreviousHostsPredicate{}),
+				},
+			},
+		}
 	}
 	return route
 }

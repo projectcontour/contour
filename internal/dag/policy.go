@@ -106,6 +106,7 @@ func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 		RetriableStatusCodes: rp.RetriableStatusCodes,
 		NumRetries:           uint32(numRetries),
 		PerTryTimeout:        perTryTimeout,
+		SkipPreviousHost:     rp.SkipPreviousHost,
 	}
 }
 

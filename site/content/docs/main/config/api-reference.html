@@ -3519,6 +3519,21 @@ Ignored if NumRetries is not supplied.</p>
 <p>This field is only respected when you include <code>retriable-status-codes</code> in the <code>RetryOn</code> field.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>skipPreviousHost</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SkipPreviousHost configures Envoy to use Previous Host Retry Predicate
+that allows it to choose a different host than the host where previous request
+has failed.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.Route">Route

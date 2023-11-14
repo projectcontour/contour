@@ -429,6 +429,11 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
 	PerTryTimeout timeout.Setting
+
+	// SkipPreviousHost configures Envoy to use Previous Host Retry Predicate
+	// that allows it to choose a different host than the host where previous request
+	// has failed.
+	SkipPreviousHost bool
 }
 
 // PathRewritePolicy defines a policy for rewriting the path of
