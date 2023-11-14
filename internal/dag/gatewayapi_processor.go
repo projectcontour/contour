@@ -136,16 +136,68 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	// Compute listeners and save a list of the valid/ready ones.
 	var readyListeners []*listenerInfo
-
 	for _, listener := range p.source.gateway.Spec.Listeners {
 		if ready, listenerInfo := p.computeListener(listener, gwAccessor, validateListenersResult); ready {
 			readyListeners = append(readyListeners, listenerInfo)
 		}
+
+	}
+
+	var attachedRoutesListeners []*listenerInfo
+	for _, listener := range p.source.gateway.Spec.Listeners {
+		attachedRoutesListeners = append(attachedRoutesListeners, p.computeListenerForAttachedRoutes(listener))
 	}
 
 	// Keep track of the number of routes attached
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
+
+	for _, httpRoute := range p.source.httproutes {
+		for _, routeParentRef := range httpRoute.Spec.ParentRefs {
+			// If this parent ref is to a different Gateway, ignore it.
+			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+				continue
+			}
+
+			p.calcAttachedRoutes(routeParentRef, httpRoute.GetNamespace(), KindHTTPRoute, attachedRoutesListeners, listenerAttachedRoutes)
+
+		}
+	}
+	for _, tlsRoute := range p.source.tlsroutes {
+		for _, routeParentRef := range tlsRoute.Spec.ParentRefs {
+			// If this parent ref is to a different Gateway, ignore it.
+			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+				continue
+			}
+
+			p.calcAttachedRoutes(routeParentRef, tlsRoute.GetNamespace(), KindTLSRoute, attachedRoutesListeners, listenerAttachedRoutes)
+
+		}
+	}
+
+	for _, grpcRoute := range p.source.grpcroutes {
+		for _, routeParentRef := range grpcRoute.Spec.ParentRefs {
+			// If this parent ref is to a different Gateway, ignore it.
+			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+				continue
+			}
+
+			p.calcAttachedRoutes(routeParentRef, grpcRoute.GetNamespace(), KindGRPCRoute, attachedRoutesListeners, listenerAttachedRoutes)
+
+		}
+	}
+
+	for _, tcpRoute := range p.source.tcproutes {
+		for _, routeParentRef := range tcpRoute.Spec.ParentRefs {
+			// If this parent ref is to a different Gateway, ignore it.
+			if !gatewayapi.IsRefToGateway(routeParentRef, k8s.NamespacedNameOf(p.source.gateway)) {
+				continue
+			}
+
+			p.calcAttachedRoutes(routeParentRef, tcpRoute.GetNamespace(), KindTCPRoute, attachedRoutesListeners, listenerAttachedRoutes)
+
+		}
+	}
 
 	// Process HTTPRoutes.
 	for _, httpRoute := range p.source.httproutes {
@@ -263,7 +315,7 @@ func (p *GatewayAPIProcessor) processRoute(
 				attached = p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
 
-			println(attached)
+			//println("abcx", attached)
 			// if attached {
 			// 	listenerAttachedRoutes[string(listener.listener.Name)]++
 			// }
@@ -350,7 +402,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
 			continue
 		}
-		listenerAttachedRoutes[string(selectedListener.listener.Name)]++
+		//listenerAttachedRoutes[string(selectedListener.listener.Name)]++
 
 		allowedListeners = append(allowedListeners, selectedListener)
 	}
@@ -366,6 +418,47 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	}
 
 	return allowedListeners
+}
+
+func (p *GatewayAPIProcessor) calcAttachedRoutes(
+	routeParentRef gatewayapi_v1beta1.ParentReference,
+	routeNamespace string,
+	routeKind gatewayapi_v1beta1.Kind,
+	listeners []*listenerInfo,
+	listenerAttachedRoutes map[string]int,
+) {
+
+	// Find the set of valid listeners that are relevant given this
+	// parent ref (either all of them, if the ref is to the entire
+	// gateway, or one of them, if the ref is to a specific listener,
+	// or none of them, if the listener(s) the ref targets are invalid).
+	var selectedListeners []*listenerInfo
+	for _, validListener := range listeners {
+		// We've already verified the parent ref is for this Gateway,
+		// now check if it has a listener name and port specified.
+		// Both need to match the listener if specified.
+		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name) &&
+			(routeParentRef.Port == nil || *routeParentRef.Port == validListener.listener.Port) {
+			selectedListeners = append(selectedListeners, validListener)
+		}
+	}
+
+	// Now find the subset of those listeners that allow this route
+	// to select them, based on route kind and namespace.
+	for _, selectedListener := range selectedListeners {
+		// Check if the listener allows routes of this kind
+		if !selectedListener.AllowsKind(routeKind) {
+			continue
+		}
+
+		// Check if the route is in a namespace that the listener allows.
+		if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, routeNamespace) {
+			continue
+		}
+		listenerAttachedRoutes[string(selectedListener.listener.Name)]++
+
+	}
+
 }
 
 type listenerInfo struct {
@@ -600,6 +693,32 @@ func (p *GatewayAPIProcessor) computeListener(
 		dagListenerName:   validateListenersResult.ListenerNames[string(listener.Name)],
 		allowedKinds:      listenerRouteKinds,
 		tlsSecret:         listenerSecret,
+		namespaceSelector: selector,
+	}
+}
+
+// computeListener processes a Listener's spec, including TLS details,
+// allowed routes, etc., and sets the appropriate conditions on it in
+// the Gateway's .status.listeners. It returns a listenerInfo struct with
+// the allowed route kinds and TLS secret (if any).
+func (p *GatewayAPIProcessor) computeListenerForAttachedRoutes(listener gatewayapi_v1beta1.Listener) *listenerInfo {
+	var selector labels.Selector
+
+	listenerRouteKinds := p.getListenerRouteKinds(listener, &status.GatewayStatusUpdate{})
+
+	if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
+		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gatewayapi_v1.NamespacesFromSelector {
+
+		var err error
+		selector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
+		if err != nil {
+			return nil
+		}
+	}
+
+	return &listenerInfo{
+		listener:          listener,
+		allowedKinds:      listenerRouteKinds,
 		namespaceSelector: selector,
 	}
 }
