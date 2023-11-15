@@ -81,7 +81,7 @@ func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 
 		type responseTLSDetails struct {
 			TLS struct {
-				NegotiatedProtocol string
+				Version string
 			}
 		}
 
@@ -96,7 +96,7 @@ func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 		// Get cert presented to backend app.
 		tlsInfo := new(responseTLSDetails)
 		require.NoError(f.T(), json.Unmarshal(res.Body, tlsInfo))
-		assert.Equal(f.T(), tlsInfo.TLS.NegotiatedProtocol, protocolVersion)
+		assert.Equal(f.T(), tlsInfo.TLS.Version, protocolVersion)
 
 	})
 }
