@@ -269,7 +269,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		deploy, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, deploy); err != nil {

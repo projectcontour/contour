@@ -305,7 +305,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.
 func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-	if !labels.Exist(current, model.OwnerLabels(contour)) {
+	if !labels.AnyExist(current, model.OwnerLabels(contour)) {
 		return nil
 	}
 	_, updated := equality.ClusterIPServiceChanged(current, desired)
@@ -323,7 +323,7 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 // updateEnvoyServiceIfNeeded updates an Envoy Service if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
-	if !labels.Exist(current, model.OwnerLabels(contour)) {
+	if !labels.AnyExist(current, model.OwnerLabels(contour)) {
 		return nil
 	}
 

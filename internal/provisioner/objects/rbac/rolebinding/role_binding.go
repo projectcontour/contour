@@ -76,7 +76,7 @@ func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *model.Contour
 // updateRoleBindingIfNeeded updates a RoleBinding resource if current does
 // not match desired.
 func updateRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.RoleBinding) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		rb, updated := equality.RoleBindingConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, rb); err != nil {

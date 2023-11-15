@@ -99,7 +99,7 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 // updateClusterRoleIfNeeded updates a ClusterRole resource if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateClusterRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRole) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		cr, updated := equality.ClusterRoleConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, cr); err != nil {

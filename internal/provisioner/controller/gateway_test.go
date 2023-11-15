@@ -19,6 +19,7 @@ import (
 
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/ref"
 
 	"github.com/go-logr/logr"
@@ -1340,6 +1341,60 @@ func TestGatewayReconcile(t *testing.T) {
 					for k, v := range gw.Spec.Infrastructure.Annotations {
 						assert.Equal(t, obj.GetAnnotations()[string(k)], string(v))
 					}
+				}
+			},
+		},
+		"Gateway owner labels are set on all resources": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway:      makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				for _, obj := range []client.Object{
+					&appsv1.Deployment{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&contourv1alpha1.ContourConfiguration{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourconfig-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourcert-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoycert-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&rbacv1.ClusterRole{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.ClusterRoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.Role{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&rbacv1.RoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-rolebinding-gateway-1"},
+					},
+				} {
+					require.NoError(t, r.client.Get(context.Background(), keyFor(obj), obj))
+
+					assert.Equal(t, gw.Name, obj.GetLabels()[model.ContourOwningGatewayNameLabel])
+					assert.Equal(t, gw.Name, obj.GetLabels()[model.GatewayAPIOwningGatewayNameLabel])
 				}
 			},
 		},

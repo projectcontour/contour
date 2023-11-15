@@ -24,9 +24,13 @@ import (
 )
 
 const (
-	// OwningGatewayNameLabel is the owner reference label used for a Contour
-	// created by the gateway provisioner. The value should be the name of the Gateway.
-	OwningGatewayNameLabel = "projectcontour.io/owning-gateway-name"
+	// ContourOwningGatewayNameLabel is the Contour-defined owner reference label applied
+	// to generated resources. The value should be the name of the Gateway.
+	ContourOwningGatewayNameLabel = "projectcontour.io/owning-gateway-name"
+
+	// GatewayAPIOwningGatewayNameLabel is the Gateway API-defined owner reference label applied
+	// to generated resources. The value should be the name of the Gateway.
+	GatewayAPIOwningGatewayNameLabel = "gateway.networking.k8s.io/gateway-name"
 )
 
 // Default returns a default instance of a Contour
@@ -600,18 +604,10 @@ const (
 	ContourAvailableConditionType = "Available"
 )
 
-// OwningSelector returns a label selector using "projectcontour.io/owning-gateway-name".
-func OwningSelector(contour *Contour) *metav1.LabelSelector {
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			OwningGatewayNameLabel: contour.Name,
-		},
-	}
-}
-
 // OwnerLabels returns owner labels for the provided contour.
 func OwnerLabels(contour *Contour) map[string]string {
 	return map[string]string{
-		OwningGatewayNameLabel: contour.Name,
+		ContourOwningGatewayNameLabel:    contour.Name,
+		GatewayAPIOwningGatewayNameLabel: contour.Name,
 	}
 }

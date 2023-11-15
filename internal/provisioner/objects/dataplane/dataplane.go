@@ -488,7 +488,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DaemonsetConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, ds); err != nil {
@@ -503,7 +503,7 @@ func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *mo
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, ds); err != nil {
