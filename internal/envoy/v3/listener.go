@@ -815,9 +815,9 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *http
 	}
 }
 
-// FilterJWTAuth returns a `jwt_authn` filter configured with the
+// FilterJWTAuthN returns a `jwt_authn` filter configured with the
 // requested parameters.
-func FilterJWTAuth(jwtProviders []dag.JWTProvider) *http.HttpFilter {
+func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 	if len(jwtProviders) == 0 {
 		return nil
 	}
