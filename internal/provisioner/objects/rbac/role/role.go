@@ -50,9 +50,10 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      name,
-			Labels:    model.CommonLabels(contour),
+			Namespace:   contour.Namespace,
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 	verbCGU := []string{"create", "get", "update"}

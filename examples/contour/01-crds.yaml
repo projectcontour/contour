@@ -3496,8 +3496,9 @@ spec:
               resourceLabels:
                 additionalProperties:
                   type: string
-                description: ResourceLabels is a set of labels to add to the provisioned
-                  Contour resources.
+                description: "ResourceLabels is a set of labels to add to the provisioned
+                  Contour resources. \n Deprecated: use Gateway.Spec.Infrastructure.Labels
+                  instead. This field will be removed in a future release."
                 type: object
               runtimeSettings:
                 description: RuntimeSettings is a ContourConfiguration spec to be

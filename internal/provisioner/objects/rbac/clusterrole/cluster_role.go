@@ -69,8 +69,9 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: model.CommonLabels(contour),
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			// Core Contour-watched resources.
