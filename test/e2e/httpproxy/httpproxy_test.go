@@ -193,6 +193,96 @@ var _ = Describe("HTTPProxy", func() {
 	})
 
 	f.NamespacedTest("httpproxy-backend-tls", func(namespace string) {
+		Context("with backend tls", func() {
+			BeforeEach(func() {
+				// Top level issuer.
+				selfSignedIssuer := &certmanagerv1.Issuer{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "selfsigned",
+					},
+					Spec: certmanagerv1.IssuerSpec{
+						IssuerConfig: certmanagerv1.IssuerConfig{
+							SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+						},
+					},
+				}
+				require.NoError(f.T(), f.Client.Create(context.TODO(), selfSignedIssuer))
+
+				// CA to sign backend certs with.
+				caCertificate := &certmanagerv1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "ca-cert",
+					},
+					Spec: certmanagerv1.CertificateSpec{
+						IsCA: true,
+						Usages: []certmanagerv1.KeyUsage{
+							certmanagerv1.UsageSigning,
+							certmanagerv1.UsageCertSign,
+						},
+						CommonName: "ca-cert",
+						SecretName: "ca-cert",
+						IssuerRef: certmanagermetav1.ObjectReference{
+							Name: "selfsigned",
+						},
+					},
+				}
+				require.NoError(f.T(), f.Client.Create(context.TODO(), caCertificate))
+
+				// Issuer based on CA to generate new certs with.
+				basedOnCAIssuer := &certmanagerv1.Issuer{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "ca-issuer",
+					},
+					Spec: certmanagerv1.IssuerSpec{
+						IssuerConfig: certmanagerv1.IssuerConfig{
+							CA: &certmanagerv1.CAIssuer{
+								SecretName: "ca-cert",
+							},
+						},
+					},
+				}
+				require.NoError(f.T(), f.Client.Create(context.TODO(), basedOnCAIssuer))
+
+				// Backend client cert, can use for upstream validation as well.
+				backendClientCert := &certmanagerv1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "backend-client-cert",
+					},
+					Spec: certmanagerv1.CertificateSpec{
+						Usages: []certmanagerv1.KeyUsage{
+							certmanagerv1.UsageClientAuth,
+						},
+						CommonName: "client",
+						SecretName: "backend-client-cert",
+						IssuerRef: certmanagermetav1.ObjectReference{
+							Name: "ca-issuer",
+						},
+					},
+				}
+				require.NoError(f.T(), f.Client.Create(context.TODO(), backendClientCert))
+
+				contourConfig.TLS = config.TLSParameters{
+					ClientCertificate: config.NamespacedName{
+						Namespace: namespace,
+						Name:      "backend-client-cert",
+					},
+				}
+
+				contourConfiguration.Spec.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+					Name:      "backend-client-cert",
+					Namespace: namespace,
+				}
+			})
+
+			testBackendTLS(namespace)
+		})
+	})
+
+	f.NamespacedTest("httpproxy-backend-tls-version", func(namespace string) {
 		BeforeEach(func() {
 			// Top level issuer.
 			selfSignedIssuer := &certmanagerv1.Issuer{
@@ -276,11 +366,9 @@ var _ = Describe("HTTPProxy", func() {
 				Namespace: namespace,
 			}
 		})
-		Context("with backend tls", func() {
-			testBackendTLS(namespace)
-		})
 		Context("with backend tls version configured via Contour ConfigMap", func() {
-			protocolVersion := "TLSv1.3"
+			protocolVersion := "v1.3"
+			expectedProtocolVersion := "TLSv1.3"
 
 			Context("via Contour ConfigMap", func() {
 				BeforeEach(func() {
@@ -293,9 +381,10 @@ var _ = Describe("HTTPProxy", func() {
 				BeforeEach(func() {
 					contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion = protocolVersion
 				})
-				testBackendTLSProtocolVersion(namespace, protocolVersion)
+				testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
 			})
 		})
+
 	})
 
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
