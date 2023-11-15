@@ -431,8 +431,6 @@ type ClusterParameters struct {
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
-	//
-	// +optional
 	UpstreamTLS TLSParameters `yaml:"upstream-tls,omitempty"`
 }
 
