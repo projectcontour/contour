@@ -799,8 +799,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	}
 
 	for name, tc := range tests {
+		tc := tc
 		t.Run(name, func(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
+			// nolint:gosec
 			require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{&tc.cluster}))
 			et.OnAdd(tc.ep, false)
 			got := et.Contents()

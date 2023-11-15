@@ -1,1 +1,0 @@
-Add flags: `--incluster`, `--kubeconfig` for enable run the `gateway-provisioner` in or out of the cluster.

@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -298,7 +299,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 func isAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}
@@ -308,7 +309,7 @@ func isAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 
 func setGatewayNotAccepted(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1beta1.Gateway {
 	newCond := metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
+		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
 		Status:             metav1.ConditionFalse,
 		Reason:             "OlderGatewayExists",
 		Message:            "An older Gateway exists for the accepted GatewayClass",
@@ -319,7 +320,7 @@ func setGatewayNotAccepted(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1be
 	for i := range gateway.Status.Conditions {
 		cond := &gateway.Status.Conditions[i]
 
-		if cond.Type != string(gatewayapi_v1beta1.GatewayConditionAccepted) {
+		if cond.Type != string(gatewayapi_v1.GatewayConditionAccepted) {
 			continue
 		}
 

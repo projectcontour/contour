@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -28,9 +29,9 @@ func TestGatewayAddCondition(t *testing.T) {
 	var testGeneration int64 = 7
 
 	simpleValidCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
+		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
 		Status:             metav1.ConditionTrue,
-		Reason:             string(gatewayapi_v1beta1.GatewayReasonAccepted),
+		Reason:             string(gatewayapi_v1.GatewayReasonAccepted),
 		Message:            MessageValidGateway,
 		ObservedGeneration: testGeneration,
 	}
@@ -44,9 +45,9 @@ func TestGatewayAddCondition(t *testing.T) {
 	}
 
 	got := gatewayUpdate.AddCondition(
-		gatewayapi_v1beta1.GatewayConditionAccepted,
+		gatewayapi_v1.GatewayConditionAccepted,
 		metav1.ConditionTrue,
-		gatewayapi_v1beta1.GatewayReasonAccepted,
+		gatewayapi_v1.GatewayReasonAccepted,
 		MessageValidGateway,
 	)
 
@@ -165,36 +166,36 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	var gsu GatewayStatusUpdate
 
 	// first condition for listener-1
-	res := gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 1")
+	res := gsu.AddListenerCondition("listener-1", gatewayapi_v1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1.ListenerReasonInvalid, "message 1")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 1)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionProgrammed), res.Type)
+	assert.Equal(t, string(gatewayapi_v1.ListenerConditionProgrammed), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonInvalid), res.Reason)
+	assert.Equal(t, string(gatewayapi_v1.ListenerReasonInvalid), res.Reason)
 	assert.Equal(t, "message 1", res.Message)
 
 	// second condition (different type) for listener-1
-	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 2")
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1.ListenerReasonUnsupportedProtocol, "message 2")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionAccepted), res.Type)
+	assert.Equal(t, string(gatewayapi_v1.ListenerConditionAccepted), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol), res.Reason)
+	assert.Equal(t, string(gatewayapi_v1.ListenerReasonUnsupportedProtocol), res.Reason)
 	assert.Equal(t, "message 2", res.Message)
 
 	// first condition for listener-2
-	res = gsu.AddListenerCondition("listener-2", gatewayapi_v1beta1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonInvalid, "message 3")
+	res = gsu.AddListenerCondition("listener-2", gatewayapi_v1.ListenerConditionProgrammed, metav1.ConditionFalse, gatewayapi_v1.ListenerReasonInvalid, "message 3")
 	assert.Len(t, gsu.ListenerStatus["listener-2"].Conditions, 1)
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionProgrammed), res.Type)
+	assert.Equal(t, string(gatewayapi_v1.ListenerConditionProgrammed), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonInvalid), res.Reason)
+	assert.Equal(t, string(gatewayapi_v1.ListenerReasonInvalid), res.Reason)
 	assert.Equal(t, "message 3", res.Message)
 
 	// third condition (pre-existing type) for listener-1
-	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1beta1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol, "message 4")
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1.ListenerConditionAccepted, metav1.ConditionFalse, gatewayapi_v1.ListenerReasonUnsupportedProtocol, "message 4")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerConditionAccepted), res.Type)
+	assert.Equal(t, string(gatewayapi_v1.ListenerConditionAccepted), res.Type)
 	assert.Equal(t, metav1.ConditionFalse, res.Status)
-	assert.Equal(t, string(gatewayapi_v1beta1.ListenerReasonUnsupportedProtocol), res.Reason)
+	assert.Equal(t, string(gatewayapi_v1.ListenerReasonUnsupportedProtocol), res.Reason)
 	assert.Equal(t, "message 2, message 4", res.Message)
 }
 
@@ -209,20 +210,20 @@ func TestGetGatewayConditions(t *testing.T) {
 		},
 		"one gateway condition": {
 			conditions: []metav1.Condition{
-				{Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
+				{Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 			},
 			want: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
+				gatewayapi_v1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 			},
 		},
 		"multiple gateway conditions": {
 			conditions: []metav1.Condition{
-				{Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
-				{Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
+				{Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
+				{Type: string(gatewayapi_v1.GatewayConditionAccepted)},
 			},
 			want: map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition{
-				gatewayapi_v1beta1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1beta1.GatewayConditionProgrammed)},
-				gatewayapi_v1beta1.GatewayConditionAccepted:   {Type: string(gatewayapi_v1beta1.GatewayConditionAccepted)},
+				gatewayapi_v1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
+				gatewayapi_v1.GatewayConditionAccepted:   {Type: string(gatewayapi_v1.GatewayConditionAccepted)},
 			},
 		},
 	}
