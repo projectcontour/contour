@@ -367,7 +367,7 @@ var _ = Describe("HTTPProxy", func() {
 			}
 		})
 		Context("with backend tls version configured via Contour ConfigMap", func() {
-			protocolVersion := "v1.3"
+			protocolVersion := "1.3"
 			expectedProtocolVersion := "TLSv1.3"
 
 			Context("via Contour ConfigMap", func() {
