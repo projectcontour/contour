@@ -280,20 +280,20 @@ var _ = Describe("HTTPProxy", func() {
 			testBackendTLS(namespace)
 		})
 		Context("with backend tls version configured via Contour ConfigMap", func() {
-			TLSProtocolVersion := "TLSv1.3"
+			protocolVersion := "TLSv1.3"
 
 			Context("via Contour ConfigMap", func() {
 				BeforeEach(func() {
-					contourConfig.Cluster.UpstreamTLS.MinimumProtocolVersion = TLSProtocolVersion
+					contourConfig.Cluster.UpstreamTLS.MinimumProtocolVersion = protocolVersion
 				})
 
-				testBackendTLSProtocolVersion(namespace, TLSProtocolVersion)
+				testBackendTLSProtocolVersion(namespace, protocolVersion)
 			})
 			Context("via ContourConfiguration ", func() {
 				BeforeEach(func() {
-					contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion = TLSProtocolVersion
+					contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion = protocolVersion
 				})
-				testBackendTLSProtocolVersion(namespace, TLSProtocolVersion)
+				testBackendTLSProtocolVersion(namespace, protocolVersion)
 			})
 		})
 	})

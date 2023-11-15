@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testBackendTLSProtocolVersion(namespace, TLSProtocolVersion string) {
+func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 	Specify("backend connection uses configured TLS version", func() {
 		// Backend server cert signed by CA.
 		backendServerCert := &certmanagerv1.Certificate{
@@ -96,7 +96,7 @@ func testBackendTLSProtocolVersion(namespace, TLSProtocolVersion string) {
 		// Get cert presented to backend app.
 		tlsInfo := new(responseTLSDetails)
 		require.NoError(f.T(), json.Unmarshal(res.Body, tlsInfo))
-		assert.Equal(f.T(), tlsInfo.TLS.NegotiatedProtocol, TLSProtocolVersion)
+		assert.Equal(f.T(), tlsInfo.TLS.NegotiatedProtocol, protocolVersion)
 
 	})
 }
