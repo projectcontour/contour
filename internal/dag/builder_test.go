@@ -16161,6 +16161,23 @@ func service(s *v1.Service) *Service {
 	return weightedService(s, 1)
 }
 
+func appProtcolService(s *v1.Service, protocol string, portIndex ...int) *Service {
+	idx := 0
+	if len(portIndex) > 0 {
+		idx = portIndex[0]
+	}
+	return &Service{
+		Weighted: WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[idx],
+			HealthPort:       s.Spec.Ports[idx],
+		},
+		Protocol: protocol,
+	}
+}
+
 func weightedService(s *v1.Service, weight uint32) *Service {
 	return &Service{
 		Weighted: WeightedService{
