@@ -5291,6 +5291,28 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	}
 
+	kuardService4 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard4",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080, protoK8sH2C)},
+		},
+	}
+
+	kuardService5 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard5",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				makeServicePort("wss", "TCP", 8444, 8444, "kubernetes.io/wss"),
+			},
+		},
+	}
+
 	run(t, "simple httproute", testcase{
 		objs: []any{
 			kuardService,
@@ -9163,6 +9185,82 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
+	})
+
+	run(t, "service with supported app protocol: h2c", testcase{
+		objs: []any{
+			kuardService4,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard4", 8080, 1),
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
+
+	run(t, "service with unsupported app protocol: wss", testcase{
+		objs: []any{
+			kuardService5,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard5", 8444, 1),
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, "AppProtocol: \"kubernetes.io/wss\" is unsupported"),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 }

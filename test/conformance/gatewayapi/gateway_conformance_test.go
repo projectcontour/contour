@@ -75,7 +75,6 @@ func TestGatewayConformance(t *testing.T) {
 			tests.HTTPRouteRedirectPortAndScheme.ShortName,
 
 			// Tests newly failing with Gateway API 1.0, to be addressed.
-			tests.HTTPRouteBackendProtocolH2C.ShortName,
 			tests.HTTPRouteTimeoutBackendRequest.ShortName,
 			tests.HTTPRouteTimeoutRequest.ShortName,
 			tests.GatewayStaticAddresses.ShortName,
