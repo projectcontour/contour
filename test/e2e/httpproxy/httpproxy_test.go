@@ -379,8 +379,12 @@ var _ = Describe("HTTPProxy", func() {
 			})
 			Context("via ContourConfiguration ", func() {
 				BeforeEach(func() {
-					contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS = &contour_api_v1alpha1.EnvoyTLS{
-						MinimumProtocolVersion: protocolVersion,
+					contourConfiguration.Spec.Envoy.Cluster = &contour_api_v1alpha1.ClusterParameters{
+						UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+							MinimumProtocolVersion: protocolVersion,
+						},
+						// adding this here because it seems to get overwritten if I try to set contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 					}
 				})
 				testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
