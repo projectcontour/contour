@@ -484,14 +484,18 @@ func (s *Server) doServe() error {
 
 	// snapshotHandler triggers go-control-plane Snapshots based on
 	// the contents of the Contour xDS caches after the DAG is built.
-	snapshotHandler := xdscache_v3.NewSnapshotHandler(
-		resources,
-		envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, s.log.WithField("context", "snapshotCache")),
-		s.log.WithField("context", "snapshotHandler"),
-	)
+	var snapshotHandler *xdscache_v3.SnapshotHandler
 
-	// register observer for endpoints updates.
-	endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
+	if contourConfiguration.XDSServer.Type == contour_api_v1alpha1.EnvoyServerType {
+		snapshotHandler = xdscache_v3.NewSnapshotHandler(
+			resources,
+			envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, s.log.WithField("context", "snapshotCache")),
+			s.log.WithField("context", "snapshotHandler"),
+		)
+
+		// register observer for endpoints updates.
+		endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
+	}
 
 	// Log that we're using the fallback certificate if configured.
 	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
@@ -559,9 +563,14 @@ func (s *Server) doServe() error {
 	})
 
 	// Build the core Kubernetes event handler.
+	xdsCaches := xdscache.ObserversOf(resources)
+	if snapshotHandler != nil {
+		xdsCaches = append(xdsCaches, snapshotHandler)
+	}
+
 	observer := contour.NewRebuildMetricsObserver(
 		contourMetrics,
-		dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
+		dag.ComposeObservers(xdsCaches...),
 	)
 
 	hasSynced := func() bool {
