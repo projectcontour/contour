@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xds
+package v3
 
 import (
 	envoy_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -20,15 +20,17 @@ import (
 // nolint:revive
 const CONSTANT_HASH_VALUE = "contour"
 
-// ConstantHashV3 is a specialized node ID hasher used to allow
+// ConstantHash is a specialized node ID hasher used to allow
 // any instance of Envoy to connect to Contour regardless of the
 // service-node flag configured on Envoy.
-type ConstantHashV3 struct{}
+type ConstantHash struct{}
 
-func (c ConstantHashV3) ID(*envoy_config_v3.Node) string {
+func (c ConstantHash) ID(*envoy_config_v3.Node) string {
 	return CONSTANT_HASH_VALUE
 }
 
-func (c ConstantHashV3) String() string {
+func (c ConstantHash) String() string {
 	return CONSTANT_HASH_VALUE
 }
+
+var Hash = ConstantHash{}
