@@ -11,49 +11,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xdscache
+package v3
 
 import (
+	"context"
 	"reflect"
-	"sync"
 
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/google/uuid"
 	"github.com/projectcontour/contour/internal/dag"
+	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
+	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 )
 
-type Snapshotter interface {
-	Generate(version string, resources map[envoy_resource_v3.Type][]envoy_types.Resource) error
-}
-
-// SnapshotHandler implements the xDS snapshot cache
-// by responding to the OnChange() event causing a new
-// snapshot to be created.
+// SnapshotHandler responds to DAG builds via the OnChange()
+// event and generates and caches go-control-plane Snapshots.
 type SnapshotHandler struct {
-	// resources holds the cache of xDS contents.
-	resources map[envoy_resource_v3.Type]ResourceCache
+	// SnapshotCache contains go-control-plane Snapshots
+	// and is used by the go-control-plane xDS server.
+	SnapshotCache envoy_cache_v3.SnapshotCache
 
-	snapshotters []Snapshotter
-	snapLock     sync.Mutex
-
-	logrus.FieldLogger
+	// resources contains the Contour xDS resource caches.
+	resources map[envoy_resource_v3.Type]xdscache.ResourceCache
+	log       logrus.FieldLogger
 }
 
 // NewSnapshotHandler returns an instance of SnapshotHandler.
-func NewSnapshotHandler(resources []ResourceCache, logger logrus.FieldLogger) *SnapshotHandler {
+func NewSnapshotHandler(resources []xdscache.ResourceCache, snapshotCache envoy_cache_v3.SnapshotCache, logger logrus.FieldLogger) *SnapshotHandler {
 	return &SnapshotHandler{
-		resources:   parseResources(resources),
-		FieldLogger: logger,
+		resources:     parseResources(resources),
+		SnapshotCache: snapshotCache,
+		log:           logger,
 	}
-}
-
-func (s *SnapshotHandler) AddSnapshotter(snap Snapshotter) {
-	s.snapLock.Lock()
-	defer s.snapLock.Unlock()
-
-	s.snapshotters = append(s.snapshotters, snap)
 }
 
 // Refresh is called when the EndpointsTranslator updates values
@@ -63,12 +55,12 @@ func (s *SnapshotHandler) Refresh() {
 }
 
 // OnChange is called when the DAG is rebuilt and a new snapshot is needed.
-func (s *SnapshotHandler) OnChange(_ *dag.DAG) {
+func (s *SnapshotHandler) OnChange(*dag.DAG) {
 	s.generateNewSnapshot()
 }
 
-// generateNewSnapshot creates a new snapshot against
-// the Contour XDS caches.
+// generateNewSnapshot creates and caches a new go-control-plane
+// Snapshot based on the contents of the Contour xDS resource caches.
 func (s *SnapshotHandler) generateNewSnapshot() {
 	// Generate new snapshot version.
 	version := uuid.NewString()
@@ -83,13 +75,15 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 		envoy_resource_v3.RuntimeType:  asResources(s.resources[envoy_resource_v3.RuntimeType].Contents()),
 	}
 
-	s.snapLock.Lock()
-	defer s.snapLock.Unlock()
+	snapshot, err := envoy_cache_v3.NewSnapshot(version, resources)
+	if err != nil {
+		s.log.Errorf("failed to generate snapshot version %q: %s", version, err)
+		return
+	}
 
-	for _, snap := range s.snapshotters {
-		if err := snap.Generate(version, resources); err != nil {
-			s.Errorf("failed to generate snapshot version %q: %s", version, err)
-		}
+	if err := s.SnapshotCache.SetSnapshot(context.Background(), contour_xds_v3.Hash.String(), snapshot); err != nil {
+		s.log.Errorf("failed to store snapshot version %q: %s", version, err)
+		return
 	}
 }
 
@@ -113,8 +107,8 @@ func asResources(messages any) []envoy_types.Resource {
 
 // parseResources converts an []ResourceCache to a map[envoy_types.ResponseType]ResourceCache
 // for faster indexing when creating new snapshots.
-func parseResources(resources []ResourceCache) map[envoy_resource_v3.Type]ResourceCache {
-	resourceMap := make(map[envoy_resource_v3.Type]ResourceCache, len(resources))
+func parseResources(resources []xdscache.ResourceCache) map[envoy_resource_v3.Type]xdscache.ResourceCache {
+	resourceMap := make(map[envoy_resource_v3.Type]xdscache.ResourceCache, len(resources))
 
 	for _, r := range resources {
 		resourceMap[r.TypeURL()] = r

@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
+	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,9 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -64,7 +65,6 @@ import (
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
-	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
 const (
@@ -482,8 +482,13 @@ func (s *Server) doServe() error {
 		}),
 	}
 
-	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
-	snapshotHandler := xdscache.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
+	// snapshotHandler triggers go-control-plane Snapshots based on
+	// the contents of the Contour xDS caches after the DAG is built.
+	snapshotHandler := xdscache_v3.NewSnapshotHandler(
+		resources,
+		envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, s.log.WithField("context", "snapshotCache")),
+		s.log.WithField("context", "snapshotHandler"),
+	)
 
 	// register observer for endpoints updates.
 	endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
@@ -872,7 +877,7 @@ type xdsServer struct {
 	log             logrus.FieldLogger
 	registry        *prometheus.Registry
 	config          contour_api_v1alpha1.XDSServerConfig
-	snapshotHandler *xdscache.SnapshotHandler
+	snapshotHandler *xdscache_v3.SnapshotHandler
 	resources       []xdscache.ResourceCache
 	initialDagBuilt func() bool
 }
@@ -896,9 +901,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 
 	switch x.config.Type {
 	case contour_api_v1alpha1.EnvoyServerType:
-		v3cache := contour_xds_v3.NewSnapshotCache(false, log)
-		x.snapshotHandler.AddSnapshotter(v3cache)
-		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.SnapshotCache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 	case contour_api_v1alpha1.ContourServerType:
 		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
 	default:
