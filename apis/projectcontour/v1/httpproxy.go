@@ -1312,6 +1312,8 @@ type UpstreamValidation struct {
 	// The secret must contain key named ca.crt.
 	// The name can be optionally prefixed with namespace "namespace/name".
 	// When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=256
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
 	// Deprecated: migrate to using the plural field subjectNames.
