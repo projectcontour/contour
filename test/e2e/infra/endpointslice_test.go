@@ -16,7 +16,8 @@
 package infra
 
 import (
-	"time"
+	"slices"
+	"sort"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/admin/v3"
 	"github.com/stretchr/testify/require"
@@ -59,46 +60,51 @@ func testSimpleEndpointSlice(namespace string) {
 			},
 		}
 
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		time.Sleep(time.Second * 10)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
-		k8sPodIPs, err := f.Fixtures.Echo.ListPodIPs(namespace, "echo")
-		require.NoError(f.T(), err)
-		envoyEndpoints, err := GetIPsFromAdminRequest()
-		require.NoError(f.T(), err)
-		require.ElementsMatch(f.T(), k8sPodIPs, envoyEndpoints)
+		require.Eventually(f.T(), func() bool {
+			return IsEnvoyProgrammedWithAllPodIPs(namespace)
+		}, f.RetryTimeout, f.RetryInterval)
 
 		// scale up to 10 pods
 		f.Fixtures.Echo.ScaleAndWaitDeployment("echo", namespace, 10)
-		// give time for changes to be propagated by envoy and contour
-		time.Sleep(time.Second * 10)
-		k8sPodIPs, err = f.Fixtures.Echo.ListPodIPs(namespace, "echo")
-		require.NoError(f.T(), err)
-		envoyEndpoints, err = GetIPsFromAdminRequest()
-		require.NoError(f.T(), err)
-		require.ElementsMatch(f.T(), k8sPodIPs, envoyEndpoints)
+
+		require.Eventually(f.T(), func() bool {
+			return IsEnvoyProgrammedWithAllPodIPs(namespace)
+		}, f.RetryTimeout, f.RetryInterval)
 
 		// scale down to 2 pods
 		f.Fixtures.Echo.ScaleAndWaitDeployment("echo", namespace, 2)
-		// give time for changes to be propagated by envoy and contour
-		time.Sleep(time.Second * 10)
-		k8sPodIPs, err = f.Fixtures.Echo.ListPodIPs(namespace, "echo")
-		require.NoError(f.T(), err)
-		envoyEndpoints, err = GetIPsFromAdminRequest()
-		require.NoError(f.T(), err)
-		require.ElementsMatch(f.T(), k8sPodIPs, envoyEndpoints)
+
+		require.Eventually(f.T(), func() bool {
+			return IsEnvoyProgrammedWithAllPodIPs(namespace)
+		}, f.RetryTimeout, f.RetryInterval)
 
 		// scale to 0
 		f.Fixtures.Echo.ScaleAndWaitDeployment("echo", namespace, 0)
-		// give time for changes to be propagated by envoy and contour
-		time.Sleep(time.Second * 10)
-		k8sPodIPs, err = f.Fixtures.Echo.ListPodIPs(namespace, "echo")
-		require.NoError(f.T(), err)
-		envoyEndpoints, err = GetIPsFromAdminRequest()
-		require.NoError(f.T(), err)
-		require.ElementsMatch(f.T(), k8sPodIPs, envoyEndpoints)
 
+		require.Eventually(f.T(), func() bool {
+			return IsEnvoyProgrammedWithAllPodIPs(namespace)
+		}, f.RetryTimeout, f.RetryInterval)
 	})
+}
+
+func IsEnvoyProgrammedWithAllPodIPs(namespace string) bool {
+	k8sPodIPs, err := f.Fixtures.Echo.ListPodIPs(namespace, "echo")
+	if err != nil {
+		return false
+	}
+
+	envoyEndpoints, err := GetIPsFromAdminRequest()
+	if err != nil {
+		return false
+	}
+
+	sort.Strings(k8sPodIPs)
+	sort.Strings(envoyEndpoints)
+
+	return slices.Equal(k8sPodIPs, envoyEndpoints)
 }
 
 // GetIPsFromAdminRequest makes a call to the envoy admin endpoint and parses
