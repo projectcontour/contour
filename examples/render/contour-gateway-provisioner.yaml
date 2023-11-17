@@ -5045,6 +5045,8 @@ spec:
                       prefixed with namespace "namespace/name". When cross-namespace
                       reference is used, TLSCertificateDelegation resource must exist
                       in the namespace to grant access to the secret.
+                    maxLength: 256
+                    minLength: 1
                     type: string
                   subjectName:
                     description: 'Key which is expected to be present in the ''subjectAltName''
@@ -6691,6 +6693,8 @@ spec:
                                   reference is used, TLSCertificateDelegation resource
                                   must exist in the namespace to grant access to the
                                   secret.
+                                maxLength: 256
+                                minLength: 1
                                 type: string
                               subjectName:
                                 description: 'Key which is expected to be present
@@ -7102,6 +7106,8 @@ spec:
                                 "namespace/name". When cross-namespace reference is
                                 used, TLSCertificateDelegation resource must exist
                                 in the namespace to grant access to the secret.
+                              maxLength: 256
+                              minLength: 1
                               type: string
                             subjectName:
                               description: 'Key which is expected to be present in
@@ -7440,6 +7446,8 @@ spec:
                                     reference is used, TLSCertificateDelegation resource
                                     must exist in the namespace to grant access to
                                     the secret.
+                                  maxLength: 256
+                                  minLength: 1
                                   type: string
                                 subjectName:
                                   description: 'Key which is expected to be present
