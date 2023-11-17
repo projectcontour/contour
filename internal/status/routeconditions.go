@@ -36,7 +36,6 @@ const (
 	ReasonInvalidPathMatch              gatewayapi_v1beta1.RouteConditionReason = "InvalidPathMatch"
 	ReasonInvalidMethodMatch            gatewayapi_v1beta1.RouteConditionReason = "InvalidMethodMatch"
 	ReasonInvalidGateway                gatewayapi_v1beta1.RouteConditionReason = "InvalidGateway"
-	ReasonInvalidTimeout                gatewayapi_v1beta1.RouteConditionReason = "InvalidTimeout"
 )
 
 // RouteStatusUpdate represents an atomic update to a
