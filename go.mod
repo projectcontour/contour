@@ -35,12 +35,12 @@ require (
 	gonum.org/v1/plot v0.12.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230526203410-71b5a4ffd15e
 	google.golang.org/grpc v1.56.3
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.26.10
+	k8s.io/api v0.26.11
 	k8s.io/apiextensions-apiserver v0.26.10
 	k8s.io/apimachinery v0.27.7
-	k8s.io/client-go v0.26.10
+	k8s.io/client-go v0.26.11
 	k8s.io/klog/v2 v2.100.1
 	sigs.k8s.io/controller-runtime v0.14.7
 	sigs.k8s.io/controller-tools v0.11.4
