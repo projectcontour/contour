@@ -81,35 +81,6 @@ type matchConditions struct {
 	queryParams []QueryParamMatchCondition
 }
 
-// computeAttachedRoutes compute the attached routes for the listener(s)
-func (p *GatewayAPIProcessor) computeAttachedRoutes() map[string]int {
-	var listeners []*listenerInfo
-	for _, listener := range p.source.gateway.Spec.Listeners {
-		listeners = append(listeners, p.computeListenerForAttachedRoutes(listener))
-	}
-
-	// Keep track of the number of routes attached
-	// to each Listener so we can set status properly.
-	attachedRoutes := map[string]int{}
-
-	for _, httpRoute := range p.source.httproutes {
-		p.computeAttachedRoutesForKind(KindHTTPRoute, httpRoute.Namespace, httpRoute.Spec.ParentRefs, listeners, attachedRoutes)
-	}
-	for _, tlsRoute := range p.source.tlsroutes {
-		p.computeAttachedRoutesForKind(KindTLSRoute, tlsRoute.Namespace, tlsRoute.Spec.ParentRefs, listeners, attachedRoutes)
-	}
-
-	for _, grpcRoute := range p.source.grpcroutes {
-		p.computeAttachedRoutesForKind(KindGRPCRoute, grpcRoute.Namespace, grpcRoute.Spec.ParentRefs, listeners, attachedRoutes)
-	}
-
-	for _, tcpRoute := range p.source.tcproutes {
-		p.computeAttachedRoutesForKind(KindTCPRoute, tcpRoute.Namespace, tcpRoute.Spec.ParentRefs, listeners, attachedRoutes)
-	}
-
-	return attachedRoutes
-}
-
 // Run translates Gateway API types into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
@@ -165,35 +136,36 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 
 	// Compute listeners and save a list of the valid/ready ones.
-	var readyListeners []*listenerInfo
+	var listenerInfos []*listenerInfo
 	for _, listener := range p.source.gateway.Spec.Listeners {
-		if ready, listenerInfo := p.computeListener(listener, gwAccessor, validateListenersResult); ready {
-			readyListeners = append(readyListeners, listenerInfo)
-		}
-
+		listenerInfos = append(listenerInfos, p.computeListener(listener, gwAccessor, validateListenersResult))
 	}
+
+	// Keep track of the number of routes attached
+	// to each Listener so we can set status properly.
+	listenerAttachedRoutes := map[string]int{}
 
 	// Process HTTPRoutes.
 	for _, httpRoute := range p.source.httproutes {
-		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1beta1.HTTPRoute{})
+		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1beta1.HTTPRoute{})
 	}
 
 	// Process TLSRoutes.
 	for _, tlsRoute := range p.source.tlsroutes {
-		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.TLSRoute{})
+		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1alpha2.TLSRoute{})
 	}
 
 	// Process GRPCRoutes.
 	for _, grpcRoute := range p.source.grpcroutes {
-		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.GRPCRoute{})
+		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1alpha2.GRPCRoute{})
 	}
 
 	// Process TCPRoutes.
 	for _, tcpRoute := range p.source.tcproutes {
-		p.processRoute(KindTCPRoute, tcpRoute, tcpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, readyListeners, &gatewayapi_v1alpha2.TCPRoute{})
+		p.processRoute(KindTCPRoute, tcpRoute, tcpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1alpha2.TCPRoute{})
 	}
 
-	for listenerName, attachedRoutes := range p.computeAttachedRoutes() {
+	for listenerName, attachedRoutes := range listenerAttachedRoutes {
 		gwAccessor.SetListenerAttachedRoutes(listenerName, attachedRoutes)
 	}
 
@@ -205,7 +177,8 @@ func (p *GatewayAPIProcessor) processRoute(
 	route client.Object,
 	parentRefs []gatewayapi_v1beta1.ParentReference,
 	gatewayNotProgrammedCondition *metav1.Condition,
-	readyListeners []*listenerInfo,
+	listeners []*listenerInfo,
+	listenerAttachedRoutes map[string]int,
 	emptyResource client.Object,
 ) {
 	routeStatus, commit := p.dag.StatusCache.RouteConditionsAccessor(
@@ -223,15 +196,17 @@ func (p *GatewayAPIProcessor) processRoute(
 
 		routeParentStatus := routeStatus.StatusUpdateFor(routeParentRef)
 
+		// Get the list of listeners that are
+		// (a) included by this parent ref, and
+		// (b) allow the route (based on kind, namespace)
+		// (c) pass the all check for it
+		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, listeners, listenerAttachedRoutes, routeParentStatus)
+
 		// If the Gateway is invalid, set status on the route and we're done.
 		if gatewayNotProgrammedCondition != nil {
 			routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 			continue
 		}
-
-		// Get the list of listeners that are (a) included by this parent ref, and
-		// (b) allow the route (based on kind, namespace).
-		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, readyListeners, routeParentStatus)
 
 		if len(allowedListeners) == 0 {
 			p.resolveRouteRefs(route, routeParentStatus)
@@ -326,7 +301,8 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	routeParentRef gatewayapi_v1beta1.ParentReference,
 	routeNamespace string,
 	routeKind gatewayapi_v1beta1.Kind,
-	validListeners []*listenerInfo,
+	listeners []*listenerInfo,
+	attachedRoutes map[string]int,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
 ) []*listenerInfo {
 
@@ -335,30 +311,30 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	// gateway, or one of them, if the ref is to a specific listener,
 	// or none of them, if the listener(s) the ref targets are invalid).
 	var selectedListeners []*listenerInfo
-	for _, validListener := range validListeners {
+	for _, listener := range listeners {
 		// We've already verified the parent ref is for this Gateway,
 		// now check if it has a listener name and port specified.
 		// Both need to match the listener if specified.
-		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == validListener.listener.Name) &&
-			(routeParentRef.Port == nil || *routeParentRef.Port == validListener.listener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
+		if (routeParentRef.SectionName == nil || *routeParentRef.SectionName == listener.listener.Name) &&
+			(routeParentRef.Port == nil || *routeParentRef.Port == listener.listener.Port) {
+			selectedListeners = append(selectedListeners, listener)
 		}
-	}
-
-	if len(selectedListeners) == 0 {
-		routeParentStatusAccessor.AddCondition(
-			gatewayapi_v1beta1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gatewayapi_v1.RouteReasonNoMatchingParent,
-			"No listeners match this parent ref",
-		)
-		return nil
 	}
 
 	// Now find the subset of those listeners that allow this route
 	// to select them, based on route kind and namespace.
 	var allowedListeners []*listenerInfo
+
+	readyListenerCount := 0
+
 	for _, selectedListener := range selectedListeners {
+
+		// for compute the AttachedRoutes, the listener that not passed its check(s), had been selected too
+		// so ignore it.
+		if selectedListener.ready {
+			readyListenerCount++
+		}
+
 		// Check if the listener allows routes of this kind
 		if !selectedListener.AllowsKind(routeKind) {
 			continue
@@ -369,7 +345,21 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 			continue
 		}
 
-		allowedListeners = append(allowedListeners, selectedListener)
+		attachedRoutes[string(selectedListener.listener.Name)]++
+
+		if selectedListener.ready {
+			allowedListeners = append(allowedListeners, selectedListener)
+		}
+
+	}
+	if readyListenerCount == 0 {
+		routeParentStatusAccessor.AddCondition(
+			gatewayapi_v1beta1.RouteConditionAccepted,
+			metav1.ConditionFalse,
+			gatewayapi_v1.RouteReasonNoMatchingParent,
+			"No listeners match this parent ref",
+		)
+		return nil
 	}
 
 	if len(allowedListeners) == 0 {
@@ -439,6 +429,7 @@ type listenerInfo struct {
 	allowedKinds      []gatewayapi_v1beta1.Kind
 	namespaceSelector labels.Selector
 	tlsSecret         *Secret
+	ready             bool
 }
 
 func (l *listenerInfo) AllowsKind(kind gatewayapi_v1beta1.Kind) bool {
@@ -486,7 +477,12 @@ func (p *GatewayAPIProcessor) computeListener(
 	listener gatewayapi_v1beta1.Listener,
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
-) (bool, *listenerInfo) {
+) (info *listenerInfo) {
+
+	info = &listenerInfo{
+		listener:        listener,
+		dagListenerName: validateListenersResult.ListenerNames[string(listener.Name)],
+	}
 
 	addInvalidListenerCondition := func(msg string) {
 		gwAccessor.AddListenerCondition(
@@ -574,37 +570,35 @@ func (p *GatewayAPIProcessor) computeListener(
 		}
 	}()
 
-	// If the listener had an invalid protocol/port/hostname, we don't need to go
-	// any further.
-	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
-		return false, nil
-	}
-
 	// Get a list of the route kinds that the listener accepts.
-	listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
-	gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
-
-	var selector labels.Selector
+	info.allowedKinds = p.getListenerRouteKinds(listener, gwAccessor)
+	gwAccessor.SetListenerSupportedKinds(string(listener.Name), info.allowedKinds)
 
 	if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
 		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gatewayapi_v1.NamespacesFromSelector {
 
 		if listener.AllowedRoutes.Namespaces.Selector == nil {
 			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".")
-			return false, nil
+			return
 		}
 
 		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
 			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.")
-			return false, nil
+			return
 		}
 
 		var err error
-		selector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
+		info.namespaceSelector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
 		if err != nil {
 			addInvalidListenerCondition(fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err))
-			return false, nil
+			return
 		}
+	}
+
+	// If the listener had an invalid protocol/port/hostname, we reach here just for pick the information to compute the AttachedRoutes later,
+	// we don't need to go any further.
+	if _, invalid := validateListenersResult.InvalidListenerConditions[listener.Name]; invalid {
+		return
 	}
 
 	var listenerSecret *Secret
@@ -618,19 +612,19 @@ func (p *GatewayAPIProcessor) computeListener(
 
 		if listener.TLS == nil {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
-			return false, nil
+			return
 		}
 
 		if listener.TLS.Mode != nil && *listener.TLS.Mode != gatewayapi_v1.TLSModeTerminate {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1.TLSModeTerminate, listener.Protocol))
-			return false, nil
+			return
 		}
 
 		// Resolve the TLS secret.
 		if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
 			// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
 			// routes to be bound to this listener since it can't serve TLS traffic.
-			return false, nil
+			return
 		}
 	case gatewayapi_v1.TLSProtocolType:
 		// The TLS protocol is used for TCP traffic encrypted with TLS.
@@ -638,7 +632,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		// or passed through to the backend.
 		if listener.TLS == nil {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
-			return false, nil
+			return
 		}
 
 		switch {
@@ -647,50 +641,23 @@ func (p *GatewayAPIProcessor) computeListener(
 			if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
 				// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
 				// routes to be bound to this listener since it can't serve TLS traffic.
-				return false, nil
+				return
 			}
 		case *listener.TLS.Mode == gatewayapi_v1.TLSModePassthrough:
 			if len(listener.TLS.CertificateRefs) != 0 {
 				addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1.TLSModePassthrough))
-				return false, nil
+				return
 			}
 		default:
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q or %q.", gatewayapi_v1.TLSModeTerminate, gatewayapi_v1.TLSModePassthrough))
-			return false, nil
+			return
 		}
 	}
 
-	return true, &listenerInfo{
-		listener:          listener,
-		dagListenerName:   validateListenersResult.ListenerNames[string(listener.Name)],
-		allowedKinds:      listenerRouteKinds,
-		tlsSecret:         listenerSecret,
-		namespaceSelector: selector,
-	}
-}
+	info.tlsSecret = listenerSecret
+	info.ready = true
+	return
 
-// computeListenerForAttachedRoutes processes a Listener's spec.
-// It returns a listenerInfo struct with the allowed route kinds and namespace selector
-func (p *GatewayAPIProcessor) computeListenerForAttachedRoutes(listener gatewayapi_v1beta1.Listener) *listenerInfo {
-	var selector labels.Selector
-
-	listenerRouteKinds := p.getListenerRouteKinds(listener, &status.GatewayStatusUpdate{})
-
-	if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
-		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gatewayapi_v1.NamespacesFromSelector {
-
-		var err error
-		selector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
-		if err != nil {
-			return nil
-		}
-	}
-
-	return &listenerInfo{
-		listener:          listener,
-		allowedKinds:      listenerRouteKinds,
-		namespaceSelector: selector,
-	}
 }
 
 // getListenerRouteKinds gets a list of the valid route kinds that

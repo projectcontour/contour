@@ -54,6 +54,15 @@ type ListenerPort struct {
 	Protocol      string
 }
 
+func conflictedCondition(reason gatewayapi_v1.ListenerConditionReason, msg string) metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1.ListenerConditionConflicted),
+		Status:  metav1.ConditionTrue,
+		Reason:  string(reason),
+		Message: msg,
+	}
+}
+
 // ValidateListeners validates protocols, ports and hostnames on a set of listeners.
 // It ensures that:
 //   - protocols are supported
@@ -134,44 +143,24 @@ func ValidateListeners(listeners []gatewayapi_v1beta1.Listener) ValidateListener
 				switch {
 				case listener.Protocol == gatewayapi_v1.HTTPProtocolType:
 					if otherListener.Protocol != gatewayapi_v1.HTTPProtocolType {
-						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
-							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
-							Message: "All Listener protocols for a given port must be compatible",
-						}
+						result.InvalidListenerConditions[listener.Name] = conflictedCondition(gatewayapi_v1.ListenerReasonProtocolConflict, "All Listener protocols for a given port must be compatible")
 						return true
 					}
 				case compatibleTLSProtocols.Has(listener.Protocol):
 					if !compatibleTLSProtocols.Has(otherListener.Protocol) {
-						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
-							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
-							Message: "All Listener protocols for a given port must be compatible",
-						}
+						result.InvalidListenerConditions[listener.Name] = conflictedCondition(gatewayapi_v1.ListenerReasonProtocolConflict, "All Listener protocols for a given port must be compatible")
 						return true
 					}
 				case listener.Protocol == gatewayapi_v1.TCPProtocolType:
 					if otherListener.Protocol != gatewayapi_v1.TCPProtocolType {
-						result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-							Type:    string(gatewayapi_v1.ListenerConditionConflicted),
-							Status:  metav1.ConditionTrue,
-							Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
-							Message: "All Listener protocols for a given port must be compatible",
-						}
+						result.InvalidListenerConditions[listener.Name] = conflictedCondition(gatewayapi_v1.ListenerReasonProtocolConflict, "All Listener protocols for a given port must be compatible")
 						return true
 					}
 				}
 
 				// Hostname conflict
 				if ref.Val(listener.Hostname, "") == ref.Val(otherListener.Hostname, "") {
-					result.InvalidListenerConditions[listener.Name] = metav1.Condition{
-						Type:    string(gatewayapi_v1.ListenerConditionConflicted),
-						Status:  metav1.ConditionTrue,
-						Reason:  string(gatewayapi_v1.ListenerReasonHostnameConflict),
-						Message: "All Listener hostnames for a given port must be unique",
-					}
+					result.InvalidListenerConditions[listener.Name] = conflictedCondition(gatewayapi_v1.ListenerReasonHostnameConflict, "All Listener hostnames for a given port must be unique")
 					return true
 				}
 			}
