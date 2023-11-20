@@ -9263,6 +9263,100 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
+	run(t, "HTTP listener, route's parent ref route kind is invalid", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80)},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{"foo.projectcontour.io"},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		gateway: &gatewayapi_v1beta1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1beta1.GatewaySpec{
+				Listeners: []gatewayapi_v1beta1.Listener{
+					{
+						Name:     "listener-1",
+						Port:     80,
+						Protocol: gatewayapi_v1.HTTPProtocolType,
+						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+							Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+								{Kind: "FooRoute"},
+							},
+						},
+						Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
+					},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "listener-1", 80),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonNotAllowedByListeners),
+							Message: "No listeners included by this parent ref allowed this attachment.",
+						},
+						routeResolvedRefsCondition(),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+				Conditions: map[gatewayapi_v1.GatewayConditionType]metav1.Condition{
+					gatewayapi_v1.GatewayConditionAccepted: gatewayAcceptedCondition(),
+					gatewayapi_v1.GatewayConditionProgrammed: {
+						Type:    string(gatewayapi_v1.GatewayConditionProgrammed),
+						Status:  contour_api_v1.ConditionFalse,
+						Reason:  string(gatewayapi_v1.GatewayReasonListenersNotValid),
+						Message: "Listeners are not valid",
+					},
+				},
+				ListenerStatus: map[string]*gatewayapi_v1beta1.ListenerStatus{
+					"listener-1": {
+						Name:           gatewayapi_v1beta1.SectionName("listener-1"),
+						AttachedRoutes: int32(0),
+						Conditions: []metav1.Condition{
+							{
+								Type:    string(gatewayapi_v1.ListenerConditionResolvedRefs),
+								Status:  metav1.ConditionFalse,
+								Reason:  string(gatewayapi_v1.ListenerReasonInvalidRouteKinds),
+								Message: "Kind \"FooRoute\" is not supported, kind must be \"HTTPRoute\", \"TLSRoute\", \"GRPCRoute\" or \"TCPRoute\"",
+							},
+							{
+								Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
+								Status:  metav1.ConditionFalse,
+								Reason:  string(gatewayapi_v1.ListenerReasonInvalid),
+								Message: "Invalid listener, see other listener conditions for details",
+							},
+							listenerAcceptedCondition(),
+						},
+					},
+				},
+			},
+		},
+	})
+
 }
 
 func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
