@@ -375,54 +375,6 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	return allowedListeners
 }
 
-// computeAttachedRoutesForKind compute attached routes for the specific kind
-func (p *GatewayAPIProcessor) computeAttachedRoutesForKind(
-	routeKind gatewayapi_v1beta1.Kind,
-	namespace string,
-	parentRefs []gatewayapi_v1beta1.ParentReference,
-	listeners []*listenerInfo,
-	attachedRoutes map[string]int,
-) {
-
-	for _, parentRef := range parentRefs {
-
-		// If this parent ref is to a different Gateway, ignore it.
-		if !gatewayapi.IsRefToGateway(parentRef, k8s.NamespacedNameOf(p.source.gateway)) {
-			continue
-		}
-
-		// Find the set of listeners that are relevant given this
-		// parent ref (either all of them, if the ref is to the entire
-		// gateway, or one of them, if the ref is to a specific listener,
-		// or none of them, if the listener(s) the ref targets are invalid).
-		var selectedListeners []*listenerInfo
-		for _, listener := range listeners {
-			// We've already verified the parent ref is for this Gateway,
-			// now check if it has a listener name and port specified.
-			// Both need to match the listener if specified.
-			if (parentRef.SectionName == nil || *parentRef.SectionName == listener.listener.Name) &&
-				(parentRef.Port == nil || *parentRef.Port == listener.listener.Port) {
-				selectedListeners = append(selectedListeners, listener)
-			}
-		}
-
-		// Now find the subset of those listeners that allow this route
-		// to select them, based on route kind and namespace.
-		for _, selectedListener := range selectedListeners {
-			// Check if the listener allows routes of this kind
-			if !selectedListener.AllowsKind(routeKind) {
-				continue
-			}
-
-			// Check if the route is in a namespace that the listener allows.
-			if !p.namespaceMatches(selectedListener.listener.AllowedRoutes.Namespaces, selectedListener.namespaceSelector, namespace) {
-				continue
-			}
-			attachedRoutes[string(selectedListener.listener.Name)]++
-		}
-	}
-}
-
 type listenerInfo struct {
 	listener          gatewayapi_v1beta1.Listener
 	dagListenerName   string
