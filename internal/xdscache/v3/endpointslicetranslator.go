@@ -61,7 +61,15 @@ func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePor
 					continue
 				}
 
-				if p.Protocol == nil || healthPort.Protocol != *p.Protocol || port.Protocol != *p.Protocol || *p.Protocol != v1.ProtocolTCP {
+				if p.Protocol == nil {
+					continue
+				}
+
+				if *p.Protocol != v1.ProtocolTCP {
+					continue
+				}
+
+				if port.Protocol != *p.Protocol || healthPort.Protocol != *p.Protocol {
 					continue
 				}
 
