@@ -571,10 +571,6 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Name:      ctx.Config.EnvoyServiceName,
 				Namespace: ctx.Config.EnvoyServiceNamespace,
 			},
-			Ingress: &contour_v1alpha1.NamespacedName{
-				Name:      ctx.Config.EnvoyIngressName,
-				Namespace: ctx.Config.EnvoyIngressNamespace,
-			},
 			HTTPListener: &contour_v1alpha1.EnvoyListener{
 				Address:   ctx.httpAddr,
 				Port:      ctx.httpPort,
@@ -616,6 +612,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				EnvoyStripTrailingHostDot: &ctx.Config.Network.EnvoyStripTrailingHostDot,
 			},
 			OMEnforcedHealth: envoyOMEnforcedHealthListenerConfig,
+			LoadBalancer:     ctx.Config.LoadBalancerStatus,
 		},
 		Gateway: gatewayConfig,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{

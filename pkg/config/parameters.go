@@ -667,11 +667,9 @@ type Parameters struct {
 	// Name of the envoy service to inspect for Ingress status details.
 	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
 
-	// Namespace of the envoy ingress to inspect for Ingress status details.
-	EnvoyIngressNamespace string `yaml:"envoy-ingress-namespace,omitempty"`
-
-	// Name of the envoy ingress to inspect for Ingress status details.
-	EnvoyIngressName string `yaml:"envoy-ingress-name,omitempty"`
+	// Identifier of ingress object for load balancer address in the format of
+	// (ingress|service):<namespace>/<name>, or hostname:fqdn1[,fqdn2].
+	LoadBalancerStatus string `yaml:"load-balancer-status,omitempty"`
 
 	// DefaultHTTPVersions defines the default set of HTTPS
 	// versions the proxy should accept. HTTP versions are
@@ -1099,8 +1097,6 @@ func Defaults() Parameters {
 		},
 		EnvoyServiceName:      "envoy",
 		EnvoyServiceNamespace: contourNamespace,
-		EnvoyIngressName:      "envoy",
-		EnvoyIngressNamespace: contourNamespace,
 		DefaultHTTPVersions:   []HTTPVersionType{},
 		Cluster: ClusterParameters{
 			DNSLookupFamily: AutoClusterDNSFamily,

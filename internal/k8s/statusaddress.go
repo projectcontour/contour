@@ -281,17 +281,39 @@ func lbStatusToGatewayAddresses(lbs core_v1.LoadBalancerStatus) []gatewayapi_v1.
 	return addrs
 }
 
+func networkingToCoreLBStatus(lbs networking_v1.IngressLoadBalancerStatus) core_v1.LoadBalancerStatus {
+	ingress := make([]core_v1.LoadBalancerIngress, len(lbs.Ingress))
+	for i, ing := range lbs.Ingress {
+		ports := make([]core_v1.PortStatus, len(ing.Ports))
+		for j, ps := range ing.Ports {
+			ports[j] = core_v1.PortStatus{
+				Port:     ps.Port,
+				Protocol: ps.Protocol,
+				Error:    ps.Error,
+			}
+		}
+		ingress[i] = core_v1.LoadBalancerIngress{
+			IP:       ing.IP,
+			Hostname: ing.Hostname,
+			Ports:    ports,
+		}
+	}
+	return core_v1.LoadBalancerStatus{
+		Ingress: ingress,
+	}
+}
+
 // IngressStatusLoadBalancerWatcher implements ResourceEventHandler and
 // watches for changes to the status.loadbalancer field
 // Note that we specifically *don't* inspect inside the struct, as sending empty values
 // is desirable to clear the status.
 type IngressStatusLoadBalancerWatcher struct {
 	IngressName string
-	LBStatus    chan networking_v1.IngressLoadBalancerStatus
+	LBStatus    chan core_v1.LoadBalancerStatus
 	Log         logrus.FieldLogger
 }
 
-func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj interface{}) {
+func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 	ingress, ok := obj.(*networking_v1.Ingress)
 	if !ok {
 		// not a service
@@ -307,7 +329,7 @@ func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj interface{}) {
 	s.notify(ingress.Status.LoadBalancer)
 }
 
-func (s *IngressStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) {
+func (s *IngressStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 	ingress, ok := newObj.(*networking_v1.Ingress)
 	if !ok {
 		// not a service
@@ -323,7 +345,7 @@ func (s *IngressStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) 
 	s.notify(ingress.Status.LoadBalancer)
 }
 
-func (s *IngressStatusLoadBalancerWatcher) OnDelete(obj interface{}) {
+func (s *IngressStatusLoadBalancerWatcher) OnDelete(obj any) {
 	ingress, ok := obj.(*networking_v1.Ingress)
 	if !ok {
 		// not a service
@@ -338,5 +360,5 @@ func (s *IngressStatusLoadBalancerWatcher) OnDelete(obj interface{}) {
 }
 
 func (s *IngressStatusLoadBalancerWatcher) notify(lbstatus networking_v1.IngressLoadBalancerStatus) {
-	s.LBStatus <- lbstatus
+	s.LBStatus <- networkingToCoreLBStatus(lbstatus)
 }

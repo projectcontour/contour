@@ -471,6 +471,15 @@ spec:
                           Contour's default is false.
                         type: boolean
                     type: object
+                  loadBalancer:
+                    description: |-
+                      LoadBalancer specifies how Contour should set the ingress status address.
+                      If provided, the value can be in one of the formats:
+                        - address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
+                        - service:<namespace>/<name>: Contour will use the address of the designated service.
+                        - ingress:<namespace>/<name>: Contour will use the address of the designated ingress.
+                      Contour's default is an empty string.
+                    type: string
                   logging:
                     description: Logging defines how Envoy's logs can be configured.
                     properties:
@@ -4334,6 +4343,15 @@ spec:
                               Contour's default is false.
                             type: boolean
                         type: object
+                      loadBalancer:
+                        description: |-
+                          LoadBalancer specifies how Contour should set the ingress status address.
+                          If provided, the value can be in one of the formats:
+                            - address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
+                            - service:<namespace>/<name>: Contour will use the address of the designated service.
+                            - ingress:<namespace>/<name>: Contour will use the address of the designated ingress.
+                          Contour's default is an empty string.
+                        type: string
                       logging:
                         description: Logging defines how Envoy's logs can be configured.
                         properties:

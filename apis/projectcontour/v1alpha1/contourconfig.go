@@ -239,11 +239,15 @@ type EnvoyConfig struct {
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
-	// Ingress holds Envoy service parameters for setting Ingress status.
+	// LoadBalancer specifies how Contour should set the ingress status address.
+	// If provided, the value can be in one of the formats:
+	//   - address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
+	//   - service:<namespace>/<name>: Contour will use the address of the designated service.
+	//   - ingress:<namespace>/<name>: Contour will use the address of the designated ingress.
 	//
-	// Contour's default is { namespace: "projectcontour", name: "envoy" }.
+	// Contour's default is an empty string.
 	// +optional
-	Ingress *NamespacedName `json:"ingress,omitempty"`
+	LoadBalancer string `json:"loadBalancer,omitempty"`
 
 	// Defines the HTTP Listener for Envoy.
 	//

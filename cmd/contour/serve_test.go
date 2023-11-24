@@ -24,6 +24,7 @@ import (
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 func TestGetDAGBuilder(t *testing.T) {
@@ -255,4 +256,109 @@ func mustGetIngressProcessor(t *testing.T, builder *dag.Builder) *dag.IngressPro
 
 	require.FailNow(t, "IngressProcessor not found in list of DAG builder's processors")
 	return nil
+}
+
+func TestParseEnvoyLoadBalancerStatus(t *testing.T) {
+	tests := []struct {
+		name   string
+		status string
+		want   envoyLoadBalancerStatus
+	}{
+		{
+			name:   "Service",
+			status: "service:namespace-1/name-1",
+			want: envoyLoadBalancerStatus{
+				Kind: "service",
+				NamespacedName: config.NamespacedName{
+					Name:      "name-1",
+					Namespace: "namespace-1",
+				},
+			},
+		},
+		{
+			name:   "Ingress",
+			status: "ingress:namespace-1/name-1",
+			want: envoyLoadBalancerStatus{
+				Kind: "ingress",
+				NamespacedName: config.NamespacedName{
+					Name:      "name-1",
+					Namespace: "namespace-1",
+				},
+			},
+		},
+		{
+			name:   "hostname",
+			status: "hostname:example.com",
+			want: envoyLoadBalancerStatus{
+				Kind:  "hostname",
+				FQDNs: "example.com",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := parseEnvoyLoadBalancerStatus(tt.status)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, *r)
+		})
+	}
+
+	tests2 := []struct {
+		name   string
+		status string
+		error  string
+	}{
+		{
+			name:   "Empty",
+			status: "",
+			error:  "invalid",
+		},
+		{
+			name:   "No kind",
+			status: ":n",
+			error:  "kind is empty",
+		},
+		{
+			name:   "Invalid kind",
+			status: "test:n",
+			error:  "unsupported kind",
+		},
+		{
+			name:   "No reference",
+			status: "service:",
+			error:  "empty object reference",
+		},
+		{
+			name:   "No colon",
+			status: "service",
+			error:  "invalid",
+		},
+		{
+			name:   "No slash",
+			status: "service:name-1",
+			error:  "not in the format",
+		},
+		{
+			name:   "starts with slash",
+			status: "service:/name-1",
+			error:  "is empty",
+		},
+		{
+			name:   "ends with slash",
+			status: "service:name-1/",
+			error:  "is empty",
+		},
+		{
+			name:   "two many slashes",
+			status: "service:name/x/y",
+			error:  "not in the format",
+		},
+	}
+	for _, tt := range tests2 {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseEnvoyLoadBalancerStatus(tt.status)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.error)
+		})
+	}
 }
