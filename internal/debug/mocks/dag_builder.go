@@ -17,6 +17,10 @@ type DagBuilder struct {
 func (_m *DagBuilder) Build() *dag.DAG {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Build")
+	}
+
 	var r0 *dag.DAG
 	if rf, ok := ret.Get(0).(func() *dag.DAG); ok {
 		r0 = rf()
