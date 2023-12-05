@@ -226,6 +226,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
 		// if there is a same name pair, overwrite it
+		// nolint:staticcheck
 		for k, v := range gatewayClassParams.Spec.ResourceLabels {
 			contourModel.Spec.ResourceLabels[k] = v
 		}
@@ -366,6 +367,16 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyMaxHeapSizeBytes = envoyParams.OverloadMaxHeapSize
 			}
 
+		}
+	}
+
+	if gateway.Spec.Infrastructure != nil {
+		for k, v := range gateway.Spec.Infrastructure.Labels {
+			contourModel.Spec.ResourceLabels[string(k)] = string(v)
+		}
+
+		for k, v := range gateway.Spec.Infrastructure.Annotations {
+			contourModel.Spec.ResourceAnnotations[string(k)] = string(v)
 		}
 	}
 

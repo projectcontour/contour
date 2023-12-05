@@ -68,6 +68,9 @@ type ContourDeploymentSpec struct {
 	RuntimeSettings *ContourConfigurationSpec `json:"runtimeSettings,omitempty"`
 
 	// ResourceLabels is a set of labels to add to the provisioned Contour resources.
+	//
+	// Deprecated: use Gateway.Spec.Infrastructure.Labels instead. This field will be
+	// removed in a future release.
 	// +optional
 	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 }

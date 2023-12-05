@@ -71,6 +71,7 @@ func Default(namespace, name string) *Contour {
 				},
 			},
 			ResourceLabels:        map[string]string{},
+			ResourceAnnotations:   map[string]string{},
 			EnvoyPodAnnotations:   map[string]string{},
 			ContourPodAnnotations: map[string]string{},
 		},
@@ -200,8 +201,11 @@ type ContourSpec struct {
 	// when envoy be running as a `DaemonSet`,it's must be nil
 	ContourDeploymentStrategy appsv1.DeploymentStrategy
 
-	// ResourceLabels is a set of labels to add to the provisioned Contour resource(s).
+	// ResourceLabels is a set of labels to add to the provisioned resources.
 	ResourceLabels map[string]string
+
+	// ResourceAnnotations is a set of annotations to add to the provisioned resources.
+	ResourceAnnotations map[string]string
 
 	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
 	EnvoyExtraVolumes []corev1.Volume

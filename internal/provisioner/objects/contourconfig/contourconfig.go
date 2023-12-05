@@ -29,9 +29,10 @@ import (
 func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := &contour_api_v1alpha1.ContourConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      contour.ContourConfigurationName(),
-			Labels:    model.CommonLabels(contour),
+			Namespace:   contour.Namespace,
+			Name:        contour.ContourConfigurationName(),
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 

@@ -51,8 +51,9 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 			Kind: "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: model.CommonLabels(contour),
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 	crb.Subjects = []rbacv1.Subject{

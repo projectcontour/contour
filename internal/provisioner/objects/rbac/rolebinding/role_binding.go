@@ -52,9 +52,10 @@ func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *model.Contour
 			Kind: "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      name,
-			Labels:    model.CommonLabels(contour),
+			Namespace:   contour.Namespace,
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 	rb.Subjects = []rbacv1.Subject{{
