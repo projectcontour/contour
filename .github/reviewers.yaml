@@ -1,8 +1,7 @@
 reviewers:
   defaults:
-    - team:maintainers
-    - team:contour-reviewers
+  - team:contour-reviewers
 
 options:
   ignore_draft: true
-  number_of_reviewers: 2
+  number_of_reviewers: 1
