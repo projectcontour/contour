@@ -4159,23 +4159,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 
-		"Route rule with timeouts": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []any{
-				kuardService,
-				makeHTTPRoute("5s", "5s"),
-			},
-			want: listeners(
-				&Listener{
-					Name: "http-80",
-					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", timeoutsHTTPProute("/", makeHTTPRouteTimeouts("5s", "5s"), service(kuardService))),
-					),
-				},
-			),
-		},
-		"Route rule with timeouts request only": {
+		"HTTPRoute rule with request timeout": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
@@ -4186,28 +4170,39 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", timeoutsHTTPProute("/", makeHTTPRouteTimeouts("5s", ""), service(kuardService))),
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+								},
+							},
+						),
 					),
 				},
 			),
 		},
-		"Route rule with timeouts backendRequest only": {
+		"HTTPRoute rule with request and backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("5s", "5s"),
+			},
+			want: listeners(),
+		},
+
+		"HTTPRoute rule with backendRequest timeout only": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
 				makeHTTPRoute("", "5s"),
 			},
-			want: listeners(
-				&Listener{
-					Name: "http-80",
-					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", timeoutsHTTPProute("/", makeHTTPRouteTimeouts("", ""), service(kuardService))),
-					),
-				},
-			),
+			want: listeners(),
 		},
-		"Route rule with timeouts request invalid": {
+		"HTTPRoute rule with invalid request timeout": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
@@ -4216,7 +4211,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		// END
 
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
@@ -15994,44 +15988,6 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	}
 }
 
-func httpRouteTimeoutToPolicy(routeTimeout *gatewayapi_v1.HTTPRouteTimeouts) (rtp *RouteTimeoutPolicy, rp *RetryPolicy, err error) {
-	rtp = &RouteTimeoutPolicy{}
-	if routeTimeout.Request != nil {
-		reqTimeout, err2 := timeout.Parse(string(*routeTimeout.Request))
-		if err2 != nil {
-			return nil, nil, fmt.Errorf("HTTPRoute.Spec.Rules.Timeouts: Invalid value for Request is specified")
-		}
-		rtp.ResponseTimeout = reqTimeout
-	}
-
-	br := &contour_api_v1.RetryPolicy{}
-	if routeTimeout.BackendRequest != nil {
-		br.PerTryTimeout = string(*routeTimeout.BackendRequest)
-	}
-
-	rp = retryPolicy(br)
-	if rp.PerTryTimeout.Duration() > rtp.ResponseTimeout.Duration() {
-		rp.PerTryTimeout = rtp.ResponseTimeout
-	}
-
-	rp.RetryOn = ""
-	return
-
-}
-
-func timeoutsHTTPProute(prefix string, timeouts *gatewayapi_v1.HTTPRouteTimeouts, first *Service, rest ...*Service) *Route {
-	services := append([]*Service{first}, rest...)
-
-	rtp, rp, _ := httpRouteTimeoutToPolicy(timeouts)
-
-	return &Route{
-		PathMatchCondition: prefixString(prefix),
-		Clusters:           clustersWeight(services...),
-		TimeoutPolicy:      *rtp,
-		RetryPolicy:        rp,
-	}
-}
-
 func prefixrouteHTTPRoute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
@@ -16371,11 +16327,18 @@ func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
 }
 
 func makeHTTPRouteTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRouteTimeouts {
-	return &gatewayapi_v1.HTTPRouteTimeouts{
-		Request:        ref.To(gatewayapi_v1.Duration(request)),
-		BackendRequest: ref.To(gatewayapi_v1.Duration(backendRequest)),
+	httpRouteTimeouts := &gatewayapi_v1.HTTPRouteTimeouts{}
+
+	if request != "" {
+		httpRouteTimeouts.Request = ref.To(gatewayapi_v1.Duration(request))
 	}
+	if backendRequest != "" {
+		httpRouteTimeouts.BackendRequest = ref.To(gatewayapi_v1.Duration(backendRequest))
+	}
+
+	return httpRouteTimeouts
 }
+
 func makeHTTPRoute(request, backendRequest string) *gatewayapi_v1beta1.HTTPRoute {
 	return &gatewayapi_v1beta1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{

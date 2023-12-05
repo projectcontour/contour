@@ -14,17 +14,18 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
+	"github.com/projectcontour/contour/internal/timeout"
 
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -1104,39 +1105,32 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 	}
 }
 
-// *NOTE: the Gateway API does not yet support retries, so do we.
-// please refer to https://github.com/projectcontour/contour/pull/5940#discussion_r1385198654
-// and related discussions for more information. for more information.
-func parseHTTPRouteTimeouts(timeout *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, *RetryPolicy, error) {
-	if timeout == nil || (timeout.BackendRequest == nil && timeout.Request == nil) {
-		return nil, nil, nil
+func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, error) {
+	if httpRouteTimeouts == nil {
+		return nil, nil
 	}
 
-	tr := &contour_api_v1.TimeoutPolicy{}
-	if timeout.Request != nil {
-		tr.Response = string(*timeout.Request)
+	// Since Gateway API doesn't yet support retries, this timeout setting
+	// is functionally equivalent to httpRouteTimeouts.Request, so we're
+	// not implementing it for now. Once retries are added to Gateway API,
+	// support for backend request timeouts can be added.
+	if httpRouteTimeouts.BackendRequest != nil {
+		return nil, errors.New("HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead")
+	}
+	if httpRouteTimeouts.Request == nil {
+		return nil, nil
 	}
 
-	rtp, _, err := timeoutPolicy(tr, 0)
+	requestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.Request))
 	if err != nil {
-		return nil, nil, fmt.Errorf("HTTPRoute.Spec.Rules.Timeouts: Invalid value for Request is specified")
+		return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.Request: %v", err)
 	}
 
-	br := &contour_api_v1.RetryPolicy{}
-	if timeout.BackendRequest != nil {
-		br.PerTryTimeout = string(*timeout.BackendRequest)
-	}
-
-	rp := retryPolicy(br)
-	if rp.PerTryTimeout.Duration() > rtp.ResponseTimeout.Duration() {
-		rp.PerTryTimeout = rtp.ResponseTimeout
-	}
-
-	// retry disabled
-	rp.RetryOn = ""
-	return &rtp, rp, nil
-
+	return &RouteTimeoutPolicy{
+		ResponseTimeout: requestTimeout,
+	}, nil
 }
+
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1beta1.HTTPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
 	for ruleIndex, rule := range route.Spec.Rules {
@@ -1179,19 +1173,17 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 
 		// Process rule-level filters.
 		var (
-			err                error
-			redirect           *Redirect
-			urlRewriteHostname string
-
-			retryPolicy          *RetryPolicy
+			err                  error
+			redirect             *Redirect
+			urlRewriteHostname   string
 			mirrorPolicies       []*MirrorPolicy
 			requestHeaderPolicy  *HeadersPolicy
 			responseHeaderPolicy *HeadersPolicy
 			pathRewritePolicy    *PathRewritePolicy
-			requestTimeoutPolicy *RouteTimeoutPolicy
+			timeoutPolicy        *RouteTimeoutPolicy
 		)
 
-		requestTimeoutPolicy, retryPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts)
+		timeoutPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts)
 		if err != nil {
 			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
 			continue
@@ -1414,8 +1406,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(route *gatewayapi_v1be
 				responseHeaderPolicy,
 				mirrorPolicies,
 				pathRewritePolicy,
-				requestTimeoutPolicy,
-				retryPolicy)
+				timeoutPolicy)
 		}
 
 		// Add each route to the relevant vhost(s)/svhosts(s).
@@ -1556,11 +1547,9 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 			KindGRPCRoute,
 			route.Namespace,
 			route.Name,
-
 			requestHeaderPolicy,
 			responseHeaderPolicy,
 			mirrorPolicies,
-			nil,
 			nil,
 			nil,
 		)
@@ -2146,7 +2135,6 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	mirrorPolicies []*MirrorPolicy,
 	pathRewritePolicy *PathRewritePolicy,
 	timeoutPolicy *RouteTimeoutPolicy,
-	retryPolicy *RetryPolicy,
 ) []*Route {
 
 	var routes []*Route
@@ -2170,7 +2158,6 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			MirrorPolicies:            mirrorPolicies,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
-			RetryPolicy:               retryPolicy,
 		}
 		if timeoutPolicy != nil {
 			route.TimeoutPolicy = *timeoutPolicy

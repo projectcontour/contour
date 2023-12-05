@@ -9222,7 +9222,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
-	run(t, "route rule with timeouts", testcase{
+	run(t, "route rule with timeouts.request and timeouts.backendRequest specified", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -9256,15 +9256,15 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedHTTPRouteCondition(),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
 					},
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
 	})
 
-	run(t, "route rule with timeouts.request empty", testcase{
+	run(t, "route rule with only timeouts.backendRequest specified", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
@@ -9297,12 +9297,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedHTTPRouteCondition(),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
 					},
 				},
 			},
 		}},
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 0),
 	})
 
 	run(t, "timeouts with invalid request for httproute", testcase{
@@ -9335,7 +9335,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts: Invalid value for Request is specified"),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "invalid HTTPRoute.Spec.Rules.Timeouts.Request: unable to parse timeout string \"invalid\": time: invalid duration \"invalid\""),
 					},
 				},
 			},
