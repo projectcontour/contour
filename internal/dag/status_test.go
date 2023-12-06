@@ -9263,7 +9263,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
-	run(t, "HTTP listener, route's parent ref route kind is invalid", testcase{
+	run(t, "HTTP listener with invalid AllowedRoute kind referenced by route parent ref", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{

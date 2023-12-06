@@ -118,8 +118,8 @@ spec:
     - kind: Service
       name: green
       port: 80
-      weight: 70
+      weight: 90
     - kind: Service
       name: blue
       port: 80
-      weight: 30
+      weight: 10

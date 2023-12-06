@@ -195,19 +195,17 @@ func (p *GatewayAPIProcessor) processRoute(
 		}
 
 		routeParentStatus := routeStatus.StatusUpdateFor(routeParentRef)
-
-		// Get the list of listeners that are
-		// (a) included by this parent ref, and
-		// (b) allow the route (based on kind, namespace)
-		// (c) pass the all check for it
-		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, listeners, listenerAttachedRoutes, routeParentStatus)
-
 		// If the Gateway is invalid, set status on the route and we're done.
 		if gatewayNotProgrammedCondition != nil {
 			routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 			continue
 		}
 
+		// Get the list of listeners that are
+		// (a) included by this parent ref, and
+		// (b) allow the route (based on kind, namespace)
+		// (c) pass the all check for it
+		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, listeners, listenerAttachedRoutes, routeParentStatus)
 		if len(allowedListeners) == 0 {
 			p.resolveRouteRefs(route, routeParentStatus)
 		}
@@ -1123,8 +1121,8 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
 		for _, match := range rule.Matches {
-			pathMatch, ok := gatewayPathMatchCondition(match.Path, routeAccessor)
-			if !ok {
+			pathMatch := gatewayPathMatchCondition(match.Path, routeAccessor)
+			if pathMatch == nil {
 				continue
 			}
 
@@ -1793,9 +1791,9 @@ func validateAppProtocol(svc *v1.ServicePort) error {
 	return fmt.Errorf("AppProtocol: \"%s\" is unsupported", *svc.AppProtocol)
 }
 
-func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) (MatchCondition, bool) {
+func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) MatchCondition {
 	if match == nil {
-		return &PrefixMatchCondition{Prefix: "/"}, true
+		return &PrefixMatchCondition{Prefix: "/"}
 	}
 
 	path := ref.Val(match.Value, "/")
@@ -1804,41 +1802,40 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 	if match.Type == nil || *match.Type == gatewayapi_v1.PathMatchPathPrefix {
 		if !strings.HasPrefix(path, "/") {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must start with '/'.")
-			return nil, false
+			return nil
 		}
 		if strings.Contains(path, "//") {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must not contain consecutive '/' characters.")
-			return nil, false
+			return nil
 		}
 
 		// As an optimization, if path is just "/", we can use
 		// string prefix matching instead of segment prefix
 		// matching which requires a regex.
 		if path == "/" {
-			return &PrefixMatchCondition{Prefix: path}, true
+			return &PrefixMatchCondition{Prefix: path}
 		}
-		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}, true
+		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}
 	}
 
 	if *match.Type == gatewayapi_v1.PathMatchExact {
 		if !strings.HasPrefix(path, "/") {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must start with '/'.")
-			return nil, false
+			return nil
 		}
 		if strings.Contains(path, "//") {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must not contain consecutive '/' characters.")
-			return nil, false
+			return nil
 		}
-
-		return &ExactMatchCondition{Path: path}, true
+		return &ExactMatchCondition{Path: path}
 	}
 
 	if *match.Type == gatewayapi_v1.PathMatchRegularExpression {
 		if err := ValidateRegex(*match.Value); err != nil {
 			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value is invalid for RegularExpression match type.")
-			return nil, false
+			return nil
 		}
-		return &RegexMatchCondition{Regex: path}, true
+		return &RegexMatchCondition{Regex: path}
 	}
 
 	routeAccessor.AddCondition(
@@ -1847,7 +1844,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
 		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 	)
-	return nil, false
+	return nil
 }
 
 func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
