@@ -1,0 +1,1 @@
+Fixes a bug with the `envoy` xDS server where at startup, xDS configuration would not be generated and served until a subsequent configuration change.
