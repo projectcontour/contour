@@ -1,0 +1,7 @@
+reviewers:
+  defaults:
+  - team:contour-reviewers
+
+options:
+  ignore_draft: true
+  number_of_reviewers: 1
