@@ -98,7 +98,7 @@ func EnsureObjectDeleted[T client.Object](ctx context.Context, cli client.Client
 		return err
 	}
 
-	if !labels.Exist(obj, model.OwnerLabels(contour)) {
+	if !labels.AnyExist(obj, model.OwnerLabels(contour)) {
 		return nil
 	}
 

@@ -71,7 +71,8 @@ func TestDesiredClusterRoleBinding(t *testing.T) {
 	crb := desiredClusterRoleBinding(name, testRoleRef, testSvcAcct, cntr)
 	checkClusterRoleBindingName(t, crb, name)
 	ownerLabels := map[string]string{
-		model.OwningGatewayNameLabel: cntr.Name,
+		model.ContourOwningGatewayNameLabel:    cntr.Name,
+		model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
 	}
 	checkClusterRoleBindingLabels(t, crb, ownerLabels)
 	checkClusterRoleBindingSvcAcct(t, crb, testSvcAcct, cntr.Namespace)

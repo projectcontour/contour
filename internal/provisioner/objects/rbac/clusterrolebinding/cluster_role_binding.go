@@ -75,7 +75,7 @@ func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.
 // updateClusterRoleBindingIfNeeded updates a ClusterRoleBinding resource if current
 // does not match desired, using contour to verify the existence of owner labels.
 func updateClusterRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRoleBinding) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		crb, updated := equality.ClusterRoleBindingConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, crb); err != nil {
