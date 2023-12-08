@@ -692,7 +692,7 @@ type ClusterParameters struct {
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	//
 	// +optional
-	UpstreamTLS *EnvoyTLS `json:"upstream-tls,omitempty"`
+	UpstreamTLS *EnvoyTLS `json:"upstreamTLS,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

@@ -122,7 +122,7 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
-                      upstream-tls:
+                      upstreamTLS:
                         description: UpstreamTLS contains the TLS policy parameters
                           for upstream connections
                         properties:
@@ -3632,7 +3632,7 @@ spec:
                             format: int32
                             minimum: 1
                             type: integer
-                          upstream-tls:
+                          upstreamTLS:
                             description: UpstreamTLS contains the TLS policy parameters
                               for upstream connections
                             properties:
