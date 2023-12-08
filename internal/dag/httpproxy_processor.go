@@ -493,6 +493,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 							Port:               port,
 							DNSLookupFamily:    dnsLookupFamily,
 							UpstreamValidation: uv,
+							UpstreamTLS:        (*UpstreamTLS)(p.UpstreamTLS),
 						},
 						CacheDuration: cacheDuration,
 					},
