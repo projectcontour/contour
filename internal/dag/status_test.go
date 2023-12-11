@@ -5725,12 +5725,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported."),
 					},
 				},
 			},
@@ -5778,12 +5773,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Matches.Headers: Only Exact match type and RegularExpression match type are supported"),
 					},
 				},
 			},
@@ -5831,12 +5821,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified"),
 					},
 				},
 			},
@@ -5937,12 +5922,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Invalid value for RegularExpression match type is specified",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Matches.QueryParams: Invalid value for RegularExpression match type is specified"),
 					},
 				},
 			},
@@ -5990,12 +5970,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact and RegularExpression match types are supported",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Matches.QueryParams: Only Exact and RegularExpression match types are supported"),
 					},
 				},
 			},
@@ -7956,12 +7931,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				{
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  contour_api_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported."),
 						routeResolvedRefsCondition(),
 					},
 				},
@@ -8007,12 +7977,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type \"custom\": only ReplacePrefixMatch and ReplaceFullPath are supported.",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type \"custom\": only ReplacePrefixMatch and ReplaceFullPath are supported."),
 					},
 				},
 			},
@@ -8250,12 +8215,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
-						{
-							Type:    string(gatewayapi_v1.RouteConditionAccepted),
-							Status:  metav1.ConditionFalse,
-							Reason:  string(gatewayapi_v1.RouteReasonUnsupportedValue),
-							Message: "HTTPRoute.Spec.Rules.Filters: invalid type \"custom-filter\": only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect, RequestMirror and URLRewrite are supported.",
-						},
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Filters: invalid type \"custom-filter\": only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect, RequestMirror and URLRewrite are supported."),
 					},
 				},
 			},
@@ -9355,6 +9315,130 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		},
+	})
+
+	run(t, "route rule with timeouts.request and timeouts.backendRequest specified", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
+								Request:        ref.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ref.To(gatewayapi_v1.Duration("30s")),
+							},
+						},
+					},
+				},
+			}},
+
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+					},
+				},
+			},
+		}},
+
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
+
+	run(t, "route rule with only timeouts.backendRequest specified", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
+								BackendRequest: ref.To(gatewayapi_v1.Duration("30s")),
+							},
+						},
+					},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
+
+	run(t, "timeouts with invalid request for httproute", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
+							Request: ref.To(gatewayapi_v1.Duration("invalid")),
+						},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						routeResolvedRefsCondition(),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "invalid HTTPRoute.Spec.Rules.Timeouts.Request: unable to parse timeout string \"invalid\": time: invalid duration \"invalid\""),
+					},
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
 }
@@ -11183,6 +11267,14 @@ func routeAcceptedHTTPRouteCondition() metav1.Condition {
 		Status:  contour_api_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1.RouteReasonAccepted),
 		Message: "Accepted HTTPRoute",
+	}
+}
+func routeAcceptedFalse(reason gatewayapi_v1.RouteConditionReason, message string) metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1.RouteConditionAccepted),
+		Status:  contour_api_v1.ConditionFalse,
+		Reason:  string(reason),
+		Message: message,
 	}
 }
 

@@ -4158,7 +4158,59 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		// END
+
+		"HTTPRoute rule with request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("5s", ""),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with request and backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("5s", "5s"),
+			},
+			want: listeners(),
+		},
+
+		"HTTPRoute rule with backendRequest timeout only": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("", "5s"),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with invalid request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("invalid", ""),
+			},
+			want: listeners(),
+		},
 
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
@@ -16272,4 +16324,39 @@ func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
 		})
 	}
 	return r
+}
+
+func makeHTTPRouteTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRouteTimeouts {
+	httpRouteTimeouts := &gatewayapi_v1.HTTPRouteTimeouts{}
+
+	if request != "" {
+		httpRouteTimeouts.Request = ref.To(gatewayapi_v1.Duration(request))
+	}
+	if backendRequest != "" {
+		httpRouteTimeouts.BackendRequest = ref.To(gatewayapi_v1.Duration(backendRequest))
+	}
+
+	return httpRouteTimeouts
+}
+
+func makeHTTPRoute(request, backendRequest string) *gatewayapi_v1beta1.HTTPRoute {
+	return &gatewayapi_v1beta1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+				Timeouts:    makeHTTPRouteTimeouts(request, backendRequest),
+			}},
+		},
+	}
 }

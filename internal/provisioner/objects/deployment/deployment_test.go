@@ -183,7 +183,7 @@ func TestDesiredDeployment(t *testing.T) {
 	checkContainerHasImage(t, container, testContourImage)
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
-	checkDeploymentHasLabels(t, deploy, cntr.AppLabels())
+	checkDeploymentHasLabels(t, deploy, cntr.WorkloadLabels())
 	checkPodHasAnnotations(t, &deploy.Spec.Template, contourPodAnnotations(cntr))
 
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {

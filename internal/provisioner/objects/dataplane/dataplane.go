@@ -341,9 +341,10 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.AppLabels(),
+			Namespace:   contour.Namespace,
+			Name:        contour.EnvoyDataPlaneName(),
+			Labels:      contour.WorkloadLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: ref.To(int32(10)),
@@ -413,9 +414,10 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      contour.EnvoyDataPlaneName(),
-			Labels:    contour.AppLabels(),
+			Namespace:   contour.Namespace,
+			Name:        contour.EnvoyDataPlaneName(),
+			Labels:      contour.WorkloadLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas:             ref.To(contour.Spec.EnvoyReplicas),
@@ -486,7 +488,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DaemonsetConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, ds); err != nil {
@@ -501,7 +503,7 @@ func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *mo
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, ds); err != nil {
@@ -526,7 +528,7 @@ func EnvoyPodSelector(contour *model.Contour) *metav1.LabelSelector {
 // envoyPodLabels returns the labels for envoy's pods
 func envoyPodLabels(contour *model.Contour) map[string]string {
 	labels := EnvoyPodSelector(contour).MatchLabels
-	for k, v := range contour.AppLabels() {
+	for k, v := range contour.WorkloadLabels() {
 		labels[k] = v
 	}
 	return labels
@@ -550,6 +552,12 @@ func envoyPodAnnotations(contour *model.Contour) map[string]string {
 	annotations["prometheus.io/scrape"] = "true"
 	annotations["prometheus.io/port"] = fmt.Sprint(metricsPort)
 	annotations["prometheus.io/path"] = "/stats/prometheus"
+
+	// Annotations specified on the Gateway take precedence
+	// over annotations specified on the GatewayClass/its parameters.
+	for k, v := range contour.CommonAnnotations() {
+		annotations[k] = v
+	}
 
 	return annotations
 }
