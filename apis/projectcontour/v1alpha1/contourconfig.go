@@ -113,12 +113,16 @@ const (
 )
 
 type GlobalCircuitBreakerDefaults struct {
+	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
 	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty"`
+	// The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
 	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"maxPendingRequests,omitempty"`
+	// The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024
 	// +optional
 	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"maxRequests,omitempty"`
+	// The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.
 	// +optional
 	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
 }

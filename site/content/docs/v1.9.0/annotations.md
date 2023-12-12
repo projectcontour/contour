@@ -23,7 +23,7 @@ In both cases, they will behave as follows, by default:
 * If specified as `kubernetes.io/ingress.class: contour`, then Contour serves the Ingress.
 * If any other value, Contour ignores the Ingress definition.
 
-You can override the default class `contour` by providing the `--ingress-class-name` flag to Contour. 
+You can override the default class `contour` by providing the `--ingress-class-name` flag to Contour.
 This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
 If you do this, the behavior is as follows:
 * If the annotation is not set, Contour will ignore the Ingress.
@@ -32,7 +32,7 @@ If you do this, the behavior is as follows:
 
 This same logic applies for these annotations on HTTPProxy objects.
 
-### Other annotations 
+### Other annotations
 
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls][16].
  - `kubernetes.io/ingress.allow-http`: Instructs Contour to not create an Envoy HTTP route for the virtual host. The Ingress exists only for HTTPS requests. Specify `"false"` for Envoy to mark the endpoint as HTTPS only. All other values are ignored.
