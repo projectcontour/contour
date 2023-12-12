@@ -1042,15 +1042,6 @@ type Cluster struct {
 	PerConnectionBufferLimitBytes *uint32
 }
 
-// CircuitBreakerPolicy defines the circuit breaker policy for a cluster.
-type CircuitBreakerPolicy struct {
-	// IdleConnectionTimeout is the timeout applied to idle connection.
-	IdleConnectionTimeout timeout.Setting
-
-	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
-	ConnectTimeout time.Duration
-}
-
 // WeightedService represents the load balancing weight of a
 // particular v1.Weighted port.
 type WeightedService struct {
