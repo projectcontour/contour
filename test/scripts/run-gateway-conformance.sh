@@ -67,5 +67,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   go test -timeout=40m ./conformance -run TestConformance -gateway-class=contour -all-features \
     -exempt-features=Mesh \
-    -skip-tests=HTTPRouteRedirectPortAndScheme
+    -skip-tests=HTTPRouteRedirectPortAndScheme,HTTPRouteTimeoutBackendRequest,GatewayStaticAddresses
 fi

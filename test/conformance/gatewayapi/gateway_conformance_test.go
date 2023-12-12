@@ -74,8 +74,16 @@ func TestGatewayConformance(t *testing.T) {
 			// See: https://github.com/envoyproxy/envoy/issues/17318
 			tests.HTTPRouteRedirectPortAndScheme.ShortName,
 
-			// Tests newly failing with Gateway API 1.0, to be addressed.
+			// Not implemented yet since it's functionally equivalent
+			// to Timeouts.Request, to be enabled once Gateway API
+			// supports retries.
+			// See: https://github.com/projectcontour/contour/issues/6000
 			tests.HTTPRouteTimeoutBackendRequest.ShortName,
+
+			// Contour supports the positive-case functionality,
+			// but there are some negative cases that aren't fully
+			// implemented plus complications with the test setup itself.
+			// See: https://github.com/projectcontour/contour/issues/5922
 			tests.GatewayStaticAddresses.ShortName,
 		},
 		ExemptFeatures: sets.New(
