@@ -205,8 +205,8 @@ func (p *GatewayAPIProcessor) processRoute(
 
 		// Get the list of listeners that are
 		// (a) included by this parent ref, and
-		// (b) allow the route (based on kind, namespace)
-		// (c) pass the all check for it
+		// (b) allow the route (based on kind, namespace), and
+		// (c) the 'listenerInfo.ready' is true
 		allowedListeners := p.getListenersForRouteParentRef(routeParentRef, route.GetNamespace(), routeKind, listeners, listenerAttachedRoutes, routeParentStatus)
 		if len(allowedListeners) == 0 {
 			p.resolveRouteRefs(route, routeParentStatus)
@@ -429,9 +429,9 @@ func (p *GatewayAPIProcessor) computeListener(
 	listener gatewayapi_v1beta1.Listener,
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
-) (info *listenerInfo) {
+) *listenerInfo {
 
-	info = &listenerInfo{
+	info := &listenerInfo{
 		listener:        listener,
 		dagListenerName: validateListenersResult.ListenerNames[string(listener.Name)],
 	}
@@ -531,26 +531,26 @@ func (p *GatewayAPIProcessor) computeListener(
 
 		if listener.AllowedRoutes.Namespaces.Selector == nil {
 			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".")
-			return
+			return info
 		}
 
 		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
 			addInvalidListenerCondition("Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.")
-			return
+			return info
 		}
 
 		var err error
 		info.namespaceSelector, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
 		if err != nil {
 			addInvalidListenerCondition(fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err))
-			return
+			return info
 		}
 	}
 
 	// If the listener had an invalid protocol/port/hostname, we reach here just for pick the information to compute the AttachedRoutes later,
 	// we don't need to go any further.
 	if _, invalid := validateListenersResult.InvalidListenerConditions[listener.Name]; invalid {
-		return
+		return info
 	}
 
 	var listenerSecret *Secret
@@ -564,19 +564,19 @@ func (p *GatewayAPIProcessor) computeListener(
 
 		if listener.TLS == nil {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
-			return
+			return info
 		}
 
 		if listener.TLS.Mode != nil && *listener.TLS.Mode != gatewayapi_v1.TLSModeTerminate {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q when protocol is %q.", gatewayapi_v1.TLSModeTerminate, listener.Protocol))
-			return
+			return info
 		}
 
 		// Resolve the TLS secret.
 		if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
 			// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
 			// routes to be bound to this listener since it can't serve TLS traffic.
-			return
+			return info
 		}
 	case gatewayapi_v1.TLSProtocolType:
 		// The TLS protocol is used for TCP traffic encrypted with TLS.
@@ -584,7 +584,7 @@ func (p *GatewayAPIProcessor) computeListener(
 		// or passed through to the backend.
 		if listener.TLS == nil {
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS is required when protocol is %q.", listener.Protocol))
-			return
+			return info
 		}
 
 		switch {
@@ -593,22 +593,22 @@ func (p *GatewayAPIProcessor) computeListener(
 			if listenerSecret = p.resolveListenerSecret(listener.TLS.CertificateRefs, string(listener.Name), gwAccessor); listenerSecret == nil {
 				// If TLS was configured on the Listener, but the secret ref is invalid, don't allow any
 				// routes to be bound to this listener since it can't serve TLS traffic.
-				return
+				return info
 			}
 		case *listener.TLS.Mode == gatewayapi_v1.TLSModePassthrough:
 			if len(listener.TLS.CertificateRefs) != 0 {
 				addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.CertificateRefs cannot be defined when Listener.TLS.Mode is %q.", gatewayapi_v1.TLSModePassthrough))
-				return
+				return info
 			}
 		default:
 			addInvalidListenerCondition(fmt.Sprintf("Listener.TLS.Mode must be %q or %q.", gatewayapi_v1.TLSModeTerminate, gatewayapi_v1.TLSModePassthrough))
-			return
+			return info
 		}
 	}
 
 	info.tlsSecret = listenerSecret
 	info.ready = true
-	return
+	return info
 
 }
 
