@@ -584,13 +584,14 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
 		},
-		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
-		GlobalExternalAuthorization: globalExtAuth,
-		RateLimitService:            rateLimitService,
-		Policy:                      policy,
-		Metrics:                     &contourMetrics,
-		Tracing:                     tracingConfig,
-		FeatureFlags:                ctx.Config.FeatureFlags,
+		EnableExternalNameService:    &ctx.Config.EnableExternalNameService,
+		GlobalExternalAuthorization:  globalExtAuth,
+		RateLimitService:             rateLimitService,
+		Policy:                       policy,
+		GlobalCircuitBreakerDefaults: ctx.Config.GlobalCircuitBreakerDefaults,
+		Metrics:                      &contourMetrics,
+		Tracing:                      tracingConfig,
+		FeatureFlags:                 ctx.Config.FeatureFlags,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

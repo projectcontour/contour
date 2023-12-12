@@ -27,9 +27,12 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -808,4 +811,50 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 		return nil, strategy
 	}
 
+}
+
+func serviceCircuitBreakerPolicy(s *Service, cb *contour_api_v1alpha1.GlobalCircuitBreakerDefaults, m *metrics.Metrics) *Service {
+	if s == nil {
+		return nil
+	}
+
+	if s.MaxConnections == 0 && cb != nil {
+		s.MaxConnections = cb.MaxConnections
+	}
+
+	if s.MaxPendingRequests == 0 && cb != nil {
+		s.MaxPendingRequests = cb.MaxPendingRequests
+	}
+
+	if s.MaxRequests == 0 && cb != nil {
+		s.MaxRequests = cb.MaxRequests
+	}
+
+	if s.MaxRetries == 0 && cb != nil {
+		s.MaxRetries = cb.MaxRetries
+	}
+
+	if m != nil {
+		m.CircuitBreakerSettings.With(prometheus.Labels{
+			"service":    s.ExternalName,
+			"limit_type": "max_connections",
+		}).Set(float64(s.MaxConnections))
+
+		m.CircuitBreakerSettings.With(prometheus.Labels{
+			"service":    s.ExternalName,
+			"limit_type": "max_pending_requests",
+		}).Set(float64(s.MaxPendingRequests))
+
+		m.CircuitBreakerSettings.With(prometheus.Labels{
+			"service":    s.ExternalName,
+			"limit_type": "max_requests",
+		}).Set(float64(s.MaxRequests))
+
+		m.CircuitBreakerSettings.With(prometheus.Labels{
+			"service":    s.ExternalName,
+			"limit_type": "max_retries",
+		}).Set(float64(s.MaxRetries))
+	}
+
+	return s
 }

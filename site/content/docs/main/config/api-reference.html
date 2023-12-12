@@ -5105,6 +5105,22 @@ PolicyConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>circuitBreaker</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">
+GlobalCircuitBreakerDefaults
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+If defined, this will be used as the default for all services.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>metrics</code>
 <br>
 <em>
@@ -5863,6 +5879,22 @@ PolicyConfig
 <td>
 <em>(Optional)</em>
 <p>Policy specifies default policy applied if not overridden by the user</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>circuitBreaker</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">
+GlobalCircuitBreakerDefaults
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+If defined, this will be used as the default for all services.</p>
 </td>
 </tr>
 <tr>
@@ -7564,6 +7596,72 @@ instance corresponds to. If set, Contour will reconcile
 only this gateway, and will not reconcile any gateway
 classes.
 Exactly one of ControllerName or GatewayRef must be set.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">GlobalCircuitBreakerDefaults
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>maxConnections</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxPendingRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRetries</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>

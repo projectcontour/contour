@@ -112,6 +112,9 @@ type HTTPProxyProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -933,6 +936,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					"Spec.Routes unresolved service reference: %s", err)
 				continue
 			}
+			s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults, p.source.Metrics)
 
 			// Determine the protocol to use to speak to this Cluster.
 			protocol, err := getProtocol(service, s)

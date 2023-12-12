@@ -669,6 +669,9 @@ type Parameters struct {
 	// GlobalExternalAuthorization optionally holds properties of the global external authorization configuration.
 	GlobalExternalAuthorization GlobalExternalAuthorization `yaml:"globalExtAuth,omitempty"`
 
+	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuitBreaker,omitempty"`
+
 	// MetricsParameters holds configurable parameters for Contour and Envoy metrics.
 	Metrics MetricsParameters `yaml:"metrics,omitempty"`
 
@@ -825,6 +828,11 @@ type RateLimitService struct {
 type MetricsParameters struct {
 	Contour MetricsServerParameters `yaml:"contour,omitempty"`
 	Envoy   MetricsServerParameters `yaml:"envoy,omitempty"`
+}
+
+// RedditParameters
+type RedditParameters struct {
+	CircuitBreaker *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuitBreaker,omitempty"`
 }
 
 // MetricsServerParameters defines configuration for metrics server.

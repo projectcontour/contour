@@ -48,7 +48,8 @@ type Metrics struct {
 	statusUpdateDurationSeconds *prometheus.SummaryVec
 
 	// Keep a local cache of metrics for comparison on updates
-	proxyMetricCache *RouteMetric
+	proxyMetricCache       *RouteMetric
+	CircuitBreakerSettings *prometheus.GaugeVec
 }
 
 // RouteMetric stores various metrics for HTTPProxy objects
@@ -87,6 +88,8 @@ const (
 	statusUpdateConflict        = "contour_status_update_conflict_total"
 	statusUpdateNoop            = "contour_status_update_noop_total"
 	statusUpdateDurationSeconds = "contour_status_update_duration_seconds"
+
+	ContourCircuitBreakerSettings = "contour_dag_circuit_breaker_settings"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
@@ -239,6 +242,10 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"kind", "error"},
 		),
+		CircuitBreakerSettings: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: ContourCircuitBreakerSettings,
+			Help: "Number of times a worker process has been restarted",
+		}, []string{"service", "limit_type"}),
 	}
 	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
 	m.register(registry)
@@ -266,6 +273,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.statusUpdateConflict,
 		m.statusUpdateNoop,
 		m.statusUpdateDurationSeconds,
+		m.CircuitBreakerSettings,
 	)
 }
 

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -1267,6 +1268,52 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
+		})
+	}
+}
+
+func TestServiceCircuitBreakerPolicy(t *testing.T) {
+	tests := map[string]struct {
+		in            *Service
+		globalDefault *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+		want          *Service
+	}{
+		"service is nil and globalDefault is nil": {
+			in:            nil,
+			globalDefault: nil,
+			want:          nil,
+		},
+		"service is nil and globalDefault is not nil": {
+			in:            nil,
+			globalDefault: &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{},
+			want:          nil,
+		},
+		"service is not nil and globalDefault is nil": {
+			in: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
+			globalDefault: nil,
+			want: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
+		},
+		"service ": {
+			in:            &Service{},
+			globalDefault: nil,
+			want:          &Service{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, nil)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

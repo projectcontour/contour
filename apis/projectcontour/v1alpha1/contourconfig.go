@@ -76,6 +76,11 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
+	// GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+	// If defined, this will be used as the default for all services.
+	// +optional
+	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreaker,omitempty"`
+
 	// Metrics defines the endpoint Contour uses to serve metrics.
 	//
 	// Contour's default is { address: "0.0.0.0", port: 8000 }.
@@ -106,6 +111,17 @@ const (
 	// Use the upstream `go-control-plane`-based xDS server.
 	EnvoyServerType XDSServerType = "envoy"
 )
+
+type GlobalCircuitBreakerDefaults struct {
+	// +optional
+	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty"`
+	// +optional
+	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"maxPendingRequests,omitempty"`
+	// +optional
+	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"maxRequests,omitempty"`
+	// +optional
+	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+}
 
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {

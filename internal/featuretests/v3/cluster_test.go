@@ -20,9 +20,12 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -383,8 +386,32 @@ func TestCDSResourceFiltering(t *testing.T) {
 	})
 }
 
-func TestClusterCircuitbreakerAnnotations(t *testing.T) {
-	rh, c, done := setup(t)
+func circuitBreakerGlobalOpt(t *testing.T, g *contour_api_v1alpha1.GlobalCircuitBreakerDefaults) func(*dag.Builder) {
+	return func(b *dag.Builder) {
+		log := fixture.NewTestLogger(t)
+		log.SetLevel(logrus.DebugLevel)
+
+		b.Processors = []dag.Processor{
+			&dag.ListenerProcessor{},
+			&dag.IngressProcessor{
+				FieldLogger:                  log.WithField("context", "IngressProcessor"),
+				GlobalCircuitBreakerDefaults: g,
+			},
+			&dag.HTTPProxyProcessor{
+				GlobalCircuitBreakerDefaults: g,
+			},
+		}
+	}
+}
+
+func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
+	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+		MaxConnections:     13,
+		MaxPendingRequests: 14,
+		MaxRequests:        15,
+		MaxRetries:         17,
+	}
+	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
 	s1 := fixture.NewService("kuard").
@@ -454,6 +481,173 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(9999),
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	s3 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "0").
+		Annotate("projectcontour.io/max-pending-requests", "0").
+		Annotate("projectcontour.io/max-requests", "0").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+
+	rh.OnUpdate(s2, s3)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/8080/da39a3ee5e",
+				AltStatName:          "default_kuard_8080",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxPendingRequests: wrapperspb.UInt32(14),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+}
+
+func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
+	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+		MaxConnections:     13,
+		MaxPendingRequests: 14,
+		MaxRequests:        15,
+		MaxRetries:         17,
+	}
+	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
+	defer done()
+
+	s1 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "9000").
+		Annotate("projectcontour.io/max-pending-requests", "4096").
+		Annotate("projectcontour.io/max-requests", "404").
+		Annotate("projectcontour.io/max-retries", "7").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	rh.OnAdd(
+		&contour_api_v1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "simple",
+				Namespace: "default",
+			},
+			Spec: contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+				Routes: []contour_api_v1.Route{
+					{
+						Services: []contour_api_v1.Service{
+							{
+								Name: "kuard",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		})
+
+	rh.OnAdd(s1)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections:     wrapperspb.UInt32(9000),
+						MaxPendingRequests: wrapperspb.UInt32(4096),
+						MaxRequests:        wrapperspb.UInt32(404),
+						MaxRetries:         wrapperspb.UInt32(7),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	// update s1 with slightly weird values
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-pending-requests", "9999").
+		Annotate("projectcontour.io/max-requests", "1e6").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	rh.OnUpdate(s1, s2)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxPendingRequests: wrapperspb.UInt32(9999),
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	s3 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "0").
+		Annotate("projectcontour.io/max-pending-requests", "0").
+		Annotate("projectcontour.io/max-requests", "0").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	rh.OnUpdate(s2, s3)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxPendingRequests: wrapperspb.UInt32(14),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
 					}},
 				},
 			}),
