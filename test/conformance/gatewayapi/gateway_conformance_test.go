@@ -76,7 +76,6 @@ func TestGatewayConformance(t *testing.T) {
 
 			// Tests newly failing with Gateway API 1.0, to be addressed.
 			tests.HTTPRouteTimeoutBackendRequest.ShortName,
-			tests.GatewayWithAttachedRoutes.ShortName,
 			tests.GatewayStaticAddresses.ShortName,
 		},
 		ExemptFeatures: sets.New(
