@@ -830,11 +830,6 @@ type MetricsParameters struct {
 	Envoy   MetricsServerParameters `yaml:"envoy,omitempty"`
 }
 
-// RedditParameters
-type RedditParameters struct {
-	CircuitBreaker *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuitBreaker,omitempty"`
-}
-
 // MetricsServerParameters defines configuration for metrics server.
 type MetricsServerParameters struct {
 	// Address that metrics server will bind to.
