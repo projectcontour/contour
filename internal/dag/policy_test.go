@@ -22,7 +22,10 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -1303,10 +1306,20 @@ func TestServiceCircuitBreakerPolicy(t *testing.T) {
 				MaxRetries:         13,
 			},
 		},
-		"service ": {
-			in:            &Service{},
-			globalDefault: nil,
-			want:          &Service{},
+		"service is not set but global is": {
+			in: &Service{},
+			globalDefault: &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
+			want: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
 		},
 	}
 
@@ -1314,6 +1327,44 @@ func TestServiceCircuitBreakerPolicy(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, nil)
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestServiceCircuitBreakerPolicyWithMetrics(t *testing.T) {
+	tests := map[string]struct {
+		in            *Service
+		globalDefault *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+		want          *Service
+	}{
+		"service is not nil and globalDefault is nil": {
+			in: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
+			globalDefault: nil,
+			want: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         13,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := prometheus.NewRegistry()
+			m := metrics.NewMetrics(r)
+			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, m)
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, 4, testutil.CollectAndCount(m.CircuitBreakerSettings))
+			assert.Equal(t, float64(got.MaxConnections), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_connections")))
+			assert.Equal(t, float64(got.MaxPendingRequests), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_pending_requests")))
+			assert.Equal(t, float64(got.MaxRequests), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_requests")))
+			assert.Equal(t, float64(got.MaxRetries), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_retries")))
 		})
 	}
 }
