@@ -307,7 +307,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	}
 
 	var cipherSuites []string
-	for _, suite := range ctx.Config.TLS.ProtocolParameters.CipherSuites {
+	for _, suite := range ctx.Config.TLS.CipherSuites {
 		cipherSuites = append(cipherSuites, suite)
 	}
 
@@ -531,8 +531,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				MaxRequestsPerIOCycle:         ctx.Config.Listener.MaxRequestsPerIOCycle,
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: ctx.Config.TLS.ProtocolParameters.MinimumProtocolVersion,
-					MaximumProtocolVersion: ctx.Config.TLS.ProtocolParameters.MaximumProtocolVersion,
+					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
+					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
 					CipherSuites:           cipherSuites,
 				},
 				SocketOptions: &contour_api_v1alpha1.SocketOptions{

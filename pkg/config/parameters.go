@@ -182,7 +182,7 @@ func (n NamespacedName) Validate() error {
 
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
-	ProtocolParameters ProtocolParameters `yaml:"protocol"`
+	ProtocolParameters `yaml:",inline"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.

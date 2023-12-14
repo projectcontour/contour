@@ -368,9 +368,8 @@ tls:
 
 	check(`
 tls:
-  protocol:
-    cipher-suites:
-    - NOTVALID
+  cipher-suites:
+  - NOTVALID
 `)
 
 	check(`
@@ -423,16 +422,15 @@ tls:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "1.2", conf.TLS.ProtocolParameters.MinimumProtocolVersion)
-		assert.Equal(t, "1.3", conf.TLS.ProtocolParameters.MaximumProtocolVersion)
-		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.ProtocolParameters.CipherSuites)
+		assert.Equal(t, "1.2", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.3", conf.TLS.MaximumProtocolVersion)
+		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
 	}, `
 tls:
-  protocol:
-    minimum-protocol-version: 1.2
-    maximum-protocol-version: 1.3
-    cipher-suites:
-    - ECDHE-RSA-AES256-GCM-SHA384
+  minimum-protocol-version: 1.2
+  maximum-protocol-version: 1.3
+  cipher-suites:
+  - ECDHE-RSA-AES256-GCM-SHA384
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
