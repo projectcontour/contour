@@ -62,6 +62,7 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 - `projectcontour.io/max-pending-requests`: [The maximum number of pending requests][13] that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 - `projectcontour.io/max-requests`: [The maximum parallel requests][13] a single Envoy instance allows to the Kubernetes Service; defaults to 1024
 - `projectcontour.io/max-retries`: [The maximum number of parallel retries][14] a single Envoy instance allows to the Kubernetes Service; defaults to 3. This is independent of the per-Kubernetes Ingress number of retries (`projectcontour.io/num-retries`) and retry-on (`projectcontour.io/retry-on`), which control whether retries are attempted and how many times a single request can retry.
+- `projectcontour.io/per-host-max-connections`: [The maximum number of connections][20] that a single Envoy instance allows to an individual Kubernetes Service endpoint; no default (unlimited).
 - `projectcontour.io/upstream-protocol.{protocol}` : The protocol used to proxy requests to the upstream service.
   The annotation value contains a comma-separated list of port names and/or numbers that must match with the ones defined in the `Service` definition.
   This value can also be specified in the `spec.routes.services[].protocol` field on the HTTPProxy object, where it takes precedence over the Service annotation.
@@ -94,3 +95,4 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 [17]: api/#projectcontour.io/v1.UpstreamValidation
 [18]: ../config/tls-delegation/
 [19]: https://github.com/projectcontour/contour/issues/3544
+[20]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-per-host-thresholds

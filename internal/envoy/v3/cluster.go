@@ -78,13 +78,16 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		cluster.IgnoreHealthOnHostRemoval = true
 	}
 
-	if envoy.AnyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
+	if envoy.AnyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries, service.PerHostMaxConnections) {
 		cluster.CircuitBreakers = &envoy_cluster_v3.CircuitBreakers{
 			Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 				MaxConnections:     protobuf.UInt32OrNil(service.MaxConnections),
 				MaxPendingRequests: protobuf.UInt32OrNil(service.MaxPendingRequests),
 				MaxRequests:        protobuf.UInt32OrNil(service.MaxRequests),
 				MaxRetries:         protobuf.UInt32OrNil(service.MaxRetries),
+			}},
+			PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				MaxConnections: protobuf.UInt32OrNil(service.PerHostMaxConnections),
 			}},
 		}
 	}
