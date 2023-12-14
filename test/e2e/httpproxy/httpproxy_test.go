@@ -366,28 +366,22 @@ var _ = Describe("HTTPProxy", func() {
 				Namespace: namespace,
 			}
 		})
-		Context("with backend tls version configured via Contour ConfigMap", func() {
+		Context("with backend tls version configured", func() {
 			protocolVersion := "1.3"
 			expectedProtocolVersion := "TLSv1.3"
 
-			Context("via Contour ConfigMap", func() {
-				BeforeEach(func() {
-					contourConfig.Cluster.UpstreamTLS.MinimumProtocolVersion = protocolVersion
+			BeforeEach(func() {
+				contourConfig.Cluster.UpstreamTLS.MinimumProtocolVersion = protocolVersion
 
-					// need to set this because it isn't set in the default config
-					contourConfig.Cluster.DNSLookupFamily = "auto"
-				})
+				// need to set this because it isn't set in the default config
+				contourConfig.Cluster.DNSLookupFamily = "auto"
 
-				testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
+				contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS = &contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: protocolVersion,
+				}
 			})
-			Context("via ContourConfiguration ", func() {
-				BeforeEach(func() {
-					contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS = &contour_api_v1alpha1.EnvoyTLS{
-						MinimumProtocolVersion: protocolVersion,
-					}
-				})
-				testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
-			})
+
+			testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
 		})
 
 	})
