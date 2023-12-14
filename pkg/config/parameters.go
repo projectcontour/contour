@@ -182,8 +182,7 @@ func (n NamespacedName) Validate() error {
 
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
-	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
-	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
+	ProtocolParameters ProtocolParameters `yaml:"protocol"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
@@ -194,6 +193,12 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+}
+
+// ProtocolParameters holds configuration details for TLS protocol specifics.
+type ProtocolParameters struct {
+	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
@@ -214,6 +219,15 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS client certificate: %w", err)
 	}
 
+	if err := t.ProtocolParameters.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS Protocol Parameters: %w", err)
+	}
+
+	return nil
+}
+
+// Validate TLS protocol versions and cipher suites
+func (t ProtocolParameters) Validate() error {
 	if err := t.CipherSuites.Validate(); err != nil {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
@@ -431,7 +445,7 @@ type ClusterParameters struct {
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
-	UpstreamTLS TLSParameters `yaml:"upstream-tls,omitempty"`
+	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`
 }
 
 func (p *ClusterParameters) Validate() error {

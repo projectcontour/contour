@@ -268,51 +268,51 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 
 	// Cipher suites validation
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		CipherSuites: []string{},
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		CipherSuites: []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		},
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		CipherSuites: []string{
 			"NOTAVALIDCIPHER",
 		},
 	}.Validate())
 
 	// TLS protocol version validation
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MaximumProtocolVersion: "invalid",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
@@ -368,8 +368,9 @@ tls:
 
 	check(`
 tls:
-  cipher-suites:
-  - NOTVALID
+  protocol:
+    cipher-suites:
+    - NOTVALID
 `)
 
 	check(`
@@ -422,15 +423,16 @@ tls:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "1.2", conf.TLS.MinimumProtocolVersion)
-		assert.Equal(t, "1.3", conf.TLS.MaximumProtocolVersion)
-		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
+		assert.Equal(t, "1.2", conf.TLS.ProtocolParameters.MinimumProtocolVersion)
+		assert.Equal(t, "1.3", conf.TLS.ProtocolParameters.MaximumProtocolVersion)
+		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.ProtocolParameters.CipherSuites)
 	}, `
 tls:
-  minimum-protocol-version: 1.2
-  maximum-protocol-version: 1.3
-  cipher-suites:
-  - ECDHE-RSA-AES256-GCM-SHA384
+  protocol:
+    minimum-protocol-version: 1.2
+    maximum-protocol-version: 1.3
+    cipher-suites:
+    - ECDHE-RSA-AES256-GCM-SHA384
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
@@ -626,7 +628,7 @@ func TestClusterParametersValidation(t *testing.T) {
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
-		UpstreamTLS: TLSParameters{
+		UpstreamTLS: ProtocolParameters{
 			MaximumProtocolVersion: "invalid",
 		},
 	}
