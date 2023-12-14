@@ -1523,7 +1523,7 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := determineUpstreamTLS(tc.envoyTLS)
+			got := (*UpstreamTLS)(tc.envoyTLS)
 			assert.Equal(t, tc.want, got)
 		})
 	}

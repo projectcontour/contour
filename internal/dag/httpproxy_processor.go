@@ -1031,7 +1031,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SlowStartConfig:               slowStart,
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
-				UpstreamTLS:                   determineUpstreamTLS(p.UpstreamTLS),
+				UpstreamTLS:                   (*UpstreamTLS)(p.UpstreamTLS),
 			}
 			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -1593,19 +1593,6 @@ func getProtocol(service contour_api_v1.Service, s *Service) (string, error) {
 	}
 
 	return protocol, nil
-}
-
-func determineUpstreamTLS(eTLS *contour_api_v1alpha1.EnvoyTLS) *UpstreamTLS {
-	if eTLS != nil {
-		return &UpstreamTLS{
-			MinimumProtocolVersion: eTLS.MinimumProtocolVersion,
-			MaximumProtocolVersion: eTLS.MaximumProtocolVersion,
-			CipherSuites:           eTLS.CipherSuites,
-		}
-	}
-
-	return nil
-
 }
 
 // determineSNI decides what the SNI should be on the request. It is configured via RequestHeadersPolicy.Host key.
