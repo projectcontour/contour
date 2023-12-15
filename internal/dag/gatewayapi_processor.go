@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
@@ -75,10 +74,6 @@ type GatewayAPIProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
-
-	// UpstreamTLS defines the TLS settings like min/max version
-	// and cipher suites for upstream connections.
-	UpstreamTLS *contour_api_v1alpha1.EnvoyTLS
 }
 
 // matchConditions holds match rules.
@@ -1015,7 +1010,6 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 				TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
-				UpstreamTLS:                   (*UpstreamTLS)(p.UpstreamTLS),
 			})
 		}
 
