@@ -31,6 +31,9 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
@@ -90,6 +93,53 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
+}
+
+func TestUpstreamTLSWithIngress(t *testing.T) {
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		for _, processor := range b.Processors {
+			if ingressProcessor, ok := processor.(*dag.IngressProcessor); ok {
+				ingressProcessor.UpstreamTLS = &v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				}
+			}
+		}
+	})
+	defer done()
+
+	s1 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
+	rh.OnAdd(s1)
+
+	i1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+		},
+	}
+	rh.OnAdd(i1)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(
+				cluster("default/kuard/443/4929fca9d4", "default/kuard/securebackend", "default_kuard_443"),
+				nil,
+				"",
+				"",
+				nil,
+				&dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				},
+			),
+		),
+		TypeUrl: clusterType,
+	})
 }
 
 func TestUpstreamTLSWithExtensionService(t *testing.T) {
