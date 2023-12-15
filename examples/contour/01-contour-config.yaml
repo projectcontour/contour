@@ -113,14 +113,10 @@ data:
     #   connect-timeout: 2s
     #
     # Envoy cluster settings.
-    cluster:
+    # cluster:
     #   configure the cluster dns lookup family
     #   valid options are: auto (default), v4, v6
     #   dns-lookup-family: auto
-      circuit-breakers:
-        max-connections: 42
-        max-pending-requests: 43
-        max-requests: 44
     #
     # Envoy network settings.
     # network:
