@@ -1321,6 +1321,20 @@ func TestServiceCircuitBreakerPolicy(t *testing.T) {
 				MaxRetries:         13,
 			},
 		},
+		"service is not set but global is partial": {
+			in: &Service{},
+			globalDefault: &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+			},
+			want: &Service{
+				MaxConnections:     42,
+				MaxPendingRequests: 73,
+				MaxRequests:        89,
+				MaxRetries:         0,
+			},
+		},
 	}
 
 	for name, tc := range tests {

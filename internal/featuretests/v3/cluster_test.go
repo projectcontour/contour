@@ -25,12 +25,16 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // projectcontour/contour#186
@@ -400,6 +404,10 @@ func circuitBreakerGlobalOpt(t *testing.T, g *contour_api_v1alpha1.GlobalCircuit
 			&dag.HTTPProxyProcessor{
 				GlobalCircuitBreakerDefaults: g,
 			},
+			&dag.GatewayAPIProcessor{
+				FieldLogger:                  log.WithField("context", "GatewayAPIProcessor"),
+				GlobalCircuitBreakerDefaults: g,
+			},
 		}
 	}
 }
@@ -562,6 +570,180 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 				},
 			},
 		})
+
+	rh.OnAdd(s1)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections:     wrapperspb.UInt32(9000),
+						MaxPendingRequests: wrapperspb.UInt32(4096),
+						MaxRequests:        wrapperspb.UInt32(404),
+						MaxRetries:         wrapperspb.UInt32(7),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	// update s1 with slightly weird values
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-pending-requests", "9999").
+		Annotate("projectcontour.io/max-requests", "1e6").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	rh.OnUpdate(s1, s2)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxPendingRequests: wrapperspb.UInt32(9999),
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	s3 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "0").
+		Annotate("projectcontour.io/max-pending-requests", "0").
+		Annotate("projectcontour.io/max-requests", "0").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	rh.OnUpdate(s2, s3)
+
+	// check that it's been translated correctly.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/80/da39a3ee5e",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: "default/kuard",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections:     wrapperspb.UInt32(13),
+						MaxPendingRequests: wrapperspb.UInt32(14),
+						MaxRequests:        wrapperspb.UInt32(15),
+						MaxRetries:         wrapperspb.UInt32(17),
+					}},
+				},
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+}
+
+func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
+	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+		MaxConnections:     13,
+		MaxPendingRequests: 14,
+		MaxRequests:        15,
+		MaxRetries:         17,
+	}
+	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
+	defer done()
+
+	s1 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "9000").
+		Annotate("projectcontour.io/max-pending-requests", "4096").
+		Annotate("projectcontour.io/max-requests", "404").
+		Annotate("projectcontour.io/max-retries", "7").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+
+	gc := &gatewayapi_v1beta1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "contour",
+		},
+		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+			ControllerName: "projectcontour.io/contour",
+		},
+		Status: gatewayapi_v1beta1.GatewayClassStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
+
+	gt := &gatewayapi_v1beta1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1beta1.Listener{
+				{
+					Name:     "http",
+					Port:     80,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
+					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						},
+					},
+				},
+			},
+		},
+	}
+	rh.OnAdd(gc)
+	rh.OnAdd(gt)
+
+	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+				{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 80, 1),
+				},
+			},
+		},
+	})
 
 	rh.OnAdd(s1)
 

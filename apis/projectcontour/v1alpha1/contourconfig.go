@@ -76,11 +76,6 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
-	// GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
-	// If defined, this will be used as the default for all services.
-	// +optional
-	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreaker,omitempty"`
-
 	// Metrics defines the endpoint Contour uses to serve metrics.
 	//
 	// Contour's default is { address: "0.0.0.0", port: 8000 }.
@@ -115,16 +110,16 @@ const (
 type GlobalCircuitBreakerDefaults struct {
 	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
-	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"maxConnections,omitempty"`
+	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"max-connections,omitempty"`
 	// The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
-	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"maxPendingRequests,omitempty"`
+	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"max-pending-requests,omitempty"`
 	// The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024
 	// +optional
-	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"maxRequests,omitempty"`
+	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"max-requests,omitempty"`
 	// The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.
 	// +optional
-	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"max-retries,omitempty"`
 }
 
 // XDSServerConfig holds the config for the Contour xDS server.
@@ -708,6 +703,12 @@ type ClusterParameters struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+	// If defined, this will be used as the default for all services.
+	//
+	// +optional
+	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreakers,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

@@ -149,10 +149,13 @@ data:
     #   connect-timeout: 2s
     #
     # Envoy cluster settings.
-    # cluster:
-    #   configure the cluster dns lookup family
-    #   valid options are: auto (default), v4, v6
-    #   dns-lookup-family: auto
+    cluster:
+      configure the cluster dns lookup family
+      valid options are: auto (default), v4, v6
+      # dns-lookup-family: auto
+      max-connections: 42
+      max-pending-requests: 43
+      max-requests: 44
     #
     # Envoy network settings.
     # network:
@@ -261,33 +264,6 @@ spec:
               Contour controller. It contains most of all the options that can be
               customized, the other remaining options being command line flags.
             properties:
-              circuitBreaker:
-                description: GlobalCircuitBreakerDefaults specifies default circuit
-                  breaker budget across all services. If defined, this will be used
-                  as the default for all services.
-                properties:
-                  maxConnections:
-                    description: The maximum number of connections that a single Envoy
-                      instance allows to the Kubernetes Service; defaults to 1024.
-                    format: int32
-                    type: integer
-                  maxPendingRequests:
-                    description: The maximum number of pending requests that a single
-                      Envoy instance allows to the Kubernetes Service; defaults to
-                      1024.
-                    format: int32
-                    type: integer
-                  maxRequests:
-                    description: The maximum parallel requests a single Envoy instance
-                      allows to the Kubernetes Service; defaults to 1024
-                    format: int32
-                    type: integer
-                  maxRetries:
-                    description: The maximum number of parallel retries a single Envoy
-                      instance allows to the Kubernetes Service; defaults to 3.
-                    format: int32
-                    type: integer
-                type: object
               debug:
                 description: Debug contains parameters to enable debug logging and
                   debug interfaces inside Contour.
@@ -327,6 +303,36 @@ spec:
                     description: Cluster holds various configurable Envoy cluster
                       values that can be set in the config file.
                     properties:
+                      circuitBreakers:
+                        description: GlobalCircuitBreakerDefaults specifies default
+                          circuit breaker budget across all services. If defined,
+                          this will be used as the default for all services.
+                        properties:
+                          maxConnections:
+                            description: The maximum number of connections that a
+                              single Envoy instance allows to the Kubernetes Service;
+                              defaults to 1024.
+                            format: int32
+                            type: integer
+                          maxPendingRequests:
+                            description: The maximum number of pending requests that
+                              a single Envoy instance allows to the Kubernetes Service;
+                              defaults to 1024.
+                            format: int32
+                            type: integer
+                          maxRequests:
+                            description: The maximum parallel requests a single Envoy
+                              instance allows to the Kubernetes Service; defaults
+                              to 1024
+                            format: int32
+                            type: integer
+                          maxRetries:
+                            description: The maximum number of parallel retries a
+                              single Envoy instance allows to the Kubernetes Service;
+                              defaults to 3.
+                            format: int32
+                            type: integer
+                        type: object
                       dnsLookupFamily:
                         description: "DNSLookupFamily defines how external names are
                           looked up When configured as V4, the DNS resolver will only
@@ -3754,35 +3760,6 @@ spec:
                   used when provisioning a Contour instance that will influence aspects
                   of the Contour instance's runtime behavior.
                 properties:
-                  circuitBreaker:
-                    description: GlobalCircuitBreakerDefaults specifies default circuit
-                      breaker budget across all services. If defined, this will be
-                      used as the default for all services.
-                    properties:
-                      maxConnections:
-                        description: The maximum number of connections that a single
-                          Envoy instance allows to the Kubernetes Service; defaults
-                          to 1024.
-                        format: int32
-                        type: integer
-                      maxPendingRequests:
-                        description: The maximum number of pending requests that a
-                          single Envoy instance allows to the Kubernetes Service;
-                          defaults to 1024.
-                        format: int32
-                        type: integer
-                      maxRequests:
-                        description: The maximum parallel requests a single Envoy
-                          instance allows to the Kubernetes Service; defaults to 1024
-                        format: int32
-                        type: integer
-                      maxRetries:
-                        description: The maximum number of parallel retries a single
-                          Envoy instance allows to the Kubernetes Service; defaults
-                          to 3.
-                        format: int32
-                        type: integer
-                    type: object
                   debug:
                     description: Debug contains parameters to enable debug logging
                       and debug interfaces inside Contour.
@@ -3822,6 +3799,36 @@ spec:
                         description: Cluster holds various configurable Envoy cluster
                           values that can be set in the config file.
                         properties:
+                          circuitBreakers:
+                            description: GlobalCircuitBreakerDefaults specifies default
+                              circuit breaker budget across all services. If defined,
+                              this will be used as the default for all services.
+                            properties:
+                              maxConnections:
+                                description: The maximum number of connections that
+                                  a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 1024.
+                                format: int32
+                                type: integer
+                              maxPendingRequests:
+                                description: The maximum number of pending requests
+                                  that a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 1024.
+                                format: int32
+                                type: integer
+                              maxRequests:
+                                description: The maximum parallel requests a single
+                                  Envoy instance allows to the Kubernetes Service;
+                                  defaults to 1024
+                                format: int32
+                                type: integer
+                              maxRetries:
+                                description: The maximum number of parallel retries
+                                  a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 3.
+                                format: int32
+                                type: integer
+                            type: object
                           dnsLookupFamily:
                             description: "DNSLookupFamily defines how external names
                               are looked up When configured as V4, the DNS resolver

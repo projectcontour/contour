@@ -429,6 +429,11 @@ type ClusterParameters struct {
 	//
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
+	//
+	// +optional
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
 }
 
 func (p *ClusterParameters) Validate() error {
@@ -668,9 +673,6 @@ type Parameters struct {
 
 	// GlobalExternalAuthorization optionally holds properties of the global external authorization configuration.
 	GlobalExternalAuthorization GlobalExternalAuthorization `yaml:"globalExtAuth,omitempty"`
-
-	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
-	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuitBreaker,omitempty"`
 
 	// MetricsParameters holds configurable parameters for Contour and Envoy metrics.
 	Metrics MetricsParameters `yaml:"metrics,omitempty"`

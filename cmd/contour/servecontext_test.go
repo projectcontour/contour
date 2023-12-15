@@ -473,7 +473,8 @@ func TestConvertServeContext(t *testing.T) {
 					ConnectTimeout:        ref.To("2s"),
 				},
 				Cluster: &contour_api_v1alpha1.ClusterParameters{
-					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					DNSLookupFamily:              contour_api_v1alpha1.AutoClusterDNSFamily,
+					GlobalCircuitBreakerDefaults: nil,
 				},
 				Network: &contour_api_v1alpha1.NetworkParameters{
 					EnvoyAdminPort:    ref.To(9001),
@@ -485,10 +486,9 @@ func TestConvertServeContext(t *testing.T) {
 				DisablePermitInsecure: ref.To(false),
 				FallbackCertificate:   nil,
 			},
-			EnableExternalNameService:    ref.To(false),
-			RateLimitService:             nil,
-			GlobalExternalAuthorization:  nil,
-			GlobalCircuitBreakerDefaults: nil,
+			EnableExternalNameService:   ref.To(false),
+			RateLimitService:            nil,
+			GlobalExternalAuthorization: nil,
 			Policy: &contour_api_v1alpha1.PolicyConfig{
 				RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
 				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
@@ -775,7 +775,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"global circuit breaker defaults": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+				ctx.Config.Cluster.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,
@@ -784,7 +784,7 @@ func TestConvertServeContext(t *testing.T) {
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+				cfg.Envoy.Cluster.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,
