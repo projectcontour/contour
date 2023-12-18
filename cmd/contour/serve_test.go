@@ -123,6 +123,31 @@ func TestGetDAGBuilder(t *testing.T) {
 		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
+	t.Run("GlobalCircuitBreakerDefaults specified for all processors", func(t *testing.T) {
+		g := contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+			MaxConnections: 100,
+		}
+
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{
+			gatewayControllerName:        "projectcontour.io/gateway-controller",
+			rootNamespaces:               []string{},
+			dnsLookupFamily:              contour_api_v1alpha1.AutoClusterDNSFamily,
+			globalCircuitBreakerDefaults: &g,
+		})
+
+		iProcessor := mustGetIngressProcessor(t, got)
+		assert.EqualValues(t, iProcessor.GlobalCircuitBreakerDefaults, &g)
+
+		hProcessor := mustGetHTTPProxyProcessor(t, got)
+		assert.EqualValues(t, hProcessor.GlobalCircuitBreakerDefaults, &g)
+
+		gProcessor := mustGetGatewayAPIProcessor(t, got)
+		assert.EqualValues(t, gProcessor.GlobalCircuitBreakerDefaults, &g)
+	})
+
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
 		policy := &contour_api_v1alpha1.PolicyConfig{
 			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
@@ -190,6 +215,19 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
+}
+
+func mustGetGatewayAPIProcessor(t *testing.T, builder *dag.Builder) *dag.GatewayAPIProcessor {
+	t.Helper()
+	for i := range builder.Processors {
+		found, ok := builder.Processors[i].(*dag.GatewayAPIProcessor)
+		if ok {
+			return found
+		}
+	}
+
+	require.FailNow(t, "GatewayAPIProcessor not found in list of DAG builder's processors")
+	return nil
 }
 
 func mustGetHTTPProxyProcessor(t *testing.T, builder *dag.Builder) *dag.HTTPProxyProcessor {

@@ -157,7 +157,7 @@ The cluster configuration block can be used to configure various parameters for 
 |-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | dns-lookup-family                 | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
 | max-requests-per-connection       | int    | none    | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                         |
-| circuit-breakers       | [CircuitBreakers](###circuit-breakers)    | none    | This field specifies the default value for [circuit-breaker-annotations](https://projectcontour.io/docs/main/config/annotations/) for services that don't specify them.                                                                    |
+| circuit-breakers       | [CircuitBreakers](#circuit-breakers)    | none    | This field specifies the default value for [circuit-breaker-annotations](https://projectcontour.io/docs/main/config/annotations/) for services that don't specify them.                                                                    |
 | per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the cluster’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                               |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
