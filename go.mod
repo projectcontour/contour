@@ -15,7 +15,7 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v48 v48.2.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/onsi/ginkgo/v2 v2.13.2
