@@ -241,7 +241,8 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  # TODO: re-enable once Ingress v1 support is complete
+  # TODO: re-enable once Ingress v1 support is complete, also
+  # need to re-enable sonobuoy download in hack/actions/install-kubernetes-toolchain.sh
   # ingress-conformance:
   #   runs-on: ubuntu-latest
   #   steps:

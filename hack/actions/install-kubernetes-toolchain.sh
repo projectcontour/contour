@@ -51,9 +51,10 @@ download \
 
 chmod +x "${DESTDIR}/kubectl"
 
-download \
-    "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERS}/sonobuoy_${SONOBUOY_VERS}_linux_amd64.tar.gz" \
-    "${DESTDIR}/sonobuoy.tgz"
+# TODO re-enable if/when Ingress conformance is enabled
+# download \
+#     "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERS}/sonobuoy_${SONOBUOY_VERS}_linux_amd64.tar.gz" \
+#     "${DESTDIR}/sonobuoy.tgz"
 
-tar -C "${DESTDIR}" -xf "${DESTDIR}/sonobuoy.tgz" sonobuoy
-rm "${DESTDIR}/sonobuoy.tgz"
+# tar -C "${DESTDIR}" -xf "${DESTDIR}/sonobuoy.tgz" sonobuoy
+# rm "${DESTDIR}/sonobuoy.tgz"
