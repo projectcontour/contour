@@ -6,7 +6,6 @@ set -o pipefail
 
 readonly KUBECTL_VERS="v1.28.0"
 readonly KIND_VERS="v0.20.0"
-readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -50,11 +49,3 @@ download \
     "${DESTDIR}/kubectl"
 
 chmod +x "${DESTDIR}/kubectl"
-
-# TODO re-enable if/when Ingress conformance is enabled
-# download \
-#     "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERS}/sonobuoy_${SONOBUOY_VERS}_linux_amd64.tar.gz" \
-#     "${DESTDIR}/sonobuoy.tgz"
-
-# tar -C "${DESTDIR}" -xf "${DESTDIR}/sonobuoy.tgz" sonobuoy
-# rm "${DESTDIR}/sonobuoy.tgz"
