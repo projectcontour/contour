@@ -42,7 +42,7 @@ type ExtensionServiceProcessor struct {
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
-	UpstreamTLS *contour_api_v1alpha1.EnvoyTLS
+	UpstreamTLS *UpstreamTLS
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -118,7 +118,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		ClusterTimeoutPolicy: ctp,
 		SNI:                  "",
 		ClientCertificate:    clientCertSecret,
-		UpstreamTLS:          (*UpstreamTLS)(p.UpstreamTLS),
+		UpstreamTLS:          p.UpstreamTLS,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

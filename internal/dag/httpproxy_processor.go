@@ -115,7 +115,7 @@ type HTTPProxyProcessor struct {
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
-	UpstreamTLS *contour_api_v1alpha1.EnvoyTLS
+	UpstreamTLS *UpstreamTLS
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -493,7 +493,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 							Port:               port,
 							DNSLookupFamily:    dnsLookupFamily,
 							UpstreamValidation: uv,
-							UpstreamTLS:        (*UpstreamTLS)(p.UpstreamTLS),
+							UpstreamTLS:        p.UpstreamTLS,
 						},
 						CacheDuration: cacheDuration,
 					},
@@ -1031,7 +1031,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SlowStartConfig:               slowStart,
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
-				UpstreamTLS:                   (*UpstreamTLS)(p.UpstreamTLS),
+				UpstreamTLS:                   p.UpstreamTLS,
 			}
 			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",

@@ -40,7 +40,7 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t), func(b *dag.Builder) {
 		for _, processor := range b.Processors {
 			if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
-				httpProxyProcessor.UpstreamTLS = &v1alpha1.EnvoyTLS{
+				httpProxyProcessor.UpstreamTLS = &dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
 				}
@@ -99,7 +99,7 @@ func TestUpstreamTLSWithIngress(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		for _, processor := range b.Processors {
 			if ingressProcessor, ok := processor.(*dag.IngressProcessor); ok {
-				ingressProcessor.UpstreamTLS = &v1alpha1.EnvoyTLS{
+				ingressProcessor.UpstreamTLS = &dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
 				}
@@ -147,7 +147,7 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		for _, processor := range b.Processors {
 			if extensionServiceProcessor, ok := processor.(*dag.ExtensionServiceProcessor); ok {
-				extensionServiceProcessor.UpstreamTLS = &v1alpha1.EnvoyTLS{
+				extensionServiceProcessor.UpstreamTLS = &dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
 				}
