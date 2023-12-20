@@ -241,18 +241,6 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  # TODO: re-enable once Ingress v1 support is complete
-  # ingress-conformance:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: add deps to path
-  #       run: |
-  #         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-  #         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-  #     - name: ingress conformance tests
-  #       run: |
-  #         make check-ingress-conformance
   test-linux:
     needs:
       - lint
