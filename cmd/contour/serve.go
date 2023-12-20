@@ -560,6 +560,11 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		upstreamTLS: &dag.UpstreamTLS{
+			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
+			MaximumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MaximumProtocolVersion, "1.3"),
+			CipherSuites:           contourConfiguration.Envoy.Cluster.UpstreamTLS.SanitizedCipherSuites(),
+		},
 	})
 
 	// Build the core Kubernetes event handler.
@@ -1117,6 +1122,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
+	upstreamTLS                        *dag.UpstreamTLS
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1187,6 +1193,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			UpstreamTLS:                   dbc.upstreamTLS,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1194,6 +1201,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: dbc.clientCert,
 			ConnectTimeout:    dbc.connectTimeout,
+			UpstreamTLS:       dbc.upstreamTLS,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService:     dbc.enableExternalNameService,
@@ -1209,6 +1217,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			UpstreamTLS:                   dbc.upstreamTLS,
 		},
 	}
 

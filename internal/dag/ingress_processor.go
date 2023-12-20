@@ -65,6 +65,10 @@ type IngressProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// UpstreamTLS defines the TLS settings like min/max version
+	// and cipher suites for upstream connections.
+	UpstreamTLS *UpstreamTLS
 }
 
 // Run translates Ingresses into DAG objects and
@@ -294,6 +298,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+			UpstreamTLS:                   p.UpstreamTLS,
 		}},
 	}
 
