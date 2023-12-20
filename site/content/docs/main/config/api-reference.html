@@ -5689,6 +5689,21 @@ GlobalCircuitBreakerDefaults
 If defined, this will be used as the default for all services.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>upstreamTLS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.EnvoyTLS">
+EnvoyTLS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpstreamTLS contains the TLS policy parameters for upstream connections</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
@@ -7189,6 +7204,7 @@ More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>, 
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
 </p>
 <p>

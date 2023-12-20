@@ -709,6 +709,11 @@ type ClusterParameters struct {
 	//
 	// +optional
 	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreakers,omitempty"`
+
+	// UpstreamTLS contains the TLS policy parameters for upstream connections
+	//
+	// +optional
+	UpstreamTLS *EnvoyTLS `json:"upstreamTLS,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.

@@ -39,6 +39,10 @@ type ExtensionServiceProcessor struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// UpstreamTLS defines the TLS settings like min/max version
+	// and cipher suites for upstream connections.
+	UpstreamTLS *UpstreamTLS
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -114,6 +118,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		ClusterTimeoutPolicy: ctp,
 		SNI:                  "",
 		ClientCertificate:    clientCertSecret,
+		UpstreamTLS:          p.UpstreamTLS,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

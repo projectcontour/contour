@@ -170,7 +170,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil, "h2"),
+					UpstreamTLSContext(nil, "", nil, nil, "h2"),
 				),
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
@@ -274,7 +274,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil),
+					UpstreamTLSContext(nil, "", nil, nil),
 				),
 			},
 		},
@@ -290,7 +290,7 @@ func TestCluster(t *testing.T) {
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "projectcontour.local", nil),
+					UpstreamTLSContext(nil, "projectcontour.local", nil, nil),
 				),
 			},
 		},
@@ -318,7 +318,45 @@ func TestCluster(t *testing.T) {
 							SubjectName:   "foo.bar.io",
 						},
 						"",
+						nil,
 						nil),
+				),
+			},
+		},
+		"UpstreamTLS protocol version set": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1, "tls"),
+				Protocol: "tls",
+				UpstreamValidation: &dag.PeerValidationContext{
+					CACertificate: secret,
+					SubjectName:   "foo.bar.io",
+				},
+				UpstreamTLS: &dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.3",
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/62d1f9ad02",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(
+						&dag.PeerValidationContext{
+							CACertificate: secret,
+							SubjectName:   "foo.bar.io",
+						},
+						"",
+						nil,
+						&dag.UpstreamTLS{
+							MinimumProtocolVersion: "1.3",
+							MaximumProtocolVersion: "1.3",
+						},
+					),
 				),
 			},
 		},
@@ -526,7 +564,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", clientSecret),
+					UpstreamTLSContext(nil, "", clientSecret, nil),
 				),
 			},
 		},
@@ -854,7 +892,7 @@ func TestDNSNameCluster(t *testing.T) {
 						},
 					},
 				},
-				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil)),
+				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil, nil)),
 			},
 		},
 		"HTTPS cluster with upstream validation": {
@@ -903,7 +941,7 @@ func TestDNSNameCluster(t *testing.T) {
 						},
 					},
 					SubjectName: "foo.projectcontour.io",
-				}, "foo.projectcontour.io", nil)),
+				}, "foo.projectcontour.io", nil, nil)),
 			},
 		},
 	}

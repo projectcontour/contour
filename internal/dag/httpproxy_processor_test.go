@@ -1499,3 +1499,32 @@ func TestRateLimitPerRoute(t *testing.T) {
 		})
 	}
 }
+
+func TestDetermineUpstreamTLS(t *testing.T) {
+	tests := map[string]struct {
+		envoyTLS *contour_api_v1alpha1.EnvoyTLS
+		want     *UpstreamTLS
+	}{
+		"nothing set": {
+			envoyTLS: nil,
+			want:     nil,
+		},
+		"only set tls min max": {
+			envoyTLS: &contour_api_v1alpha1.EnvoyTLS{
+				MinimumProtocolVersion: "1.1",
+				MaximumProtocolVersion: "1.2",
+			},
+			want: &UpstreamTLS{
+				MinimumProtocolVersion: "1.1",
+				MaximumProtocolVersion: "1.2",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := (*UpstreamTLS)(tc.envoyTLS)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

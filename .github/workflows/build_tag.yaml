@@ -73,7 +73,7 @@ jobs:
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(git describe --tags)"
           make setup-kind-cluster run-gateway-conformance cleanup-kind
       - name: Upload gateway conformance report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gateway-conformance-report
           path: gateway-conformance-report/projectcontour-contour-*.yaml

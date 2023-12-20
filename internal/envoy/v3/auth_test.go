@@ -41,9 +41,10 @@ func TestUpstreamTLSContext(t *testing.T) {
 		validation    *dag.PeerValidationContext
 		alpnProtocols []string
 		externalName  string
+		upstreamTLS   *dag.UpstreamTLS
 		want          *envoy_v3_tls.UpstreamTlsContext
 	}{
-		"no alpn, no validation": {
+		"no alpn, no validation, no upstreamTLS": {
 			want: &envoy_v3_tls.UpstreamTlsContext{
 				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
 			},
@@ -108,11 +109,25 @@ func TestUpstreamTLSContext(t *testing.T) {
 				Sni:              "projectcontour.local",
 			},
 		},
+		"use TLS 1.3": {
+			upstreamTLS: &dag.UpstreamTLS{
+				MinimumProtocolVersion: "1.3",
+				MaximumProtocolVersion: "1.3",
+			},
+			want: &envoy_v3_tls.UpstreamTlsContext{
+				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+					TlsParams: &envoy_v3_tls.TlsParameters{
+						TlsMinimumProtocolVersion: ParseTLSVersion("1.3"),
+						TlsMaximumProtocolVersion: ParseTLSVersion("1.3"),
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.alpnProtocols...)
+			got := UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.upstreamTLS, tc.alpnProtocols...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
