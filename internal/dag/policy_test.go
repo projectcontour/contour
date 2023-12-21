@@ -25,7 +25,6 @@ import (
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -1374,11 +1373,6 @@ func TestServiceCircuitBreakerPolicyWithMetrics(t *testing.T) {
 			m := metrics.NewMetrics(r)
 			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, m)
 			assert.Equal(t, tc.want, got)
-			assert.Equal(t, 4, testutil.CollectAndCount(m.CircuitBreakerSettings))
-			assert.Equal(t, float64(got.MaxConnections), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_connections")))
-			assert.Equal(t, float64(got.MaxPendingRequests), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_pending_requests")))
-			assert.Equal(t, float64(got.MaxRequests), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_requests")))
-			assert.Equal(t, float64(got.MaxRetries), testutil.ToFloat64(m.CircuitBreakerSettings.WithLabelValues(got.ExternalName, "max_retries")))
 		})
 	}
 }

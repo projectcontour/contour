@@ -48,8 +48,7 @@ type Metrics struct {
 	statusUpdateDurationSeconds *prometheus.SummaryVec
 
 	// Keep a local cache of metrics for comparison on updates
-	proxyMetricCache       *RouteMetric
-	CircuitBreakerSettings *prometheus.GaugeVec
+	proxyMetricCache *RouteMetric
 }
 
 // RouteMetric stores various metrics for HTTPProxy objects
@@ -242,10 +241,6 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"kind", "error"},
 		),
-		CircuitBreakerSettings: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: ContourCircuitBreakerSettings,
-			Help: "Circuit breaker settings set by Contour for a specific service.",
-		}, []string{"service", "limit_type"}),
 	}
 	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
 	m.register(registry)
@@ -273,7 +268,6 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.statusUpdateConflict,
 		m.statusUpdateNoop,
 		m.statusUpdateDurationSeconds,
-		m.CircuitBreakerSettings,
 	)
 }
 
@@ -307,11 +301,6 @@ func (m *Metrics) Zero() {
 
 	m.CacheHandlerOnUpdateSummary.Observe(0)
 	m.DAGRebuildSeconds.Observe(0)
-
-	m.CircuitBreakerSettings.With(prometheus.Labels{
-		"service":    "kind",
-		"limit_type": "kind",
-	}).Set(0)
 }
 
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.
