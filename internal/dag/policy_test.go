@@ -22,9 +22,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -1338,40 +1336,7 @@ func TestServiceCircuitBreakerPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, nil)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestServiceCircuitBreakerPolicyWithMetrics(t *testing.T) {
-	tests := map[string]struct {
-		in            *Service
-		globalDefault *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
-		want          *Service
-	}{
-		"service is not nil and globalDefault is nil": {
-			in: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         13,
-			},
-			globalDefault: nil,
-			want: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         13,
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			r := prometheus.NewRegistry()
-			m := metrics.NewMetrics(r)
-			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault, m)
+			got := serviceCircuitBreakerPolicy(tc.in, tc.globalDefault)
 			assert.Equal(t, tc.want, got)
 		})
 	}

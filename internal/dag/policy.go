@@ -29,7 +29,6 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
@@ -812,7 +811,7 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 
 }
 
-func serviceCircuitBreakerPolicy(s *Service, cb *contour_api_v1alpha1.GlobalCircuitBreakerDefaults, m *metrics.Metrics) *Service {
+func serviceCircuitBreakerPolicy(s *Service, cb *contour_api_v1alpha1.GlobalCircuitBreakerDefaults) *Service {
 	if s == nil {
 		return nil
 	}

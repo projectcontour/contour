@@ -221,7 +221,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 				Error("unresolved service reference")
 			continue
 		}
-		s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults, p.source.Metrics)
+		s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults)
 
 		r, err := p.route(ing, rule.Host, path, pathType, s, clientCertSecret, be.Service.Name, be.Service.Port.Number, p.FieldLogger)
 		if err != nil {

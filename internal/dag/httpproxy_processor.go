@@ -941,7 +941,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					"Spec.Routes unresolved service reference: %s", err)
 				continue
 			}
-			s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults, p.source.Metrics)
+			s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults)
 
 			// Determine the protocol to use to speak to this Cluster.
 			protocol, err := getProtocol(service, s)

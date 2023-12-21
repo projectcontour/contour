@@ -1814,7 +1814,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
-	service = serviceCircuitBreakerPolicy(service, p.GlobalCircuitBreakerDefaults, p.source.Metrics)
+	service = serviceCircuitBreakerPolicy(service, p.GlobalCircuitBreakerDefaults)
 	if err = validateAppProtocol(&service.Weighted.ServicePort); err != nil {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
 	}
