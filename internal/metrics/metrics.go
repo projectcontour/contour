@@ -244,7 +244,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 		),
 		CircuitBreakerSettings: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: ContourCircuitBreakerSettings,
-			Help: "Number of times a worker process has been restarted",
+			Help: "Circuit breaker settings set by Contour for a specific service.",
 		}, []string{"service", "limit_type"}),
 	}
 	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
@@ -307,6 +307,11 @@ func (m *Metrics) Zero() {
 
 	m.CacheHandlerOnUpdateSummary.Observe(0)
 	m.DAGRebuildSeconds.Observe(0)
+
+	m.CircuitBreakerSettings.With(prometheus.Labels{
+		"service":    "kind",
+		"limit_type": "kind",
+	}).Set(0)
 }
 
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.
