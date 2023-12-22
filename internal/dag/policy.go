@@ -837,50 +837,39 @@ func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *con
 	}
 
 	var err error
-	var interval, baseEjectionTime, maxEjectionTime, maxEjectionTimeJitter time.Duration
-
-	if outlierDetection.Interval != nil {
-		interval, err = time.ParseDuration(ref.Val(outlierDetection.Interval, "10s"))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing interval: %w", err)
-		}
-		out.Interval = interval
+	out.Interval, err = time.ParseDuration(ref.Val(outlierDetection.Interval, "10s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing interval: %w", err)
+	}
+	if out.Interval == 0 {
+		return nil, fmt.Errorf("interval must be greater than 0s")
 	}
 
-	if outlierDetection.BaseEjectionTime != nil {
-		baseEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.BaseEjectionTime, "30s"))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing baseEjectionTime: %w", err)
-		}
-		out.BaseEjectionTime = baseEjectionTime
+	out.BaseEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.BaseEjectionTime, "30s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing baseEjectionTime: %w", err)
+	}
+	if out.BaseEjectionTime == 0 {
+		return nil, fmt.Errorf("baseEjectionTime must be greater than 0s")
 	}
 
-	if outlierDetection.MaxEjectionTime != nil {
-		maxEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTime, "300s"))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing maxEjectionTime: %w", err)
-		}
-		out.MaxEjectionTime = maxEjectionTime
+	out.MaxEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTime, "300s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing maxEjectionTime: %w", err)
+	}
+	if out.MaxEjectionTime < out.BaseEjectionTime {
+		return nil, fmt.Errorf("maxEjectionTime cannot be smaller than baseEjectionTime")
 	}
 
-	if outlierDetection.ConsecutiveServerErrors != nil {
-		out.ConsecutiveServerErrors = ref.Val(outlierDetection.ConsecutiveServerErrors, 5)
-	}
+	out.ConsecutiveServerErrors = ref.Val(outlierDetection.ConsecutiveServerErrors, 5)
 
-	if outlierDetection.ConsecutiveLocalOriginFailure != nil {
-		out.ConsecutiveLocalOriginFailure = ref.Val(outlierDetection.ConsecutiveLocalOriginFailure, 5)
-	}
+	out.ConsecutiveLocalOriginFailure = ref.Val(outlierDetection.ConsecutiveLocalOriginFailure, 5)
 
-	if outlierDetection.MaxEjectionPercent != nil {
-		out.MaxEjectionPercent = ref.Val(outlierDetection.MaxEjectionPercent, 10)
-	}
+	out.MaxEjectionPercent = ref.Val(outlierDetection.MaxEjectionPercent, 10)
 
-	if outlierDetection.MaxEjectionTimeJitter != nil {
-		maxEjectionTimeJitter, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTimeJitter, "0s"))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing maxEjectionTimeJitter: %w", err)
-		}
-		out.MaxEjectionTimeJitter = maxEjectionTimeJitter
+	out.MaxEjectionTimeJitter, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTimeJitter, "0s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing maxEjectionTimeJitter: %w", err)
 	}
 
 	return out, nil

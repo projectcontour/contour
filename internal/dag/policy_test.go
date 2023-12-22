@@ -1358,15 +1358,16 @@ func TestOutlierDetectionPolicy(t *testing.T) {
 			want: nil,
 		},
 		"empty": {
-			in:   &contour_api_v1.OutlierDetection{},
-			want: &OutlierDetectionPolicy{},
-		},
-		"consecutive server errors": {
-			in: &contour_api_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(5)),
-			},
+			in: &contour_api_v1.OutlierDetection{},
 			want: &OutlierDetectionPolicy{
-				ConsecutiveServerErrors: 5,
+				ConsecutiveServerErrors:        5,
+				Interval:                       10 * time.Second,
+				BaseEjectionTime:               30 * time.Second,
+				MaxEjectionTime:                300 * time.Second,
+				SplitExternalLocalOriginErrors: false,
+				ConsecutiveLocalOriginFailure:  5,
+				MaxEjectionPercent:             10,
+				MaxEjectionTimeJitter:          0,
 			},
 		},
 		"interval no unit": {
@@ -1382,14 +1383,6 @@ func TestOutlierDetectionPolicy(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
-		},
-		"interval good": {
-			in: &contour_api_v1.OutlierDetection{
-				Interval: ref.To("10s"),
-			},
-			want: &OutlierDetectionPolicy{
-				Interval: 10 * time.Second,
-			},
 		},
 		"normal": {
 			in: &contour_api_v1.OutlierDetection{
