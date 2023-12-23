@@ -666,6 +666,9 @@ type Parameters struct {
 	// Name of the envoy service to inspect for Ingress status details.
 	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
 
+	// Whether to set StatPrefix on envoy routes or not
+	EnvoyEnableStatPrefix bool `yaml:"envoy-enable-stat-prefix,omitempty"`
+
 	// DefaultHTTPVersions defines the default set of HTTPS
 	// versions the proxy should accept. HTTP versions are
 	// strings of the form "HTTP/xx". Supported versions are
@@ -1048,6 +1051,7 @@ func Defaults() Parameters {
 			ApplyToIngress:        false,
 		},
 		EnvoyServiceName:      "envoy",
+		EnvoyEnableStatPrefix: false,
 		EnvoyServiceNamespace: contourNamespace,
 		DefaultHTTPVersions:   []HTTPVersionType{},
 		Cluster: ClusterParameters{

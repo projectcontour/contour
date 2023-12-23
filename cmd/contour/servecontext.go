@@ -520,6 +520,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			Port:    ctx.healthPort,
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
+			EnableStatPrefix: &ctx.Config.EnvoyEnableStatPrefix,
 			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:                 &ctx.useProxyProto,
 				DisableAllowChunkedLength:     &ctx.Config.DisableAllowChunkedLength,

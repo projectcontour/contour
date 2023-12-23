@@ -404,6 +404,7 @@ func TestConvertServeContext(t *testing.T) {
 					Name:      "envoy",
 					Namespace: "projectcontour",
 				},
+				EnableStatPrefix: ref.To(false),
 				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto:              ref.To(false),
 					DisableAllowChunkedLength:  ref.To(false),
