@@ -23,7 +23,7 @@ In both cases, they will behave as follows, by default:
 * If specified as `kubernetes.io/ingress.class: contour`, then Contour serves the Ingress.
 * If any other value, Contour ignores the Ingress definition.
 
-You can override the default class `contour` by providing the `--ingress-class-name` flag to Contour.
+You can override the default class `contour` by providing the `--ingress-class-name` flag to Contour. 
 This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
 If you do this, the behavior is as follows:
 * If the annotation is not set, Contour will ignore the Ingress.

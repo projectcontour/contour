@@ -87,8 +87,6 @@ const (
 	statusUpdateConflict        = "contour_status_update_conflict_total"
 	statusUpdateNoop            = "contour_status_update_noop_total"
 	statusUpdateDurationSeconds = "contour_status_update_duration_seconds"
-
-	ContourCircuitBreakerSettings = "contour_dag_circuit_breaker_settings"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
