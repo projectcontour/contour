@@ -32,7 +32,7 @@ If you do this, the behavior is as follows:
 
 This same logic applies for these annotations on HTTPProxy objects.
 
-### Other annotations
+### Other annotations 
 
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls][16].
  - `kubernetes.io/ingress.allow-http`: Instructs Contour to not create an Envoy HTTP route for the virtual host. The Ingress exists only for HTTPS requests. Specify `"false"` for Envoy to mark the endpoint as HTTPS only. All other values are ignored.
