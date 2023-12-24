@@ -27,7 +27,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	github.com/tsaarni/certyaml v0.9.2
-	github.com/vektra/mockery/v2 v2.38.0
+	github.com/vektra/mockery/v2 v2.39.1
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/oauth2 v0.15.0
 	gonum.org/v1/plot v0.14.0
@@ -55,7 +55,7 @@ require (
 	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/chigopher/pathlib v0.15.0 // indirect
+	github.com/chigopher/pathlib v0.19.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
