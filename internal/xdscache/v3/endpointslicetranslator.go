@@ -55,31 +55,27 @@ func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePor
 
 			// Range over each port. We want the resultant endpoints to be a
 			// a cartesian product MxN where M are the endpoints and N are the ports.
-			for _, p := range endpointSlice.Ports {
+			for _, endpointPort := range endpointSlice.Ports {
 				// Nil check for the port.
-				if p.Port == nil {
+				if endpointPort.Port == nil {
 					continue
 				}
 
-				if p.Protocol == nil {
+				if endpointPort.Protocol == nil {
 					continue
 				}
 
-				if *p.Protocol != v1.ProtocolTCP {
-					continue
-				}
-
-				if port.Protocol != *p.Protocol || healthPort.Protocol != *p.Protocol {
+				if *endpointPort.Protocol != v1.ProtocolTCP {
 					continue
 				}
 
 				// Set healthCheckPort only when port and healthPort are different.
-				if p.Name != nil && (healthPort.Name != "" && healthPort.Name == *p.Name && port.Name != healthPort.Name) {
-					healthCheckPort = *p.Port
+				if endpointPort.Name != nil && (healthPort.Name != "" && healthPort.Name == *endpointPort.Name && port.Name != healthPort.Name) {
+					healthCheckPort = *endpointPort.Port
 				}
 
 				// Match by port name.
-				if port.Name != "" && p.Name != nil && port.Name != *p.Name {
+				if port.Name != "" && endpointPort.Name != nil && port.Name != *endpointPort.Name {
 					continue
 				}
 
@@ -92,14 +88,14 @@ func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePor
 				// address but no more than 100. These are all assumed to be fungible
 				// and clients may choose to only use the first element.
 				// Refer to: https://issue.k8s.io/106267
-				addr := envoy_v3.SocketAddress(endpoint.Addresses[0], int(*p.Port))
+				addr := envoy_v3.SocketAddress(endpoint.Addresses[0], int(*endpointPort.Port))
 
 				// as per note on https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/
 				// Clients of the EndpointSlice API must iterate through all the existing EndpointSlices associated to
 				// a Service and build a complete list of unique network endpoints. It is important to mention that
 				// endpoints may be duplicated in different EndpointSlices.
 				// Hence, we need to ensure that the endpoints we add to []*LoadBalancingEndpoint aren't duplicated.
-				endpointKey := fmt.Sprintf("%s:%d", endpoint.Addresses[0], *p.Port)
+				endpointKey := fmt.Sprintf("%s:%d", endpoint.Addresses[0], *endpointPort.Port)
 				if _, exists := uniqueEndpoints[endpointKey]; !exists {
 					lb = append(lb, envoy_v3.LBEndpoint(addr))
 					uniqueEndpoints[endpointKey] = struct{}{}
