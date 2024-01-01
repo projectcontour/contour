@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"dario.cat/mergo"
+
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -130,6 +131,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				XffNumTrustedHops: ref.To(uint32(0)),
 				EnvoyAdminPort:    ref.To(9001),
 			},
+			EnableStatPrefix: ref.To(false),
 		},
 		Gateway: nil,
 		HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{

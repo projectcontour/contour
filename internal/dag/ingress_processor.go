@@ -14,18 +14,20 @@
 package dag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 // IngressProcessor translates Ingresses into DAG
@@ -69,6 +71,9 @@ type IngressProcessor struct {
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
 	UpstreamTLS *UpstreamTLS
+
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 }
 
 // Run translates Ingresses into DAG objects and
@@ -306,6 +311,10 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 		r.Kind = "Ingress"
 		r.Namespace = ingress.Namespace
 		r.Name = ingress.Name
+	}
+
+	if p.EnableStatPrefix {
+		r.StatPrefix = ref.To(fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name))
 	}
 
 	switch pathType {
