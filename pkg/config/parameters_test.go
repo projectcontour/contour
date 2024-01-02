@@ -488,6 +488,20 @@ listener:
 cluster:
   max-requests-per-connection: 1
 `)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, uint32(42), conf.Cluster.GlobalCircuitBreakerDefaults.MaxConnections)
+		assert.Equal(t, uint32(43), conf.Cluster.GlobalCircuitBreakerDefaults.MaxPendingRequests)
+		assert.Equal(t, uint32(44), conf.Cluster.GlobalCircuitBreakerDefaults.MaxRequests)
+		assert.Equal(t, uint32(0), conf.Cluster.GlobalCircuitBreakerDefaults.MaxRetries)
+	}, `
+cluster:
+  circuit-breakers:
+    max-connections: 42
+    max-pending-requests: 43
+    max-requests: 44
+`)
+
 }
 
 func TestMetricsParametersValidation(t *testing.T) {

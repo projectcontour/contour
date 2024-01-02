@@ -167,10 +167,14 @@ The cluster configuration block can be used to configure various parameters for 
 |-----------------------------------|--------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | dns-lookup-family                 | string | auto    | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4`, `v6`, `all` |
 | max-requests-per-connection       | int    | none    | This field specifies the maximum requests for upstream connections. If not specified, there is no limit                                                                         |
+| circuit-breakers       | [CircuitBreakers](#circuit-breakers)    | none    | This field specifies the default value for [circuit-breaker-annotations](https://projectcontour.io/docs/main/config/annotations/) for services that don't specify them.                                                                    |
 | per-connection-buffer-limit-bytes | int    | 1MiB*   | This field specifies the soft limit on size of the cluster’s new connection read and write buffer. If not specified, Envoy defaults of 1MiB apply                               |
 | upstream-tls |  UpstreamTLS   |    | [Upstream TLS configuration](#upstream-tls)                            |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
+
+
+
 
 ### Network Configuration
 
@@ -287,6 +291,16 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 | --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
 | tos             | int    | 0       | Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv6-only addresses, setting this option will cause an error. |
 | traffic-class   | int    | 0       | Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv4-only addresses, setting this option will cause an error. |
+
+
+### Circuit Breakers
+
+| Field Name      | Type   | Default | Description                                                                   |
+| --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
+| max-connections | int    | 0       | The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024. |
+| max-pending-requests  | int    | 0       | The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024. |
+| max-requests | int    | 0       | The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024 |
+| max-retries  | int    | 0       | The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3. This setting only makes sense if the cluster is configured to do retries.|
 
 ### Configuration Example
 

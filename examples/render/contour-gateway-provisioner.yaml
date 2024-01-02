@@ -89,6 +89,36 @@ spec:
                     description: Cluster holds various configurable Envoy cluster
                       values that can be set in the config file.
                     properties:
+                      circuitBreakers:
+                        description: GlobalCircuitBreakerDefaults specifies default
+                          circuit breaker budget across all services. If defined,
+                          this will be used as the default for all services.
+                        properties:
+                          maxConnections:
+                            description: The maximum number of connections that a
+                              single Envoy instance allows to the Kubernetes Service;
+                              defaults to 1024.
+                            format: int32
+                            type: integer
+                          maxPendingRequests:
+                            description: The maximum number of pending requests that
+                              a single Envoy instance allows to the Kubernetes Service;
+                              defaults to 1024.
+                            format: int32
+                            type: integer
+                          maxRequests:
+                            description: The maximum parallel requests a single Envoy
+                              instance allows to the Kubernetes Service; defaults
+                              to 1024
+                            format: int32
+                            type: integer
+                          maxRetries:
+                            description: The maximum number of parallel retries a
+                              single Envoy instance allows to the Kubernetes Service;
+                              defaults to 3.
+                            format: int32
+                            type: integer
+                        type: object
                       dnsLookupFamily:
                         description: "DNSLookupFamily defines how external names are
                           looked up When configured as V4, the DNS resolver will only
@@ -3695,6 +3725,36 @@ spec:
                         description: Cluster holds various configurable Envoy cluster
                           values that can be set in the config file.
                         properties:
+                          circuitBreakers:
+                            description: GlobalCircuitBreakerDefaults specifies default
+                              circuit breaker budget across all services. If defined,
+                              this will be used as the default for all services.
+                            properties:
+                              maxConnections:
+                                description: The maximum number of connections that
+                                  a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 1024.
+                                format: int32
+                                type: integer
+                              maxPendingRequests:
+                                description: The maximum number of pending requests
+                                  that a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 1024.
+                                format: int32
+                                type: integer
+                              maxRequests:
+                                description: The maximum parallel requests a single
+                                  Envoy instance allows to the Kubernetes Service;
+                                  defaults to 1024
+                                format: int32
+                                type: integer
+                              maxRetries:
+                                description: The maximum number of parallel retries
+                                  a single Envoy instance allows to the Kubernetes
+                                  Service; defaults to 3.
+                                format: int32
+                                type: integer
+                            type: object
                           dnsLookupFamily:
                             description: "DNSLookupFamily defines how external names
                               are looked up When configured as V4, the DNS resolver

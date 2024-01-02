@@ -572,6 +572,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				DNSLookupFamily:               dnsLookupFamily,
 				MaxRequestsPerConnection:      ctx.Config.Cluster.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: ctx.Config.Cluster.PerConnectionBufferLimitBytes,
+				GlobalCircuitBreakerDefaults:  ctx.Config.Cluster.GlobalCircuitBreakerDefaults,
 				UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.Cluster.UpstreamTLS.MinimumProtocolVersion,
 					MaximumProtocolVersion: ctx.Config.Cluster.UpstreamTLS.MaximumProtocolVersion,

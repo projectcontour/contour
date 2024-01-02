@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
@@ -74,6 +75,9 @@ type GatewayAPIProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
 }
 
 // matchConditions holds match rules.
@@ -1810,6 +1814,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
+	service = serviceCircuitBreakerPolicy(service, p.GlobalCircuitBreakerDefaults)
 	if err = validateAppProtocol(&service.Weighted.ServicePort); err != nil {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
 	}

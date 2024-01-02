@@ -560,6 +560,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
 			MaximumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MaximumProtocolVersion, "1.3"),
@@ -1122,6 +1123,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
+	globalCircuitBreakerDefaults       *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
 	upstreamTLS                        *dag.UpstreamTLS
 }
 
@@ -1192,6 +1194,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			SetSourceMetadataOnRoutes:     true,
 			UpstreamTLS:                   dbc.upstreamTLS,
 		},
@@ -1217,6 +1220,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			UpstreamTLS:                   dbc.upstreamTLS,
 		},
 	}
@@ -1229,6 +1233,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 		})
 	}
 

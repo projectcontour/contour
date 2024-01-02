@@ -113,6 +113,9 @@ type HTTPProxyProcessor struct {
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
 
+	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
 	UpstreamTLS *UpstreamTLS
@@ -938,6 +941,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					"Spec.Routes unresolved service reference: %s", err)
 				continue
 			}
+			s = serviceCircuitBreakerPolicy(s, p.GlobalCircuitBreakerDefaults)
 
 			// Determine the protocol to use to speak to this Cluster.
 			protocol, err := getProtocol(service, s)

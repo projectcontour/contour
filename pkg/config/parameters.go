@@ -444,6 +444,11 @@ type ClusterParameters struct {
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
 
+	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
+	//
+	// +optional
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
+
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`
 }
