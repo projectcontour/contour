@@ -53,22 +53,22 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []
 			continue
 		}
 
-		for _, p := range s.Ports {
-			if (healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol) && p.Protocol != v1.ProtocolTCP {
+		for _, endpointPort := range s.Ports {
+			if endpointPort.Protocol != v1.ProtocolTCP {
 				// NOTE: we only support "TCP", which is the default.
 				continue
 			}
 
 			// Set healthCheckPort only when port and healthPort are different.
-			if healthPort.Name != "" && healthPort.Name == p.Name && port.Name != healthPort.Name {
-				healthCheckPort = p.Port
+			if healthPort.Name != "" && healthPort.Name == endpointPort.Name && port.Name != healthPort.Name {
+				healthCheckPort = endpointPort.Port
 			}
 
 			// If the port isn't named, it must be the
 			// only Service port, so it's a match by
 			// definition. Otherwise, only take endpoint
 			// ports that match the service port name.
-			if port.Name != "" && port.Name != p.Name {
+			if port.Name != "" && port.Name != endpointPort.Name {
 				continue
 			}
 
@@ -77,7 +77,7 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoy_v3.SocketAddress(a.IP, int(p.Port))
+				addr := envoy_v3.SocketAddress(a.IP, int(endpointPort.Port))
 				lb = append(lb, envoy_v3.LBEndpoint(addr))
 			}
 		}
