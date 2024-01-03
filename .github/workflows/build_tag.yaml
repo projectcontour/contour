@@ -37,7 +37,7 @@ jobs:
         TAG_LATEST: "false"
       run: |
         ./hack/actions/build-and-push-release-images.sh
-    - uses: act10ns/slack@c97e3fd72786369b169158fff23a3bd2f418cb14 # v2
+    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -77,7 +77,7 @@ jobs:
         with:
           name: gateway-conformance-report
           path: gateway-conformance-report/projectcontour-contour-*.yaml
-      - uses: act10ns/slack@c97e3fd72786369b169158fff23a3bd2f418cb14 # v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
