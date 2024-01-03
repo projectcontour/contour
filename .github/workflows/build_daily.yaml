@@ -15,8 +15,8 @@ jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -26,7 +26,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -40,7 +40,7 @@ jobs:
           CONTOUR_E2E_XDS_SERVER_TYPE: envoy
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -49,8 +49,8 @@ jobs:
   e2e-envoy-deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -74,7 +74,7 @@ jobs:
           CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE: deployment
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -83,8 +83,8 @@ jobs:
   e2e-gateway-reconcile-controller:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -94,7 +94,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -109,7 +109,7 @@ jobs:
           CONTOUR_E2E_GATEWAY_RECONCILE_MODE: controller
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -118,8 +118,8 @@ jobs:
   e2e-ipv6:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -129,7 +129,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -146,7 +146,7 @@ jobs:
           make setup-kind-cluster
           export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep global | head -n1 | awk '{print $2}')
           make run-e2e cleanup-kind
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -155,8 +155,8 @@ jobs:
   e2e-endpoint-slices:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -166,7 +166,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -180,10 +180,9 @@ jobs:
           CONTOUR_E2E_USE_ENDPOINT_SLICES: true
         run: |
           make setup-kind-cluster run-e2e cleanup-kind
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
-

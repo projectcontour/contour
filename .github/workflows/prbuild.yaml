@@ -16,19 +16,19 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
         with:
           version: v1.55.2
           # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
           # is resolved
           args: --build-tags=e2e,conformance,gcp,oidc,none
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -39,15 +39,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Codespell
-        uses: codespell-project/actions-codespell@v2.0
+        uses: codespell-project/actions-codespell@94259cd8be02ad2903ba34a22d9c13de21a74461 # v2.0
         with:
           skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -56,8 +56,8 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -67,7 +67,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -79,7 +79,7 @@ jobs:
         run: |
           make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -92,9 +92,9 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
       with:
         version: latest
     - name: Build image
@@ -103,11 +103,11 @@ jobs:
       run: |
         make multiarch-build
     - name: Upload image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@v2
+    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -140,13 +140,13 @@ jobs:
             use_config_crd: "true"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Download image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
         with:
           name: image
           path: image
-      - uses: actions/cache@v3
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -156,7 +156,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -172,7 +172,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make e2e
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -198,17 +198,17 @@ jobs:
           - kubernetes_version: "kubernetes:n-2"
             node_image: "docker.io/kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           # Fetch history for all tags and branches so we can figure out most
           # recent release tag.
           fetch-depth: 0
       - name: Download image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
         with:
           name: image
           path: image
-      - uses: actions/cache@v3
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -218,7 +218,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -235,7 +235,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make upgrade
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -248,8 +248,8 @@ jobs:
       - codegen
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -259,7 +259,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -273,10 +273,10 @@ jobs:
           make check-coverage
       - name: codeCoverage
         if: ${{ success() }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
         with:
           files: coverage.out
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -289,8 +289,8 @@ jobs:
       - codegen
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Windows)
@@ -300,7 +300,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -312,7 +312,7 @@ jobs:
         run: |
           make install
           make check-coverage
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -322,13 +322,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-image]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Download image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
         with:
           name: image
           path: image
-      - uses: actions/cache@v3
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -338,7 +338,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -352,7 +352,7 @@ jobs:
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
           make gateway-conformance
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
