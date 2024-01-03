@@ -107,7 +107,7 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
-      - uses: act10ns/slack@c97e3fd72786369b169158fff23a3bd2f418cb14 # v2
+    - uses: act10ns/slack@c97e3fd72786369b169158fff23a3bd2f418cb14 # v2
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
