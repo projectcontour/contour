@@ -36,6 +36,7 @@ import (
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
+// TODO(KauzClay): test that lookup peervalidation works
 func TestKubernetesCacheInsert(t *testing.T) {
 	tests := map[string]struct {
 		cacheGateway *types.NamespacedName

@@ -67,7 +67,7 @@ func TestUpstreamTLSContext(t *testing.T) {
 		},
 		"no alpn, missing ca": {
 			validation: &dag.PeerValidationContext{
-				SubjectName: "www.example.com",
+				SubjectNames: []string{"www.example.com"},
 			},
 			want: &envoy_v3_tls.UpstreamTlsContext{
 				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
@@ -76,7 +76,7 @@ func TestUpstreamTLSContext(t *testing.T) {
 		"no alpn, ca and altname": {
 			validation: &dag.PeerValidationContext{
 				CACertificate: secret,
-				SubjectName:   "www.example.com",
+				SubjectNames:  []string{"www.example.com"},
 			},
 			want: &envoy_v3_tls.UpstreamTlsContext{
 				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
@@ -126,7 +126,6 @@ func TestUpstreamTLSContext(t *testing.T) {
 		"multiple subjectnames": {
 			validation: &dag.PeerValidationContext{
 				CACertificate: secret,
-				SubjectName:   "foo.com",
 				SubjectNames: []string{
 					"foo.com",
 					"bar.com",

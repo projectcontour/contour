@@ -50,7 +50,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		}
 	}
 
-	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectName()) > 0 {
+	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectNames()) > 0 {
 		// We have to explicitly assign the value from validationContext
 		// to context.CommonTlsContext.ValidationContextType because the
 		// latter is an interface. Returning nil from validationContext

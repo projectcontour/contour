@@ -48,7 +48,7 @@ func Clustername(cluster *dag.Cluster) string {
 	}
 	if uv := cluster.UpstreamValidation; uv != nil {
 		buf += uv.CACertificate.Object.ObjectMeta.Name
-		buf += uv.SubjectName
+		buf += uv.SubjectNames[0]
 	}
 	buf += cluster.Protocol + cluster.SNI
 	if !cluster.TimeoutPolicy.IdleConnectionTimeout.UseDefault() {

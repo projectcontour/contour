@@ -201,7 +201,7 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: ca},
 				}},
-				SubjectName: subjectName},
+				SubjectNames: []string{subjectName}},
 			sni,
 			secret,
 			upstreamTLS,

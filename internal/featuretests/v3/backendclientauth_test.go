@@ -211,7 +211,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: []byte(featuretests.CERTIFICATE)},
 				}},
-				SubjectName: "subjname"},
+				SubjectNames: []string{"subjname"}},
 			"subjname",
 			&dag.Secret{Object: sec1},
 			nil,

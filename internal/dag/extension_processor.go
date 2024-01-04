@@ -174,7 +174,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// future.
 		//
 		// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
-		extension.SNI = uv.SubjectName
+		extension.SNI = uv.SubjectNames[0]
 
 		if extension.Protocol != "h2" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "InconsistentProtocol",

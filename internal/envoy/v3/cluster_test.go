@@ -300,7 +300,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "tls",
 				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificate: secret,
-					SubjectName:   "foo.bar.io",
+					SubjectNames:  []string{"foo.bar.io"},
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -315,7 +315,7 @@ func TestCluster(t *testing.T) {
 					UpstreamTLSContext(
 						&dag.PeerValidationContext{
 							CACertificate: secret,
-							SubjectName:   "foo.bar.io",
+							SubjectNames:  []string{"foo.bar.io"},
 						},
 						"",
 						nil,
@@ -329,7 +329,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "tls",
 				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificate: secret,
-					SubjectName:   "foo.bar.io",
+					SubjectNames:  []string{"foo.bar.io"},
 				},
 				UpstreamTLS: &dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.3",
@@ -348,7 +348,7 @@ func TestCluster(t *testing.T) {
 					UpstreamTLSContext(
 						&dag.PeerValidationContext{
 							CACertificate: secret,
-							SubjectName:   "foo.bar.io",
+							SubjectNames:  []string{"foo.bar.io"},
 						},
 						"",
 						nil,
@@ -909,7 +909,7 @@ func TestDNSNameCluster(t *testing.T) {
 							},
 						},
 					},
-					SubjectName: "foo.projectcontour.io",
+					SubjectNames: []string{"foo.projectcontour.io"},
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -940,7 +940,7 @@ func TestDNSNameCluster(t *testing.T) {
 							},
 						},
 					},
-					SubjectName: "foo.projectcontour.io",
+					SubjectNames: []string{"foo.projectcontour.io"},
 				}, "foo.projectcontour.io", nil, nil)),
 			},
 		},
@@ -1071,7 +1071,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 			},
-			SubjectName: "foo.com",
+			SubjectNames: []string{"foo.com"},
 		},
 	}
 
