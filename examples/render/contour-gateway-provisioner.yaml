@@ -5054,7 +5054,7 @@ spec:
                     description: 'Key which is expected to be present in the ''subjectAltName''
                       of the presented certificate. Deprecated: migrate to using the
                       plural field subjectNames.'
-                    maxLength: 150
+                    maxLength: 256
                     minLength: 1
                     type: string
                   subjectNames:
@@ -6703,7 +6703,7 @@ spec:
                                 description: 'Key which is expected to be present
                                   in the ''subjectAltName'' of the presented certificate.
                                   Deprecated: migrate to using the plural field subjectNames.'
-                                maxLength: 150
+                                maxLength: 256
                                 minLength: 1
                                 type: string
                               subjectNames:
@@ -7118,7 +7118,7 @@ spec:
                               description: 'Key which is expected to be present in
                                 the ''subjectAltName'' of the presented certificate.
                                 Deprecated: migrate to using the plural field subjectNames.'
-                              maxLength: 150
+                              maxLength: 256
                               minLength: 1
                               type: string
                             subjectNames:
@@ -7461,7 +7461,7 @@ spec:
                                     in the ''subjectAltName'' of the presented certificate.
                                     Deprecated: migrate to using the plural field
                                     subjectNames.'
-                                  maxLength: 150
+                                  maxLength: 256
                                   minLength: 1
                                   type: string
                                 subjectNames:
