@@ -4694,7 +4694,8 @@ string
 <p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 The secret must contain key named ca.crt.
 The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
-When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
+Max length should be the actual max possible length of a namespaced name (63 + 253 + 1 = 317)</p>
 </td>
 </tr>
 <tr>

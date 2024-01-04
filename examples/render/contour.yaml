@@ -5252,15 +5252,17 @@ spec:
                       secret must contain key named ca.crt. The name can be optionally
                       prefixed with namespace "namespace/name". When cross-namespace
                       reference is used, TLSCertificateDelegation resource must exist
-                      in the namespace to grant access to the secret.
-                    maxLength: 256
+                      in the namespace to grant access to the secret. Max length should
+                      be the actual max possible length of a namespaced name (63 +
+                      253 + 1 = 317)
+                    maxLength: 317
                     minLength: 1
                     type: string
                   subjectName:
                     description: 'Key which is expected to be present in the ''subjectAltName''
                       of the presented certificate. Deprecated: migrate to using the
                       plural field subjectNames.'
-                    maxLength: 100
+                    maxLength: 150
                     minLength: 1
                     type: string
                   subjectNames:
@@ -6900,15 +6902,16 @@ spec:
                                   namespace "namespace/name". When cross-namespace
                                   reference is used, TLSCertificateDelegation resource
                                   must exist in the namespace to grant access to the
-                                  secret.
-                                maxLength: 256
+                                  secret. Max length should be the actual max possible
+                                  length of a namespaced name (63 + 253 + 1 = 317)
+                                maxLength: 317
                                 minLength: 1
                                 type: string
                               subjectName:
                                 description: 'Key which is expected to be present
                                   in the ''subjectAltName'' of the presented certificate.
                                   Deprecated: migrate to using the plural field subjectNames.'
-                                maxLength: 100
+                                maxLength: 150
                                 minLength: 1
                                 type: string
                               subjectNames:
@@ -7313,15 +7316,17 @@ spec:
                                 ca.crt. The name can be optionally prefixed with namespace
                                 "namespace/name". When cross-namespace reference is
                                 used, TLSCertificateDelegation resource must exist
-                                in the namespace to grant access to the secret.
-                              maxLength: 256
+                                in the namespace to grant access to the secret. Max
+                                length should be the actual max possible length of
+                                a namespaced name (63 + 253 + 1 = 317)
+                              maxLength: 317
                               minLength: 1
                               type: string
                             subjectName:
                               description: 'Key which is expected to be present in
                                 the ''subjectAltName'' of the presented certificate.
                                 Deprecated: migrate to using the plural field subjectNames.'
-                              maxLength: 100
+                              maxLength: 150
                               minLength: 1
                               type: string
                             subjectNames:
@@ -7653,8 +7658,10 @@ spec:
                                     namespace "namespace/name". When cross-namespace
                                     reference is used, TLSCertificateDelegation resource
                                     must exist in the namespace to grant access to
-                                    the secret.
-                                  maxLength: 256
+                                    the secret. Max length should be the actual max
+                                    possible length of a namespaced name (63 + 253
+                                    + 1 = 317)
+                                  maxLength: 317
                                   minLength: 1
                                   type: string
                                 subjectName:
@@ -7662,7 +7669,7 @@ spec:
                                     in the ''subjectAltName'' of the presented certificate.
                                     Deprecated: migrate to using the plural field
                                     subjectNames.'
-                                  maxLength: 100
+                                  maxLength: 150
                                   minLength: 1
                                   type: string
                                 subjectNames:
