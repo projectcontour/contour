@@ -91,9 +91,9 @@ func TestPeerValidationContext(t *testing.T) {
 
 	assert.Equal(t, pvc1.GetSubjectNames()[0], "subject")
 	assert.Equal(t, pvc1.GetCACertificate(), []byte("cacert"))
-	assert.Equal(t, pvc2.GetSubjectNames(), nil)
+	assert.Equal(t, pvc2.GetSubjectNames(), []string(nil))
 	assert.Equal(t, pvc2.GetCACertificate(), []byte(nil))
-	assert.Equal(t, pvc3.GetSubjectNames(), nil)
+	assert.Equal(t, pvc3.GetSubjectNames(), []string(nil))
 	assert.Equal(t, pvc3.GetCACertificate(), []byte(nil))
 }
 
