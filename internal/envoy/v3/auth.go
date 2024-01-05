@@ -50,14 +50,14 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		}
 	}
 
-	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectName()) > 0 {
+	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectNames()) > 0 {
 		// We have to explicitly assign the value from validationContext
 		// to context.CommonTlsContext.ValidationContextType because the
 		// latter is an interface. Returning nil from validationContext
 		// directly into this field boxes the nil into the unexported
 		// type of this grpc OneOf field which causes proto marshaling
 		// to explode later on.
-		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false, nil, false)
+		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectNames(), false, nil, false)
 		if vc != nil {
 			// TODO: update this for SDS (CommonTlsContext_ValidationContextSdsSecretConfig) instead of inlining it.
 			context.CommonTlsContext.ValidationContextType = vc
@@ -68,7 +68,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 }
 
 // TODO: update this for SDS (CommonTlsContext_ValidationContextSdsSecretConfig) instead of inlining it.
-func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, crl []byte, onlyVerifyLeafCertCrl bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
+func validationContext(ca []byte, subjectNames []string, skipVerifyPeerCert bool, crl []byte, onlyVerifyLeafCertCrl bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
 	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
 		ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 			TrustChainVerification: envoy_v3_tls.CertificateValidationContext_VERIFY_TRUST_CHAIN,
@@ -87,17 +87,18 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool, c
 		}
 	}
 
-	if len(subjectName) > 0 {
-		vc.ValidationContext.MatchTypedSubjectAltNames = []*envoy_v3_tls.SubjectAltNameMatcher{
-			{
+	for _, san := range subjectNames {
+		vc.ValidationContext.MatchTypedSubjectAltNames = append(
+			vc.ValidationContext.MatchTypedSubjectAltNames,
+			&envoy_v3_tls.SubjectAltNameMatcher{
 				SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
 				Matcher: &matcher.StringMatcher{
 					MatchPattern: &matcher.StringMatcher_Exact{
-						Exact: subjectName,
+						Exact: san,
 					},
 				},
 			},
-		}
+		)
 	}
 
 	if len(crl) > 0 {
@@ -129,7 +130,7 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxPr
 		},
 	}
 	if peerValidationContext != nil {
-		vc := validationContext(peerValidationContext.GetCACertificate(), "", peerValidationContext.SkipClientCertValidation,
+		vc := validationContext(peerValidationContext.GetCACertificate(), []string{}, peerValidationContext.SkipClientCertValidation,
 			peerValidationContext.GetCRL(), peerValidationContext.OnlyVerifyLeafCertCrl)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc

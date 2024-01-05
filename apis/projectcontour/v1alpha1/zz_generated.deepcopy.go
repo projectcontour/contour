@@ -786,7 +786,7 @@ func (in *ExtensionServiceSpec) DeepCopyInto(out *ExtensionServiceSpec) {
 	if in.UpstreamValidation != nil {
 		in, out := &in.UpstreamValidation, &out.UpstreamValidation
 		*out = new(v1.UpstreamValidation)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Protocol != nil {
 		in, out := &in.Protocol, &out.Protocol

@@ -84,16 +84,16 @@ func TestPeerValidationContext(t *testing.T) {
 				},
 			},
 		},
-		SubjectName: "subject",
+		SubjectNames: []string{"subject"},
 	}
 	pvc2 := PeerValidationContext{}
 	var pvc3 *PeerValidationContext
 
-	assert.Equal(t, pvc1.GetSubjectName(), "subject")
+	assert.Equal(t, pvc1.GetSubjectNames()[0], "subject")
 	assert.Equal(t, pvc1.GetCACertificate(), []byte("cacert"))
-	assert.Equal(t, pvc2.GetSubjectName(), "")
+	assert.Equal(t, pvc2.GetSubjectNames(), []string(nil))
 	assert.Equal(t, pvc2.GetCACertificate(), []byte(nil))
-	assert.Equal(t, pvc3.GetSubjectName(), "")
+	assert.Equal(t, pvc3.GetSubjectNames(), []string(nil))
 	assert.Equal(t, pvc3.GetCACertificate(), []byte(nil))
 }
 

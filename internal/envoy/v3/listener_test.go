@@ -241,7 +241,7 @@ func TestSocketAddress(t *testing.T) {
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
-	const subjectName = "client-subject-name"
+	subjectNames := []string{"client-subject-name"}
 	ca := []byte("client-ca-cert")
 	crl := []byte("crl-data")
 
@@ -328,7 +328,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 				},
 			},
 		},
-		SubjectName: subjectName,
+		SubjectNames: subjectNames,
 	}
 
 	peerValidationContextSkipClientCertValidation := &dag.PeerValidationContext{

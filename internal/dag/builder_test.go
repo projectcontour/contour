@@ -11349,7 +11349,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert1),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
@@ -11382,7 +11382,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert1),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
@@ -11457,7 +11457,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert2),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
