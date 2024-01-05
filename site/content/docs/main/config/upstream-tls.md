@@ -8,7 +8,7 @@ By default, the upstream TLS server certificate will not be validated, but valid
 This field has mandatory `caSecret`, `subjectName`, and `subjectNames` fields, which specify the trusted root certificates with which to validate the server certificate and the expected server name(s).
 
 _**Note:**
-The `subjectName` field is deprecated in favor of `subjectNames`. When using `subjectNames`, the first entry must match the value for `subjectName`. The `subjectName` field also has a limit of TODO(KauzClay) characters._
+The `subjectName` field is deprecated in favor of `subjectNames`. When using `subjectNames`, the first entry must match the value for `subjectName`. The `subjectName` field also has a limit of 250 characters._
 
 The `caSecret` can be a namespaced name of the form `<namespace>/<secret-name>`. If the CA secret's namespace is not the same namespace as the `HTTPProxy` resource, [TLS Certificate Delegation][4] must be used to allow the owner of the CA certificate secret to delegate, for the purposes of referencing the CA certificate in a different namespace, permission to Contour to read the Secret object from another namespace.
 
