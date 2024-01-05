@@ -60,6 +60,8 @@ var _ = AfterSuite(func() {
 var _ = Describe("HTTPProxy API validation", func() {
 	f.NamespacedTest("httpproxy-required-field-validation", testRequiredFieldValidation)
 
+	f.NamespacedTest("httpproxy-cel-validation", testCELValidation)
+
 	f.NamespacedTest("httpproxy-invalid-wildcard-fqdn", testWildcardFQDN)
 
 	f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
