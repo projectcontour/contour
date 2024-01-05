@@ -1,0 +1,1 @@
+Envoy: Adds support for setting [per-host circuit breaker max-connections threshold](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-per-host-thresholds) using a new service-level annotation: `projectcontour.io/per-host-max-connections`.

@@ -967,6 +967,10 @@ type Service struct {
 	// Envoy will allow to the upstream cluster.
 	MaxRetries uint32
 
+	// PerHostMaxConnections is the maximum number of connections
+	// that Envoy will allow to each individual host in a cluster.
+	PerHostMaxConnections uint32
+
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
 }

@@ -61,13 +61,14 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"projectcontour.io/websocket-routes":             {},
 	},
 	"Service": {
-		"projectcontour.io/max-connections":       {},
-		"projectcontour.io/max-pending-requests":  {},
-		"projectcontour.io/max-requests":          {},
-		"projectcontour.io/max-retries":           {},
-		"projectcontour.io/upstream-protocol.h2":  {},
-		"projectcontour.io/upstream-protocol.h2c": {},
-		"projectcontour.io/upstream-protocol.tls": {},
+		"projectcontour.io/max-connections":          {},
+		"projectcontour.io/max-pending-requests":     {},
+		"projectcontour.io/max-requests":             {},
+		"projectcontour.io/max-retries":              {},
+		"projectcontour.io/per-host-max-connections": {},
+		"projectcontour.io/upstream-protocol.h2":     {},
+		"projectcontour.io/upstream-protocol.h2c":    {},
+		"projectcontour.io/upstream-protocol.tls":    {},
 	},
 	"HTTPProxy": {
 		"kubernetes.io/ingress.class":     {},
@@ -255,4 +256,13 @@ func MaxRequests(o metav1.Object) uint32 {
 // '0' is returned if the annotation is absent or unparsable.
 func MaxRetries(o metav1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-retries"))
+}
+
+// PerHostMaxConnections returns the value of the first matching
+// per-host-max-connectionss annotation for the following annotations:
+// 1. projectcontour.io/per-host-max-connections
+//
+// '0' is returned if the annotation is absent or unparsable.
+func PerHostMaxConnections(o metav1.Object) uint32 {
+	return parseUInt32(ContourAnnotation(o, "per-host-max-connections"))
 }
