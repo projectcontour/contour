@@ -689,6 +689,9 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		pvc.SubjectNames = []string{uv.SubjectName}
 	case l > 0:
 		// UpstreamValidation is using new SubjectNames field, can use it directly. CEL validation should enforce that SubjectName is contained in SubjectNames
+		if uv.SubjectName != uv.SubjectNames[0] {
+			return nil, fmt.Errorf("first entry of SubjectNames (%s) does not match SubjectName (%s)", uv.SubjectNames[0], uv.SubjectName)
+		}
 		pvc.SubjectNames = uv.SubjectNames
 	}
 
