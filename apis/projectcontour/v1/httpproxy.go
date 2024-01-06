@@ -343,10 +343,10 @@ type VirtualHost struct {
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// HttpVersions specify the http versions to offer for this HTTPProxy.
+	// HTTPVersions specify the http versions to offer for this HTTPProxy.
 	// If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
 	// It is ignored when TCPProxy is set.
-	HttpVersions []HTTPVersion `json:"httpVersions,omitempty"`
+	HTTPVersions []HTTPVersion `json:"httpVersions,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.

@@ -263,7 +263,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			svhost.Secret = sec
 			svhost.MinTLSVersion = minTLSVer
 			svhost.MaxTLSVersion = maxTLSVer
-			svhost.HTTPVersions = p.getSortedHttpVersions(proxy)
+			svhost.HTTPVersions = p.getSortedHTTPVersions(proxy)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
@@ -1474,14 +1474,14 @@ func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 	return nil
 }
 
-// getSortedHttpVersions returns and empty slice or ["h2", "http/1.1"] or ["http/1.1"].
+// getSortedHTTPVersions returns and empty slice or ["h2", "http/1.1"] or ["http/1.1"].
 // This is done to conform with how envoy expects AlpnProtocols in tlsv3.CommonTlsContext.
-func (p *HTTPProxyProcessor) getSortedHttpVersions(proxy *contour_api_v1.HTTPProxy) []string {
-	proxyHttpVersions := proxy.Spec.VirtualHost.HttpVersions
-	if len(proxyHttpVersions) == 0 {
+func (p *HTTPProxyProcessor) getSortedHTTPVersions(proxy *contour_api_v1.HTTPProxy) []string {
+	proxyHTTPVersions := proxy.Spec.VirtualHost.HTTPVersions
+	if len(proxyHTTPVersions) == 0 {
 		return nil
 	}
-	for _, httpVersion := range proxyHttpVersions {
+	for _, httpVersion := range proxyHTTPVersions {
 		if httpVersion == "h2" {
 			return []string{"h2", "http/1.1"}
 		}

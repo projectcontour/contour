@@ -1486,8 +1486,8 @@ func (in *VirtualHost) DeepCopyInto(out *VirtualHost) {
 		*out = make([]IPFilterPolicy, len(*in))
 		copy(*out, *in)
 	}
-	if in.HttpVersions != nil {
-		in, out := &in.HttpVersions, &out.HttpVersions
+	if in.HTTPVersions != nil {
+		in, out := &in.HTTPVersions, &out.HTTPVersions
 		*out = make([]HTTPVersion, len(*in))
 		copy(*out, *in)
 	}
