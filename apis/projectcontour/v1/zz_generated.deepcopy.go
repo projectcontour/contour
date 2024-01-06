@@ -463,7 +463,7 @@ func (in *HTTPProxySpec) DeepCopyInto(out *HTTPProxySpec) {
 	}
 	if in.HttpVersions != nil {
 		in, out := &in.HttpVersions, &out.HttpVersions
-		*out = make([]HttpVersion, len(*in))
+		*out = make([]HTTPVersion, len(*in))
 		copy(*out, *in)
 	}
 }

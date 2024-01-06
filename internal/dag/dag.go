@@ -795,7 +795,7 @@ type SecureVirtualHost struct {
 	JWTProviders []JWTProvider
 
 	// AlpnProtos specify the HTTP version to offer for this vhost
-	HttpVersions []string
+	HTTPVersions []string
 }
 
 type JWTProvider struct {

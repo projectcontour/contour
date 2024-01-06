@@ -18,9 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// HttpVersion is an alias to enforce validation
+// HTTPVersion is an alias to enforce validation
 // +kubebuilder:validation:Enum=h2;http/1.1
-type HttpVersion string
+type HTTPVersion string
 
 // HTTPProxySpec defines the spec of the CRD.
 type HTTPProxySpec struct {
@@ -48,7 +48,7 @@ type HTTPProxySpec struct {
 	// HttpVersions specify the http versions to offer for this HTTPProxy.
 	// If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
 	// It is ignored when TCPProxy is set.
-	HttpVersions []HttpVersion `json:"httpVersions,omitempty"`
+	HttpVersions []HTTPVersion `json:"httpVersions,omitempty"`
 }
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.

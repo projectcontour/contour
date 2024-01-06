@@ -263,7 +263,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			svhost.Secret = sec
 			svhost.MinTLSVersion = minTLSVer
 			svhost.MaxTLSVersion = maxTLSVer
-			svhost.HttpVersions = p.getSortedHttpVersions(proxy)
+			svhost.HTTPVersions = p.getSortedHttpVersions(proxy)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
