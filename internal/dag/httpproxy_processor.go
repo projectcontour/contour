@@ -1477,7 +1477,7 @@ func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 // getSortedHttpVersions returns and empty slice or ["h2", "http/1.1"] or ["http/1.1"].
 // This is done to conform with how envoy expects AlpnProtocols in tlsv3.CommonTlsContext.
 func (p *HTTPProxyProcessor) getSortedHttpVersions(proxy *contour_api_v1.HTTPProxy) []string {
-	proxyHttpVersions := proxy.Spec.HttpVersions
+	proxyHttpVersions := proxy.Spec.VirtualHost.HttpVersions
 	if len(proxyHttpVersions) == 0 {
 		return nil
 	}

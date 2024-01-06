@@ -161,22 +161,6 @@ annotation. For backwards compatibility, when that annotation is set, it
 is given precedence over this field.</p>
 </td>
 </tr>
-<tr>
-<td style="white-space:nowrap">
-<code>httpVersions</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.HttpVersion">
-[]HttpVersion
-</a>
-</em>
-</td>
-<td>
-<p>HttpVersions specify the http versions to offer for this HTTPProxy.
-If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
-It is ignored when TCPProxy is set.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1624,22 +1608,6 @@ annotation. For backwards compatibility, when that annotation is set, it
 is given precedence over this field.</p>
 </td>
 </tr>
-<tr>
-<td style="white-space:nowrap">
-<code>httpVersions</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.HttpVersion">
-[]HttpVersion
-</a>
-</em>
-</td>
-<td>
-<p>HttpVersions specify the http versions to offer for this HTTPProxy.
-If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
-It is ignored when TCPProxy is set.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HTTPProxyStatus">HTTPProxyStatus
@@ -1874,6 +1842,15 @@ int64
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HTTPVersion">HTTPVersion
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>HTTPVersion is an alias to enforce validation</p>
+</p>
 <h3 id="projectcontour.io/v1.HeaderHashOptions">HeaderHashOptions
 </h3>
 <p>
@@ -2172,15 +2149,6 @@ If the header does not exist it will be added, otherwise it will be overwritten 
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.HttpVersion">HttpVersion
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec</a>)
-</p>
-<p>
-<p>HttpVersion is an alias to enforce validation</p>
-</p>
 <h3 id="projectcontour.io/v1.IPFilterPolicy">IPFilterPolicy
 </h3>
 <p>
@@ -4898,6 +4866,22 @@ The rules defined here may be overridden in a Route.</p>
 requests should be denied. All other requests will be allowed.
 Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here may be overridden in a Route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpVersions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPVersion">
+[]HTTPVersion
+</a>
+</em>
+</td>
+<td>
+<p>HttpVersions specify the http versions to offer for this HTTPProxy.
+If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
+It is ignored when TCPProxy is set.</p>
 </td>
 </tr>
 </tbody>

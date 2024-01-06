@@ -44,11 +44,6 @@ type HTTPProxySpec struct {
 	// is given precedence over this field.
 	// +optional
 	IngressClassName string `json:"ingressClassName,omitempty"`
-
-	// HttpVersions specify the http versions to offer for this HTTPProxy.
-	// If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
-	// It is ignored when TCPProxy is set.
-	HttpVersions []HTTPVersion `json:"httpVersions,omitempty"`
 }
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
@@ -347,6 +342,11 @@ type VirtualHost struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// HttpVersions specify the http versions to offer for this HTTPProxy.
+	// If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
+	// It is ignored when TCPProxy is set.
+	HttpVersions []HTTPVersion `json:"httpVersions,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
