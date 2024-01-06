@@ -438,6 +438,13 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	HTTP2MaxConcurrentStreams *uint32 `json:"httpMaxConcurrentStreams,omitempty"`
+
+	// Defines the limit on number of active connections to a listener. The limit is applied
+	// per listener. The default value when this is not set is unlimited.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxConnectionsPerListener *uint32 `json:"maxConnectionsPerListener,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

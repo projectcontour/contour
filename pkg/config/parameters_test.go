@@ -483,6 +483,13 @@ listener:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxConnectionsPerListener)
+	}, `
+listener:
+  max-connections-per-listener: 1
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, ref.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
 	}, `
 cluster:
@@ -622,6 +629,15 @@ func TestListenerValidation(t *testing.T) {
 	l = &ListenerParameters{SocketOptions: SocketOptions{TOS: -1}}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{SocketOptions: SocketOptions{TrafficClass: -1}}
+	require.Error(t, l.Validate())
+
+	l = &ListenerParameters{
+		MaxConnectionsPerListener: ref.To(uint32(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		MaxConnectionsPerListener: ref.To(uint32(0)),
+	}
 	require.Error(t, l.Validate())
 }
 
