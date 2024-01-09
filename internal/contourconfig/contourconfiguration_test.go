@@ -121,6 +121,13 @@ func TestOverlayOnDefaults(t *testing.T) {
 			},
 			Cluster: &contour_api_v1alpha1.ClusterParameters{
 				DNSLookupFamily: contour_api_v1alpha1.IPv4ClusterDNSFamily,
+				UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: "1.1",
+					MaximumProtocolVersion: "1.2",
+					CipherSuites: []string{
+						"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+					},
+				},
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: ref.To(uint32(77)),

@@ -268,51 +268,51 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 
 	// Cipher suites validation
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		CipherSuites: []string{},
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		CipherSuites: []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		},
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		CipherSuites: []string{
 			"NOTAVALIDCIPHER",
 		},
 	}.Validate())
 
 	// TLS protocol version validation
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MaximumProtocolVersion: "invalid",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, TLSParameters{
+	assert.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	assert.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
@@ -488,6 +488,20 @@ listener:
 cluster:
   max-requests-per-connection: 1
 `)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, uint32(42), conf.Cluster.GlobalCircuitBreakerDefaults.MaxConnections)
+		assert.Equal(t, uint32(43), conf.Cluster.GlobalCircuitBreakerDefaults.MaxPendingRequests)
+		assert.Equal(t, uint32(44), conf.Cluster.GlobalCircuitBreakerDefaults.MaxRequests)
+		assert.Equal(t, uint32(0), conf.Cluster.GlobalCircuitBreakerDefaults.MaxRetries)
+	}, `
+cluster:
+  circuit-breakers:
+    max-connections: 42
+    max-pending-requests: 43
+    max-requests: 44
+`)
+
 }
 
 func TestMetricsParametersValidation(t *testing.T) {
@@ -623,6 +637,12 @@ func TestClusterParametersValidation(t *testing.T) {
 	require.NoError(t, l.Validate())
 	l = &ClusterParameters{
 		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+	}
+	require.Error(t, l.Validate())
+	l = &ClusterParameters{
+		UpstreamTLS: ProtocolParameters{
+			MaximumProtocolVersion: "invalid",
+		},
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{

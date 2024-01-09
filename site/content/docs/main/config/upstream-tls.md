@@ -5,7 +5,11 @@ Applying the `projectcontour.io/upstream-protocol.tls` annotation to a Service o
 The same configuration can be specified by setting the protocol name in the `spec.routes.services[].protocol` field on the HTTPProxy object.
 If both the annotation and the protocol field are specified, the protocol field takes precedence.
 By default, the upstream TLS server certificate will not be validated, but validation can be requested by setting the `spec.routes.services[].validation` field.
-This field has mandatory `caSecret` and `subjectName` fields, which specify the trusted root certificates with which to validate the server certificate and the expected server name.
+This field has mandatory `caSecret`, `subjectName`, and `subjectNames` fields, which specify the trusted root certificates with which to validate the server certificate and the expected server name(s).
+
+_**Note:**
+The `subjectName` field is deprecated in favor of `subjectNames`. When using `subjectNames`, the first entry must match the value for `subjectName`. The `subjectName` field also has a limit of 250 characters._
+
 The `caSecret` can be a namespaced name of the form `<namespace>/<secret-name>`. If the CA secret's namespace is not the same namespace as the `HTTPProxy` resource, [TLS Certificate Delegation][4] must be used to allow the owner of the CA certificate secret to delegate, for the purposes of referencing the CA certificate in a different namespace, permission to Contour to read the Secret object from another namespace.
 
 _**Note:**
@@ -60,7 +64,10 @@ Status:
 ## Upstream Validation
 
 When defining upstream services on a route, it's possible to configure the connection from Envoy to the backend endpoint to communicate over TLS.
-Two configuration items are required, a CA certificate and a `SubjectName` which are both used to verify the backend endpoint's identity.
+
+A CA certificate and a Subject Name must be provided, which are both used to verify the backend endpoint's identity.
+
+If specifying multiple Subject Names, `SubjectNames` and `SubjectName` must be configured such that `SubjectNames[0] == SubjectName`. 
 
 The CA certificate bundle for the backend service should be supplied in a Kubernetes Secret.
 The referenced Secret must be of type "Opaque" and have a data key named `ca.crt`.
@@ -84,6 +91,9 @@ spec:
           validation:
             caSecret: foo-ca-cert
             subjectName: foo.marketing
+            subjectNames:
+            - foo.marketing
+            - bar.marketing
 ```
 
 ## Envoy Client Certificate

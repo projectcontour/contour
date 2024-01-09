@@ -50,9 +50,10 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      name,
-			Labels:    model.CommonLabels(contour),
+			Namespace:   contour.Namespace,
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 	verbCGU := []string{"create", "get", "update"}
@@ -74,7 +75,7 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 // updateRoleIfNeeded updates a Role resource if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.Role) (*rbacv1.Role, error) {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		role, updated := equality.RoleConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, role); err != nil {

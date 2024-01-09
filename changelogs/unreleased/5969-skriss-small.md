@@ -1,0 +1,1 @@
+Gateway API: add the `gateway.networking.k8s.io/gateway-name` label to generated resources.

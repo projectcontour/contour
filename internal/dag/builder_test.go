@@ -4158,7 +4158,59 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		// END
+
+		"HTTPRoute rule with request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("5s", ""),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with request and backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("5s", "5s"),
+			},
+			want: listeners(),
+		},
+
+		"HTTPRoute rule with backendRequest timeout only": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("", "5s"),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with invalid request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("invalid", ""),
+			},
+			want: listeners(),
+		},
 
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
@@ -7107,10 +7159,11 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"projectcontour.io/max-connections":      "9000",
-				"projectcontour.io/max-pending-requests": "4096",
-				"projectcontour.io/max-requests":         "404",
-				"projectcontour.io/max-retries":          "7",
+				"projectcontour.io/max-connections":          "9000",
+				"projectcontour.io/max-pending-requests":     "4096",
+				"projectcontour.io/max-requests":             "404",
+				"projectcontour.io/max-retries":              "7",
+				"projectcontour.io/per-host-max-connections": "45",
 			},
 		},
 		Spec: v1.ServiceSpec{
@@ -10843,10 +10896,11 @@ func TestDAGInsert(t *testing.T) {
 									ServicePort:      s1b.Spec.Ports[0],
 									HealthPort:       s1b.Spec.Ports[0],
 								},
-								MaxConnections:     9000,
-								MaxPendingRequests: 4096,
-								MaxRequests:        404,
-								MaxRetries:         7,
+								MaxConnections:        9000,
+								MaxPendingRequests:    4096,
+								MaxRequests:           404,
+								MaxRetries:            7,
+								PerHostMaxConnections: 45,
 							}),
 						),
 					),
@@ -11295,7 +11349,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert1),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
@@ -11328,7 +11382,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert1),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
@@ -11403,7 +11457,7 @@ func TestDAGInsert(t *testing.T) {
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: caSecret(cert2),
-										SubjectName:   "example.com",
+										SubjectNames:  []string{"example.com"},
 									},
 								},
 							),
@@ -16272,4 +16326,39 @@ func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
 		})
 	}
 	return r
+}
+
+func makeHTTPRouteTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRouteTimeouts {
+	httpRouteTimeouts := &gatewayapi_v1.HTTPRouteTimeouts{}
+
+	if request != "" {
+		httpRouteTimeouts.Request = ref.To(gatewayapi_v1.Duration(request))
+	}
+	if backendRequest != "" {
+		httpRouteTimeouts.BackendRequest = ref.To(gatewayapi_v1.Duration(backendRequest))
+	}
+
+	return httpRouteTimeouts
+}
+
+func makeHTTPRoute(request, backendRequest string) *gatewayapi_v1beta1.HTTPRoute {
+	return &gatewayapi_v1beta1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			},
+			Hostnames: []gatewayapi_v1beta1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+				Timeouts:    makeHTTPRouteTimeouts(request, backendRequest),
+			}},
+		},
+	}
 }

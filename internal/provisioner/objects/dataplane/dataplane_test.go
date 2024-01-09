@@ -338,7 +338,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
-	checkDaemonSetHasLabels(t, ds, cntr.AppLabels())
+	checkDaemonSetHasLabels(t, ds, cntr.WorkloadLabels())
 	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port))
 
 	checkDaemonSetHasNodeSelector(t, ds, nil)

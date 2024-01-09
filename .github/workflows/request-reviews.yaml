@@ -1,0 +1,14 @@
+name: Request Reviews
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review, reopened]
+
+jobs:
+  request-reviews:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: necojackarc/auto-request-review@6a51cebffe2c084705d9a7b394abd802e0119633 # v0.12.0
+        with:
+          token: ${{ secrets.PAT_FOR_AUTO_REQUEST_REVIEW }}
+          config: .github/reviewers.yaml

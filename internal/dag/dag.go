@@ -669,9 +669,9 @@ type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
 	// verify the upstream connection.
 	CACertificate *Secret
-	// SubjectName holds an optional subject name which Envoy will check against the
-	// certificate presented by the upstream.
-	SubjectName string
+	// SubjectNames holds optional subject names which Envoy will check against the
+	// certificate presented by the upstream. The first entry must match the value of SubjectName
+	SubjectNames []string
 	// SkipClientCertValidation when set to true will ensure Envoy requests but
 	// does not verify peer certificates.
 	SkipClientCertValidation bool
@@ -698,13 +698,14 @@ func (pvc *PeerValidationContext) GetCACertificate() []byte {
 	return pvc.CACertificate.Object.Data[CACertificateKey]
 }
 
-// GetSubjectName returns the SubjectName from PeerValidationContext.
-func (pvc *PeerValidationContext) GetSubjectName() string {
+// GetSubjectName returns the SubjectNames from PeerValidationContext.
+func (pvc *PeerValidationContext) GetSubjectNames() []string {
 	if pvc == nil {
 		// No validation required.
-		return ""
+		return nil
 	}
-	return pvc.SubjectName
+
+	return pvc.SubjectNames
 }
 
 // GetCRL returns the Certificate Revocation List.
@@ -818,6 +819,7 @@ type DNSNameCluster struct {
 	Port               int
 	DNSLookupFamily    string
 	UpstreamValidation *PeerValidationContext
+	UpstreamTLS        *UpstreamTLS
 }
 
 type JWTRule struct {
@@ -966,6 +968,10 @@ type Service struct {
 	// Envoy will allow to the upstream cluster.
 	MaxRetries uint32
 
+	// PerHostMaxConnections is the maximum number of connections
+	// that Envoy will allow to each individual host in a cluster.
+	PerHostMaxConnections uint32
+
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
 }
@@ -1043,6 +1049,9 @@ type Cluster struct {
 
 	// OutlierDetection defines how to detect unhealthy hosts in the cluster, and evict them.
 	OutlierDetectionPolicy *OutlierDetectionPolicy
+
+	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
+	UpstreamTLS *UpstreamTLS
 }
 
 // WeightedService represents the load balancing weight of a
@@ -1232,6 +1241,9 @@ type ExtensionCluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
+
+	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
+	UpstreamTLS *UpstreamTLS
 }
 
 const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
@@ -1274,4 +1286,11 @@ type OutlierDetectionPolicy struct {
 	ConsecutiveLocalOriginFailure  uint32
 	MaxEjectionPercent             uint32
 	MaxEjectionTimeJitter          time.Duration
+}
+
+// UpstreamTLS holds the TLS configuration for upstream connections
+type UpstreamTLS struct {
+	MinimumProtocolVersion string
+	MaximumProtocolVersion string
+	CipherSuites           []string
 }

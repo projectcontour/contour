@@ -15,18 +15,18 @@ on:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.21.3
+  GO_VERSION: 1.21.5
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
       with:
         version: latest
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -37,7 +37,7 @@ jobs:
         TAG_LATEST: "false"
       run: |
         ./hack/actions/build-and-push-release-images.sh
-    - uses: act10ns/slack@v2
+    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -47,8 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         with:
           # * Module download cache
           # * Build cache (Linux)
@@ -58,7 +58,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
@@ -73,11 +73,11 @@ jobs:
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(git describe --tags)"
           make setup-kind-cluster run-gateway-conformance cleanup-kind
       - name: Upload gateway conformance report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: gateway-conformance-report
           path: gateway-conformance-report/projectcontour-contour-*.yaml
-      - uses: act10ns/slack@v2
+      - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

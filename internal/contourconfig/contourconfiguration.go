@@ -120,6 +120,11 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			},
 			Cluster: &contour_api_v1alpha1.ClusterParameters{
 				DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+				UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.3",
+					CipherSuites:           contour_api_v1alpha1.DefaultTLSCiphers,
+				},
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: ref.To(uint32(0)),
