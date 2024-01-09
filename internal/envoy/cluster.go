@@ -114,13 +114,6 @@ func truncate(l int, s, suffix string) string {
 	return s[:l-len(suffix)-1] + "-" + suffix
 }
 
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
-}
-
 // AnyPositive indicates if any of the values provided are greater than zero.
 func AnyPositive(first uint32, rest ...uint32) bool {
 	if first > 0 {
