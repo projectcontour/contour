@@ -121,7 +121,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1),
+			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1, nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -159,7 +159,7 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsClusterWithoutValidation(cluster("default/backend/443/4929fca9d4", "default/backend/http", "default_backend_443"), "", sec1),
+			tlsClusterWithoutValidation(cluster("default/backend/443/4929fca9d4", "default/backend/http", "default_backend_443"), "", sec1, nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -211,9 +211,10 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: []byte(featuretests.CERTIFICATE)},
 				}},
-				SubjectName: "subjname"},
+				SubjectNames: []string{"subjname"}},
 			"subjname",
 			&dag.Secret{Object: sec1},
+			nil,
 			"h2",
 		),
 	)

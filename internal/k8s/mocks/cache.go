@@ -31,6 +31,10 @@ func (_m *Cache) Get(ctx context.Context, key types.NamespacedName, obj client.O
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName, client.Object, ...client.GetOption) error); ok {
 		r0 = rf(ctx, key, obj, opts...)
@@ -51,6 +55,10 @@ func (_m *Cache) GetInformer(ctx context.Context, obj client.Object, opts ...cac
 	_ca = append(_ca, ctx, obj)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetInformer")
+	}
 
 	var r0 cache.Informer
 	var r1 error
@@ -85,6 +93,10 @@ func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersion
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetInformerForKind")
+	}
+
 	var r0 cache.Informer
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) (cache.Informer, error)); ok {
@@ -111,6 +123,10 @@ func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersion
 func (_m *Cache) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
 	ret := _m.Called(ctx, obj, field, extractValue)
 
+	if len(ret) == 0 {
+		panic("no return value specified for IndexField")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, client.Object, string, client.IndexerFunc) error); ok {
 		r0 = rf(ctx, obj, field, extractValue)
@@ -132,6 +148,10 @@ func (_m *Cache) List(ctx context.Context, list client.ObjectList, opts ...clien
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, client.ObjectList, ...client.ListOption) error); ok {
 		r0 = rf(ctx, list, opts...)
@@ -146,6 +166,10 @@ func (_m *Cache) List(ctx context.Context, list client.ObjectList, opts ...clien
 func (_m *Cache) Start(ctx context.Context) error {
 	ret := _m.Called(ctx)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
 		r0 = rf(ctx)
@@ -159,6 +183,10 @@ func (_m *Cache) Start(ctx context.Context) error {
 // WaitForCacheSync provides a mock function with given fields: ctx
 func (_m *Cache) WaitForCacheSync(ctx context.Context) bool {
 	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WaitForCacheSync")
+	}
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {

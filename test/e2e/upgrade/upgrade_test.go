@@ -34,6 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -188,7 +189,7 @@ var _ = Describe("When upgrading", func() {
 							{
 								Name:     "http",
 								Port:     gatewayapi_v1beta1.PortNumber(80),
-								Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+								Protocol: gatewayapi_v1.HTTPProtocolType,
 								Hostname: ref.To(gatewayapi_v1beta1.Hostname(appHost)),
 							},
 						},
@@ -228,11 +229,11 @@ var _ = Describe("When upgrading", func() {
 								},
 								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
-										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
 										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 											Set: []gatewayapi_v1beta1.HTTPHeader{
 												{
-													Name:  gatewayapi_v1beta1.HTTPHeaderName("X-Envoy-Response-Flags"),
+													Name:  gatewayapi_v1.HTTPHeaderName("X-Envoy-Response-Flags"),
 													Value: "%RESPONSE_FLAGS%",
 												},
 											},

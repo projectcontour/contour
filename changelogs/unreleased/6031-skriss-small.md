@@ -1,0 +1,1 @@
+Updates to Kubernetes 1.29. Supported/tested Kubernetes versions are now 1.27, 1.28 and 1.29.

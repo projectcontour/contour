@@ -182,8 +182,7 @@ func (n NamespacedName) Validate() error {
 
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
-	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
-	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
+	ProtocolParameters `yaml:",inline"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
@@ -194,6 +193,12 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+}
+
+// ProtocolParameters holds configuration details for TLS protocol specifics.
+type ProtocolParameters struct {
+	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+	MaximumProtocolVersion string `yaml:"maximum-protocol-version"`
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
@@ -214,6 +219,15 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS client certificate: %w", err)
 	}
 
+	if err := t.ProtocolParameters.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS Protocol Parameters: %w", err)
+	}
+
+	return nil
+}
+
+// Validate TLS protocol versions and cipher suites
+func (t ProtocolParameters) Validate() error {
 	if err := t.CipherSuites.Validate(); err != nil {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
@@ -429,6 +443,14 @@ type ClusterParameters struct {
 	//
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `yaml:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
+	//
+	// +optional
+	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
+
+	// UpstreamTLS contains the TLS policy parameters for upstream connections
+	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`
 }
 
 func (p *ClusterParameters) Validate() error {
@@ -443,6 +465,11 @@ func (p *ClusterParameters) Validate() error {
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
 		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on cluster, minimum value is 1", *p.PerConnectionBufferLimitBytes)
 	}
+
+	if err := p.UpstreamTLS.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -674,6 +701,13 @@ type Parameters struct {
 
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
+
+	// FeatureFlags defines toggle to enable new contour features.
+	// available toggles are
+	// useEndpointSlices - configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to false and reading endpoint
+	// data from the k8s endpoints.
+	FeatureFlags []string `yaml:"featureFlags,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -840,6 +874,10 @@ type MetricsServerParameters struct {
 	// Optional: required only if client certificates shall be validated to protect the metrics endpoint.
 	CABundle string `yaml:"ca-certificate-path,omitempty"`
 }
+
+// FeatureFlags defines the set of feature flags
+// to toggle new contour features.
+type FeatureFlags []string
 
 func (p *MetricsParameters) Validate() error {
 	if err := p.Contour.Validate(); err != nil {

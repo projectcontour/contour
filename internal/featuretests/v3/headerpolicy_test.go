@@ -214,7 +214,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(externalNameCluster("default/externalname/443/9ebffe8f28", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil),
+			tlsCluster(externalNameCluster("default/externalname/443/9ebffe8f28", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil, nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -334,7 +334,7 @@ func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(externalNameCluster("default/externalname/443/9ebffe8f28", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil),
+			tlsCluster(externalNameCluster("default/externalname/443/9ebffe8f28", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil, nil),
 		),
 		TypeUrl: clusterType,
 	})

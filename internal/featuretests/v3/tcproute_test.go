@@ -22,6 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -54,7 +55,7 @@ func TestTCPRoute(t *testing.T) {
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -67,10 +68,10 @@ func TestTCPRoute(t *testing.T) {
 			Listeners: []gatewayapi_v1beta1.Listener{{
 				Name:     "tcp-1",
 				Port:     10000,
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -120,10 +121,10 @@ func TestTCPRoute(t *testing.T) {
 	gateway.Spec.Listeners = append(gateway.Spec.Listeners, gatewayapi_v1beta1.Listener{
 		Name:     "tcp-2",
 		Port:     10001,
-		Protocol: gatewayapi_v1beta1.TCPProtocolType,
+		Protocol: gatewayapi_v1.TCPProtocolType,
 		AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 			Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+				From: ref.To(gatewayapi_v1.NamespacesFromAll),
 			},
 		},
 	})
@@ -208,7 +209,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -222,16 +223,16 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 				{
 					Name:     "tls",
 					Port:     5000,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1.TLSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},

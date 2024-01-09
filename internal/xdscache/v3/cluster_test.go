@@ -743,10 +743,11 @@ func TestClusterVisit(t *testing.T) {
 					"default",
 					"kuard",
 					map[string]string{
-						"projectcontour.io/max-connections":      "9000",
-						"projectcontour.io/max-pending-requests": "4096",
-						"projectcontour.io/max-requests":         "404",
-						"projectcontour.io/max-retries":          "7",
+						"projectcontour.io/max-connections":          "9000",
+						"projectcontour.io/max-pending-requests":     "4096",
+						"projectcontour.io/max-requests":             "404",
+						"projectcontour.io/max-retries":              "7",
+						"projectcontour.io/per-host-max-connections": "45",
 					},
 					v1.ServicePort{
 						Protocol: "TCP",
@@ -770,6 +771,9 @@ func TestClusterVisit(t *testing.T) {
 							MaxPendingRequests: wrapperspb.UInt32(4096),
 							MaxRequests:        wrapperspb.UInt32(404),
 							MaxRetries:         wrapperspb.UInt32(7),
+						}},
+						PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+							MaxConnections: wrapperspb.UInt32(45),
 						}},
 					},
 				},

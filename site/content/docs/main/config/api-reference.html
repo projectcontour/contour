@@ -4694,7 +4694,8 @@ string
 <p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 The secret must contain key named ca.crt.
 The name can be optionally prefixed with namespace &ldquo;namespace/name&rdquo;.
-When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.</p>
+When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
+Max length should be the actual max possible length of a namespaced name (63 + 253 + 1 = 317)</p>
 </td>
 </tr>
 <tr>
@@ -4706,7 +4707,22 @@ string
 </em>
 </td>
 <td>
-<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate.</p>
+<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate.
+Deprecated: migrate to using the plural field subjectNames.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>subjectNames</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of keys, of which at least one is expected to be present in the &lsquo;subjectAltName of the
+presented certificate.</p>
 </td>
 </tr>
 </tbody>
@@ -5133,6 +5149,24 @@ TracingConfig
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>featureFlags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.FeatureFlags">
+FeatureFlags
+</a>
+</em>
+</td>
+<td>
+<p>FeatureFlags defines toggle to enable new contour features.
+Available toggles are:
+useEndpointSlices - configures contour to fetch endpoint data
+from k8s endpoint slices. defaults to false and reading endpoint
+data from the k8s endpoints.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5276,6 +5310,8 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>ResourceLabels is a set of labels to add to the provisioned Contour resources.</p>
+<p>Deprecated: use Gateway.Spec.Infrastructure.Labels instead. This field will be
+removed in a future release.</p>
 </td>
 </tr>
 </table>
@@ -5653,6 +5689,37 @@ see <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v
 for more information.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>circuitBreakers</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">
+GlobalCircuitBreakerDefaults
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+If defined, this will be used as the default for all services.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>upstreamTLS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.EnvoyTLS">
+EnvoyTLS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpstreamTLS contains the TLS policy parameters for upstream connections</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
@@ -5875,6 +5942,24 @@ TracingConfig
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>featureFlags</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.FeatureFlags">
+FeatureFlags
+</a>
+</em>
+</td>
+<td>
+<p>FeatureFlags defines toggle to enable new contour features.
+Available toggles are:
+useEndpointSlices - configures contour to fetch endpoint data
+from k8s endpoint slices. defaults to false and reading endpoint
+data from the k8s endpoints.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus
@@ -5997,6 +6082,8 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>ResourceLabels is a set of labels to add to the provisioned Contour resources.</p>
+<p>Deprecated: use Gateway.Spec.Infrastructure.Labels instead. This field will be
+removed in a future release.</p>
 </td>
 </tr>
 </tbody>
@@ -7133,6 +7220,7 @@ More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>, 
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
 </p>
 <p>
@@ -7464,6 +7552,16 @@ uint32
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.FeatureFlags">FeatureFlags
+(<code>[]string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>FeatureFlags defines the set of feature flags
+to toggle new contour features.</p>
+</p>
 <h3 id="projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig
 </h3>
 <p>
@@ -7514,6 +7612,76 @@ instance corresponds to. If set, Contour will reconcile
 only this gateway, and will not reconcile any gateway
 classes.
 Exactly one of ControllerName or GatewayRef must be set.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">GlobalCircuitBreakerDefaults
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>maxConnections</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxPendingRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRetries</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.</p>
 </td>
 </tr>
 </tbody>

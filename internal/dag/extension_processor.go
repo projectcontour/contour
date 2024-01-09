@@ -39,6 +39,10 @@ type ExtensionServiceProcessor struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// UpstreamTLS defines the TLS settings like min/max version
+	// and cipher suites for upstream connections.
+	UpstreamTLS *UpstreamTLS
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -114,6 +118,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		ClusterTimeoutPolicy: ctp,
 		SNI:                  "",
 		ClientCertificate:    clientCertSecret,
+		UpstreamTLS:          p.UpstreamTLS,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)
@@ -169,7 +174,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// future.
 		//
 		// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
-		extension.SNI = uv.SubjectName
+		extension.SNI = uv.SubjectNames[0]
 
 		if extension.Protocol != "h2" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "InconsistentProtocol",

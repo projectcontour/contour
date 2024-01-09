@@ -85,7 +85,6 @@ merge_slashes path transformation behavior that strips duplicate slashes from re
 | incluster                 | boolean                | `false`                                                                                              | This field specifies that Contour is running in a Kubernetes cluster and should use the in-cluster client access configuration.                                                                                                                                                       |
 | json-fields               | string array           | [fields][5]                                                                                          | This is the list the field names to include in the JSON [access log format][2]. This field only has effect if `accesslog-format` is `json`.                                                                                                                                           |
 | kubeconfig                | string                 | `$HOME/.kube/config`                                                                                 | Path to a Kubernetes [kubeconfig file][3] for when Contour is executed outside a cluster.                                                                                                                                                                                             |
-| leaderelection            | leaderelection         |                                                                                                      | The [leader election configuration](#leader-election-configuration).                                                                                                                                                                                                                  |
 | policy                    | PolicyConfig           |                                                                                                      | The default [policy configuration](#policy-configuration).                                                                                                                                                                                                                            |
 | tls                       | TLS                    |                                                                                                      | The default [TLS configuration](#tls-configuration).                                                                                                                                                                                                                                  |
 | timeouts                  | TimeoutConfig          |                                                                                                      | The [timeout configuration](#timeout-configuration).                                                                                                                                                                                                                                  |
@@ -125,21 +124,6 @@ Contour should provision TLS hosts.
 | name       | string | `""`    | This field specifies the name of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service.      |
 | namespace  | string | `""`    | This field specifies the namespace of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
 
-### Leader Election Configuration
-
-The leader election configuration block configures how a deployment with more than one Contour pod elects a leader.
-The Contour leader is responsible for updating the status field on Ingress and HTTPProxy documents.
-In the vast majority of deployments, only the `configmap-name` and `configmap-namespace` fields should require any configuration.
-
-_Note:_ Configuring leader election via the configuration file is deprecated, please use the `contour serve` command line flags instead.
-
-| Field Name          | Type          | Default          | Description                                                                                                                                                                          |
-| ------------------- | ------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| configmap-name      | string        | `leader-elect`   | The name of the ConfigMap that Contour leader election will lease.                                                                                                                   |
-| configmap-namespace | string        | `projectcontour` | The namespace of the ConfigMap that Contour leader election will lease. If the `CONTOUR_NAMESPACE` environment variable is present, Contour will populate this field with its value. |
-| lease-duration      | [duration][4] | `15s`            | The duration of the leadership lease.                                                                                                                                                |
-| renew-deadline      | [duration][4] | `10s`            | The length of time that the leader will retry refreshing leadership before giving up.                                                                                                |
-| retry-period        | [duration][4] | `2s`             | The interval at which Contour will attempt to the acquire leadership lease.                                                                                                          |
 
 ### Timeout Configuration
 

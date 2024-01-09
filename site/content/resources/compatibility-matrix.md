@@ -3,72 +3,73 @@ title: Compatibility Matrix
 layout: page
 ---
 
-This page documents the compatibility matrix of versions of Contour, Envoy, Kubernetes, and the Contour Operator.
+This page documents the compatibility matrix of versions of Contour, Envoy, Kubernetes, and Gateway API.
 These combinations of versions are specifically tested in CI and supported by the Contour maintainers.
 
 ## Compatibility Matrix
 
-| Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
-| --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.27.2][42]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
-| 1.26.1          | [1.27.2][42]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
-| 1.26.0          | [1.27.0][41]         | 1.28, 1.27, 1.26    | N/A              | v1alpha2, v1beta1   |
-| 1.25.3          | [1.26.6][43]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
-| 1.25.2          | [1.26.4][40]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
-| 1.25.1          | [1.26.4][40]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
-| 1.25.0          | [1.26.1][35]         | 1.27, 1.26, 1.25    | N/A              | v1alpha2, v1beta1   |
-| 1.24.6          | [1.25.11][44]        | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.5          | [1.25.9][39]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.4          | [1.25.6][36]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.3          | [1.25.4][32]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.2          | [1.25.2][31]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.1          | [1.25.1][28]         | 1.26, 1.25, 1.24    | N/A              | v1alpha2, v1beta1   |
-| 1.24.0          | [1.25.0][25]         | 1.26, 1.25, 1.24    | [1.24.0][75]     | v1alpha2, v1beta1   |
-| 1.23.6          | [1.24.10][38]        | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.5          | [1.24.5][33]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.4          | [1.24.3][30]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.3          | [1.24.2][27]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.2          | [1.24.1][24]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.1          | [1.24.1][24]         | 1.25, 1.24, 1.23    | N/A              | v1alpha2, v1beta1   |
-| 1.23.0          | [1.24.0][21]         | 1.25, 1.24, 1.23    | [1.23.0][74]     | v1alpha2, v1beta1   |
-| 1.22.6          | [1.23.7][34]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
-| 1.22.5          | [1.23.5][29]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
-| 1.22.4          | [1.23.4][26]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
-| 1.22.3          | [1.23.3][23]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
-| 1.22.2          | [1.23.3][23]         | 1.24, 1.23, 1.22    | N/A              | v1alpha2, v1beta1   |
-| 1.22.1          | [1.23.1][20]         | 1.24, 1.23, 1.22    | [1.22.1][73]     | v1alpha2, v1beta1   |
-| 1.22.0          | [1.23.0][19]         | 1.24, 1.23, 1.22    | [1.22.0][72]     | v1alpha2, v1beta1   |
-| 1.21.3          | [1.22.6][22]         | 1.23, 1.22, 1.21    | N/A              | v1alpha2            |
-| 1.21.2          | [1.22.6][22]         | 1.23, 1.22, 1.21    | N/A              | v1alpha2            |
-| 1.21.1          | [1.22.2][17]         | 1.23, 1.22, 1.21    | [1.21.1][70]     | v1alpha2            |
-| 1.21.0          | [1.22.0][16]         | 1.23, 1.22, 1.21    | [1.21.0][69]     | v1alpha2            |
-| 1.20.2          | [1.21.3][18]         | 1.23, 1.22, 1.21    | [1.20.2][71]     | v1alpha2            |
-| 1.20.1          | [1.21.1][15]         | 1.23, 1.22, 1.21    | [1.20.1][68]     | v1alpha2            |
-| 1.20.0          | [1.21.0][14]         | 1.23, 1.22, 1.21    | [1.20.0][67]     | v1alpha2            |
-| 1.19.1          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.1][65]     | v1alpha1            |
-| 1.19.0          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.0][64]     | v1alpha1            |
-| 1.18.3          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.3][66]     | v1alpha1            |
-| 1.18.2          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.2][63]     | v1alpha1            |
-| 1.18.1          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.1][62]     | v1alpha1            |
-| 1.18.0          | [1.19.0][10]         | 1.21, 1.20, 1.19    | [1.18.0][61]     | v1alpha1            |
-| 1.17.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.17.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.17.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.17.0][60]     | v1alpha1            |
-| 1.16.1          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.16.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.16.0][59]     | v1alpha1            |
-| 1.15.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.15.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.15.1][58]     | v1alpha1            |
-| 1.15.0          | [1.18.2][8]          | 1.21, 1.20, 1.19    | [1.15.0][57]     | v1alpha1            |
-| 1.14.2          | [1.17.4][11]         | 1.20, 1.19, 1.18    | N/A              | v1alpha1            |
-| 1.14.1          | [1.17.2][7]          | 1.20, 1.19, 1.18    | [1.14.1][56]     | v1alpha1            |
-| 1.14.0          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.14.0][55]     | v1alpha1            |
-| 1.13.1          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.13.1][54]     | v1alpha1            |
-| 1.13.0          | [1.17.0][5]          | 1.20, 1.19, 1.18    | [1.13.0][53]     | v1alpha1            |
-| 1.12.0          | [1.17.0][5]          | 1.19, 1.18, 1.17    | [1.12.0][52]     | N/A                 |
-| 1.11.0          | [1.16.2][4]          | 1.19, 1.18, 1.17    | [1.11.0][51]     | N/A                 |
-| 1.10.1          | [1.16.2][4]          | 1.19, 1.18, 1.17    | N/A              | N/A                 |
-| 1.10.0          | [1.16.0][3]          | 1.19, 1.18, 1.17    | N/A              | N/A                 |
-| 1.9.0           | [1.15.1][2]          | 1.18, 1.17, 1.16    | N/A              | N/A                 |
+| Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
+| --------------- | :------------------- | ------------------- | --------------------|
+| main            | [1.28.0][45]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.27.0          | [1.28.0][45]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
+| 1.26.1          | [1.27.2][42]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
+| 1.26.0          | [1.27.0][41]         | 1.28, 1.27, 1.26    | [0.8.0][108]        |
+| 1.25.3          | [1.26.6][43]         | 1.27, 1.26, 1.25    | [0.6.2][107]        |
+| 1.25.2          | [1.26.4][40]         | 1.27, 1.26, 1.25    | [0.6.2][107]        |
+| 1.25.1          | [1.26.4][40]         | 1.27, 1.26, 1.25    | [0.6.2][107]        |
+| 1.25.0          | [1.26.1][35]         | 1.27, 1.26, 1.25    | [0.6.2][107]        |
+| 1.24.6          | [1.25.11][44]        | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.5          | [1.25.9][39]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.4          | [1.25.6][36]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.3          | [1.25.4][32]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.2          | [1.25.2][31]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.1          | [1.25.1][28]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.24.0          | [1.25.0][25]         | 1.26, 1.25, 1.24    | [0.6.0][106]        |
+| 1.23.6          | [1.24.10][38]        | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.5          | [1.24.5][33]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.4          | [1.24.3][30]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.3          | [1.24.2][27]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.2          | [1.24.1][24]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.1          | [1.24.1][24]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.23.0          | [1.24.0][21]         | 1.25, 1.24, 1.23    | [0.5.1][105]        |
+| 1.22.6          | [1.23.7][34]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.5          | [1.23.5][29]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.4          | [1.23.4][26]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.3          | [1.23.3][23]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.2          | [1.23.3][23]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.1          | [1.23.1][20]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.22.0          | [1.23.0][19]         | 1.24, 1.23, 1.22    | [0.5.0][104]        |
+| 1.21.3          | [1.22.6][22]         | 1.23, 1.22, 1.21    | [0.4.3][103]        |
+| 1.21.2          | [1.22.6][22]         | 1.23, 1.22, 1.21    | [0.4.3][103]        |
+| 1.21.1          | [1.22.2][17]         | 1.23, 1.22, 1.21    | [0.4.3][103]        |
+| 1.21.0          | [1.22.0][16]         | 1.23, 1.22, 1.21    | [0.4.3][103]        |
+| 1.20.2          | [1.21.3][18]         | 1.23, 1.22, 1.21    | [0.4.1][102]        |
+| 1.20.1          | [1.21.1][15]         | 1.23, 1.22, 1.21    | [0.4.1][102]        |
+| 1.20.0          | [1.21.0][14]         | 1.23, 1.22, 1.21    | [0.4.1][102]        |
+| 1.19.1          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [0.3.0][101]        |
+| 1.19.0          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [0.3.0][101]        |
+| 1.18.3          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.18.2          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.18.1          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.18.0          | [1.19.0][10]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.17.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.17.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.17.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.16.1          | [1.18.4][12]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.16.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.15.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.15.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.15.0          | [1.18.2][8]          | 1.21, 1.20, 1.19    | [0.3.0][101]        |
+| 1.14.2          | [1.17.4][11]         | 1.20, 1.19, 1.18    | [0.2.0][100]        |
+| 1.14.1          | [1.17.2][7]          | 1.20, 1.19, 1.18    | [0.2.0][100]        |
+| 1.14.0          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [0.2.0][100]        |
+| 1.13.1          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [0.2.0][100]        |
+| 1.13.0          | [1.17.0][5]          | 1.20, 1.19, 1.18    | [0.2.0][100]        |
+| 1.12.0          | [1.17.0][5]          | 1.19, 1.18, 1.17    | N/A                 |
+| 1.11.0          | [1.16.2][4]          | 1.19, 1.18, 1.17    | N/A                 |
+| 1.10.1          | [1.16.2][4]          | 1.19, 1.18, 1.17    | N/A                 |
+| 1.10.0          | [1.16.0][3]          | 1.19, 1.18, 1.17    | N/A                 |
+| 1.9.0           | [1.15.1][2]          | 1.18, 1.17, 1.16    | N/A                 |
 
 <br />
 
@@ -172,33 +173,19 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [42]: https://www.envoyproxy.io/docs/envoy/v1.27.2/version_history/v1.27/v1.27.2
 [43]: https://www.envoyproxy.io/docs/envoy/v1.26.6/version_history/v1.26/v1.26.6
 [44]: https://www.envoyproxy.io/docs/envoy/v1.25.11/version_history/v1.25/v1.25.11
-
-[50]: https://github.com/projectcontour/contour-operator
-[51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
-[52]: https://github.com/projectcontour/contour-operator/releases/tag/v1.12.0
-[53]: https://github.com/projectcontour/contour-operator/releases/tag/v1.13.0
-[54]: https://github.com/projectcontour/contour-operator/releases/tag/v1.13.1
-[55]: https://github.com/projectcontour/contour-operator/releases/tag/v1.14.0
-[56]: https://github.com/projectcontour/contour-operator/releases/tag/v1.14.1
-[57]: https://github.com/projectcontour/contour-operator/releases/tag/v1.15.0
-[58]: https://github.com/projectcontour/contour-operator/releases/tag/v1.15.1
-[59]: https://github.com/projectcontour/contour-operator/releases/tag/v1.16.0
-[60]: https://github.com/projectcontour/contour-operator/releases/tag/v1.17.0
-[61]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.0
-[62]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.1
-[63]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.2
-[64]: https://github.com/projectcontour/contour-operator/releases/tag/v1.19.0
-[65]: https://github.com/projectcontour/contour-operator/releases/tag/v1.19.1
-[66]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.3
-[67]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.0
-[68]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.1
-[69]: https://github.com/projectcontour/contour-operator/releases/tag/v1.21.0
-[70]: https://github.com/projectcontour/contour-operator/releases/tag/v1.21.1
-[71]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.2
-[72]: https://github.com/projectcontour/contour-operator/releases/tag/v1.22.0
-[73]: https://github.com/projectcontour/contour-operator/releases/tag/v1.22.1
-[74]: https://github.com/projectcontour/contour-operator/releases/tag/v1.23.0
-[75]: https://github.com/projectcontour/contour-operator/releases/tag/v1.24.0
+[45]: https://www.envoyproxy.io/docs/envoy/v1.28.0/version_history/v1.28/v1.28.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix
+
+[100]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.2.0
+[101]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.3.0
+[102]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.4.1
+[103]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.4.3
+[104]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.5.0
+[105]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.5.1
+[106]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.6.0
+[107]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.6.2
+[108]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.8.0
+[109]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.8.1
+[110]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v1.0.0

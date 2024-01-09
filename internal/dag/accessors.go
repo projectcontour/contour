@@ -62,12 +62,13 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port int, healthPort int,
 			HealthPort:       healthSvcPort,
 			Weight:           1,
 		},
-		Protocol:           upstreamProtocol(svc, svcPort),
-		MaxConnections:     annotation.MaxConnections(svc),
-		MaxPendingRequests: annotation.MaxPendingRequests(svc),
-		MaxRequests:        annotation.MaxRequests(svc),
-		MaxRetries:         annotation.MaxRetries(svc),
-		ExternalName:       externalName(svc),
+		Protocol:              upstreamProtocol(svc, svcPort),
+		MaxConnections:        annotation.MaxConnections(svc),
+		MaxPendingRequests:    annotation.MaxPendingRequests(svc),
+		MaxRequests:           annotation.MaxRequests(svc),
+		MaxRetries:            annotation.MaxRetries(svc),
+		PerHostMaxConnections: annotation.PerHostMaxConnections(svc),
+		ExternalName:          externalName(svc),
 	}, nil
 }
 
@@ -103,13 +104,33 @@ func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
 	return nil
 }
 
+// the ServicePort's AppProtocol must be one of the these.
+const (
+	protoK8sH2C = "kubernetes.io/h2c"
+	protoK8sWS  = "kubernetes.io/ws"
+)
+
+func toContourProtocol(appProtocol string) (string, bool) {
+	proto, ok := map[string]string{
+		// *NOTE: for gateway-api: the websocket is enabled by default
+		protoK8sWS:  "",
+		protoK8sH2C: "h2c",
+	}[appProtocol]
+	return proto, ok
+}
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
-	up := annotation.ParseUpstreamProtocols(svc.Annotations)
-	protocol := up[port.Name]
-	if protocol == "" {
-		protocol = up[strconv.Itoa(int(port.Port))]
+	// if appProtocol is not nil, check it only
+	if port.AppProtocol != nil {
+		proto, _ := toContourProtocol(*port.AppProtocol)
+		return proto
 	}
-	return protocol
+
+	up := annotation.ParseUpstreamProtocols(svc.Annotations)
+	proto := up[port.Name]
+	if proto == "" {
+		proto = up[strconv.Itoa(int(port.Port))]
+	}
+	return proto
 }
 
 func externalName(svc *v1.Service) string {

@@ -17,13 +17,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/internal/timeout"
+
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_gzip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
@@ -33,14 +39,7 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -242,7 +241,7 @@ func TestSocketAddress(t *testing.T) {
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
-	const subjectName = "client-subject-name"
+	subjectNames := []string{"client-subject-name"}
 	ca := []byte("client-ca-cert")
 	crl := []byte("crl-data")
 
@@ -329,7 +328,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 				},
 			},
 		},
-		SubjectName: subjectName,
+		SubjectNames: subjectNames,
 	}
 
 	peerValidationContextSkipClientCertValidation := &dag.PeerValidationContext{
@@ -1740,6 +1739,84 @@ func TestBuilderValidation(t *testing.T) {
 }
 
 func TestAddFilter(t *testing.T) {
+	routerFilter := &http.HttpFilter{
+		Name: "router",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+		},
+	}
+	grpcWebFilter := &http.HttpFilter{
+		Name: "grpcweb",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
+		},
+	}
+	corsFilter := &http.HttpFilter{
+		Name: "cors",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
+		},
+	}
+
+	grpcStatsFilter := &http.HttpFilter{
+		Name: "grpc_stats",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(
+				&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
+					EmitFilterState:     true,
+					EnableUpstreamStats: true,
+				},
+			),
+		},
+	}
+	luaFilter := &http.HttpFilter{
+		Name: "envoy.filters.http.lua",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
+				DefaultSourceCode: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineString{
+						InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+					},
+				},
+			}),
+		},
+	}
+	rbacFilter := &http.HttpFilter{
+		Name: "envoy.filters.http.rbac",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
+		},
+	}
+
+	localRateLimitFilter := &http.HttpFilter{
+		Name: "local_ratelimit",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(
+				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+					StatPrefix: "http",
+				},
+			),
+		},
+	}
+
+	compressFilter := &http.HttpFilter{
+		Name: "compressor",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+				CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+					Name: "gzip",
+					TypedConfig: protobuf.MustMarshalAny(
+						&envoy_gzip_v3.Gzip{},
+					),
+				},
+				ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
+					CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
+						ContentType: compressorContentTypes,
+					},
+				},
+			}),
+		},
+	}
 
 	tests := map[string]struct {
 		builder *httpConnectionManagerBuilder
@@ -1753,289 +1830,61 @@ func TestAddFilter(t *testing.T) {
 		},
 		"Add a single router filter to empty builder": {
 			builder: HTTPConnectionManagerBuilder(),
-			add: &http.HttpFilter{
-				Name: "router",
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-				},
-			},
-			want: []*http.HttpFilter{
-				{
-					Name: "router",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-					},
-				},
-			},
+			add:     routerFilter,
+			want:    []*http.HttpFilter{routerFilter},
 		},
 		"Add a single non-router filter to empty builder": {
 			builder: HTTPConnectionManagerBuilder(),
-			add: &http.HttpFilter{
-				Name: "grpcweb",
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-				},
-			},
-			want: []*http.HttpFilter{
-				{
-					Name: "grpcweb",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-					},
-				},
-			},
+			add:     grpcWebFilter,
+			want:    []*http.HttpFilter{grpcWebFilter},
 		},
+		"Add a single router filter to non-empty builder": {
+			builder: HTTPConnectionManagerBuilder().AddFilter(grpcWebFilter),
+			add:     routerFilter,
+			want:    []*http.HttpFilter{grpcWebFilter, routerFilter},
+		},
+
 		"Add a filter to a builder with a router": {
-			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
-				Name: "router",
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-				},
-			}),
-			add: &http.HttpFilter{
-				Name: "grpcweb",
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-				},
-			},
-			want: []*http.HttpFilter{
-				{
-					Name: "grpcweb",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-					},
-				},
-				{
-					Name: "router",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-					},
-				},
-			},
+			builder: HTTPConnectionManagerBuilder().AddFilter(routerFilter),
+			add:     grpcWebFilter,
+			want:    []*http.HttpFilter{grpcWebFilter, routerFilter},
 		},
 		"Add to the default filters": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add: FilterExternalAuthz(&dag.ExternalAuthorization{
-				AuthorizationService: &dag.ExtensionCluster{
-					Name: "test",
-					SNI:  "",
-				},
-				AuthorizationFailOpen:              false,
-				AuthorizationResponseTimeout:       timeout.Setting{},
-				AuthorizationServerWithRequestBody: nil,
-			}),
+			add:     authzFilter(),
 			want: []*http.HttpFilter{
-				{
-					Name: "compressor",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-							CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-								Name: "gzip",
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_gzip_v3.Gzip{},
-								),
-							},
-							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-									ContentType: compressorContentTypes,
-								},
-							},
-						}),
-					},
-				},
-				{
-					Name: "grpcweb",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-					},
-				},
-				{
-					Name: "grpc_stats",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-								EmitFilterState:     true,
-								EnableUpstreamStats: true,
-							},
-						),
-					},
-				},
-				{
-					Name: "cors",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-					},
-				},
-				{
-					Name: "local_ratelimit",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-								StatPrefix: "http",
-							},
-						),
-					},
-				},
-				{
-					Name: "envoy.filters.http.lua",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-							DefaultSourceCode: &envoy_core_v3.DataSource{
-								Specifier: &envoy_core_v3.DataSource_InlineString{
-									InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
-								},
-							},
-						}),
-					},
-				},
-				{
-					Name: "envoy.filters.http.rbac",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
-					},
-				},
-				FilterExternalAuthz(&dag.ExternalAuthorization{
-					AuthorizationService: &dag.ExtensionCluster{
-						Name: "test",
-						SNI:  "",
-					},
-					AuthorizationFailOpen:              false,
-					AuthorizationResponseTimeout:       timeout.Setting{},
-					AuthorizationServerWithRequestBody: nil,
-				}),
-				{
-					Name: "router",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-					},
-				},
+				compressFilter,
+				grpcWebFilter,
+				grpcStatsFilter,
+				corsFilter,
+				localRateLimitFilter,
+				luaFilter,
+				rbacFilter,
+				authzFilter(),
+				routerFilter,
 			},
 		},
 		"Add to the default filters with AuthorizationServerBufferSettings": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add: FilterExternalAuthz(&dag.ExternalAuthorization{
-				AuthorizationService: &dag.ExtensionCluster{
-					Name: "test",
-					SNI:  "ext-auth-server.com",
-				},
-				AuthorizationFailOpen:        false,
-				AuthorizationResponseTimeout: timeout.Setting{},
-				AuthorizationServerWithRequestBody: &dag.AuthorizationServerBufferSettings{
+			add: authzFilter("ext-auth-server.com", &dag.AuthorizationServerBufferSettings{
+				MaxRequestBytes:     10,
+				AllowPartialMessage: true,
+				PackAsBytes:         true,
+			}),
+			want: []*http.HttpFilter{
+				compressFilter,
+				grpcWebFilter,
+				grpcStatsFilter,
+				corsFilter,
+				localRateLimitFilter,
+				luaFilter,
+				rbacFilter,
+				authzFilter("ext-auth-server.com", &dag.AuthorizationServerBufferSettings{
 					MaxRequestBytes:     10,
 					AllowPartialMessage: true,
 					PackAsBytes:         true,
-				},
-			}),
-			want: []*http.HttpFilter{
-				{
-					Name: "compressor",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
-							CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
-								Name: "gzip",
-								TypedConfig: protobuf.MustMarshalAny(
-									&envoy_gzip_v3.Gzip{},
-								),
-							},
-							ResponseDirectionConfig: &envoy_compressor_v3.Compressor_ResponseDirectionConfig{
-								CommonConfig: &envoy_compressor_v3.Compressor_CommonDirectionConfig{
-									ContentType: compressorContentTypes,
-								},
-							},
-						}),
-					},
-				},
-				{
-					Name: "grpcweb",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
-					},
-				},
-				{
-					Name: "grpc_stats",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
-								EmitFilterState:     true,
-								EnableUpstreamStats: true,
-							},
-						),
-					},
-				},
-				{
-					Name: "cors",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
-					},
-				},
-				{
-					Name: "local_ratelimit",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-								StatPrefix: "http",
-							},
-						),
-					},
-				},
-				{
-					Name: "envoy.filters.http.lua",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-							DefaultSourceCode: &envoy_core_v3.DataSource{
-								Specifier: &envoy_core_v3.DataSource_InlineString{
-									InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
-								},
-							},
-						}),
-					},
-				},
-				{
-					Name: "envoy.filters.http.rbac",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
-					},
-				},
-				{
-					Name: "envoy.filters.http.ext_authz",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-								Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-									GrpcService: &envoy_core_v3.GrpcService{
-										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-												ClusterName: "test",
-												Authority:   "ext-auth-server.com",
-											},
-										},
-										Timeout:         envoy.Timeout(timeout.Setting{}),
-										InitialMetadata: []*envoy_core_v3.HeaderValue{},
-									},
-								},
-								ClearRouteCache:  true,
-								FailureModeAllow: false,
-								StatusOnError: &envoy_type_v3.HttpStatus{
-									Code: envoy_type_v3.StatusCode_Forbidden,
-								},
-								MetadataContextNamespaces: []string{},
-								IncludePeerCertificate:    true,
-								TransportApiVersion:       envoy_core_v3.ApiVersion_V3,
-								WithRequestBody: &envoy_config_filter_http_ext_authz_v3.BufferSettings{
-									MaxRequestBytes:     10,
-									AllowPartialMessage: true,
-									PackAsBytes:         true,
-								},
-							},
-						),
-					},
-				},
-				{
-					Name: "router",
-					ConfigType: &http.HttpFilter_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-					},
-				},
+				}),
+				routerFilter,
 			},
 		},
 	}
@@ -2048,11 +1897,28 @@ func TestAddFilter(t *testing.T) {
 	}
 
 	assert.Panics(t, func() {
-		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(&http.HttpFilter{
-			Name: "router",
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
-			},
-		})
+		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(routerFilter)
+	})
+}
+
+func authzFilter(extras ...any) *http.HttpFilter {
+	sni := ""
+	if len(extras) > 0 {
+		sni = extras[0].(string)
+	}
+
+	var body *dag.AuthorizationServerBufferSettings
+	if len(extras) > 1 {
+		body = extras[1].(*dag.AuthorizationServerBufferSettings)
+	}
+
+	return FilterExternalAuthz(&dag.ExternalAuthorization{
+		AuthorizationService: &dag.ExtensionCluster{
+			Name: "test",
+			SNI:  sni,
+		},
+		AuthorizationFailOpen:              false,
+		AuthorizationResponseTimeout:       timeout.Setting{},
+		AuthorizationServerWithRequestBody: body,
 	})
 }

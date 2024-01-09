@@ -19,6 +19,7 @@ import (
 
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/ref"
 
 	"github.com/go-logr/logr"
@@ -26,12 +27,14 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -50,9 +53,9 @@ func TestGatewayReconcile(t *testing.T) {
 			Status: gatewayv1beta1.GatewayClassStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+						Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 						Status: metav1.ConditionTrue,
-						Reason: string(gatewayv1beta1.GatewayClassReasonAccepted),
+						Reason: string(gatewayapi_v1.GatewayClassReasonAccepted),
 					},
 				},
 			},
@@ -121,7 +124,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Contour deployment has been created
@@ -145,9 +148,9 @@ func TestGatewayReconcile(t *testing.T) {
 				Status: gatewayv1beta1.GatewayClassStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+							Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 							Status: metav1.ConditionFalse,
-							Reason: string(gatewayv1beta1.GatewayClassReasonInvalidParameters),
+							Reason: string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 						},
 					},
 				},
@@ -182,9 +185,9 @@ func TestGatewayReconcile(t *testing.T) {
 				Status: gatewayv1beta1.GatewayClassStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   string(gatewayv1beta1.GatewayClassConditionStatusAccepted),
+							Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 							Status: metav1.ConditionTrue,
-							Reason: string(gatewayv1beta1.GatewayClassReasonAccepted),
+							Reason: string(gatewayapi_v1.GatewayClassReasonAccepted),
 						},
 					},
 				},
@@ -318,7 +321,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -387,7 +390,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -442,7 +445,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the ContourConfiguration has been created
@@ -477,40 +480,40 @@ func TestGatewayReconcile(t *testing.T) {
 			gateway: makeGatewayWithListeners([]gatewayv1beta1.Listener{
 				{
 					Name:     "listener-1",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
 				},
 				{
 					Name:     "listener-2",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     81,
 				},
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
 					Name:     "listener-4",
-					Protocol: gatewayv1beta1.UDPProtocolType,
+					Protocol: gatewayapi_v1.UDPProtocolType,
 					Port:     82,
 				},
 				{
 					Name:     "listener-5",
-					Protocol: gatewayv1beta1.HTTPSProtocolType,
+					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					Port:     443,
 				},
 				{
 					Name:     "listener-6",
-					Protocol: gatewayv1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1.TLSProtocolType,
 					Port:     443,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-7",
-					Protocol: gatewayv1beta1.HTTPSProtocolType,
+					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					Port:     8443,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.baz")),
 				},
@@ -559,24 +562,24 @@ func TestGatewayReconcile(t *testing.T) {
 			gateway: makeGatewayWithListeners([]gatewayv1beta1.Listener{
 				{
 					Name:     "listener-1",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
 				},
 				{
 					Name:     "listener-2",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
 					Hostname: ref.To(gatewayv1beta1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     8080,
 				},
 				// listener-4 will be ignored because it's an unsupported protocol
 				{
 					Name:     "listener-4",
-					Protocol: gatewayv1beta1.UDPProtocolType,
+					Protocol: gatewayapi_v1.UDPProtocolType,
 					Port:     82,
 				},
 			}),
@@ -622,7 +625,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Deployment has been created
@@ -664,7 +667,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the Deployment has been created
@@ -700,7 +703,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -745,7 +748,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -785,7 +788,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
@@ -830,7 +833,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
@@ -868,7 +871,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -907,10 +910,10 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 			gateway: makeGatewayWithListeners([]gatewayv1beta1.Listener{
 				{
-					Protocol: gatewayv1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
 						Namespaces: &gatewayv1beta1.RouteNamespaces{
-							From: ref.To(gatewayv1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 					Name: gatewayv1beta1.SectionName("http"),
@@ -919,14 +922,14 @@ func TestGatewayReconcile(t *testing.T) {
 				{
 					Name:     gatewayv1beta1.SectionName("https"),
 					Port:     gatewayv1beta1.PortNumber(30001),
-					Protocol: gatewayv1beta1.HTTPSProtocolType,
+					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayv1beta1.AllowedRoutes{
 						Namespaces: &gatewayv1beta1.RouteNamespaces{
-							From: ref.To(gatewayv1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayv1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayv1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 					},
 				},
 			}),
@@ -936,7 +939,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -982,7 +985,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1034,7 +1037,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1086,7 +1089,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the service has been created
@@ -1199,7 +1202,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has a "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the deployment has been created
@@ -1241,7 +1244,7 @@ func TestGatewayReconcile(t *testing.T) {
 				// Verify the Gateway has an "Accepted: true" condition
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
 				require.Len(t, gw.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1beta1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
 				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
 
 				// Verify the daemonset has been created
@@ -1263,6 +1266,136 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				err := r.client.Get(context.Background(), keyFor(deployment), deployment)
 				assert.True(t, errors.IsNotFound(err))
+			},
+		},
+		"The Gateway's infrastructure labels and annotations are set on all resources": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1beta1.GatewaySpec{
+					GatewayClassName: gatewayv1beta1.ObjectName("gatewayclass-1"),
+					Infrastructure: &gatewayapi_v1.GatewayInfrastructure{
+						Labels: map[gatewayapi_v1.AnnotationKey]gatewayapi_v1.AnnotationValue{
+							gatewayapi_v1.AnnotationKey("projectcontour.io/label-1"): gatewayapi_v1.AnnotationValue("label-value-1"),
+							gatewayapi_v1.AnnotationKey("projectcontour.io/label-2"): gatewayapi_v1.AnnotationValue("label-value-2"),
+						},
+						Annotations: map[gatewayapi_v1.AnnotationKey]gatewayapi_v1.AnnotationValue{
+							gatewayapi_v1.AnnotationKey("projectcontour.io/annotation-1"): gatewayapi_v1.AnnotationValue("annotation-value-1"),
+							gatewayapi_v1.AnnotationKey("projectcontour.io/annotation-2"): gatewayapi_v1.AnnotationValue("annotation-value-2"),
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				for _, obj := range []client.Object{
+					&appsv1.Deployment{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&contourv1alpha1.ContourConfiguration{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourconfig-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourcert-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoycert-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&rbacv1.ClusterRole{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.ClusterRoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.Role{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&rbacv1.RoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-rolebinding-gateway-1"},
+					},
+				} {
+					require.NoError(t, r.client.Get(context.Background(), keyFor(obj), obj))
+
+					for k, v := range gw.Spec.Infrastructure.Labels {
+						assert.Equal(t, obj.GetLabels()[string(k)], string(v))
+					}
+					for k, v := range gw.Spec.Infrastructure.Annotations {
+						assert.Equal(t, obj.GetAnnotations()[string(k)], string(v))
+					}
+				}
+			},
+		},
+		"Gateway owner labels are set on all resources": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway:      makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1beta1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				for _, obj := range []client.Object{
+					&appsv1.Deployment{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&contourv1alpha1.ContourConfiguration{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourconfig-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contourcert-gateway-1"},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoycert-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&corev1.ServiceAccount{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "envoy-gateway-1"},
+					},
+					&rbacv1.ClusterRole{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.ClusterRoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Name: "contour-gateway-1-gateway-1"},
+					},
+					&rbacv1.Role{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-gateway-1"},
+					},
+					&rbacv1.RoleBinding{
+						ObjectMeta: metav1.ObjectMeta{Namespace: "gateway-1", Name: "contour-rolebinding-gateway-1"},
+					},
+				} {
+					require.NoError(t, r.client.Get(context.Background(), keyFor(obj), obj))
+
+					assert.Equal(t, gw.Name, obj.GetLabels()[model.ContourOwningGatewayNameLabel])
+					assert.Equal(t, gw.Name, obj.GetLabels()[model.GatewayAPIOwningGatewayNameLabel])
+				}
 			},
 		},
 	}

@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -40,6 +41,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -49,6 +51,7 @@ func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
 	var et *EndpointsTranslator
 	var eh *contour.EventHandler
+	var est *EndpointSliceTranslator
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
@@ -94,6 +97,39 @@ func TestGRPC(t *testing.T) {
 						Port: 443,
 					}},
 				}},
+			}, false)
+
+			eds := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			stream, err := eds.StreamEndpoints(ctx)
+			require.NoError(t, err)
+			sendreq(t, stream, resource.EndpointType) // send initial notification
+			checkrecv(t, stream)                      // check we receive one notification
+			checktimeout(t, stream)                   // check that the second receive times out
+		},
+		"StreamEndpointSlices": func(t *testing.T, cc *grpc.ClientConn) {
+			et.OnAdd(&discoveryv1.EndpointSlice{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kube-scheduler",
+					Namespace: "kube-system",
+				},
+				AddressType: discoveryv1.AddressTypeIPv4,
+				Endpoints: []discoveryv1.Endpoint{
+					{
+						Addresses: []string{
+							"130.211.139.167",
+						},
+					},
+				},
+				Ports: []discoveryv1.EndpointPort{
+					{
+						Port: ref.To[int32](80),
+					},
+					{
+						Port: ref.To[int32](80),
+					},
+				},
 			}, false)
 
 			eds := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(cc)
@@ -201,12 +237,14 @@ func TestGRPC(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
+			est = NewEndpointSliceTranslator(fixture.NewTestLogger(t))
 
 			resources := []xdscache.ResourceCache{
 				&ListenerCache{},
 				&SecretCache{},
 				&RouteCache{},
 				&ClusterCache{},
+				est,
 				et,
 				NewRuntimeCache(ConfigurableRuntimeSettings{}),
 			}

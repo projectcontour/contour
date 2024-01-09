@@ -14,11 +14,21 @@
 package v3
 
 import (
+	"net/url"
 	"path"
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/types/known/wrapperspb"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/contourconfig"
+	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/internal/timeout"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -27,17 +37,9 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contourconfig"
-	"github.com/projectcontour/contour/internal/dag"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -161,6 +163,49 @@ func TestListenerVisit(t *testing.T) {
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 		Get()
 
+	jwksTimeout := "10s"
+	jwksTimeoutDuration, _ := time.ParseDuration(jwksTimeout)
+	jwtProvider := contour_api_v1.JWTProvider{
+		Name:   "provider-1",
+		Issuer: "issuer.jwt.example.com",
+		RemoteJWKS: contour_api_v1.RemoteJWKS{
+			URI:     "https://jwt.example.com/jwks.json",
+			Timeout: jwksTimeout,
+		},
+	}
+	jwksURL, _ := url.Parse(jwtProvider.RemoteJWKS.URI)
+
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
+	fallbackSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbacksecret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
 	tests := map[string]struct {
 		ListenerConfig
 		fallbackCertificate *types.NamespacedName
@@ -183,19 +228,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -226,19 +259,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -272,27 +293,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -362,27 +364,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -436,27 +419,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -487,27 +451,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -575,27 +520,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -640,27 +566,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -716,27 +623,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -794,27 +682,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -870,27 +739,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     8080,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -942,27 +792,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1013,27 +844,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1084,27 +896,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1164,35 +957,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1281,35 +1048,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1398,35 +1139,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1515,35 +1230,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1632,35 +1321,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1749,35 +1412,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -1860,35 +1497,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -1974,35 +1585,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -2072,27 +1657,8 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(),
 		},
@@ -2128,27 +1694,8 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -2198,19 +1745,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2254,19 +1789,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2310,19 +1833,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2366,19 +1877,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2422,19 +1921,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2479,27 +1966,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2561,19 +2029,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2615,19 +2071,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 
 			want: listenermap(&envoy_listener_v3.Listener{
@@ -2670,19 +2114,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 
 			want: listenermap(&envoy_listener_v3.Listener{
@@ -2725,19 +2157,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2781,27 +2201,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2866,27 +2267,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -2950,27 +2332,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3034,27 +2397,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3125,19 +2469,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3209,27 +2541,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3353,35 +2666,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "fallbacksecret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				fallbackSecret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3527,19 +2814,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
@@ -3573,19 +2848,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3627,27 +2890,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3709,19 +2953,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3763,27 +2995,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
@@ -3845,19 +3058,7 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:                          ENVOY_HTTP_LISTENER,
@@ -3899,27 +3100,8 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
+				secret,
+				service,
 			},
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:                          ENVOY_HTTP_LISTENER,
@@ -3956,13 +3138,110 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}),
 		},
+
+		"httpproxy with authZ the authN": {
+			ListenerConfig: ListenerConfig{
+				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			},
+			objs: []any{
+				&contour_api_v1alpha1.ExtensionService{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "auth",
+						Namespace: "extension",
+					},
+				},
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName: "secret",
+							},
+							Authorization: &contour_api_v1.AuthorizationServer{
+								ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+									Namespace: "extension",
+									Name:      "auth",
+								},
+							},
+							JWTProviders: []contour_api_v1.JWTProvider{jwtProvider},
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				secret,
+				service,
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:                          ENVOY_HTTP_LISTENER,
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8080),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_HTTP_LISTENER).
+					MetricsPrefix(ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
+					DefaultFilters().
+					Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}, &envoy_listener_v3.Listener{
+				Name:                          ENVOY_HTTPS_LISTENER,
+				Address:                       envoy_v3.SocketAddress("0.0.0.0", 8443),
+				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						AddFilter(envoy_v3.FilterJWTAuthN([]dag.JWTProvider{{
+							Name:   jwtProvider.Name,
+							Issuer: jwtProvider.Issuer,
+							RemoteJWKS: dag.RemoteJWKS{
+								URI: jwtProvider.RemoteJWKS.URI,
+								Cluster: dag.DNSNameCluster{
+									Address: jwksURL.Hostname(),
+									Scheme:  jwksURL.Scheme,
+									Port:    443,
+								},
+								Timeout: jwksTimeoutDuration,
+							},
+						}})).
+						AddFilter(envoy_v3.FilterExternalAuthz(&dag.ExternalAuthorization{
+							AuthorizationService: &dag.ExtensionCluster{
+								Name: "extension/extension/auth",
+							},
+						})).
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
+						Get()),
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+
 			lc := ListenerCache{
 				Config: tc.ListenerConfig,
 			}
+
 			lc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
 			protobuf.ExpectEqual(t, tc.want, lc.values)
 		})

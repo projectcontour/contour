@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -121,7 +122,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 
 	var accepted bool
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) {
+		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				accepted = true
 			}
@@ -225,6 +226,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		contourModel.Spec.RuntimeSettings = gatewayClassParams.Spec.RuntimeSettings
 
 		// if there is a same name pair, overwrite it
+		// nolint:staticcheck
 		for k, v := range gatewayClassParams.Spec.ResourceLabels {
 			contourModel.Spec.ResourceLabels[k] = v
 		}
@@ -368,13 +370,23 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
+	if gateway.Spec.Infrastructure != nil {
+		for k, v := range gateway.Spec.Infrastructure.Labels {
+			contourModel.Spec.ResourceLabels[string(k)] = string(v)
+		}
+
+		for k, v := range gateway.Spec.Infrastructure.Annotations {
+			contourModel.Spec.ResourceAnnotations[string(k)] = string(v)
+		}
+	}
+
 	if errs := r.ensureContour(ctx, contourModel, log); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 
 	var newConds []metav1.Condition
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1beta1.GatewayConditionAccepted) {
+		if cond.Type == string(gatewayapi_v1.GatewayConditionAccepted) {
 			if cond.Status == metav1.ConditionTrue {
 				return ctrl.Result{}, nil
 			}
@@ -389,11 +401,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
-		Type:               string(gatewayapi_v1beta1.GatewayConditionAccepted),
+		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: gateway.Generation,
 		LastTransitionTime: metav1.Now(),
-		Reason:             string(gatewayapi_v1beta1.GatewayReasonAccepted),
+		Reason:             string(gatewayapi_v1.GatewayReasonAccepted),
 		Message:            "Gateway is accepted",
 	})
 

@@ -572,6 +572,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				DNSLookupFamily:               dnsLookupFamily,
 				MaxRequestsPerConnection:      ctx.Config.Cluster.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: ctx.Config.Cluster.PerConnectionBufferLimitBytes,
+				GlobalCircuitBreakerDefaults:  ctx.Config.Cluster.GlobalCircuitBreakerDefaults,
+				UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: ctx.Config.Cluster.UpstreamTLS.MinimumProtocolVersion,
+					MaximumProtocolVersion: ctx.Config.Cluster.UpstreamTLS.MaximumProtocolVersion,
+					CipherSuites:           ctx.Config.Cluster.UpstreamTLS.CipherSuites,
+				},
 			},
 			Network: &contour_api_v1alpha1.NetworkParameters{
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,
@@ -590,6 +596,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
 		Tracing:                     tracingConfig,
+		FeatureFlags:                ctx.Config.FeatureFlags,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType

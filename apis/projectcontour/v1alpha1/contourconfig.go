@@ -84,7 +84,18 @@ type ContourConfigurationSpec struct {
 
 	// Tracing defines properties for exporting trace data to OpenTelemetry.
 	Tracing *TracingConfig `json:"tracing,omitempty"`
+
+	// FeatureFlags defines toggle to enable new contour features.
+	// Available toggles are:
+	// useEndpointSlices - configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to false and reading endpoint
+	// data from the k8s endpoints.
+	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
 }
+
+// FeatureFlags defines the set of feature flags
+// to toggle new contour features.
+type FeatureFlags []string
 
 // XDSServerType is the type of xDS server implementation.
 type XDSServerType string
@@ -95,6 +106,21 @@ const (
 	// Use the upstream `go-control-plane`-based xDS server.
 	EnvoyServerType XDSServerType = "envoy"
 )
+
+type GlobalCircuitBreakerDefaults struct {
+	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
+	// +optional
+	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"max-connections,omitempty"`
+	// The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
+	// +optional
+	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"max-pending-requests,omitempty"`
+	// The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024
+	// +optional
+	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"max-requests,omitempty"`
+	// The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.
+	// +optional
+	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"max-retries,omitempty"`
+}
 
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {
@@ -677,6 +703,17 @@ type ClusterParameters struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	PerConnectionBufferLimitBytes *uint32 `json:"per-connection-buffer-limit-bytes,omitempty"`
+
+	// GlobalCircuitBreakerDefaults specifies default circuit breaker budget across all services.
+	// If defined, this will be used as the default for all services.
+	//
+	// +optional
+	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreakers,omitempty"`
+
+	// UpstreamTLS contains the TLS policy parameters for upstream connections
+	//
+	// +optional
+	UpstreamTLS *EnvoyTLS `json:"upstreamTLS,omitempty"`
 }
 
 // HTTPProxyConfig defines parameters on HTTPProxy.
