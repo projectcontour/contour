@@ -174,41 +174,41 @@ spec:
 ```go
 
 // HeaderSendMode control how headers and trailers are handled
-type HeaderSendMode int32
+type HeaderSendMode string
 
 const (
 	// The default HeaderSendMode depends on which part of the message is being
 	// processed. By default, request and response headers are sent,
 	// while trailers are skipped.
-	ProcessingMode_DEFAULT HeaderSendMode = 0
+	ProcessingMode_DEFAULT HeaderSendMode = "DEFAULT"
 
 	// Send the header or trailer.
-	ProcessingMode_SEND HeaderSendMode = 1
+	ProcessingMode_SEND HeaderSendMode = "SEND"
 
 	// Do not send the header or trailer.
-	ProcessingMode_SKIP HeaderSendMode = 2
+	ProcessingMode_SKIP HeaderSendMode = "SKIP"
 )
 
 // BodySendMode control how the request and response bodies are handled
-type BodySendMode int32
+type BodySendMode string
 
 const (
 	// Do not send the body at all. This is the default.
-	ProcessingMode_NONE BodySendMode = 0
+	ProcessingMode_NONE BodySendMode = "NONE"
 
 	// Stream the body to the server in pieces as they arrive at the
 	// proxy.
-	ProcessingMode_STREAMED BodySendMode = 1
+	ProcessingMode_STREAMED BodySendMode = "STREAMED"
 
 	// Buffer the message body in memory and send the entire body at once.
 	// If the body exceeds the configured buffer limit, then the
 	// downstream system will receive an error.
-	ProcessingMode_BUFFERED BodySendMode = 2
+	ProcessingMode_BUFFERED BodySendMode = "BUFFERED"
 
 	// Buffer the message body in memory and send the entire body in one
 	// chunk. If the body exceeds the configured buffer limit, then the body contents
 	// up to the buffer limit will be sent.
-	ProcessingMode_BUFFERED_PARTIAL BodySendMode = 3
+	ProcessingMode_BUFFERED_PARTIAL BodySendMode = "BUFFERED_PARTIAL"
 )
 
 // HeaderMutationRules specifies what headers may be manipulated by a processing filter.
@@ -317,20 +317,19 @@ type GRPCService struct {
 type ProcessingPhase string
 
 const (
-	// UnspecifiedPhase decides where to insert the external processing service.
-	// This will generally be at the end of the filter chain, right before the Router
-	UnspecifiedPhase ProcessingPhase = "UnspecifiedPhase"
+	// DefaultPhase decides insert the external processing service at the end of the filter chain, right before the Router.
+	DefaultPhase ProcessingPhase = "DefaultPhase"
 
 	// Insert before contour authentication filter(s).
 	AuthN ProcessingPhase = "AuthN"
 
-	// Insert  before contour authorization filter(s) and after the authentication filter(s).
+	// Insert before contour authorization filter(s) and after the authentication filter(s).
 	AuthZ ProcessingPhase = "AuthZ"
 
-	// Insert  before contour CORS filter(s).
+	// Insert before contour CORS filter(s).
 	CORS ProcessingPhase = "CORS"
 
-	// Insert  before contour RateLimit.
+	// Insert before contour RateLimit.
 	RateLimit ProcessingPhase = "RateLimit"
 )
 
