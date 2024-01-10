@@ -365,20 +365,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	cfg := c.Config
 	listeners := map[string]*envoy_listener_v3.Listener{}
 
-	max := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a > b {
-			return a
-		}
-		return b
-	}
-
-	min := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a < b {
-			return a
-		}
-		return b
-	}
-
 	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
 	if cfg.SocketOptions != nil {
 		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
