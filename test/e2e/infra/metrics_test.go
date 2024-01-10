@@ -53,7 +53,8 @@ func testReady() {
 }
 
 func testEnvoyMetricsOverHTTPS() {
-	Specify("requests to metrics listener are served", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/5932
+	Specify("requests to metrics listener are served", FlakeAttempts(3), func() {
 		t := f.T()
 
 		// Port-forward seems to be flaky. Following sequence happens:

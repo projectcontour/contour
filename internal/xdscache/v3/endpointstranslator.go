@@ -38,37 +38,37 @@ type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
 
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.
-// ep may be nil, in which case, the result is also nil.
-func RecalculateEndpoints(port, healthPort v1.ServicePort, ep *v1.Endpoints) []*LoadBalancingEndpoint {
-	if ep == nil {
+// eps may be nil, in which case, the result is also nil.
+func RecalculateEndpoints(port, healthPort v1.ServicePort, eps *v1.Endpoints) []*LoadBalancingEndpoint {
+	if eps == nil {
 		return nil
 	}
 
 	var lb []*LoadBalancingEndpoint
 	var healthCheckPort int32
 
-	for _, s := range ep.Subsets {
+	for _, s := range eps.Subsets {
 		// Skip subsets without ready addresses.
 		if len(s.Addresses) < 1 {
 			continue
 		}
 
-		for _, p := range s.Ports {
-			if (healthPort.Protocol != p.Protocol || port.Protocol != p.Protocol) && p.Protocol != v1.ProtocolTCP {
+		for _, endpointPort := range s.Ports {
+			if endpointPort.Protocol != v1.ProtocolTCP {
 				// NOTE: we only support "TCP", which is the default.
 				continue
 			}
 
 			// Set healthCheckPort only when port and healthPort are different.
-			if healthPort.Name != "" && healthPort.Name == p.Name && port.Name != healthPort.Name {
-				healthCheckPort = p.Port
+			if healthPort.Name != "" && healthPort.Name == endpointPort.Name && port.Name != healthPort.Name {
+				healthCheckPort = endpointPort.Port
 			}
 
 			// If the port isn't named, it must be the
 			// only Service port, so it's a match by
 			// definition. Otherwise, only take endpoint
 			// ports that match the service port name.
-			if port.Name != "" && port.Name != p.Name {
+			if port.Name != "" && port.Name != endpointPort.Name {
 				continue
 			}
 
@@ -77,7 +77,7 @@ func RecalculateEndpoints(port, healthPort v1.ServicePort, ep *v1.Endpoints) []*
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoy_v3.SocketAddress(a.IP, int(p.Port))
+				addr := envoy_v3.SocketAddress(a.IP, int(endpointPort.Port))
 				lb = append(lb, envoy_v3.LBEndpoint(addr))
 			}
 		}
@@ -199,16 +199,16 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 	return nil
 }
 
-// UpdateEndpoint adds ep to the cache, or replaces it if it is
+// UpdateEndpoint adds eps to the cache, or replaces it if it is
 // already cached. Any ServiceClusters that are backed by a Service
-// that ep belongs become stale. Returns a boolean indicating whether
-// any ServiceClusters use ep or not.
-func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) bool {
+// that eps belongs become stale. Returns a boolean indicating whether
+// any ServiceClusters use eps or not.
+func (c *EndpointsCache) UpdateEndpoint(eps *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(ep)
-	c.endpoints[name] = ep.DeepCopy()
+	name := k8s.NamespacedNameOf(eps)
+	c.endpoints[name] = eps.DeepCopy()
 
 	// If any service clusters include this endpoint, mark them
 	// all as stale.
@@ -220,14 +220,14 @@ func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) bool {
 	return false
 }
 
-// DeleteEndpoint deletes ep from the cache. Any ServiceClusters
-// that are backed by a Service that ep belongs become stale. Returns
-// a boolean indicating whether any ServiceClusters use ep or not.
-func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) bool {
+// DeleteEndpoint deletes eps from the cache. Any ServiceClusters
+// that are backed by a Service that eps belongs become stale. Returns
+// a boolean indicating whether any ServiceClusters use eps or not.
+func (c *EndpointsCache) DeleteEndpoint(eps *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := k8s.NamespacedNameOf(ep)
+	name := k8s.NamespacedNameOf(eps)
 	delete(c.endpoints, name)
 
 	// If any service clusters include this endpoint, mark them
@@ -458,3 +458,5 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 }
 
 func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
+
+func (e *EndpointsTranslator) SetObserver(observer contour.Observer) { e.Observer = observer }

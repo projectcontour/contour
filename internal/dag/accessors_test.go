@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,15 +27,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...int) v1.ServicePort {
+func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...any) v1.ServicePort {
 	p := v1.ServicePort{
 		Name:     name,
 		Protocol: protocol,
 		Port:     port,
 	}
-	if len(extras) != 0 {
-		p.TargetPort = intstr.FromInt(extras[0])
+
+	if len(extras) > 0 {
+		p.TargetPort = intstr.FromInt(extras[0].(int))
 	}
+
+	if len(extras) > 1 {
+		p.AppProtocol = ref.To(extras[1].(string))
+	}
+
 	return p
 
 }
@@ -82,11 +90,53 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
+	annotatedService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "annotated-service",
+			Namespace:   "default",
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "foo",
+				Protocol:   "TCP",
+				Port:       8443,
+				TargetPort: intstr.FromInt(26441),
+			}},
+		},
+	}
+
+	appProtoService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "app-protocol-service",
+			Namespace:   "default",
+			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444"},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Name:        "k8s-h2c",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("kubernetes.io/h2c"),
+					Port:        8443,
+				},
+				{
+					Name:        "k8s-wss",
+					Protocol:    "TCP",
+					AppProtocol: ref.To("kubernetes.io/wss"),
+					Port:        8444,
+				},
+			},
+		},
+	}
+
 	services := map[types.NamespacedName]*v1.Service{
-		{Name: "service1", Namespace: "default"}:              s1,
-		{Name: "servicehealthcheck", Namespace: "default"}:    s2,
-		{Name: "externalnamevalid", Namespace: "default"}:     externalNameValid,
-		{Name: "externalnamelocalhost", Namespace: "default"}: externalNameLocalhost,
+		{Name: "service1", Namespace: "default"}:                             s1,
+		{Name: "servicehealthcheck", Namespace: "default"}:                   s2,
+		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,
+		{Name: "externalnamelocalhost", Namespace: "default"}:                externalNameLocalhost,
+		{Name: annotatedService.Name, Namespace: annotatedService.Namespace}: annotatedService,
+		{Name: appProtoService.Name, Namespace: appProtoService.Namespace}:   appProtoService,
 	}
 
 	tests := map[string]struct {
@@ -150,6 +200,22 @@ func TestBuilderLookupService(t *testing.T) {
 			port:                  80,
 			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
 			enableExternalNameSvc: true,
+		},
+		"lookup service by port number with annotated number": {
+			NamespacedName: types.NamespacedName{Name: annotatedService.Name, Namespace: annotatedService.Namespace},
+			port:           8443,
+			want:           appProtcolService(annotatedService, "tls"),
+		},
+		"lookup service by port number with k8s app protocol: h2c": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8443,
+			want:           appProtcolService(appProtoService, "h2c"),
+		},
+
+		"lookup service by port number with unsupported k8s app protocol: wss": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8444,
+			want:           appProtcolService(appProtoService, "", 1),
 		},
 	}
 

@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,12 +69,16 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: model.CommonLabels(contour),
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			// Core Contour-watched resources.
 			policyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services", "namespaces"),
+
+			// Discovery Contour-watched resources.
+			policyRuleFor(discoveryv1.GroupName, getListWatch, "endpointslices"),
 
 			// Gateway API resources.
 			// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
@@ -94,7 +99,7 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 // updateClusterRoleIfNeeded updates a ClusterRole resource if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateClusterRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRole) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		cr, updated := equality.ClusterRoleConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, cr); err != nil {

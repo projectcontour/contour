@@ -381,20 +381,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	cfg := c.Config
 	listeners := map[string]*envoy_listener_v3.Listener{}
 
-	max := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a > b {
-			return a
-		}
-		return b
-	}
-
-	min := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a < b {
-			return a
-		}
-		return b
-	}
-
 	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
 	if cfg.SocketOptions != nil {
 		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
@@ -481,10 +467,10 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			}
 
 			if vh.TCPProxy == nil {
-				var authFilter *http.HttpFilter
+				var authzFilter *http.HttpFilter
 
 				if vh.ExternalAuthorization != nil {
-					authFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
+					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
 				// Create a uniquely named HTTP connection manager for
@@ -498,8 +484,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
-					AddFilter(authFilter).
-					AddFilter(envoy_v3.FilterJWTAuth(vh.JWTProviders)).
+					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
+					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).

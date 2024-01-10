@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: '0 10 * * 1'
 
+env:
+  GOPROXY: https://proxy.golang.org/
+  GO_VERSION: 1.21.5
 jobs:
   CodeQL-Build:
 
@@ -16,9 +19,9 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
       with:
         # * Module download cache
         # * Build cache (Linux)
@@ -29,15 +32,20 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ github.job }}-go-
 
+    - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: false
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.22.12
       with:
         languages: go
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.22.12
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.22.12

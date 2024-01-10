@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
+	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,9 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -188,6 +189,12 @@ type Server struct {
 	mgr               manager.Manager
 	registry          *prometheus.Registry
 	handlerCacheSyncs []cache.InformerSynced
+}
+
+type EndpointsTranslator interface {
+	cache.ResourceEventHandler
+	xdscache.ResourceCache
+	SetObserver(observer contour.Observer)
 }
 
 // NewServer returns a Server object which contains the initial configuration
@@ -460,9 +467,13 @@ func (s *Server) doServe() error {
 
 	contourMetrics := metrics.NewMetrics(s.registry)
 
-	// Endpoints updates are handled directly by the EndpointsTranslator
-	// due to their high update rate and their orthogonal nature.
-	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
+	// Endpoints updates are handled directly by the EndpointsTranslator/EndpointSliceTranslator due to the high update volume.
+	var endpointHandler EndpointsTranslator
+	if contourConfiguration.FeatureFlags.IsEndpointSliceEnabled() {
+		endpointHandler = xdscache_v3.NewEndpointSliceTranslator(s.log.WithField("context", "endpointslicetranslator"))
+	} else {
+		endpointHandler = xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
+	}
 
 	resources := []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
@@ -475,11 +486,20 @@ func (s *Server) doServe() error {
 		}),
 	}
 
-	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
-	snapshotHandler := xdscache.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
+	// snapshotHandler triggers go-control-plane Snapshots based on
+	// the contents of the Contour xDS caches after the DAG is built.
+	var snapshotHandler *xdscache_v3.SnapshotHandler
 
-	// register observer for endpoints updates.
-	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
+	if contourConfiguration.XDSServer.Type == contour_api_v1alpha1.EnvoyServerType {
+		snapshotHandler = xdscache_v3.NewSnapshotHandler(
+			resources,
+			envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, s.log.WithField("context", "snapshotCache")),
+			s.log.WithField("context", "snapshotHandler"),
+		)
+
+		// register observer for endpoints updates.
+		endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
+	}
 
 	// Log that we're using the fallback certificate if configured.
 	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
@@ -545,12 +565,23 @@ func (s *Server) doServe() error {
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
 		globalExternalProcessor:            contourConfiguration.GlobalExternalProcessor,
+		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
+		upstreamTLS: &dag.UpstreamTLS{
+			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
+			MaximumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MaximumProtocolVersion, "1.3"),
+			CipherSuites:           contourConfiguration.Envoy.Cluster.UpstreamTLS.SanitizedCipherSuites(),
+		},
 	})
 
 	// Build the core Kubernetes event handler.
+	xdsCaches := xdscache.ObserversOf(resources)
+	if snapshotHandler != nil {
+		xdsCaches = append(xdsCaches, snapshotHandler)
+	}
+
 	observer := contour.NewRebuildMetricsObserver(
 		contourMetrics,
-		dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
+		dag.ComposeObservers(xdsCaches...),
 	)
 
 	hasSynced := func() bool {
@@ -613,12 +644,21 @@ func (s *Server) doServe() error {
 		s.log.WithError(err).WithField("resource", "secrets").Fatal("failed to create informer")
 	}
 
-	// Inform on endpoints.
-	if err := s.informOnResource(&corev1.Endpoints{}, &contour.EventRecorder{
-		Next:    endpointHandler,
-		Counter: contourMetrics.EventHandlerOperations,
-	}); err != nil {
-		s.log.WithError(err).WithField("resource", "endpoints").Fatal("failed to create informer")
+	// Inform on endpoints/endpointSlices.
+	if contourConfiguration.FeatureFlags.IsEndpointSliceEnabled() {
+		if err := s.informOnResource(&discoveryv1.EndpointSlice{}, &contour.EventRecorder{
+			Next:    endpointHandler,
+			Counter: contourMetrics.EventHandlerOperations,
+		}); err != nil {
+			s.log.WithError(err).WithField("resource", "endpointslices").Fatal("failed to create informer")
+		}
+	} else {
+		if err := s.informOnResource(&corev1.Endpoints{}, &contour.EventRecorder{
+			Next:    endpointHandler,
+			Counter: contourMetrics.EventHandlerOperations,
+		}); err != nil {
+			s.log.WithError(err).WithField("resource", "endpoints").Fatal("failed to create informer")
+		}
 	}
 
 	// Register our event handler with the manager.
@@ -895,7 +935,7 @@ type xdsServer struct {
 	log             logrus.FieldLogger
 	registry        *prometheus.Registry
 	config          contour_api_v1alpha1.XDSServerConfig
-	snapshotHandler *xdscache.SnapshotHandler
+	snapshotHandler *xdscache_v3.SnapshotHandler
 	resources       []xdscache.ResourceCache
 	initialDagBuilt func() bool
 }
@@ -907,21 +947,19 @@ func (x *xdsServer) NeedLeaderElection() bool {
 func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
-	log.Printf("waiting for the initial dag to be built")
+	log.Info("waiting for the initial dag to be built")
 	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(ctx context.Context) (done bool, err error) {
 		return x.initialDagBuilt(), nil
 	}); err != nil {
 		return fmt.Errorf("failed to wait for initial dag build, %w", err)
 	}
-	log.Printf("the initial dag is built")
+	log.Info("the initial dag is built")
 
 	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
 
 	switch x.config.Type {
 	case contour_api_v1alpha1.EnvoyServerType:
-		v3cache := contour_xds_v3.NewSnapshotCache(false, log)
-		x.snapshotHandler.AddSnapshotter(v3cache)
-		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.SnapshotCache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 	case contour_api_v1alpha1.ContourServerType:
 		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
 	default:
@@ -1129,6 +1167,8 @@ type dagBuilderConfig struct {
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_api_v1alpha1.RateLimitServiceConfig
 	globalExternalProcessor            *contour_api_v1.ExternalProcessor
+	globalCircuitBreakerDefaults       *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+	upstreamTLS                        *dag.UpstreamTLS
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -1198,7 +1238,9 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ConnectTimeout:                dbc.connectTimeout,
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			SetSourceMetadataOnRoutes:     true,
+			UpstreamTLS:                   dbc.upstreamTLS,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
@@ -1206,6 +1248,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: dbc.clientCert,
 			ConnectTimeout:    dbc.connectTimeout,
+			UpstreamTLS:       dbc.upstreamTLS,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService:     dbc.enableExternalNameService,
@@ -1222,6 +1265,8 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
 			GlobalExternalProcessor:       dbc.globalExternalProcessor,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
+			UpstreamTLS:                   dbc.upstreamTLS,
 		},
 	}
 
@@ -1233,6 +1278,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			MaxRequestsPerConnection:      dbc.maxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 		})
 	}
 

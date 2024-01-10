@@ -30,6 +30,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -166,7 +167,7 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 				"gatewayapi.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 80, 1),
 			}},
 		},

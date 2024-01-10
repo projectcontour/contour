@@ -667,6 +667,8 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		return nil, nil
 	}
 
+	pvc := &PeerValidationContext{}
+
 	cacert, err := kc.LookupCASecret(caCertificate, targetNamespace)
 	if err != nil {
 		if _, ok := err.(DelegationNotPermittedError); ok {
@@ -674,16 +676,26 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		}
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
+	pvc.CACertificate = cacert
 
+	// CEL validation should enforce that SubjectName must be set if SubjectNames is used. So, SubjectName will always be present.
 	if uv.SubjectName == "" {
-		// UpstreamValidation is requested, but SAN is not provided
 		return nil, errors.New("missing subject alternative name")
 	}
 
-	return &PeerValidationContext{
-		CACertificate: cacert,
-		SubjectName:   uv.SubjectName,
-	}, nil
+	switch l := len(uv.SubjectNames); {
+	case l == 0:
+		// UpstreamValidation was using old SubjectName field only, can internally move that into SubjectNames
+		pvc.SubjectNames = []string{uv.SubjectName}
+	case l > 0:
+		// UpstreamValidation is using new SubjectNames field, can use it directly. CEL validation should enforce that SubjectName is contained in SubjectNames
+		if uv.SubjectName != uv.SubjectNames[0] {
+			return nil, fmt.Errorf("first entry of SubjectNames (%s) does not match SubjectName (%s)", uv.SubjectNames[0], uv.SubjectName)
+		}
+		pvc.SubjectNames = uv.SubjectNames
+	}
+
+	return pvc, nil
 }
 
 // LookupTLSSecretInsecure returns Secret with TLS certificate and private key from cache.

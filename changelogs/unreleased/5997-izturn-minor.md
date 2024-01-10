@@ -1,0 +1,3 @@
+## Gateway API: support HTTPRoute request timeouts
+
+Contour now enables end-users to specify request timeouts by setting the [HTTPRouteRule.Timeouts.Request](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteTimeouts) parameter. Note that `BackendRequest` is not yet implemented because without Gateway API support for retries, it's functionally equivalent to `Request`.

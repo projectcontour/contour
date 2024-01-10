@@ -170,7 +170,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil, "h2"),
+					UpstreamTLSContext(nil, "", nil, nil, "h2"),
 				),
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
@@ -274,7 +274,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil),
+					UpstreamTLSContext(nil, "", nil, nil),
 				),
 			},
 		},
@@ -290,7 +290,7 @@ func TestCluster(t *testing.T) {
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "projectcontour.local", nil),
+					UpstreamTLSContext(nil, "projectcontour.local", nil, nil),
 				),
 			},
 		},
@@ -300,7 +300,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "tls",
 				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificate: secret,
-					SubjectName:   "foo.bar.io",
+					SubjectNames:  []string{"foo.bar.io"},
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -315,10 +315,48 @@ func TestCluster(t *testing.T) {
 					UpstreamTLSContext(
 						&dag.PeerValidationContext{
 							CACertificate: secret,
-							SubjectName:   "foo.bar.io",
+							SubjectNames:  []string{"foo.bar.io"},
 						},
 						"",
+						nil,
 						nil),
+				),
+			},
+		},
+		"UpstreamTLS protocol version set": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1, "tls"),
+				Protocol: "tls",
+				UpstreamValidation: &dag.PeerValidationContext{
+					CACertificate: secret,
+					SubjectNames:  []string{"foo.bar.io"},
+				},
+				UpstreamTLS: &dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.3",
+					MaximumProtocolVersion: "1.3",
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/62d1f9ad02",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(
+						&dag.PeerValidationContext{
+							CACertificate: secret,
+							SubjectNames:  []string{"foo.bar.io"},
+						},
+						"",
+						nil,
+						&dag.UpstreamTLS{
+							MinimumProtocolVersion: "1.3",
+							MaximumProtocolVersion: "1.3",
+						},
+					),
 				),
 			},
 		},
@@ -347,6 +385,7 @@ func TestCluster(t *testing.T) {
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(9000),
 					}},
+					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -375,6 +414,7 @@ func TestCluster(t *testing.T) {
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(4096),
 					}},
+					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -403,6 +443,7 @@ func TestCluster(t *testing.T) {
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxRequests: wrapperspb.UInt32(404),
 					}},
+					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -430,6 +471,36 @@ func TestCluster(t *testing.T) {
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxRetries: wrapperspb.UInt32(7),
+					}},
+					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+				},
+			},
+		},
+		"projectcontour.io/per-host-max-connections": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.Service{
+					PerHostMaxConnections: 45,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      s1.Name,
+						ServiceNamespace: s1.Namespace,
+						ServicePort:      s1.Spec.Ports[0],
+						HealthPort:       s1.Spec.Ports[0],
+					},
+				},
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+						MaxConnections: wrapperspb.UInt32(45),
 					}},
 				},
 			},
@@ -526,7 +597,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", clientSecret),
+					UpstreamTLSContext(nil, "", clientSecret, nil),
 				),
 			},
 		},
@@ -854,7 +925,7 @@ func TestDNSNameCluster(t *testing.T) {
 						},
 					},
 				},
-				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil)),
+				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil, nil)),
 			},
 		},
 		"HTTPS cluster with upstream validation": {
@@ -871,7 +942,7 @@ func TestDNSNameCluster(t *testing.T) {
 							},
 						},
 					},
-					SubjectName: "foo.projectcontour.io",
+					SubjectNames: []string{"foo.projectcontour.io"},
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -902,8 +973,8 @@ func TestDNSNameCluster(t *testing.T) {
 							},
 						},
 					},
-					SubjectName: "foo.projectcontour.io",
-				}, "foo.projectcontour.io", nil)),
+					SubjectNames: []string{"foo.projectcontour.io"},
+				}, "foo.projectcontour.io", nil, nil)),
 			},
 		},
 	}
@@ -1033,7 +1104,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 			},
-			SubjectName: "foo.com",
+			SubjectNames: []string{"foo.com"},
 		},
 	}
 

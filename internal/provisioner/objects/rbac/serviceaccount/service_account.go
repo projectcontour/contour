@@ -49,9 +49,10 @@ func desiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 			Kind: rbacv1.ServiceAccountKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      name,
-			Labels:    model.CommonLabels(contour),
+			Namespace:   contour.Namespace,
+			Name:        name,
+			Labels:      contour.CommonLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 	}
 }
@@ -59,7 +60,7 @@ func desiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 // updateSvcAcctIfNeeded updates a ServiceAccount resource if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateSvcAcctIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		sa, updated := utilequality.ServiceAccountConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, sa); err != nil {

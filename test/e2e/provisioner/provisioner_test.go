@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -170,11 +171,11 @@ var _ = Describe("Gateway provisioner", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -239,11 +240,11 @@ var _ = Describe("Gateway provisioner", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -272,7 +273,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 						{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/prefix"),
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 						},
 					},
@@ -310,23 +311,23 @@ var _ = Describe("Gateway provisioner", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http-1",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("http-1.provisioner.projectcontour.io")),
 						},
 						{
 							Name:     "http-2",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("http-2.provisioner.projectcontour.io")),
 						},
 						{
 							Name:     "https-1",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-1.provisioner.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+								Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									{Name: "https-1-cert"},
 								},
@@ -334,11 +335,11 @@ var _ = Describe("Gateway provisioner", func() {
 						},
 						{
 							Name:     "https-2",
-							Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     444,
 							Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-2.provisioner.projectcontour.io")),
 							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+								Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 									{Name: "https-2-cert"},
 								},
@@ -346,12 +347,12 @@ var _ = Describe("Gateway provisioner", func() {
 						},
 						{
 							Name:     "tcp-1",
-							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Protocol: gatewayapi_v1.TCPProtocolType,
 							Port:     7777,
 						},
 						{
 							Name:     "tcp-2",
-							Protocol: gatewayapi_v1beta1.TCPProtocolType,
+							Protocol: gatewayapi_v1.TCPProtocolType,
 							Port:     8888,
 						},
 					},
@@ -389,7 +390,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 						{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 						},
 					},
