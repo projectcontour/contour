@@ -291,42 +291,42 @@ type AuthorizationPolicy struct {
 	Context map[string]string `json:"context,omitempty"`
 }
 
-// HeaderSendMode control how headers and trailers are handled
-type HeaderSendMode int32
+// HeaderSendMode control how headers and trailers are handled.
+type HeaderSendMode string
 
 const (
 	// The default HeaderSendMode depends on which part of the message is being
 	// processed. By default, request and response headers are sent,
 	// while trailers are skipped.
-	ProcessingModeDefault HeaderSendMode = 0
+	ProcessingModeDefault HeaderSendMode = "DEFAULT"
 
 	// Send the header or trailer.
-	ProcessingModeSend HeaderSendMode = 1
+	ProcessingModeSend HeaderSendMode = "SEND"
 
 	// Do not send the header or trailer.
-	ProcessingModeSkip HeaderSendMode = 2
+	ProcessingModeSkip HeaderSendMode = "SKIP"
 )
 
 // BodySendMode control how the request and response bodies are handled
-type BodySendMode int32
+type BodySendMode string
 
 const (
 	// Do not send the body at all. This is the default.
-	ProcessingModeNone BodySendMode = 0
+	ProcessingModeNone BodySendMode = "NONE"
 
 	// Stream the body to the server in pieces as they arrive at the
 	// proxy.
-	ProcessingModeStreamed BodySendMode = 1
+	ProcessingModeStreamed BodySendMode = "STREAMED"
 
 	// Buffer the message body in memory and send the entire body at once.
 	// If the body exceeds the configured buffer limit, then the
 	// downstream system will receive an error.
-	ProcessingModeBuffered BodySendMode = 2
+	ProcessingModeBuffered BodySendMode = "BUFFERED"
 
 	// Buffer the message body in memory and send the entire body in one
 	// chunk. If the body exceeds the configured buffer limit, then the body contents
 	// up to the buffer limit will be sent.
-	ProcessingModeBufferedPartial BodySendMode = 3
+	ProcessingModeBufferedPartial BodySendMode = "BUFFERED_PARTIAL"
 )
 
 // HeaderMutationRules specifies what headers may be manipulated by a processing filter.
@@ -334,15 +334,15 @@ const (
 type HeaderMutationRules struct {
 	// By default, certain headers that could affect processing of subsequent
 	// filters or request routing cannot be modified. These headers are
-	// ``host``, ``:authority``, ``:scheme``, and ``:method``. Setting this parameter
-	// to true allows these headers to be modified as well.
+	// ``host``, ``:authority``, ``:scheme``, and ``:method``.
+	// Setting this parameter to true allows these headers to be modified as well.
 	//
 	// +optional
 	AllowAllRouting bool `json:"allowAllRouting,omitempty"`
 
 	// If true, allow modification of envoy internal headers. By default, these
-	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap``
-	// configuration. Default is false.
+	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+	// Default is false.
 	//
 	// +optional
 	AllowEnvoy bool `json:"allowEnvoy,omitempty"`
@@ -350,14 +350,16 @@ type HeaderMutationRules struct {
 	// If true, prevent modification of any system header, defined as a header
 	// that starts with a ``:`` character, regardless of any other settings.
 	// A processing server may still override the ``:status`` of an HTTP response
-	// using an ``ImmediateResponse`` message. Default is false.
+	// using an ``ImmediateResponse`` message.
+	// Default is false.
 	//
 	// +optional
 	DisallowSystem bool `json:"disallowSystem,omitempty"`
 
 	// If true, prevent modifications of all header values, regardless of any
 	// other settings. A processing server may still override the ``:status``
-	// of an HTTP response using an ``ImmediateResponse`` message. Default is false.
+	// of an HTTP response using an ``ImmediateResponse`` message.
+	// Default is false.
 	//
 	// +optional
 	DisallowAll bool `json:"disallowAll,omitempty"`
@@ -376,33 +378,51 @@ type HeaderMutationRules struct {
 // ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
 // and how they are delivered.
 type ProcessingMode struct {
-	// How to handle the request header. Default is "SEND".
+	// How to handle the request header.
+	// Default is "SEND".
 	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SEND
 	// +optional
 	RequestHeaderMode HeaderSendMode `json:"requestHeaderMode,omitempty"`
 
-	// How to handle the response header. Default is "SEND".
+	// How to handle the response header.
+	// Default is "SEND".
 	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SEND
 	// +optional
 	ResponseHeaderMode HeaderSendMode `json:"responseHeaderMode,omitempty"`
 
-	// How to handle the request body. Default is "NONE".
+	// How to handle the request body.
+	// Default is "NONE".
 	//
+	// +kubebuilder:validation:Enum=NONE;STREAMED;BUFFERED;BUFFERED_PARTIAL
+	// +kubebuilder:default=NONE
 	// +optional
 	RequestBodyMode BodySendMode `json:"requestBodyMode,omitempty"`
 
-	// How do handle the response body. Default is "NONE".
+	// How do handle the response body.
+	// Default is "NONE".
 	//
+	// +kubebuilder:validation:Enum=NONE;STREAMED;BUFFERED;BUFFERED_PARTIAL
+	// +kubebuilder:default=NONE
 	// +optional
 	ResponseBodyMode BodySendMode `json:"responseBodyMode,omitempty"`
 
-	// How to handle the request trailers. Default is "SKIP".
+	// How to handle the request trailers.
+	// Default is "SKIP".
 	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SKIP
 	// +optional
 	RequestTrailerMode HeaderSendMode `json:"requestTrailerMode,omitempty"`
 
-	// How to handle the response trailers. Default is "SKIP".
+	// How to handle the response trailers.
+	// Default is "SKIP".
 	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SKIP
 	// +optional
 	ResponseTrailerMode HeaderSendMode `json:"responseTrailerMode,omitempty"`
 }
@@ -435,10 +455,10 @@ type GRPCService struct {
 type ProcessingPhase string
 
 const (
-	// UnspecifiedPhase decides where to insert the external processing service.
-	// This will generally be at the end of the filter chain, right before the Router
-	// **NOTE: if not specify, default to UnspecifiedPhase
-	UnspecifiedPhase ProcessingPhase = "UnspecifiedPhase"
+	// DefaultPhase decides insert the external processing service at the end of the filter chain, right before the Router.
+	//
+	// **NOTE: if not specify, default to DefaultPhase
+	DefaultPhase ProcessingPhase = "DefaultPhase"
 
 	// Insert before contour authentication filter(s).
 	AuthN ProcessingPhase = "AuthN"

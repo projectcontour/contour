@@ -483,7 +483,7 @@ bool
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.BodySendMode">BodySendMode
-(<code>int32</code> alias)</p></h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.ProcessingMode">ProcessingMode</a>)
@@ -498,20 +498,20 @@ bool
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>2</p></td>
+<tbody><tr><td><p>&#34;BUFFERED&#34;</p></td>
 <td><p>Buffer the message body in memory and send the entire body at once.
 If the body exceeds the configured buffer limit, then the
 downstream system will receive an error.</p>
 </td>
-</tr><tr><td><p>3</p></td>
+</tr><tr><td><p>&#34;BUFFERED_PARTIAL&#34;</p></td>
 <td><p>Buffer the message body in memory and send the entire body in one
 chunk. If the body exceeds the configured buffer limit, then the body contents
 up to the buffer limit will be sent.</p>
 </td>
-</tr><tr><td><p>0</p></td>
+</tr><tr><td><p>&#34;NONE&#34;</p></td>
 <td><p>Do not send the body at all. This is the default.</p>
 </td>
-</tr><tr><td><p>1</p></td>
+</tr><tr><td><p>&#34;STREAMED&#34;</p></td>
 <td><p>Stream the body to the server in pieces as they arrive at the
 proxy.</p>
 </td>
@@ -2431,8 +2431,8 @@ bool
 <em>(Optional)</em>
 <p>By default, certain headers that could affect processing of subsequent
 filters or request routing cannot be modified. These headers are
-<code>host</code>, <code>:authority</code>, <code>:scheme</code>, and <code>:method</code>. Setting this parameter
-to true allows these headers to be modified as well.</p>
+<code>host</code>, <code>:authority</code>, <code>:scheme</code>, and <code>:method</code>.
+Setting this parameter to true allows these headers to be modified as well.</p>
 </td>
 </tr>
 <tr>
@@ -2446,8 +2446,8 @@ bool
 <td>
 <em>(Optional)</em>
 <p>If true, allow modification of envoy internal headers. By default, these
-start with <code>x-envoy</code> but this may be overridden in the <code>Bootstrap</code>
-configuration. Default is false.</p>
+start with <code>x-envoy</code> but this may be overridden in the <code>Bootstrap</code> configuration.
+Default is false.</p>
 </td>
 </tr>
 <tr>
@@ -2463,7 +2463,8 @@ bool
 <p>If true, prevent modification of any system header, defined as a header
 that starts with a <code>:</code> character, regardless of any other settings.
 A processing server may still override the <code>:status</code> of an HTTP response
-using an <code>ImmediateResponse</code> message. Default is false.</p>
+using an <code>ImmediateResponse</code> message.
+Default is false.</p>
 </td>
 </tr>
 <tr>
@@ -2478,7 +2479,8 @@ bool
 <em>(Optional)</em>
 <p>If true, prevent modifications of all header values, regardless of any
 other settings. A processing server may still override the <code>:status</code>
-of an HTTP response using an <code>ImmediateResponse</code> message. Default is false.</p>
+of an HTTP response using an <code>ImmediateResponse</code> message.
+Default is false.</p>
 </td>
 </tr>
 <tr>
@@ -2502,13 +2504,13 @@ Default is false.</p>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HeaderSendMode">HeaderSendMode
-(<code>int32</code> alias)</p></h3>
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.ProcessingMode">ProcessingMode</a>)
 </p>
 <p>
-<p>HeaderSendMode control how headers and trailers are handled</p>
+<p>HeaderSendMode control how headers and trailers are handled.</p>
 </p>
 <table>
 <thead>
@@ -2517,15 +2519,15 @@ Default is false.</p>
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>0</p></td>
+<tbody><tr><td><p>&#34;DEFAULT&#34;</p></td>
 <td><p>The default HeaderSendMode depends on which part of the message is being
 processed. By default, request and response headers are sent,
 while trailers are skipped.</p>
 </td>
-</tr><tr><td><p>1</p></td>
+</tr><tr><td><p>&#34;SEND&#34;</p></td>
 <td><p>Send the header or trailer.</p>
 </td>
-</tr><tr><td><p>2</p></td>
+</tr><tr><td><p>&#34;SKIP&#34;</p></td>
 <td><p>Do not send the header or trailer.</p>
 </td>
 </tr></tbody>
@@ -3231,7 +3233,8 @@ HeaderSendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How to handle the request header. Default is &ldquo;SEND&rdquo;.</p>
+<p>How to handle the request header.
+Default is &ldquo;SEND&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -3246,7 +3249,8 @@ HeaderSendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How to handle the response header. Default is &ldquo;SEND&rdquo;.</p>
+<p>How to handle the response header.
+Default is &ldquo;SEND&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -3261,7 +3265,8 @@ BodySendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How to handle the request body. Default is &ldquo;NONE&rdquo;.</p>
+<p>How to handle the request body.
+Default is &ldquo;NONE&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -3276,7 +3281,8 @@ BodySendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How do handle the response body. Default is &ldquo;NONE&rdquo;.</p>
+<p>How do handle the response body.
+Default is &ldquo;NONE&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -3291,7 +3297,8 @@ HeaderSendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How to handle the request trailers. Default is &ldquo;SKIP&rdquo;.</p>
+<p>How to handle the request trailers.
+Default is &ldquo;SKIP&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -3306,7 +3313,8 @@ HeaderSendMode
 </td>
 <td>
 <em>(Optional)</em>
-<p>How to handle the response trailers. Default is &ldquo;SKIP&rdquo;.</p>
+<p>How to handle the response trailers.
+Default is &ldquo;SKIP&rdquo;.</p>
 </td>
 </tr>
 </tbody>

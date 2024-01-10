@@ -26,7 +26,7 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
+	envoy_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
@@ -193,28 +193,60 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 // routeExtProcDisabled returns a per-route config to disable extProc for this particular vhost or route.
 func routeExtProcDisabled() *anypb.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute{
-			Override: &envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute_Disabled{
+		&envoy_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_ext_proc_v3.ExtProcPerRoute_Disabled{
 				Disabled: true,
 			},
 		},
 	)
 }
 
+/*
+
+	reqHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+
+	reqBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
+	respBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
+
+	reqTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+
+	return &envoy_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
+	}
+
+*/
+
 func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
-	pm := &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
-		RequestHeaderMode:   envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.RequestHeaderMode),
-		ResponseHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.ResponseHeaderMode),
-		RequestBodyMode:     envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(overrides.ProcessingMode.RequestBodyMode),
-		ResponseBodyMode:    envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(overrides.ProcessingMode.ResponseBodyMode),
-		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.RequestTrailerMode),
-		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(overrides.ProcessingMode.ResponseTrailerMode),
+
+	reqHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
+	respHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.ResponseHeaderMode)]
+
+	reqBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(overrides.ProcessingMode.RequestBodyMode)]
+	respBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(overrides.ProcessingMode.ResponseBodyMode)]
+
+	reqTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
+	respTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.ResponseHeaderMode)]
+
+	pm := &envoy_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
 	}
 
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute{
-			Override: &envoy_config_filter_http_ext_proc_v3.ExtProcPerRoute_Overrides{
-				Overrides: &envoy_config_filter_http_ext_proc_v3.ExtProcOverrides{
+		&envoy_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_ext_proc_v3.ExtProcPerRoute_Overrides{
+				Overrides: &envoy_ext_proc_v3.ExtProcOverrides{
 					ProcessingMode: pm,
 					GrpcService:    GrpcService(overrides.ExtProcService.Name, overrides.ExtProcService.SNI, *overrides.ResponseTimeout),
 				},

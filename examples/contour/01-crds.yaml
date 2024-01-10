@@ -725,35 +725,61 @@ spec:
                               and how they are delivered.
                             properties:
                               requestBodyMode:
+                                default: NONE
                                 description: How to handle the request body. Default
                                   is "NONE".
-                                format: int32
-                                type: integer
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
                               requestHeaderMode:
+                                default: SEND
                                 description: How to handle the request header. Default
                                   is "SEND".
-                                format: int32
-                                type: integer
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
                               requestTrailerMode:
+                                default: SKIP
                                 description: How to handle the request trailers. Default
                                   is "SKIP".
-                                format: int32
-                                type: integer
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
                               responseBodyMode:
+                                default: NONE
                                 description: How do handle the response body. Default
                                   is "NONE".
-                                format: int32
-                                type: integer
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
                               responseHeaderMode:
+                                default: SEND
                                 description: How to handle the response header. Default
                                   is "SEND".
-                                format: int32
-                                type: integer
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
                               responseTrailerMode:
+                                default: SKIP
                                 description: How to handle the response trailers.
                                   Default is "SKIP".
-                                format: int32
-                                type: integer
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
                             type: object
                         type: object
                     type: object
@@ -878,35 +904,61 @@ spec:
                             and how they are delivered.
                           properties:
                             requestBodyMode:
+                              default: NONE
                               description: How to handle the request body. Default
                                 is "NONE".
-                              format: int32
-                              type: integer
+                              enum:
+                              - NONE
+                              - STREAMED
+                              - BUFFERED
+                              - BUFFERED_PARTIAL
+                              type: string
                             requestHeaderMode:
+                              default: SEND
                               description: How to handle the request header. Default
                                 is "SEND".
-                              format: int32
-                              type: integer
+                              enum:
+                              - DEFAULT
+                              - SEND
+                              - SKIP
+                              type: string
                             requestTrailerMode:
+                              default: SKIP
                               description: How to handle the request trailers. Default
                                 is "SKIP".
-                              format: int32
-                              type: integer
+                              enum:
+                              - DEFAULT
+                              - SEND
+                              - SKIP
+                              type: string
                             responseBodyMode:
+                              default: NONE
                               description: How do handle the response body. Default
                                 is "NONE".
-                              format: int32
-                              type: integer
+                              enum:
+                              - NONE
+                              - STREAMED
+                              - BUFFERED
+                              - BUFFERED_PARTIAL
+                              type: string
                             responseHeaderMode:
+                              default: SEND
                               description: How to handle the response header. Default
                                 is "SEND".
-                              format: int32
-                              type: integer
+                              enum:
+                              - DEFAULT
+                              - SEND
+                              - SKIP
+                              type: string
                             responseTrailerMode:
+                              default: SKIP
                               description: How to handle the response trailers. Default
                                 is "SKIP".
-                              format: int32
-                              type: integer
+                              enum:
+                              - DEFAULT
+                              - SEND
+                              - SKIP
+                              type: string
                           type: object
                       type: object
                     type: array
@@ -4638,35 +4690,61 @@ spec:
                                   server and how they are delivered.
                                 properties:
                                   requestBodyMode:
+                                    default: NONE
                                     description: How to handle the request body. Default
                                       is "NONE".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - NONE
+                                    - STREAMED
+                                    - BUFFERED
+                                    - BUFFERED_PARTIAL
+                                    type: string
                                   requestHeaderMode:
+                                    default: SEND
                                     description: How to handle the request header.
                                       Default is "SEND".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   requestTrailerMode:
+                                    default: SKIP
                                     description: How to handle the request trailers.
                                       Default is "SKIP".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   responseBodyMode:
+                                    default: NONE
                                     description: How do handle the response body.
                                       Default is "NONE".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - NONE
+                                    - STREAMED
+                                    - BUFFERED
+                                    - BUFFERED_PARTIAL
+                                    type: string
                                   responseHeaderMode:
+                                    default: SEND
                                     description: How to handle the response header.
                                       Default is "SEND".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   responseTrailerMode:
+                                    default: SKIP
                                     description: How to handle the response trailers.
                                       Default is "SKIP".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                 type: object
                             type: object
                         type: object
@@ -4793,35 +4871,61 @@ spec:
                                 server and how they are delivered.
                               properties:
                                 requestBodyMode:
+                                  default: NONE
                                   description: How to handle the request body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 requestHeaderMode:
+                                  default: SEND
                                   description: How to handle the request header. Default
                                     is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 requestTrailerMode:
+                                  default: SKIP
                                   description: How to handle the request trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseBodyMode:
+                                  default: NONE
                                   description: How do handle the response body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 responseHeaderMode:
+                                  default: SEND
                                   description: How to handle the response header.
                                     Default is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseTrailerMode:
+                                  default: SKIP
                                   description: How to handle the response trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                               type: object
                           type: object
                         type: array
@@ -6302,35 +6406,61 @@ spec:
                                 server and how they are delivered.
                               properties:
                                 requestBodyMode:
+                                  default: NONE
                                   description: How to handle the request body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 requestHeaderMode:
+                                  default: SEND
                                   description: How to handle the request header. Default
                                     is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 requestTrailerMode:
+                                  default: SKIP
                                   description: How to handle the request trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseBodyMode:
+                                  default: NONE
                                   description: How do handle the response body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 responseHeaderMode:
+                                  default: SEND
                                   description: How to handle the response header.
                                     Default is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseTrailerMode:
+                                  default: SKIP
                                   description: How to handle the response trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                               type: object
                           type: object
                       type: object
@@ -7972,35 +8102,61 @@ spec:
                                   server and how they are delivered.
                                 properties:
                                   requestBodyMode:
+                                    default: NONE
                                     description: How to handle the request body. Default
                                       is "NONE".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - NONE
+                                    - STREAMED
+                                    - BUFFERED
+                                    - BUFFERED_PARTIAL
+                                    type: string
                                   requestHeaderMode:
+                                    default: SEND
                                     description: How to handle the request header.
                                       Default is "SEND".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   requestTrailerMode:
+                                    default: SKIP
                                     description: How to handle the request trailers.
                                       Default is "SKIP".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   responseBodyMode:
+                                    default: NONE
                                     description: How do handle the response body.
                                       Default is "NONE".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - NONE
+                                    - STREAMED
+                                    - BUFFERED
+                                    - BUFFERED_PARTIAL
+                                    type: string
                                   responseHeaderMode:
+                                    default: SEND
                                     description: How to handle the response header.
                                       Default is "SEND".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                   responseTrailerMode:
+                                    default: SKIP
                                     description: How to handle the response trailers.
                                       Default is "SKIP".
-                                    format: int32
-                                    type: integer
+                                    enum:
+                                    - DEFAULT
+                                    - SEND
+                                    - SKIP
+                                    type: string
                                 type: object
                             type: object
                         type: object
@@ -8127,35 +8283,61 @@ spec:
                                 server and how they are delivered.
                               properties:
                                 requestBodyMode:
+                                  default: NONE
                                   description: How to handle the request body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 requestHeaderMode:
+                                  default: SEND
                                   description: How to handle the request header. Default
                                     is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 requestTrailerMode:
+                                  default: SKIP
                                   description: How to handle the request trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseBodyMode:
+                                  default: NONE
                                   description: How do handle the response body. Default
                                     is "NONE".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
                                 responseHeaderMode:
+                                  default: SEND
                                   description: How to handle the response header.
                                     Default is "SEND".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                                 responseTrailerMode:
+                                  default: SKIP
                                   description: How to handle the response trailers.
                                     Default is "SKIP".
-                                  format: int32
-                                  type: integer
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
                               type: object
                           type: object
                         type: array

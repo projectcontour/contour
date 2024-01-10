@@ -28,7 +28,7 @@ import (
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_config_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
+	envoy_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_config_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -405,10 +405,8 @@ func makePhaseFilters(processors []*dag.ExternalProcessor, phase contour_api_v1.
 	var extProcs []*dag.ExternalProcessor
 
 	for _, ep := range processors {
-		// UnspecifiedPhase decides where to insert the external processing service.
-		// This will generally be at the end of the filter chain, right before the Router
 		if len(ep.Phase) == 0 {
-			ep.Phase = contour_api_v1.UnspecifiedPhase
+			ep.Phase = contour_api_v1.DefaultPhase
 		}
 		if ep.Phase != phase {
 			continue
@@ -425,11 +423,11 @@ func makePhaseFilters(processors []*dag.ExternalProcessor, phase contour_api_v1.
 
 func (b *httpConnectionManagerBuilder) AddExtProcFilters(processors []*dag.ExternalProcessor) *httpConnectionManagerBuilder {
 	phases := map[contour_api_v1.ProcessingPhase]string{
-		contour_api_v1.AuthN:            "envoy.filters.http.jwt_authn",
-		contour_api_v1.AuthZ:            "envoy.filters.http.ext_authz",
-		contour_api_v1.CORS:             "cors",
-		contour_api_v1.RateLimit:        wellknown.HTTPRateLimit,
-		contour_api_v1.UnspecifiedPhase: "router",
+		contour_api_v1.AuthN:        "envoy.filters.http.jwt_authn",
+		contour_api_v1.AuthZ:        "envoy.filters.http.ext_authz",
+		contour_api_v1.CORS:         "cors",
+		contour_api_v1.RateLimit:    wellknown.HTTPRateLimit,
+		contour_api_v1.DefaultPhase: "router",
 	}
 	for phase, name := range phases {
 		// only insert when we find the 'anchor'
@@ -838,16 +836,24 @@ end
 	}
 }
 
-func makeProcessMode(mode *contour_api_v1.ProcessingMode) *envoy_config_filter_http_ext_proc_v3.ProcessingMode {
-	return &envoy_config_filter_http_ext_proc_v3.ProcessingMode{
-		RequestHeaderMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestHeaderMode),
-		ResponseHeaderMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseHeaderMode),
+func makeProcessMode(mode *contour_api_v1.ProcessingMode) *envoy_ext_proc_v3.ProcessingMode {
 
-		RequestBodyMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.RequestBodyMode),
-		ResponseBodyMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(mode.ResponseBodyMode),
+	reqHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
 
-		RequestTrailerMode:  envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.RequestTrailerMode),
-		ResponseTrailerMode: envoy_config_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(mode.ResponseTrailerMode),
+	reqBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
+	respBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
+
+	reqTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+
+	return &envoy_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
 	}
 }
 
@@ -856,19 +862,19 @@ func makeProcessMode(mode *contour_api_v1.ProcessingMode) *envoy_config_filter_h
 func filterExtProc(extProc *dag.ExternalProcessor) *http.HttpFilter {
 	if extProc.ProcessingMode == nil {
 		extProc.ProcessingMode = &contour_api_v1.ProcessingMode{
-			RequestHeaderMode:   1,
-			ResponseHeaderMode:  1,
-			RequestBodyMode:     0,
-			ResponseBodyMode:    0,
-			RequestTrailerMode:  2,
-			ResponseTrailerMode: 2,
+			RequestHeaderMode:   contour_api_v1.ProcessingModeSend,
+			ResponseHeaderMode:  contour_api_v1.ProcessingModeSend,
+			RequestBodyMode:     contour_api_v1.ProcessingModeNone,
+			ResponseBodyMode:    contour_api_v1.ProcessingModeNone,
+			RequestTrailerMode:  contour_api_v1.ProcessingModeSkip,
+			ResponseTrailerMode: contour_api_v1.ProcessingModeSkip,
 		}
 	}
 	if extProc.MutationRules == nil {
 		extProc.MutationRules = &contour_api_v1.HeaderMutationRules{}
 	}
 
-	extProcConfig := envoy_config_filter_http_ext_proc_v3.ExternalProcessor{
+	extProcConfig := envoy_ext_proc_v3.ExternalProcessor{
 		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
 		FailureModeAllow:       extProc.FailOpen,
 		ProcessingMode:         makeProcessMode(extProc.ProcessingMode),
