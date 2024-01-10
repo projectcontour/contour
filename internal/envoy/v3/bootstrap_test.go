@@ -183,13 +183,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -369,13 +362,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -554,13 +540,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -742,13 +721,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -929,13 +901,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -1115,13 +1080,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -1304,13 +1262,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -1528,13 +1479,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -1749,13 +1693,6 @@ func TestBootstrap(t *testing.T) {
         "layered_runtime": {
           "layers": [
             {
-              "name": "base",
-              "static_layer": {
-                "re2.max_program_size.error_level": 1048576,
-                "re2.max_program_size.warn_level": 1000
-              }
-            },
-            {
               "name": "dynamic",
               "rtds_layer": {
                 "name": "dynamic",
@@ -1964,13 +1901,6 @@ func TestBootstrap(t *testing.T) {
         },
         "layered_runtime": {
           "layers": [
-            {
-              "name": "base",
-              "static_layer": {
-                "re2.max_program_size.error_level": 1048576,
-                "re2.max_program_size.warn_level": 1000
-              }
-            },
             {
               "name": "dynamic",
               "rtds_layer": {
