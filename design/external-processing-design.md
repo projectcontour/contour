@@ -61,12 +61,12 @@ spec:
           failOpen: false
           responseTimeout: 30s
         processingMode:
-          requestBodyMode: 0
-          requestHeaderMode: 1
-          requestTrailerMode: 2
-          responseBodyMode: 0
-          responseHeaderMode: 1
-          responseTrailerMode: 2
+          requestBodyMode: NONE
+          requestHeaderMode: SEND
+          requestTrailerMode: SKIP
+          responseBodyMode: NONE
+          responseHeaderMode: SEND
+          responseTrailerMode: SKIP
       - grpcService:
           extensionRef:
             apiVersion: projectcontour.io/v1alpha1
@@ -75,12 +75,12 @@ spec:
           failOpen: true
           responseTimeout: 60s
         processingMode:
-          requestBodyMode: 0
-          requestHeaderMode: 1
-          requestTrailerMode: 2
-          responseBodyMode: 0
-          responseHeaderMode: 1
-          responseTrailerMode: 2
+          requestBodyMode: NONE
+          requestHeaderMode: SEND
+          requestTrailerMode: SKIP
+          responseBodyMode: NONE
+          responseHeaderMode: SEND
+          responseTrailerMode: SKIP
 ...
 ```
 ### Opting out from Global/VirtualHost External Processing
@@ -110,12 +110,12 @@ spec:
             failOpen: true
             responseTimeout: 60s
           processingMode:
-            requestBodyMode: 0
-            requestHeaderMode: 1
-            requestTrailerMode: 2
-            responseBodyMode: 0
-            responseHeaderMode: 1
-            responseTrailerMode: 2
+            requestBodyMode: NONE
+            requestHeaderMode: SEND
+            requestTrailerMode: SKIP
+            responseBodyMode: NONE
+            responseHeaderMode: SEND
+            responseTrailerMode: SKIP
 ...
 ```
 
@@ -148,12 +148,12 @@ spec:
             failOpen: true
             responseTimeout: 60s
           processingMode:
-            requestBodyMode: 0
-            requestHeaderMode: 1
-            requestTrailerMode: 2
-            responseBodyMode: 0
-            responseHeaderMode: 1
-            responseTrailerMode: 2
+            requestBodyMode: NONE
+            requestHeaderMode: SEND
+            requestTrailerMode: SKIP
+            responseBodyMode: NONE
+            responseHeaderMode: SEND
+            responseTrailerMode: SKIP
       services:
         - name: http-echo-service2
           port: 5678
