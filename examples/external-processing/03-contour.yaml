@@ -94,12 +94,12 @@ spec:
           failOpen: true
           responseTimeout: 60s
         processingMode:
-          requestBodyMode: 0
-          requestHeaderMode: 1
-          requestTrailerMode: 2
-          responseBodyMode: 0
-          responseHeaderMode: 1
-          responseTrailerMode: 2
+          requestBodyMode: NONE
+          requestHeaderMode: SEND
+          requestTrailerMode: SKIP
+          responseBodyMode: NONE
+          responseHeaderMode: SEND
+          responseTrailerMode: SKIP
       - grpcService:
           extensionRef:
             apiVersion: projectcontour.io/v1alpha1
@@ -108,12 +108,12 @@ spec:
           failOpen: true
           responseTimeout: 60s
         processingMode:
-          requestBodyMode: 0
-          requestHeaderMode: 1
-          requestTrailerMode: 2
-          responseBodyMode: 0
-          responseHeaderMode: 1
-          responseTrailerMode: 2
+          requestBodyMode: NONE
+          requestHeaderMode: SEND
+          requestTrailerMode: SKIP
+          responseBodyMode: NONE
+          responseHeaderMode: SEND
+          responseTrailerMode: SKIP
   httpproxy:
     rootNamespaces:
       - extproc-test
@@ -154,12 +154,12 @@ spec:
             failOpen: true
             responseTimeout: 30s
           processingMode:
-            requestBodyMode: 0
-            requestHeaderMode: 1
-            requestTrailerMode: 2
-            responseBodyMode: 0
-            responseHeaderMode: 1
-            responseTrailerMode: 2
+            requestBodyMode: NONE
+            requestHeaderMode: SEND
+            requestTrailerMode: SKIP
+            responseBodyMode: NONE
+            responseHeaderMode: SEND
+            responseTrailerMode: SKIP
       services:
         - name: http-echo-service3
           port: 5678
@@ -179,12 +179,12 @@ spec:
             failOpen: true
             responseTimeout: 60s
           processingMode:
-            requestBodyMode: 0
-            requestHeaderMode: 1
-            requestTrailerMode: 2
-            responseBodyMode: 0
-            responseHeaderMode: 1
-            responseTrailerMode: 2
+            requestBodyMode: NONE
+            requestHeaderMode: SEND
+            requestTrailerMode: SKIP
+            responseBodyMode: NONE
+            responseHeaderMode: SEND
+            responseTrailerMode: SKIP
 ---
 
 apiVersion: projectcontour.io/v1
