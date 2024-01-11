@@ -11,7 +11,7 @@ on:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  GO_VERSION: 1.21.5
+  GO_VERSION: 1.21.6
 jobs:
   CodeQL-Build:
 
