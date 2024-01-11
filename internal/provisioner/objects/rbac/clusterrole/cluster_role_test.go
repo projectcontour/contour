@@ -49,7 +49,8 @@ func TestDesiredClusterRole(t *testing.T) {
 	cr := desiredClusterRole(name, cntr)
 	checkClusterRoleName(t, cr, name)
 	ownerLabels := map[string]string{
-		model.OwningGatewayNameLabel: cntr.Name,
+		model.ContourOwningGatewayNameLabel:    cntr.Name,
+		model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
 	}
 	checkClusterRoleLabels(t, cr, ownerLabels)
 }

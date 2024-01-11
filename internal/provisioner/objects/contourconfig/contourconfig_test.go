@@ -241,7 +241,7 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 					Labels: map[string]string{
-						model.OwningGatewayNameLabel: "contour-1",
+						model.ContourOwningGatewayNameLabel: "contour-1",
 					},
 				},
 			},
@@ -292,7 +292,7 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 					Labels: map[string]string{
-						model.OwningGatewayNameLabel: "some-other-contour",
+						model.ContourOwningGatewayNameLabel: "some-other-contour",
 					},
 				},
 			},

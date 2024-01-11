@@ -19,6 +19,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"time"
 
 	"github.com/onsi/ginkgo/v2"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -29,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -66,7 +68,7 @@ type Echo struct {
 }
 
 // Deploy runs DeployN with a default of 1 replica.
-func (e *Echo) Deploy(ns, name string) func() {
+func (e *Echo) Deploy(ns, name string) (func(), *appsv1.Deployment) {
 	return e.DeployN(ns, name, 1)
 }
 
@@ -76,7 +78,7 @@ func (e *Echo) Deploy(ns, name string) func() {
 // can be configured. Namespace is defaulted to "default"
 // and name is defaulted to "ingress-conformance-echo" if not provided. Returns
 // a cleanup function.
-func (e *Echo) DeployN(ns, name string, replicas int32) func() {
+func (e *Echo) DeployN(ns, name string, replicas int32) (func(), *appsv1.Deployment) {
 	ns = valOrDefault(ns, "default")
 	name = valOrDefault(name, "ingress-conformance-echo")
 
@@ -179,7 +181,51 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 	return func() {
 		require.NoError(e.t, e.client.Delete(context.TODO(), service))
 		require.NoError(e.t, e.client.Delete(context.TODO(), deployment))
+	}, deployment
+}
+
+func (e *Echo) ScaleAndWaitDeployment(name, ns string, replicas int32) {
+	deployment := &appsv1.Deployment{}
+	key := types.NamespacedName{
+		Namespace: ns,
+		Name:      name,
 	}
+
+	require.NoError(e.t, e.client.Get(context.TODO(), key, deployment))
+
+	deployment.Spec.Replicas = &replicas
+
+	updateAndWaitFor(e.t, e.client, deployment, func(d *appsv1.Deployment) bool {
+		err := e.client.Get(context.Background(), key, deployment)
+		if err != nil {
+			return false
+		}
+		if deployment.Status.Replicas == replicas && deployment.Status.ReadyReplicas == replicas {
+			return true
+		}
+		return false
+	}, time.Second, time.Second*10)
+}
+
+func (e *Echo) ListPodIPs(ns, name string) ([]string, error) {
+	ns = valOrDefault(ns, "default")
+	name = valOrDefault(name, "ingress-conformance-echo")
+
+	pods := new(corev1.PodList)
+	podListOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": name}),
+		Namespace:     ns,
+	}
+	if err := e.client.List(context.TODO(), pods, podListOptions); err != nil {
+		return nil, err
+	}
+
+	podIPs := make([]string, 0)
+	for _, pod := range pods.Items {
+		podIPs = append(podIPs, pod.Status.PodIP)
+	}
+
+	return podIPs, nil
 }
 
 // DumpEchoLogs returns logs of the "conformance-echo" container in
@@ -528,6 +574,7 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 				Address: listenAllAddress(),
 				Port:    8000,
 			},
+			FeatureFlags: UseFeatureFlagsFromEnv(),
 			Envoy: &contour_api_v1alpha1.EnvoyConfig{
 				DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 					"HTTP/1.1", "HTTP/2",
@@ -598,6 +645,15 @@ func XDSServerTypeFromEnv() contour_api_v1alpha1.XDSServerType {
 		serverType = contour_api_v1alpha1.XDSServerType(typeFromEnv)
 	}
 	return serverType
+}
+
+func UseFeatureFlagsFromEnv() []string {
+	flags := make([]string, 0)
+	_, found := os.LookupEnv("CONTOUR_E2E_USE_ENDPOINT_SLICES")
+	if found {
+		flags = append(flags, "useEndpointSlices")
+	}
+	return flags
 }
 
 func valOrDefault(val, defaultVal string) string {

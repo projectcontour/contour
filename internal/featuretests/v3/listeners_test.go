@@ -36,6 +36,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -1372,49 +1373,49 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 				{
 					Name:     "http",
 					Port:     80,
-					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
 				{
 					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
 				{
 					Name:     "tls",
 					Port:     8443,
-					Protocol: gatewayapi_v1beta1.TLSProtocolType,
+					Protocol: gatewayapi_v1.TLSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1beta1.TLSModePassthrough),
+						Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
 				{
 					Name:     "tcp",
 					Port:     27017,
-					Protocol: gatewayapi_v1beta1.TCPProtocolType,
+					Protocol: gatewayapi_v1.TCPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -1438,7 +1439,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 				"test.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
 			}},
 		},

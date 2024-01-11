@@ -7,14 +7,23 @@ versions:
   - version: main
     supported: "false"
     dependencies:
-      envoy: "1.27.2"
+      envoy: "1.28.0"
+      kubernetes:
+        - "1.29"
+        - "1.28"
+        - "1.27"
+      gateway-api:
+        - "1.0.0"
+  - version: v1.27.0
+    supported: "true"
+    dependencies:
+      envoy: "1.28.0"
       kubernetes:
         - "1.28"
         - "1.27"
         - "1.26"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.8.1"
   - version: v1.26.1
     supported: "true"
     dependencies:
@@ -24,8 +33,7 @@ versions:
         - "1.27"
         - "1.26"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.8.1"
   - version: v1.26.0
     supported: "false"
     dependencies:
@@ -35,8 +43,7 @@ versions:
         - "1.27"
         - "1.26"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.8.0"
   - version: v1.25.3
     supported: "true"
     dependencies:
@@ -46,8 +53,7 @@ versions:
         - "1.26"
         - "1.25"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.2"
   - version: v1.25.2
     supported: "false"
     dependencies:
@@ -57,8 +63,7 @@ versions:
         - "1.26"
         - "1.25"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.2"
   - version: v1.25.1
     supported: "false"
     dependencies:
@@ -68,8 +73,7 @@ versions:
         - "1.26"
         - "1.25"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.2"
   - version: v1.25.0
     supported: "false"
     dependencies:
@@ -79,10 +83,9 @@ versions:
         - "1.26"
         - "1.25"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.2"
   - version: v1.24.6
-    supported: "true"
+    supported: "false"
     dependencies:
       envoy: "1.25.11"
       kubernetes:
@@ -90,8 +93,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.5
     supported: "false"
@@ -102,8 +104,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.4
     supported: "false"
@@ -114,8 +115,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.3
     supported: "false"
@@ -126,8 +126,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.2
     supported: "false"
@@ -138,8 +137,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.1
     supported: "false"
@@ -150,8 +148,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: "N/A"
   - version: v1.24.0
     supported: "false"
@@ -162,8 +159,7 @@ versions:
         - "1.25"
         - "1.24"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.6.0"
       contour-operator: v1.24.0
   - version: v1.23.6
     supported: "false"
@@ -174,8 +170,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.5
     supported: "false"
@@ -186,8 +181,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.4
     supported: "false"
@@ -198,8 +192,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.3
     supported: "false"
@@ -210,8 +203,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.2
     supported: "false"
@@ -222,8 +214,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.1
     supported: "false"
@@ -234,8 +225,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: "N/A"
   - version: v1.23.0
     supported: "false"
@@ -246,8 +236,7 @@ versions:
         - "1.24"
         - "1.23"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.1"
       contour-operator: v1.23.0
   - version: v1.22.6
     supported: "false"
@@ -258,8 +247,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: "N/A"
   - version: v1.22.5
     supported: "false"
@@ -270,8 +258,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: "N/A"
   - version: v1.22.4
     supported: "false"
@@ -282,8 +269,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: "N/A"
   - version: v1.22.3
     supported: "false"
@@ -294,8 +280,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: "N/A"
   - version: v1.22.2
     supported: "false"
@@ -306,8 +291,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: "N/A"
   - version: v1.22.1
     supported: "false"
@@ -318,8 +302,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: v1.22.1
   - version: v1.22.0
     supported: "false"
@@ -330,8 +313,7 @@ versions:
         - "1.23"
         - "1.22"
       gateway-api:
-        - v1alpha2
-        - v1beta1
+        - "0.5.0"
       contour-operator: v1.22.0
   - version: v1.21.3
     supported: "false"
@@ -342,7 +324,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.3"
       contour-operator: "N/A"
   - version: v1.21.2
     supported: "false"
@@ -353,7 +335,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.3"
       contour-operator: "N/A"
   - version: v1.21.1
     supported: "false"
@@ -364,7 +346,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.3"
       contour-operator: v1.21.1
   - version: v1.21.0
     supported: "false"
@@ -375,7 +357,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.3"
       contour-operator: v1.21.0
   - version: v1.20.2
     supported: "false"
@@ -386,7 +368,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.1"
       contour-operator: v1.20.2
   - version: v1.20.1
     supported: "false"
@@ -397,7 +379,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.1"
       contour-operator: v1.20.1
   - version: v1.20.0
     supported: "false"
@@ -408,7 +390,7 @@ versions:
         - "1.22"
         - "1.21"
       gateway-api:
-        - v1alpha2
+        - "0.4.1"
       contour-operator: v1.20.0
   - version: v1.19.1
     supported: "false"
@@ -419,7 +401,7 @@ versions:
         - "1.21"
         - "1.20"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.19.1
   - version: v1.19.0
     supported: "false"
@@ -430,7 +412,7 @@ versions:
         - "1.21"
         - "1.20"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: main
   - version: v1.18.3
     supported: "false"
@@ -441,7 +423,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.18.3
   - version: v1.18.2
     supported: "false"
@@ -452,7 +434,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.18.2
   - version: v1.18.1
     supported: "false"
@@ -463,7 +445,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.18.1
   - version: v1.18.0
     supported: "false"
@@ -474,7 +456,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.18.0
   - version: v1.17.2
     supported: "false"
@@ -485,7 +467,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: NA
   - version: v1.17.1
     supported: "false"
@@ -496,7 +478,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: NA
   - version: v1.17.0
     supported: "false"
@@ -507,7 +489,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.17.0
   - version: v1.16.1
     supported: "false"
@@ -518,7 +500,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: NA
   - version: v1.16.0
     supported: "false"
@@ -529,7 +511,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.16.0
   - version: v1.15.2
     supported: "false"
@@ -540,7 +522,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: NA
   - version: v1.15.1
     supported: "false"
@@ -551,7 +533,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.15.1
   - version: v1.15.0
     supported: "false"
@@ -562,7 +544,7 @@ versions:
         - "1.20"
         - "1.19"
       gateway-api:
-        - v1alpha1
+        - "0.3.0"
       contour-operator: v1.15.0
   - version: v1.14.2
     supported: "false"
@@ -573,7 +555,7 @@ versions:
         - "1.19"
         - "1.18"
       gateway-api:
-        - v1alpha1
+        - "0.2.0"
       contour-operator: NA
   - version: 1.14.1
     supported: "false"
@@ -584,7 +566,7 @@ versions:
         - "1.19"
         - "1.18"
       gateway-api:
-        - v1alpha1
+        - "0.2.0"
       contour-operator: v1.14.1
   - version: v1.14.0
     supported: "false"
@@ -595,7 +577,7 @@ versions:
         - "1.19"
         - "1.18"
       gateway-api:
-        - v1alpha1
+        - "0.2.0"
       contour-operator: v1.14.0
   - version: 1.13.1
     supported: "false"
@@ -606,7 +588,7 @@ versions:
         - "1.19"
         - "1.18"
       gateway-api:
-        - v1alpha1
+        - "0.2.0"
       contour-operator: v1.13.1
   - version: v1.13.0
     supported: "false"
@@ -617,7 +599,7 @@ versions:
         - "1.19"
         - "1.18"
       gateway-api:
-        - v1alpha1
+        - "0.2.0"
       contour-operator: v1.13.0
   - version: v1.12.0
     supported: "false"

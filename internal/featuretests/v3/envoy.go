@@ -184,7 +184,7 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -201,16 +201,17 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: ca},
 				}},
-				SubjectName: subjectName},
+				SubjectNames: []string{subjectName}},
 			sni,
 			secret,
+			upstreamTLS,
 			alpnProtocols...,
 		),
 	)
 	return c
 }
 
-func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -221,6 +222,7 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 			nil,
 			sni,
 			secret,
+			upstreamTLS,
 			alpnProtocols...,
 		),
 	)

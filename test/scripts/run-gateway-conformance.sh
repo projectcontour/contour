@@ -18,8 +18,13 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+readonly HERE=$(cd "$(dirname "$0")" && pwd)
+readonly REPO=$(cd "${HERE}/../.." && pwd)
+
 readonly KUBECTL=${KUBECTL:-kubectl}
 export CONTOUR_IMG=${CONTOUR_E2E_IMAGE:-ghcr.io/projectcontour/contour:main}
+export GENERATE_GATEWAY_CONFORMANCE_REPORT=${GENERATE_GATEWAY_CONFORMANCE_REPORT:-false}
+export GATEWAY_CONFORMANCE_REPORT_OUTDIR="${REPO}/gateway-conformance-report"
 
 echo "Using Contour image: ${CONTOUR_IMG}"
 echo "Using Gateway API version: ${GATEWAY_API_VERSION}"
@@ -62,5 +67,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   go test -timeout=40m ./conformance -run TestConformance -gateway-class=contour -all-features \
     -exempt-features=Mesh \
-    -skip-tests=HTTPRouteRedirectPortAndScheme
+    -skip-tests=HTTPRouteRedirectPortAndScheme,HTTPRouteTimeoutBackendRequest,GatewayStaticAddresses
 fi

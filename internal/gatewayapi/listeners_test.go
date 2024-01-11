@@ -19,6 +19,7 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -27,30 +28,30 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -68,30 +69,30 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     8080,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -110,36 +111,36 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")), // duplicate hostname
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "listener-5",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     8080,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType, // non-HTTP
+				Protocol: gatewayapi_v1.TLSProtocolType, // non-HTTP
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -153,9 +154,9 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"listener-3": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonHostnameConflict),
 				Message: "All Listener hostnames for a given port must be unique",
 			},
 		}, res.InvalidListenerConditions)
@@ -165,30 +166,30 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -206,30 +207,30 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     8443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "http-listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -248,36 +249,36 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")), // duplicate hostname
 			},
 			{
 				Name:     "listener-4",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "listener-5",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     8443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "http-listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("local.projectcontour.io")),
 			},
@@ -291,9 +292,9 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"listener-3": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonHostnameConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonHostnameConflict),
 				Message: "All Listener hostnames for a given port must be unique",
 			},
 		}, res.InvalidListenerConditions)
@@ -303,19 +304,19 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "listener-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("192.168.1.1")),
 			},
 			{
 				Name:     "listener-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("*.*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname(".invalid.$.")),
 			},
@@ -325,21 +326,21 @@ func TestValidateListeners(t *testing.T) {
 		assert.Empty(t, res.Ports)
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"listener-1": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+				Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
+				Reason:  string(gatewayapi_v1.ListenerReasonInvalid),
 				Message: "invalid hostname \"192.168.1.1\": must be a DNS name, not an IP address",
 			},
 			"listener-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+				Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
+				Reason:  string(gatewayapi_v1.ListenerReasonInvalid),
 				Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 			},
 			"listener-3": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionProgrammed),
+				Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonInvalid),
+				Reason:  string(gatewayapi_v1.ListenerReasonInvalid),
 				Message: "invalid hostname \".invalid.$.\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 			},
 		}, res.InvalidListenerConditions)
@@ -349,19 +350,19 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "https-1",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-1.gateway.projectcontour.io")),
 				Port:     443,
 			},
 			{
 				Name:     "https-2",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-2.gateway.projectcontour.io")),
 				Port:     443,
 			},
 			{
 				Name:     "https-3",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Hostname: ref.To(gatewayapi_v1beta1.Hostname("https-3.gateway.projectcontour.io")),
 				Port:     443,
 			},
@@ -377,18 +378,18 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "http",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     7777,
 			},
 			{
 				Name:     "https",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     7777,
 			},
 
 			{
 				Name:     "http-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     9999,
 			},
 			{
@@ -399,12 +400,12 @@ func TestValidateListeners(t *testing.T) {
 
 			{
 				Name:     "tcp-1",
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				Port:     11111,
 			},
 			{
 				Name:     "tls-1",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     11111,
 			},
 		}
@@ -417,21 +418,21 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"https": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 			"projectcontour-io-https": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 			"tls-1": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 		}, res.InvalidListenerConditions)
@@ -441,12 +442,12 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "https",
-				Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     7777,
 			},
 			{
 				Name:     "http",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     7777,
 			},
 
@@ -457,18 +458,18 @@ func TestValidateListeners(t *testing.T) {
 			},
 			{
 				Name:     "http-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     9999,
 			},
 
 			{
 				Name:     "tls-1",
-				Protocol: gatewayapi_v1beta1.TLSProtocolType,
+				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     11111,
 			},
 			{
 				Name:     "tcp-1",
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				Port:     11111,
 			},
 		}
@@ -481,21 +482,21 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"http": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 			"http-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 			"tcp-1": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionConflicted),
+				Type:    string(gatewayapi_v1.ListenerConditionConflicted),
 				Status:  metav1.ConditionTrue,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonProtocolConflict),
+				Reason:  string(gatewayapi_v1.ListenerReasonProtocolConflict),
 				Message: "All Listener protocols for a given port must be compatible",
 			},
 		}, res.InvalidListenerConditions)
@@ -505,17 +506,17 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "tcp-1",
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				Port:     10000,
 			},
 			{
 				Name:     "tcp-2",
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				Port:     10001,
 			},
 			{
 				Name:     "tcp-3",
-				Protocol: gatewayapi_v1beta1.TCPProtocolType,
+				Protocol: gatewayapi_v1.TCPProtocolType,
 				Port:     10002,
 			},
 		}
@@ -529,17 +530,17 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "http-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     65535, // wraps around, does not hit a privileged port
 			},
 			{
 				Name:     "http-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     57536, // wraps around, hits a privileged port
 			},
 			{
 				Name:     "http-3",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     58560, // wraps around, does not hit a privileged port
 			},
 		}
@@ -557,12 +558,12 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "http-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     58000,
 			},
 			{
 				Name:     "http-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     59023,
 			},
 		}
@@ -573,9 +574,9 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"http-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Type:    string(gatewayapi_v1.ListenerConditionAccepted),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+				Reason:  string(gatewayapi_v1.ListenerReasonPortUnavailable),
 				Message: "Listener port conflicts with a previous Listener's port",
 			},
 		}, res.InvalidListenerConditions)
@@ -585,12 +586,12 @@ func TestValidateListeners(t *testing.T) {
 		listeners := []gatewayapi_v1beta1.Listener{
 			{
 				Name:     "http-1",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     59000,
 			},
 			{
 				Name:     "http-2",
-				Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     57977,
 			},
 		}
@@ -601,9 +602,9 @@ func TestValidateListeners(t *testing.T) {
 		})
 		assert.Equal(t, map[gatewayapi_v1beta1.SectionName]metav1.Condition{
 			"http-2": {
-				Type:    string(gatewayapi_v1beta1.ListenerConditionAccepted),
+				Type:    string(gatewayapi_v1.ListenerConditionAccepted),
 				Status:  metav1.ConditionFalse,
-				Reason:  string(gatewayapi_v1beta1.ListenerReasonPortUnavailable),
+				Reason:  string(gatewayapi_v1.ListenerReasonPortUnavailable),
 				Message: "Listener port conflicts with a previous Listener's port",
 			},
 		}, res.InvalidListenerConditions)

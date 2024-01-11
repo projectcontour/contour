@@ -1,0 +1,3 @@
+## Gateway API Backend Protocol Selection
+
+For Gateway API, Contour now enables end-users to specify backend protocols by setting the backend Service's [ServicePort.AppProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) parameter. The accepted values are `kubernetes.io/h2c` and `kubernetes.io/ws`. Note that websocket upgrades are already enabled by default for Gateway API. If `AppProtocol` is set, any other configurations, such as the annotation: `projectcontour.io/upstream-protocol.{protocol}` will be disregarded.

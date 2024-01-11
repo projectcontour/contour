@@ -28,5 +28,8 @@ site/public
 # Saved container image archive
 image/
 
+# Gateway API conformance report output
+gateway-conformance-report/
+
 # Compiled tests from Ginkgo
 *.test

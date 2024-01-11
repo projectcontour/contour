@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -49,7 +50,7 @@ func testResponseHeaderModifierBackendRef(namespace string, gateway types.Namesp
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/filter"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/filter"),
 						BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1beta1.BackendRef{
@@ -57,13 +58,13 @@ func testResponseHeaderModifierBackendRef(namespace string, gateway types.Namesp
 								},
 								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
 									{
-										Type: gatewayapi_v1beta1.HTTPRouteFilterResponseHeaderModifier,
+										Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
 										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
 											Add: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("My-Header"), Value: "Foo"},
+												{Name: gatewayapi_v1.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},
 											Set: []gatewayapi_v1beta1.HTTPHeader{
-												{Name: gatewayapi_v1beta1.HTTPHeaderName("Replace-Header"), Value: "Bar"},
+												{Name: gatewayapi_v1.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 											},
 											Remove: []string{"Other-Header"},
 										},

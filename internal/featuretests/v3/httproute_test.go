@@ -27,6 +27,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -41,7 +42,7 @@ var (
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted),
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -59,26 +60,26 @@ var (
 				{
 					Name:     "http",
 					Port:     80,
-					Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+					Protocol: gatewayapi_v1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
 				{
 					Name:     "https",
 					Port:     443,
-					Protocol: gatewayapi_v1beta1.HTTPSProtocolType,
+					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1beta1.TLSModeTerminate),
+						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1beta1.NamespacesFromAll),
+							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -129,10 +130,10 @@ func TestGateway_TLS(t *testing.T) {
 				"test.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/blog"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc2", 80, 1),
 			}, {
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
 			}},
 		},

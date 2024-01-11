@@ -30,9 +30,14 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+  groups:
+    artifact-actions:
+      patterns:
+      - "actions/upload-artifact"
+      - "actions/download-artifact"
   
 # release branch N targets
-- target-branch: release-1.26
+- target-branch: release-1.27
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
@@ -52,7 +57,7 @@ updates:
     k8s-dependencies:
       patterns:
       - "k8s.io/*"
-- target-branch: release-1.26
+- target-branch: release-1.27
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
@@ -68,9 +73,14 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+  groups:
+    artifact-actions:
+      patterns:
+      - "actions/upload-artifact"
+      - "actions/download-artifact"
 
 # release branch N-1 targets
-- target-branch: release-1.25
+- target-branch: release-1.26
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
@@ -90,7 +100,7 @@ updates:
     k8s-dependencies:
       patterns:
       - "k8s.io/*"
-- target-branch: release-1.25
+- target-branch: release-1.26
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
@@ -106,9 +116,14 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+  groups:
+    artifact-actions:
+      patterns:
+      - "actions/upload-artifact"
+      - "actions/download-artifact"
 
 # release branch N-2 targets
-- target-branch: release-1.24
+- target-branch: release-1.25
   package-ecosystem: "gomod"
   directory: "/"
   schedule:
@@ -128,7 +143,7 @@ updates:
     k8s-dependencies:
       patterns:
       - "k8s.io/*"
-- target-branch: release-1.24
+- target-branch: release-1.25
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
@@ -144,3 +159,8 @@ updates:
   - release-note/none-required
   reviewers:
   - projectcontour/maintainers
+  groups:
+    artifact-actions:
+      patterns:
+      - "actions/upload-artifact"
+      - "actions/download-artifact"

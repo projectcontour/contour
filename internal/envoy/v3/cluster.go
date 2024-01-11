@@ -78,13 +78,16 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		cluster.IgnoreHealthOnHostRemoval = true
 	}
 
-	if envoy.AnyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
+	if envoy.AnyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries, service.PerHostMaxConnections) {
 		cluster.CircuitBreakers = &envoy_cluster_v3.CircuitBreakers{
 			Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 				MaxConnections:     protobuf.UInt32OrNil(service.MaxConnections),
 				MaxPendingRequests: protobuf.UInt32OrNil(service.MaxPendingRequests),
 				MaxRequests:        protobuf.UInt32OrNil(service.MaxRequests),
 				MaxRetries:         protobuf.UInt32OrNil(service.MaxRetries),
+			}},
+			PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				MaxConnections: protobuf.UInt32OrNil(service.PerHostMaxConnections),
 			}},
 		}
 	}
@@ -97,6 +100,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
+				c.UpstreamTLS,
 			),
 		)
 	case "h2":
@@ -106,6 +110,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
+				c.UpstreamTLS,
 				"h2",
 			),
 		)
@@ -177,6 +182,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 				ext.UpstreamValidation,
 				ext.SNI,
 				ext.ClientCertificate,
+				ext.UpstreamTLS,
 				"h2",
 			),
 		)
@@ -207,7 +213,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_cluster_v3.Cluster {
 
 	var transportSocket *envoy_core_v3.TransportSocket
 	if c.Scheme == "https" {
-		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil))
+		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil, c.UpstreamTLS))
 	}
 
 	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))

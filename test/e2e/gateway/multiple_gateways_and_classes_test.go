@@ -30,6 +30,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -116,7 +117,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			secondOldest := newGatewayClass("second-oldest-matching-gatewayclass", controllerName)
 			_, notOldest := f.CreateGatewayClassAndWaitFor(secondOldest, func(gc *gatewayapi_v1beta1.GatewayClass) bool {
 				for _, cond := range gc.Status.Conditions {
-					if cond.Type == string(gatewayapi_v1beta1.GatewayClassConditionStatusAccepted) &&
+					if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
 						cond.Reason == string(status.ReasonOlderGatewayClassExists) &&
 						cond.Message == "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists" {
@@ -167,11 +168,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -192,11 +193,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -205,7 +206,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			}
 			_, notAccepted := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				for _, cond := range gw.Status.Conditions {
-					if cond.Type == string(gatewayapi_v1beta1.GatewayConditionAccepted) &&
+					if cond.Type == string(gatewayapi_v1.GatewayConditionAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
 						cond.Reason == "OlderGatewayExists" {
 						return true
@@ -256,11 +257,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -298,11 +299,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -327,11 +328,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
 							Name:     "http",
-							Protocol: gatewayapi_v1beta1.HTTPProtocolType,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1beta1.NamespacesFromSame),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},

@@ -11,7 +11,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v8
+    - uses: actions/stale@28ca1036281a5e5922ead5184a1bbf96e5fc984e # v9.0.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         exempt-all-milestones: true
@@ -28,6 +28,7 @@ jobs:
 
           You can:
 
+          - *Ensure your PR is passing all CI checks.* PRs that are fully green are more likely to be reviewed. If you are having trouble with CI checks, reach out to the #contour channel in the Kubernetes Slack workspace.
           - Mark this PR as fresh by commenting or pushing a commit
           - Close this PR
           - Offer to help out with triage
@@ -43,6 +44,7 @@ jobs:
 
           You can:
 
+          - *Ensure your PR is passing all CI checks.* PRs that are fully green are more likely to be reviewed. If you are having trouble with CI checks, reach out to the #contour channel in the Kubernetes Slack workspace.
           - Mark this PR as fresh by commenting or pushing a commit
           - Close this PR
           - Offer to help out with triage

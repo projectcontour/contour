@@ -17,16 +17,19 @@ type LabeledObject interface {
 	GetLabels() map[string]string
 }
 
-// Exist returns true if obj contains labels m.
-func Exist(obj LabeledObject, m map[string]string) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
+// AnyExist returns true if obj contains at least one of the provided labels.
+func AnyExist(obj LabeledObject, labels map[string]string) bool {
+	objLabels := obj.GetLabels()
+
+	if len(objLabels) == 0 {
 		return false
 	}
-	for key, val := range m {
-		if found, ok := labels[key]; !ok || found != val {
-			return false
+
+	for k, v := range labels {
+		if val, ok := objLabels[k]; ok && val == v {
+			return true
 		}
 	}
-	return true
+
+	return false
 }

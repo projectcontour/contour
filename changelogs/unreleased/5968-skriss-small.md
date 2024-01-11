@@ -1,0 +1,1 @@
+Gateway API: adds support for [Gateway infrastructure labels and annotations](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.GatewayInfrastructure)``.

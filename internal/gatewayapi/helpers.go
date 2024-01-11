@@ -16,6 +16,7 @@ package gatewayapi
 import (
 	"github.com/projectcontour/contour/internal/ref"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -86,7 +87,7 @@ func HTTPHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value s
 	return []gatewayapi_v1beta1.HTTPHeaderMatch{
 		{
 			Type:  ref.To(matchType),
-			Name:  gatewayapi_v1beta1.HTTPHeaderName(name),
+			Name:  gatewayapi_v1.HTTPHeaderName(name),
 			Value: value,
 		},
 	}
@@ -97,8 +98,8 @@ func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1beta
 
 	for name, val := range namesAndValues {
 		matches = append(matches, gatewayapi_v1beta1.HTTPQueryParamMatch{
-			Type:  ref.To(gatewayapi_v1beta1.QueryParamMatchExact),
-			Name:  gatewayapi_v1beta1.HTTPHeaderName(name),
+			Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+			Name:  gatewayapi_v1.HTTPHeaderName(name),
 			Value: val,
 		})
 	}

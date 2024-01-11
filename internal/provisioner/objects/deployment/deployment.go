@@ -195,9 +195,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      contour.ContourDeploymentName(),
-			Labels:    contour.AppLabels(),
+			Namespace:   contour.Namespace,
+			Name:        contour.ContourDeploymentName(),
+			Labels:      contour.WorkloadLabels(),
+			Annotations: contour.CommonAnnotations(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: ref.To(int32(600)),
@@ -268,7 +269,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
 func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
-	if labels.Exist(current, model.OwnerLabels(contour)) {
+	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		deploy, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, deploy); err != nil {
@@ -293,7 +294,7 @@ func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector 
 // app labels
 func contourPodLabels(contour *model.Contour) map[string]string {
 	labels := ContourDeploymentPodSelector(contour).MatchLabels
-	for k, v := range contour.AppLabels() {
+	for k, v := range contour.WorkloadLabels() {
 		labels[k] = v
 	}
 	return labels
@@ -315,6 +316,12 @@ func contourPodAnnotations(contour *model.Contour) map[string]string {
 
 	annotations["prometheus.io/scrape"] = "true"
 	annotations["prometheus.io/port"] = fmt.Sprint(port)
+
+	// Annotations specified on the Gateway take precedence
+	// over annotations specified on the GatewayClass/its parameters.
+	for k, v := range contour.CommonAnnotations() {
+		annotations[k] = v
+	}
 
 	return annotations
 }
