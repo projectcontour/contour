@@ -164,12 +164,6 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 		LayeredRuntime: &envoy_bootstrap_v3.LayeredRuntime{
 			Layers: []*envoy_bootstrap_v3.RuntimeLayer{
 				{
-					Name: "base",
-					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_StaticLayer{
-						StaticLayer: baseRuntimeLayer(),
-					},
-				},
-				{
 					Name: "dynamic",
 					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer_{
 						RtdsLayer: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer{

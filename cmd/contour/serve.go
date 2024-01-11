@@ -482,7 +482,8 @@ func (s *Server) doServe() error {
 		&xdscache_v3.ClusterCache{},
 		endpointHandler,
 		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
-			MaxRequestsPerIOCycle: contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+			MaxRequestsPerIOCycle:     contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+			MaxConnectionsPerListener: contourConfiguration.Envoy.Listener.MaxConnectionsPerListener,
 		}),
 	}
 

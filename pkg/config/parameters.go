@@ -526,6 +526,12 @@ type ListenerParameters struct {
 	// and mitigate attacks like CVE-2023-44487. The default value when this is not set is
 	// unlimited.
 	HTTP2MaxConcurrentStreams *uint32 `yaml:"http2-max-concurrent-streams,omitempty"`
+
+	// Defines the limit on number of active connections to a listener. The limit is applied
+	// per listener. The default value when this is not set is unlimited.
+	//
+	// +optional
+	MaxConnectionsPerListener *uint32 `yaml:"max-connections-per-listener,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -551,6 +557,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.HTTP2MaxConcurrentStreams != nil && *p.HTTP2MaxConcurrentStreams < 1 {
 		return fmt.Errorf("invalid max HTTP/2 concurrent streams value %q set on listener, minimum value is 1", *p.HTTP2MaxConcurrentStreams)
+	}
+
+	if p.MaxConnectionsPerListener != nil && *p.MaxConnectionsPerListener < 1 {
+		return fmt.Errorf("invalid max connections per listener value %q set on listener, minimum value is 1", *p.MaxConnectionsPerListener)
 	}
 
 	return p.SocketOptions.Validate()
