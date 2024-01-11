@@ -3344,13 +3344,12 @@ Default is &ldquo;SKIP&rdquo;.</p>
 </tr><tr><td><p>&#34;CORS&#34;</p></td>
 <td><p>Insert  before contour CORS filter(s).</p>
 </td>
+</tr><tr><td><p>&#34;DefaultPhase&#34;</p></td>
+<td><p>DefaultPhase decides insert the external processing service at the end of the filter chain, right before the Router.</p>
+<p>**NOTE: if not specify, default to DefaultPhase</p>
+</td>
 </tr><tr><td><p>&#34;RateLimit&#34;</p></td>
 <td><p>Insert  before contour RateLimit.</p>
-</td>
-</tr><tr><td><p>&#34;UnspecifiedPhase&#34;</p></td>
-<td><p>UnspecifiedPhase decides where to insert the external processing service.
-This will generally be at the end of the filter chain, right before the Router
-**NOTE: if not specify, default to UnspecifiedPhase</p>
 </td>
 </tr></tbody>
 </table>
