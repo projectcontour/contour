@@ -122,6 +122,11 @@ type ContourSettings struct {
 	// the annotations for Prometheus will be appended or overwritten with predefined value.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+	// to only watch these set of namespaces
+	// +optional
+	WatchNamespaces []string `json:"watchNamespaces,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

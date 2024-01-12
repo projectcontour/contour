@@ -14,6 +14,8 @@
 package model
 
 import (
+	"slices"
+
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 
@@ -134,6 +136,10 @@ func (c *Contour) EnvoyTolerationsExist() bool {
 	return false
 }
 
+func (c *Contour) WatchAllNamespaces() bool {
+	return c.Spec.WatchNamespaces == nil || slices.Contains(c.Spec.WatchNamespaces, corev1.NamespaceAll)
+}
+
 // ContourSpec defines the desired state of Contour.
 type ContourSpec struct {
 	// ContourReplicas is the desired number of Contour replicas. If unset,
@@ -245,6 +251,11 @@ type ContourSpec struct {
 	// If the value is 0, the overload manager is disabled.
 	// defaults to 0.
 	EnvoyMaxHeapSizeBytes uint64
+
+	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+	// to only watch these set of namespaces
+	// default is nil, contour will watch resource of all namespaces
+	WatchNamespaces []string
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

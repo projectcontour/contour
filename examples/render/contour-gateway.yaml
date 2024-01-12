@@ -1842,6 +1842,13 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
                     type: object
+                  watchNamespaces:
+                    description: |-
+                      WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+                      to only watch these set of namespaces
+                    items:
+                      type: string
+                    type: array
                 type: object
               envoy:
                 description: |-

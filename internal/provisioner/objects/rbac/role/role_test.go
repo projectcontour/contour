@@ -43,6 +43,16 @@ func checkRoleLabels(t *testing.T, role *rbacv1.Role, expected map[string]string
 	t.Errorf("role has unexpected %q labels", role.Labels)
 }
 
+func checkRoleNamespace(t *testing.T, role *rbacv1.Role, namespace string) {
+	t.Helper()
+
+	if role.Namespace == namespace {
+		return
+	}
+
+	t.Errorf("role has unexpected '%q' namespace", role.Namespace)
+}
+
 func TestDesiredControllerRole(t *testing.T) {
 	name := "role-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -53,4 +63,36 @@ func TestDesiredControllerRole(t *testing.T) {
 		model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
 	}
 	checkRoleLabels(t, role, ownerLabels)
+}
+
+func TestDesiredRoleForContourInNamespace(t *testing.T) {
+	testCases := []struct {
+		description      string
+		namespace        string
+		gatewayclassOnly bool
+	}{
+		{
+			description: "namespace 1",
+			namespace:   "ns1",
+		},
+		{
+			description: "namespace 2",
+			namespace:   "ns2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "role-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			role := desiredRoleForContourInNamespace(name, tc.namespace, cntr)
+			checkRoleName(t, role, name)
+			ownerLabels := map[string]string{
+				model.ContourOwningGatewayNameLabel:    cntr.Name,
+				model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
+			}
+			checkRoleLabels(t, role, ownerLabels)
+			checkRoleNamespace(t, role, tc.namespace)
+		})
+	}
 }

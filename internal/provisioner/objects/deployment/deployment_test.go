@@ -15,6 +15,7 @@ package deployment
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -134,6 +135,16 @@ func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected ap
 	t.Errorf("deployment has unexpected strategy %q", expected)
 }
 
+func ensureContainerDoesntHaveArg(t *testing.T, container *corev1.Container, arg string) {
+	t.Helper()
+
+	for _, a := range container.Args {
+		if a == arg {
+			t.Errorf("container has arg %q", arg)
+		}
+	}
+}
+
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -210,6 +221,49 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasTolerations(t, deploy, nil)
 	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
+}
+
+func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
+	testCases := []struct {
+		description    string
+		namespaces     []string
+		expectArgExist bool
+	}{
+		{
+			description:    "several valid namespaces",
+			namespaces:     []string{"ns1", "ns2"},
+			expectArgExist: true,
+		},
+		{
+			description:    "single valid namespace",
+			namespaces:     []string{"ns1", "ns2"},
+			expectArgExist: true,
+		},
+		{
+			description:    "include empty namespace",
+			namespaces:     []string{"ns1", ""},
+			expectArgExist: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "deploy-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			icName := "test-ic"
+			cntr.Spec.IngressClassName = &icName
+			// Change the Contour watch namespaces flag
+			cntr.Spec.WatchNamespaces = tc.namespaces
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(tc.namespaces, ","))
+			if tc.expectArgExist {
+				checkContainerHasArg(t, container, arg)
+			} else {
+				ensureContainerDoesntHaveArg(t, container, arg)
+			}
+		})
+	}
 }
 
 func TestNodePlacementDeployment(t *testing.T) {
