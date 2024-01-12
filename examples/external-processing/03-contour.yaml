@@ -121,6 +121,8 @@ spec:
     type: envoy
     tls:
       insecure: true
+  gateway:
+    controllerName: projectcontour.io/projectcontour/contour
 
 ---
 apiVersion: projectcontour.io/v1
