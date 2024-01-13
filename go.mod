@@ -32,7 +32,7 @@ require (
 	golang.org/x/oauth2 v0.15.0
 	gonum.org/v1/plot v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97
-	google.golang.org/grpc v1.60.1
+	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.29.0
