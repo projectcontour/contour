@@ -126,6 +126,37 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
+	rh.OnDelete(proxy)
+
+	tcpproxy := fixture.NewProxy("tcpproxy").WithSpec(
+		projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name:     svc.Name,
+					Port:     443,
+					Protocol: ref.To("tls"),
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: sec2.Name,
+						SubjectName:   "subjname",
+					},
+				}},
+			},
+		})
+	rh.OnAdd(tcpproxy)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1, nil),
+		),
+		TypeUrl: clusterType,
+	})
+
 	// Test the error branch when Envoy client certificate secret does not exist.
 	rh.OnDelete(sec1)
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{

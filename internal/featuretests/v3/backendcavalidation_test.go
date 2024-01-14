@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -30,7 +31,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	secret := &v1.Secret{
+	caSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
@@ -60,7 +61,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			}},
 		},
 	}
-	rh.OnAdd(secret)
+	rh.OnAdd(caSecret)
 	rh.OnAdd(svc)
 	rh.OnAdd(p1)
 
@@ -93,7 +94,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 					Name: svc.Name,
 					Port: 443,
 					UpstreamValidation: &contour_api_v1.UpstreamValidation{
-						CACertificate: secret.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -140,7 +141,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 					Name: svc.Name,
 					Port: 443,
 					UpstreamValidation: &contour_api_v1.UpstreamValidation{
-						CACertificate: secret.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -173,5 +174,46 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		// resources is nil, not []any.Any{} -- an empty slice.
 		Resources: nil,
 		TypeUrl:   secretType,
+	})
+
+	rh.OnDelete(hp1)
+
+	tlsSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+	rh.OnAdd(tlsSecret)
+
+	tcpproxy := fixture.NewProxy("tcpproxy").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: tlsSecret.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name:     svc.Name,
+					Port:     443,
+					Protocol: ref.To("tls"),
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+						CACertificate: caSecret.Name,
+						SubjectName:   "subjname",
+					},
+				}},
+			},
+		})
+	rh.OnAdd(tcpproxy)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
+		),
+		TypeUrl: clusterType,
 	})
 }
