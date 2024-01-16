@@ -44,7 +44,6 @@ func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 	reason gatewayapi_v1beta1.GatewayConditionReason,
 	message string,
 ) metav1.Condition {
-
 	if c, ok := gatewayUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
 	}

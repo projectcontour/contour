@@ -116,7 +116,7 @@ func invertHeaderMatch(h dag.HeaderMatchCondition) dag.HeaderMatchCondition {
 	return h
 }
 
-func regexHeader(name string, value string) dag.HeaderMatchCondition {
+func regexHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeRegex,
@@ -124,7 +124,7 @@ func regexHeader(name string, value string) dag.HeaderMatchCondition {
 	}
 }
 
-func exactHeader(name string, value string) dag.HeaderMatchCondition {
+func exactHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeExact,
@@ -132,7 +132,7 @@ func exactHeader(name string, value string) dag.HeaderMatchCondition {
 	}
 }
 
-func containsHeader(name string, value string) dag.HeaderMatchCondition {
+func containsHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeContains,
@@ -152,7 +152,7 @@ func ignoreCaseQueryParam(h dag.QueryParamMatchCondition) dag.QueryParamMatchCon
 	return h
 }
 
-func exactQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func exactQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeExact,
@@ -160,7 +160,7 @@ func exactQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func prefixQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func prefixQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypePrefix,
@@ -168,7 +168,7 @@ func prefixQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func suffixQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func suffixQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeSuffix,
@@ -176,7 +176,7 @@ func suffixQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func regexQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func regexQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeRegex,
@@ -184,7 +184,7 @@ func regexQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func containsQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func containsQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeContains,
@@ -344,7 +344,6 @@ func TestSortRoutesMethod(t *testing.T) {
 		},
 	}
 	shuffleAndCheckSort(t, want)
-
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {

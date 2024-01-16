@@ -107,7 +107,8 @@ func TestStatsListeners(t *testing.T) {
 				},
 			),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-		}}})
+		}},
+	})
 
 	run(t, "stats-over-https-and-health-over-http", testcase{
 		metrics: contour_api_v1alpha1.MetricsConfig{
@@ -120,7 +121,8 @@ func TestStatsListeners(t *testing.T) {
 		},
 		health: contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.127",
-			Port:    8124},
+			Port:    8124,
+		},
 		want: []*envoy_listener_v3.Listener{{
 			Name:    "stats",
 			Address: SocketAddress("127.0.0.127", 8123),
@@ -195,7 +197,8 @@ func TestStatsListeners(t *testing.T) {
 				},
 			),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-		}}})
+		}},
+	})
 
 	run(t, "stats-over-https-with-client-auth-and-health-over-http", testcase{
 		metrics: contour_api_v1alpha1.MetricsConfig{
@@ -209,7 +212,8 @@ func TestStatsListeners(t *testing.T) {
 		},
 		health: contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.127",
-			Port:    8124},
+			Port:    8124,
+		},
 		want: []*envoy_listener_v3.Listener{{
 			Name:    "stats",
 			Address: SocketAddress("127.0.0.127", 8123),
@@ -291,7 +295,8 @@ func TestStatsListeners(t *testing.T) {
 				},
 			),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-		}}})
+		}},
+	})
 
 	run(t, "stats-and-health-over-http-but-different-listeners", testcase{
 		metrics: contour_api_v1alpha1.MetricsConfig{
@@ -300,7 +305,8 @@ func TestStatsListeners(t *testing.T) {
 		},
 		health: contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.128",
-			Port:    8124},
+			Port:    8124,
+		},
 		want: []*envoy_listener_v3.Listener{{
 			Name:    "stats",
 			Address: SocketAddress("127.0.0.127", 8123),
@@ -361,8 +367,8 @@ func TestStatsListeners(t *testing.T) {
 				},
 			),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-		}}})
-
+		}},
+	})
 }
 
 func TestStatsTLSSecrets(t *testing.T) {

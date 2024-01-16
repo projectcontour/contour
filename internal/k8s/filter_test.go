@@ -66,5 +66,4 @@ func TestNamespaceFilter(t *testing.T) {
 
 	filter.OnDelete(fixture.NewProxy("ns1/proxy"))
 	assert.Equal(t, 1, counter.deleted)
-
 }

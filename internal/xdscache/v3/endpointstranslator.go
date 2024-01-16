@@ -33,8 +33,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type LocalityEndpoints = envoy_endpoint_v3.LocalityLbEndpoints
-type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
+type (
+	LocalityEndpoints     = envoy_endpoint_v3.LocalityLbEndpoints
+	LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
+)
 
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.

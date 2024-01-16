@@ -280,9 +280,11 @@ func (f *Framework) T() ginkgo.GinkgoTInterface {
 	return f.t
 }
 
-type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
-type NamespacedTestBody func(string)
-type TestBody func()
+type (
+	NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
+	NamespacedTestBody        func(string)
+	TestBody                  func()
+)
 
 func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
@@ -499,7 +501,6 @@ func UsingContourConfigCRD() bool {
 // HTTPProxyValid returns true if the proxy has a .status.currentStatus
 // of "valid".
 func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
-
 	if proxy == nil {
 		return false
 	}
@@ -510,7 +511,6 @@ func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
 
 	cond := proxy.Status.GetConditionFor("Valid")
 	return cond.Status == "True"
-
 }
 
 // HTTPProxyInvalid returns true if the proxy has a .status.currentStatus

@@ -42,7 +42,6 @@ const defaultMaxRequestBytes uint32 = 1024
 func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_api_v1.ExtensionServiceReference {
 	if ref.APIVersion == "" {
 		ref.APIVersion = contour_api_v1alpha1.GroupVersion.String()
-
 	}
 
 	return ref
@@ -1365,7 +1364,7 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_api_v
 	}
 
 	if auth.WithRequestBody != nil {
-		var maxRequestBytes = defaultMaxRequestBytes
+		maxRequestBytes := defaultMaxRequestBytes
 		if auth.WithRequestBody.MaxRequestBytes != 0 {
 			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
 		}
@@ -1602,8 +1601,7 @@ func getProtocol(service contour_api_v1.Service, s *Service) (string, error) {
 // determineSNI decides what the SNI should be on the request. It is configured via RequestHeadersPolicy.Host key.
 // Policies set on service are used before policies set on a route. Otherwise the value of the externalService
 // is used if the route is configured to proxy to an externalService type.
-func determineSNI(routeRequestHeaders *HeadersPolicy, clusterRequestHeaders *HeadersPolicy, service *Service) string {
-
+func determineSNI(routeRequestHeaders, clusterRequestHeaders *HeadersPolicy, service *Service) string {
 	// Service RequestHeadersPolicy take precedence
 	if clusterRequestHeaders != nil {
 		if clusterRequestHeaders.HostRewrite != "" {

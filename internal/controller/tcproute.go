@@ -56,7 +56,6 @@ func RegisterTCPRouteController(log logrus.FieldLogger, mgr manager.Manager, eve
 }
 
 func (r *tcpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	// Fetch the TCPRoute from the cache.
 	tcpRoute := &gatewayapi_v1alpha2.TCPRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, tcpRoute)

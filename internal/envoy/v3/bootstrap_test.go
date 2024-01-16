@@ -37,7 +37,8 @@ func TestBootstrap(t *testing.T) {
 		"default configuration": {
 			config: envoy.BootstrapConfig{
 				Path:      "envoy.json",
-				Namespace: "testing-ns"},
+				Namespace: "testing-ns",
+			},
 			wantedBootstrapConfig: `{
   "static_resources": {
     "clusters": [
@@ -1981,7 +1982,8 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
-      }`},
+      }`,
+		},
 	}
 
 	for name, tc := range tests {

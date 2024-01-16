@@ -47,7 +47,6 @@ func doDirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTIn
 
 	assertDirectResponseRequest(t, proxy.Spec.VirtualHost.Fqdn, "/directresponse-notfound",
 		"not found", 404)
-
 }
 
 func assertDirectResponseRequest(t GinkgoTInterface, fqdn, path, expectedBody string, expectedStatusCode int) {

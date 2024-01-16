@@ -291,7 +291,6 @@ func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurr
 }
 
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
-
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
@@ -442,7 +441,6 @@ func (b *httpConnectionManagerBuilder) Tracing(tracing *http.HttpConnectionManag
 
 // Validate runs builtin validation rules against the current builder state.
 func (b *httpConnectionManagerBuilder) Validate() error {
-
 	// It's not OK for the filters to be empty.
 	if len(b.filters) == 0 {
 		return errors.New("filter list is empty")
@@ -665,7 +663,7 @@ func UnixSocketAddress(address string) *envoy_core_v3.Address {
 		Address: &envoy_core_v3.Address_Pipe{
 			Pipe: &envoy_core_v3.Pipe{
 				Path: address,
-				Mode: 0644,
+				Mode: 0o644,
 			},
 		},
 	}
@@ -804,7 +802,6 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *http
 			AllowPartialMessage: externalAuthorization.AuthorizationServerWithRequestBody.AllowPartialMessage,
 			PackAsBytes:         externalAuthorization.AuthorizationServerWithRequestBody.PackAsBytes,
 		}
-
 	}
 
 	return &http.HttpFilter{
@@ -895,7 +892,6 @@ func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext
 	// Attach TLS data to this listener if provided.
 	if downstream != nil {
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
-
 	}
 	return fc
 }

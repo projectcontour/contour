@@ -26,8 +26,10 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-const metricsServerCertSDSName = "metrics-tls-certificate"
-const metricsCaBundleSDSName = "metrics-ca-certificate"
+const (
+	metricsServerCertSDSName = "metrics-tls-certificate"
+	metricsCaBundleSDSName   = "metrics-ca-certificate"
+)
 
 // StatsListeners returns an array of *envoy_listener_v3.Listeners,
 // either single HTTP listener or HTTP and HTTPS listeners depending on config.

@@ -62,7 +62,6 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 		return newDc
 	}
 	return dc
-
 }
 
 func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
@@ -116,5 +115,4 @@ func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
 	}
 
 	return proxy
-
 }

@@ -66,7 +66,7 @@ func capture(cmd []string) string {
 	return out.String()
 }
 
-func updateMappingForTOC(filePath string, vers string, toc string) error {
+func updateMappingForTOC(filePath, vers, toc string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 		},
 	)
 
-	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600)
 }
 
 // InsertAfter is like yaml.ElementAppender except it inserts after the named node.
@@ -114,7 +114,7 @@ func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 	return rn, nil
 }
 
-func updateConfigForSite(filePath string, vers string) error {
+func updateConfigForSite(filePath, vers string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func updateConfigForSite(filePath string, vers string) error {
 		log.Fatalf("%s", err)
 	}
 
-	return os.WriteFile(filePath, []byte(rn.MustString()), 0600)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600)
 }
 
 func updateIndexFile(filePath, newVers string) error {
@@ -160,7 +160,7 @@ func updateIndexFile(filePath, newVers string) error {
 	upd := strings.ReplaceAll(string(data), "version: main", fmt.Sprintf("version: \"%s\"", newVers))
 	upd = strings.ReplaceAll(upd, "branch: main", "branch: release-"+newVers)
 
-	return os.WriteFile(filePath, []byte(upd), 0600)
+	return os.WriteFile(filePath, []byte(upd), 0o600)
 }
 
 func main() {

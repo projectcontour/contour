@@ -494,5 +494,4 @@ func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayCl
 	}
 
 	return gcParams, nil
-
 }

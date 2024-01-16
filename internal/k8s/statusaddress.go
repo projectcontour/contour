@@ -193,11 +193,9 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 }
 
 func (s *StatusAddressUpdater) OnUpdate(_, newObj any) {
-
 	// We only care about the new object, because we're only updating its status.
 	// So, we can get away with just passing this call to OnAdd.
 	s.OnAdd(newObj, false)
-
 }
 
 func (s *StatusAddressUpdater) OnDelete(_ any) {

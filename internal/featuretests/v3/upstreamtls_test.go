@@ -92,7 +92,6 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-
 }
 
 func TestUpstreamTLSWithIngress(t *testing.T) {
@@ -143,7 +142,6 @@ func TestUpstreamTLSWithIngress(t *testing.T) {
 }
 
 func TestUpstreamTLSWithExtensionService(t *testing.T) {
-
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		for _, processor := range b.Processors {
 			if extensionServiceProcessor, ok := processor.(*dag.ExtensionServiceProcessor); ok {

@@ -283,7 +283,8 @@ func TestEditIngressInPlace(t *testing.T) {
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	i3 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/hello", map[string]string{
-			"ingress.kubernetes.io/force-ssl-redirect": "true"}),
+			"ingress.kubernetes.io/force-ssl-redirect": "true",
+		}),
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
@@ -338,7 +339,8 @@ func TestEditIngressInPlace(t *testing.T) {
 			Name:      "hello",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"ingress.kubernetes.io/force-ssl-redirect": "true"},
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
 		},
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
@@ -753,7 +755,6 @@ func TestRDSFilter(t *testing.T) {
 		TypeUrl: routeType,
 		Nonce:   "5",
 	})
-
 }
 
 // issue 404
@@ -1214,7 +1215,8 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 					Prefix: "/insecure",
 				}},
 				PermitInsecure: true,
-				Services: []contour_api_v1.Service{{Name: "kuard",
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
@@ -1588,7 +1590,8 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 			Routes: []contour_api_v1.Route{{
 				Conditions:     conditions(prefixCondition("/insecure")),
 				PermitInsecure: true,
-				Services: []contour_api_v1.Service{{Name: "kuard",
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
 					Port: 80,
 				}},
 			}, {

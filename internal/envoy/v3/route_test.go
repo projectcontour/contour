@@ -154,7 +154,6 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Websocket: true,
 				Clusters: []*dag.Cluster{{
-
 					Upstream: &dag.Service{
 						Weighted: dag.WeightedService{
 							Weight:           1,
@@ -706,7 +705,8 @@ func TestRouteRoute(t *testing.T) {
 						},
 						Weight: 100,
 					},
-				}},
+				},
+			},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
 					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
@@ -719,7 +719,8 @@ func TestRouteRoute(t *testing.T) {
 								Numerator:   100,
 								Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 							},
-						}}},
+						},
+					}},
 				},
 			},
 		},
@@ -763,7 +764,8 @@ func TestRouteRoute(t *testing.T) {
 						},
 						Weight: 100,
 					},
-				}},
+				},
+			},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
 					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
@@ -1138,7 +1140,6 @@ func TestRouteConfiguration(t *testing.T) {
 		virtualhosts []*envoy_route_v3.VirtualHost
 		want         *envoy_route_v3.RouteConfiguration
 	}{
-
 		"empty": {
 			name: "ingress_http",
 			want: &envoy_route_v3.RouteConfiguration{
@@ -1245,7 +1246,8 @@ func TestCORSVirtualHost(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowMethods: "GET,POST,PUT",
 			},
 			want: &envoy_route_v3.VirtualHost{
@@ -1259,7 +1261,8 @@ func TestCORSVirtualHost(t *testing.T) {
 									Exact: "*",
 								},
 								IgnoreCase: true,
-							}},
+							},
+						},
 						AllowMethods: "GET,POST,PUT",
 					}),
 				},
@@ -1291,7 +1294,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1339,7 +1343,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(true),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1358,7 +1363,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1378,7 +1384,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1398,7 +1405,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1418,7 +1426,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1437,7 +1446,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowPrivateNetworkAccess: wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",
@@ -1457,7 +1467,8 @@ func TestCORSPolicy(t *testing.T) {
 							Exact: "*",
 						},
 						IgnoreCase: true,
-					}},
+					},
+				},
 				AllowPrivateNetworkAccess: wrapperspb.Bool(true),
 				AllowCredentials:          wrapperspb.Bool(false),
 				AllowMethods:              "GET,POST,PUT",

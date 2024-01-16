@@ -311,6 +311,13 @@ At a maintainer's discretion, pull requests with multiple commits can be merged 
 Merging pull requests with multiple commits can make sense in cases where a change involves code generation or mechanical changes that can be cleanly separated from semantic changes.
 The maintainer should review commit messages for each commit and make sure that each commit builds and passes tests.
 
+### Code formatting
+
+Contour utilizes [`gofumpt`](https://github.com/mvdan/gofumpt) for strict Golang formatting of the contour codebase.
+The `lint` CI job checks this to ensure all commits are formatted as expected.
+
+The `make format` target can be used to run `gofumpt` locally before making a PR.
+
 ### Import Aliases
 
 Naming is one of the most difficult things in software engineering.

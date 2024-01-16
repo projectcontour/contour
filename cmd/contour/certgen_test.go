@@ -276,7 +276,7 @@ func TestOutputFileMode(t *testing.T) {
 
 			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 				if !info.IsDir() {
-					assert.Equal(t, os.FileMode(0600), info.Mode(), "incorrect mode for file "+path)
+					assert.Equal(t, os.FileMode(0o600), info.Mode(), "incorrect mode for file "+path)
 				}
 				return nil
 			})

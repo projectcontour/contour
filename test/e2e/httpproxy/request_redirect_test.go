@@ -44,7 +44,6 @@ func testRequestRedirectRuleNoService(namespace string) {
 
 func testRequestRedirectRuleInvalid(namespace string) {
 	Specify("invalid policy specified on route rule", func() {
-
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 		proxy := getRedirectHTTPProxyInvalid(namespace)
 
@@ -53,7 +52,6 @@ func testRequestRedirectRuleInvalid(namespace string) {
 }
 
 func doRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
-
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
 	f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
@@ -94,7 +92,6 @@ func assertRequest(t GinkgoTInterface, fqdn, path, expectedLocation string, expe
 }
 
 func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
-
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "redirect",
@@ -177,7 +174,6 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1
 }
 
 func getRedirectHTTPProxyInvalid(namespace string) *contour_api_v1.HTTPProxy {
-
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalid",

@@ -80,7 +80,7 @@ var annotationsByKind = map[string]map[string]struct{}{
 }
 
 // ValidForKind checks if a particular annotation is valid for a given Kind.
-func ValidForKind(kind string, key string) bool {
+func ValidForKind(kind, key string) bool {
 	if a, ok := annotationsByKind[kind]; ok {
 		_, ok := a[key]
 		return ok
@@ -175,7 +175,6 @@ func WebsocketRoutes(i *networking_v1.Ingress) map[string]bool {
 // NumRetries returns the number of retries specified by the
 // "projectcontour.io/num-retries" annotation.
 func NumRetries(i *networking_v1.Ingress) uint32 {
-
 	val := parseInt32(ContourAnnotation(i, "num-retries"))
 
 	// If set to -1, then retries set to 0. If set to 0 or
@@ -213,7 +212,7 @@ func IngressClass(o metav1.Object) string {
 
 // TLSVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func TLSVersion(version string, defaultVal string) string {
+func TLSVersion(version, defaultVal string) string {
 	switch version {
 	case "1.2", "1.3":
 		return version

@@ -720,7 +720,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
-						Namespace: "default"},
+						Namespace: "default",
+					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -748,7 +749,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
-						Namespace: "tlsroute"},
+						Namespace: "tlsroute",
+					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -776,7 +778,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
-						Namespace: "default"},
+						Namespace: "default",
+					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -1125,7 +1128,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			cache := KubernetesCache{
 				ConfiguredGatewayToCache: tc.cacheGateway,
 				ConfiguredSecretRefs: []*types.NamespacedName{
-					{Name: "secretReferredByConfigFile", Namespace: "default"}},
+					{Name: "secretReferredByConfigFile", Namespace: "default"},
+				},
 				FieldLogger: fixture.NewTestLogger(t),
 				Client:      new(fakeReader),
 			}
@@ -1218,7 +1222,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
-						Namespace: "default"},
+						Namespace: "default",
+					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -1252,7 +1257,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
-						Namespace: "default"},
+						Namespace: "default",
+					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
@@ -1410,7 +1416,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "Gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "httproute",
@@ -1431,7 +1438,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1beta1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "httproute",
@@ -1466,7 +1474,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "Gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
@@ -1486,7 +1495,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.TLSRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tlsroute",
@@ -1521,7 +1531,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "Gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "grpcroute",
@@ -1541,7 +1552,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.GRPCRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "grpcroute",
@@ -1576,7 +1588,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "Gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.TCPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tcproute",
@@ -1596,7 +1609,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gateway",
 					Namespace: "default",
-				}},
+				},
+			},
 				&gatewayapi_v1alpha2.TCPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tcproute",
@@ -1846,7 +1860,6 @@ func TestLookupService(t *testing.T) {
 }
 
 func TestServiceTriggersRebuild(t *testing.T) {
-
 	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
@@ -2184,7 +2197,6 @@ func TestServiceTriggersRebuild(t *testing.T) {
 }
 
 func TestSecretTriggersRebuild(t *testing.T) {
-
 	secret := func(namespace, name string) *v1.Secret {
 		return &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -2221,7 +2233,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	ingress := func(namespace, name, secretName string, secretNamespace string) *networking_v1.Ingress {
+	ingress := func(namespace, name, secretName, secretNamespace string) *networking_v1.Ingress {
 		i := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -2484,7 +2496,6 @@ func TestSecretTriggersRebuild(t *testing.T) {
 }
 
 func TestRouteTriggersRebuild(t *testing.T) {
-
 	cache := func(objs ...any) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),

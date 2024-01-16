@@ -162,7 +162,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
-			}})
+			},
+		})
 		return reconcile.Result{}, nil
 	}
 

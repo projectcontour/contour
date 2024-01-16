@@ -1383,14 +1383,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-							BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{{
-								BackendRef: gatewayapi_v1beta1.BackendRef{
-									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Name: "kuard",
+							BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+								{
+									BackendRef: gatewayapi_v1beta1.BackendRef{
+										BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
+											Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
+											Name: "kuard",
+										},
 									},
 								},
-							},
 							},
 						}},
 					},
@@ -2443,7 +2444,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-
 						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1beta1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
@@ -2559,7 +2559,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									},
 								},
 								BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -3391,7 +3392,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										},
 									},
 								}},
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -3452,7 +3454,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										}},
 									},
 								},
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -3508,7 +3511,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										}},
 									},
 								},
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -4991,7 +4995,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Name: "tcp.projectcontour.io",
 							},
 							TCPProxy: &TCPProxy{
-
 								Clusters: clustersWeight(
 									weightedService(kuardService, 1),
 									weightedService(kuardService2, 2),
@@ -5039,7 +5042,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Name: "tcp.projectcontour.io",
 							},
 							TCPProxy: &TCPProxy{
-
 								Clusters: clustersWeight(
 									weightedService(kuardService, 1),
 									weightedService(kuardService2, 0),
@@ -5087,7 +5089,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Name: "tcp.projectcontour.io",
 							},
 							TCPProxy: &TCPProxy{
-
 								Clusters: clustersWeight(
 									weightedService(kuardService, 1),
 									weightedService(kuardService2, 1),
@@ -5509,7 +5510,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									},
 								},
 								{
-
 									// Second instance of filter should be ignored.
 									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
 									RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPHeaderFilter{
@@ -5662,7 +5662,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										},
 									},
 								}},
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -5725,7 +5726,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										}},
 									},
 								},
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -5891,7 +5893,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			builder := Builder{
 				Source: KubernetesCache{
 					gatewayclass: tc.gatewayclass,
@@ -6432,11 +6433,16 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
-				IngressRuleValue: networking_v1.IngressRuleValue{HTTP: &networking_v1.HTTPIngressRuleValue{
-					Paths: []networking_v1.HTTPIngressPath{{Path: "/",
-						Backend: *backendv1("kuard", intstr.FromString("http")),
-					}}},
-				}}}},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
 	}
 
 	i12dV1 := &networking_v1.Ingress{
@@ -6493,11 +6499,16 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
-				IngressRuleValue: networking_v1.IngressRuleValue{HTTP: &networking_v1.HTTPIngressRuleValue{
-					Paths: []networking_v1.HTTPIngressPath{{Path: "/",
-						Backend: *backendv1("kuard", intstr.FromString("http")),
-					}}},
-				}}}},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
 	}
 
 	// i13_v1 a and b are a pair of ingressesv1 for the same vhost
@@ -11912,17 +11923,18 @@ func TestDAGInsert(t *testing.T) {
 							),
 							&Route{
 								PathMatchCondition: prefixString("/blog/infotech"),
-								Clusters: []*Cluster{{
-									Upstream: &Service{
-										Weighted: WeightedService{
-											Weight:           1,
-											ServiceName:      s4.Name,
-											ServiceNamespace: s4.Namespace,
-											ServicePort:      s4.Spec.Ports[0],
-											HealthPort:       s4.Spec.Ports[0],
+								Clusters: []*Cluster{
+									{
+										Upstream: &Service{
+											Weighted: WeightedService{
+												Weight:           1,
+												ServiceName:      s4.Name,
+												ServiceNamespace: s4.Namespace,
+												ServicePort:      s4.Spec.Ports[0],
+												HealthPort:       s4.Spec.Ports[0],
+											},
 										},
 									},
-								},
 								},
 							},
 						),
@@ -12851,33 +12863,34 @@ func TestDAGInsert(t *testing.T) {
 						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
-								Prefix: "/",
-							}},
-							Services: []contour_api_v1.Service{{
-								Name: s1.Name,
-								Port: 8080,
-							}},
-						}, {
-							Conditions: []contour_api_v1.MatchCondition{{
-								Prefix: "/direct",
-							}},
-							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
-								StatusCode: 404,
-								Body:       "page not found",
+						Routes: []contour_api_v1.Route{
+							{
+								Conditions: []contour_api_v1.MatchCondition{{
+									Prefix: "/",
+								}},
+								Services: []contour_api_v1.Service{{
+									Name: s1.Name,
+									Port: 8080,
+								}},
+							}, {
+								Conditions: []contour_api_v1.MatchCondition{{
+									Prefix: "/direct",
+								}},
+								DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+									StatusCode: 404,
+									Body:       "page not found",
+								},
+							}, {
+								Conditions: []contour_api_v1.MatchCondition{{
+									Prefix: "/redirect",
+								}},
+								RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+									Scheme:     ref.To("https"),
+									Hostname:   ref.To("envoyproxy.io"),
+									Port:       ref.To(int32(443)),
+									StatusCode: ref.To(301),
+								},
 							},
-						}, {
-							Conditions: []contour_api_v1.MatchCondition{{
-								Prefix: "/redirect",
-							}},
-							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     ref.To("https"),
-								Hostname:   ref.To("envoyproxy.io"),
-								Port:       ref.To(int32(443)),
-								StatusCode: ref.To(301),
-							},
-						},
 						},
 					},
 				},
@@ -15140,7 +15153,6 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 }
 
 func backendv1(name string, port intstr.IntOrString) *networking_v1.IngressBackend {
-
 	var v1port networking_v1.ServiceBackendPort
 
 	switch port.Type {
@@ -15495,17 +15507,20 @@ func TestHTTPProxyConficts(t *testing.T) {
 					VirtualHost: &contour_api_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Routes: []contour_api_v1.Route{{
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
-						Services: []contour_api_v1.Service{{
-							Name: "missing-service",
-							Port: 8080,
-						}}}, {
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/valid"}},
-						Services: []contour_api_v1.Service{{
-							Name: "existing-service-1",
-							Port: 8080,
-						}}},
+					Routes: []contour_api_v1.Route{
+						{
+							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
+							Services: []contour_api_v1.Service{{
+								Name: "missing-service",
+								Port: 8080,
+							}},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/valid"}},
+							Services: []contour_api_v1.Service{{
+								Name: "existing-service-1",
+								Port: 8080,
+							}},
+						},
 					},
 				},
 			},
@@ -15539,21 +15554,23 @@ func TestHTTPProxyConficts(t *testing.T) {
 					VirtualHost: &contour_api_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Routes: []contour_api_v1.Route{{
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
-						Services: []contour_api_v1.Service{{
-							Name:   "missing-service",
-							Port:   8080,
-							Weight: 50,
-						}, {
-							Name:   "existing-service-1",
-							Port:   8080,
-							Weight: 30,
-						}, {
-							Name:   "existing-service-2",
-							Port:   8080,
-							Weight: 20,
-						}}},
+					Routes: []contour_api_v1.Route{
+						{
+							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
+							Services: []contour_api_v1.Service{{
+								Name:   "missing-service",
+								Port:   8080,
+								Weight: 50,
+							}, {
+								Name:   "existing-service-1",
+								Port:   8080,
+								Weight: 30,
+							}, {
+								Name:   "existing-service-2",
+								Port:   8080,
+								Weight: 20,
+							}},
+						},
 					},
 				},
 			},
@@ -15677,7 +15694,8 @@ func TestHTTPProxyConficts(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantListeners: listeners(
 			&Listener{
 				Name: HTTP_LISTENER_NAME,
@@ -15834,86 +15852,87 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		httpProxyReqHp  *HeadersPolicy
 		httpProxyRespHp *HeadersPolicy
 		wantErr         error
-	}{{
-		name: "empty is fine",
-	}, {
-		name: "ingressv1: insert ingress w/ single unnamed backend",
-		objs: []any{
-			i2V1,
-			s1,
-		},
-		want: listeners(
-			&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
-				VirtualHosts: virtualhosts(
-					virtualhost("*", &Route{
-						PathMatchCondition: prefixString("/"),
-						Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1)),
-					},
+	}{
+		{
+			name: "empty is fine",
+		}, {
+			name: "ingressv1: insert ingress w/ single unnamed backend",
+			objs: []any{
+				i2V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1)),
+						},
+						),
 					),
-				),
+				},
+			),
+			ingressReqHp: &HeadersPolicy{
+				// Add not currently siupported
+				// Add: map[string]string{
+				// 	"Custom-Header-Add": "foo-bar",
+				// },
+				Set: map[string]string{
+					"Custom-Header-Set": "foo-bar",
+				},
+				Remove: []string{"K-Nada"},
 			},
-		),
-		ingressReqHp: &HeadersPolicy{
-			// Add not currently siupported
-			// Add: map[string]string{
-			// 	"Custom-Header-Add": "foo-bar",
-			// },
-			Set: map[string]string{
-				"Custom-Header-Set": "foo-bar",
+			ingressRespHp: &HeadersPolicy{
+				// Add not currently siupported
+				// Add: map[string]string{
+				// 	"Custom-Header-Add": "foo-bar",
+				// },
+				Set: map[string]string{
+					"Custom-Header-Set": "foo-bar",
+				},
+				Remove: []string{"K-Nada"},
 			},
-			Remove: []string{"K-Nada"},
-		},
-		ingressRespHp: &HeadersPolicy{
-			// Add not currently siupported
-			// Add: map[string]string{
-			// 	"Custom-Header-Add": "foo-bar",
-			// },
-			Set: map[string]string{
-				"Custom-Header-Set": "foo-bar",
+		}, {
+			name: "insert httpproxy referencing two backends",
+			objs: []any{
+				proxyMultipleBackends, s1, s2,
 			},
-			Remove: []string{"K-Nada"},
-		},
-	}, {
-		name: "insert httpproxy referencing two backends",
-		objs: []any{
-			proxyMultipleBackends, s1, s2,
-		},
-		want: listeners(
-			&Listener{
-				Name: HTTP_LISTENER_NAME,
-				Port: 8080,
-				VirtualHosts: virtualhosts(
-					virtualhost("example.com", &Route{
-						PathMatchCondition: prefixString("/"),
-						Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1), service(s2)),
-					},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1), service(s2)),
+						},
+						),
 					),
-				),
+				},
+			),
+			httpProxyReqHp: &HeadersPolicy{
+				// Add not currently siupported
+				// Add: map[string]string{
+				// 	"Custom-Header-Add": "foo-bar",
+				// },
+				Set: map[string]string{
+					"Custom-Header-Set": "foo-bar",
+				},
+				Remove: []string{"K-Nada"},
 			},
-		),
-		httpProxyReqHp: &HeadersPolicy{
-			// Add not currently siupported
-			// Add: map[string]string{
-			// 	"Custom-Header-Add": "foo-bar",
-			// },
-			Set: map[string]string{
-				"Custom-Header-Set": "foo-bar",
+			httpProxyRespHp: &HeadersPolicy{
+				// Add not currently siupported
+				// Add: map[string]string{
+				// 	"Custom-Header-Add": "foo-bar",
+				// },
+				Set: map[string]string{
+					"Custom-Header-Set": "foo-bar",
+				},
+				Remove: []string{"K-Nada"},
 			},
-			Remove: []string{"K-Nada"},
 		},
-		httpProxyRespHp: &HeadersPolicy{
-			// Add not currently siupported
-			// Add: map[string]string{
-			// 	"Custom-Header-Add": "foo-bar",
-			// },
-			Set: map[string]string{
-				"Custom-Header-Set": "foo-bar",
-			},
-			Remove: []string{"K-Nada"},
-		},
-	},
 	}
 
 	for _, tc := range tests {
@@ -16026,7 +16045,7 @@ func exactrouteGRPCRoute(path string, first *Service, rest ...*Service) *Route {
 	return exactrouteHTTPRoute(path, first, rest...)
 }
 
-func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
+func routeProtocol(prefix, protocol string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 
 	cs := clusters(services...)
@@ -16085,7 +16104,7 @@ func routeHeaders(prefix string, requestSet map[string]string, requestRemove []s
 	return r
 }
 
-func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, requestRemove []string, hostRewrite string, responseSet map[string]string, responseAdd map[string]string, responseRemove []string, services ...*Service) (c []*Cluster) {
+func clusterHeaders(requestSet, requestAdd map[string]string, requestRemove []string, hostRewrite string, responseSet, responseAdd map[string]string, responseRemove []string, services ...*Service) (c []*Cluster) {
 	var requestHeadersPolicy *HeadersPolicy
 	if requestSet != nil || requestAdd != nil || requestRemove != nil || hostRewrite != "" {
 		requestHeadersPolicy = &HeadersPolicy{
@@ -16115,7 +16134,7 @@ func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, 
 	return c
 }
 
-func clusterHeadersUnweighted(headersSet map[string]string, headersAdd map[string]string, headersRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
+func clusterHeadersUnweighted(headersSet, headersAdd map[string]string, headersRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
 	for _, s := range services {
 		c = append(c, &Cluster{
 			Upstream: s,
@@ -16310,6 +16329,7 @@ func listeners(ls ...*Listener) []*Listener {
 func prefixString(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchString}
 }
+
 func prefixSegment(prefix string) MatchCondition {
 	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchSegment}
 }

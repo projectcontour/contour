@@ -54,11 +54,9 @@ func testWildcardFQDN(namespace string) {
 		err := f.CreateHTTPProxy(p)
 		require.Error(t, err, "Expected invalid wildcard to be rejected.")
 	})
-
 }
 
 func testWildcardSubdomainFQDN(namespace string) {
-
 	Specify("wildcard routing works", func() {
 		t := f.T()
 

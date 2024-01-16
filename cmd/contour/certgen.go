@@ -53,7 +53,6 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 
 // certgenConfig holds the configuration for the certificate generation process.
 type certgenConfig struct {
-
 	// KubeConfig is the path to the Kubeconfig file if we're not running in a cluster
 	KubeConfig string
 
@@ -154,5 +153,4 @@ func doCertgen(config *certgenConfig, log logrus.FieldLogger) {
 	if oerr := OutputCerts(config, coreClient, generatedCerts); oerr != nil {
 		log.WithError(oerr).Fatalf("failed output certificates")
 	}
-
 }

@@ -56,7 +56,6 @@ func RegisterGRPCRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 }
 
 func (r *grpcRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	// Fetch the GRPCRoute from the cache.
 	grpcRoute := &gatewayapi_v1alpha2.GRPCRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, grpcRoute)

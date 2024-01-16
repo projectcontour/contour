@@ -84,7 +84,8 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 								Path: "/foo",
 							},
 						},
-					}}
+					},
+				}
 			},
 			expect: true,
 		},
@@ -179,7 +180,8 @@ func TestDeploymentConfigChanged(t *testing.T) {
 								Path: "/foo",
 							},
 						},
-					}}
+					},
+				}
 			},
 			expect: true,
 		},

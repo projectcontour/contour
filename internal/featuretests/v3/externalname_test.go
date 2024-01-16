@@ -322,7 +322,6 @@ func TestExternalNameService(t *testing.T) {
 
 func enableExternalNameService(t *testing.T) func(*dag.Builder) {
 	return func(b *dag.Builder) {
-
 		log := fixture.NewTestLogger(t)
 		log.SetLevel(logrus.DebugLevel)
 
