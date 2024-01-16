@@ -146,7 +146,7 @@ func TestHTTPSService(t *testing.T) {
 		resp.Body.Close()
 		expectedCert, _ := contourCertBeforeRotation.X509Certificate()
 		assert.Equal(t, &expectedCert, resp.TLS.PeerCertificates[0])
-		assert.True(t, uint16(tls.VersionTLS13) >= resp.TLS.Version)
+		assert.GreaterOrEqual(t, uint16(tls.VersionTLS13), resp.TLS.Version)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		return true
 	}, 1*time.Second, 100*time.Millisecond)
@@ -156,7 +156,7 @@ func TestHTTPSService(t *testing.T) {
 	checkFatalErr(t, err)
 
 	resp, err := tryGet("https://localhost:8001/test", trustedTLSClientCert, caCertPool)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	resp.Body.Close()
 	expectedCert, _ := contourCertAfterRotation.X509Certificate()
 	assert.Equal(t, &expectedCert, resp.TLS.PeerCertificates[0])
@@ -164,7 +164,7 @@ func TestHTTPSService(t *testing.T) {
 	// Connection should fail when trying to connect with untrusted client cert.
 	untrustedTLSClientCert, _ := untrustedClientCert.TLSCertificate()
 	_, err = tryGet("https://localhost:8001/test", untrustedTLSClientCert, caCertPool) // nolint // false positive: response body must be closed
-	assert.NotNil(t, err)
+	require.Error(t, err)
 
 	// Gracefully shut down.
 	cancel()

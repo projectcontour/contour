@@ -18,6 +18,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPathMatchCondition(t *testing.T) {
@@ -741,11 +742,11 @@ func TestValidateHeaderMatchConditions(t *testing.T) {
 			gotErr := headerMatchConditionsValid(tc.matchconditions)
 
 			if !tc.wantErr {
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
 
 			if tc.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			}
 		})
 	}
@@ -871,11 +872,11 @@ func TestValidateQueryParameterMatchConditions(t *testing.T) {
 			gotErr := queryParameterMatchConditionsValid(tc.matchconditions)
 
 			if !tc.wantErr {
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
 
 			if tc.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			}
 		})
 	}

@@ -1835,9 +1835,9 @@ func TestLookupService(t *testing.T) {
 			switch {
 			case tc.wantErr != nil:
 				require.Error(t, gotErr)
-				assert.EqualError(t, tc.wantErr, gotErr.Error())
+				require.EqualError(t, tc.wantErr, gotErr.Error())
 			default:
-				assert.Nil(t, gotErr)
+				require.NoError(t, gotErr)
 				assert.Equal(t, tc.wantSvc, gotSvc)
 				assert.Equal(t, tc.wantPort, gotPort)
 			}
@@ -2732,9 +2732,9 @@ func TestLookupUpstreamValidation(t *testing.T) {
 			switch {
 			case tc.wantErr != nil:
 				require.Error(t, gotErr)
-				assert.EqualError(t, tc.wantErr, gotErr.Error())
+				require.EqualError(t, tc.wantErr, gotErr.Error())
 			default:
-				assert.Nil(t, gotErr)
+				require.NoError(t, gotErr)
 				assert.Equal(t, tc.wantPvc, gotPvc)
 			}
 		})

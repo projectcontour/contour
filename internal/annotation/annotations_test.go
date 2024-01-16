@@ -483,8 +483,8 @@ func TestAnnotationKindValidation(t *testing.T) {
 		for key := range annotationsByKind[kind] {
 			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
 				func(t *testing.T) {
-					assert.Equal(t, true, IsKnown(key))
-					assert.Equal(t, true, ValidForKind(kind, key))
+					assert.True(t, IsKnown(key))
+					assert.True(t, ValidForKind(kind, key))
 				})
 		}
 	}

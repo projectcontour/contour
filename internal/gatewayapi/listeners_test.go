@@ -369,7 +369,7 @@ func TestValidateListeners(t *testing.T) {
 		}
 
 		res := ValidateListeners(listeners)
-		assert.Len(t, res.InvalidListenerConditions, 0)
+		assert.Empty(t, res.InvalidListenerConditions)
 		assert.Len(t, res.Ports, 1)
 		assert.Len(t, res.ListenerNames, 3)
 	})
@@ -521,7 +521,7 @@ func TestValidateListeners(t *testing.T) {
 			},
 		}
 		res := ValidateListeners(listeners)
-		assert.Len(t, res.InvalidListenerConditions, 0)
+		assert.Empty(t, res.InvalidListenerConditions)
 		assert.Len(t, res.Ports, 3)
 		assert.Len(t, res.ListenerNames, 3)
 	})
