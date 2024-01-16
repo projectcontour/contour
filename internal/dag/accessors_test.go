@@ -44,8 +44,8 @@ func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...an
 	}
 
 	return p
-
 }
+
 func TestBuilderLookupService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{

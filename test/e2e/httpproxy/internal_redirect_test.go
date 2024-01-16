@@ -101,7 +101,6 @@ func testInternalRedirectPolicy(namespace string) {
 }
 
 func doInternalRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
-
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
 	envoyService := &corev1.Service{
@@ -235,7 +234,8 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
 					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{
 						RedirectResponseCodes: []contour_api_v1.RedirectResponseCode{301},
 					},
-				}},
+				},
+			},
 		},
 	}
 

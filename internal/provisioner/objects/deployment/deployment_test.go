@@ -76,7 +76,6 @@ func checkPodHasAnnotations(t *testing.T, tmpl *corev1.PodTemplateSpec, annotati
 			t.Errorf("pod template has unexpected %q annotations", tmpl.Annotations)
 		}
 	}
-
 }
 
 func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string) {
@@ -238,5 +237,4 @@ func TestNodePlacementDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, selectors)
 	checkDeploymentHasTolerations(t, deploy, tolerations)
-
 }

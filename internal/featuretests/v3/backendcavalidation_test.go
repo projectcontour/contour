@@ -174,5 +174,4 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: nil,
 		TypeUrl:   secretType,
 	})
-
 }

@@ -229,7 +229,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	const enabled = "enabled.projectcontour.io"
 	const disabled = "disabled.projectcontour.io"
 
-	var extensionRef = contour_api_v1.ExtensionServiceReference{
+	extensionRef := contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",
 		Name:      "extension",
 	}

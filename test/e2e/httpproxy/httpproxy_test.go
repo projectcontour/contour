@@ -385,7 +385,6 @@ var _ = Describe("HTTPProxy", func() {
 
 			testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
 		})
-
 	})
 
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
@@ -857,5 +856,4 @@ descriptors:
 
 		f.NamespacedTest("httpproxy-global-ext-auth-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthTLSAuthDisabled))
 	})
-
 })

@@ -99,7 +99,8 @@ func TestNonTLSListener(t *testing.T) {
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple", map[string]string{
-			"kubernetes.io/ingress.allow-http": "false"}),
+			"kubernetes.io/ingress.allow-http": "false",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},

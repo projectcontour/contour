@@ -235,7 +235,6 @@ func TestValidateTimeoutParams(t *testing.T) {
 	require.Error(t, TimeoutParameters{DelayedCloseTimeout: "bebop"}.Validate())
 	require.Error(t, TimeoutParameters{ConnectionShutdownGracePeriod: "bong"}.Validate())
 	require.Error(t, TimeoutParameters{ConnectTimeout: "infinite"}.Validate())
-
 }
 
 func TestTLSParametersValidation(t *testing.T) {
@@ -386,7 +385,6 @@ default-http-versions:
 listener:
   connection-balancer: notexact
 `)
-
 }
 
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
@@ -508,7 +506,6 @@ cluster:
     max-pending-requests: 43
     max-requests: 44
 `)
-
 }
 
 func TestMetricsParametersValidation(t *testing.T) {
@@ -565,7 +562,6 @@ func TestMetricsParametersValidation(t *testing.T) {
 		},
 	}
 	require.Error(t, tlsCAWithoutServerCert.Validate())
-
 }
 
 func TestListenerValidation(t *testing.T) {

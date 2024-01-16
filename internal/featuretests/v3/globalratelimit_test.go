@@ -703,7 +703,8 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
 									DescriptorKey:   "generic-key-key",
-									DescriptorValue: "generic-key-value-2"},
+									DescriptorValue: "generic-key-value-2",
+								},
 							},
 						},
 					},
@@ -716,7 +717,6 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 		TypeUrl:   routeType,
 		Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", envoy_v3.VirtualHost("foo.com", route))),
 	})
-
 }
 
 type tlsConfig struct {

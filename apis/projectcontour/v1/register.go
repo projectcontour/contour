@@ -28,8 +28,10 @@ const (
 // New code should use GroupVersion.
 var SchemeGroupVersion = GroupVersion
 
-var HTTPProxyGVR = GroupVersion.WithResource("httpproxies")
-var TLSCertificateDelegationGVR = GroupVersion.WithResource("tlscertificatedelegations")
+var (
+	HTTPProxyGVR                = GroupVersion.WithResource("httpproxies")
+	TLSCertificateDelegationGVR = GroupVersion.WithResource("tlscertificatedelegations")
+)
 
 // Resource gets an Contour GroupResource for a specified resource
 func Resource(resource string) schema.GroupResource {

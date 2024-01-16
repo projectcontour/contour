@@ -60,7 +60,7 @@ func headerExactMatchCondition(name, value string, ignoreCase bool) contour_api_
 	}
 }
 
-func headerNotExactMatchCondition(name, value string, ignoreCase bool, treatMissingAsEmpty bool) contour_api_v1.MatchCondition {
+func headerNotExactMatchCondition(name, value string, ignoreCase, treatMissingAsEmpty bool) contour_api_v1.MatchCondition {
 	return contour_api_v1.MatchCondition{
 		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:                name,

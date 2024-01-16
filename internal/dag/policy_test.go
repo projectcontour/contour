@@ -282,7 +282,6 @@ func TestTimeoutPolicy(t *testing.T) {
 				assert.Equal(t, tc.wantClusterTimeoutPolicy, gotClusterTimeoutPolicy)
 				require.NoError(t, gotErr)
 			}
-
 		})
 	}
 }

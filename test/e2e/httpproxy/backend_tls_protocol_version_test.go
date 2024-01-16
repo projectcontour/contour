@@ -97,6 +97,5 @@ func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 		tlsInfo := new(responseTLSDetails)
 		require.NoError(f.T(), json.Unmarshal(res.Body, tlsInfo))
 		assert.Equal(f.T(), tlsInfo.TLS.Version, protocolVersion)
-
 	})
 }

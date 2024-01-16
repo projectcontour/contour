@@ -78,6 +78,7 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 		}
 	}
 }
+
 func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 	osw.values[key] = val
 	return osw

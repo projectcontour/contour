@@ -340,7 +340,7 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 		escapedValue = strings.ReplaceAll(escapedValue, "%%"+envoyVar+"%%", "%"+envoyVar+"%")
 	}
 	// REQ(header-name)
-	var validReqEnvoyVar = regexp.MustCompile(`%(%REQ\(:?[\w-]+(\?:?[\w-]+)?\)(:\d+)?%)%`)
+	validReqEnvoyVar := regexp.MustCompile(`%(%REQ\(:?[\w-]+(\?:?[\w-]+)?\)(:\d+)?%)%`)
 	escapedValue = validReqEnvoyVar.ReplaceAllString(escapedValue, "$1")
 	return escapedValue
 }
@@ -808,7 +808,6 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 	default:
 		return nil, strategy
 	}
-
 }
 
 func serviceCircuitBreakerPolicy(s *Service, cb *contour_api_v1alpha1.GlobalCircuitBreakerDefaults) *Service {

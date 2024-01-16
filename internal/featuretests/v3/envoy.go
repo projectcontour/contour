@@ -184,7 +184,7 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -201,7 +201,8 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: ca},
 				}},
-				SubjectNames: []string{subjectName}},
+				SubjectNames: []string{subjectName},
+			},
 			sni,
 			secret,
 			upstreamTLS,
@@ -295,7 +296,8 @@ func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string, weight i
 				Numerator:   uint32(weight),
 				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 			},
-		}}}
+		},
+	}}
 	return route
 }
 

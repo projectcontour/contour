@@ -191,7 +191,6 @@ const (
 type AccessLogJSONFields []string
 
 func (a AccessLogJSONFields) Validate() error {
-
 	for key, val := range a.AsFieldMap() {
 		if val == "" {
 			return fmt.Errorf("invalid JSON log field name %s", key)

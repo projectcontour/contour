@@ -63,7 +63,7 @@ func globalExternalAuthorizationFilterExists(t *testing.T, rh ResourceEventHandl
 	}
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
@@ -101,7 +101,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
@@ -175,7 +175,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
@@ -239,7 +239,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 	}
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
@@ -313,7 +313,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.
@@ -434,7 +434,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 
 	rh.OnAdd(p)
 
-	var httpListener = defaultHTTPListener()
+	httpListener := defaultHTTPListener()
 
 	// replace the default filter chains with an HCM that includes the global
 	// extAuthz filter.

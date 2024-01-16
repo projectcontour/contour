@@ -294,7 +294,6 @@ func TestToCORSPolicy(t *testing.T) {
 			require.Equal(t, tc.want, got)
 		})
 	}
-
 }
 
 func TestSlowStart(t *testing.T) {

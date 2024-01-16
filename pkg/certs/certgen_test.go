@@ -114,7 +114,6 @@ func TestGenerateCerts(t *testing.T) {
 }
 
 func TestGeneratedCertsValid(t *testing.T) {
-
 	now := time.Now()
 	expiry := now.Add(24 * 365 * time.Hour)
 
@@ -151,7 +150,6 @@ func TestGeneratedCertsValid(t *testing.T) {
 			require.NoErrorf(t, err, "Validating %s failed", name)
 		})
 	}
-
 }
 
 func verifyCert(certPEM []byte, roots *x509.CertPool, dnsname string, currentTime time.Time) error {

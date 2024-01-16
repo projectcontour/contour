@@ -1673,7 +1673,6 @@ func TestTCPProxy(t *testing.T) {
 }
 
 func TestFilterChainTLS_Match(t *testing.T) {
-
 	tests := map[string]struct {
 		domain     string
 		downstream *envoy_tls_v3.DownstreamTlsContext
@@ -1709,7 +1708,6 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-
 	require.Error(t, HTTPConnectionManagerBuilder().Validate(),
 		"ConnectionManager with no filters should not pass validation")
 

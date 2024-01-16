@@ -337,6 +337,5 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 				require.NoError(t, err)
 			}
 		})
-
 	}
 }

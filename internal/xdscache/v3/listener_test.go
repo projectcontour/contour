@@ -212,7 +212,6 @@ func TestListenerVisit(t *testing.T) {
 		objs                []any
 		want                map[string]*envoy_listener_v3.Listener
 	}{
-
 		"nothing": {
 			objs: nil,
 			want: map[string]*envoy_listener_v3.Listener{},
@@ -1619,7 +1618,8 @@ func TestListenerVisit(t *testing.T) {
 						TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, envoy_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 						Filters:         envoy_v3.Filters(fallbackCertFilter),
 						Name:            "fallback-certificate",
-					}},
+					},
+				},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
@@ -3237,7 +3237,6 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			lc := ListenerCache{
 				Config: tc.ListenerConfig,
 			}

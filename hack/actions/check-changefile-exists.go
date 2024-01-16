@@ -52,7 +52,6 @@ Error: %s
 	
 Please see the "Commit message and PR guidelines" section of CONTRIBUTING.md,
 or https://github.com/projectcontour/contour/blob/main/design/changelog.md for background.`, errorMessage))
-
 	}
 
 	// We need a GITHUB_TOKEN and PR_NUMBER in the environment.
@@ -62,7 +61,6 @@ or https://github.com/projectcontour/contour/blob/main/design/changelog.md for b
 	token, ok := os.LookupEnv("GITHUB_TOKEN")
 	if !ok {
 		log.Fatal("No GITHUB_TOKEN set, check the Action config.")
-
 	}
 	prEnv, ok := os.LookupEnv("PR_NUMBER")
 	if !ok {

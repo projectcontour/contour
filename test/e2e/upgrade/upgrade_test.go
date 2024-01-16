@@ -137,7 +137,7 @@ var _ = Describe("When upgrading", func() {
 		})
 	})
 
-	var _ = Describe("the Gateway provisioner", func() {
+	_ = Describe("the Gateway provisioner", func() {
 		const gatewayClassName = "upgrade-gc"
 
 		BeforeEach(func() {

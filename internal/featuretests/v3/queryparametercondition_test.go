@@ -444,7 +444,8 @@ func TestConditions_ContainsQueryParameter_HTTProxy(t *testing.T) {
 						Name: "svc2",
 						Port: 80,
 					}},
-				}},
+				},
+			},
 		},
 	)
 

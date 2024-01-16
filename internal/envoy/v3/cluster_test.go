@@ -250,7 +250,7 @@ func TestCluster(t *testing.T) {
 		"externalName service - dns-lookup-family not defined": {
 			cluster: &dag.Cluster{
 				Upstream: service(s2),
-				//DNSLookupFamily: "auto",
+				// DNSLookupFamily: "auto",
 			},
 			want: &envoy_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -1124,7 +1124,6 @@ func TestClustername(t *testing.T) {
 		cluster: cluster1,
 		want:    "default/backend/80/50abc1400c",
 	})
-
 }
 
 func TestLBPolicy(t *testing.T) {

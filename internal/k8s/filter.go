@@ -50,7 +50,6 @@ func (e *namespaceFilter) allowed(obj any) bool {
 	}
 
 	return true
-
 }
 
 func (e *namespaceFilter) OnAdd(obj any, isInInitialList bool) {

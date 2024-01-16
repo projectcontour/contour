@@ -230,7 +230,6 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		}
 		c.Tracing.CustomTags = customTags
 		require.Error(t, c.Validate())
-
 	})
 }
 

@@ -132,7 +132,6 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 		Resources: nil,
 		TypeUrl:   clusterType,
 	})
-
 }
 
 func TestBackendClientAuthenticationWithIngress(t *testing.T) {
@@ -211,7 +210,8 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 					Type: "kubernetes.io/tls",
 					Data: map[string][]byte{dag.CACertificateKey: []byte(featuretests.CERTIFICATE)},
 				}},
-				SubjectNames: []string{"subjname"}},
+				SubjectNames: []string{"subjname"},
+			},
 			"subjname",
 			&dag.Secret{Object: sec1},
 			nil,

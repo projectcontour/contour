@@ -85,7 +85,7 @@ func WaitForEnvoyDeploymentUpdated(deployment *appsv1.Deployment, cli client.Cli
 	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
-func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace string, image string, cli client.Client) int {
+func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace, image string, cli client.Client) int {
 	pods := new(v1.PodList)
 	opts := &client.ListOptions{
 		LabelSelector: labelSelector,

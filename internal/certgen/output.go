@@ -30,8 +30,7 @@ func writeSecret(f *os.File, secret *corev1.Secret) error {
 }
 
 func createFile(filepath string, force bool) (*os.File, error) {
-
-	err := os.MkdirAll(path.Dir(filepath), 0755)
+	err := os.MkdirAll(path.Dir(filepath), 0o755)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create %s: %s", path.Dir(filepath), err)
 	}
@@ -46,7 +45,7 @@ func createFile(filepath string, force bool) (*os.File, error) {
 		flags |= os.O_EXCL
 	}
 
-	f, err := os.OpenFile(filepath, flags, 0600)
+	f, err := os.OpenFile(filepath, flags, 0o600)
 	if err != nil {
 		// File exists, and we don't want to create it.
 		return nil, fmt.Errorf("can't create file %s: %s", filepath, err)

@@ -456,7 +456,6 @@ func testClientCertRevocation(namespace string) {
 
 		require.NotNil(t, res, "expected 200 response code, request was never successful")
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 	})
 }
 

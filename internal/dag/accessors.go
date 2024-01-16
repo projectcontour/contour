@@ -28,7 +28,7 @@ import (
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
-func (d *DAG) EnsureService(meta types.NamespacedName, port int, healthPort int, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
+func (d *DAG) EnsureService(meta types.NamespacedName, port, healthPort int, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, intstr.FromInt(port))
 	if err != nil {
 		return nil, err
@@ -73,7 +73,6 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port int, healthPort int,
 }
 
 func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
-
 	// If this isn't an ExternalName Service, we're all good here.
 	en := externalName(svc)
 	if en == "" {
@@ -118,6 +117,7 @@ func toContourProtocol(appProtocol string) (string, bool) {
 	}[appProtocol]
 	return proto, ok
 }
+
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	// if appProtocol is not nil, check it only
 	if port.AppProtocol != nil {

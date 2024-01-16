@@ -114,25 +114,26 @@ func TestJSONFileAccessLog(t *testing.T) {
 		"only timestamp": {
 			path:    "/dev/stdout",
 			headers: contour_api_v1alpha1.AccessLogJSONFields([]string{"@timestamp"}),
-			want: []*envoy_accesslog_v3.AccessLog{{
-				Name: wellknown.FileAccessLog,
-				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
-						Path: "/dev/stdout",
-						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
-							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
-								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
-									JsonFormat: &structpb.Struct{
-										Fields: map[string]*structpb.Value{
-											"@timestamp": sv("%START_TIME%"),
+			want: []*envoy_accesslog_v3.AccessLog{
+				{
+					Name: wellknown.FileAccessLog,
+					ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
+							Path: "/dev/stdout",
+							AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
+								LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+									Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+										JsonFormat: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"@timestamp": sv("%START_TIME%"),
+											},
 										},
 									},
 								},
 							},
-						},
-					}),
+						}),
+					},
 				},
-			},
 			},
 		},
 		"custom fields should appear": {
@@ -144,29 +145,30 @@ func TestJSONFileAccessLog(t *testing.T) {
 				"custom2=%DURATION%.0",
 				"custom3=ST=%START_TIME(%s.%6f)%",
 			}),
-			want: []*envoy_accesslog_v3.AccessLog{{
-				Name: wellknown.FileAccessLog,
-				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
-						Path: "/dev/stdout",
-						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
-							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
-								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
-									JsonFormat: &structpb.Struct{
-										Fields: map[string]*structpb.Value{
-											"@timestamp": sv("%START_TIME%"),
-											"method":     sv("%REQ(:METHOD)%"),
-											"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
-											"custom2":    sv("%DURATION%.0"),
-											"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
+			want: []*envoy_accesslog_v3.AccessLog{
+				{
+					Name: wellknown.FileAccessLog,
+					ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
+							Path: "/dev/stdout",
+							AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
+								LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+									Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+										JsonFormat: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"@timestamp": sv("%START_TIME%"),
+												"method":     sv("%REQ(:METHOD)%"),
+												"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
+												"custom2":    sv("%DURATION%.0"),
+												"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
+											},
 										},
 									},
 								},
 							},
-						},
-					}),
+						}),
+					},
 				},
-			},
 			},
 		},
 	}
@@ -179,7 +181,6 @@ func TestJSONFileAccessLog(t *testing.T) {
 }
 
 func TestAccessLogLevel(t *testing.T) {
-
 	tests := map[string]struct {
 		level          contour_api_v1alpha1.AccessLogLevel
 		wantRespStatus uint32
@@ -229,7 +230,6 @@ func TestAccessLogLevel(t *testing.T) {
 				},
 			}}
 			protobuf.ExpectEqual(t, want, got)
-
 		})
 	}
 

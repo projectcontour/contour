@@ -612,7 +612,6 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
-
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
@@ -651,7 +650,7 @@ func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
 	if tags == nil {
 		return nil
 	}
-	var customTags = make([]*envoy_v3.CustomTag, len(tags))
+	customTags := make([]*envoy_v3.CustomTag, len(tags))
 	for i, tag := range tags {
 		customTags[i] = &envoy_v3.CustomTag{
 			TagName:           tag.TagName,

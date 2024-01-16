@@ -280,7 +280,8 @@ func TestGRPC(t *testing.T) {
 
 func sendreq(t *testing.T, stream interface {
 	Send(*discovery.DiscoveryRequest) error
-}, typeurl string) {
+}, typeurl string,
+) {
 	t.Helper()
 	err := stream.Send(&discovery.DiscoveryRequest{
 		TypeUrl: typeurl,
@@ -290,7 +291,8 @@ func sendreq(t *testing.T, stream interface {
 
 func checkrecv(t *testing.T, stream interface {
 	Recv() (*discovery.DiscoveryResponse, error)
-}) {
+},
+) {
 	t.Helper()
 	_, err := stream.Recv()
 	require.NoError(t, err)
@@ -298,7 +300,8 @@ func checkrecv(t *testing.T, stream interface {
 
 func checktimeout(t *testing.T, stream interface {
 	Recv() (*discovery.DiscoveryResponse, error)
-}) {
+},
+) {
 	t.Helper()
 	_, err := stream.Recv()
 	require.Errorf(t, err, "expected timeout")

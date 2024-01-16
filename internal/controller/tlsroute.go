@@ -56,7 +56,6 @@ func RegisterTLSRouteController(log logrus.FieldLogger, mgr manager.Manager, eve
 }
 
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	// Fetch the TLSRoute from the cache.
 	tlsroute := &gatewayapi_v1alpha2.TLSRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, tlsroute)

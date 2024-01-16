@@ -23,7 +23,6 @@ import (
 )
 
 func TestVirtualHostValid(t *testing.T) {
-
 	vh := VirtualHost{}
 	assert.False(t, vh.Valid())
 
@@ -36,7 +35,6 @@ func TestVirtualHostValid(t *testing.T) {
 }
 
 func TestSecureVirtualHostValid(t *testing.T) {
-
 	vh := SecureVirtualHost{}
 	assert.False(t, vh.Valid())
 
@@ -232,5 +230,4 @@ func TestServiceClusterRebalance(t *testing.T) {
 			assert.Equal(t, c.want, s)
 		})
 	}
-
 }

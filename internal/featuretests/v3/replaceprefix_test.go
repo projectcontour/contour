@@ -87,11 +87,10 @@ func basic(t *testing.T) {
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
 	vhost = update(rh, vhost,
 		func(vhost *contour_api_v1.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]contour_api_v1.ReplacePrefix{
-					{Replacement: "/api/v1"},
-					{Replacement: "/api/v2"},
-				}
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix = []contour_api_v1.ReplacePrefix{
+				{Replacement: "/api/v1"},
+				{Replacement: "/api/v2"},
+			}
 		})
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -104,11 +103,10 @@ func basic(t *testing.T) {
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
 	vhost = update(rh, vhost,
 		func(vhost *contour_api_v1.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]contour_api_v1.ReplacePrefix{
-					{Prefix: "/foo", Replacement: "/api/v1"},
-					{Prefix: "/api", Replacement: "/api/v2"},
-				}
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix = []contour_api_v1.ReplacePrefix{
+				{Prefix: "/foo", Replacement: "/api/v1"},
+				{Prefix: "/api", Replacement: "/api/v2"},
+			}
 		})
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -133,11 +131,10 @@ func basic(t *testing.T) {
 	// it ambiguous again.
 	vhost = update(rh, vhost,
 		func(vhost *contour_api_v1.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]contour_api_v1.ReplacePrefix{
-					{Prefix: "/foo", Replacement: "/api/v1"},
-					{Prefix: "/foo", Replacement: "/api/v2"},
-				}
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix = []contour_api_v1.ReplacePrefix{
+				{Prefix: "/foo", Replacement: "/api/v1"},
+				{Prefix: "/foo", Replacement: "/api/v2"},
+			}
 		})
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -150,11 +147,10 @@ func basic(t *testing.T) {
 	// The "/api" prefix should have precedence over the empty prefix.
 	vhost = update(rh, vhost,
 		func(vhost *contour_api_v1.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]contour_api_v1.ReplacePrefix{
-					{Prefix: "/api", Replacement: "/api/full"},
-					{Prefix: "", Replacement: "/api/empty"},
-				}
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix = []contour_api_v1.ReplacePrefix{
+				{Prefix: "/api", Replacement: "/api/full"},
+				{Prefix: "", Replacement: "/api/empty"},
+			}
 		})
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -280,10 +276,9 @@ func multiInclude(t *testing.T) {
 	// Remove one of the replacements, and one cluster loses the rewrite.
 	update(rh, app,
 		func(app *contour_api_v1.HTTPProxy) {
-			app.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]contour_api_v1.ReplacePrefix{
-					{Prefix: "/v1", Replacement: "/api/v1"},
-				}
+			app.Spec.Routes[0].PathRewritePolicy.ReplacePrefix = []contour_api_v1.ReplacePrefix{
+				{Prefix: "/v1", Replacement: "/api/v1"},
+			}
 		})
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{

@@ -285,12 +285,13 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.CORSVirtualHost("hello.world",
 					&envoy_cors_v3.CorsPolicy{
-						AllowOriginStringMatch: []*matcher.StringMatcher{{
-							MatchPattern: &matcher.StringMatcher_Exact{
-								Exact: "*",
+						AllowOriginStringMatch: []*matcher.StringMatcher{
+							{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
 							},
-							IgnoreCase: true,
-						},
 						},
 						AllowCredentials:          &wrapperspb.BoolValue{Value: true},
 						AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
@@ -466,5 +467,4 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http")),
 		TypeUrl: routeType,
 	}).Status(invvhost).IsInvalid()
-
 }

@@ -105,12 +105,14 @@ func TestPathMatchCondition(t *testing.T) {
 			want: &ExactMatchCondition{Path: "/a/"},
 		},
 		"trailing slash on second prefix condition": {
-			matchconditions: []contour_api_v1.MatchCondition{{
-				Prefix: "/a",
-			},
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Prefix: "/a",
+				},
 				{
 					Prefix: "/b/",
-				}},
+				},
+			},
 			want: &PrefixMatchCondition{Prefix: "/a/b/"},
 		},
 		"nothing but slashes prefix": {
@@ -120,14 +122,16 @@ func TestPathMatchCondition(t *testing.T) {
 				},
 				{
 					Prefix: "/",
-				}},
+				},
+			},
 			want: &PrefixMatchCondition{Prefix: "/"},
 		},
 		"nothing but slashes one exact": {
 			matchconditions: []contour_api_v1.MatchCondition{
 				{
 					Exact: "///",
-				}},
+				},
+			},
 			want: &ExactMatchCondition{Path: "/"},
 		},
 		"nothing but slashes mixed": {
@@ -137,7 +141,8 @@ func TestPathMatchCondition(t *testing.T) {
 				},
 				{
 					Exact: "/",
-				}},
+				},
+			},
 			want: &ExactMatchCondition{Path: "/"},
 		},
 		"regex": {
