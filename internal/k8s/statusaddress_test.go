@@ -77,7 +77,7 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 	want := v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
-	assert.Equal(t, got, want)
+	assert.Equal(t, want, got)
 }
 
 func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
@@ -127,7 +127,7 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 	want := v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
-	assert.Equal(t, got, want)
+	assert.Equal(t, want, got)
 }
 
 func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
@@ -175,7 +175,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 	want := v1.LoadBalancerStatus{
 		Ingress: nil,
 	}
-	assert.Equal(t, got, want)
+	assert.Equal(t, want, got)
 }
 
 func TestStatusAddressUpdater(t *testing.T) {

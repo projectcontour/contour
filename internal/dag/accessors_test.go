@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/ref"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -254,11 +255,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 	})
 
 	t.Run("one HTTP listener, no HTTPS listener", func(t *testing.T) {
@@ -273,11 +274,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Nil(t, got)
-		assert.EqualError(t, gotErr, "no HTTPS listener configured")
+		require.EqualError(t, gotErr, "no HTTPS listener configured")
 	})
 
 	t.Run("many HTTP listeners, one HTTPS listener", func(t *testing.T) {
@@ -304,11 +305,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Nil(t, got)
-		assert.EqualError(t, gotErr, "more than one HTTP listener configured")
+		require.EqualError(t, gotErr, "more than one HTTP listener configured")
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https-1"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 	})
 }
 

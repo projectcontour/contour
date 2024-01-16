@@ -52,7 +52,7 @@ func testWildcardFQDN(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid wildcard to be rejected.")
+		require.Error(t, err, "Expected invalid wildcard to be rejected.")
 	})
 
 }

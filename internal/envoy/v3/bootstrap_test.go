@@ -1988,7 +1988,7 @@ func TestBootstrap(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tc := tc
 			steps, gotError := bootstrap(&tc.config)
-			assert.Equal(t, gotError != nil, tc.wantedError)
+			assert.Equal(t, tc.wantedError, gotError != nil)
 
 			gotConfigs := map[string]proto.Message{}
 			for _, step := range steps {

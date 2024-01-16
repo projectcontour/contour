@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestKubebuilderValidation verifies that the regex used as a kubebuilder validation
@@ -75,10 +76,10 @@ func TestKubebuilderValidation(t *testing.T) {
 
 		if valid {
 			assert.True(t, regexMatches, "input string %q: regex should match but does not", tc)
-			assert.NoError(t, parseErr, "input string %q: timeout.Parse should succeed but does not", tc)
+			require.NoError(t, parseErr, "input string %q", tc)
 		} else {
 			assert.False(t, regexMatches, "input string %q: regex should not match but does", tc)
-			assert.NotNil(t, parseErr, "input string %q: timeout.Parse should return an error but does not", tc)
+			require.Error(t, parseErr, "input string %q", tc)
 		}
 	}
 }

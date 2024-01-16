@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/pkg/certs"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,9 +49,7 @@ func TestGeneratedSecretsValid(t *testing.T) {
 			Lifetime:  conf.Lifetime,
 			Namespace: conf.Namespace,
 		})
-	if err != nil {
-		t.Fatalf("failed to generate certificates: %s", err)
-	}
+	require.NoError(t, err, "failed to generate certificates")
 
 	secrets, errs := certgen.AsSecrets(conf.Namespace, "", certificates)
 	if len(errs) > 0 {
@@ -93,7 +92,7 @@ func TestGeneratedSecretsValid(t *testing.T) {
 		}
 
 		pemBlock, _ := pem.Decode(s.Data[corev1.TLSCertKey])
-		assert.Equal(t, pemBlock.Type, "CERTIFICATE")
+		assert.Equal(t, "CERTIFICATE", pemBlock.Type)
 
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)
 		if err != nil {
@@ -127,9 +126,7 @@ func TestSecretNamePrefix(t *testing.T) {
 			Lifetime:  conf.Lifetime,
 			Namespace: conf.Namespace,
 		})
-	if err != nil {
-		t.Fatalf("failed to generate certificates: %s", err)
-	}
+	require.NoError(t, err, "failed to generate certificates")
 
 	secrets, errs := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
 	if len(errs) > 0 {
@@ -172,18 +169,15 @@ func TestSecretNamePrefix(t *testing.T) {
 		}
 
 		pemBlock, _ := pem.Decode(s.Data[corev1.TLSCertKey])
-		assert.Equal(t, pemBlock.Type, "CERTIFICATE")
+		assert.Equal(t, "CERTIFICATE", pemBlock.Type)
 
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)
-		if err != nil {
-			t.Errorf("failed to parse X509 certificate: %s", err)
-		}
+		require.NoError(t, err, "failed to parse X509 certificate")
 
 		// Check that each certificate contains SAN entries for the right DNS names.
 		sort.Strings(cert.DNSNames)
 		sort.Strings(wantedNames[s.Name])
 		assert.Equal(t, cert.DNSNames, wantedNames[s.Name])
-
 	}
 }
 
@@ -206,9 +200,7 @@ func TestInvalidNamespaceAndName(t *testing.T) {
 			Lifetime:  conf.Lifetime,
 			Namespace: conf.Namespace,
 		})
-	if err != nil {
-		t.Fatalf("failed to generate certificates: %s", err)
-	}
+	require.NoError(t, err, "failed to generate certificates")
 
 	secrets, errs := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
 	if len(errs) != 2 {
@@ -263,14 +255,14 @@ func TestOutputFileMode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			outputDir, err := os.MkdirTemp("", "")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			defer os.RemoveAll(outputDir)
 			tc.cc.OutputDir = outputDir
 
 			// Write a file with insecure mode to ensure overwrite works as expected.
 			if tc.cc.Overwrite {
 				_, err = os.Create(filepath.Join(outputDir, tc.insecureFile))
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			generatedCerts, err := certs.GenerateCerts(
@@ -278,9 +270,9 @@ func TestOutputFileMode(t *testing.T) {
 					Lifetime:  tc.cc.Lifetime,
 					Namespace: tc.cc.Namespace,
 				})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
-			assert.NoError(t, OutputCerts(tc.cc, nil, generatedCerts))
+			require.NoError(t, OutputCerts(tc.cc, nil, generatedCerts))
 
 			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 				if !info.IsDir() {
@@ -288,7 +280,7 @@ func TestOutputFileMode(t *testing.T) {
 				}
 				return nil
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

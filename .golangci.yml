@@ -14,6 +14,8 @@ linters:
   - goheader
   - gocritic
   - forbidigo
+  - testifylint
+  - ginkgolinter
 
 linters-settings:
   misspell:
@@ -56,6 +58,10 @@ linters-settings:
     - name: use-any
     - name: var-declaration
     - name: var-naming
+  testifylint:
+    enable-all: true
+  ginkgolinter:
+    forbid-focus-container: true
 
 issues:
   exclude-rules:

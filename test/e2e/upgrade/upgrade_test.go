@@ -68,7 +68,7 @@ var _ = Describe("When upgrading", func() {
 			// We should be running in a multi-node cluster with a proper load
 			// balancer, so fetch load balancer ip to make requests to.
 			require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), f.Deployment.EnvoyService))
-			require.Greater(f.T(), len(f.Deployment.EnvoyService.Status.LoadBalancer.Ingress), 0)
+			require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress)
 			require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP)
 			f.HTTP.HTTPURLBase = "http://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
 			f.HTTP.HTTPSURLBase = "https://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP

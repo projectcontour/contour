@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -89,12 +90,12 @@ func TestPeerValidationContext(t *testing.T) {
 	pvc2 := PeerValidationContext{}
 	var pvc3 *PeerValidationContext
 
-	assert.Equal(t, pvc1.GetSubjectNames()[0], "subject")
-	assert.Equal(t, pvc1.GetCACertificate(), []byte("cacert"))
-	assert.Equal(t, pvc2.GetSubjectNames(), []string(nil))
-	assert.Equal(t, pvc2.GetCACertificate(), []byte(nil))
-	assert.Equal(t, pvc3.GetSubjectNames(), []string(nil))
-	assert.Equal(t, pvc3.GetCACertificate(), []byte(nil))
+	assert.Equal(t, "subject", pvc1.GetSubjectNames()[0])
+	assert.Equal(t, []byte("cacert"), pvc1.GetCACertificate())
+	assert.Equal(t, []string(nil), pvc2.GetSubjectNames())
+	assert.Equal(t, []byte(nil), pvc2.GetCACertificate())
+	assert.Equal(t, []string(nil), pvc3.GetSubjectNames())
+	assert.Equal(t, []byte(nil), pvc3.GetCACertificate())
 }
 
 func TestObserverFunc(t *testing.T) {
@@ -104,7 +105,7 @@ func TestObserverFunc(t *testing.T) {
 	// Ensure the given function gets called.
 	result := false
 	ObserverFunc(func(*DAG) { result = true }).OnChange(nil)
-	assert.Equal(t, true, result)
+	require.True(t, result)
 }
 
 func TestServiceClusterValid(t *testing.T) {
@@ -117,7 +118,7 @@ func TestServiceClusterValid(t *testing.T) {
 	}
 
 	for _, c := range invalid {
-		assert.Errorf(t, c.Validate(), "invalid cluster %#v", c)
+		require.Errorf(t, c.Validate(), "invalid cluster %#v", c)
 	}
 }
 

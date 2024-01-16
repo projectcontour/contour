@@ -57,7 +57,7 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
+		require.Error(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
 	})
 
 	Specify("invalid redirect code", func() {
@@ -86,7 +86,7 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
+		require.Error(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
 	})
 }
 

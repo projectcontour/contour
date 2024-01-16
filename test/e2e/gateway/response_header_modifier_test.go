@@ -113,22 +113,20 @@ func testResponseHeaderModifierBackendRef(namespace string, gateway types.Namesp
 			switch body.Service {
 			case "echo-header-filter":
 				assert.Len(t, res.Headers["My-Header"], 1)
-				assert.Equal(t, res.Headers.Get("My-Header"), "Foo")
+				assert.Equal(t, "Foo", res.Headers.Get("My-Header"))
 
 				assert.Len(t, res.Headers["Replace-Header"], 1)
-				assert.Equal(t, res.Headers.Get("Replace-Header"), "Bar")
+				assert.Equal(t, "Bar", res.Headers.Get("Replace-Header"))
 
-				assert.Len(t, res.Headers["Other-Header"], 0)
-				assert.Equal(t, res.Headers.Get("Other-Header"), "")
+				assert.Empty(t, res.Headers["Other-Header"])
 			case "echo-header-nofilter":
-				assert.Len(t, res.Headers["My-Header"], 0)
-				assert.Equal(t, res.Headers.Get("My-Header"), "")
+				assert.Empty(t, res.Headers["My-Header"])
 
 				assert.Len(t, res.Headers["Replace-Header"], 1)
-				assert.Equal(t, res.Headers.Get("Replace-Header"), "Tobe-Replaced")
+				assert.Equal(t, "Tobe-Replaced", res.Headers.Get("Replace-Header"))
 
 				assert.Len(t, res.Headers["Other-Header"], 1)
-				assert.Equal(t, res.Headers.Get("Other-Header"), "Remove")
+				assert.Equal(t, "Remove", res.Headers.Get("Other-Header"))
 			}
 		}
 		assert.Contains(t, seenBackends, "echo-header-filter")

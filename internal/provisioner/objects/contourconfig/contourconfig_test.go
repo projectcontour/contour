@@ -332,9 +332,9 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 			}
 			err := client.Get(context.Background(), key, remaining)
 			if tc.wantDelete {
-				assert.True(t, errors.IsNotFound(err))
+				require.True(t, errors.IsNotFound(err))
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 

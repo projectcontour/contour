@@ -27,6 +27,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -198,7 +199,7 @@ func TestStreamLoggingConnectionClose(t *testing.T) {
 				assert.Equal(t, tc.closeErr, err)
 				assert.Equal(t, tc.closeErr, entry.Data["error"])
 			} else {
-				assert.Nil(t, err)
+				require.NoError(t, err)
 			}
 
 			logHook.Reset()

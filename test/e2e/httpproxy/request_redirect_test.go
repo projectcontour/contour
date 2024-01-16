@@ -35,7 +35,7 @@ func testRequestRedirectRuleNoService(namespace string) {
 		proxy := getRedirectHTTPProxy(namespace, true)
 
 		for _, route := range proxy.Spec.Routes {
-			require.Equal(t, 0, len(route.Services))
+			require.Empty(t, route.Services)
 		}
 
 		doRedirectTest(namespace, proxy, t)
