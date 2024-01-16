@@ -660,6 +660,15 @@ spec:
                           Contour's default is false.
                         type: boolean
                     type: object
+                  loadBalancer:
+                    description: "LoadBalancer specifies how Contour should set the
+                      ingress status address. If provided, the value can be in one
+                      of the formats: - hostname:<address,...>: Contour will use the
+                      provided comma separated list of addresses directly. - service:<namespace>/<name>:
+                      Contour will use the address of the designated service. - ingress:<namespace>/<name>:
+                      Contour will use the address of the designated ingress. \n Contour's
+                      default is an empty string."
+                    type: string
                   logging:
                     description: Logging defines how Envoy's logs can be configured.
                     properties:
@@ -4317,6 +4326,16 @@ spec:
                               Contour's default is false.
                             type: boolean
                         type: object
+                      loadBalancer:
+                        description: "LoadBalancer specifies how Contour should set
+                          the ingress status address. If provided, the value can be
+                          in one of the formats: - hostname:<address,...>: Contour
+                          will use the provided comma separated list of addresses
+                          directly. - service:<namespace>/<name>: Contour will use
+                          the address of the designated service. - ingress:<namespace>/<name>:
+                          Contour will use the address of the designated ingress.
+                          \n Contour's default is an empty string."
+                        type: string
                       logging:
                         description: Logging defines how Envoy's logs can be configured.
                         properties:

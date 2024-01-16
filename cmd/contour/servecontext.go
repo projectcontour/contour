@@ -584,6 +584,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,
 				EnvoyAdminPort:    &ctx.Config.Network.EnvoyAdminPort,
 			},
+			LoadBalancer: ctx.Config.LoadBalancerStatus,
 		},
 		Gateway: gatewayConfig,
 		HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{

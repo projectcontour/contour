@@ -268,6 +268,16 @@ type EnvoyConfig struct {
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
+	// LoadBalancer specifies how Contour should set the ingress status address.
+	// If provided, the value can be in one of the formats:
+	//   - hostname:<address,...>: Contour will use the provided comma separated list of addresses directly.
+	//   - service:<namespace>/<name>: Contour will use the address of the designated service.
+	//   - ingress:<namespace>/<name>: Contour will use the address of the designated ingress.
+	//
+	// Contour's default is an empty string.
+	// +optional
+	LoadBalancer string `json:"loadBalancer,omitempty"`
+
 	// Defines the HTTP Listener for Envoy.
 	//
 	// Contour's default is { address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout" }.
