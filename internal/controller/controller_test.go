@@ -17,13 +17,14 @@ import (
 	"testing"
 
 	logr_testing "github.com/go-logr/logr/testing"
-	"github.com/projectcontour/contour/internal/controller"
-	"github.com/projectcontour/contour/internal/controller/mocks"
-	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/projectcontour/contour/internal/controller"
+	"github.com/projectcontour/contour/internal/controller/mocks"
+	"github.com/projectcontour/contour/internal/fixture"
 )
 
 func TestRegisterControllers(t *testing.T) {

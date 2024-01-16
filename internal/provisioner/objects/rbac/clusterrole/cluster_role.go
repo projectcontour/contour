@@ -17,14 +17,15 @@ import (
 	"context"
 	"fmt"
 
+	rbac_v1 "k8s.io/api/rbac/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EnsureClusterRole ensures a ClusterRole resource exists with the provided name
@@ -33,21 +34,21 @@ func EnsureClusterRole(ctx context.Context, cli client.Client, name string, cont
 	desired := desiredClusterRole(name, contour, clusterScopedResourceOnly)
 
 	// Enclose contour.
-	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.ClusterRole) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbac_v1.ClusterRole) error {
 		return updateClusterRoleIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.ClusterRole{})
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbac_v1.ClusterRole{})
 }
 
 // desiredClusterRole constructs an instance of the desired ClusterRole resource with
 // the provided name and contour namespace/name for the owning contour labels.
-func desiredClusterRole(name string, contour *model.Contour, clusterScopedResourceOnly bool) *rbacv1.ClusterRole {
-	role := &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
+func desiredClusterRole(name string, contour *model.Contour, clusterScopedResourceOnly bool) *rbac_v1.ClusterRole {
+	role := &rbac_v1.ClusterRole{
+		TypeMeta: meta_v1.TypeMeta{
 			Kind: "Role",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        name,
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
@@ -65,7 +66,7 @@ func desiredClusterRole(name string, contour *model.Contour, clusterScopedResour
 
 // updateClusterRoleIfNeeded updates a ClusterRole resource if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateClusterRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRole) error {
+func updateClusterRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbac_v1.ClusterRole) error {
 	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		cr, updated := equality.ClusterRoleConfigChanged(current, desired)
 		if updated {

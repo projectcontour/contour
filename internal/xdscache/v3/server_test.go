@@ -20,7 +20,7 @@ import (
 	"time"
 
 	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
@@ -32,10 +32,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	v1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
+	core_v1 "k8s.io/api/core/v1"
+	discovery_v1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/projectcontour/contour/internal/contour"
@@ -55,16 +55,16 @@ func TestGRPC(t *testing.T) {
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
-			eh.OnAdd(&v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			eh.OnAdd(&core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 				},
-				Spec: v1.ServiceSpec{
+				Spec: core_v1.ServiceSpec{
 					Selector: map[string]string{
 						"app": "simple",
 					},
-					Ports: []v1.ServicePort{{
+					Ports: []core_v1.ServicePort{{
 						Protocol:   "TCP",
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
@@ -82,16 +82,16 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)                  // check that the second receive times out
 		},
 		"StreamEndpoints": func(t *testing.T, cc *grpc.ClientConn) {
-			et.OnAdd(&v1.Endpoints{
-				ObjectMeta: metav1.ObjectMeta{
+			et.OnAdd(&core_v1.Endpoints{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "kube-scheduler",
 					Namespace: "kube-system",
 				},
-				Subsets: []v1.EndpointSubset{{
-					Addresses: []v1.EndpointAddress{{
+				Subsets: []core_v1.EndpointSubset{{
+					Addresses: []core_v1.EndpointAddress{{
 						IP: "130.211.139.167",
 					}},
-					Ports: []v1.EndpointPort{{
+					Ports: []core_v1.EndpointPort{{
 						Port: 80,
 					}, {
 						Port: 443,
@@ -109,20 +109,20 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)                   // check that the second receive times out
 		},
 		"StreamEndpointSlices": func(t *testing.T, cc *grpc.ClientConn) {
-			et.OnAdd(&discoveryv1.EndpointSlice{
-				ObjectMeta: metav1.ObjectMeta{
+			et.OnAdd(&discovery_v1.EndpointSlice{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "kube-scheduler",
 					Namespace: "kube-system",
 				},
-				AddressType: discoveryv1.AddressTypeIPv4,
-				Endpoints: []discoveryv1.Endpoint{
+				AddressType: discovery_v1.AddressTypeIPv4,
+				Endpoints: []discovery_v1.Endpoint{
 					{
 						Addresses: []string{
 							"130.211.139.167",
 						},
 					},
 				},
-				Ports: []discoveryv1.EndpointPort{
+				Ports: []discovery_v1.EndpointPort{
 					{
 						Port: ref.To[int32](80),
 					},
@@ -144,7 +144,7 @@ func TestGRPC(t *testing.T) {
 		"StreamListeners": func(t *testing.T, cc *grpc.ClientConn) {
 			// add an ingress, which will create a non tls listener
 			eh.OnAdd(&networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
 				},
@@ -173,7 +173,7 @@ func TestGRPC(t *testing.T) {
 		},
 		"StreamRoutes": func(t *testing.T, cc *grpc.ClientConn) {
 			eh.OnAdd(&networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
 				},
@@ -201,14 +201,14 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)                // check that the second receive times out
 		},
 		"StreamSecrets": func(t *testing.T, cc *grpc.ClientConn) {
-			eh.OnAdd(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			eh.OnAdd(&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
-					v1.TLSCertKey:       []byte("certificate"),
-					v1.TLSPrivateKeyKey: []byte("key"),
+					core_v1.TLSCertKey:       []byte("certificate"),
+					core_v1.TLSPrivateKeyKey: []byte("key"),
 				},
 			}, false)
 
@@ -279,18 +279,18 @@ func TestGRPC(t *testing.T) {
 }
 
 func sendreq(t *testing.T, stream interface {
-	Send(*discovery.DiscoveryRequest) error
+	Send(*envoy_service_discovery_v3.DiscoveryRequest) error
 }, typeurl string,
 ) {
 	t.Helper()
-	err := stream.Send(&discovery.DiscoveryRequest{
+	err := stream.Send(&envoy_service_discovery_v3.DiscoveryRequest{
 		TypeUrl: typeurl,
 	})
 	require.NoError(t, err)
 }
 
 func checkrecv(t *testing.T, stream interface {
-	Recv() (*discovery.DiscoveryResponse, error)
+	Recv() (*envoy_service_discovery_v3.DiscoveryResponse, error)
 },
 ) {
 	t.Helper()
@@ -299,7 +299,7 @@ func checkrecv(t *testing.T, stream interface {
 }
 
 func checktimeout(t *testing.T, stream interface {
-	Recv() (*discovery.DiscoveryResponse, error)
+	Recv() (*envoy_service_discovery_v3.DiscoveryResponse, error)
 },
 ) {
 	t.Helper()

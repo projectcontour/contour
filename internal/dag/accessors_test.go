@@ -17,19 +17,19 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 )
 
-func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...any) v1.ServicePort {
-	p := v1.ServicePort{
+func makeServicePort(name string, protocol core_v1.Protocol, port int32, extras ...any) core_v1.ServicePort {
+	p := core_v1.ServicePort{
 		Name:     name,
 		Protocol: protocol,
 		Port:     port,
@@ -47,58 +47,58 @@ func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...an
 }
 
 func TestBuilderLookupService(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "includehealth",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080), makeServicePort("health", "TCP", 8998, 8998)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080), makeServicePort("health", "TCP", 8998, 8998)},
 		},
 	}
 
-	externalNameValid := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	externalNameValid := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "externalnamevalid",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Type:         v1.ServiceTypeExternalName,
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: "external.projectcontour.io",
-			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
-	externalNameLocalhost := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	externalNameLocalhost := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "externalnamelocalhost",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Type:         v1.ServiceTypeExternalName,
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: "localhost",
-			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
-	annotatedService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	annotatedService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "annotated-service",
 			Namespace:   "default",
 			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:       "foo",
 				Protocol:   "TCP",
 				Port:       8443,
@@ -107,14 +107,14 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
-	appProtoService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	appProtoService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "app-protocol-service",
 			Namespace:   "default",
 			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444"},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{
 				{
 					Name:        "k8s-h2c",
 					Protocol:    "TCP",
@@ -131,7 +131,7 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
-	services := map[types.NamespacedName]*v1.Service{
+	services := map[types.NamespacedName]*core_v1.Service{
 		{Name: "service1", Namespace: "default"}:                             s1,
 		{Name: "servicehealthcheck", Namespace: "default"}:                   s2,
 		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,

@@ -16,21 +16,22 @@ package k8s
 import (
 	"strings"
 
-	"github.com/projectcontour/contour/internal/annotation"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/projectcontour/contour/internal/annotation"
 )
 
 // NamespacedNameOf returns the NamespacedName of any given Kubernetes object.
-func NamespacedNameOf(obj metav1.Object) types.NamespacedName {
+func NamespacedNameOf(obj meta_v1.Object) types.NamespacedName {
 	name := types.NamespacedName{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
 	}
 
 	if name.Namespace == "" {
-		name.Namespace = metav1.NamespaceDefault
+		name.Namespace = meta_v1.NamespaceDefault
 	}
 
 	return name
@@ -81,7 +82,7 @@ func NamespacedNameFrom(nameStr string, opts ...func(*types.NamespacedName)) typ
 	}
 
 	if name.Namespace == "" {
-		name.Namespace = metav1.NamespaceDefault
+		name.Namespace = meta_v1.NamespaceDefault
 	}
 
 	return name

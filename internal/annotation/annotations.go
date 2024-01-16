@@ -18,9 +18,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/projectcontour/contour/internal/timeout"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // IsKnown checks if an annotation is one Contour knows about.
@@ -97,7 +98,7 @@ func ValidForKind(kind, key string) bool {
 
 // ContourAnnotation checks the Object for the given annotation with the
 // "projectcontour.io/" prefix.
-func ContourAnnotation(o metav1.Object, key string) string {
+func ContourAnnotation(o meta_v1.Object, key string) string {
 	a := o.GetAnnotations()
 
 	return a["projectcontour.io/"+key]
@@ -199,7 +200,7 @@ func PerTryTimeout(i *networking_v1.Ingress) (timeout.Setting, error) {
 // annotations:
 // 1. projectcontour.io/ingress.class
 // 2. kubernetes.io/ingress.class
-func IngressClass(o metav1.Object) string {
+func IngressClass(o meta_v1.Object) string {
 	a := o.GetAnnotations()
 	if class, ok := a["projectcontour.io/ingress.class"]; ok {
 		return class
@@ -226,7 +227,7 @@ func TLSVersion(version, defaultVal string) string {
 // 1. projectcontour.io/max-connections
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxConnections(o metav1.Object) uint32 {
+func MaxConnections(o meta_v1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-connections"))
 }
 
@@ -235,7 +236,7 @@ func MaxConnections(o metav1.Object) uint32 {
 // 1. projectcontour.io/max-pending-requests
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxPendingRequests(o metav1.Object) uint32 {
+func MaxPendingRequests(o meta_v1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-pending-requests"))
 }
 
@@ -244,7 +245,7 @@ func MaxPendingRequests(o metav1.Object) uint32 {
 // 1. projectcontour.io/max-requests
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxRequests(o metav1.Object) uint32 {
+func MaxRequests(o meta_v1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-requests"))
 }
 
@@ -253,7 +254,7 @@ func MaxRequests(o metav1.Object) uint32 {
 // 1. projectcontour.io/max-retries
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxRetries(o metav1.Object) uint32 {
+func MaxRetries(o meta_v1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-retries"))
 }
 
@@ -262,6 +263,6 @@ func MaxRetries(o metav1.Object) uint32 {
 // 1. projectcontour.io/per-host-max-connections
 //
 // '0' is returned if the annotation is absent or unparsable.
-func PerHostMaxConnections(o metav1.Object) uint32 {
+func PerHostMaxConnections(o meta_v1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "per-host-max-connections"))
 }

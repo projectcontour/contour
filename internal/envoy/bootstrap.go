@@ -20,9 +20,10 @@ import (
 	"net"
 	"os"
 
-	"github.com/projectcontour/contour/pkg/config"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 // SDSResourcesSubdirectory stores the subdirectory name where SDS path resources are stored to.

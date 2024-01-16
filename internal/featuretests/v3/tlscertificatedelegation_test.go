@@ -16,14 +16,15 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
 )
 
 func TestTLSCertificateDelegation(t *testing.T) {
@@ -31,7 +32,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	defer done()
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -42,24 +43,24 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080})
+		WithPorts(core_v1.ServicePort{Port: 8080})
 	rh.OnAdd(s1)
 
 	// add an httpproxy in a different namespace mentioning secret/wildcard.
-	p1 := &contour_api_v1.HTTPProxy{
+	p1 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Namespace + "/" + sec1.Name,
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -69,7 +70,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// assert there are no listeners
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -77,10 +78,10 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t1 is a TLSCertificateDelegation that permits default to access secret/wildcard
-	t1 := &contour_api_v1.TLSCertificateDelegation{
+	t1 := &contour_v1.TLSCertificateDelegation{
 		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
-		Spec: contour_api_v1.TLSCertificateDelegationSpec{
-			Delegations: []contour_api_v1.CertificateDelegation{{
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					s1.Namespace,
@@ -90,7 +91,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(t1)
 
-	ingressHTTPS := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -104,7 +105,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
@@ -114,10 +115,10 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t2 is a TLSCertificateDelegation that permits access to secret/wildcard from all namespaces.
-	t2 := &contour_api_v1.TLSCertificateDelegation{
+	t2 := &contour_v1.TLSCertificateDelegation{
 		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
-		Spec: contour_api_v1.TLSCertificateDelegationSpec{
-			Delegations: []contour_api_v1.CertificateDelegation{{
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					"*",
@@ -127,7 +128,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t1, t2)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
@@ -137,10 +138,10 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t3 is a TLSCertificateDelegation that permits access to secret/different all namespaces.
-	t3 := &contour_api_v1.TLSCertificateDelegation{
+	t3 := &contour_v1.TLSCertificateDelegation{
 		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
-		Spec: contour_api_v1.TLSCertificateDelegationSpec{
-			Delegations: []contour_api_v1.CertificateDelegation{{
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
 				SecretName: "different",
 				TargetNamespaces: []string{
 					"*",
@@ -150,7 +151,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t2, t3)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -158,10 +159,10 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t4 is a TLSCertificateDelegation that permits access to secret/wildcard from the kube-secret namespace.
-	t4 := &contour_api_v1.TLSCertificateDelegation{
+	t4 := &contour_v1.TLSCertificateDelegation{
 		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
-		Spec: contour_api_v1.TLSCertificateDelegationSpec{
-			Delegations: []contour_api_v1.CertificateDelegation{{
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					"kube-secret",
@@ -171,7 +172,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t3, t4)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -182,18 +183,18 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnDelete(t4)
 
 	// add a httpproxy in a different namespace mentioning secret/wildcard.
-	hp1 := &contour_api_v1.HTTPProxy{
+	hp1 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Namespace + "/" + sec1.Name,
 				},
 			},
-			Routes: []contour_api_v1.Route{{
+			Routes: []contour_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -203,17 +204,17 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnAdd(hp1)
 
 	// assert there are no listeners
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
 
-	t5 := &contour_api_v1.TLSCertificateDelegation{
+	t5 := &contour_v1.TLSCertificateDelegation{
 		ObjectMeta: fixture.ObjectMeta("secret/delegation"),
-		Spec: contour_api_v1.TLSCertificateDelegationSpec{
-			Delegations: []contour_api_v1.CertificateDelegation{{
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					s1.Namespace,
@@ -223,7 +224,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(t5)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
@@ -234,7 +235,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	rh.OnDelete(hp1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -272,7 +273,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,

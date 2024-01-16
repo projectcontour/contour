@@ -19,15 +19,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // isStatusEqual checks that two objects of supported Kubernetes types
@@ -40,49 +41,49 @@ func isStatusEqual(objA, objB any) bool {
 				return true
 			}
 		}
-	case *contour_api_v1.HTTPProxy:
-		if b, ok := objB.(*contour_api_v1.HTTPProxy); ok {
+	case *contour_v1.HTTPProxy:
+		if b, ok := objB.(*contour_v1.HTTPProxy); ok {
 			// Compare the status of the object ignoring the LastTransitionTime which is always
 			// updated on each DAG rebuild regardless if the status of object changed or not.
 			// Not ignoring this causes each status to be updated each time since the objects
 			// are always different for each DAG rebuild (Issue #2979).
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(contour_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
-	case *contour_api_v1alpha1.ExtensionService:
-		if b, ok := objB.(*contour_api_v1alpha1.ExtensionService); ok {
+	case *contour_v1alpha1.ExtensionService:
+		if b, ok := objB.(*contour_v1alpha1.ExtensionService); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(contour_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
 	case *gatewayapi_v1beta1.GatewayClass:
 		if b, ok := objB.(*gatewayapi_v1beta1.GatewayClass); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
 	case *gatewayapi_v1beta1.Gateway:
 		if b, ok := objB.(*gatewayapi_v1beta1.Gateway); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
 	case *gatewayapi_v1beta1.HTTPRoute:
 		if b, ok := objB.(*gatewayapi_v1beta1.HTTPRoute); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
 	case *gatewayapi_v1alpha2.TLSRoute:
 		if b, ok := objB.(*gatewayapi_v1alpha2.TLSRoute); ok {
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
@@ -106,8 +107,8 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 	// Fast path for objects that implement Generation and where only spec changes matter.
 	// Status/annotations/labels changes are ignored.
 	// Generation is implemented in CRDs, Ingress and IngressClass.
-	case *contour_api_v1alpha1.ExtensionService,
-		*contour_api_v1.TLSCertificateDelegation:
+	case *contour_v1alpha1.ExtensionService,
+		*contour_v1.TLSCertificateDelegation:
 		return isGenerationEqual(oldObj, newObj), nil
 
 	case *gatewayapi_v1beta1.GatewayClass,
@@ -121,30 +122,30 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 		return isGenerationEqual(oldObj, newObj), nil
 
 	// Slow path: compare the content of the objects.
-	case *contour_api_v1.HTTPProxy,
+	case *contour_v1.HTTPProxy,
 		*networking_v1.Ingress:
 		return isGenerationEqual(oldObj, newObj) &&
 			apiequality.Semantic.DeepEqual(oldObj.GetAnnotations(), newObj.GetAnnotations()), nil
-	case *v1.Secret:
-		if newObj, ok := newObj.(*v1.Secret); ok {
+	case *core_v1.Secret:
+		if newObj, ok := newObj.(*core_v1.Secret); ok {
 			return reflect.DeepEqual(oldObj.Data, newObj.Data), nil
 		}
-	case *v1.ConfigMap:
-		if newObj, ok := newObj.(*v1.ConfigMap); ok {
+	case *core_v1.ConfigMap:
+		if newObj, ok := newObj.(*core_v1.ConfigMap); ok {
 			return reflect.DeepEqual(oldObj.Data, newObj.Data), nil
 		}
-	case *v1.Service:
-		if newObj, ok := newObj.(*v1.Service); ok {
+	case *core_v1.Service:
+		if newObj, ok := newObj.(*core_v1.Service); ok {
 			return apiequality.Semantic.DeepEqual(oldObj.Spec, newObj.Spec) &&
 				apiequality.Semantic.DeepEqual(oldObj.Status, newObj.Status) &&
 				apiequality.Semantic.DeepEqual(oldObj.GetAnnotations(), newObj.GetAnnotations()), nil
 		}
-	case *v1.Endpoints:
-		if newObj, ok := newObj.(*v1.Endpoints); ok {
+	case *core_v1.Endpoints:
+		if newObj, ok := newObj.(*core_v1.Endpoints); ok {
 			return apiequality.Semantic.DeepEqual(oldObj.Subsets, newObj.Subsets), nil
 		}
-	case *v1.Namespace:
-		if newObj, ok := newObj.(*v1.Namespace); ok {
+	case *core_v1.Namespace:
+		if newObj, ok := newObj.(*core_v1.Namespace); ok {
 			return apiequality.Semantic.DeepEqual(oldObj.Labels, newObj.Labels), nil
 		}
 	}

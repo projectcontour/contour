@@ -17,35 +17,36 @@ import (
 	"fmt"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 // ConditionCache holds all the DetailedConditions to add to the object
 // keyed by the Type (since that's what the API server will end up doing).
 type ConditionCache struct {
-	Conditions map[ConditionType]*contour_api_v1.DetailedCondition
+	Conditions map[ConditionType]*contour_v1.DetailedCondition
 }
 
 // ConditionFor returns the cached DetailedCondition of the given
 // type. If no such condition exists, a new one is created.
-func (c *ConditionCache) ConditionFor(condType ConditionType) *contour_api_v1.DetailedCondition {
+func (c *ConditionCache) ConditionFor(condType ConditionType) *contour_v1.DetailedCondition {
 	if c.Conditions == nil {
-		c.Conditions = make(map[ConditionType]*contour_api_v1.DetailedCondition)
+		c.Conditions = make(map[ConditionType]*contour_v1.DetailedCondition)
 	}
 
 	if cond, ok := c.Conditions[condType]; ok {
 		return cond
 	}
 
-	cond := &contour_api_v1.DetailedCondition{
-		Condition: contour_api_v1.Condition{
+	cond := &contour_v1.DetailedCondition{
+		Condition: contour_v1.Condition{
 			Type:   string(condType),
-			Status: contour_api_v1.ConditionUnknown,
+			Status: contour_v1.ConditionUnknown,
 		},
 	}
 
@@ -59,14 +60,14 @@ type ExtensionCacheEntry struct {
 
 	Name           types.NamespacedName
 	Generation     int64
-	TransitionTime v1.Time
+	TransitionTime meta_v1.Time
 }
 
 var _ CacheEntry = &ExtensionCacheEntry{}
 
 func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 	m := k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
-		o, ok := obj.(*contour_api_v1alpha1.ExtensionService)
+		o, ok := obj.(*contour_v1alpha1.ExtensionService)
 		if !ok {
 			panic(fmt.Sprintf("unsupported %T object %q in status mutator", obj, e.Name))
 		}
@@ -96,7 +97,7 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 
 	return k8s.StatusUpdate{
 		NamespacedName: e.Name,
-		Resource:       &contour_api_v1alpha1.ExtensionService{},
+		Resource:       &contour_v1alpha1.ExtensionService{},
 		Mutator:        m,
 	}
 }
@@ -106,13 +107,13 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 // new entry is added. When the caller finishes with the cache entry,
 // it must call the returned function to release the entry back to the
 // cache.
-func ExtensionAccessor(c *Cache, ext *contour_api_v1alpha1.ExtensionService) (*ExtensionCacheEntry, func()) {
+func ExtensionAccessor(c *Cache, ext *contour_v1alpha1.ExtensionService) (*ExtensionCacheEntry, func()) {
 	entry := c.Get(ext)
 	if entry == nil {
 		entry = &ExtensionCacheEntry{
 			Name:           k8s.NamespacedNameOf(ext),
 			Generation:     ext.GetGeneration(),
-			TransitionTime: v1.NewTime(time.Now()),
+			TransitionTime: meta_v1.NewTime(time.Now()),
 		}
 
 		// Populate the cache with the new entry

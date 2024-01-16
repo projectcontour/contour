@@ -16,15 +16,16 @@ package v3
 import (
 	"testing"
 
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestWebsocketsIngress(t *testing.T) {
@@ -32,7 +33,7 @@ func TestWebsocketsIngress(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("ws").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
@@ -56,11 +57,11 @@ func TestWebsocketsIngress(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// check websocket annotation
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("websocket.hello.world",
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/ws2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
 					},
@@ -76,34 +77,34 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("ws").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	s2 := fixture.NewService("ws2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
-	hp1 := &contour_api_v1.HTTPProxy{
+	hp1 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []contour_api_v1.Route{{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "websocket.hello.world"},
+			Routes: []contour_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -112,19 +113,19 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("websocket.hello.world",
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
 					},
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/ws-1"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
 					},
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/ws/80/da39a3ee5e"),
 					},
@@ -134,20 +135,20 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	hp2 := &contour_api_v1.HTTPProxy{
+	hp2 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []contour_api_v1.Route{{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "websocket.hello.world"},
+			Routes: []contour_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}, {
@@ -157,7 +158,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -166,22 +167,22 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	}
 	rh.OnUpdate(hp1, hp2)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("websocket.hello.world",
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
 					},
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match: routePrefix("/ws-1"),
 						Action: withWebsocket(routeWeightedCluster(
 							weightedCluster{"default/ws/80/da39a3ee5e", 1},
 							weightedCluster{"default/ws2/80/da39a3ee5e", 1},
 						)),
 					},
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/ws/80/da39a3ee5e"),
 					},

@@ -14,12 +14,13 @@
 package provisioner
 
 import (
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	gateway_api_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gateway_api_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // CreateScheme returns a scheme with all the API types necessary for the gateway
@@ -30,9 +31,9 @@ func CreateScheme() (*runtime.Scheme, error) {
 	b := runtime.SchemeBuilder{
 		clientgoscheme.AddToScheme,
 		apiextensions_v1.AddToScheme,
-		gateway_api_v1alpha2.AddToScheme,
-		gateway_api_v1beta1.AddToScheme,
-		contour_api_v1alpha1.AddToScheme,
+		gatewayapi_v1alpha2.AddToScheme,
+		gatewayapi_v1beta1.AddToScheme,
+		contour_v1alpha1.AddToScheme,
 	}
 
 	if err := b.AddToScheme(scheme); err != nil {

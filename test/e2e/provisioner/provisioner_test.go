@@ -25,20 +25,21 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 var f = e2e.NewFramework(true)
@@ -52,7 +53,7 @@ var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
 
 	gc := &gatewayapi_v1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour",
 		},
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -67,12 +68,12 @@ var _ = BeforeSuite(func() {
 	// cluster we will still have a basic GatewayClass without any
 	// parameters to ensure that case is covered.
 	if runtimeSettings != nil {
-		params := &contour_api_v1alpha1.ContourDeployment{
-			ObjectMeta: metav1.ObjectMeta{
+		params := &contour_v1alpha1.ContourDeployment{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: "projectcontour",
 				Name:      "basic-contour",
 			},
-			Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+			Spec: contour_v1alpha1.ContourDeploymentSpec{
 				RuntimeSettings: runtimeSettings,
 			},
 		}
@@ -89,14 +90,14 @@ var _ = BeforeSuite(func() {
 	_, ok := f.CreateGatewayClassAndWaitFor(gc, e2e.GatewayClassAccepted)
 	require.True(f.T(), ok)
 
-	paramsEnvoyDeployment := &contour_api_v1alpha1.ContourDeployment{
-		ObjectMeta: metav1.ObjectMeta{
+	paramsEnvoyDeployment := &contour_v1alpha1.ContourDeployment{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "projectcontour",
 			Name:      "contour-with-envoy-deployment",
 		},
-		Spec: contour_api_v1alpha1.ContourDeploymentSpec{
-			Envoy: &contour_api_v1alpha1.EnvoySettings{
-				WorkloadType: contour_api_v1alpha1.WorkloadTypeDeployment,
+		Spec: contour_v1alpha1.ContourDeploymentSpec{
+			Envoy: &contour_v1alpha1.EnvoySettings{
+				WorkloadType: contour_v1alpha1.WorkloadTypeDeployment,
 			},
 			RuntimeSettings: runtimeSettings,
 		},
@@ -104,7 +105,7 @@ var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Client.Create(context.Background(), paramsEnvoyDeployment))
 
 	gcWithEnvoyDeployment := &gatewayapi_v1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour-with-envoy-deployment",
 		},
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -129,7 +130,7 @@ var _ = AfterSuite(func() {
 
 	for _, name := range []string{"contour", "contour-with-envoy-deployment"} {
 		gc := &gatewayapi_v1beta1.GatewayClass{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name: name,
 			},
 		}
@@ -146,7 +147,7 @@ var _ = Describe("Gateway provisioner", func() {
 		// forget to update the supported version we check for.
 		require.Eventually(f.T(), func() bool {
 			gc := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour",
 				},
 			}
@@ -155,7 +156,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 			for _, cond := range gc.Status.Conditions {
 				if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion) &&
-					cond.Status == metav1.ConditionTrue {
+					cond.Status == meta_v1.ConditionTrue {
 					return true
 				}
 			}
@@ -168,7 +169,7 @@ var _ = Describe("Gateway provisioner", func() {
 			// Create GatewayClass with a reference to a nonexistent ContourDeployment,
 			// it should be set to "Accepted: false" since the ref is invalid.
 			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour-with-params",
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -187,7 +188,7 @@ var _ = Describe("Gateway provisioner", func() {
 			// Create a Gateway using that GatewayClass, it should not be accepted
 			// since the GatewayClass is not accepted.
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "http",
 					Namespace: namespace,
 				},
@@ -219,12 +220,12 @@ var _ = Describe("Gateway provisioner", func() {
 			}, 10*time.Second, time.Second)
 
 			// Now create the ContourDeployment to match the parametersRef.
-			params := &contour_api_v1alpha1.ContourDeployment{
-				ObjectMeta: metav1.ObjectMeta{
+			params := &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "contour-params",
 				},
-				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
 				},
 			}
@@ -257,7 +258,7 @@ var _ = Describe("Gateway provisioner", func() {
 	f.NamespacedTest("gateway-with-envoy-deployment", func(namespace string) {
 		Specify("A gateway with Envoy as a deployment can be provisioned and routes traffic correctly", func() {
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "http",
 					Namespace: namespace,
 				},
@@ -286,7 +287,7 @@ var _ = Describe("Gateway provisioner", func() {
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
 			route := &gatewayapi_v1beta1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-1",
 				},
@@ -329,7 +330,7 @@ var _ = Describe("Gateway provisioner", func() {
 			f.Certs.CreateSelfSignedCert(namespace, "https-2-cert", "https-2-cert", "https-2.provisioner.projectcontour.io")
 
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "many-listeners",
 					Namespace: namespace,
 				},
@@ -405,7 +406,7 @@ var _ = Describe("Gateway provisioner", func() {
 
 			// This HTTPRoute will attach to all of the HTTP and HTTPS Listeners.
 			httpRoute := &gatewayapi_v1beta1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-1",
 				},
@@ -466,7 +467,7 @@ var _ = Describe("Gateway provisioner", func() {
 
 			// This TCPRoute will attach to both TCP Listeners.
 			tcpRoute := &gatewayapi_v1alpha2.TCPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "tcproute-1",
 				},
@@ -521,7 +522,7 @@ var _ = Describe("Gateway provisioner", func() {
 		BeforeEach(func() {
 			By("create gatewayclass that reference contourDeployment with watchNamespace value")
 			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: objectTestName,
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -538,15 +539,15 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok)
 
 			// Now create the ContourDeployment to match the parametersRef.
-			params := &contour_api_v1alpha1.ContourDeployment{
-				ObjectMeta: metav1.ObjectMeta{
+			params := &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      objectTestName,
 				},
-				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
-					Contour: &contour_api_v1alpha1.ContourSettings{
-						WatchNamespaces: []contour_api_v1.Namespace{"testns-1", "testns-2"},
+					Contour: &contour_v1alpha1.ContourSettings{
+						WatchNamespaces: []contour_v1.Namespace{"testns-1", "testns-2"},
 					},
 				},
 			}
@@ -564,7 +565,7 @@ var _ = Describe("Gateway provisioner", func() {
 		})
 		AfterEach(func() {
 			require.NoError(f.T(), f.DeleteGatewayClass(&gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: objectTestName,
 				},
 			}, false))
@@ -573,7 +574,7 @@ var _ = Describe("Gateway provisioner", func() {
 			By("This tests deploy 3 dev namespaces testns-1, testns-2, testns-3")
 			By("Deploy gateway that referencing above gatewayclass")
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "http-for-watchnamespaces",
 					Namespace: namespace,
 				},
@@ -624,7 +625,7 @@ var _ = Describe("Gateway provisioner", func() {
 				f.Fixtures.Echo.Deploy(t.namespace, "echo")
 
 				route := &gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: t.namespace,
 						Name:      "httproute-1",
 					},
@@ -689,7 +690,7 @@ var _ = Describe("Gateway provisioner", func() {
 		BeforeEach(func() {
 			By("create gatewayclass that reference contourDeployment with disabled-features value")
 			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: objectTestName,
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -706,15 +707,15 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok)
 
 			// Now create the ContourDeployment to match the parametersRef.
-			params := &contour_api_v1alpha1.ContourDeployment{
-				ObjectMeta: metav1.ObjectMeta{
+			params := &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      objectTestName,
 				},
-				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
-					Contour: &contour_api_v1alpha1.ContourSettings{
-						DisabledFeatures: []contour_api_v1.Feature{"tlsroutes"},
+					Contour: &contour_v1alpha1.ContourSettings{
+						DisabledFeatures: []contour_v1.Feature{"tlsroutes"},
 					},
 				},
 			}
@@ -732,7 +733,7 @@ var _ = Describe("Gateway provisioner", func() {
 		})
 		AfterEach(func() {
 			require.NoError(f.T(), f.DeleteGatewayClass(&gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: objectTestName,
 				},
 			}, false))
@@ -740,7 +741,7 @@ var _ = Describe("Gateway provisioner", func() {
 		Specify("A gateway can be provisioned that ignore CRDs in disabledFeatures", func() {
 			By("Deploy gateway that referencing above gatewayclass")
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: namespace,
 				},
@@ -772,7 +773,7 @@ var _ = Describe("Gateway provisioner", func() {
 			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
 			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 			route := &gatewayapi_v1alpha2.TLSRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "tlsroute-1",
 				},
@@ -807,35 +808,35 @@ var _ = Describe("Gateway provisioner", func() {
 	})
 })
 
-func contourDeploymentRuntimeSettings() *contour_api_v1alpha1.ContourConfigurationSpec {
+func contourDeploymentRuntimeSettings() *contour_v1alpha1.ContourConfigurationSpec {
 	if os.Getenv("IPV6_CLUSTER") != "true" {
 		return nil
 	}
 
-	return &contour_api_v1alpha1.ContourConfigurationSpec{
-		XDSServer: &contour_api_v1alpha1.XDSServerConfig{
+	return &contour_v1alpha1.ContourConfigurationSpec{
+		XDSServer: &contour_v1alpha1.XDSServerConfig{
 			Address: "::",
 		},
-		Debug: &contour_api_v1alpha1.DebugConfig{
+		Debug: &contour_v1alpha1.DebugConfig{
 			Address: "::1",
 		},
-		Health: &contour_api_v1alpha1.HealthConfig{
+		Health: &contour_v1alpha1.HealthConfig{
 			Address: "::",
 		},
-		Metrics: &contour_api_v1alpha1.MetricsConfig{
+		Metrics: &contour_v1alpha1.MetricsConfig{
 			Address: "::",
 		},
-		Envoy: &contour_api_v1alpha1.EnvoyConfig{
-			HTTPListener: &contour_api_v1alpha1.EnvoyListener{
+		Envoy: &contour_v1alpha1.EnvoyConfig{
+			HTTPListener: &contour_v1alpha1.EnvoyListener{
 				Address: "::",
 			},
-			HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
+			HTTPSListener: &contour_v1alpha1.EnvoyListener{
 				Address: "::",
 			},
-			Health: &contour_api_v1alpha1.HealthConfig{
+			Health: &contour_v1alpha1.HealthConfig{
 				Address: "::",
 			},
-			Metrics: &contour_api_v1alpha1.MetricsConfig{
+			Metrics: &contour_v1alpha1.MetricsConfig{
 				Address: "::",
 			},
 		},

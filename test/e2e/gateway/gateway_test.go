@@ -22,20 +22,20 @@ import (
 	"os"
 	"testing"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/stretchr/testify/require"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // ReconcileModeController means Contour should be configured
@@ -78,7 +78,7 @@ var _ = Describe("Gateway API", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
-		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
+		contourConfiguration  *contour_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 
@@ -107,9 +107,9 @@ var _ = Describe("Gateway API", func() {
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{}
+					contourConfiguration.Spec.Gateway = &contour_v1alpha1.GatewayConfig{}
 					if reconcileMode == ReconcileModeGateway {
-						contourConfiguration.Spec.Gateway.GatewayRef = &contour_api_v1alpha1.NamespacedName{
+						contourConfiguration.Spec.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
 						}
@@ -177,7 +177,7 @@ var _ = Describe("Gateway API", func() {
 		testWithHTTPGateway := func(body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "http",
 				},
 				Spec: gatewayapi_v1beta1.GatewaySpec{
@@ -218,7 +218,7 @@ var _ = Describe("Gateway API", func() {
 			gatewayClass := getGatewayClass()
 
 			gw := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "https",
 				},
 				Spec: gatewayapi_v1beta1.GatewaySpec{
@@ -278,7 +278,7 @@ var _ = Describe("Gateway API", func() {
 		testWithMultipleHTTPSListenersGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gateway := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "multiple-https-listeners",
 				},
 				Spec: gatewayapi_v1beta1.GatewaySpec{
@@ -363,7 +363,7 @@ var _ = Describe("Gateway API", func() {
 		testWithTCPGateway := func(body e2e.NamespacedGatewayTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "tcp",
 				},
 				Spec: gatewayapi_v1beta1.GatewaySpec{
@@ -402,7 +402,7 @@ func getGatewayClass() *gatewayapi_v1beta1.GatewayClass {
 	randNumber := getRandomNumber()
 
 	return &gatewayapi_v1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: fmt.Sprintf("contour-class-%d", randNumber),
 		},
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{

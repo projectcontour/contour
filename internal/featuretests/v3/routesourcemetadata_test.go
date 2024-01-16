@@ -16,22 +16,23 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"google.golang.org/protobuf/types/known/structpb"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"google.golang.org/protobuf/types/known/structpb"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestRouteSourceMetadataIsSet(t *testing.T) {
@@ -51,7 +52,7 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	rh, c, done := setup(t, setRouteSourceMetadata)
 	defer done()
 
-	s1 := fixture.NewService("kuard").WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
+	s1 := fixture.NewService("kuard").WithPorts(core_v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// Test an Ingress route gets it source metadata set correctly.
@@ -77,14 +78,14 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	}
 	rh.OnAdd(ing)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("ingress.projectcontour.io", &envoy_route_v3.Route{
+				envoy_v3.VirtualHost("ingress.projectcontour.io", &envoy_config_route_v3.Route{
 					Match:  routePrefix("/"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
-					Metadata: &envoy_core_v3.Metadata{
+					Metadata: &envoy_config_core_v3.Metadata{
 						FilterMetadata: map[string]*structpb.Struct{
 							"envoy.access_loggers.file": {
 								Fields: map[string]*structpb.Value{
@@ -105,16 +106,16 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	rh.OnDelete(ing)
 
 	// Test an HTTPProxy route gets it source metadata set correctly.
-	httpProxy := &contour_api_v1.HTTPProxy{
+	httpProxy := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("default/httpproxy-kuard"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "httpproxy.projectcontour.io",
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
-					Services:   []contour_api_v1.Service{{Name: "kuard", Port: 80}},
+					Conditions: []contour_v1.MatchCondition{{Prefix: "/"}},
+					Services:   []contour_v1.Service{{Name: "kuard", Port: 80}},
 				},
 			},
 		},
@@ -122,14 +123,14 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 
 	rh.OnAdd(httpProxy)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("httpproxy.projectcontour.io", &envoy_route_v3.Route{
+				envoy_v3.VirtualHost("httpproxy.projectcontour.io", &envoy_config_route_v3.Route{
 					Match:  routePrefix("/"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
-					Metadata: &envoy_core_v3.Metadata{
+					Metadata: &envoy_config_core_v3.Metadata{
 						FilterMetadata: map[string]*structpb.Struct{
 							"envoy.access_loggers.file": {
 								Fields: map[string]*structpb.Value{
@@ -153,7 +154,7 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	rh.OnAdd(gc)
 	rh.OnAdd(gateway)
 	httpRoute := &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "httproute-kuard",
 			Namespace: "default",
 		},
@@ -174,14 +175,14 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	}
 	rh.OnAdd(httpRoute)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("http-80",
-				envoy_v3.VirtualHost("gatewayapi.projectcontour.io", &envoy_route_v3.Route{
+				envoy_v3.VirtualHost("gatewayapi.projectcontour.io", &envoy_config_route_v3.Route{
 					Match:  routePrefix("/"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
-					Metadata: &envoy_core_v3.Metadata{
+					Metadata: &envoy_config_core_v3.Metadata{
 						FilterMetadata: map[string]*structpb.Struct{
 							"envoy.access_loggers.file": {
 								Fields: map[string]*structpb.Value{

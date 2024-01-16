@@ -16,12 +16,13 @@ package dag
 import (
 	"sort"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/metrics"
-	"github.com/projectcontour/contour/internal/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/status"
 )
 
 // Processor constructs part of a DAG.

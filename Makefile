@@ -226,7 +226,9 @@ lint-flags:
 .PHONY: format
 format: ## Run gofumpt to format the codebase.
 	@echo Running gofumpt...
-	@./hack/gofumpt -l -w -extra .
+	@go run mvdan.cc/gofumpt@v0.5.0 -l -w -extra .
+	@echo Running gci...
+	@go run github.com/daixiang0/gci@v0.12.1 write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation

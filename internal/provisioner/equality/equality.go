@@ -14,15 +14,15 @@
 package equality
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 )
 
 // DaemonsetConfigChanged checks if current and expected DaemonSet match,
 // and if not, returns the updated DaemonSet resource.
-func DaemonsetConfigChanged(current, expected *appsv1.DaemonSet) (*appsv1.DaemonSet, bool) {
+func DaemonsetConfigChanged(current, expected *apps_v1.DaemonSet) (*apps_v1.DaemonSet, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -45,13 +45,13 @@ func DaemonsetConfigChanged(current, expected *appsv1.DaemonSet) (*appsv1.Daemon
 }
 
 // DaemonSetSelectorsDiffer checks if the current and expected DaemonSet selectors differ.
-func DaemonSetSelectorsDiffer(current, expected *appsv1.DaemonSet) bool {
+func DaemonSetSelectorsDiffer(current, expected *apps_v1.DaemonSet) bool {
 	return !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector)
 }
 
 // DeploymentConfigChanged checks if the current and expected Deployment match
 // and if not, returns true and the expected Deployment.
-func DeploymentConfigChanged(current, expected *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func DeploymentConfigChanged(current, expected *apps_v1.Deployment) (*apps_v1.Deployment, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -73,14 +73,14 @@ func DeploymentConfigChanged(current, expected *appsv1.Deployment) (*appsv1.Depl
 }
 
 // DeploymentSelectorsDiffer checks if the current and expected Deployment selectors differ.
-func DeploymentSelectorsDiffer(current, expected *appsv1.Deployment) bool {
+func DeploymentSelectorsDiffer(current, expected *apps_v1.Deployment) bool {
 	return !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector)
 }
 
 // ClusterIPServiceChanged checks if the spec of current and expected match and if not,
 // returns true and the expected Service resource. The cluster IP is not compared
 // as it's assumed to be dynamically assigned.
-func ClusterIPServiceChanged(current, expected *corev1.Service) (*corev1.Service, bool) {
+func ClusterIPServiceChanged(current, expected *core_v1.Service) (*core_v1.Service, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -123,7 +123,7 @@ func ClusterIPServiceChanged(current, expected *corev1.Service) (*corev1.Service
 // LoadBalancerServiceChanged checks if current and expected match and if not, returns
 // true and the expected Service resource. The healthCheckNodePort and a port's nodePort
 // are not compared since they are dynamically assigned.
-func LoadBalancerServiceChanged(current, expected *corev1.Service) (*corev1.Service, bool) {
+func LoadBalancerServiceChanged(current, expected *core_v1.Service) (*core_v1.Service, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -197,7 +197,7 @@ func LoadBalancerServiceChanged(current, expected *corev1.Service) (*corev1.Serv
 // NodePortServiceChanged checks if current and expected match and if not, returns
 // true and the expected Service resource. The healthCheckNodePort is not compared
 // since it's dynamically assigned.
-func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service, bool) {
+func NodePortServiceChanged(current, expected *core_v1.Service) (*core_v1.Service, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -252,7 +252,7 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 
 // ServiceAccountConfigChanged checks if the current and expected ServiceAccount
 // match and if not, returns true and the expected ServiceAccount.
-func ServiceAccountConfigChanged(current, expected *corev1.ServiceAccount) (*corev1.ServiceAccount, bool) {
+func ServiceAccountConfigChanged(current, expected *core_v1.ServiceAccount) (*core_v1.ServiceAccount, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -270,7 +270,7 @@ func ServiceAccountConfigChanged(current, expected *corev1.ServiceAccount) (*cor
 
 // ClusterRoleConfigChanged checks if the current and expected ClusterRole
 // match and if not, returns true and the expected ClusterRole.
-func ClusterRoleConfigChanged(current, expected *rbacv1.ClusterRole) (*rbacv1.ClusterRole, bool) {
+func ClusterRoleConfigChanged(current, expected *rbac_v1.ClusterRole) (*rbac_v1.ClusterRole, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -293,7 +293,7 @@ func ClusterRoleConfigChanged(current, expected *rbacv1.ClusterRole) (*rbacv1.Cl
 
 // ClusterRoleBindingConfigChanged checks if the current and expected ClusterRoleBinding
 // match and if not, returns true and the expected ClusterRoleBinding.
-func ClusterRoleBindingConfigChanged(current, expected *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, bool) {
+func ClusterRoleBindingConfigChanged(current, expected *rbac_v1.ClusterRoleBinding) (*rbac_v1.ClusterRoleBinding, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -322,7 +322,7 @@ func ClusterRoleBindingConfigChanged(current, expected *rbacv1.ClusterRoleBindin
 
 // RoleConfigChanged checks if the current and expected Role match
 // and if not, returns true and the expected Role.
-func RoleConfigChanged(current, expected *rbacv1.Role) (*rbacv1.Role, bool) {
+func RoleConfigChanged(current, expected *rbac_v1.Role) (*rbac_v1.Role, bool) {
 	changed := false
 	updated := current.DeepCopy()
 
@@ -345,7 +345,7 @@ func RoleConfigChanged(current, expected *rbacv1.Role) (*rbacv1.Role, bool) {
 
 // RoleBindingConfigChanged checks if the current and expected RoleBinding
 // match and if not, returns true and the expected RoleBinding.
-func RoleBindingConfigChanged(current, expected *rbacv1.RoleBinding) (*rbacv1.RoleBinding, bool) {
+func RoleBindingConfigChanged(current, expected *rbac_v1.RoleBinding) (*rbac_v1.RoleBinding, bool) {
 	changed := false
 	updated := current.DeepCopy()
 

@@ -18,15 +18,16 @@ package featuretests
 import (
 	"testing"
 
+	"github.com/tsaarni/certyaml"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/tsaarni/certyaml"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
+func IngressBackend(svc *core_v1.Service) *networking_v1.IngressBackend {
 	return &networking_v1.IngressBackend{
 		Service: &networking_v1.IngressServiceBackend{
 			Name: svc.Name,
@@ -56,43 +57,43 @@ var CRL = certyaml.CRL{
 	Issuer: &CACertificate,
 }
 
-func TLSSecret(t *testing.T, name string, credential *certyaml.Certificate) *v1.Secret {
+func TLSSecret(t *testing.T, name string, credential *certyaml.Certificate) *core_v1.Secret {
 	cert, key, err := credential.PEM()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &v1.Secret{
+	return &core_v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
-		Type:       v1.SecretTypeTLS,
+		Type:       core_v1.SecretTypeTLS,
 		Data: map[string][]byte{
-			v1.TLSCertKey:       cert,
-			v1.TLSPrivateKeyKey: key,
+			core_v1.TLSCertKey:       cert,
+			core_v1.TLSPrivateKeyKey: key,
 		},
 	}
 }
 
-func CASecret(t *testing.T, name string, credential *certyaml.Certificate) *v1.Secret {
+func CASecret(t *testing.T, name string, credential *certyaml.Certificate) *core_v1.Secret {
 	cert, _, err := credential.PEM()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &v1.Secret{
+	return &core_v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
-		Type:       v1.SecretTypeOpaque,
+		Type:       core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CACertificateKey: cert,
 		},
 	}
 }
 
-func CRLSecret(t *testing.T, name string, credential *certyaml.CRL) *v1.Secret {
+func CRLSecret(t *testing.T, name string, credential *certyaml.CRL) *core_v1.Secret {
 	crl, err := credential.PEM()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &v1.Secret{
+	return &core_v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
-		Type:       v1.SecretTypeOpaque,
+		Type:       core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			dag.CRLKey: crl,
 		},
@@ -107,9 +108,9 @@ func PEMBytes(t *testing.T, cert *certyaml.Certificate) []byte {
 	return c
 }
 
-func Endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
-	return &v1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
+func Endpoints(ns, name string, subsets ...core_v1.EndpointSubset) *core_v1.Endpoints {
+	return &core_v1.Endpoints{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
@@ -117,22 +118,22 @@ func Endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	}
 }
 
-func Ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+func Ports(eps ...core_v1.EndpointPort) []core_v1.EndpointPort {
 	return eps
 }
 
-func Port(name string, port int32) v1.EndpointPort {
-	return v1.EndpointPort{
+func Port(name string, port int32) core_v1.EndpointPort {
+	return core_v1.EndpointPort{
 		Name:     name,
 		Port:     port,
 		Protocol: "TCP",
 	}
 }
 
-func Addresses(ips ...string) []v1.EndpointAddress {
-	var addrs []v1.EndpointAddress
+func Addresses(ips ...string) []core_v1.EndpointAddress {
+	var addrs []core_v1.EndpointAddress
 	for _, ip := range ips {
-		addrs = append(addrs, v1.EndpointAddress{IP: ip})
+		addrs = append(addrs, core_v1.EndpointAddress{IP: ip})
 	}
 	return addrs
 }

@@ -321,18 +321,20 @@ The `make format` target can be used to run `gofumpt` locally before making a PR
 ### Import Aliases
 
 Naming is one of the most difficult things in software engineering.
-Contour uses the following pattern to name imports when referencing packages from other packages.
+Contour uses the following general pattern to name imports when referencing internal packages and packages from other projects.
 
 > thing_version: The name+package path of the thing and then the version separated by underscores
 
 Examples:
 
 ```
-contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 ```
+
+Exact patterns for import paths can be found in the `importas` linter settings in `.golangci.yml`
 
 ### Pre commit CI
 

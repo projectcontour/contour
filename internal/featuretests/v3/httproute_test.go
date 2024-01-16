@@ -16,41 +16,42 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 var (
 	gc = &gatewayapi_v1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour",
 		},
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
 	}
 
 	gateway = &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
@@ -93,11 +94,11 @@ func TestGateway_TLS(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	rh.OnAdd(fixture.NewService("svc2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	sec1 := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
@@ -109,7 +110,7 @@ func TestGateway_TLS(t *testing.T) {
 	rh.OnAdd(gateway)
 
 	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
@@ -132,14 +133,14 @@ func TestGateway_TLS(t *testing.T) {
 		},
 	})
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("http-80",
 				envoy_v3.VirtualHost("test.projectcontour.io",
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routeSegmentPrefix("/blog"),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
-					}, &envoy_route_v3.Route{
+					}, &envoy_config_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
 					},
@@ -147,10 +148,10 @@ func TestGateway_TLS(t *testing.T) {
 			),
 			envoy_v3.RouteConfiguration("https-443/test.projectcontour.io",
 				envoy_v3.VirtualHost("test.projectcontour.io",
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match:  routeSegmentPrefix("/blog"),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
-					}, &envoy_route_v3.Route{
+					}, &envoy_config_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
 					},
@@ -160,10 +161,10 @@ func TestGateway_TLS(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	c.Request(listenerType, "https-443").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "https-443").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(

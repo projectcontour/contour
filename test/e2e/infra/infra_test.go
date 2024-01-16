@@ -18,15 +18,15 @@ package infra
 import (
 	"testing"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	v1 "k8s.io/api/core/v1"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -44,14 +44,14 @@ func TestInfra(t *testing.T) {
 var _ = BeforeSuite(func() {
 	// Add volume mount for the Envoy deployment for certificate and key,
 	// used only for testing metrics over HTTPS.
-	f.Deployment.EnvoyExtraVolumeMounts = []v1.VolumeMount{{
+	f.Deployment.EnvoyExtraVolumeMounts = []core_v1.VolumeMount{{
 		Name:      "metrics-certs",
 		MountPath: "/metrics-certs",
 	}}
-	f.Deployment.EnvoyExtraVolumes = []v1.Volume{{
+	f.Deployment.EnvoyExtraVolumes = []core_v1.Volume{{
 		Name: "metrics-certs",
-		VolumeSource: v1.VolumeSource{
-			Secret: &v1.SecretVolumeSource{
+		VolumeSource: core_v1.VolumeSource{
+			Secret: &core_v1.SecretVolumeSource{
 				SecretName: "metrics-server",
 			},
 		},
@@ -83,7 +83,7 @@ var _ = Describe("Infra", func() {
 		contourCmd            *gexec.Session
 		kubectlCmd            *gexec.Session
 		contourConfig         *config.Parameters
-		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
+		contourConfiguration  *contour_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 	)
@@ -136,10 +136,10 @@ var _ = Describe("Infra", func() {
 				CABundle:   "/metrics-certs/ca.crt",
 			}
 
-			contourConfiguration.Spec.Envoy.Metrics = &contour_api_v1alpha1.MetricsConfig{
+			contourConfiguration.Spec.Envoy.Metrics = &contour_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
 				Port:    8003,
-				TLS: &contour_api_v1alpha1.MetricsTLS{
+				TLS: &contour_v1alpha1.MetricsTLS{
 					CertFile: "/metrics-certs/tls.crt",
 					KeyFile:  "/metrics-certs/tls.key",
 					CAFile:   "/metrics-certs/ca.crt",

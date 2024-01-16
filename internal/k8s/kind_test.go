@@ -16,14 +16,15 @@ package k8s
 import (
 	"testing"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestKindOf(t *testing.T) {
@@ -31,17 +32,17 @@ func TestKindOf(t *testing.T) {
 		Kind string
 		Obj  any
 	}{
-		{"Secret", &v1.Secret{}},
-		{"Service", &v1.Service{}},
-		{"Namespace", &v1.Namespace{}},
-		{"Endpoints", &v1.Endpoints{}},
-		{"Pod", &v1.Pod{}},
+		{"Secret", &core_v1.Secret{}},
+		{"Service", &core_v1.Service{}},
+		{"Namespace", &core_v1.Namespace{}},
+		{"Endpoints", &core_v1.Endpoints{}},
+		{"Pod", &core_v1.Pod{}},
 		{"Ingress", &networking_v1.Ingress{}},
-		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
-		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
-		{"ExtensionService", &v1alpha1.ExtensionService{}},
-		{"ContourConfiguration", &v1alpha1.ContourConfiguration{}},
-		{"ContourDeployment", &v1alpha1.ContourDeployment{}},
+		{"HTTPProxy", &contour_v1.HTTPProxy{}},
+		{"TLSCertificateDelegation", &contour_v1.TLSCertificateDelegation{}},
+		{"ExtensionService", &contour_v1alpha1.ExtensionService{}},
+		{"ContourConfiguration", &contour_v1alpha1.ContourConfiguration{}},
+		{"ContourDeployment", &contour_v1alpha1.ContourDeployment{}},
 		{"GRPCRoute", &gatewayapi_v1alpha2.GRPCRoute{}},
 		{"HTTPRoute", &gatewayapi_v1beta1.HTTPRoute{}},
 		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},
@@ -69,13 +70,13 @@ func TestVersionOf(t *testing.T) {
 		Version string
 		Obj     any
 	}{
-		{"v1", &v1.Secret{}},
-		{"v1", &v1.Service{}},
-		{"v1", &v1.Endpoints{}},
+		{"v1", &core_v1.Secret{}},
+		{"v1", &core_v1.Service{}},
+		{"v1", &core_v1.Endpoints{}},
 		{"networking.k8s.io/v1", &networking_v1.Ingress{}},
-		{"projectcontour.io/v1", &contour_api_v1.HTTPProxy{}},
-		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
-		{"projectcontour.io/v1alpha1", &v1alpha1.ExtensionService{}},
+		{"projectcontour.io/v1", &contour_v1.HTTPProxy{}},
+		{"projectcontour.io/v1", &contour_v1.TLSCertificateDelegation{}},
+		{"projectcontour.io/v1alpha1", &contour_v1alpha1.ExtensionService{}},
 		{
 			"test.projectcontour.io/v1", &unstructured.Unstructured{
 				Object: map[string]any{

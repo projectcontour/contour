@@ -16,21 +16,22 @@ package v3
 import (
 	"testing"
 
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	core_v1 "k8s.io/api/core/v1"
+	discovery_v1 "k8s.io/api/discovery/v1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/ref"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
-	v1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
 func TestEndpointSliceTranslatorContents(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 		want     []proto.Message
 	}{
 		"empty": {
@@ -63,7 +64,7 @@ func TestEndpointSliceTranslatorContents(t *testing.T) {
 
 func TestEndpointSliceCacheQuery(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 		query    []string
 		want     []proto.Message
 	}{
@@ -126,7 +127,7 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "a"},
+					ServicePort:      core_v1.ServicePort{Name: "a"},
 				},
 			},
 		},
@@ -137,7 +138,7 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "b"},
+					ServicePort:      core_v1.ServicePort{Name: "b"},
 				},
 			},
 		},
@@ -148,7 +149,7 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -159,35 +160,35 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "healthcheck-port",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "a"},
-					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
+					ServicePort:      core_v1.ServicePort{Name: "a"},
+					HealthPort:       core_v1.ServicePort{Name: "health", Port: 8998},
 				},
 			},
 		},
 	}
 
 	tests := map[string]struct {
-		endpointSlice *discoveryv1.EndpointSlice
+		endpointSlice *discovery_v1.EndpointSlice
 		want          []proto.Message
 		wantUpdate    bool
 	}{
 		"simple": {
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -195,14 +196,14 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: true,
 		},
 		"adding an endpoint slice not used by a cluster should not trigger a calculation": {
-			endpointSlice: endpointSlice("default", "not-used-eps-sdf8s", "not-used-endpoint", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "not-used-eps-sdf8s", "not-used-endpoint", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -210,24 +211,24 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: false,
 		},
 		"single slice, multiple addresses": {
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"50.17.206.192",
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](80),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("50.17.206.192", 80),
@@ -237,7 +238,7 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: true,
 		},
 		"multiple slices": {
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"50.17.206.192",
@@ -258,18 +259,18 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 						"50.19.99.160",
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](80),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80), // addresses should be sorted
@@ -282,42 +283,42 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: true,
 		},
 		"multiple ports": {
-			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"10.10.1.1",
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Name:     ref.To[string]("a"),
 					Port:     ref.To[int32](8675),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 				{
 					Name:     ref.To[string]("b"),
 					Port:     ref.To[int32](309),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				// Results should be sorted by cluster name.
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("10.10.1.1", 8675)),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("10.10.1.1", 309)),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"cartesian product": {
-			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"10.10.1.1",
@@ -328,46 +329,46 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 						"10.10.2.2",
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Name:     ref.To[string]("a"),
 					Port:     ref.To[int32](8675),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 				{
 					Name:     ref.To[string]("b"),
 					Port:     ref.To[int32](309),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 8675), // addresses should be sorted
 						envoy_v3.SocketAddress("10.10.2.2", 8675),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 309),
 						envoy_v3.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"not ready": {
-			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-s9d8f", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"10.10.1.1",
 					},
-					Conditions: discoveryv1.EndpointConditions{
+					Conditions: discovery_v1.EndpointConditions{
 						Ready: ref.To[bool](false),
 					},
 				},
@@ -375,71 +376,71 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 					Addresses: []string{
 						"10.10.2.2",
 					},
-					Conditions: discoveryv1.EndpointConditions{
+					Conditions: discovery_v1.EndpointConditions{
 						Ready: ref.To[bool](true),
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Name:     ref.To[string]("a"),
 					Port:     ref.To[int32](8675),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 				{
 					Name:     ref.To[string]("b"),
 					Port:     ref.To[int32](309),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.2.2", 8675),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"health port": {
-			endpointSlice: endpointSlice("default", "healthcheck-port-s9d8f", "healthcheck-port", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "healthcheck-port-s9d8f", "healthcheck-port", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{
 						"10.10.1.1",
 					},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Name:     ref.To[string]("health"),
 					Port:     ref.To[int32](8998),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 				{
 					Name:     ref.To[string]("a"),
 					Port:     ref.To[int32](309),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/healthcheck-port",
 					Endpoints: weightedHealthcheckEndpoints(1, 8998,
 						envoy_v3.SocketAddress("10.10.1.1", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
@@ -469,7 +470,7 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -480,7 +481,7 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "http"},
+					ServicePort:      core_v1.ServicePort{Name: "http"},
 				},
 			},
 		},
@@ -491,7 +492,7 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				},
 			},
 		},
@@ -499,32 +500,32 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 
 	tests := map[string]struct {
 		setup         func(*EndpointSliceTranslator)
-		endpointSlice *discoveryv1.EndpointSlice
+		endpointSlice *discovery_v1.EndpointSlice
 		want          []proto.Message
 		wantUpdate    bool
 	}{
 		"remove existing": {
 			setup: func(endpointSliceTranslator *EndpointSliceTranslator) {
-				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 					{
 						Addresses: []string{"192.168.183.24"},
 					},
-				}, []discoveryv1.EndpointPort{
+				}, []discovery_v1.EndpointPort{
 					{
 						Port:     ref.To[int32](8080),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
 			},
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -537,31 +538,31 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"removing an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
 			setup: func(endpointSliceTranslator *EndpointSliceTranslator) {
-				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 					{
 						Addresses: []string{"192.168.183.24"},
 					},
-				}, []discoveryv1.EndpointPort{
+				}, []discovery_v1.EndpointPort{
 					{
 						Port:     ref.To[int32](8080),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
 			},
-			endpointSlice: endpointSlice("default", "different-fs9du", "different", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "different-fs9du", "different", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -572,14 +573,14 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove non existent": {
 			setup: func(*EndpointSliceTranslator) {},
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -596,23 +597,23 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					"super-long-namespace-name-oh-boy",
 					"what-a-descriptive-service-name-you-must-be-so-proud-9d8f8",
 					"what-a-descriptive-service-name-you-must-be-so-proud",
-					discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+					discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 						{
 							Addresses: []string{"172.16.0.2"},
 						},
 						{
 							Addresses: []string{"172.16.0.1"},
 						},
-					}, []discoveryv1.EndpointPort{
+					}, []discovery_v1.EndpointPort{
 						{
 							Name:     ref.To[string]("http"),
 							Port:     ref.To[int32](8080),
-							Protocol: ref.To[v1.Protocol]("TCP"),
+							Protocol: ref.To[core_v1.Protocol]("TCP"),
 						},
 						{
 							Name:     ref.To[string]("https"),
 							Port:     ref.To[int32](8443),
-							Protocol: ref.To[v1.Protocol]("TCP"),
+							Protocol: ref.To[core_v1.Protocol]("TCP"),
 						},
 					},
 				)
@@ -622,23 +623,23 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 				"super-long-namespace-name-oh-boy",
 				"what-a-descriptive-service-name-you-must-be-so-proud-9d8f8",
 				"what-a-descriptive-service-name-you-must-be-so-proud",
-				discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+				discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 					{
 						Addresses: []string{"172.16.0.2"},
 					},
 					{
 						Addresses: []string{"172.16.0.1"},
 					},
-				}, []discoveryv1.EndpointPort{
+				}, []discovery_v1.EndpointPort{
 					{
 						Name:     ref.To[string]("http"),
 						Port:     ref.To[int32](8080),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 					{
 						Name:     ref.To[string]("https"),
 						Port:     ref.To[int32](8443),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 				},
 			),
@@ -680,7 +681,7 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -688,48 +689,48 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 
 	tests := map[string]struct {
 		setup      func(*EndpointSliceTranslator)
-		old, new   *discoveryv1.EndpointSlice
+		old, new   *discovery_v1.EndpointSlice
 		want       []proto.Message
 		wantUpdate bool
 	}{
 		"update existing": {
 			setup: func(endpointSliceTranslator *EndpointSliceTranslator) {
-				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-sdf8s", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-sdf8s", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 					{
 						Addresses: []string{"192.168.183.24"},
 					},
-				}, []discoveryv1.EndpointPort{
+				}, []discovery_v1.EndpointPort{
 					{
 						Port:     ref.To[int32](8080),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
 			},
-			old: endpointSlice("default", "simple-sdf8s", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			old: endpointSlice("default", "simple-sdf8s", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
-			new: endpointSlice("default", "simple-sdf8s", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			new: endpointSlice("default", "simple-sdf8s", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.25"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8081),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.25", 8081)),
 				},
@@ -738,42 +739,42 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 		},
 		"getting an update for an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
 			setup: func(endpointSliceTranslator *EndpointSliceTranslator) {
-				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-sdf8s", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+				endpointSliceTranslator.OnAdd(endpointSlice("default", "simple-sdf8s", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 					{
 						Addresses: []string{"192.168.183.24"},
 					},
-				}, []discoveryv1.EndpointPort{
+				}, []discovery_v1.EndpointPort{
 					{
 						Port:     ref.To[int32](8080),
-						Protocol: ref.To[v1.Protocol]("TCP"),
+						Protocol: ref.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
 			},
-			old: endpointSlice("default", "different-eps-fs9du", "different", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			old: endpointSlice("default", "different-eps-fs9du", "different", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
-			new: endpointSlice("default", "different-eps-fs9du", "different", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			new: endpointSlice("default", "different-eps-fs9du", "different", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.25"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8081),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -805,7 +806,7 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	tests := map[string]struct {
 		cluster       dag.ServiceCluster
-		endpointSlice *discoveryv1.EndpointSlice
+		endpointSlice *discovery_v1.EndpointSlice
 		want          []proto.Message
 	}{
 		"simple": {
@@ -817,19 +818,19 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8080),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("192.168.183.24", 8080)),
@@ -845,7 +846,7 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"50.17.192.147"},
 				},
@@ -858,15 +859,15 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				{
 					Addresses: []string{"50.19.99.160"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](80),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -884,23 +885,23 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "secure",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				}},
 			},
-			endpointSlice: endpointSlice("default", "secure-fs9du", "secure", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "secure-fs9du", "secure", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"192.168.183.24"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](8443),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 					Name:     ref.To[string]("https"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/secure/https",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("192.168.183.24", 8443)),
@@ -914,11 +915,11 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
-					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+					HealthPort:       core_v1.ServicePort{Name: "health", Port: 8998},
+					ServicePort:      core_v1.ServicePort{Name: "a", Port: 80},
 				}},
 			},
-			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"50.17.192.147"},
 				},
@@ -931,21 +932,21 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				{
 					Addresses: []string{"50.19.99.160"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](80),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 					Name:     ref.To[string]("a"),
 				},
 				{
 					Port:     ref.To[int32](8998),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 					Name:     ref.To[string]("health"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: weightedHealthcheckEndpoints(1, 8998,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -963,11 +964,11 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					HealthPort:       v1.ServicePort{Name: "a", Port: 80},
-					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+					HealthPort:       core_v1.ServicePort{Name: "a", Port: 80},
+					ServicePort:      core_v1.ServicePort{Name: "a", Port: 80},
 				}},
 			},
-			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+			endpointSlice: endpointSlice("default", "httpbin-org-fs9du", "httpbin-org", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{
 					Addresses: []string{"50.17.192.147"},
 				},
@@ -980,21 +981,21 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				{
 					Addresses: []string{"50.19.99.160"},
 				},
-			}, []discoveryv1.EndpointPort{
+			}, []discovery_v1.EndpointPort{
 				{
 					Port:     ref.To[int32](80),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 					Name:     ref.To[string]("a"),
 				},
 				{
 					Port:     ref.To[int32](8998),
-					Protocol: ref.To[v1.Protocol]("TCP"),
+					Protocol: ref.To[core_v1.Protocol]("TCP"),
 					Name:     ref.To[string]("health"),
 				},
 			},
 			),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -1029,19 +1030,19 @@ func TestEndpointSliceTranslatorScaleToZeroEndpoints(t *testing.T) {
 				Weight:           1,
 				ServiceName:      "simple",
 				ServiceNamespace: "default",
-				ServicePort:      v1.ServicePort{},
+				ServicePort:      core_v1.ServicePort{},
 			}},
 		},
 	}))
 
-	e1 := endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, []discoveryv1.Endpoint{
+	e1 := endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 		{
 			Addresses: []string{"192.168.183.24"},
 		},
-	}, []discoveryv1.EndpointPort{
+	}, []discovery_v1.EndpointPort{
 		{
 			Port:     ref.To[int32](8080),
-			Protocol: ref.To[v1.Protocol]("TCP"),
+			Protocol: ref.To[core_v1.Protocol]("TCP"),
 		},
 	},
 	)
@@ -1049,7 +1050,7 @@ func TestEndpointSliceTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoint was added
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/simple",
 			Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 		},
@@ -1058,12 +1059,12 @@ func TestEndpointSliceTranslatorScaleToZeroEndpoints(t *testing.T) {
 	protobuf.RequireEqual(t, want, endpointSliceTranslator.Contents())
 
 	// e2 is the same as e1, but without endpoint subsets
-	e2 := endpointSlice("default", "simple-eps-fs9du", "simple", discoveryv1.AddressTypeIPv4, nil, nil)
+	e2 := endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, nil, nil)
 	endpointSliceTranslator.OnUpdate(e1, e2)
 
 	// Assert endpoints are removed
 	want = []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 	}
 
 	protobuf.RequireEqual(t, want, endpointSliceTranslator.Contents())
@@ -1079,19 +1080,19 @@ func TestEndpointSliceTranslatorWeightedService(t *testing.T) {
 					Weight:           0,
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           1,
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           2,
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -1099,22 +1100,22 @@ func TestEndpointSliceTranslatorWeightedService(t *testing.T) {
 
 	require.NoError(t, endpointSliceTranslator.cache.SetClusters(clusters))
 
-	endpoints := []discoveryv1.Endpoint{
+	endpoints := []discovery_v1.Endpoint{
 		{
 			Addresses: []string{"192.168.183.24"},
 		},
 	}
 
-	ports := []discoveryv1.EndpointPort{
+	ports := []discovery_v1.EndpointPort{
 		{
 			Port:     ref.To[int32](8080),
-			Protocol: ref.To[v1.Protocol]("TCP"),
+			Protocol: ref.To[core_v1.Protocol]("TCP"),
 		},
 	}
 
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-fs23r", "weight0", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-sdf9f", "weight1", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-v9drg", "weight2", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-fs23r", "weight0", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-sdf9f", "weight1", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-v9drg", "weight2", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
 
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching
@@ -1124,9 +1125,9 @@ func TestEndpointSliceTranslatorWeightedService(t *testing.T) {
 	w2 := envoy_v3.WeightedEndpoints(2, envoy_v3.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
-			Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+			Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
 			},
 		},
@@ -1144,17 +1145,17 @@ func TestEndpointSliceTranslatorDefaultWeightedService(t *testing.T) {
 				{
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -1162,22 +1163,22 @@ func TestEndpointSliceTranslatorDefaultWeightedService(t *testing.T) {
 
 	require.NoError(t, endpointSliceTranslator.cache.SetClusters(clusters))
 
-	endpoints := []discoveryv1.Endpoint{
+	endpoints := []discovery_v1.Endpoint{
 		{
 			Addresses: []string{"192.168.183.24"},
 		},
 	}
 
-	ports := []discoveryv1.EndpointPort{
+	ports := []discovery_v1.EndpointPort{
 		{
 			Port:     ref.To[int32](8080),
-			Protocol: ref.To[v1.Protocol]("TCP"),
+			Protocol: ref.To[core_v1.Protocol]("TCP"),
 		},
 	}
 
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-fs23r", "weight0", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-sdf9f", "weight1", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
-	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-v9drg", "weight2", discoveryv1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-fs23r", "weight0", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-sdf9f", "weight1", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
+	endpointSliceTranslator.OnAdd(endpointSlice("default", "weight0-eps-v9drg", "weight2", discovery_v1.AddressTypeIPv4, endpoints, ports), false)
 
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching
@@ -1187,9 +1188,9 @@ func TestEndpointSliceTranslatorDefaultWeightedService(t *testing.T) {
 	w2 := envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
-			Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+			Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
 			},
 		},

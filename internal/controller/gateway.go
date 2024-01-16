@@ -18,10 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/leadership"
 )
 
 type gatewayReconciler struct {
@@ -212,7 +213,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	if acceptedGatewayClass == nil {
 		r.log.Info("No accepted gateway class found")
 		r.eventHandler.OnDelete(&gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
 			},
@@ -236,7 +237,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	if len(gatewaysForClass) == 0 {
 		r.log.Info("No gateways found for accepted gateway class")
 		r.eventHandler.OnDelete(&gatewayapi_v1beta1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
 			},
@@ -301,7 +302,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 func isAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) && cond.Status == meta_v1.ConditionTrue {
 			return true
 		}
 	}
@@ -310,12 +311,12 @@ func isAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 }
 
 func setGatewayNotAccepted(gateway *gatewayapi_v1beta1.Gateway) *gatewayapi_v1beta1.Gateway {
-	newCond := metav1.Condition{
+	newCond := meta_v1.Condition{
 		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
-		Status:             metav1.ConditionFalse,
+		Status:             meta_v1.ConditionFalse,
 		Reason:             "OlderGatewayExists",
 		Message:            "An older Gateway exists for the accepted GatewayClass",
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: gateway.Generation,
 	}
 

@@ -18,18 +18,19 @@ import (
 	"strings"
 	"testing"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestIsObjectEqual(t *testing.T) {
@@ -91,9 +92,9 @@ func TestIsObjectEqual(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	_ = v1.AddToScheme(scheme)
+	_ = core_v1.AddToScheme(scheme)
 	_ = networking_v1.AddToScheme(scheme)
-	_ = contour_api_v1.AddKnownTypes(scheme)
+	_ = contour_v1.AddKnownTypes(scheme)
 
 	deserializer := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 
@@ -120,8 +121,8 @@ func TestIsObjectEqual(t *testing.T) {
 }
 
 func TestIsEqualForResourceVersion(t *testing.T) {
-	oldS := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	oldS := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test",
 			Namespace:       "default",
 			ResourceVersion: "123",
@@ -147,13 +148,13 @@ func TestIsEqualForResourceVersion(t *testing.T) {
 
 // TestIsEqualFallback compares with ServiceAccount objects, which are not supported.
 func TestIsEqualFallback(t *testing.T) {
-	oldObj := &v1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
+	oldObj := &core_v1.ServiceAccount{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test",
 			Namespace:       "default",
 			ResourceVersion: "123",
 		},
-		Secrets: []v1.ObjectReference{
+		Secrets: []core_v1.ObjectReference{
 			{
 				Kind:      "Secret",
 				Name:      "test",
@@ -198,9 +199,9 @@ func TestIsEqualForGeneration(t *testing.T) {
 	}
 
 	run(t, &networking_v1.Ingress{})
-	run(t, &contour_api_v1.HTTPProxy{})
-	run(t, &contour_api_v1alpha1.ExtensionService{})
-	run(t, &contour_api_v1.TLSCertificateDelegation{})
+	run(t, &contour_v1.HTTPProxy{})
+	run(t, &contour_v1alpha1.ExtensionService{})
+	run(t, &contour_v1.TLSCertificateDelegation{})
 	run(t, &gatewayapi_v1beta1.GatewayClass{})
 	run(t, &gatewayapi_v1beta1.Gateway{})
 	run(t, &gatewayapi_v1beta1.HTTPRoute{})

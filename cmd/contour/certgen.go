@@ -20,13 +20,14 @@ import (
 	"strconv"
 
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/sirupsen/logrus"
+	core_v1 "k8s.io/api/core/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/certs"
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/kubernetes"
 )
 
 // registercertgen registers the certgen subcommand and flags
@@ -89,7 +90,7 @@ type certgenConfig struct {
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
-	var secrets []*corev1.Secret
+	var secrets []*core_v1.Secret
 	var errs []error
 
 	force := certgen.NoOverwrite

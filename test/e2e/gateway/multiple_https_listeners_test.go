@@ -21,14 +21,15 @@ import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testMultipleHTTPSListeners(namespace string) {
@@ -40,7 +41,7 @@ func testMultipleHTTPSListeners(namespace string) {
 			f.Fixtures.Echo.Deploy(namespace, "echo-"+tc)
 
 			route := &gatewayapi_v1beta1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-" + tc,
 				},
@@ -65,7 +66,7 @@ func testMultipleHTTPSListeners(namespace string) {
 		// Make requests to each listener hostname and validate the response
 		// and upstream service.
 		for _, tc := range []string{"1", "2", "3"} {
-			certSecret := &corev1.Secret{}
+			certSecret := &core_v1.Secret{}
 			key := client.ObjectKey{Namespace: namespace, Name: "tlscert-" + tc}
 			require.NoError(t, f.Client.Get(context.Background(), key, certSecret))
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -35,12 +35,12 @@ const (
 // validTLSSecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain valid certificate and private key material in
 // the tls.crt and tls.key keys.
-func validTLSSecret(secret *v1.Secret) error {
-	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
-		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
+func validTLSSecret(secret *core_v1.Secret) error {
+	if secret.Type != core_v1.SecretTypeTLS && secret.Type != core_v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", core_v1.SecretTypeTLS, core_v1.SecretTypeOpaque)
 	}
 
-	data, ok := secret.Data[v1.TLSCertKey]
+	data, ok := secret.Data[core_v1.TLSCertKey]
 	if !ok {
 		return errors.New("missing TLS certificate")
 	}
@@ -49,7 +49,7 @@ func validTLSSecret(secret *v1.Secret) error {
 		return fmt.Errorf("invalid TLS certificate: %v", err)
 	}
 
-	data, ok = secret.Data[v1.TLSPrivateKeyKey]
+	data, ok = secret.Data[core_v1.TLSPrivateKeyKey]
 	if !ok {
 		return errors.New("missing TLS private key")
 	}
@@ -63,9 +63,9 @@ func validTLSSecret(secret *v1.Secret) error {
 
 // validCASecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain a valid CA bundle in the ca.crt key.
-func validCASecret(secret *v1.Secret) error {
-	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
-		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
+func validCASecret(secret *core_v1.Secret) error {
+	if secret.Type != core_v1.SecretTypeTLS && secret.Type != core_v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", core_v1.SecretTypeTLS, core_v1.SecretTypeOpaque)
 	}
 
 	if len(secret.Data[CACertificateKey]) == 0 {
@@ -81,9 +81,9 @@ func validCASecret(secret *v1.Secret) error {
 
 // validCRLSecret returns an error if the Secret is not of type TLS or Opaque or
 // if it doesn't contain a valid CRL in the crl.pem key.
-func validCRLSecret(secret *v1.Secret) error {
-	if secret.Type != v1.SecretTypeTLS && secret.Type != v1.SecretTypeOpaque {
-		return fmt.Errorf("secret type is not %q or %q", v1.SecretTypeTLS, v1.SecretTypeOpaque)
+func validCRLSecret(secret *core_v1.Secret) error {
+	if secret.Type != core_v1.SecretTypeTLS && secret.Type != core_v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q or %q", core_v1.SecretTypeTLS, core_v1.SecretTypeOpaque)
 	}
 
 	if len(secret.Data[CRLKey]) == 0 {

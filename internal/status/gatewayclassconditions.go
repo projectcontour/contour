@@ -17,7 +17,7 @@ import (
 	"time"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
@@ -25,33 +25,33 @@ import (
 const ReasonOlderGatewayClassExists gatewayapi_v1beta1.GatewayClassConditionReason = "OlderGatewayClassExists"
 
 // computeGatewayClassAcceptedCondition computes the GatewayClass Accepted status condition.
-func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1beta1.GatewayClass, accepted bool) metav1.Condition {
+func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1beta1.GatewayClass, accepted bool) meta_v1.Condition {
 	switch accepted {
 	case true:
-		return metav1.Condition{
+		return meta_v1.Condition{
 			Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-			Status:             metav1.ConditionTrue,
+			Status:             meta_v1.ConditionTrue,
 			Reason:             string(gatewayapi_v1.GatewayClassReasonAccepted),
 			Message:            "Valid GatewayClass",
 			ObservedGeneration: gatewayClass.Generation,
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			LastTransitionTime: meta_v1.NewTime(time.Now()),
 		}
 	default:
-		return metav1.Condition{
+		return meta_v1.Condition{
 			Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-			Status:             metav1.ConditionFalse,
+			Status:             meta_v1.ConditionFalse,
 			Reason:             string(ReasonOlderGatewayClassExists),
 			Message:            "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists",
 			ObservedGeneration: gatewayClass.Generation,
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			LastTransitionTime: meta_v1.NewTime(time.Now()),
 		}
 	}
 }
 
 // mergeConditions adds or updates matching conditions, and updates the transition
 // time if details of a condition have changed. Returns the updated condition array.
-func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
-	var additions []metav1.Condition
+func mergeConditions(conditions []meta_v1.Condition, updates ...meta_v1.Condition) []meta_v1.Condition {
+	var additions []meta_v1.Condition
 	for i, update := range updates {
 		add := true
 		for j, cond := range conditions {
@@ -78,10 +78,10 @@ func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition)
 	return conditions
 }
 
-func conditionChanged(a, b metav1.Condition) bool {
+func conditionChanged(a, b meta_v1.Condition) bool {
 	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
 }
 
-func conditionsEqual(a, b []metav1.Condition) bool {
+func conditionsEqual(a, b []meta_v1.Condition) bool {
 	return apiequality.Semantic.DeepEqual(a, b)
 }

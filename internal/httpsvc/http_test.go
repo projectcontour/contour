@@ -24,12 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/httpsvc"
 )
 
 func TestHTTPService(t *testing.T) {

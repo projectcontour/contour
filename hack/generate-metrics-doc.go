@@ -19,10 +19,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
 	dto "github.com/prometheus/client_model/go"
+
+	"github.com/projectcontour/contour/internal/metrics"
 )
 
 // Collect all the label names for this metric and return them as

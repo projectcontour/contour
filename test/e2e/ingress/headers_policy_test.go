@@ -19,12 +19,13 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
@@ -48,25 +49,25 @@ func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
 				host = "global-headers-policy-apply-to-ingress-true.ingress.projectcontour.io"
 			}
 
-			i := &networkingv1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+			i := &networking_v1.Ingress{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "global-headers-policy",
 				},
-				Spec: networkingv1.IngressSpec{
-					Rules: []networkingv1.IngressRule{
+				Spec: networking_v1.IngressSpec{
+					Rules: []networking_v1.IngressRule{
 						{
 							Host: host,
-							IngressRuleValue: networkingv1.IngressRuleValue{
-								HTTP: &networkingv1.HTTPIngressRuleValue{
-									Paths: []networkingv1.HTTPIngressPath{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{
 										{
-											PathType: ref.To(networkingv1.PathTypePrefix),
+											PathType: ref.To(networking_v1.PathTypePrefix),
 											Path:     "/",
-											Backend: networkingv1.IngressBackend{
-												Service: &networkingv1.IngressServiceBackend{
+											Backend: networking_v1.IngressBackend{
+												Service: &networking_v1.IngressServiceBackend{
 													Name: "echo",
-													Port: networkingv1.ServiceBackendPort{
+													Port: networking_v1.ServiceBackendPort{
 														Number: 80,
 													},
 												},

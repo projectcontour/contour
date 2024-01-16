@@ -14,10 +14,11 @@
 package ingressclass
 
 import (
+	networking_v1 "k8s.io/api/networking/v1"
+
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/ref"
-	networking_v1 "k8s.io/api/networking/v1"
 )
 
 // DefaultClassName is the default IngressClass name that Contour will match

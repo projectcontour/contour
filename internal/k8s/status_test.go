@@ -16,15 +16,16 @@ package k8s
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/k8s/mocks"
 )
 
 func TestStatusUpdateHandlerRequiresLeaderElection(t *testing.T) {
@@ -34,7 +35,7 @@ func TestStatusUpdateHandlerRequiresLeaderElection(t *testing.T) {
 
 func TestStatusUpdateHandlerApplyOutputsMetrics(t *testing.T) {
 	fooIngress := &networking_v1.Ingress{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "somens",
 		},

@@ -17,17 +17,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 )
 
-func checkDaemonSetHasEnvVar(t *testing.T, ds *appsv1.DaemonSet, container, name string) {
+func checkDaemonSetHasEnvVar(t *testing.T, ds *apps_v1.DaemonSet, container, name string) {
 	t.Helper()
 
 	if container == envoyInitContainerName {
@@ -55,7 +55,7 @@ func checkDaemonSetHasEnvVar(t *testing.T, ds *appsv1.DaemonSet, container, name
 	t.Errorf("daemonset is missing environment variable %q", name)
 }
 
-func checkDaemonSetHasContainer(t *testing.T, ds *appsv1.DaemonSet, name string, expect bool) *corev1.Container {
+func checkDaemonSetHasContainer(t *testing.T, ds *apps_v1.DaemonSet, name string, expect bool) *core_v1.Container {
 	t.Helper()
 
 	if ds.Spec.Template.Spec.Containers == nil {
@@ -87,7 +87,7 @@ func checkDaemonSetHasContainer(t *testing.T, ds *appsv1.DaemonSet, name string,
 	return nil
 }
 
-func checkDaemonSetHasLabels(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+func checkDaemonSetHasLabels(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Labels, expected) {
@@ -97,7 +97,7 @@ func checkDaemonSetHasLabels(t *testing.T, ds *appsv1.DaemonSet, expected map[st
 	t.Errorf("daemonset has unexpected %q labels", ds.Labels)
 }
 
-func checkDaemonSetHasPodAnnotations(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+func checkDaemonSetHasPodAnnotations(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Template.ObjectMeta.Annotations, expected) {
@@ -107,7 +107,7 @@ func checkDaemonSetHasPodAnnotations(t *testing.T, ds *appsv1.DaemonSet, expecte
 	t.Errorf("daemonset has unexpected %q pod annotations", ds.Spec.Template.Annotations)
 }
 
-func checkContainerHasPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
+func checkContainerHasPort(t *testing.T, ds *apps_v1.DaemonSet, port int32) {
 	t.Helper()
 
 	for _, c := range ds.Spec.Template.Spec.Containers {
@@ -120,7 +120,7 @@ func checkContainerHasPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
 	t.Errorf("container is missing containerPort %q", port)
 }
 
-func checkContainerHasImage(t *testing.T, container *corev1.Container, image string) {
+func checkContainerHasImage(t *testing.T, container *core_v1.Container, image string) {
 	t.Helper()
 
 	if container.Image == image {
@@ -129,7 +129,7 @@ func checkContainerHasImage(t *testing.T, container *corev1.Container, image str
 	t.Errorf("container is missing image %q", image)
 }
 
-func checkContainerHaveResourceRequirements(t *testing.T, container *corev1.Container) {
+func checkContainerHaveResourceRequirements(t *testing.T, container *core_v1.Container) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(container.Resources, defContainerResources) {
@@ -138,7 +138,7 @@ func checkContainerHaveResourceRequirements(t *testing.T, container *corev1.Cont
 	t.Errorf("container doesn't have resource requiremetns")
 }
 
-func checkDaemonSetHasNodeSelector(t *testing.T, ds *appsv1.DaemonSet, expected map[string]string) {
+func checkDaemonSetHasNodeSelector(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Spec.NodeSelector, expected) {
@@ -147,7 +147,7 @@ func checkDaemonSetHasNodeSelector(t *testing.T, ds *appsv1.DaemonSet, expected 
 	t.Errorf("deployment has unexpected node selector %q", expected)
 }
 
-func checkDaemonSetHasVolume(t *testing.T, ds *appsv1.DaemonSet, vol corev1.Volume, volMount corev1.VolumeMount) {
+func checkDaemonSetHasVolume(t *testing.T, ds *apps_v1.DaemonSet, vol core_v1.Volume, volMount core_v1.VolumeMount) {
 	t.Helper()
 
 	hasVol := false
@@ -176,7 +176,7 @@ func checkDaemonSetHasVolume(t *testing.T, ds *appsv1.DaemonSet, vol corev1.Volu
 	}
 }
 
-func checkDaemonSetHasResourceRequirements(t *testing.T, ds *appsv1.DaemonSet, expected corev1.ResourceRequirements) {
+func checkDaemonSetHasResourceRequirements(t *testing.T, ds *apps_v1.DaemonSet, expected core_v1.ResourceRequirements) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Spec.Containers[1].Resources, expected) {
@@ -185,7 +185,7 @@ func checkDaemonSetHasResourceRequirements(t *testing.T, ds *appsv1.DaemonSet, e
 	t.Errorf("daemonset has unexpected resource requirements %v", expected)
 }
 
-func checkDaemonSetHasUpdateStrategy(t *testing.T, ds *appsv1.DaemonSet, expected appsv1.DaemonSetUpdateStrategy) {
+func checkDaemonSetHasUpdateStrategy(t *testing.T, ds *apps_v1.DaemonSet, expected apps_v1.DaemonSetUpdateStrategy) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.UpdateStrategy, expected) {
@@ -194,7 +194,7 @@ func checkDaemonSetHasUpdateStrategy(t *testing.T, ds *appsv1.DaemonSet, expecte
 	t.Errorf("daemonset has unexpected update strategy %q", expected)
 }
 
-func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected appsv1.DeploymentStrategy) {
+func checkDeploymentHasStrategy(t *testing.T, ds *apps_v1.Deployment, expected apps_v1.DeploymentStrategy) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Strategy, expected) {
@@ -203,7 +203,7 @@ func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected ap
 	t.Errorf("deployment has unexpected strategy %q", expected)
 }
 
-func checkDaemonSetHasTolerations(t *testing.T, ds *appsv1.DaemonSet, expected []corev1.Toleration) {
+func checkDaemonSetHasTolerations(t *testing.T, ds *apps_v1.DaemonSet, expected []core_v1.Toleration) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Spec.Tolerations, expected) {
@@ -212,13 +212,13 @@ func checkDaemonSetHasTolerations(t *testing.T, ds *appsv1.DaemonSet, expected [
 	t.Errorf("daemonset has unexpected tolerations %v", expected)
 }
 
-func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
+func checkDaemonSecurityContext(t *testing.T, ds *apps_v1.DaemonSet) {
 	t.Helper()
 
 	user := int64(65534)
 	group := int64(65534)
 	nonRoot := true
-	expected := &corev1.PodSecurityContext{
+	expected := &core_v1.PodSecurityContext{
 		RunAsUser:    &user,
 		RunAsGroup:   &group,
 		RunAsNonRoot: &nonRoot,
@@ -229,7 +229,7 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 	t.Errorf("deployment has unexpected SecurityContext %v", expected)
 }
 
-func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string) {
+func checkContainerHasArg(t *testing.T, container *core_v1.Container, arg string) {
 	t.Helper()
 
 	for _, a := range container.Args {
@@ -240,7 +240,7 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
-func checkContainerHasReadinessPort(t *testing.T, container *corev1.Container, port int32) {
+func checkContainerHasReadinessPort(t *testing.T, container *core_v1.Container, port int32) {
 	t.Helper()
 
 	if container.ReadinessProbe != nil &&
@@ -251,7 +251,7 @@ func checkContainerHasReadinessPort(t *testing.T, container *corev1.Container, p
 	t.Errorf("container has unexpected readiness port %d", port)
 }
 
-func checkDaemonSetHasMetricsPort(t *testing.T, ds *appsv1.DaemonSet, port int32) {
+func checkDaemonSetHasMetricsPort(t *testing.T, ds *apps_v1.DaemonSet, port int32) {
 	t.Helper()
 
 	if ds.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] == fmt.Sprint(port) {
@@ -260,15 +260,15 @@ func checkDaemonSetHasMetricsPort(t *testing.T, ds *appsv1.DaemonSet, port int32
 	t.Errorf("container has unexpected metrics port %d", port)
 }
 
-func checkEnvoyDeploymentHasAffinity(t *testing.T, d *appsv1.Deployment, contour *model.Contour) {
+func checkEnvoyDeploymentHasAffinity(t *testing.T, d *apps_v1.Deployment, contour *model.Contour) {
 	t.Helper()
 	if apiequality.Semantic.DeepEqual(*d.Spec.Template.Spec.Affinity,
-		corev1.Affinity{
-			PodAntiAffinity: &corev1.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+		core_v1.Affinity{
+			PodAntiAffinity: &core_v1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []core_v1.WeightedPodAffinityTerm{
 					{
 						Weight: int32(100),
-						PodAffinityTerm: corev1.PodAffinityTerm{
+						PodAffinityTerm: core_v1.PodAffinityTerm{
 							LabelSelector: EnvoyPodSelector(contour),
 							TopologyKey:   "kubernetes.io/hostname",
 						},
@@ -292,10 +292,10 @@ func TestDesiredDaemonSet(t *testing.T) {
 		"prometheus.io/scrape": "false",
 	}
 
-	volTest := corev1.Volume{
+	volTest := core_v1.Volume{
 		Name: "vol-test-mount",
 	}
-	volTestMount := corev1.VolumeMount{
+	volTestMount := core_v1.VolumeMount{
 		Name: volTest.Name,
 	}
 
@@ -313,23 +313,23 @@ func TestDesiredDaemonSet(t *testing.T) {
 	testBaseIDArg := "--base-id 1"
 	testEnvoyMaxHeapSize := "--overload-max-heap=8000000000"
 
-	resQutoa := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("400m"),
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
+	resQutoa := core_v1.ResourceRequirements{
+		Limits: core_v1.ResourceList{
+			core_v1.ResourceCPU:    resource.MustParse("400m"),
+			core_v1.ResourceMemory: resource.MustParse("256Mi"),
 		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("25Mi"),
+		Requests: core_v1.ResourceList{
+			core_v1.ResourceCPU:    resource.MustParse("100m"),
+			core_v1.ResourceMemory: resource.MustParse("25Mi"),
 		},
 	}
 	cntr.Spec.EnvoyResources = resQutoa
 
 	// Change the Envoy log level to test --log-level debug.
-	cntr.Spec.EnvoyLogLevel = v1alpha1.DebugLog
-	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
-		Envoy: &v1alpha1.EnvoyConfig{
-			Metrics: &v1alpha1.MetricsConfig{
+	cntr.Spec.EnvoyLogLevel = contour_v1alpha1.DebugLog
+	cntr.Spec.RuntimeSettings = &contour_v1alpha1.ContourConfigurationSpec{
+		Envoy: &contour_v1alpha1.EnvoyConfig{
+			Metrics: &contour_v1alpha1.MetricsConfig{
 				Port: int(objects.EnvoyMetricsPort),
 			},
 		},
@@ -389,12 +389,12 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 
 	selectors := map[string]string{"node-role": "envoy"}
-	tolerations := []corev1.Toleration{
+	tolerations := []core_v1.Toleration{
 		{
-			Operator: corev1.TolerationOpExists,
+			Operator: core_v1.TolerationOpExists,
 			Key:      "node-role",
 			Value:    "envoy",
-			Effect:   corev1.TaintEffectNoSchedule,
+			Effect:   core_v1.TaintEffectNoSchedule,
 		},
 	}
 
@@ -416,12 +416,12 @@ func TestEnvoyCustomPorts(t *testing.T) {
 	name := "envoy-runtime-ports"
 	metricPort := 9090
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-	cntr.Spec.RuntimeSettings = &v1alpha1.ContourConfigurationSpec{
-		Envoy: &v1alpha1.EnvoyConfig{
-			Health: &v1alpha1.HealthConfig{
+	cntr.Spec.RuntimeSettings = &contour_v1alpha1.ContourConfigurationSpec{
+		Envoy: &contour_v1alpha1.EnvoyConfig{
+			Health: &contour_v1alpha1.HealthConfig{
 				Port: 8020,
 			},
-			Metrics: &v1alpha1.MetricsConfig{
+			Metrics: &contour_v1alpha1.MetricsConfig{
 				Port: metricPort,
 			},
 		},

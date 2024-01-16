@@ -16,10 +16,9 @@ package controller
 import (
 	"context"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -61,7 +60,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	err := r.client.Get(ctx, request.NamespacedName, tlsroute)
 	if errors.IsNotFound(err) {
 		r.eventHandler.OnDelete(&gatewayapi_v1alpha2.TLSRoute{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      request.Name,
 				Namespace: request.Namespace,
 			},

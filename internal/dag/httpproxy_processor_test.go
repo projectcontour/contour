@@ -18,13 +18,14 @@ import (
 	"testing"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 func TestDetermineSNI(t *testing.T) {
@@ -142,7 +143,7 @@ func TestEnforceRoute(t *testing.T) {
 
 func TestToCORSPolicy(t *testing.T) {
 	tests := map[string]struct {
-		cp      *contour_api_v1.CORSPolicy
+		cp      *contour_v1.CORSPolicy
 		want    *CORSPolicy
 		wantErr bool
 	}{
@@ -151,12 +152,12 @@ func TestToCORSPolicy(t *testing.T) {
 			want: nil,
 		},
 		"all fields present and valid": {
-			cp: &contour_api_v1.CORSPolicy{
+			cp: &contour_v1.CORSPolicy{
 				AllowCredentials: true,
-				AllowHeaders:     []contour_api_v1.CORSHeaderValue{"X-Some-Header-A", "X-Some-Header-B"},
-				AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET", "PUT"},
+				AllowHeaders:     []contour_v1.CORSHeaderValue{"X-Some-Header-A", "X-Some-Header-B"},
+				AllowMethods:     []contour_v1.CORSHeaderValue{"GET", "PUT"},
 				AllowOrigin:      []string{"*"},
-				ExposeHeaders:    []contour_api_v1.CORSHeaderValue{"X-Expose-A", "X-Expose-B"},
+				ExposeHeaders:    []contour_v1.CORSHeaderValue{"X-Expose-A", "X-Expose-B"},
 				MaxAge:           "5h",
 			},
 			want: &CORSPolicy{
@@ -169,8 +170,8 @@ func TestToCORSPolicy(t *testing.T) {
 			},
 		},
 		"allow origin wildcard": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{"*"},
 			},
 			want: &CORSPolicy{
@@ -181,8 +182,8 @@ func TestToCORSPolicy(t *testing.T) {
 			},
 		},
 		"allow origin specific valid": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{"http://foo-1.bar.com", "https://foo-2.com:443"},
 			},
 			want: &CORSPolicy{
@@ -196,8 +197,8 @@ func TestToCORSPolicy(t *testing.T) {
 			},
 		},
 		"allow origin invalid specific but valid regex": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin: []string{
 					"no-scheme.bar.com",
 					"http://bar.com/foo",
@@ -218,8 +219,8 @@ func TestToCORSPolicy(t *testing.T) {
 			},
 		},
 		"allow origin regex valid": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{`.*\.foo\.com`, `https://example\.bar-[0-9]+\.org`},
 			},
 			want: &CORSPolicy{
@@ -233,52 +234,52 @@ func TestToCORSPolicy(t *testing.T) {
 			},
 		},
 		"allow origin regex invalid": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{"**"},
 			},
 			wantErr: true,
 		},
 		"nil allow origin": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  nil,
 			},
 			wantErr: true,
 		},
 		"nil allow methods": {
-			cp: &contour_api_v1.CORSPolicy{
+			cp: &contour_v1.CORSPolicy{
 				AllowMethods: nil,
 				AllowOrigin:  []string{"*"},
 			},
 			wantErr: true,
 		},
 		"empty allow origin": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{},
 			},
 			wantErr: true,
 		},
 		"empty allow methods": {
-			cp: &contour_api_v1.CORSPolicy{
-				AllowMethods: []contour_api_v1.CORSHeaderValue{},
+			cp: &contour_v1.CORSPolicy{
+				AllowMethods: []contour_v1.CORSHeaderValue{},
 				AllowOrigin:  []string{"*"},
 			},
 			wantErr: true,
 		},
 		"invalid max age": {
-			cp: &contour_api_v1.CORSPolicy{
+			cp: &contour_v1.CORSPolicy{
 				MaxAge:       "xxm",
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{"*"},
 			},
 			wantErr: true,
 		},
 		"negative max age": {
-			cp: &contour_api_v1.CORSPolicy{
+			cp: &contour_v1.CORSPolicy{
 				MaxAge:       "-5s",
-				AllowMethods: []contour_api_v1.CORSHeaderValue{"GET"},
+				AllowMethods: []contour_v1.CORSHeaderValue{"GET"},
 				AllowOrigin:  []string{"*"},
 			},
 			wantErr: true,
@@ -298,12 +299,12 @@ func TestToCORSPolicy(t *testing.T) {
 
 func TestSlowStart(t *testing.T) {
 	tests := map[string]struct {
-		input   *contour_api_v1.SlowStartPolicy
+		input   *contour_v1.SlowStartPolicy
 		want    *SlowStartConfig
 		wantErr bool
 	}{
 		"window only": {
-			input: &contour_api_v1.SlowStartPolicy{
+			input: &contour_v1.SlowStartPolicy{
 				Window: "10s",
 			},
 			want: &SlowStartConfig{
@@ -313,7 +314,7 @@ func TestSlowStart(t *testing.T) {
 			},
 		},
 		"with all fields": {
-			input: &contour_api_v1.SlowStartPolicy{
+			input: &contour_v1.SlowStartPolicy{
 				Window:               "10s",
 				Aggression:           "1.1",
 				MinimumWeightPercent: 5,
@@ -325,13 +326,13 @@ func TestSlowStart(t *testing.T) {
 			},
 		},
 		"invalid window, missing unit": {
-			input: &contour_api_v1.SlowStartPolicy{
+			input: &contour_v1.SlowStartPolicy{
 				Window: "10",
 			},
 			wantErr: true,
 		},
 		"invalid aggression, not float": {
-			input: &contour_api_v1.SlowStartPolicy{
+			input: &contour_v1.SlowStartPolicy{
 				Window:     "10s",
 				Aggression: "not-a-float",
 			},
@@ -352,17 +353,17 @@ func TestSlowStart(t *testing.T) {
 
 func TestIncludeMatchConditionsIdentical(t *testing.T) {
 	tests := map[string]struct {
-		includeConds []contour_api_v1.MatchCondition
+		includeConds []contour_v1.MatchCondition
 		seenConds    map[string][]matchConditionAggregate
 		duplicate    bool
 	}{
 		"empty conditions, no seen": {
-			includeConds: []contour_api_v1.MatchCondition{},
+			includeConds: []contour_v1.MatchCondition{},
 			seenConds:    make(map[string][]matchConditionAggregate),
 			duplicate:    false,
 		},
 		"empty conditions, seen some": {
-			includeConds: []contour_api_v1.MatchCondition{},
+			includeConds: []contour_v1.MatchCondition{},
 			seenConds: map[string][]matchConditionAggregate{
 				"/": {
 					{
@@ -380,14 +381,14 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix /, no seen": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/"},
 			},
 			seenConds: make(map[string][]matchConditionAggregate),
 			duplicate: false,
 		},
 		"prefix /, seen prefix / only should not be duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -401,7 +402,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix /, seen headers only": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -415,7 +416,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix /, seen query only": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -429,7 +430,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix /, seen some": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -447,14 +448,14 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix nonroot, no seen": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: make(map[string][]matchConditionAggregate),
 			duplicate: false,
 		},
 		"prefix nonroot, seen": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -468,7 +469,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: true,
 		},
 		"prefix nonroot, seen duplicate and others": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -488,7 +489,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: true,
 		},
 		"prefix nonroot, seen others": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -508,7 +509,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix nonroot, seen headers only": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -522,7 +523,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix nonroot, seen query only": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -536,7 +537,7 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"prefix nonroot, seen some": {
-			includeConds: []contour_api_v1.MatchCondition{
+			includeConds: []contour_v1.MatchCondition{
 				{Prefix: "/api"},
 			},
 			seenConds: map[string][]matchConditionAggregate{
@@ -560,9 +561,9 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"headers only, seen headers only non-duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-foo", NotPresent: true}},
-				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-bar", Exact: "bar"}},
+			includeConds: []contour_v1.MatchCondition{
+				{Header: &contour_v1.HeaderMatchCondition{Name: "x-foo", NotPresent: true}},
+				{Header: &contour_v1.HeaderMatchCondition{Name: "x-bar", Exact: "bar"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				// Same header conditions but different prefix.
@@ -588,8 +589,8 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"headers only, seen headers only duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
+			includeConds: []contour_v1.MatchCondition{
+				{Header: &contour_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				"/": {
@@ -602,9 +603,9 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: true,
 		},
 		"query only, seen query only non-duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-1", Present: true}},
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-2", Exact: "bar"}},
+			includeConds: []contour_v1.MatchCondition{
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-1", Present: true}},
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-2", Exact: "bar"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				"/": {
@@ -630,8 +631,8 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: false,
 		},
 		"query only, seen query only duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
+			includeConds: []contour_v1.MatchCondition{
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				"/": {
@@ -646,10 +647,10 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: true,
 		},
 		"combination of header and query, duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-2", Prefix: "foo"}},
-				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
+			includeConds: []contour_v1.MatchCondition{
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-2", Prefix: "foo"}},
+				{Header: &contour_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				"/": {
@@ -665,9 +666,9 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 			duplicate: true,
 		},
 		"combination of header and query, non-duplicate": {
-			includeConds: []contour_api_v1.MatchCondition{
-				{Header: &contour_api_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
-				{QueryParameter: &contour_api_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
+			includeConds: []contour_v1.MatchCondition{
+				{Header: &contour_v1.HeaderMatchCondition{Name: "x-foo", Present: true}},
+				{QueryParameter: &contour_v1.QueryParameterMatchCondition{Name: "param-1", Prefix: "foo"}},
 			},
 			seenConds: map[string][]matchConditionAggregate{
 				// Header and query params are the same, but different prefix.
@@ -702,36 +703,36 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 
 func TestValidateExternalAuthExtensionService(t *testing.T) {
 	tests := map[string]struct {
-		ref                 contour_api_v1.ExtensionServiceReference
-		wantValidCond       *contour_api_v1.DetailedCondition
-		httpproxy           *contour_api_v1.HTTPProxy
+		ref                 contour_v1.ExtensionServiceReference
+		wantValidCond       *contour_v1.DetailedCondition
+		httpproxy           *contour_v1.HTTPProxy
 		getExtensionCluster func(name string) *ExtensionCluster
 		want                *ExtensionCluster
 		wantBool            bool
 	}{
 		"Unsupported API version": {
-			ref: contour_api_v1.ExtensionServiceReference{
+			ref: contour_v1.ExtensionServiceReference{
 				APIVersion: "wrong version",
 				Namespace:  "ns",
 				Name:       "test",
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{
-				Condition: v1.Condition{
-					Status:  contour_api_v1.ConditionTrue,
+			wantValidCond: &contour_v1.DetailedCondition{
+				Condition: meta_v1.Condition{
+					Status:  contour_v1.ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
-				Errors: []contour_api_v1.SubCondition{
+				Errors: []contour_v1.SubCondition{
 					{
 						Type:    "AuthError",
 						Reason:  "AuthBadResourceVersion",
 						Message: "Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version \"wrong version\"",
-						Status:  contour_api_v1.ConditionTrue,
+						Status:  contour_v1.ConditionTrue,
 					},
 				},
 			},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
 			},
@@ -744,28 +745,28 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 			wantBool: false,
 		},
 		"ExtensionService does not exist": {
-			ref: contour_api_v1.ExtensionServiceReference{
+			ref: contour_v1.ExtensionServiceReference{
 				APIVersion: "projectcontour.io/v1alpha1",
 				Namespace:  "ns",
 				Name:       "test",
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{
-				Condition: v1.Condition{
-					Status:  contour_api_v1.ConditionTrue,
+			wantValidCond: &contour_v1.DetailedCondition{
+				Condition: meta_v1.Condition{
+					Status:  contour_v1.ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
-				Errors: []contour_api_v1.SubCondition{
+				Errors: []contour_v1.SubCondition{
 					{
 						Type:    "AuthError",
 						Reason:  "ExtensionServiceNotFound",
 						Message: "Spec.Virtualhost.Authorization.ServiceRef extension service \"ns/test\" not found",
-						Status:  contour_api_v1.ConditionTrue,
+						Status:  contour_v1.ConditionTrue,
 					},
 				},
 			},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
 			},
@@ -776,14 +777,14 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 			wantBool: false,
 		},
 		"Validation successful": {
-			ref: contour_api_v1.ExtensionServiceReference{
+			ref: contour_v1.ExtensionServiceReference{
 				APIVersion: "projectcontour.io/v1alpha1",
 				Namespace:  "ns",
 				Name:       "test",
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
 			},
@@ -801,7 +802,7 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			validCond := &contour_api_v1.DetailedCondition{}
+			validCond := &contour_v1.DetailedCondition{}
 			gotBool, got := validateExternalAuthExtensionService(tc.ref, validCond, tc.httpproxy, tc.getExtensionCluster)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantBool, gotBool)
@@ -813,32 +814,32 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 func TestDetermineExternalAuthTimeout(t *testing.T) {
 	tests := map[string]struct {
 		responseTimeout string
-		wantValidCond   *contour_api_v1.DetailedCondition
+		wantValidCond   *contour_v1.DetailedCondition
 		ext             *ExtensionCluster
 		want            *timeout.Setting
 		wantBool        bool
 	}{
 		"invalid timeout": {
 			responseTimeout: "foo",
-			wantValidCond: &contour_api_v1.DetailedCondition{
-				Condition: v1.Condition{
-					Status:  contour_api_v1.ConditionTrue,
+			wantValidCond: &contour_v1.DetailedCondition{
+				Condition: meta_v1.Condition{
+					Status:  contour_v1.ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
-				Errors: []contour_api_v1.SubCondition{
+				Errors: []contour_v1.SubCondition{
 					{
 						Type:    "AuthError",
 						Reason:  "AuthResponseTimeoutInvalid",
 						Message: "Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string \"foo\": time: invalid duration \"foo\"",
-						Status:  contour_api_v1.ConditionTrue,
+						Status:  contour_v1.ConditionTrue,
 					},
 				},
 			},
 		},
 		"default timeout": {
 			responseTimeout: "",
-			wantValidCond:   &contour_api_v1.DetailedCondition{},
+			wantValidCond:   &contour_v1.DetailedCondition{},
 			ext: &ExtensionCluster{
 				Name: "test",
 				RouteTimeoutPolicy: RouteTimeoutPolicy{
@@ -850,7 +851,7 @@ func TestDetermineExternalAuthTimeout(t *testing.T) {
 		},
 		"success": {
 			responseTimeout: "20s",
-			wantValidCond:   &contour_api_v1.DetailedCondition{},
+			wantValidCond:   &contour_v1.DetailedCondition{},
 			ext: &ExtensionCluster{
 				Name: "test",
 				RouteTimeoutPolicy: RouteTimeoutPolicy{
@@ -864,7 +865,7 @@ func TestDetermineExternalAuthTimeout(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			validCond := &contour_api_v1.DetailedCondition{}
+			validCond := &contour_v1.DetailedCondition{}
 			gotBool, got := determineExternalAuthTimeout(tc.responseTimeout, validCond, tc.ext)
 			require.Equal(t, tc.want, got)
 			require.Equal(t, tc.wantBool, gotBool)
@@ -875,29 +876,29 @@ func TestDetermineExternalAuthTimeout(t *testing.T) {
 
 func TestToIPFilterRule(t *testing.T) {
 	tests := map[string]struct {
-		allowPolicy       []contour_api_v1.IPFilterPolicy
-		denyPolicy        []contour_api_v1.IPFilterPolicy
+		allowPolicy       []contour_v1.IPFilterPolicy
+		denyPolicy        []contour_v1.IPFilterPolicy
 		want              []IPFilterRule
 		wantAllow         bool
 		wantErr           bool
-		wantConditionErrs []contour_api_v1.SubCondition
+		wantConditionErrs []contour_v1.SubCondition
 	}{
 		"no ip policy": {
 			allowPolicy: nil,
-			denyPolicy:  []contour_api_v1.IPFilterPolicy{},
+			denyPolicy:  []contour_v1.IPFilterPolicy{},
 			want:        nil,
 		},
 		"both allow and deny rules not supported": {
-			allowPolicy: []contour_api_v1.IPFilterPolicy{{
-				Source: contour_api_v1.IPFilterSourceRemote,
+			allowPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourceRemote,
 				CIDR:   "1.1.1.1/24",
 			}},
-			denyPolicy: []contour_api_v1.IPFilterPolicy{{
-				Source: contour_api_v1.IPFilterSourcePeer,
+			denyPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourcePeer,
 				CIDR:   "2.2.2.2/24",
 			}},
 			wantErr: true,
-			wantConditionErrs: []contour_api_v1.SubCondition{{
+			wantConditionErrs: []contour_v1.SubCondition{{
 				Type:    "IPFilterError",
 				Status:  "True",
 				Reason:  "IncompatibleIPAddressFilters",
@@ -905,15 +906,15 @@ func TestToIPFilterRule(t *testing.T) {
 			}},
 		},
 		"reports invalid cidr ranges": {
-			allowPolicy: []contour_api_v1.IPFilterPolicy{{
-				Source: contour_api_v1.IPFilterSourceRemote,
+			allowPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourceRemote,
 				CIDR:   "!@#$!@#$",
 			}, {
-				Source: contour_api_v1.IPFilterSourcePeer,
+				Source: contour_v1.IPFilterSourcePeer,
 				CIDR:   "2.2.2.2/512",
 			}},
 			wantErr: true,
-			wantConditionErrs: []contour_api_v1.SubCondition{
+			wantConditionErrs: []contour_v1.SubCondition{
 				{
 					Type:    "IPFilterError",
 					Status:  "True",
@@ -929,11 +930,11 @@ func TestToIPFilterRule(t *testing.T) {
 			},
 		},
 		"parses multiple allow rules": {
-			allowPolicy: []contour_api_v1.IPFilterPolicy{{
-				Source: contour_api_v1.IPFilterSourceRemote,
+			allowPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourceRemote,
 				CIDR:   "1.1.1.1",
 			}, {
-				Source: contour_api_v1.IPFilterSourcePeer,
+				Source: contour_v1.IPFilterSourcePeer,
 				CIDR:   "2001:db8::68/24",
 			}},
 			wantAllow: true,
@@ -952,11 +953,11 @@ func TestToIPFilterRule(t *testing.T) {
 			}},
 		},
 		"parses multiple deny rules": {
-			denyPolicy: []contour_api_v1.IPFilterPolicy{{
-				Source: contour_api_v1.IPFilterSourceRemote,
+			denyPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourceRemote,
 				CIDR:   "1.1.1.1/24",
 			}, {
-				Source: contour_api_v1.IPFilterSourcePeer,
+				Source: contour_v1.IPFilterSourcePeer,
 				CIDR:   "2001:db8::68",
 			}},
 			wantAllow: false,
@@ -978,7 +979,7 @@ func TestToIPFilterRule(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cond := contour_api_v1.DetailedCondition{}
+			cond := contour_v1.DetailedCondition{}
 			gotAllow, got, gotErr := toIPFilterRules(tc.allowPolicy, tc.denyPolicy, &cond)
 			if tc.wantErr {
 				require.Error(t, gotErr)
@@ -992,49 +993,49 @@ func TestToIPFilterRule(t *testing.T) {
 
 func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 	tests := map[string]struct {
-		rateLimitServiceConfig *contour_api_v1alpha1.RateLimitServiceConfig
-		wantValidCond          *contour_api_v1.DetailedCondition
-		httpproxy              *contour_api_v1.HTTPProxy
+		rateLimitServiceConfig *contour_v1alpha1.RateLimitServiceConfig
+		wantValidCond          *contour_v1.DetailedCondition
+		httpproxy              *contour_v1.HTTPProxy
 		want                   *RateLimitPolicy
 		isValidCond            bool
-		wantConditionErrs      []contour_api_v1.SubCondition
+		wantConditionErrs      []contour_v1.SubCondition
 	}{
 		"no rate limit policy is set anywhere": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{},
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{},
 				},
 			},
 			want:        nil,
 			isValidCond: true,
 		},
 		"default global rate limit Policy is not set": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Global: &contour_api_v1.GlobalRateLimitPolicy{
-								Descriptors: []contour_api_v1.RateLimitDescriptor{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Global: &contour_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												GenericKey: &contour_api_v1.GenericKeyDescriptor{
+												GenericKey: &contour_v1.GenericKeyDescriptor{
 													Key:   "foo",
 													Value: "bar",
 												},
@@ -1066,15 +1067,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			isValidCond: true,
 		},
 		"default global rate limit policy is set but HTTPProxy is opted out": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "A general policy key",
 										Value: "A general policy value",
 									},
@@ -1084,15 +1085,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Global: &contour_api_v1.GlobalRateLimitPolicy{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Global: &contour_v1.GlobalRateLimitPolicy{
 								Disabled: true,
 							},
 						},
@@ -1103,15 +1104,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			isValidCond: true,
 		},
 		"default global rate limit policy is set but HTTPProxy defines its own global RateLimit policy": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "A general policy key",
 										Value: "A general policy value",
 									},
@@ -1121,20 +1122,20 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Global: &contour_api_v1.GlobalRateLimitPolicy{
-								Descriptors: []contour_api_v1.RateLimitDescriptor{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Global: &contour_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												GenericKey: &contour_api_v1.GenericKeyDescriptor{
+												GenericKey: &contour_v1.GenericKeyDescriptor{
 													Key:   "foo",
 													Value: "bar",
 												},
@@ -1166,15 +1167,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			isValidCond: true,
 		},
 		"default rate limit policy is set": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "A general policy key",
 										Value: "A general policy value",
 									},
@@ -1184,13 +1185,13 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{},
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{},
 				},
 			},
 			want: &RateLimitPolicy{
@@ -1212,15 +1213,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			isValidCond: true,
 		},
 		"default rate limit policy is set and HTTPProxy's local rate limit should not change": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "A general policy key",
 										Value: "A general policy value",
 									},
@@ -1230,15 +1231,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			wantValidCond: &contour_v1.DetailedCondition{},
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Local: &contour_api_v1.LocalRateLimitPolicy{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Local: &contour_v1.LocalRateLimitPolicy{
 								Requests: 10,
 								Unit:     "second",
 							},
@@ -1270,34 +1271,34 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			isValidCond: true,
 		},
 		"default rate limit policy is set but it is invalid": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{},
 							},
 						},
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{
-				Condition: v1.Condition{
-					Status:  contour_api_v1.ConditionTrue,
+			wantValidCond: &contour_v1.DetailedCondition{
+				Condition: meta_v1.Condition{
+					Status:  contour_v1.ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
 			},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Local: &contour_api_v1.LocalRateLimitPolicy{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Local: &contour_v1.LocalRateLimitPolicy{
 								Requests: 10,
 								Unit:     "second",
 							},
@@ -1307,7 +1308,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			},
 			want:        nil,
 			isValidCond: false,
-			wantConditionErrs: []contour_api_v1.SubCondition{
+			wantConditionErrs: []contour_v1.SubCondition{
 				{
 					Type:    "VirtualHostError",
 					Status:  "True",
@@ -1317,15 +1318,15 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			},
 		},
 		"global rate limit policy on HTTPProxy is invalid": {
-			rateLimitServiceConfig: &contour_api_v1alpha1.RateLimitServiceConfig{
+			rateLimitServiceConfig: &contour_v1alpha1.RateLimitServiceConfig{
 				Domain:   "test-domain",
 				FailOpen: ref.To(true),
-				DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-					Descriptors: []contour_api_v1.RateLimitDescriptor{
+				DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contour_api_v1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "A general policy key",
 										Value: "A general policy value",
 									},
@@ -1335,24 +1336,24 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantValidCond: &contour_api_v1.DetailedCondition{
-				Condition: v1.Condition{
-					Status:  contour_api_v1.ConditionTrue,
+			wantValidCond: &contour_v1.DetailedCondition{
+				Condition: meta_v1.Condition{
+					Status:  contour_v1.ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
 			},
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
-						RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-							Global: &contour_api_v1.GlobalRateLimitPolicy{
-								Descriptors: []contour_api_v1.RateLimitDescriptor{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						RateLimitPolicy: &contour_v1.RateLimitPolicy{
+							Global: &contour_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{},
 										},
 									},
@@ -1364,7 +1365,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 			},
 			want:        nil,
 			isValidCond: false,
-			wantConditionErrs: []contour_api_v1.SubCondition{
+			wantConditionErrs: []contour_v1.SubCondition{
 				{
 					Type:    "VirtualHostError",
 					Status:  "True",
@@ -1377,7 +1378,7 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			validCond := &contour_api_v1.DetailedCondition{}
+			validCond := &contour_v1.DetailedCondition{}
 			got, isValid := computeVirtualHostRateLimitPolicy(tc.httpproxy, tc.rateLimitServiceConfig, validCond)
 			require.Equal(t, tc.isValidCond, isValid)
 			require.Equal(t, tc.want, got)
@@ -1388,27 +1389,27 @@ func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 
 func TestRateLimitPerRoute(t *testing.T) {
 	tests := map[string]struct {
-		httpproxy *contour_api_v1.HTTPProxy
+		httpproxy *contour_v1.HTTPProxy
 		want      *RateLimitPerRoute
 	}{
 		"route doesn't disable the global rate limit functionality": {
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "foo.projectcontour.io",
 					},
-					Routes: []contour_api_v1.Route{
+					Routes: []contour_v1.Route{
 						{
-							Services: []contour_api_v1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "foo",
 									Port: 80,
 								},
 							},
-							Conditions: []contour_api_v1.MatchCondition{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/bar",
 								},
@@ -1420,29 +1421,29 @@ func TestRateLimitPerRoute(t *testing.T) {
 			want: nil,
 		},
 		"route disables the global rate limit functionality": {
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "foo.projectcontour.io",
 					},
-					Routes: []contour_api_v1.Route{
+					Routes: []contour_v1.Route{
 						{
-							Services: []contour_api_v1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "foo",
 									Port: 80,
 								},
 							},
-							Conditions: []contour_api_v1.MatchCondition{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/bar",
 								},
 							},
-							RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-								Global: &contour_api_v1.GlobalRateLimitPolicy{
+							RateLimitPolicy: &contour_v1.RateLimitPolicy{
+								Global: &contour_v1.GlobalRateLimitPolicy{
 									Disabled: true,
 								},
 							},
@@ -1455,29 +1456,29 @@ func TestRateLimitPerRoute(t *testing.T) {
 			},
 		},
 		"route doesn't disable the global rate limit functionality explicitly": {
-			httpproxy: &contour_api_v1.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
+			httpproxy: &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "ns",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "foo.projectcontour.io",
 					},
-					Routes: []contour_api_v1.Route{
+					Routes: []contour_v1.Route{
 						{
-							Services: []contour_api_v1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "foo",
 									Port: 80,
 								},
 							},
-							Conditions: []contour_api_v1.MatchCondition{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/bar",
 								},
 							},
-							RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-								Global: &contour_api_v1.GlobalRateLimitPolicy{
+							RateLimitPolicy: &contour_v1.RateLimitPolicy{
+								Global: &contour_v1.GlobalRateLimitPolicy{
 									Disabled: false,
 								},
 							},
@@ -1501,7 +1502,7 @@ func TestRateLimitPerRoute(t *testing.T) {
 
 func TestDetermineUpstreamTLS(t *testing.T) {
 	tests := map[string]struct {
-		envoyTLS *contour_api_v1alpha1.EnvoyTLS
+		envoyTLS *contour_v1alpha1.EnvoyTLS
 		want     *UpstreamTLS
 	}{
 		"nothing set": {
@@ -1509,7 +1510,7 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 			want:     nil,
 		},
 		"only set tls min max": {
-			envoyTLS: &contour_api_v1alpha1.EnvoyTLS{
+			envoyTLS: &contour_v1alpha1.EnvoyTLS{
 				MinimumProtocolVersion: "1.1",
 				MaximumProtocolVersion: "1.2",
 			},

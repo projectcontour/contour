@@ -16,22 +16,23 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	"github.com/projectcontour/contour/internal/dag"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
+
+	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestEndpointsTranslatorContents(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 		want     []proto.Message
 	}{
 		"empty": {
@@ -64,7 +65,7 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 
 func TestEndpointCacheQuery(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 		query    []string
 		want     []proto.Message
 	}{
@@ -127,7 +128,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "a"},
+					ServicePort:      core_v1.ServicePort{Name: "a"},
 				},
 			},
 		},
@@ -138,7 +139,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "b"},
+					ServicePort:      core_v1.ServicePort{Name: "b"},
 				},
 			},
 		},
@@ -149,7 +150,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -160,30 +161,30 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "healthcheck-port",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "a"},
-					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
+					ServicePort:      core_v1.ServicePort{Name: "a"},
+					HealthPort:       core_v1.ServicePort{Name: "health", Port: 8998},
 				},
 			},
 		},
 	}
 
 	tests := map[string]struct {
-		ep         *v1.Endpoints
+		ep         *core_v1.Endpoints
 		want       []proto.Message
 		wantUpdate bool
 	}{
 		"simple": {
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -191,7 +192,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: true,
 		},
 		"adding an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
-			ep: endpoints("default", "not-used-endpoint", v1.EndpointSubset{
+			ep: endpoints("default", "not-used-endpoint", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -201,7 +202,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: false,
 		},
 		"multiple addresses": {
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"50.17.206.192",
@@ -213,10 +214,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80), // addresses should be sorted
@@ -229,7 +230,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			wantUpdate: true,
 		},
 		"multiple ports": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.1.1",
 				),
@@ -239,22 +240,22 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
 				// Results should be sorted by cluster name.
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("10.10.1.1", 8675)),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("10.10.1.1", 309)),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"cartesian product": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.2.2",
 					"10.10.1.1",
@@ -265,27 +266,27 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 8675), // addresses should be sorted
 						envoy_v3.SocketAddress("10.10.2.2", 8675),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 309),
 						envoy_v3.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"not ready": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.1.1",
 				),
@@ -295,7 +296,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				Ports: ports(
 					port("a", 8675),
 				),
-			}, v1.EndpointSubset{
+			}, core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.2.2",
 					"10.10.1.1",
@@ -305,26 +306,26 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/healthcheck-port"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 8675),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("10.10.1.1", 309),
 						envoy_v3.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
 		"health port": {
-			ep: endpoints("default", "healthcheck-port", v1.EndpointSubset{
+			ep: endpoints("default", "healthcheck-port", core_v1.EndpointSubset{
 				Addresses: addresses("10.10.1.1"),
 				Ports: ports(
 					port("a", 309),
@@ -332,15 +333,15 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/healthcheck-port",
 					Endpoints: weightedHealthcheckEndpoints(1, 8998,
 						envoy_v3.SocketAddress("10.10.1.1", 309),
 					),
 				},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 			wantUpdate: true,
 		},
@@ -378,7 +379,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -389,7 +390,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "http"},
+					ServicePort:      core_v1.ServicePort{Name: "http"},
 				},
 			},
 		},
@@ -400,7 +401,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				},
 			},
 		},
@@ -408,20 +409,20 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 
 	tests := map[string]struct {
 		setup      func(*EndpointsTranslator)
-		ep         *v1.Endpoints
+		ep         *core_v1.Endpoints
 		want       []proto.Message
 		wantUpdate bool
 	}{
 		"remove existing": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}), false)
 			},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -436,21 +437,21 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"removing an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}), false)
 			},
-			ep: endpoints("default", "different", v1.EndpointSubset{
+			ep: endpoints("default", "different", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -461,7 +462,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove non existent": {
 			setup: func(*EndpointsTranslator) {},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -479,7 +480,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				e1 := endpoints(
 					"super-long-namespace-name-oh-boy",
 					"what-a-descriptive-service-name-you-must-be-so-proud",
-					v1.EndpointSubset{
+					core_v1.EndpointSubset{
 						Addresses: addresses(
 							"172.16.0.2",
 							"172.16.0.1",
@@ -495,7 +496,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			ep: endpoints(
 				"super-long-namespace-name-oh-boy",
 				"what-a-descriptive-service-name-you-must-be-so-proud",
-				v1.EndpointSubset{
+				core_v1.EndpointSubset{
 					Addresses: addresses(
 						"172.16.0.2",
 						"172.16.0.1",
@@ -549,7 +550,7 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -557,33 +558,33 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 
 	tests := map[string]struct {
 		setup      func(*EndpointsTranslator)
-		old, new   *v1.Endpoints
+		old, new   *core_v1.Endpoints
 		want       []proto.Message
 		wantUpdate bool
 	}{
 		"update existing": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}), false)
 			},
-			old: endpoints("default", "simple", v1.EndpointSubset{
+			old: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
 				),
 			}),
-			new: endpoints("default", "simple", v1.EndpointSubset{
+			new: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.25"),
 				Ports: ports(
 					port("", 8081),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.25", 8081)),
 				},
@@ -592,27 +593,27 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 		},
 		"getting an update for an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}), false)
 			},
-			old: endpoints("default", "different", v1.EndpointSubset{
+			old: endpoints("default", "different", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
 				),
 			}),
-			new: endpoints("default", "different", v1.EndpointSubset{
+			new: endpoints("default", "different", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.25"),
 				Ports: ports(
 					port("", 8081),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
@@ -644,7 +645,7 @@ func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
 func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	tests := map[string]struct {
 		cluster dag.ServiceCluster
-		ep      *v1.Endpoints
+		ep      *core_v1.Endpoints
 		want    []proto.Message
 	}{
 		"simple": {
@@ -656,14 +657,14 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/simple",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("192.168.183.24", 8080)),
@@ -679,7 +680,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"23.23.247.89",
@@ -691,7 +692,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -709,17 +710,17 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "secure",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				}},
 			},
-			ep: endpoints("default", "secure", v1.EndpointSubset{
+			ep: endpoints("default", "secure", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("https", 8443),
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/secure/https",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("192.168.183.24", 8443)),
@@ -733,11 +734,11 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					HealthPort:       v1.ServicePort{Name: "health", Port: 8998},
-					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+					HealthPort:       core_v1.ServicePort{Name: "health", Port: 8998},
+					ServicePort:      core_v1.ServicePort{Name: "a", Port: 80},
 				}},
 			},
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"23.23.247.89",
@@ -750,7 +751,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: weightedHealthcheckEndpoints(1, 8998,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -768,11 +769,11 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					HealthPort:       v1.ServicePort{Name: "a", Port: 80},
-					ServicePort:      v1.ServicePort{Name: "a", Port: 80},
+					HealthPort:       core_v1.ServicePort{Name: "a", Port: 80},
+					ServicePort:      core_v1.ServicePort{Name: "a", Port: 80},
 				}},
 			},
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"23.23.247.89",
@@ -785,7 +786,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&envoy_endpoint_v3.ClusterLoadAssignment{
+				&envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
 					Endpoints: envoy_v3.WeightedEndpoints(1,
 						envoy_v3.SocketAddress("23.23.247.89", 80),
@@ -822,12 +823,12 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 				Weight:           1,
 				ServiceName:      "simple",
 				ServiceNamespace: "default",
-				ServicePort:      v1.ServicePort{},
+				ServicePort:      core_v1.ServicePort{},
 			}},
 		},
 	}))
 
-	e1 := endpoints("default", "simple", v1.EndpointSubset{
+	e1 := endpoints("default", "simple", core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports: ports(
 			port("", 8080),
@@ -837,7 +838,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoint was added
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/simple",
 			Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 		},
@@ -851,7 +852,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoints are removed
 	want = []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 	}
 
 	protobuf.RequireEqual(t, want, et.Contents())
@@ -868,19 +869,19 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 					Weight:           0,
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           1,
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           2,
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -888,7 +889,7 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 
 	require.NoError(t, et.cache.SetClusters(clusters))
 
-	epSubset := v1.EndpointSubset{
+	epSubset := core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports:     ports(port("", 8080)),
 	}
@@ -905,9 +906,9 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 	w2 := envoy_v3.WeightedEndpoints(2, envoy_v3.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
-			Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+			Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
 			},
 		},
@@ -928,17 +929,17 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 				{
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -946,7 +947,7 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 
 	require.NoError(t, et.cache.SetClusters(clusters))
 
-	epSubset := v1.EndpointSubset{
+	epSubset := core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports:     ports(port("", 8080)),
 	}
@@ -963,9 +964,9 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 	w2 := envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&envoy_endpoint_v3.ClusterLoadAssignment{
+		&envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
-			Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+			Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
 			},
 		},
@@ -976,7 +977,7 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 
 func TestEqual(t *testing.T) {
 	tests := map[string]struct {
-		a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+		a, b map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 		want bool
 	}{
 		"both nil": {
@@ -985,21 +986,21 @@ func TestEqual(t *testing.T) {
 			want: true,
 		},
 		"one nil, one empty": {
-			a:    map[string]*envoy_endpoint_v3.ClusterLoadAssignment{},
+			a:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 			b:    nil,
 			want: true,
 		},
 		"both empty": {
-			a:    map[string]*envoy_endpoint_v3.ClusterLoadAssignment{},
-			b:    map[string]*envoy_endpoint_v3.ClusterLoadAssignment{},
+			a:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
+			b:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 			want: true,
 		},
 		"a is an incomplete subset of b": {
-			a: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 			},
-			b: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
@@ -1007,24 +1008,24 @@ func TestEqual(t *testing.T) {
 			want: false,
 		},
 		"b is an incomplete subset of a": {
-			a: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
 			},
-			b: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 			},
 			want: false,
 		},
 		"a and b have the same keys, different values": {
-			a: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
 			},
-			b: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "different"},
@@ -1032,12 +1033,12 @@ func TestEqual(t *testing.T) {
 			want: false,
 		},
 		"a and b have the same values, different keys": {
-			a: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
 			},
-			b: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"d": {ClusterName: "a"},
 				"e": {ClusterName: "b"},
 				"f": {ClusterName: "c"},
@@ -1045,12 +1046,12 @@ func TestEqual(t *testing.T) {
 			want: false,
 		},
 		"a and b have the same keys, same values": {
-			a: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
 			},
-			b: map[string]*envoy_endpoint_v3.ClusterLoadAssignment{
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
 				"a": {ClusterName: "a"},
 				"b": {ClusterName: "b"},
 				"c": {ClusterName: "c"},
@@ -1066,53 +1067,53 @@ func TestEqual(t *testing.T) {
 	}
 }
 
-func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+func ports(eps ...core_v1.EndpointPort) []core_v1.EndpointPort {
 	return eps
 }
 
-func port(name string, port int32) v1.EndpointPort {
-	return v1.EndpointPort{
+func port(name string, port int32) core_v1.EndpointPort {
+	return core_v1.EndpointPort{
 		Name:     name,
 		Port:     port,
 		Protocol: "TCP",
 	}
 }
 
-func clusterloadassignments(clas ...*envoy_endpoint_v3.ClusterLoadAssignment) map[string]*envoy_endpoint_v3.ClusterLoadAssignment {
-	m := make(map[string]*envoy_endpoint_v3.ClusterLoadAssignment)
+func clusterloadassignments(clas ...*envoy_config_endpoint_v3.ClusterLoadAssignment) map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment {
+	m := make(map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment)
 	for _, cla := range clas {
 		m[cla.ClusterName] = cla
 	}
 	return m
 }
 
-func weightedHealthcheckEndpoints(weight uint32, healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
+func weightedHealthcheckEndpoints(weight uint32, healthcheckPort int32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
 	lbendpoints := healthcheckEndpoints(healthcheckPort, addrs...)
 	lbendpoints[0].LoadBalancingWeight = wrapperspb.UInt32(weight)
 	return lbendpoints
 }
 
-func healthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbEndpoints {
-	lbendpoints := make([]*envoy_endpoint_v3.LbEndpoint, 0, len(addrs))
+func healthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := make([]*envoy_config_endpoint_v3.LbEndpoint, 0, len(addrs))
 	for _, addr := range addrs {
 		lbendpoints = append(lbendpoints, healthCheckLBEndpoint(addr, healthcheckPort))
 	}
-	return []*envoy_endpoint_v3.LocalityLbEndpoints{{
+	return []*envoy_config_endpoint_v3.LocalityLbEndpoints{{
 		LbEndpoints: lbendpoints,
 	}}
 }
 
 // healthCheckLBEndpoint creates a new LbEndpoint include healthCheckConfig
-func healthCheckLBEndpoint(addr *envoy_core_v3.Address, healthCheckPort int32) *envoy_endpoint_v3.LbEndpoint {
-	var hc *envoy_endpoint_v3.Endpoint_HealthCheckConfig
+func healthCheckLBEndpoint(addr *envoy_config_core_v3.Address, healthCheckPort int32) *envoy_config_endpoint_v3.LbEndpoint {
+	var hc *envoy_config_endpoint_v3.Endpoint_HealthCheckConfig
 	if healthCheckPort != 0 {
-		hc = &envoy_endpoint_v3.Endpoint_HealthCheckConfig{
+		hc = &envoy_config_endpoint_v3.Endpoint_HealthCheckConfig{
 			PortValue: uint32(healthCheckPort),
 		}
 	}
-	return &envoy_endpoint_v3.LbEndpoint{
-		HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-			Endpoint: &envoy_endpoint_v3.Endpoint{
+	return &envoy_config_endpoint_v3.LbEndpoint{
+		HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+			Endpoint: &envoy_config_endpoint_v3.Endpoint{
 				Address:           addr,
 				HealthCheckConfig: hc,
 			},

@@ -17,23 +17,23 @@ import (
 	"reflect"
 	"testing"
 
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func TestNamespacesToStrings(t *testing.T) {
 	testCases := []struct {
 		description   string
-		namespaces    []contourv1.Namespace
+		namespaces    []contour_v1.Namespace
 		expectStrings []string
 	}{
 		{
 			description:   "no namespaces",
-			namespaces:    []contourv1.Namespace{},
+			namespaces:    []contour_v1.Namespace{},
 			expectStrings: []string{},
 		},
 		{
 			description:   "2 namespaces",
-			namespaces:    []contourv1.Namespace{"ns1", "ns2"},
+			namespaces:    []contour_v1.Namespace{"ns1", "ns2"},
 			expectStrings: []string{"ns1", "ns2"},
 		},
 	}
@@ -50,17 +50,17 @@ func TestNamespacesToStrings(t *testing.T) {
 func TestFeaturesToStrings(t *testing.T) {
 	testCases := []struct {
 		description   string
-		features      []contourv1.Feature
+		features      []contour_v1.Feature
 		expectStrings []string
 	}{
 		{
 			description:   "no features",
-			features:      []contourv1.Feature{},
+			features:      []contour_v1.Feature{},
 			expectStrings: []string{},
 		},
 		{
 			description:   "2 features",
-			features:      []contourv1.Feature{"tlsroutes", "grpcroutes"},
+			features:      []contour_v1.Feature{"tlsroutes", "grpcroutes"},
 			expectStrings: []string{"tlsroutes", "grpcroutes"},
 		},
 	}

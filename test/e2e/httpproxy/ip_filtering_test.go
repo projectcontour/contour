@@ -22,11 +22,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -38,18 +38,18 @@ func testIPFilterPolicy(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ipfilter1",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "ipfilter1.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -95,9 +95,9 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].IPAllowFilterPolicy = []contourv1.IPFilterPolicy{
+			p.Spec.Routes[0].IPAllowFilterPolicy = []contour_v1.IPFilterPolicy{
 				{
-					Source: contourv1.IPFilterSourceRemote,
+					Source: contour_v1.IPFilterSourceRemote,
 					CIDR:   "10.10.10.10/32",
 				},
 			}
@@ -136,21 +136,21 @@ func testIPFilterPolicy(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ipfilter2",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "ipfilter2.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{{
+						Conditions: []contour_v1.MatchCondition{{
 							Prefix: "/one",
 						}},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -158,10 +158,10 @@ func testIPFilterPolicy(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{{
+						Conditions: []contour_v1.MatchCondition{{
 							Prefix: "/other",
 						}},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -209,9 +209,9 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].IPAllowFilterPolicy = []contourv1.IPFilterPolicy{
+			p.Spec.Routes[0].IPAllowFilterPolicy = []contour_v1.IPFilterPolicy{
 				{
-					Source: contourv1.IPFilterSourceRemote,
+					Source: contour_v1.IPFilterSourceRemote,
 					CIDR:   "10.10.10.10",
 				},
 			}
@@ -264,16 +264,16 @@ func testIPFilterPolicy(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		r := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		r := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ipfilter3-root",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "ipfilter3.projectcontour.io",
 				},
-				Includes: []contourv1.Include{{
+				Includes: []contour_v1.Include{{
 					Namespace: namespace,
 					Name:      "ipfilter3-child",
 				}},
@@ -282,15 +282,15 @@ func testIPFilterPolicy(namespace string) {
 		// root will be missing an include when created
 		r, _ = f.CreateHTTPProxyAndWaitFor(r, e2e.HTTPProxyInvalid)
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ipfilter3-child",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -336,9 +336,9 @@ func testIPFilterPolicy(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].IPAllowFilterPolicy = []contourv1.IPFilterPolicy{
+			p.Spec.Routes[0].IPAllowFilterPolicy = []contour_v1.IPFilterPolicy{
 				{
-					Source: contourv1.IPFilterSourceRemote,
+					Source: contour_v1.IPFilterSourceRemote,
 					CIDR:   "10.10.10.10/32",
 				},
 			}
@@ -372,22 +372,22 @@ func testIPFilterPolicy(namespace string) {
 }
 
 // Needs IPv4 and IPv6 rules to ensure this test works in both types of clusters.
-func ipFilterDenyAll() []contourv1.IPFilterPolicy {
-	return []contourv1.IPFilterPolicy{
+func ipFilterDenyAll() []contour_v1.IPFilterPolicy {
+	return []contour_v1.IPFilterPolicy{
 		{
-			Source: contourv1.IPFilterSourcePeer,
+			Source: contour_v1.IPFilterSourcePeer,
 			CIDR:   "10.8.8.8/0",
 		},
 		{
-			Source: contourv1.IPFilterSourceRemote,
+			Source: contour_v1.IPFilterSourceRemote,
 			CIDR:   "10.8.8.8/0",
 		},
 		{
-			Source: contourv1.IPFilterSourcePeer,
+			Source: contour_v1.IPFilterSourcePeer,
 			CIDR:   "::/0",
 		},
 		{
-			Source: contourv1.IPFilterSourceRemote,
+			Source: contour_v1.IPFilterSourceRemote,
 			CIDR:   "::/0",
 		},
 	}

@@ -17,11 +17,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/projectcontour/contour/internal/ref"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 const MessageValidGateway = "Valid Gateway"
@@ -30,30 +31,30 @@ const MessageValidGateway = "Valid Gateway"
 // Gateway's status.
 type GatewayStatusUpdate struct {
 	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition
+	Conditions         map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition
+	ExistingConditions map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition
 	ListenerStatus     map[string]*gatewayapi_v1beta1.ListenerStatus
 	Generation         int64
-	TransitionTime     metav1.Time
+	TransitionTime     meta_v1.Time
 }
 
-// AddCondition returns a metav1.Condition for a given GatewayConditionType.
+// AddCondition returns a meta_v1.Condition for a given GatewayConditionType.
 func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
 	cond gatewayapi_v1beta1.GatewayConditionType,
-	status metav1.ConditionStatus,
+	status meta_v1.ConditionStatus,
 	reason gatewayapi_v1beta1.GatewayConditionReason,
 	message string,
-) metav1.Condition {
+) meta_v1.Condition {
 	if c, ok := gatewayUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
 	}
 
-	newCond := metav1.Condition{
+	newCond := meta_v1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 	gatewayUpdate.Conditions[cond] = newCond
@@ -97,10 +98,10 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName
 func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 	listenerName string,
 	cond gatewayapi_v1beta1.ListenerConditionType,
-	status metav1.ConditionStatus,
+	status meta_v1.ConditionStatus,
 	reason gatewayapi_v1beta1.ListenerConditionReason,
 	message string,
-) metav1.Condition {
+) meta_v1.Condition {
 	if gatewayUpdate.ListenerStatus == nil {
 		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1beta1.ListenerStatus{}
 	}
@@ -121,12 +122,12 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 		}
 	}
 
-	newCond := metav1.Condition{
+	newCond := meta_v1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: gatewayUpdate.Generation,
 	}
 
@@ -139,8 +140,8 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 	return newCond
 }
 
-func getGatewayConditions(gs *gatewayapi_v1beta1.GatewayStatus) map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition {
-	conditions := make(map[gatewayapi_v1beta1.GatewayConditionType]metav1.Condition)
+func getGatewayConditions(gs *gatewayapi_v1beta1.GatewayStatus) map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition {
+	conditions := make(map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition)
 	for _, cond := range gs.Conditions {
 		if _, ok := conditions[gatewayapi_v1beta1.GatewayConditionType(cond.Type)]; !ok {
 			conditions[gatewayapi_v1beta1.GatewayConditionType(cond.Type)] = cond
@@ -159,7 +160,7 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 
 	updated := o.DeepCopy()
 
-	var conditionsToWrite []metav1.Condition
+	var conditionsToWrite []meta_v1.Condition
 
 	for _, cond := range gatewayUpdate.Conditions {
 
@@ -199,7 +200,7 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 	for _, status := range gatewayUpdate.ListenerStatus {
 		if status.Conditions == nil {
 			// Conditions is a required field so we have to specify an empty slice here
-			status.Conditions = []metav1.Condition{}
+			status.Conditions = []meta_v1.Condition{}
 		}
 		if status.SupportedKinds == nil {
 			// SupportedKinds is a required field so we have to specify an empty slice here
