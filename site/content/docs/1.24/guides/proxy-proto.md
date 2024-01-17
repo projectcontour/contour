@@ -51,5 +51,3 @@ spec:
 
 [0]: http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [1]: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer
-[2]: https://github.com/kubernetes/kubernetes/issues/57250
-[3]: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-target-groups.html#enable-proxy-protocol
