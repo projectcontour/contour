@@ -299,8 +299,10 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s1, "tls"),
 				Protocol: "tls",
 				UpstreamValidation: &dag.PeerValidationContext{
-					CACertificate: secret,
-					SubjectNames:  []string{"foo.bar.io"},
+					CACertificates: []*dag.Secret{
+						secret,
+					},
+					SubjectNames: []string{"foo.bar.io"},
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
@@ -314,8 +316,10 @@ func TestCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(
 					UpstreamTLSContext(
 						&dag.PeerValidationContext{
-							CACertificate: secret,
-							SubjectNames:  []string{"foo.bar.io"},
+							CACertificates: []*dag.Secret{
+								secret,
+							},
+							SubjectNames: []string{"foo.bar.io"},
 						},
 						"",
 						nil,
@@ -328,8 +332,10 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s1, "tls"),
 				Protocol: "tls",
 				UpstreamValidation: &dag.PeerValidationContext{
-					CACertificate: secret,
-					SubjectNames:  []string{"foo.bar.io"},
+					CACertificates: []*dag.Secret{
+						secret,
+					},
+					SubjectNames: []string{"foo.bar.io"},
 				},
 				UpstreamTLS: &dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.3",
@@ -347,8 +353,10 @@ func TestCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(
 					UpstreamTLSContext(
 						&dag.PeerValidationContext{
-							CACertificate: secret,
-							SubjectNames:  []string{"foo.bar.io"},
+							CACertificates: []*dag.Secret{
+								secret,
+							},
+							SubjectNames: []string{"foo.bar.io"},
 						},
 						"",
 						nil,
@@ -935,10 +943,12 @@ func TestDNSNameCluster(t *testing.T) {
 				Port:            443,
 				DNSLookupFamily: "auto",
 				UpstreamValidation: &dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: &v1.Secret{
-							Data: map[string][]byte{
-								"ca.crt": []byte("ca-cert"),
+					CACertificates: []*dag.Secret{
+						{
+							Object: &v1.Secret{
+								Data: map[string][]byte{
+									"ca.crt": []byte("ca-cert"),
+								},
 							},
 						},
 					},
@@ -966,10 +976,12 @@ func TestDNSNameCluster(t *testing.T) {
 					},
 				},
 				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: &v1.Secret{
-							Data: map[string][]byte{
-								"ca.crt": []byte("ca-cert"),
+					CACertificates: []*dag.Secret{
+						{
+							Object: &v1.Secret{
+								Data: map[string][]byte{
+									"ca.crt": []byte("ca-cert"),
+								},
 							},
 						},
 					},
@@ -1093,14 +1105,16 @@ func TestClustername(t *testing.T) {
 		},
 		LoadBalancerPolicy: "Random",
 		UpstreamValidation: &dag.PeerValidationContext{
-			CACertificate: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Data: map[string][]byte{
-						dag.CACertificateKey: []byte("somethingsecret"),
+			CACertificates: []*dag.Secret{
+				{
+					Object: &v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "secret",
+							Namespace: "default",
+						},
+						Data: map[string][]byte{
+							dag.CACertificateKey: []byte("somethingsecret"),
+						},
 					},
 				},
 			},

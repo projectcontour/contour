@@ -207,6 +207,8 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
+
+		f.NamespacedTest("gateway-backend-tls-policy", testWithHTTPGateway(testBackendTLSPolicy))
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {

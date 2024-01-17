@@ -45,6 +45,9 @@ func TestRegisterControllers(t *testing.T) {
 		"grpcroute controller": func(mockManager *mocks.Manager) error {
 			return controller.RegisterGRPCRouteController(fixture.NewTestLogger(t), mockManager, nil)
 		},
+		"backendtlspolicy controller": func(mockManager *mocks.Manager) error {
+			return controller.RegisterBackendTLSPolicyController(fixture.NewTestLogger(t), mockManager, nil)
+		},
 	}
 
 	for name, test := range tests {

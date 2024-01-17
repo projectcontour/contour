@@ -302,14 +302,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	peerValidationContext := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -317,14 +319,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 
 	// Negative test case: downstream validation should not contain subjectname.
 	peerValidationContextWithSubjectName := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -340,14 +344,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 	peerValidationContextSkipClientCertValidationWithCA := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -364,28 +370,32 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 	peerValidationContextOptionalClientCertValidationWithCA := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
 		OptionalClientCertificate: true,
 	}
 	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -417,14 +427,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	peerValidationContextWithCRLCheckOnlyLeaf := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},

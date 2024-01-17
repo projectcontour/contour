@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -84,6 +85,29 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8080)},
+		},
+	}
+
+	tlsService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlssvc",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 8443)},
+		},
+	}
+
+	tlsAndNonTLSService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlsandnontlssvc",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				makeServicePort("http", "TCP", 80, 8080),
+				makeServicePort("https", "TCP", 443, 8443),
+			},
 		},
 	}
 
@@ -312,6 +336,37 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	cert1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			CACertificateKey: []byte(fixture.CERTIFICATE),
+		},
+	}
+	cert2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca2",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			CACertificateKey: []byte(fixture.EC_CERTIFICATE),
+		},
+	}
+
+	configMapCert1 := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "projectcontour",
+		},
+		Data: map[string]string{
+			CACertificateKey: fixture.CERTIFICATE,
+		},
+	}
+
 	sec1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
@@ -475,6 +530,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		objs         []any
 		gatewayclass *gatewayapi_v1beta1.GatewayClass
 		gateway      *gatewayapi_v1beta1.Gateway
+		upstreamTLS  *UpstreamTLS
 		want         []*Listener
 	}{
 		"insert basic single route, single hostname": {
@@ -4216,6 +4272,599 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 
+		"HTTPRoute with BackendTLSPolicy": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				configMapCert1,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "ConfigMap",
+								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "tls",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+								Protocol: "tls",
+								UpstreamValidation: &PeerValidationContext{
+									CACertificates: []*Secret{
+										caSecret(cert1),
+									},
+									SubjectNames: []string{"example.com"},
+								},
+								UpstreamTLS: &UpstreamTLS{
+									MinimumProtocolVersion: "1.2",
+									MaximumProtocolVersion: "1.2",
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"HTTPRoute with BackendTLSPolicy and CA cert in secret": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				cert1,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "Secret",
+								Name: gatewayapi_v1.ObjectName(cert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "tls",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+								Protocol: "tls",
+								UpstreamValidation: &PeerValidationContext{
+									CACertificates: []*Secret{
+										caSecret(cert1),
+									},
+									SubjectNames: []string{"example.com"},
+								},
+								UpstreamTLS: &UpstreamTLS{
+									MinimumProtocolVersion: "1.2",
+									MaximumProtocolVersion: "1.2",
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"HTTPRoute with BackendTLSPolicy using multiple certs": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				cert1,
+				cert2,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+								{
+									Kind: "Secret",
+									Name: gatewayapi_v1.ObjectName(cert1.Name),
+								},
+								{
+									Kind: "Secret",
+									Name: gatewayapi_v1.ObjectName(cert2.Name),
+								},
+							},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "tls",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+								Protocol: "tls",
+								UpstreamValidation: &PeerValidationContext{
+									CACertificates: []*Secret{
+										caSecret(cert1),
+										caSecret(cert2),
+									},
+									SubjectNames: []string{"example.com"},
+								},
+								UpstreamTLS: &UpstreamTLS{
+									MinimumProtocolVersion: "1.2",
+									MaximumProtocolVersion: "1.2",
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"HTTPRoute with BackendTLSPolicy and sectionName set": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsAndNonTLSService,
+				cert1,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/tls"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlsandnontlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "non-tls-basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/non-tls"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlsandnontlssvc", 80, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlsandnontlssvc",
+							},
+							SectionName: ptr.To(gatewayapi_v1.SectionName("https")),
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "Secret",
+								Name: gatewayapi_v1.ObjectName(cert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							&Route{
+								PathMatchCondition: prefixSegment("/tls"),
+								Clusters: []*Cluster{
+									{
+										Weight: 1,
+										Upstream: &Service{
+											Protocol: "tls",
+											Weighted: WeightedService{
+												Weight:           1,
+												ServiceName:      tlsAndNonTLSService.Name,
+												ServiceNamespace: tlsAndNonTLSService.Namespace,
+												ServicePort:      tlsAndNonTLSService.Spec.Ports[1],
+												HealthPort:       tlsAndNonTLSService.Spec.Ports[1],
+											},
+										},
+										Protocol: "tls",
+										UpstreamValidation: &PeerValidationContext{
+											CACertificates: []*Secret{
+												caSecret(cert1),
+											},
+											SubjectNames: []string{"example.com"},
+										},
+										UpstreamTLS: &UpstreamTLS{
+											MinimumProtocolVersion: "1.2",
+											MaximumProtocolVersion: "1.2",
+										},
+									},
+								},
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/non-tls"),
+								Clusters: []*Cluster{
+									{
+										Weight: 1,
+										Upstream: &Service{
+											Weighted: WeightedService{
+												Weight:           1,
+												ServiceName:      tlsAndNonTLSService.Name,
+												ServiceNamespace: tlsAndNonTLSService.Namespace,
+												ServicePort:      tlsAndNonTLSService.Spec.Ports[0],
+												HealthPort:       tlsAndNonTLSService.Spec.Ports[0],
+											},
+										},
+									},
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute with invalid BackendTLSPolicy certRef secret": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "Secret",
+								Name: gatewayapi_v1.ObjectName(cert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"HTTPRoute with invalid BackendTLSPolicy certRef configmap": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "ConfigMap",
+								Name: gatewayapi_v1.ObjectName(cert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"HTTPRoute with invalid BackendTLSPolicy certRef kind": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				&gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRefs(
+								gatewayapi.HTTPBackendRef("tlssvc", 443, 1),
+							),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.BackendTLSPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+						TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+							PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+								Kind: "Service",
+								Name: "tlssvc",
+							},
+						},
+						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+								Kind: "Invalid",
+								Name: gatewayapi_v1.ObjectName(cert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("*", routeCluster("/",
+							&Cluster{
+								Weight: 1,
+								Upstream: &Service{
+									Protocol: "",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      tlsService.Name,
+										ServiceNamespace: tlsService.Namespace,
+										ServicePort:      tlsService.Spec.Ports[0],
+										HealthPort:       tlsService.Spec.Ports[0],
+									},
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
 		"different weights for multiple forwardTos": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -5906,6 +6555,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
+						UpstreamTLS: tc.upstreamTLS,
 					},
 				},
 			}
@@ -11359,8 +12009,10 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: caSecret(cert1),
-										SubjectNames:  []string{"example.com"},
+										CACertificates: []*Secret{
+											caSecret(cert1),
+										},
+										SubjectNames: []string{"example.com"},
 									},
 								},
 							),
@@ -11392,8 +12044,10 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: caSecret(cert1),
-										SubjectNames:  []string{"example.com"},
+										CACertificates: []*Secret{
+											caSecret(cert1),
+										},
+										SubjectNames: []string{"example.com"},
 									},
 								},
 							),
@@ -11467,8 +12121,10 @@ func TestDAGInsert(t *testing.T) {
 									},
 									Protocol: "tls",
 									UpstreamValidation: &PeerValidationContext{
-										CACertificate: caSecret(cert2),
-										SubjectNames:  []string{"example.com"},
+										CACertificates: []*Secret{
+											caSecret(cert2),
+										},
+										SubjectNames: []string{"example.com"},
 									},
 								},
 							),
@@ -11503,7 +12159,9 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 							},
 						},
 					),
@@ -11533,7 +12191,9 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 							},
 						},
 					),
@@ -11600,7 +12260,9 @@ func TestDAGInsert(t *testing.T) {
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
-								CACertificate:            caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 							},
 						},
 					),
@@ -11633,8 +12295,10 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: caSecret(cert1),
-								CRL:           crlSecret(crl),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
+								CRL: crlSecret(crl),
 							},
 						},
 					),
@@ -11667,7 +12331,9 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:         caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 								CRL:                   crlSecret(crl),
 								OnlyVerifyLeafCertCrl: true,
 							},
@@ -11702,7 +12368,9 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate: caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 								ForwardClientCertificate: &ClientCertificateDetails{
 									Subject: true,
 									Cert:    true,
@@ -11742,7 +12410,9 @@ func TestDAGInsert(t *testing.T) {
 							MaxTLSVersion: "1.3",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
-								CACertificate:             caSecret(cert1),
+								CACertificates: []*Secret{
+									caSecret(cert1),
+								},
 								OptionalClientCertificate: true,
 							},
 						},

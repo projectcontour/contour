@@ -340,7 +340,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 						}
 						return
 					}
-					dv.CACertificate = cacert
+					dv.CACertificates = []*Secret{
+						cacert,
+					}
 				} else if !tls.ClientValidation.SkipClientCertValidation {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
 						"Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified")

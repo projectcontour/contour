@@ -190,16 +190,16 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca *v1.Secret, subjectName, sni str
 	}
 
 	// Secret for validation is optional.
-	var s *dag.Secret
+	var s []*dag.Secret
 	if ca != nil {
-		s = &dag.Secret{Object: ca}
+		s = []*dag.Secret{{Object: ca}}
 	}
 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: s,
-				SubjectNames:  []string{subjectName},
+				CACertificates: s,
+				SubjectNames:   []string{subjectName},
 			},
 			sni,
 			secret,

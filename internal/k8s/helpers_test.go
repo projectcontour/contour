@@ -49,6 +49,16 @@ func TestIsObjectEqual(t *testing.T) {
 			equals:   true,
 		},
 		{
+			name:     "ConfigMap with content change",
+			filename: "testdata/configmap-content-change.yaml",
+			equals:   false,
+		},
+		{
+			name:     "ConfigMap with metadata change",
+			filename: "testdata/configmap-metadata-change.yaml",
+			equals:   true,
+		},
+		{
 			name:     "Service with status change",
 			filename: "testdata/service-status-change.yaml",
 			equals:   false,
@@ -135,16 +145,20 @@ func TestIsEqualForResourceVersion(t *testing.T) {
 	assert.True(t, got)
 }
 
-// TestIsEqualFallback compares with ConfigMap objects, which are not supported.
+// TestIsEqualFallback compares with ServiceAccount objects, which are not supported.
 func TestIsEqualFallback(t *testing.T) {
-	oldObj := &v1.ConfigMap{
+	oldObj := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "test",
 			Namespace:       "default",
 			ResourceVersion: "123",
 		},
-		Data: map[string]string{
-			"foo": "bar",
+		Secrets: []v1.ObjectReference{
+			{
+				Kind:      "Secret",
+				Name:      "test",
+				Namespace: "default",
+			},
 		},
 	}
 

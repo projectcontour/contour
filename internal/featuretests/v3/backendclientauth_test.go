@@ -207,8 +207,8 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: featuretests.CASecret(t, "secret", &featuretests.CACertificate)},
-				SubjectNames:  []string{"subjname"},
+				CACertificates: []*dag.Secret{{Object: featuretests.CASecret(t, "secret", &featuretests.CACertificate)}},
+				SubjectNames:   []string{"subjname"},
 			},
 			"subjname",
 			&dag.Secret{Object: clientSecret},

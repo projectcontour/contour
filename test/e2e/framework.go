@@ -389,6 +389,12 @@ func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
+// CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha2.BackendTLSPolicy, condition func(*gatewayapi_v1alpha2.BackendTLSPolicy) bool) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
+}
+
 // CreateNamespace creates a namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateNamespace(name string) {
