@@ -35,8 +35,6 @@ spec:
 ...
 ```
 
-**NOTE**: The service annotation `service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'` used to toggle the PROXY protocol is found to have no effect on NLBs (Due to this open [issue][2]). Hence, follow the steps mentioned in this AWS [documentation][3] to manually toggle PROXY protocol on NLBs
-
 ## Enable PROXY protocol support for all Envoy listening ports
 
 ```
