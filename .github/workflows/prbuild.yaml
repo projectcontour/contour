@@ -32,7 +32,7 @@ jobs:
         version: v1.55.2
         # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
         # is resolved
-        args: --build-tags=e2e,conformance,gcp,oidc,none --out-${NO_FUTURE}format=colored-line-number
+        args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
     - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
       with:
         status: ${{ job.status }}
