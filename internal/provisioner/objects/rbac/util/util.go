@@ -14,6 +14,8 @@
 package util
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -40,8 +42,9 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbacv1.
 	}
 }
 
-// BasicPolicyRulesForContour returns set of basic rules that contour requires
-func BasicPolicyRulesForContour() []rbacv1.PolicyRule {
+// NamespacedResourcePolicyRules returns a set of policy rules for resources that are
+// namespaced-scoped
+func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		// Core Contour-watched resources.
 		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services", "namespaces"),
@@ -64,11 +67,17 @@ func BasicPolicyRulesForContour() []rbacv1.PolicyRule {
 	}
 }
 
-// ClusterScopePolicyRulesForContour returns set of rules only for cluster scope object
-func ClusterScopePolicyRulesForContour() []rbacv1.PolicyRule {
+// ClusterScopedResourcePolicyRules returns a set of policy rules for
+// cluster-scoped resources.
+func ClusterScopedResourcePolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		// GatewayClass only.
 		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gatewayclasses"),
 		PolicyRuleFor(gatewayv1alpha2.GroupName, update, "gatewayclasses/status"),
 	}
+}
+
+// ContourResourceName returns names for roles/rolebindings for contour resources
+func ContourResourceName(name string) string {
+	return fmt.Sprintf("contour-resource-%s", name)
 }

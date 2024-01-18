@@ -85,7 +85,7 @@ func TestDesiredRoleForContourInNamespace(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			name := "role-test"
 			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-			role := desiredRoleForContourInNamespace(name, tc.namespace, cntr)
+			role := desiredRoleForResourceInNamespace(name, tc.namespace, cntr)
 			checkRoleName(t, role, name)
 			ownerLabels := map[string]string{
 				model.ContourOwningGatewayNameLabel:    cntr.Name,

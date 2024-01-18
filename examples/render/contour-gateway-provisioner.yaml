@@ -1634,7 +1634,7 @@ spec:
                   watchNamespaces:
                     description: |-
                       WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
-                      to only watch these set of namespaces
+                      to only watch this subset of namespaces.
                     items:
                       type: string
                     type: array

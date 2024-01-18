@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EnsureRoleBinding ensures a RoleBinding resource exists with the provided
+// EnsureControllerRoleBinding ensures a RoleBinding resource exists with the provided
 // ns/name and using contour namespace/name for the owning contour labels.
 // The RoleBinding will use svcAct for the subject and role for the role reference.
-func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
+func EnsureControllerRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
 	desired := desiredRoleBindingInNamespace(name, svcAct, role, contour.Namespace, contour)
 
 	// Enclose contour.
@@ -42,13 +43,13 @@ func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, rol
 	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.RoleBinding{})
 }
 
-// EnsureRoleBindingsInNamespaces ensures a set of RoleBindings resource exist with the provided
-// namespaces/name using contour namespace/name for the owning contour labels.
+// EnsureRoleBindingsInNamespaces ensures a set of RoleBinding resources exist with the provided
+// namespaces/contour-resource-<name> and using contour namespace/name for the owning contour labels.
 // The RoleBindings will use same svcAct for the subject and role for the role reference.
 func EnsureRoleBindingsInNamespaces(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour, namespaces []string) error {
 	errs := []error{}
 	for _, ns := range namespaces {
-		desired := desiredRoleBindingInNamespace(name, svcAct, role, ns, contour)
+		desired := desiredRoleBindingInNamespace(util.ContourResourceName(name), svcAct, role, ns, contour)
 
 		// Enclose contour.
 		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.RoleBinding) error {

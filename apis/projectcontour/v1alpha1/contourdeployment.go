@@ -124,7 +124,7 @@ type ContourSettings struct {
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
 	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
-	// to only watch these set of namespaces
+	// to only watch this subset of namespaces.
 	// +optional
 	WatchNamespaces []string `json:"watchNamespaces,omitempty"`
 }

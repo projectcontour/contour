@@ -52,14 +52,14 @@ func desiredClusterRole(name string, contour *model.Contour, gatewayClassOnly bo
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Rules: util.ClusterScopePolicyRulesForContour(),
+		Rules: util.ClusterScopedResourcePolicyRules(),
 	}
 	if gatewayClassOnly {
 		return role
 	}
 
 	// add basic rules to role
-	role.Rules = append(role.Rules, util.BasicPolicyRulesForContour()...)
+	role.Rules = append(role.Rules, util.NamespacedResourcePolicyRules()...)
 	return role
 }
 

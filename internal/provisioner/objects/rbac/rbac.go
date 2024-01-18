@@ -60,33 +60,32 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 		if err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour, !clusterRoleForGatewayclassOnly); err != nil {
 			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 		}
+		if err := clusterrolebinding.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
+			return fmt.Errorf("failed to ensure cluster role binding %s: %w", names.ClusterRoleBinding, err)
+		}
 	} else {
 		// Ensure cluster role & cluster binding for gatewayclass first since it's cluster scope variables
 		if err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour, clusterRoleForGatewayclassOnly); err != nil {
 			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 		}
+		if err := clusterrolebinding.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
+			return fmt.Errorf("failed to ensure cluster role binding %s: %w", names.ClusterRoleBinding, err)
+		}
 
-		// Ensures role and rolebinding for set of namespaces in contour.spec.watchNamespaces variable
-		// Ensure cluster role & cluster binding for gatewayclass first since it's cluster scope variables
+		// Ensures role and rolebinding for namespaced scope resources in namespaces specified in contour.spec.watchNamespaces variable
 		if err := role.EnsureRolesInNamespaces(ctx, cli, names.Role, contour, contour.Spec.WatchNamespaces); err != nil {
 			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 		}
-		// Ensures role and rolebinding for set of namespaces in contour.spec.watchNamespaces variable
-		// Ensure cluster role & cluster binding for gatewayclass first since it's cluster scope variables
 		if err := rolebinding.EnsureRoleBindingsInNamespaces(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour, contour.Spec.WatchNamespaces); err != nil {
 			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 		}
-	}
-
-	if err := clusterrolebinding.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
-		return fmt.Errorf("failed to ensure cluster role binding %s: %w", names.ClusterRoleBinding, err)
 	}
 
 	// Ensure role & binding.
 	if err := role.EnsureControllerRole(ctx, cli, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role %s/%s: %w", contour.Namespace, names.Role, err)
 	}
-	if err := rolebinding.EnsureRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
+	if err := rolebinding.EnsureControllerRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role binding %s/%s: %w", contour.Namespace, names.RoleBinding, err)
 	}
 	return nil

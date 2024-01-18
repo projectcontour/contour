@@ -50,7 +50,7 @@ func EnsureControllerRole(ctx context.Context, cli client.Client, name string, c
 func EnsureRolesInNamespaces(ctx context.Context, cli client.Client, name string, contour *model.Contour, namespaces []string) error {
 	errs := []error{}
 	for _, ns := range namespaces {
-		desired := desiredRoleForContourInNamespace(name, ns, contour)
+		desired := desiredRoleForResourceInNamespace(util.ContourResourceName(name), ns, contour)
 
 		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.Role) error {
 			err := updateRoleIfNeeded(ctx, cli, contour, current, desired)
@@ -95,9 +95,9 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 	return role
 }
 
-// desiredRoleForContour constructs an instance of the desired Role resource with the
+// desiredRoleForResourceInNamespace constructs an instance of the desired Role resource with the
 // provided ns/name and using contour namespace/name for the corresponding Contour instance
-func desiredRoleForContourInNamespace(name, namespace string, contour *model.Contour) *rbacv1.Role {
+func desiredRoleForResourceInNamespace(name, namespace string, contour *model.Contour) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Role",
@@ -108,7 +108,7 @@ func desiredRoleForContourInNamespace(name, namespace string, contour *model.Con
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Rules: util.BasicPolicyRulesForContour(),
+		Rules: util.NamespacedResourcePolicyRules(),
 	}
 }
 
