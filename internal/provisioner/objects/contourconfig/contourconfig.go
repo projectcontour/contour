@@ -85,5 +85,4 @@ func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour 
 	}
 
 	return objects.EnsureObjectDeleted(ctx, cli, obj, contour)
-
 }

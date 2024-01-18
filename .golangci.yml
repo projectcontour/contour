@@ -4,7 +4,7 @@ run:
 linters:
   enable:
   - bodyclose
-  - gofmt
+  - gofumpt
   - goimports
   - revive
   - gosec
@@ -14,6 +14,8 @@ linters:
   - goheader
   - gocritic
   - forbidigo
+  - testifylint
+  - ginkgolinter
 
 linters-settings:
   misspell:
@@ -21,8 +23,6 @@ linters-settings:
     - clas
     - cancelled
     locale: US
-  gofmt:
-    simplify: true
   unparam:
     check-exported: false
   goheader:
@@ -56,8 +56,16 @@ linters-settings:
     - name: use-any
     - name: var-declaration
     - name: var-naming
+  testifylint:
+    enable-all: true
+  ginkgolinter:
+    forbid-focus-container: true
+  gofumpt:
+    extra-rules: true
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-rules:
   - linters: ["unparam"]
     text: "always receives"

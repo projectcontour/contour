@@ -31,8 +31,10 @@ import (
 // ServerType is the name of a xDS server implementation.
 type ServerType string
 
-const ContourServerType ServerType = "contour"
-const EnvoyServerType ServerType = "envoy"
+const (
+	ContourServerType ServerType = "contour"
+	EnvoyServerType   ServerType = "envoy"
+)
 
 // Validate the xDS server type.
 func (s ServerType) Validate() error {
@@ -89,10 +91,12 @@ func (c ClusterDNSFamilyType) Validate() error {
 	}
 }
 
-const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
-const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
-const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
-const AllClusterDNSFamily ClusterDNSFamilyType = "all"
+const (
+	AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
+	IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
+	IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
+	AllClusterDNSFamily  ClusterDNSFamilyType = "all"
+)
 
 // ServerHeaderTransformation defines the action to be applied to the Server header on the response path
 type ServerHeaderTransformationType string
@@ -106,9 +110,11 @@ func (s ServerHeaderTransformationType) Validate() error {
 	}
 }
 
-const OverwriteServerHeader ServerHeaderTransformationType = "overwrite"
-const AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
-const PassThroughServerHeader ServerHeaderTransformationType = "pass_through"
+const (
+	OverwriteServerHeader      ServerHeaderTransformationType = "overwrite"
+	AppendIfAbsentServerHeader ServerHeaderTransformationType = "append_if_absent"
+	PassThroughServerHeader    ServerHeaderTransformationType = "pass_through"
+)
 
 // AccessLogType is the name of a supported access logging mechanism.
 type AccessLogType string
@@ -117,8 +123,10 @@ func (a AccessLogType) Validate() error {
 	return contour_api_v1alpha1.AccessLogType(a).Validate()
 }
 
-const EnvoyAccessLog AccessLogType = "envoy"
-const JSONAccessLog AccessLogType = "json"
+const (
+	EnvoyAccessLog AccessLogType = "envoy"
+	JSONAccessLog  AccessLogType = "json"
+)
 
 type AccessLogFields []string
 
@@ -153,8 +161,10 @@ func (h HTTPVersionType) Validate() error {
 	}
 }
 
-const HTTPVersion1 HTTPVersionType = "http/1.1"
-const HTTPVersion2 HTTPVersionType = "http/2"
+const (
+	HTTPVersion1 HTTPVersionType = "http/1.1"
+	HTTPVersion2 HTTPVersionType = "http/2"
+)
 
 // NamespacedName defines the namespace/name of the Kubernetes resource referred from the configuration file.
 // Used for Contour configuration YAML file parsing, otherwise we could use K8s types.NamespacedName.
@@ -965,10 +975,12 @@ func (a AccessLogLevel) Validate() error {
 	return contour_api_v1alpha1.AccessLogLevel(a).Validate()
 }
 
-const LogLevelInfo AccessLogLevel = "info" // Default log level.
-const LogLevelError AccessLogLevel = "error"
-const LogLevelCritical AccessLogLevel = "critical"
-const LogLevelDisabled AccessLogLevel = "disabled"
+const (
+	LogLevelInfo     AccessLogLevel = "info" // Default log level.
+	LogLevelError    AccessLogLevel = "error"
+	LogLevelCritical AccessLogLevel = "critical"
+	LogLevelDisabled AccessLogLevel = "disabled"
+)
 
 // Validate verifies that the parameter values do not have any syntax errors.
 func (p *Parameters) Validate() error {
@@ -1107,7 +1119,7 @@ func Parse(in io.Reader) (*Parameters, error) {
 }
 
 // GetenvOr reads an environment or return a default value
-func GetenvOr(key string, defaultVal string) string {
+func GetenvOr(key, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}

@@ -30,7 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -185,26 +184,23 @@ func (e *Echo) DeployN(ns, name string, replicas int32) (func(), *appsv1.Deploym
 }
 
 func (e *Echo) ScaleAndWaitDeployment(name, ns string, replicas int32) {
-	deployment := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Namespace: ns,
-		Name:      name,
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
 	}
 
-	require.NoError(e.t, e.client.Get(context.TODO(), key, deployment))
-
-	deployment.Spec.Replicas = &replicas
-
-	updateAndWaitFor(e.t, e.client, deployment, func(d *appsv1.Deployment) bool {
-		err := e.client.Get(context.Background(), key, deployment)
-		if err != nil {
+	updateAndWaitFor(e.t, e.client, deployment,
+		func(d *appsv1.Deployment) {
+			d.Spec.Replicas = ref.To(replicas)
+		},
+		func(d *appsv1.Deployment) bool {
+			if d.Status.Replicas == replicas && d.Status.ReadyReplicas == replicas {
+				return true
+			}
 			return false
-		}
-		if deployment.Status.Replicas == replicas && deployment.Status.ReadyReplicas == replicas {
-			return true
-		}
-		return false
-	}, time.Second, time.Second*10)
+		}, time.Second, time.Second*10)
 }
 
 func (e *Echo) ListPodIPs(ns, name string) ([]string, error) {

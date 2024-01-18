@@ -57,7 +57,6 @@ const (
 
 // Configuration holds config parameters used for generating certificates.
 type Configuration struct {
-
 	// Lifetime is the number of days for which certificates will be valid.
 	Lifetime uint
 
@@ -90,7 +89,6 @@ type Certificates struct {
 // GenerateCerts generates a CA Certificate along with certificates for
 // Contour & Envoy returning them as a *Certificates struct or error if encountered.
 func GenerateCerts(config *Configuration) (*Certificates, error) {
-
 	// Check if the config is not passed, then default.
 	if config == nil {
 		config = &Configuration{}
@@ -139,7 +137,6 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 // of the Kubernetes DNS schema.)
 // The return values are cert, key, err.
 func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace, dnsname string) ([]byte, []byte, error) {
-
 	caKeyPair, err := tls.X509KeyPair(caCertPEM, caKeyPEM)
 	if err != nil {
 		return nil, nil, err
@@ -187,13 +184,11 @@ func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace, d
 		Bytes: newCert,
 	})
 	return newCertPEM, newKeyPEM, nil
-
 }
 
 // newCA generates a new CA, given the CA's CN and an expiry time.
 // The return order is cacert, cakey, error.
 func newCA(cn string, expiry time.Time) ([]byte, []byte, error) {
-
 	key, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
 		return nil, nil, err
@@ -256,14 +251,14 @@ func serviceNames(service, namespace, dnsname string) []string {
 	}
 }
 
-func stringOrDefault(val string, defaultval string) string {
+func stringOrDefault(val, defaultval string) string {
 	if len(val) > 0 {
 		return val
 	}
 	return defaultval
 }
 
-func uint32OrDefault(val uint, defaultval uint) uint {
+func uint32OrDefault(val, defaultval uint) uint {
 	if val != 0 {
 		return val
 	}

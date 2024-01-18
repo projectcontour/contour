@@ -47,7 +47,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
 			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1beta1.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
+				require.NoError(t, reconcileErr)
 
 				gatewayClasses := &gatewayv1beta1.GatewayClassList{}
 				require.NoError(t, r.client.List(context.Background(), gatewayClasses))
@@ -64,7 +64,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				},
 			},
 			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1beta1.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
+				require.NoError(t, reconcileErr)
 
 				res := &gatewayv1beta1.GatewayClass{}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))

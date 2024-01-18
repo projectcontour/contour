@@ -234,7 +234,6 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-
 }
 
 func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {

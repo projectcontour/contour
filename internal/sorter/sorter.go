@@ -47,7 +47,7 @@ type headerMatchConditionSorter []dag.HeaderMatchCondition
 func (s headerMatchConditionSorter) Len() int      { return len(s) }
 func (s headerMatchConditionSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s headerMatchConditionSorter) Less(i, j int) bool {
-	compareValue := func(a dag.HeaderMatchCondition, b dag.HeaderMatchCondition) bool {
+	compareValue := func(a, b dag.HeaderMatchCondition) bool {
 		switch strings.Compare(a.Value, b.Value) {
 		case -1:
 			return true
@@ -119,7 +119,7 @@ type queryParamMatchConditionSorter []dag.QueryParamMatchCondition
 func (s queryParamMatchConditionSorter) Len() int      { return len(s) }
 func (s queryParamMatchConditionSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s queryParamMatchConditionSorter) Less(i, j int) bool {
-	compareValue := func(a dag.QueryParamMatchCondition, b dag.QueryParamMatchCondition) bool {
+	compareValue := func(a, b dag.QueryParamMatchCondition) bool {
 		switch strings.Compare(a.Value, b.Value) {
 		case -1:
 			return true
@@ -419,7 +419,6 @@ type filterChainSorter []*envoy_listener_v3.FilterChain
 func (s filterChainSorter) Len() int      { return len(s) }
 func (s filterChainSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s filterChainSorter) Less(i, j int) bool {
-
 	// If i's ServerNames aren't defined, then it should not swap
 	if len(s[i].FilterChainMatch.ServerNames) == 0 {
 		return false

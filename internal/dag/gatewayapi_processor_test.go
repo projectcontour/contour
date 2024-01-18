@@ -232,7 +232,6 @@ func TestComputeHosts(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 			}
@@ -389,7 +388,6 @@ func TestNamespaceMatches(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
@@ -738,7 +736,6 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{

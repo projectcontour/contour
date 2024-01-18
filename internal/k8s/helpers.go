@@ -95,7 +95,6 @@ func isStatusEqual(objA, objB any) bool {
 // Make an attempt to avoid comparing full objects since it can be very CPU intensive.
 // Prefer comparing Generation when only interested in spec changes.
 func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
-
 	// Fast path for any object: when ResourceVersions are equal, the objects are equal.
 	// NOTE: This optimizes the case when controller-runtime executes full sync and sends updates for all objects.
 	if isResourceVersionEqual(oldObj, newObj) {

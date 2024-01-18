@@ -57,7 +57,7 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
+		require.Error(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
 	})
 
 	Specify("invalid redirect code", func() {
@@ -86,7 +86,7 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
+		require.Error(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
 	})
 }
 
@@ -101,7 +101,6 @@ func testInternalRedirectPolicy(namespace string) {
 }
 
 func doInternalRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
-
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
 	envoyService := &corev1.Service{
@@ -235,7 +234,8 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
 					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{
 						RedirectResponseCodes: []contour_api_v1.RedirectResponseCode{301},
 					},
-				}},
+				},
+			},
 		},
 	}
 

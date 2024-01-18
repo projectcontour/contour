@@ -91,7 +91,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	ctx := newServeContext()
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
-
 		if ctx.contourConfigurationName != "" && configFile != "" {
 			return fmt.Errorf("cannot specify both %s and %s", "--contour-config", "-c/--config-path")
 		}
@@ -200,7 +199,6 @@ type EndpointsTranslator interface {
 // NewServer returns a Server object which contains the initial configuration
 // objects required to start an instance of Contour.
 func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
-
 	var restConfigOpts []func(*rest.Config)
 
 	if qps := ctx.Config.KubeClientQPS; qps > 0 {
@@ -260,7 +258,8 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 						secret.SetAnnotations(nil)
 
 						return secret, nil
-					}},
+					},
+				},
 			},
 			// DefaultTransform is called for objects that do not have a TransformByObject function.
 			DefaultTransform: func(obj any) (any, error) {
@@ -747,7 +746,7 @@ func (s *Server) doServe() error {
 	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
-func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
+func (s *Server) getExtensionSvcConfig(name, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
 	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
 	key := client.ObjectKey{
 		Namespace: namespace,
@@ -827,7 +826,6 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 		MaxPathTagLength:       ref.Val(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
 	}, nil
-
 }
 
 func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.RateLimitConfig, error) {
@@ -997,8 +995,8 @@ func (x *xdsServer) Start(ctx context.Context) error {
 
 // setupMetrics creates metrics service for Contour.
 func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
-	registry *prometheus.Registry) error {
-
+	registry *prometheus.Registry,
+) error {
 	// Create metrics service and register with mgr.
 	metricsvc := &httpsvc.Service{
 		Addr:        metricsConfig.Address,
@@ -1025,8 +1023,8 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 }
 
 func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
-	metricsConfig contour_api_v1alpha1.MetricsConfig) error {
-
+	metricsConfig contour_api_v1alpha1.MetricsConfig,
+) error {
 	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
 		healthsvc := &httpsvc.Service{
 			Addr:        healthConfig.Address,
@@ -1045,8 +1043,8 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler) []leadership.NeedLeaderElectionNotification {
-
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler,
+) []leadership.NeedLeaderElectionNotification {
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
@@ -1173,7 +1171,6 @@ type dagBuilderConfig struct {
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
-
 	var (
 		requestHeadersPolicy       dag.HeadersPolicy
 		responseHeadersPolicy      dag.HeadersPolicy
@@ -1318,7 +1315,6 @@ func (s *Server) informOnResource(obj client.Object, handler cache.ResourceEvent
 	}
 
 	registration, err := inf.AddEventHandler(handler)
-
 	if err != nil {
 		return err
 	}

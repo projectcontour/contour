@@ -192,5 +192,4 @@ func TestInternalRedirectPolicy_HTTProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-
 }

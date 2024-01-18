@@ -72,11 +72,11 @@ func TestCacheAcquisition(t *testing.T) {
 	assert.Equal(t, &newEntry, cachedEntry)
 
 	updates := cache.GetStatusUpdates()
-	assert.Equal(t, 3, len(updates))
+	assert.Len(t, updates, 3)
 	assert.Equal(t, newEntry.ID, updates[0].NamespacedName.Name)
 
-	assert.Equal(t, 3, len(cache.entries))
-	assert.Equal(t, 1, len(cache.entries["HTTPProxy"]))
-	assert.Equal(t, 1, len(cache.entries["ExtensionService"]))
-	assert.Equal(t, 1, len(cache.entries["HTTPRoute"]))
+	assert.Len(t, cache.entries, 3)
+	assert.Len(t, cache.entries["HTTPProxy"], 1)
+	assert.Len(t, cache.entries["ExtensionService"], 1)
+	assert.Len(t, cache.entries["HTTPRoute"], 1)
 }

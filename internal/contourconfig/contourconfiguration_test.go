@@ -333,7 +333,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				require.Error(t, err, "expected error to be returned")
 				require.Contains(t, err.Error(), tc.errorMsg)
 			} else {
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.Equal(t, tc.expected, parsed)
 			}
 		})

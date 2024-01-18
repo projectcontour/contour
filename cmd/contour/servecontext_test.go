@@ -340,7 +340,8 @@ func TestParseHTTPVersions(t *testing.T) {
 		"http/1.1+http/2 duplicated": {
 			versions: []contour_api_v1alpha1.HTTPVersionType{
 				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
-				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
+			},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 	}

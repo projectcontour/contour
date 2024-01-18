@@ -48,7 +48,7 @@ func testWatchNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			deployEchoServer(f.T(), f.Client, nonWatchedNS, "echo")
 			p := newEchoProxy("proxy", nonWatchedNS)
 			err := f.CreateHTTPProxy(p)
-			require.Nil(f.T(), err, "could not create httpproxy")
+			require.NoError(f.T(), err, "could not create httpproxy")
 			require.Never(f.T(), func() bool {
 				res := &contourv1.HTTPProxy{}
 				if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), res); err != nil {
@@ -121,7 +121,7 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 				},
 			}
 			err := f.CreateHTTPProxy(lp)
-			require.Nil(f.T(), err, "could not create leaf httpproxy")
+			require.NoError(f.T(), err, "could not create leaf httpproxy")
 			f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 				Host:      p.Spec.VirtualHost.Fqdn,
@@ -134,7 +134,7 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 			deployEchoServer(f.T(), f.Client, nonWatchedNS, "echo")
 			p = newEchoProxy("root-proxy", nonWatchedNS)
 			err = f.CreateHTTPProxy(p)
-			require.Nil(f.T(), err, "could not create httpproxy")
+			require.NoError(f.T(), err, "could not create httpproxy")
 			require.Never(f.T(), func() bool {
 				res := &contourv1.HTTPProxy{}
 				if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), res); err != nil {

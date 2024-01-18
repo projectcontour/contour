@@ -46,13 +46,13 @@ func (b *ProxyBuilder) ensureTLS() {
 }
 
 // Annotate adds the given values as metadata annotations.
-func (b *ProxyBuilder) Annotate(k string, v string) *ProxyBuilder {
+func (b *ProxyBuilder) Annotate(k, v string) *ProxyBuilder {
 	b.ObjectMeta.Annotations[k] = v
 	return b
 }
 
 // Label adds the given values as metadata labels.
-func (b *ProxyBuilder) Label(k string, v string) *ProxyBuilder {
+func (b *ProxyBuilder) Label(k, v string) *ProxyBuilder {
 	b.ObjectMeta.Labels[k] = v
 	return b
 }

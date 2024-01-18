@@ -56,7 +56,6 @@ func TestConditionFor(t *testing.T) {
 	}
 	gotEmpty := emptyProxyUpdate.ConditionFor(ValidCondition)
 	assert.Equal(t, newDc, *gotEmpty)
-
 }
 
 func TestStatusMutator(t *testing.T) {

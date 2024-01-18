@@ -53,7 +53,6 @@ func testTLSGateway(namespace string, gateway types.NamespacedName) {
 				},
 				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
 					{
-
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-insecure", 80, 1),
 					},

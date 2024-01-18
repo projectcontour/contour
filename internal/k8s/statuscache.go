@@ -45,7 +45,6 @@ func (suc *StatusUpdateCacher) OnDelete(obj any) {
 		default:
 			panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 		}
-
 	}
 }
 
@@ -61,12 +60,10 @@ func (suc *StatusUpdateCacher) OnAdd(obj any) {
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 	}
-
 }
 
 // Get allows retrieval of objects from the cache.
 func (suc *StatusUpdateCacher) Get(name, namespace string) any {
-
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]client.Object)
 	}
@@ -76,7 +73,6 @@ func (suc *StatusUpdateCacher) Get(name, namespace string) any {
 		return obj
 	}
 	return nil
-
 }
 
 func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bool {
@@ -93,7 +89,6 @@ func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bo
 	suc.objectCache[prefix] = obj
 
 	return true
-
 }
 
 func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_api_v1.HTTPProxyStatus, error) {
@@ -113,7 +108,6 @@ func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_api_v1.HTTPProxyStat
 }
 
 func (suc *StatusUpdateCacher) objKey(name, namespace string) string {
-
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 

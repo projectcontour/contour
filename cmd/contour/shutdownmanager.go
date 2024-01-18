@@ -198,7 +198,6 @@ func (s *shutdownContext) shutdownHandler() {
 
 // shutdownEnvoy sends a POST request to /healthcheck/fail to tell Envoy to start draining connections
 func shutdownEnvoy(adminAddress string) error {
-
 	httpClient := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
@@ -221,7 +220,6 @@ func shutdownEnvoy(adminAddress string) error {
 
 // getOpenConnections parses a http request to a prometheus endpoint returning the sum of values found
 func getOpenConnections(adminAddress string) (int, error) {
-
 	httpClient := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
@@ -280,7 +278,6 @@ func parseOpenConnections(stats io.Reader) (int, error) {
 }
 
 func doShutdownManager(config *shutdownmanagerContext) {
-
 	config.Info("started envoy shutdown manager")
 
 	http.HandleFunc("/healthz", config.healthzHandler)

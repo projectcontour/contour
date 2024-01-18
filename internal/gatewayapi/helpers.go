@@ -160,13 +160,14 @@ func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayap
 					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
 					Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
 				},
-				Weight: &weight},
+				Weight: &weight,
+			},
 			Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{},
 		},
 	}
 }
 
-func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service string, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
+func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
 	return &gatewayapi_v1alpha2.GRPCMethodMatch{
 		Type:    ref.To(matchType),
 		Service: ref.To(service),

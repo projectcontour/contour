@@ -122,48 +122,48 @@ policy:
 }
 
 func TestValidateClusterDNSFamilyType(t *testing.T) {
-	assert.Error(t, ClusterDNSFamilyType("").Validate())
-	assert.Error(t, ClusterDNSFamilyType("foo").Validate())
+	require.Error(t, ClusterDNSFamilyType("").Validate())
+	require.Error(t, ClusterDNSFamilyType("foo").Validate())
 
-	assert.NoError(t, AutoClusterDNSFamily.Validate())
-	assert.NoError(t, IPv4ClusterDNSFamily.Validate())
-	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
-	assert.NoError(t, AllClusterDNSFamily.Validate())
+	require.NoError(t, AutoClusterDNSFamily.Validate())
+	require.NoError(t, IPv4ClusterDNSFamily.Validate())
+	require.NoError(t, IPv6ClusterDNSFamily.Validate())
+	require.NoError(t, AllClusterDNSFamily.Validate())
 }
 
 func TestValidateServerHeaderTranformationType(t *testing.T) {
-	assert.Error(t, ServerHeaderTransformationType("").Validate())
-	assert.Error(t, ServerHeaderTransformationType("foo").Validate())
+	require.Error(t, ServerHeaderTransformationType("").Validate())
+	require.Error(t, ServerHeaderTransformationType("foo").Validate())
 
-	assert.NoError(t, OverwriteServerHeader.Validate())
-	assert.NoError(t, AppendIfAbsentServerHeader.Validate())
-	assert.NoError(t, PassThroughServerHeader.Validate())
+	require.NoError(t, OverwriteServerHeader.Validate())
+	require.NoError(t, AppendIfAbsentServerHeader.Validate())
+	require.NoError(t, PassThroughServerHeader.Validate())
 }
 
 func TestValidateHeadersPolicy(t *testing.T) {
-	assert.Error(t, HeadersPolicy{
+	require.Error(t, HeadersPolicy{
 		Set: map[string]string{
 			"inv@lid-header": "ook",
 		},
 	}.Validate())
-	assert.Error(t, HeadersPolicy{
+	require.Error(t, HeadersPolicy{
 		Remove: []string{"inv@lid-header"},
 	}.Validate())
-	assert.NoError(t, HeadersPolicy{
+	require.NoError(t, HeadersPolicy{
 		Set:    map[string]string{},
 		Remove: []string{},
 	}.Validate())
-	assert.NoError(t, HeadersPolicy{
+	require.NoError(t, HeadersPolicy{
 		Set: map[string]string{"X-Envoy-Host": "envoy-a12345"},
 	}.Validate())
-	assert.NoError(t, HeadersPolicy{
+	require.NoError(t, HeadersPolicy{
 		Set: map[string]string{
 			"X-Envoy-Host":     "envoy-s12345",
 			"l5d-dst-override": "kuard.default.svc.cluster.local:80",
 		},
 		Remove: []string{"Sensitive-Header"},
 	}.Validate())
-	assert.NoError(t, HeadersPolicy{
+	require.NoError(t, HeadersPolicy{
 		Set: map[string]string{
 			"X-Envoy-Host":     "%HOSTNAME%",
 			"l5d-dst-override": "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
@@ -172,44 +172,44 @@ func TestValidateHeadersPolicy(t *testing.T) {
 }
 
 func TestValidateNamespacedName(t *testing.T) {
-	assert.NoErrorf(t, NamespacedName{}.Validate(), "empty name should be OK")
-	assert.NoError(t, NamespacedName{Name: "name", Namespace: "ns"}.Validate())
+	require.NoErrorf(t, NamespacedName{}.Validate(), "empty name should be OK")
+	require.NoError(t, NamespacedName{Name: "name", Namespace: "ns"}.Validate())
 
-	assert.Error(t, NamespacedName{Name: "name"}.Validate())
-	assert.Error(t, NamespacedName{Namespace: "ns"}.Validate())
+	require.Error(t, NamespacedName{Name: "name"}.Validate())
+	require.Error(t, NamespacedName{Namespace: "ns"}.Validate())
 }
 
 func TestValidateServerType(t *testing.T) {
-	assert.Error(t, ServerType("").Validate())
-	assert.Error(t, ServerType("foo").Validate())
+	require.Error(t, ServerType("").Validate())
+	require.Error(t, ServerType("foo").Validate())
 
-	assert.NoError(t, EnvoyServerType.Validate())
-	assert.NoError(t, ContourServerType.Validate())
+	require.NoError(t, EnvoyServerType.Validate())
+	require.NoError(t, ContourServerType.Validate())
 }
 
 func TestValidateGatewayParameters(t *testing.T) {
 	// Not required if nothing is passed.
 	var gw *GatewayParameters
-	assert.Equal(t, nil, gw.Validate())
+	require.NoError(t, gw.Validate())
 
 	// ControllerName is required.
 	gw = &GatewayParameters{ControllerName: "controller"}
-	assert.Equal(t, nil, gw.Validate())
+	require.NoError(t, gw.Validate())
 }
 
 func TestValidateHTTPVersionType(t *testing.T) {
-	assert.Error(t, HTTPVersionType("").Validate())
-	assert.Error(t, HTTPVersionType("foo").Validate())
-	assert.Error(t, HTTPVersionType("HTTP/1.1").Validate())
-	assert.Error(t, HTTPVersionType("HTTP/2").Validate())
+	require.Error(t, HTTPVersionType("").Validate())
+	require.Error(t, HTTPVersionType("foo").Validate())
+	require.Error(t, HTTPVersionType("HTTP/1.1").Validate())
+	require.Error(t, HTTPVersionType("HTTP/2").Validate())
 
-	assert.NoError(t, HTTPVersion1.Validate())
-	assert.NoError(t, HTTPVersion2.Validate())
+	require.NoError(t, HTTPVersion1.Validate())
+	require.NoError(t, HTTPVersion2.Validate())
 }
 
 func TestValidateTimeoutParams(t *testing.T) {
-	assert.NoError(t, TimeoutParameters{}.Validate())
-	assert.NoError(t, TimeoutParameters{
+	require.NoError(t, TimeoutParameters{}.Validate())
+	require.NoError(t, TimeoutParameters{
 		RequestTimeout:                "infinite",
 		ConnectionIdleTimeout:         "infinite",
 		StreamIdleTimeout:             "infinite",
@@ -218,7 +218,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 		ConnectionShutdownGracePeriod: "infinite",
 		ConnectTimeout:                "2s",
 	}.Validate())
-	assert.NoError(t, TimeoutParameters{
+	require.NoError(t, TimeoutParameters{
 		RequestTimeout:                "infinity",
 		ConnectionIdleTimeout:         "infinity",
 		StreamIdleTimeout:             "infinity",
@@ -228,25 +228,24 @@ func TestValidateTimeoutParams(t *testing.T) {
 		ConnectTimeout:                "2s",
 	}.Validate())
 
-	assert.Error(t, TimeoutParameters{RequestTimeout: "foo"}.Validate())
-	assert.Error(t, TimeoutParameters{ConnectionIdleTimeout: "bar"}.Validate())
-	assert.Error(t, TimeoutParameters{StreamIdleTimeout: "baz"}.Validate())
-	assert.Error(t, TimeoutParameters{MaxConnectionDuration: "boop"}.Validate())
-	assert.Error(t, TimeoutParameters{DelayedCloseTimeout: "bebop"}.Validate())
-	assert.Error(t, TimeoutParameters{ConnectionShutdownGracePeriod: "bong"}.Validate())
-	assert.Error(t, TimeoutParameters{ConnectTimeout: "infinite"}.Validate())
-
+	require.Error(t, TimeoutParameters{RequestTimeout: "foo"}.Validate())
+	require.Error(t, TimeoutParameters{ConnectionIdleTimeout: "bar"}.Validate())
+	require.Error(t, TimeoutParameters{StreamIdleTimeout: "baz"}.Validate())
+	require.Error(t, TimeoutParameters{MaxConnectionDuration: "boop"}.Validate())
+	require.Error(t, TimeoutParameters{DelayedCloseTimeout: "bebop"}.Validate())
+	require.Error(t, TimeoutParameters{ConnectionShutdownGracePeriod: "bong"}.Validate())
+	require.Error(t, TimeoutParameters{ConnectTimeout: "infinite"}.Validate())
 }
 
 func TestTLSParametersValidation(t *testing.T) {
 	// Fallback certificate validation
-	assert.NoError(t, TLSParameters{
+	require.NoError(t, TLSParameters{
 		FallbackCertificate: NamespacedName{
 			Name:      "  ",
 			Namespace: "  ",
 		},
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	require.Error(t, TLSParameters{
 		FallbackCertificate: NamespacedName{
 			Name:      "somename",
 			Namespace: "  ",
@@ -254,13 +253,13 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 
 	// Client certificate validation
-	assert.NoError(t, TLSParameters{
+	require.NoError(t, TLSParameters{
 		ClientCertificate: NamespacedName{
 			Name:      "  ",
 			Namespace: "  ",
 		},
 	}.Validate())
-	assert.Error(t, TLSParameters{
+	require.Error(t, TLSParameters{
 		ClientCertificate: NamespacedName{
 			Name:      "",
 			Namespace: "somenamespace  ",
@@ -268,51 +267,51 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 
 	// Cipher suites validation
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		CipherSuites: []string{},
 	}.Validate())
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		CipherSuites: []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		},
 	}.Validate())
-	assert.Error(t, ProtocolParameters{
+	require.Error(t, ProtocolParameters{
 		CipherSuites: []string{
 			"NOTAVALIDCIPHER",
 		},
 	}.Validate())
 
 	// TLS protocol version validation
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 	}.Validate())
-	assert.Error(t, ProtocolParameters{
+	require.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 	}.Validate())
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, ProtocolParameters{
+	require.Error(t, ProtocolParameters{
 		MaximumProtocolVersion: "invalid",
 	}.Validate())
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, ProtocolParameters{
+	require.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
 		MaximumProtocolVersion: "1.2",
 	}.Validate())
-	assert.NoError(t, ProtocolParameters{
+	require.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.3",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
-	assert.Error(t, ProtocolParameters{
+	require.Error(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.1",
 		MaximumProtocolVersion: "1.3",
 	}.Validate())
@@ -386,7 +385,6 @@ default-http-versions:
 listener:
   connection-balancer: notexact
 `)
-
 }
 
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
@@ -508,7 +506,6 @@ cluster:
     max-pending-requests: 43
     max-requests: 44
 `)
-
 }
 
 func TestMetricsParametersValidation(t *testing.T) {
@@ -522,7 +519,7 @@ func TestMetricsParametersValidation(t *testing.T) {
 			Port:    1234,
 		},
 	}
-	assert.NoError(t, valid.Validate())
+	require.NoError(t, valid.Validate())
 
 	tlsValid := MetricsParameters{
 		Contour: MetricsServerParameters{
@@ -536,7 +533,7 @@ func TestMetricsParametersValidation(t *testing.T) {
 			Port:    1234,
 		},
 	}
-	assert.NoError(t, valid.Validate())
+	require.NoError(t, valid.Validate())
 	assert.True(t, tlsValid.Contour.HasTLS())
 	assert.False(t, tlsValid.Envoy.HasTLS())
 
@@ -551,7 +548,7 @@ func TestMetricsParametersValidation(t *testing.T) {
 			Port:    1234,
 		},
 	}
-	assert.Error(t, tlsKeyMissing.Validate())
+	require.Error(t, tlsKeyMissing.Validate())
 
 	tlsCAWithoutServerCert := MetricsParameters{
 		Contour: MetricsServerParameters{
@@ -564,8 +561,7 @@ func TestMetricsParametersValidation(t *testing.T) {
 			CABundle: "ca.pem",
 		},
 	}
-	assert.Error(t, tlsCAWithoutServerCert.Validate())
-
+	require.Error(t, tlsCAWithoutServerCert.Validate())
 }
 
 func TestListenerValidation(t *testing.T) {

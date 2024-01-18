@@ -122,7 +122,7 @@ func calculateRouteMetric(updates []*status.ProxyUpdate) metrics.RouteMetric {
 	}
 }
 
-func calcMetrics(u *status.ProxyUpdate, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+func calcMetrics(u *status.ProxyUpdate, metricValid, metricInvalid, metricOrphaned, metricTotal map[metrics.Meta]int) {
 	validCond := u.ConditionFor(status.ValidCondition)
 	switch validCond.Status {
 	case contour_api_v1.ConditionTrue:

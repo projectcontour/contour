@@ -23,7 +23,7 @@ import (
 )
 
 // UInt32OrDefault returns a wrapped UInt32Value. If val is 0, def is wrapped and returned.
-func UInt32OrDefault(val uint32, def uint32) *wrapperspb.UInt32Value {
+func UInt32OrDefault(val, def uint32) *wrapperspb.UInt32Value {
 	switch val {
 	case 0:
 		return wrapperspb.UInt32(def)

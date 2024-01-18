@@ -135,7 +135,6 @@ func TestHealthCheck(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := httpHealthCheck(tc.cluster)
 			protobuf.ExpectEqual(t, tc.want, got)
-
 		})
 	}
 }

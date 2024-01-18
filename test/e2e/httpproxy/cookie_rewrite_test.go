@@ -75,7 +75,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 					},
 				},
 			}
-			assert.Error(f.T(), f.Client.Create(context.TODO(), p), "expected char %d to be invalid in cookie name", c)
+			require.Error(f.T(), f.Client.Create(context.TODO(), p), "expected char %d to be invalid in cookie name", c)
 		}
 
 		// ;, DEL, and control chars.
@@ -108,7 +108,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 					},
 				},
 			}
-			assert.Error(f.T(), f.Client.Create(context.TODO(), p), "expected char %d to be invalid in path rewrite", c)
+			require.Error(f.T(), f.Client.Create(context.TODO(), p), "expected char %d to be invalid in path rewrite", c)
 		}
 
 		invalidDomains := []string{
@@ -144,7 +144,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 					},
 				},
 			}
-			assert.Error(f.T(), f.Client.Create(context.TODO(), p), "expected domain rewrite %q to be invalid", d)
+			require.Error(f.T(), f.Client.Create(context.TODO(), p), "expected domain rewrite %q to be invalid", d)
 		}
 
 		p := &contourv1.HTTPProxy{
@@ -174,7 +174,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 				},
 			},
 		}
-		assert.Error(f.T(), f.Client.Create(context.TODO(), p), "expected invalid SameSite to be rejected")
+		require.Error(f.T(), f.Client.Create(context.TODO(), p), "expected invalid SameSite to be rejected")
 	})
 }
 

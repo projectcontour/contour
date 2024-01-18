@@ -53,7 +53,8 @@ var _ = BeforeSuite(func() {
 		VolumeSource: v1.VolumeSource{
 			Secret: &v1.SecretVolumeSource{
 				SecretName: "metrics-server",
-			}},
+			},
+		},
 	}}
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())

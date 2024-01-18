@@ -56,7 +56,6 @@ func RegisterHTTPRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 }
 
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	// Fetch the HTTPRoute from the cache.
 	httpRoute := &gatewayapi_v1beta1.HTTPRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, httpRoute)

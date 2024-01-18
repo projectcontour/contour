@@ -37,7 +37,8 @@ func TestBootstrap(t *testing.T) {
 		"default configuration": {
 			config: envoy.BootstrapConfig{
 				Path:      "envoy.json",
-				Namespace: "testing-ns"},
+				Namespace: "testing-ns",
+			},
 			wantedBootstrapConfig: `{
   "static_resources": {
     "clusters": [
@@ -1981,14 +1982,15 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
-      }`},
+      }`,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tc := tc
 			steps, gotError := bootstrap(&tc.config)
-			assert.Equal(t, gotError != nil, tc.wantedError)
+			assert.Equal(t, tc.wantedError, gotError != nil)
 
 			gotConfigs := map[string]proto.Message{}
 			for _, step := range steps {

@@ -86,26 +86,24 @@ const (
 	EnvoyNodePortHTTPSPort = int32(30443)
 )
 
-var (
-	// InternalLBAnnotations maps cloud providers to the provider's annotation
-	// key/value pair used for managing an internal load balancer. For additional
-	// details see:
-	//  https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-	//
-	InternalLBAnnotations = map[model.LoadBalancerProviderType]map[string]string{
-		model.AWSLoadBalancerProvider: {
-			awsInternalLBAnnotation: "true",
-		},
-		model.AzureLoadBalancerProvider: {
-			// Azure load balancers are not customizable and are set to (2 fail @ 5s interval, 2 healthy)
-			azureInternalLBAnnotation: "true",
-		},
-		model.GCPLoadBalancerProvider: {
-			gcpLBTypeAnnotation:       "Internal",
-			gcpLBTypeAnnotationLegacy: "Internal",
-		},
-	}
-)
+// InternalLBAnnotations maps cloud providers to the provider's annotation
+// key/value pair used for managing an internal load balancer. For additional
+// details see:
+//
+//	https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+var InternalLBAnnotations = map[model.LoadBalancerProviderType]map[string]string{
+	model.AWSLoadBalancerProvider: {
+		awsInternalLBAnnotation: "true",
+	},
+	model.AzureLoadBalancerProvider: {
+		// Azure load balancers are not customizable and are set to (2 fail @ 5s interval, 2 healthy)
+		azureInternalLBAnnotation: "true",
+	},
+	model.GCPLoadBalancerProvider: {
+		gcpLBTypeAnnotation:       "Internal",
+		gcpLBTypeAnnotationLegacy: "Internal",
+	},
+}
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
@@ -317,7 +315,6 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 	}
 
 	return nil
-
 }
 
 // updateEnvoyServiceIfNeeded updates an Envoy Service if current does not match desired,

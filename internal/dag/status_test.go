@@ -38,7 +38,6 @@ import (
 )
 
 func TestDAGStatus(t *testing.T) {
-
 	type testcase struct {
 		objs                []any
 		fallbackCertificate *types.NamespacedName
@@ -1310,11 +1309,15 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate include condition headers", testcase{
 		objs: []any{proxyInvalidDuplicateIncludeCondtionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidDuplicateIncludeCondtionHeaders.Name,
-				Namespace: proxyInvalidDuplicateIncludeCondtionHeaders.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidDuplicateIncludeCondtionHeaders.Name,
+				Namespace: proxyInvalidDuplicateIncludeCondtionHeaders.Namespace,
+			}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidDuplicateIncludeCondtionHeaders.Generation).WithError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
-			{Name: proxyValidDelegatedRoots.Name,
-				Namespace: proxyValidDelegatedRoots.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidDelegatedRoots.Name,
+				Namespace: proxyValidDelegatedRoots.Namespace,
+			}: fixture.NewValidCondition().
 				WithGeneration(proxyValidDelegatedRoots.Generation).Orphaned(),
 		},
 	})
@@ -1733,8 +1736,10 @@ func TestDAGStatus(t *testing.T) {
 				Valid(), // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Orphaned(), // Orphaned because the include pointing to this condition is a duplicate so the route is not programmed.
-			{Name: proxyInvalidConflictingIncludeConditionsSimple.Name,
-				Namespace: proxyInvalidConflictingIncludeConditionsSimple.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidConflictingIncludeConditionsSimple.Name,
+				Namespace: proxyInvalidConflictingIncludeConditionsSimple.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -1765,8 +1770,10 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Valid(),
-			{Name: proxyIncludeConditionsEmpty.Name,
-				Namespace: proxyIncludeConditionsEmpty.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyIncludeConditionsEmpty.Name,
+				Namespace: proxyIncludeConditionsEmpty.Namespace,
+			}: fixture.NewValidCondition().
 				Valid(),
 		},
 	})
@@ -1806,8 +1813,10 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Valid(),
-			{Name: proxyIncludeConditionsPrefixRoot.Name,
-				Namespace: proxyIncludeConditionsPrefixRoot.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyIncludeConditionsPrefixRoot.Name,
+				Namespace: proxyIncludeConditionsPrefixRoot.Namespace,
+			}: fixture.NewValidCondition().
 				Valid(),
 		},
 	})
@@ -1859,8 +1868,10 @@ func TestDAGStatus(t *testing.T) {
 				Valid(), // Valid since there is a valid include preceding an invalid one.
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
 				Valid(), // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyInvalidConflictingIncludeConditions.Name,
-				Namespace: proxyInvalidConflictingIncludeConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidConflictingIncludeConditions.Name,
+				Namespace: proxyInvalidConflictingIncludeConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -1917,14 +1928,20 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header conditions on an include", testcase{
 		objs: []any{proxyInvalidConflictHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyInvalidConflictHeaderConditions.Name,
-				Namespace: proxyInvalidConflictHeaderConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyInvalidConflictHeaderConditions.Name,
+				Namespace: proxyInvalidConflictHeaderConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -1988,14 +2005,20 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header conditions on an include mismatched order", testcase{
 		objs: []any{proxyInvalidDuplicateMultiHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
 				Orphaned(),
-			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
-				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -2066,14 +2089,20 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header conditions on an include with same path", testcase{
 		objs: []any{proxyInvalidDuplicateIncludeSamePathDiffHeaders, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyInvalidDuplicateMultiHeaderConditions.Name,
-				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyInvalidDuplicateMultiHeaderConditions.Name,
+				Namespace: proxyInvalidDuplicateMultiHeaderConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -2123,14 +2152,20 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate header+path conditions on an include", testcase{
 		objs: []any{proxyInvalidDuplicateHeaderAndPathConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
 				Orphaned(),
-			{Name: proxyInvalidDuplicateHeaderAndPathConditions.Name,
-				Namespace: proxyInvalidDuplicateHeaderAndPathConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidDuplicateHeaderAndPathConditions.Name,
+				Namespace: proxyInvalidDuplicateHeaderAndPathConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 		},
 	})
@@ -2215,15 +2250,21 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate query param conditions on an include", testcase{
 		objs: []any{proxyInvalidConflictQueryConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidConflictQueryConditions.Name,
-				Namespace: proxyInvalidConflictQueryConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidConflictQueryConditions.Name,
+				Namespace: proxyInvalidConflictQueryConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
 		},
 	})
 
@@ -2285,15 +2326,21 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "duplicate query param+header conditions on an include", testcase{
 		objs: []any{proxyInvalidConflictQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyInvalidConflictQueryHeaderConditions.Name,
-				Namespace: proxyInvalidConflictQueryHeaderConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyInvalidConflictQueryHeaderConditions.Name,
+				Namespace: proxyInvalidConflictQueryHeaderConditions.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include preceding an invalid one.
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
-				Valid(),   // Valid since there is a valid include.
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include preceding an invalid one.
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
+				Valid(), // Valid since there is a valid include.
 		},
 	})
 
@@ -2345,14 +2392,20 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "query param+header conditions on an include should not be duplicate", testcase{
 		objs: []any{proxyValidQueryHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyValidBlogTeamA.Name,
-				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamA.Name,
+				Namespace: proxyValidBlogTeamA.Namespace,
+			}: fixture.NewValidCondition().
 				Valid(),
-			{Name: proxyValidBlogTeamB.Name,
-				Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidBlogTeamB.Name,
+				Namespace: proxyValidBlogTeamB.Namespace,
+			}: fixture.NewValidCondition().
 				Valid(),
-			{Name: proxyValidQueryHeaderConditions.Name,
-				Namespace: proxyValidQueryHeaderConditions.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      proxyValidQueryHeaderConditions.Name,
+				Namespace: proxyValidQueryHeaderConditions.Namespace,
+			}: fixture.NewValidCondition().
 				Valid(),
 		},
 	})
@@ -2592,20 +2645,28 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "valid HTTPProxy.TCPProxy - plural", testcase{
 		objs: []any{proxyTCPValidIncludesChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyTCPValidIncludesChild.Name,
-				Namespace: proxyTCPValidIncludesChild.Namespace}: fixture.NewValidCondition().Valid(),
-			{Name: proxyTCPValidChild.Name,
-				Namespace: proxyTCPValidChild.Namespace}: fixture.NewValidCondition().Valid(),
+			{
+				Name:      proxyTCPValidIncludesChild.Name,
+				Namespace: proxyTCPValidIncludesChild.Namespace,
+			}: fixture.NewValidCondition().Valid(),
+			{
+				Name:      proxyTCPValidChild.Name,
+				Namespace: proxyTCPValidChild.Namespace,
+			}: fixture.NewValidCondition().Valid(),
 		},
 	})
 
 	run(t, "valid HTTPProxy.TCPProxy", testcase{
 		objs: []any{proxyTCPValidIncludeChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyTCPValidIncludeChild.Name,
-				Namespace: proxyTCPValidIncludeChild.Namespace}: fixture.NewValidCondition().Valid(),
-			{Name: proxyTCPValidChild.Name,
-				Namespace: proxyTCPValidChild.Namespace}: fixture.NewValidCondition().Valid(),
+			{
+				Name:      proxyTCPValidIncludeChild.Name,
+				Namespace: proxyTCPValidIncludeChild.Namespace,
+			}: fixture.NewValidCondition().Valid(),
+			{
+				Name:      proxyTCPValidChild.Name,
+				Namespace: proxyTCPValidChild.Namespace,
+			}: fixture.NewValidCondition().Valid(),
 		},
 	})
 
@@ -2683,8 +2744,10 @@ func TestDAGStatus(t *testing.T) {
 		},
 		objs: []any{fallbackCertificate, fallbackCertDelegation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid", `Spec.Virtualhost.TLS Secret "non-existing/non-existing" fallback certificate is invalid: Secret not found`),
 		},
 	})
@@ -2696,8 +2759,10 @@ func TestDAGStatus(t *testing.T) {
 		},
 		objs: []any{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotDelegated", `Spec.VirtualHost.TLS Secret "not-delegated/not-delegated" is not configured for certificate delegation`),
 		},
 	})
@@ -2705,8 +2770,10 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "fallback certificate requested but cert not configured in contour", testcase{
 		objs: []any{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotPresent", "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file"),
 		},
 	})
@@ -2739,8 +2806,10 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "clientValidation missing CA", testcase{
 		objs: []any{fallbackCertificateWithClientValidationNoCA, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificateWithClientValidationNoCA.Name,
-				Namespace: fallbackCertificateWithClientValidationNoCA.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificateWithClientValidationNoCA.Name,
+				Namespace: fallbackCertificateWithClientValidationNoCA.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", "Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified"),
 		},
 	})
@@ -2776,8 +2845,10 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "fallback certificate requested and clientValidation also configured", testcase{
 		objs: []any{fallbackCertificateWithClientValidation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificateWithClientValidation.Name,
-				Namespace: fallbackCertificateWithClientValidation.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificateWithClientValidation.Name,
+				Namespace: fallbackCertificateWithClientValidation.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client validation are incompatible"),
 		},
 	})
@@ -4865,8 +4936,10 @@ func TestDAGStatus(t *testing.T) {
 			clientValidationWithDelegatedCA,
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CA Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
 		},
 	})
@@ -4891,8 +4964,10 @@ func TestDAGStatus(t *testing.T) {
 			},
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", `Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret "delegated/delegated": Secret not found`),
 		},
 	})
@@ -4943,8 +5018,10 @@ func TestDAGStatus(t *testing.T) {
 			clientValidationWithDelegatedCRL,
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CRL Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
 		},
 	})
@@ -4970,8 +5047,10 @@ func TestDAGStatus(t *testing.T) {
 			},
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: fallbackCertificate.Name,
-				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
+			{
+				Name:      fallbackCertificate.Name,
+				Namespace: fallbackCertificate.Namespace,
+			}: fixture.NewValidCondition().
 				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", `Spec.VirtualHost.TLS client validation is invalid: invalid CRL Secret "delegated/delegated": Secret not found`),
 		},
 	})
@@ -5074,7 +5153,8 @@ func TestDAGStatus(t *testing.T) {
 			ingressSharedService,
 			tlsProtocolVersion,
 			fixture.ServiceRootsHome,
-			fixture.SecretRootsCert},
+			fixture.SecretRootsCert,
+		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: tlsProtocolVersion.Name, Namespace: tlsProtocolVersion.Namespace}: fixture.NewValidCondition().
 				WithGeneration(tlsProtocolVersion.Generation).
@@ -5084,7 +5164,6 @@ func TestDAGStatus(t *testing.T) {
 				),
 		},
 	})
-
 }
 
 func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1beta1.ProtocolType, attachedRoutes int) []*status.GatewayStatusUpdate {
@@ -5333,7 +5412,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5381,7 +5461,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{{
@@ -5433,7 +5514,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{
 			{
 				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
@@ -5488,7 +5570,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5534,7 +5617,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5576,7 +5660,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5623,7 +5708,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5670,7 +5756,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5717,7 +5804,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5765,7 +5853,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5813,7 +5902,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5861,7 +5951,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5914,7 +6005,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -5962,7 +6054,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6007,7 +6100,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6056,7 +6150,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("invalid-two", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6102,7 +6197,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6138,7 +6234,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6185,7 +6282,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6898,7 +6996,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6940,7 +7039,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -6982,7 +7082,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7021,7 +7122,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -7132,7 +7234,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -7248,7 +7351,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -7338,7 +7442,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -7652,20 +7757,23 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						Filters: []gatewayapi_v1.HTTPRouteFilter{{
-							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
-								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+						Filters: []gatewayapi_v1.HTTPRouteFilter{
+							{
+								Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}, {
+								Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+								},
 							},
-						}, {
-							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
-								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
-							}},
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7712,7 +7820,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7760,7 +7869,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7823,7 +7933,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7875,7 +7986,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7896,7 +8008,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute backendref", testcase{
 		objs: []any{
-
 			kuardService,
 			&gatewayapi_v1beta1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -7924,7 +8035,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -7969,7 +8081,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8015,7 +8128,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8066,7 +8180,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8114,7 +8229,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8165,7 +8281,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8207,7 +8324,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -8977,7 +9095,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								Selector: nil,
 							},
 						},
-					}},
+					},
+				},
 			},
 		},
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
@@ -9044,7 +9163,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								},
 							},
 						},
-					}},
+					},
+				},
 			},
 		},
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
@@ -9105,7 +9225,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								Selector: &metav1.LabelSelector{},
 							},
 						},
-					}},
+					},
+				},
 			},
 		},
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
@@ -9169,7 +9290,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9207,7 +9329,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9241,7 +9364,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		gateway: &gatewayapi_v1beta1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "contour",
@@ -9343,13 +9467,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
 				{
-
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []metav1.Condition{
 						routeResolvedRefsCondition(),
@@ -9387,7 +9511,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9425,7 +9550,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9440,11 +9566,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
-
 }
 
 func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
-
 	type testcase struct {
 		objs                    []any
 		gateway                 *gatewayapi_v1beta1.Gateway
@@ -9533,7 +9657,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 			if diff := cmp.Diff(tc.wantGatewayStatusUpdate, gotGatewayUpdates, ops...); diff != "" {
 				t.Fatalf("expected gateway status: %v, got %v", tc.wantGatewayStatusUpdate, diff)
 			}
-
 		})
 	}
 
@@ -9596,7 +9719,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9637,7 +9761,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-two", 8080, nil)},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9687,7 +9812,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9728,7 +9854,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9769,7 +9896,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9812,7 +9940,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9855,7 +9984,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9896,7 +10026,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, ref.To(int32(0))),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -9944,7 +10075,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10010,7 +10142,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10235,7 +10368,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10274,7 +10408,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10317,7 +10452,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10360,7 +10496,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10612,16 +10749,18 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
 						}},
 						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
-						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
-							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
-								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+						Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{
+							{
+								Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								},
+							}, {
+								Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+								},
 							},
-						}, {
-							Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
-								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
-							}},
 						},
 					}},
 				},
@@ -10718,7 +10857,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 						}},
 					}},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -10755,11 +10895,13 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Hostnames: []gatewayapi_v1beta1.Hostname{
 						"test.projectcontour.io",
 					},
-					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
-						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
-							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
-						}},
-						BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{}},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+						{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+							}},
+							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{},
+						},
 					},
 				},
 			},
@@ -10846,26 +10988,28 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Hostnames: []gatewayapi_v1beta1.Hostname{
 						"test.projectcontour.io",
 					},
-					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
-						Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
-							Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
-						}},
-						BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
-							{
-								BackendRef: gatewayapi_v1beta1.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-								},
-								Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
-									Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
-									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
-											{Name: "custom", Value: "duplicated"},
-											{Name: "Custom", Value: "duplicated"},
-										},
+					Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
+						{
+							Matches: []gatewayapi_v1alpha2.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1alpha2.GRPCMethodMatchExact, "com.example.service", "Login"),
+							}},
+							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{
+								{
+									BackendRef: gatewayapi_v1beta1.BackendRef{
+										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 									},
-								}},
+									Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
+										Type: gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
+											Set: []gatewayapi_v1beta1.HTTPHeader{
+												{Name: "custom", Value: "duplicated"},
+												{Name: "Custom", Value: "duplicated"},
+											},
+										},
+									}},
+								},
 							},
-						}},
+						},
 					},
 				},
 			},
@@ -11157,7 +11301,8 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -11193,7 +11338,8 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 						{},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -11226,7 +11372,8 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
+		},
 		wantRouteConditions: []*status.RouteStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
@@ -11269,6 +11416,7 @@ func routeAcceptedHTTPRouteCondition() metav1.Condition {
 		Message: "Accepted HTTPRoute",
 	}
 }
+
 func routeAcceptedFalse(reason gatewayapi_v1.RouteConditionReason, message string) metav1.Condition {
 	return metav1.Condition{
 		Type:    string(gatewayapi_v1.RouteConditionAccepted),

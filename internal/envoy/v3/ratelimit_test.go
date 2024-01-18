@@ -241,7 +241,6 @@ func TestGlobalRateLimits(t *testing.T) {
 			assert.Equal(t, tc.want, got)
 		})
 	}
-
 }
 
 func TestGlobalRateLimitFilter(t *testing.T) {

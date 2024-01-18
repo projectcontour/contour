@@ -215,7 +215,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
-			}})
+			},
+		})
 		return reconcile.Result{}, nil
 	}
 
@@ -238,7 +239,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
-			}})
+			},
+		})
 		return reconcile.Result{}, nil
 	}
 

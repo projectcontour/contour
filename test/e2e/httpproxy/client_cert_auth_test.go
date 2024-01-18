@@ -149,7 +149,6 @@ func testClientCertAuth(namespace string) {
 				Name:      "echo-no-auth-cert",
 			},
 			Spec: certmanagerv1.CertificateSpec{
-
 				Usages: []certmanagerv1.KeyUsage{
 					certmanagerv1.UsageServerAuth,
 				},
@@ -192,7 +191,6 @@ func testClientCertAuth(namespace string) {
 				Name:      "echo-with-auth-skip-verify-cert",
 			},
 			Spec: certmanagerv1.CertificateSpec{
-
 				Usages: []certmanagerv1.KeyUsage{
 					certmanagerv1.UsageServerAuth,
 				},
@@ -214,7 +212,6 @@ func testClientCertAuth(namespace string) {
 				Name:      "echo-with-auth-skip-verify-with-ca-cert",
 			},
 			Spec: certmanagerv1.CertificateSpec{
-
 				Usages: []certmanagerv1.KeyUsage{
 					certmanagerv1.UsageServerAuth,
 				},
@@ -236,7 +233,6 @@ func testClientCertAuth(namespace string) {
 				Name:      "echo-with-optional-auth-cert",
 			},
 			Spec: certmanagerv1.CertificateSpec{
-
 				Usages: []certmanagerv1.KeyUsage{
 					certmanagerv1.UsageServerAuth,
 				},
@@ -258,7 +254,6 @@ func testClientCertAuth(namespace string) {
 				Name:      "echo-with-optional-auth-no-ca-cert",
 			},
 			Spec: certmanagerv1.CertificateSpec{
-
 				Usages: []certmanagerv1.KeyUsage{
 					certmanagerv1.UsageServerAuth,
 				},

@@ -305,7 +305,6 @@ func ClusterDiscoveryTypeForAddress(address string, t envoy_cluster_v3.Cluster_D
 
 // parseDNSLookupFamily parses the dnsLookupFamily string into a envoy_cluster_v3.Cluster_DnsLookupFamily
 func parseDNSLookupFamily(value string) envoy_cluster_v3.Cluster_DnsLookupFamily {
-
 	switch value {
 	case "v4":
 		return envoy_cluster_v3.Cluster_V4_ONLY

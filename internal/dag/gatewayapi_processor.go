@@ -309,7 +309,6 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	attachedRoutes map[string]int,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
 ) []*listenerInfo {
-
 	// Find the set of valid listeners that are relevant given this
 	// parent ref (either all of them, if the ref is to the entire
 	// gateway, or one of them, if the ref is to a specific listener,
@@ -434,7 +433,6 @@ func (p *GatewayAPIProcessor) computeListener(
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
 ) *listenerInfo {
-
 	info := &listenerInfo{
 		listener:        listener,
 		dagListenerName: validateListenersResult.ListenerNames[string(listener.Name)],
@@ -613,7 +611,6 @@ func (p *GatewayAPIProcessor) computeListener(
 	info.tlsSecret = listenerSecret
 	info.ready = true
 	return info
-
 }
 
 // getListenerRouteKinds gets a list of the valid route kinds that
@@ -926,7 +923,6 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.Ro
 	case gatewayapi_v1.NamespacesFromSelector:
 		// Look up the route's namespace in the list of cached namespaces.
 		if ns := p.source.namespaces[routeNamespace]; ns != nil {
-
 			// Check that the route's namespace is included in the Gateway's
 			// namespace selector.
 			return namespaceSelector.Matches(labels.Set(ns.Labels))
@@ -1142,12 +1138,13 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 		ResponseTimeout: requestTimeout,
 	}, nil
 }
+
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	route *gatewayapi_v1beta1.HTTPRoute,
 	routeAccessor *status.RouteParentStatusUpdate,
 	listener *listenerInfo,
-	hosts sets.Set[string]) {
-
+	hosts sets.Set[string],
+) {
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -1764,8 +1761,8 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	backendObjectRef gatewayapi_v1beta1.BackendObjectReference,
 	field string,
 	routeKind string,
-	routeNamespace string) (*Service, *metav1.Condition) {
-
+	routeNamespace string,
+) (*Service, *metav1.Condition) {
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
@@ -2147,7 +2144,6 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	pathRewritePolicy *PathRewritePolicy,
 	timeoutPolicy *RouteTimeoutPolicy,
 ) []*Route {
-
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,

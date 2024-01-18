@@ -30,7 +30,6 @@ type subConditionDetails struct {
 }
 
 func TestAddErrorConditions(t *testing.T) {
-
 	tests := map[string]struct {
 		dc            *DetailedCondition
 		subconditions []subConditionDetails
@@ -274,7 +273,6 @@ func TestAddErrorConditions(t *testing.T) {
 }
 
 func TestAddWarningConditions(t *testing.T) {
-
 	tests := map[string]struct {
 		dc            *DetailedCondition
 		subconditions []subConditionDetails
@@ -544,7 +542,6 @@ func TestGetConditionFor(t *testing.T) {
 }
 
 func TestGetError(t *testing.T) {
-
 	dcWithErrors := &DetailedCondition{
 		Errors: []SubCondition{
 			{
@@ -571,11 +568,9 @@ func TestGetError(t *testing.T) {
 	emptySubCond, ok := dcEmpty.GetError(ConditionTypeServiceError)
 	assert.False(t, ok)
 	assert.Equal(t, SubCondition{}, emptySubCond)
-
 }
 
 func TestGetWarning(t *testing.T) {
-
 	dcWithErrors := &DetailedCondition{
 		Warnings: []SubCondition{
 			{
@@ -612,10 +607,9 @@ func TestGetWarning(t *testing.T) {
 	emptySubCond, ok := dcEmpty.GetWarning("SimpleTest1")
 	assert.False(t, ok)
 	assert.Equal(t, SubCondition{}, emptySubCond)
-
 }
-func TestTruncateLongMessage(t *testing.T) {
 
+func TestTruncateLongMessage(t *testing.T) {
 	shortmessage := "This is a message shorter than the max length"
 
 	assert.Equal(t, shortmessage, truncateLongMessage(shortmessage))
@@ -623,7 +617,6 @@ func TestTruncateLongMessage(t *testing.T) {
 	truncatedLongMessage := longMessage[:LongMessageLength]
 
 	assert.Equal(t, truncatedLongMessage, truncateLongMessage(longMessage))
-
 }
 
 // nolint:misspell

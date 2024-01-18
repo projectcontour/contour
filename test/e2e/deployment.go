@@ -378,7 +378,7 @@ func (d *Deployment) WaitForEnvoyUpdated() error {
 	return WaitForEnvoyDeploymentUpdated(d.EnvoyDeployment, d.client, d.contourImage)
 }
 
-func (d *Deployment) EnsureRateLimitResources(namespace string, configContents string) error {
+func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) error {
 	setNamespace := d.Namespace.Name
 	if len(namespace) > 0 {
 		setNamespace = namespace
@@ -609,7 +609,6 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 // file. Returns running Contour command and config file so we can clean them
 // up.
 func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfiguration *contour_api_v1alpha1.ContourConfiguration, additionalArgs ...string) (*gexec.Session, string, error) {
-
 	var content []byte
 	var configReferenceName string
 	var contourServeArgs []string
@@ -654,7 +653,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		if err != nil {
 			return nil, "", err
 		}
-		if err := os.WriteFile(configFile.Name(), content, 0600); err != nil {
+		if err := os.WriteFile(configFile.Name(), content, 0o600); err != nil {
 			return nil, "", err
 		}
 

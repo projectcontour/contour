@@ -190,5 +190,4 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-
 }

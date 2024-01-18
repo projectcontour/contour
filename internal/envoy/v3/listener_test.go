@@ -62,19 +62,19 @@ var compressorContentTypes = []string{
 }
 
 func TestCodecForVersions(t *testing.T) {
-	assert.Equal(t, CodecForVersions(HTTPVersionAuto), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1, HTTPVersion2), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1), HTTPVersion1)
-	assert.Equal(t, CodecForVersions(HTTPVersion2), HTTPVersion2)
+	assert.Equal(t, HTTPVersionAuto, CodecForVersions(HTTPVersionAuto))
+	assert.Equal(t, HTTPVersionAuto, CodecForVersions(HTTPVersion1, HTTPVersion2))
+	assert.Equal(t, HTTPVersion1, CodecForVersions(HTTPVersion1))
+	assert.Equal(t, HTTPVersion2, CodecForVersions(HTTPVersion2))
 }
 
 func TestProtoNamesForVersions(t *testing.T) {
-	assert.Equal(t, ProtoNamesForVersions(), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersionAuto), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1), []string{"http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion2), []string{"h2"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions())
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions(HTTPVersionAuto))
+	assert.Equal(t, []string{"http/1.1"}, ProtoNamesForVersions(HTTPVersion1))
+	assert.Equal(t, []string{"h2"}, ProtoNamesForVersions(HTTPVersion2))
+	assert.Equal(t, []string(nil), ProtoNamesForVersions(HTTPVersion3))
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2))
 }
 
 func TestListener(t *testing.T) {
@@ -1673,7 +1673,6 @@ func TestTCPProxy(t *testing.T) {
 }
 
 func TestFilterChainTLS_Match(t *testing.T) {
-
 	tests := map[string]struct {
 		domain     string
 		downstream *envoy_tls_v3.DownstreamTlsContext
@@ -1709,11 +1708,10 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-
-	assert.Error(t, HTTPConnectionManagerBuilder().Validate(),
+	require.Error(t, HTTPConnectionManagerBuilder().Validate(),
 		"ConnectionManager with no filters should not pass validation")
 
-	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+	require.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: &anypb.Any{
@@ -1723,7 +1721,7 @@ func TestBuilderValidation(t *testing.T) {
 	}).Validate(),
 		"ConnectionManager with only non-router filter should not pass validation")
 
-	assert.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
+	require.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
 		"ConnectionManager with default filters failed validation")
 
 	badBuilder := HTTPConnectionManagerBuilder().DefaultFilters()
@@ -1735,7 +1733,7 @@ func TestBuilderValidation(t *testing.T) {
 			},
 		},
 	})
-	assert.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
+	require.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
 }
 
 func TestAddFilter(t *testing.T) {

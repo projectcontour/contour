@@ -50,12 +50,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
-					Name: "svc1",
-					Port: 80,
-				}},
-			},
+			Routes: []contour_api_v1.Route{
+				{
+					Services: []contour_api_v1.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
 				{
 					Conditions: matchconditions(
 						prefixMatchCondition("/"),
@@ -428,7 +429,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Name: "svc2",
 						Port: 80,
 					}},
-				}},
+				},
+			},
 		},
 	)
 
@@ -487,7 +489,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Name: "svc2",
 						Port: 80,
 					}},
-				}},
+				},
+			},
 		},
 	)
 
@@ -582,5 +585,4 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-
 }
