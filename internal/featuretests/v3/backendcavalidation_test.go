@@ -112,13 +112,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	expectedResponse := &envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret.Data[dag.CACertificateKey], "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
-	})
+	}
+
+	// assert that the cluster now has a certificate and subject name.
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
@@ -160,12 +162,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
-		),
-		TypeUrl: clusterType,
-	})
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
@@ -210,10 +207,5 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		})
 	rh.OnAdd(tcpproxy)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
-		),
-		TypeUrl: clusterType,
-	})
+	c.Request(clusterType).Equals(expectedResponse)
 }

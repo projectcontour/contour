@@ -119,12 +119,14 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 		})
 	rh.OnAdd(proxy)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	expectedResponse := &envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1, nil),
+			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), sec2.Data[dag.CACertificateKey], "subjname", "", sec1, nil),
 		),
 		TypeUrl: clusterType,
-	})
+	}
+
+	c.Request(clusterType).Equals(expectedResponse)
 
 	rh.OnDelete(proxy)
 
@@ -150,12 +152,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 		})
 	rh.OnAdd(tcpproxy)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1, nil),
-		),
-		TypeUrl: clusterType,
-	})
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Test the error branch when Envoy client certificate secret does not exist.
 	rh.OnDelete(sec1)
