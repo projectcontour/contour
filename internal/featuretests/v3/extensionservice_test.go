@@ -25,7 +25,6 @@ import (
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -123,7 +122,7 @@ func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 						TrustedCa: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: []byte(featuretests.CERTIFICATE),
+								InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
 							},
 						},
 						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
@@ -172,13 +171,7 @@ func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	})
 
 	// Create a secret for the CA certificate that can be delegated
-	rh.OnAdd(&corev1.Secret{
-		ObjectMeta: fixture.ObjectMeta("otherNs/cacert"),
-		Type:       corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	})
+	rh.OnAdd(featuretests.CASecret("otherNs/cacert", &featuretests.CACertificate))
 
 	// Update the validation spec to reference a secret that is not delegated.
 	rh.OnUpdate(ext, &v1alpha1.ExtensionService{
@@ -429,14 +422,7 @@ func TestExtensionService(t *testing.T) {
 
 			// Add common test fixtures.
 
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("ns/cacert"),
-				Type:       corev1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-				},
-			})
-
+			rh.OnAdd(featuretests.CASecret("ns/cacert", &featuretests.CACertificate))
 			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
 			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(corev1.ServicePort{Port: 8082}))
 

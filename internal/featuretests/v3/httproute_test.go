@@ -100,14 +100,7 @@ func TestGateway_TLS(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret("projectcontour/tlscert", &featuretests.ServerCertificate)
 
 	rh.OnAdd(sec1)
 

@@ -22,6 +22,7 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -47,25 +48,10 @@ func TestFallbackCertificate(t *testing.T) {
 	})
 	defer done()
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
-	fallbackSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "fallbacksecret",
-			Namespace: "admin",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-
+	fallbackSecret := featuretests.TLSSecret("admin/fallbacksecret", &featuretests.ServerCertificate)
 	rh.OnAdd(fallbackSecret)
 
 	s1 := fixture.NewService("backend").
@@ -295,7 +281,7 @@ func TestFallbackCertificate(t *testing.T) {
 		TypeUrl: secretType,
 		Resources: resources(t,
 			&envoy_tls_v3.Secret{
-				Name: "admin/fallbacksecret/0567f551af",
+				Name: envoy.Secretname(&dag.Secret{Object: fallbackSecret}),
 				Type: &envoy_tls_v3.Secret_TlsCertificate{
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{
@@ -312,7 +298,7 @@ func TestFallbackCertificate(t *testing.T) {
 				},
 			},
 			&envoy_tls_v3.Secret{
-				Name: "default/secret/0567f551af",
+				Name: envoy.Secretname(&dag.Secret{Object: sec1}),
 				Type: &envoy_tls_v3.Secret_TlsCertificate{
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{

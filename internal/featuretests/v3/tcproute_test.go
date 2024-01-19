@@ -189,15 +189,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 
 	rh.OnAdd(svc1)
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-
+	sec1 := featuretests.TLSSecret("projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{

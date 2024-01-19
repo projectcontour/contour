@@ -32,14 +32,7 @@ func TestTCPProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("correct-backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -129,14 +122,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("app/backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -312,14 +298,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "k8s-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("k8s-tls", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("kubernetes").
 		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
@@ -394,14 +373,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -483,14 +455,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -754,14 +719,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -865,14 +823,7 @@ func TestTCPProxyInvalidLoadBalancerPolicy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})

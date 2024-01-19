@@ -323,14 +323,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		Nonce:   "4",
 	})
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello-kitty",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("hello-kitty", &featuretests.ServerCertificate))
 
 	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
@@ -436,14 +429,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	s2 := fixture.NewService("nginx-ingress/challenge-service").
 		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
@@ -498,11 +484,8 @@ func TestInvalidCertInIngress(t *testing.T) {
 	defer done()
 
 	// Create an invalid TLS secret
-	secret := &v1.Secret{
-		ObjectMeta: fixture.ObjectMeta("example-tls"),
-		Type:       "kubernetes.io/tls",
-		Data:       featuretests.Secretdata("wrong", featuretests.RSA_PRIVATE_KEY),
-	}
+	secret := featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate)
+	secret.Data[v1.TLSCertKey] = []byte("wrong")
 	rh.OnAdd(secret)
 
 	// Create a service
@@ -541,11 +524,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 	), nil)
 
 	// Correct the secret
-	rh.OnUpdate(secret, &v1.Secret{
-		ObjectMeta: fixture.ObjectMeta("example-tls"),
-		Type:       "kubernetes.io/tls",
-		Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnUpdate(secret, featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("kuard.io",
@@ -692,14 +671,7 @@ func TestRDSFilter(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	s2 := fixture.NewService("nginx-ingress/challenge-service").
 		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
@@ -1118,14 +1090,7 @@ func TestRouteWithTLS(t *testing.T) {
 	rh.OnAdd(fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1189,14 +1154,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1286,14 +1244,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1497,14 +1448,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	rh.OnAdd(fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1566,14 +1510,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1659,14 +1596,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("example-tls", &featuretests.ServerCertificate))
 
 	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

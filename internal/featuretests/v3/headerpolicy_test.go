@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -155,14 +154,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		}),
 	)
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("foo", &featuretests.ServerCertificate))
 
 	// Proxy with SNI
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
@@ -275,14 +267,7 @@ func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
 		}),
 	)
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	})
+	rh.OnAdd(featuretests.TLSSecret("foo", &featuretests.ServerCertificate))
 
 	// Proxy with SNI
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(

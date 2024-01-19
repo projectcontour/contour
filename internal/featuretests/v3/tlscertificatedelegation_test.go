@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTLSCertificateDelegation(t *testing.T) {
@@ -39,16 +38,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "wildcard",
-			Namespace: "secret",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-
-	// add a secret object secret/wildcard.
+	sec1 := featuretests.TLSSecret("secret/wildcard", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("kuard").

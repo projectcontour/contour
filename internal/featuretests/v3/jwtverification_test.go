@@ -28,7 +28,6 @@ import (
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -36,21 +35,13 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestJWTVerification(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").
@@ -725,13 +716,7 @@ func TestJWTVerification(t *testing.T) {
 		),
 	})
 
-	rh.OnAdd(&corev1.Secret{
-		ObjectMeta: fixture.ObjectMeta("default/cacert"),
-		Type:       corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	})
+	rh.OnAdd(featuretests.CASecret("cacert", &featuretests.CACertificate))
 
 	// JWKS with upstream validation
 	proxy7 := fixture.NewProxy("simple").WithSpec(
@@ -857,7 +842,7 @@ func TestJWTVerification(t *testing.T) {
 									ValidationContext: &envoy_tls_v3.CertificateValidationContext{
 										TrustedCa: &envoy_core_v3.DataSource{
 											Specifier: &envoy_core_v3.DataSource_InlineBytes{
-												InlineBytes: []byte(featuretests.CERTIFICATE),
+												InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
 											},
 										},
 										MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
@@ -1194,14 +1179,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").

@@ -49,10 +49,10 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 	})
 	defer done()
 
-	sec1 := clientSecret()
-	sec2 := caSecret()
-	rh.OnAdd(sec1)
-	rh.OnAdd(sec2)
+	clientSecret := featuretests.TLSSecret("envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret("backendcacert", &featuretests.CACertificate)
+	rh.OnAdd(clientSecret)
+	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 443})
@@ -69,7 +69,7 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 					Port:     443,
 					Protocol: ref.To("tls"),
 					UpstreamValidation: &projcontour.UpstreamValidation{
-						CACertificate: sec2.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -81,10 +81,10 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 		Resources: resources(t,
 			tlsCluster(
 				cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"),
-				[]byte(featuretests.CERTIFICATE),
+				&featuretests.CACertificate,
 				"subjname",
 				"",
-				sec1,
+				clientSecret,
 				&dag.UpstreamTLS{
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
@@ -156,13 +156,7 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 
 	// Add common test fixtures.
 
-	rh.OnAdd(&corev1.Secret{
-		ObjectMeta: fixture.ObjectMeta("ns/cacert"),
-		Type:       corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	})
+	rh.OnAdd(featuretests.CASecret("ns/cacert", &featuretests.CACertificate))
 
 	rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
 
@@ -200,7 +194,7 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 						TrustedCa: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: []byte(featuretests.CERTIFICATE),
+								InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
 							},
 						},
 						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{

@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,26 +31,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	serverTLSSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "serverTLSSecret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	serverTLSSecret := featuretests.TLSSecret("serverTLSSecret", &featuretests.ServerCertificate)
 	rh.OnAdd(serverTLSSecret)
 
-	clientCASecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "clientCASecret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	}
+	clientCASecret := featuretests.CASecret("clientCASecret", &featuretests.CACertificate)
 	rh.OnAdd(clientCASecret)
 
 	service := fixture.NewService("kuard").
@@ -207,16 +190,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		TypeUrl: listenerType,
 	}).Status(proxy3).IsValid()
 
-	crlSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "crl",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CRLKey: []byte(featuretests.CRL),
-		},
-	}
+	crlSecret := featuretests.CRLSecret("crl", &featuretests.CRL)
 	rh.OnAdd(crlSecret)
 
 	proxy4 := fixture.NewProxy("example.com").

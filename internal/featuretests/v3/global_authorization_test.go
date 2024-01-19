@@ -115,11 +115,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				&corev1.Secret{
-					ObjectMeta: fixture.ObjectMeta("certificate"),
-					Type:       "kubernetes.io/tls",
-					Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-				},
+				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -189,11 +185,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				&corev1.Secret{
-					ObjectMeta: fixture.ObjectMeta("certificate"),
-					Type:       "kubernetes.io/tls",
-					Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-				},
+				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
 				httpsFilterFor("foo.com"),
 				nil, "h2", "http/1.1"),
 		},
@@ -327,11 +319,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				&corev1.Secret{
-					ObjectMeta: fixture.ObjectMeta("certificate"),
-					Type:       "kubernetes.io/tls",
-					Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-				},
+				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -448,11 +436,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				&corev1.Secret{
-					ObjectMeta: fixture.ObjectMeta("certificate"),
-					Type:       "kubernetes.io/tls",
-					Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-				},
+				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -570,11 +554,7 @@ func TestGlobalAuthorization(t *testing.T) {
 				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("certificate"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
+			rh.OnAdd(featuretests.TLSSecret("certificate", &featuretests.ServerCertificate))
 
 			f(t, rh, c)
 		})

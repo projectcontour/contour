@@ -20,6 +20,7 @@ import (
 	"time"
 
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"github.com/tsaarni/certyaml"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -36,6 +37,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"google.golang.org/protobuf/proto"
@@ -43,7 +45,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DefaultCluster returns a copy of the default Cluster, with each
@@ -184,24 +185,23 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_cluster_v3.Cluster, ca *certyaml.Certificate, subjectName, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
 	}
 
+	// Secret for validation is optional.
+	var s *dag.Secret
+	if ca != nil {
+		s = &dag.Secret{Object: featuretests.CASecret("secret", ca)}
+	}
+
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: map[string][]byte{dag.CACertificateKey: ca},
-				}},
-				SubjectNames: []string{subjectName},
+				CACertificate: s,
+				SubjectNames:  []string{subjectName},
 			},
 			sni,
 			secret,
