@@ -103,7 +103,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the cluster now has a certificate and subject name.
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), &featuretests.CACertificate, "subjname", "", nil, nil),
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret, "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -150,7 +150,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the cluster now has a certificate and subject name.
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), &featuretests.CACertificate, "subjname", "", nil, nil),
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret, "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
 	})

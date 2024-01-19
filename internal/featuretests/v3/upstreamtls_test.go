@@ -81,7 +81,7 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 		Resources: resources(t,
 			tlsCluster(
 				cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"),
-				&featuretests.CACertificate,
+				caSecret,
 				"subjname",
 				"",
 				clientSecret,

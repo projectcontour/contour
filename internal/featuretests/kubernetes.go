@@ -48,7 +48,6 @@ var ServerCertificate = certyaml.Certificate{
 var ClientCertificate = certyaml.Certificate{
 	Issuer:  &CACertificate,
 	Subject: "CN=client",
-	KeyType: certyaml.KeyTypeRSA,
 }
 
 var CRL = certyaml.CRL{

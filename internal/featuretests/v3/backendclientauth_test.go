@@ -96,7 +96,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), &featuretests.CACertificate, "subjname", "", clientSecret, nil),
+			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), caSecret, "subjname", "", clientSecret, nil),
 		),
 		TypeUrl: clusterType,
 	})
