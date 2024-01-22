@@ -392,6 +392,9 @@ In general, changes to the core processing pipeline should be accompanied by new
 | `internal/featuretests/v3/*_test.go` | Tests conversion of Kubernetes config to Envoy config, using a ~full Contour event handler and xDS server. |
 | `test/e2e/[httpproxy\|gateway\|ingress]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
 
+> **Note:**
+To compile code under folder `e2e` with VSCode, please add `go.buildTags": "e2e,conformance"` to VSCode config file `settings.json`. Since tests under it have e2e and conformance build tags.
+
 
 ## DCO Sign off
 
