@@ -17,6 +17,9 @@ cat > "${REPO}/examples/contour/02-role-contour.yaml" <<EOF
 # files and re-render.
 EOF
 
+echo "controller-gen version: "
+go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
+
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
     rbac:roleName=contour \
     output:stdout \

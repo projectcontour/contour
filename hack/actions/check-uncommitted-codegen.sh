@@ -24,5 +24,6 @@ if git status -s ${TARGETS[@]} 2>&1 | grep -E -q '^\s+[MADRCU]'
 then
 	echo Uncommitted changes in generated sources:
 	git status -s ${TARGETS[@]}
+	git diff
 	exit 1
 fi
