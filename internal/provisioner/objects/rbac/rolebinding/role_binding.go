@@ -49,7 +49,7 @@ func EnsureControllerRoleBinding(ctx context.Context, cli client.Client, name, s
 func EnsureRoleBindingsInNamespaces(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour, namespaces []string) error {
 	errs := []error{}
 	for _, ns := range namespaces {
-		desired := desiredRoleBindingInNamespace(util.ContourResourceName(name), svcAct, role, ns, contour)
+		desired := desiredRoleBindingInNamespace(util.ContourResourceName(name), svcAct, util.ContourResourceName(role), ns, contour)
 
 		// Enclose contour.
 		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.RoleBinding) error {

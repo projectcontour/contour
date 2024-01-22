@@ -489,6 +489,156 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 		})
 	})
+	f.NamespacedTest("gateway-with-envoy-in-watch-namespaces", func(namespace string) {
+		Specify("A gateway with Envoy as a deployment can be provisioned, only routes in watch namespace can be reconciled", func() {
+			By("create gatewayclass that reference contourDeployment with watchNamespace value")
+			objectTestName := "contour-params-with-watch-namespaces"
+			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: objectTestName,
+				},
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Namespace: ref.To(gatewayapi_v1beta1.Namespace(namespace)),
+						Name:      objectTestName,
+					},
+				},
+			}
+			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
+			require.True(f.T(), ok)
+
+			// Now create the ContourDeployment to match the parametersRef.
+			params := &contour_api_v1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "contour-params-with-watch-namespaces",
+				},
+				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+					RuntimeSettings: contourDeploymentRuntimeSettings(),
+					Contour: &contour_api_v1alpha1.ContourSettings{
+						WatchNamespaces: []string{"testns-1", "testns-2"},
+					},
+				},
+			}
+			require.NoError(f.T(), f.Client.Create(context.Background(), params))
+
+			// Now the GatewayClass should be accepted.
+			require.Eventually(f.T(), func() bool {
+				gc := &gatewayapi_v1beta1.GatewayClass{}
+				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gatewayClass), gc); err != nil {
+					return false
+				}
+
+				return e2e.GatewayClassAccepted(gc)
+			}, time.Minute, time.Second)
+
+			By("Deploy gateway that referencing above gatewayclass")
+			gateway := &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "http-for-watchnamespaces",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(objectTestName),
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1.HTTPProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			gateway, ok = f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
+				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
+			})
+			require.True(f.T(), ok)
+
+			type testObj struct {
+				expectWatch bool
+				namespace   string
+			}
+			testcases := []testObj{
+				{
+					expectWatch: true,
+					namespace:   "testns-1",
+				},
+				{
+					expectWatch: true,
+					namespace:   "testns-2",
+				},
+				{
+					expectWatch: false,
+					namespace:   "testns-3",
+				},
+			}
+
+			By("Deploy workload in target namespaces, check if they get reconciled or not")
+			for _, t := range testcases {
+				f.Fixtures.Echo.Deploy(t.namespace, "echo")
+
+				route := &gatewayapi_v1beta1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: t.namespace,
+						Name:      "httproute-1",
+					},
+					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1beta1.Hostname{"'provisioner'.projectcontour.io"},
+						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+								gatewayapi.GatewayParentRef("", gateway.Name),
+							},
+						},
+						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+							{
+								Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
+								BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
+							},
+						},
+					},
+				}
+
+				if t.expectWatch {
+					By(fmt.Sprintf("Expect namespace %s to be watched by contour", t.namespace))
+					_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+					By("Expect Routed is accepted")
+					require.True(f.T(), ok)
+					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+						OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
+						Host:        string(route.Spec.Hostnames[0]),
+						Path:        "/prefix/match",
+						Condition:   e2e.HasStatusCode(200),
+					})
+					require.NotNil(f.T(), res)
+					require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
+
+					body := f.GetEchoResponseBody(res.Body)
+					assert.Equal(f.T(), namespace, body.Namespace)
+					assert.Equal(f.T(), "echo", body.Service)
+
+					require.NoError(f.T(), f.DeleteHTTPRoute(route, false))
+				} else {
+					// Root proxy in non-watched namespace should fail
+					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
+					_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteNotAccepted)
+					By("Expect Routed is not accepted")
+					require.True(f.T(), ok)
+					require.NoError(f.T(), f.DeleteHTTPRoute(route, false))
+				}
+			}
+
+			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
+		})
+	}, "testns-1", "testns-2", "testns-3")
 })
 
 func contourDeploymentRuntimeSettings() *contour_api_v1alpha1.ContourConfigurationSpec {

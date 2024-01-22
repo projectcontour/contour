@@ -74,10 +74,10 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 
 		// Ensures role and rolebinding for namespaced scope resources in namespaces specified in contour.spec.watchNamespaces variable
 		if err := role.EnsureRolesInNamespaces(ctx, cli, names.Role, contour, contour.Spec.WatchNamespaces); err != nil {
-			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
+			return fmt.Errorf("failed to ensure roles in namespace %s: %w", contour.Spec.WatchNamespaces, err)
 		}
 		if err := rolebinding.EnsureRoleBindingsInNamespaces(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour, contour.Spec.WatchNamespaces); err != nil {
-			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
+			return fmt.Errorf("failed to ensure rolebindings in namespace %s: %w", contour.Spec.WatchNamespaces, err)
 		}
 	}
 
