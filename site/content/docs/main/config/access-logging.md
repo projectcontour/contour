@@ -78,7 +78,7 @@ See the [example config file][6] to see this used in context.
 
 #### Omitting Logs with Empty Values
 
-Contour now automatically omits empty fields in Envoy JSON access logs, enhancing clarity and delivering more concise and relevant log outputs by default.
+Contour automatically omits empty fields in Envoy JSON access logs, enhancing clarity and delivering more concise and relevant log outputs by default.
 
 #### Sample Configuration File
 
