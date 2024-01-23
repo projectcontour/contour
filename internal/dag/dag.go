@@ -794,6 +794,9 @@ type SecureVirtualHost struct {
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
+
+	// AlpnProtos specify the HTTP version to offer for this vhost
+	HTTPVersions []string
 }
 
 type JWTProvider struct {

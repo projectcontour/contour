@@ -492,7 +492,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 				filters = envoy_v3.Filters(cm)
 
-				alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
+				if len(vh.HTTPVersions) != 0 {
+					alpnProtos = vh.HTTPVersions
+				} else {
+					alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
+				}
 			} else {
 				filters = envoy_v3.Filters(envoy_v3.TCPProxy(listener.Name, vh.TCPProxy, cfg.newSecureAccessLog()))
 

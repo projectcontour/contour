@@ -18,6 +18,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// HTTPVersion is an alias to enforce validation
+// +kubebuilder:validation:Enum=h2;http/1.1
+type HTTPVersion string
+
 // HTTPProxySpec defines the spec of the CRD.
 type HTTPProxySpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
@@ -338,6 +342,11 @@ type VirtualHost struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// HTTPVersions specify the http versions to offer for this HTTPProxy.
+	// If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig will be used.
+	// It is ignored when TCPProxy is set.
+	HTTPVersions []HTTPVersion `json:"httpVersions,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.

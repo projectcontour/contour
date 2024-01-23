@@ -7598,6 +7598,17 @@ spec:
                       all leaves of the DAG rooted at this object relate to the fqdn.
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  httpVersions:
+                    description: HTTPVersions specify the http versions to offer for
+                      this HTTPProxy. If empty, the DefaultHTTPVersions from v1alpha1.EnvoyConfig
+                      will be used. It is ignored when TCPProxy is set.
+                    items:
+                      description: HTTPVersion is an alias to enforce validation
+                      enum:
+                      - h2
+                      - http/1.1
+                      type: string
+                    type: array
                   ipAllowPolicy:
                     description: |-
                       IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
