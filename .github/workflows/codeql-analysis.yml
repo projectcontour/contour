@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         persist-credentials: false
-    - uses: actions/cache@e12d46a63a90f2fae62d114769bbf2a179198b5c # v3.3.3
+    - uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
       with:
         # * Module download cache
         # * Build cache (Linux)
@@ -41,11 +41,11 @@ jobs:
         cache: false
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@e5f05b81d5b6ff8cfa111c80c22c5fd02a384118 # v3.23.0
+      uses: github/codeql-action/init@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
       with:
         languages: go
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     - name: Autobuild
-      uses: github/codeql-action/autobuild@e5f05b81d5b6ff8cfa111c80c22c5fd02a384118 # v3.23.0
+      uses: github/codeql-action/autobuild@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@e5f05b81d5b6ff8cfa111c80c22c5fd02a384118 # v3.23.0
+      uses: github/codeql-action/analyze@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1

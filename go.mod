@@ -18,8 +18,8 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/onsi/ginkgo/v2 v2.14.0
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/ginkgo/v2 v2.15.0
+	github.com/onsi/gomega v1.31.1
 	github.com/projectcontour/yages v0.1.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
@@ -35,11 +35,11 @@ require (
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.29.0
-	k8s.io/apiextensions-apiserver v0.29.0
-	k8s.io/apimachinery v0.29.0
-	k8s.io/client-go v0.29.0
-	k8s.io/klog/v2 v2.120.0
+	k8s.io/api v0.29.1
+	k8s.io/apiextensions-apiserver v0.29.1
+	k8s.io/apimachinery v0.29.1
+	k8s.io/client-go v0.29.1
+	k8s.io/klog/v2 v2.120.1
 	sigs.k8s.io/controller-runtime v0.17.0
 	sigs.k8s.io/controller-tools v0.14.0
 	sigs.k8s.io/gateway-api v1.0.0
@@ -135,7 +135,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.29.0 // indirect
+	k8s.io/component-base v0.29.1 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect

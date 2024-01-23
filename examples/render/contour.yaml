@@ -9053,7 +9053,6 @@ spec:
         readinessProbe:
           tcpSocket:
             port: 8001
-          initialDelaySeconds: 15
           periodSeconds: 10
         volumeMounts:
           - name: contourcert
