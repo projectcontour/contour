@@ -116,6 +116,8 @@ github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nos
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/go-asn1-ber/asn1-ber v1.5.4 h1:vXT6d/FNDiELJnLb6hGNa309LMsrCoYFvpwHDF0+Y1A=
 github.com/go-asn1-ber/asn1-ber v1.5.4/go.mod h1:hEBeB/ic+5LoWskz+yKT7vGhhPYkProFKoKdwZRWMe0=
+github.com/go-asn1-ber/asn1-ber v1.5.5 h1:MNHlNMBDgEKD4TcKr36vQN68BA00aDfjIt3/bD50WnA=
+github.com/go-asn1-ber/asn1-ber v1.5.5/go.mod h1:hEBeB/ic+5LoWskz+yKT7vGhhPYkProFKoKdwZRWMe0=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
 github.com/go-errors/errors v1.4.2/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
 github.com/go-fonts/dejavu v0.1.0 h1:JSajPXURYqpr+Cu8U9bt8K+XcACIHWqWrvWCKyeFmVQ=
@@ -381,6 +383,8 @@ github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
 github.com/tsaarni/certyaml v0.9.2 h1:LoRTuajwjJ1CHAJiMv5cpOtwQ05207Oqe6cT9D7WDaQ=
 github.com/tsaarni/certyaml v0.9.2/go.mod h1:s+ErAC1wZ32r1ihSULvR7HXedKKN5HZasdb8Cj8gT9E=
+github.com/tsaarni/certyaml v0.9.3 h1:m8HHbuUzWVUOmv8IQU9HgVZZ8r5ICExKm++54DJKCs0=
+github.com/tsaarni/certyaml v0.9.3/go.mod h1:hhuU1qYr5re488geArUP4gZWqMUMqGlj4HA2qUyGYLk=
 github.com/tsaarni/x500dn v1.0.0 h1:LvaWTkqRpse4VHBhB5uwf3wytokK4vF9IOyNAEyiA+U=
 github.com/tsaarni/x500dn v1.0.0/go.mod h1:QaHa3EcUKC4dfCAZmj8+ZRGLKukWgpGv9H3oOCsAbcE=
 github.com/vektra/mockery/v2 v2.40.1 h1:8D01rBqloDLDHKZGXkyUD9Yj5Z+oDXBqDZ+tRXYM/oA=
